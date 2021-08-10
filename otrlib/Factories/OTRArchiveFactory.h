@@ -1,5 +1,5 @@
 #include "../OTRArchive.h"
-#include "../Lib/BinaryReader.h"
+#include "Utils/BinaryReader.h"
 
 namespace OtrLib
 {

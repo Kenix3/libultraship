@@ -20,7 +20,7 @@ namespace OtrLib
 	{
 		OTRSceneCommandID cmdID = (OTRSceneCommandID)reader->ReadInt32();
 
-		reader->Seek(-4, OtrLib::SeekOffsetType::Current);
+		reader->Seek(-4, SeekOffsetType::Current);
 
 		switch (cmdID)
 		{

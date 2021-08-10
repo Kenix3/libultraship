@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include "Lib/BinaryReader.h"
+#include "Utils/BinaryReader.h"
 #include "OTRResource.h"
 
 namespace OtrLib

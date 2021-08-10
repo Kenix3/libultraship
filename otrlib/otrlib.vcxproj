@@ -78,6 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)ZAPD\ZAPDUtils;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -139,12 +140,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\lib\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="Factories\OTRArchiveFactory.cpp" />
     <ClCompile Include="Factories\OTRMaterialFactory.cpp" />
     <ClCompile Include="Factories\OTRResourceLoader.cpp" />
-    <ClCompile Include="Lib\BinaryReader.cpp" />
-    <ClCompile Include="Lib\StrHash.cpp" />
+    <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="OTRArchive.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
@@ -159,13 +158,7 @@
     <ClInclude Include="Factories\OTRArchiveFactory.h" />
     <ClInclude Include="Factories\OTRMaterialFactory.h" />
     <ClInclude Include="Factories\OTRResourceLoader.h" />
-    <ClInclude Include="Lib\BinaryReader.h" />
-    <ClInclude Include="Lib\Color3b.h" />
-    <ClInclude Include="Lib\Stream.h" />
-    <ClInclude Include="Lib\StrHash.h" />
-    <ClInclude Include="Lib\Vec2f.h" />
-    <ClInclude Include="Lib\Vec3f.h" />
-    <ClInclude Include="Lib\Vec3s.h" />
+    <ClInclude Include="Lib\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OTRArchive.h" />
     <ClInclude Include="OTRDisplayList.h" />
     <ClInclude Include="OTRMaterial.h" />

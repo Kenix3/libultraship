@@ -1,9 +1,9 @@
 #pragma once
 
 #include <stdint.h>
-#include "Lib/BinaryReader.h"
-#include "../ZAPD/ZAPD/Utils/BinaryWriter.h"
-#include "Lib/StrHash.h"
+#include "Utils/BinaryReader.h"
+#include "Utils/BinaryWriter.h"
+#include "StrHash.h"
 #include "../lib/tinyxml2/tinyxml2.h"
 
 namespace OtrLib

@@ -28,14 +28,17 @@
     <Filter Include="Source Files\extlibs">
       <UniqueIdentifier>{21e92ac8-8651-4525-8504-dad6004c00e5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\extlibs\tinyxml2">
-      <UniqueIdentifier>{b19066f7-3eef-433e-b7c4-8b63b342dec6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\extlibs">
       <UniqueIdentifier>{960c9e00-f1f6-48ae-8207-b5d38d57c2ee}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\extlibs\tinyxml2">
       <UniqueIdentifier>{7251379e-cf9b-4936-9c11-764842440e5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Lib\tinyxml2">
+      <UniqueIdentifier>{6b6658ad-694d-4943-83b8-c9dbd31ca67d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\extlibs\tinyxml2">
+      <UniqueIdentifier>{c88e78b2-a90a-4a1e-b98e-c1fca5aa2a77}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -60,17 +63,8 @@
     <ClCompile Include="Factories\OTRMaterialFactory.cpp">
       <Filter>Source Files\Factories</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\BinaryReader.cpp">
-      <Filter>Source Files\Lib</Filter>
-    </ClCompile>
     <ClCompile Include="Factories\OTRResourceLoader.cpp">
       <Filter>Source Files\Factories</Filter>
-    </ClCompile>
-    <ClCompile Include="Lib\StrHash.cpp">
-      <Filter>Source Files\Lib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\lib\tinyxml2\tinyxml2.cpp">
-      <Filter>Source Files\extlibs\tinyxml2</Filter>
     </ClCompile>
     <ClCompile Include="OTRScene.cpp">
       <Filter>Source Files</Filter>
@@ -80,6 +74,9 @@
     </ClCompile>
     <ClCompile Include="OTRDisplayList.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp">
+      <Filter>Source Files\extlibs\tinyxml2</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,27 +104,6 @@
     <ClInclude Include="Factories\OTRResourceLoader.h">
       <Filter>Header Files\Factories</Filter>
     </ClInclude>
-    <ClInclude Include="Lib\BinaryReader.h">
-      <Filter>Header Files\Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Color3b.h">
-      <Filter>Header Files\Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Vec2f.h">
-      <Filter>Header Files\Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Vec3f.h">
-      <Filter>Header Files\Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Vec3s.h">
-      <Filter>Header Files\Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\StrHash.h">
-      <Filter>Header Files\Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Stream.h">
-      <Filter>Header Files\Lib</Filter>
-    </ClInclude>
     <ClInclude Include="OTRScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -139,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="OTRDisplayList.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
+      <Filter>Header Files\Lib\tinyxml2</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
