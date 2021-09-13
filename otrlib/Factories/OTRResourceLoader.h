@@ -5,6 +5,6 @@ namespace OtrLib
     class OTRResourceLoader
     {
     public:
-        OTRResource* LoadResource(BinaryReader* reader);
+        static OTRResource* LoadResource(BinaryReader* reader);
     };
 }

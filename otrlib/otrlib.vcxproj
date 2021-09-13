@@ -78,7 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)ZAPD\ZAPDUtils;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -143,7 +143,10 @@
     <ClCompile Include="Factories\OTRArchiveFactory.cpp" />
     <ClCompile Include="Factories\OTRMaterialFactory.cpp" />
     <ClCompile Include="Factories\OTRResourceLoader.cpp" />
-    <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_cc.c" />
+    <ClCompile Include="Lib\Fast3D\gfx_opengl.c" />
+    <ClCompile Include="Lib\Fast3D\gfx_pc.c" />
+    <ClCompile Include="Lib\Fast3D\gfx_sdl2.c" />
     <ClCompile Include="OTRArchive.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
@@ -154,10 +157,13 @@
     <ClCompile Include="OTRTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\lib\tinyxml2\tinyxml2.h" />
     <ClInclude Include="Factories\OTRArchiveFactory.h" />
     <ClInclude Include="Factories\OTRMaterialFactory.h" />
     <ClInclude Include="Factories\OTRResourceLoader.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_opengl.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_pc.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_sdl.h" />
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OTRArchive.h" />
     <ClInclude Include="OTRDisplayList.h" />

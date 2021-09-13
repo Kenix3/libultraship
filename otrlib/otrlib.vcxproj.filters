@@ -25,20 +25,14 @@
     <Filter Include="Source Files\Factories">
       <UniqueIdentifier>{3376a196-8303-4613-9721-62f31e746b0d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\extlibs">
-      <UniqueIdentifier>{21e92ac8-8651-4525-8504-dad6004c00e5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\extlibs">
-      <UniqueIdentifier>{960c9e00-f1f6-48ae-8207-b5d38d57c2ee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\extlibs\tinyxml2">
-      <UniqueIdentifier>{7251379e-cf9b-4936-9c11-764842440e5e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Lib\tinyxml2">
       <UniqueIdentifier>{6b6658ad-694d-4943-83b8-c9dbd31ca67d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\extlibs\tinyxml2">
-      <UniqueIdentifier>{c88e78b2-a90a-4a1e-b98e-c1fca5aa2a77}</UniqueIdentifier>
+    <Filter Include="Header Files\Lib\Fast3D">
+      <UniqueIdentifier>{7b0c46ac-ee0f-44b4-b9b3-e958c12f389c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Lib\Fast3D">
+      <UniqueIdentifier>{19d4557f-ea31-4405-88d5-15504070f479}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -75,8 +69,17 @@
     <ClCompile Include="OTRDisplayList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp">
-      <Filter>Source Files\extlibs\tinyxml2</Filter>
+    <ClCompile Include="Lib\Fast3D\gfx_cc.c">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_opengl.c">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_pc.c">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_sdl2.c">
+      <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,9 +110,6 @@
     <ClInclude Include="OTRScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\lib\tinyxml2\tinyxml2.h">
-      <Filter>Header Files\extlibs\tinyxml2</Filter>
-    </ClInclude>
     <ClInclude Include="OTRResourceMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -118,6 +118,18 @@
     </ClInclude>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
       <Filter>Header Files\Lib\tinyxml2</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_cc.h">
+      <Filter>Header Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_opengl.h">
+      <Filter>Header Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_pc.h">
+      <Filter>Header Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_sdl.h">
+      <Filter>Header Files\Lib\Fast3D</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
