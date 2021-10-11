@@ -9,6 +9,8 @@ namespace OtrLib
 	{
 	public:
 		OTRResourceMgr();
+		// TODO: mpq handles, and free memory on destructor.
+		// TODO: Free game resource buffers
 
 		void LoadArchiveAndPatches(std::string mainArchivePath, std::string patchesPath);
 
@@ -23,7 +25,7 @@ namespace OtrLib
 		HANDLE mainMPQ;
 
 
-		void LoadMPQ(std::string filePath);
+		void LoadMPQMain(std::string filePath);
 		void LoadMPQPatch(std::string patchFilePath);
 	};
 }

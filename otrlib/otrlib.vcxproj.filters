@@ -81,6 +81,9 @@
     <ClCompile Include="Lib\Fast3D\gfx_sdl2.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
+    <ClCompile Include="OtrContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="OTRArchive.h">
@@ -130,6 +133,9 @@
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_sdl.h">
       <Filter>Header Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="OtrContext.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
