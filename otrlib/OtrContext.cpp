@@ -14,6 +14,7 @@ namespace OtrLib {
             contextId = nextContextId++;
             Name = "OtrLib" + contextId;
             Logger = spdlog::create_async<spdlog::sinks::basic_file_sink_mt>("async_file_logger", "logs/otr.txt");
+            Logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
 
             if (contextId == 0) {
                 spdlog::set_default_logger(Logger);
