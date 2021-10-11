@@ -19,7 +19,7 @@ namespace OtrLib
 	protected:
 		std::map<std::string, char*> fileCache; // TODO: Use smart pointers here...
 		std::map<std::string, OTRResource*> otrCache; // TODO: Use smart pointers here...
-		std::map<std::string, HANDLE> patchMpqHandles;
+		std::map<std::string, HANDLE> mpqHandles;
 		HANDLE mainMPQ;
 
 
