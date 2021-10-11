@@ -9,14 +9,19 @@ OTRResourceMgr::OTRResourceMgr()
 	mainMPQ = NULL;
 }
 
-void OTRResourceMgr::LoadArchiveAndPatches()
+void OTRResourceMgr::LoadArchiveAndPatches(std::string mainArchiveFilePath, std::string patchesPath)
 {
-	LoadMPQ("Main.MPQ");
+	LoadMPQ(mainArchiveFilePath.c_str());
 
-	// Make this do a directory search...
-	LoadMPQPatch("Patch1.MPQ");
-	LoadMPQPatch("Patch2.MPQ");
-	LoadMPQPatch("Patch3.MPQ");
+	if (patchesPath.length() > 0) {
+		/*
+		// TODO: This needs to be something like a directory search for all .otr files in the patches folder.
+		// Make this do a directory search...
+		LoadMPQPatch("Patch1.MPQ");
+		LoadMPQPatch("Patch2.MPQ");
+		LoadMPQPatch("Patch3.MPQ");
+		*/
+	}
 }
 
 // TODO: Figure out if we want to return a copy of the data or reference.

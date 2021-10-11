@@ -10,7 +10,7 @@ namespace OtrLib
 	public:
 		OTRResourceMgr();
 
-		void LoadArchiveAndPatches();
+		void LoadArchiveAndPatches(std::string mainArchivePath, std::string patchesPath);
 
 		char* LoadFile(std::string filePath);
 		OTRResource* LoadOTRFile(std::string filePath);
@@ -19,7 +19,7 @@ namespace OtrLib
 	protected:
 		std::map<std::string, char*> fileCache; // TODO: Use smart pointers here...
 		std::map<std::string, OTRResource*> otrCache; // TODO: Use smart pointers here...
-		std::map<std::string, HANDLE> mpqHandles;
+		std::map<std::string, HANDLE> patchMpqHandles;
 		HANDLE mainMPQ;
 
 
