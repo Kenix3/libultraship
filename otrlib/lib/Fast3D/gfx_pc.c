@@ -153,12 +153,20 @@ static size_t buf_vbo_num_tris;
 static struct GfxWindowManagerAPI *gfx_wapi;
 static struct GfxRenderingAPI *gfx_rapi;
 
+#ifdef _MSC_VER
+// TODO: Properly implement for MSVC
+static unsigned long get_time(void) 
+{
+    return 0;
+}
+#else
 #include <time.h>
 static unsigned long get_time(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (unsigned long)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
+#endif
 
 static void gfx_flush(void) {
     if (buf_vbo_len > 0) {
@@ -900,6 +908,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                         break;
                 }
                 if (k == 0) {
+                    //color->r = 255;
+                    //color->g = 0;
+                    //color->b = 255;
+                    //color->a = 255;
                     buf_vbo[buf_vbo_len++] = color->r / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->g / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->b / 255.0f;
@@ -1022,6 +1034,14 @@ static void gfx_dp_set_scissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32
 static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const void* addr) {
     rdp.texture_to_load.addr = addr;
     rdp.texture_to_load.siz = size;
+}
+
+static void gfx_dp_set_texture_image_otr(uint32_t format, uint32_t size, uint32_t width, const void* strAddr) 
+{
+    char* str = (char*)strAddr;
+
+    //rdp.texture_to_load.addr = addr;
+    //rdp.texture_to_load.siz = size;
 }
 
 static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette, uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks, uint32_t shifts) {
@@ -1462,6 +1482,9 @@ static void gfx_run_dl(Gfx* cmd) {
             
             // RDP Commands:
             case G_SETTIMG:
+                gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
+                break;
+            case G_SETTIMGOTR:
                 gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
                 break;
             case G_LOADBLOCK:

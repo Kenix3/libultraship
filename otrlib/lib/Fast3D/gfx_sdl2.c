@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #if !defined(__linux__) && defined(ENABLE_OPENGL)
 
 #ifdef __MINGW32__

@@ -2,11 +2,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include <PR/gbi.h>
+#include "PR/gbi.h"
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
@@ -14,7 +15,11 @@
 #define FOR_WINDOWS 0
 #endif
 
-#if FOR_WINDOWS
+#ifdef _MSC_VER
+#include <SDL2/SDL.h>
+//#define GL_GLEXT_PROTOTYPES 1
+#include <GL/glew.h>
+#elif FOR_WINDOWS
 #include <GL/glew.h>
 #include "SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
@@ -299,9 +304,9 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
         GLint max_length = 0;
         glGetShaderiv(vertex_shader, GL_INFO_LOG_LENGTH, &max_length);
         char error_log[1024];
-        fprintf(stderr, "Vertex shader compilation failed\n");
+        //fprintf(stderr, "Vertex shader compilation failed\n");
         glGetShaderInfoLog(vertex_shader, max_length, &max_length, &error_log[0]);
-        fprintf(stderr, "%s\n", &error_log[0]);
+        //fprintf(stderr, "%s\n", &error_log[0]);
         abort();
     }
 
@@ -313,9 +318,9 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
         GLint max_length = 0;
         glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &max_length);
         char error_log[1024];
-        fprintf(stderr, "Fragment shader compilation failed\n");
+        //fprintf(stderr, "Fragment shader compilation failed\n");
         glGetShaderInfoLog(fragment_shader, max_length, &max_length, &error_log[0]);
-        fprintf(stderr, "%s\n", &error_log[0]);
+        //fprintf(stderr, "%s\n", &error_log[0]);
         abort();
     }
 
@@ -472,9 +477,9 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
 }
 
 static void gfx_opengl_init(void) {
-#if FOR_WINDOWS
+//#if FOR_WINDOWS
     glewInit();
-#endif
+//#endif
     
     glGenBuffers(1, &opengl_vbo);
     
