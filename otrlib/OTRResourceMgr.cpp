@@ -48,7 +48,9 @@ namespace OtrLib {
 			return fileCache[filePath];
 		}
 		else {
-			HANDLE fileHandle = NULL;
+			spdlog::debug("Cache miss on file load: {}", filePath.c_str());
+
+;			HANDLE fileHandle = NULL;
 
 			if (!SFileOpenFileEx(mainMPQ, filePath.c_str(), 0, &fileHandle)) {
 				spdlog::error("Failed to load file from mpq, ERROR CODE: {}", GetLastError());

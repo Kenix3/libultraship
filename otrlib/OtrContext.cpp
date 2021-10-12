@@ -1,4 +1,4 @@
-#include "OtrContext.h"
+#include "OTRContext.h"
 #include <iostream>
 #include "OTRResourceMgr.h"
 #include "spdlog/spdlog.h"
@@ -8,7 +8,7 @@
 namespace OtrLib {
     static int32_t nextContextId;
 
-    OtrContext::OtrContext() {
+    OTRContext::OTRContext() {
         try
         {
             contextId = nextContextId++;
@@ -28,7 +28,7 @@ namespace OtrLib {
         ResourceMgr = std::make_shared<OTRResourceMgr>();
     }
 
-    OtrContext::~OtrContext() {
+    OTRContext::~OTRContext() {
         try
         {
             spdlog::drop(Name);

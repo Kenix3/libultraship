@@ -7,11 +7,11 @@
 namespace OtrLib {
 	class OTRResourceMgr;
 
-	class OtrContext
+	class OTRContext
 	{
 	public:
-		OtrContext();
-		~OtrContext();
+		OTRContext();
+		~OTRContext();
 	private:
 		std::shared_ptr<OTRResourceMgr> ResourceMgr;
 		std::shared_ptr<spdlog::logger> Logger;

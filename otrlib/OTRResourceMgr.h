@@ -28,6 +28,7 @@ namespace OtrLib
 		std::map<std::string, std::shared_ptr<OTRResource>> otrCache;
 		std::map<std::string, std::shared_ptr<std::unordered_set<uintptr_t>>> gameResourceAddresses;
 		std::map<std::string, HANDLE> mpqHandles;
+		// TODO: Replace this handle with OTRArchive
 		HANDLE mainMPQ;
 
 
