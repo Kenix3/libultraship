@@ -78,7 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;D:\Zelda\OtrLib\otrlib\Lib\spdlog\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -117,6 +117,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -149,6 +150,8 @@
     <ClCompile Include="Lib\Fast3D\gfx_sdl2.c" />
     <ClCompile Include="OTRArchive.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
+    <ClCompile Include="OtrContext.cpp" />
+    <ClCompile Include="OTRFile.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
     <ClCompile Include="OTRModel.cpp" />
     <ClCompile Include="OTRResource.cpp" />
@@ -167,6 +170,8 @@
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OTRArchive.h" />
     <ClInclude Include="OTRDisplayList.h" />
+    <ClInclude Include="OtrContext.h" />
+    <ClInclude Include="OTRFile.h" />
     <ClInclude Include="OTRMaterial.h" />
     <ClInclude Include="OTRModel.h" />
     <ClInclude Include="OTRResource.h" />

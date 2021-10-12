@@ -79,6 +79,7 @@ namespace OtrLib
     {
     public:
         uint64_t id; // Unique Resource ID
+        bool isDirty = false;
     };
 
     class OTRResourceFile
