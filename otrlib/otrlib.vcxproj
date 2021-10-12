@@ -117,6 +117,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,6 +151,7 @@
     <ClCompile Include="OTRArchive.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
     <ClCompile Include="OtrContext.cpp" />
+    <ClCompile Include="OTRFile.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
     <ClCompile Include="OTRModel.cpp" />
     <ClCompile Include="OTRResource.cpp" />
@@ -169,6 +171,7 @@
     <ClInclude Include="OTRArchive.h" />
     <ClInclude Include="OTRDisplayList.h" />
     <ClInclude Include="OtrContext.h" />
+    <ClInclude Include="OTRFile.h" />
     <ClInclude Include="OTRMaterial.h" />
     <ClInclude Include="OTRModel.h" />
     <ClInclude Include="OTRResource.h" />

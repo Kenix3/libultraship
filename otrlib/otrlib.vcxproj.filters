@@ -84,6 +84,9 @@
     <ClCompile Include="OtrContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OTRFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="OTRArchive.h">
@@ -135,6 +138,9 @@
       <Filter>Header Files\Lib\Fast3D</Filter>
     </ClInclude>
     <ClInclude Include="OtrContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

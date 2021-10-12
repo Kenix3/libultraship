@@ -3,10 +3,10 @@
 #include "spdlog/spdlog.h"
 #include "stdint.h"
 
-class OTRResourceMgr;
-
 
 namespace OtrLib {
+	class OTRResourceMgr;
+
 	class OtrContext
 	{
 	public:
