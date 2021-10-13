@@ -88,6 +88,15 @@ namespace OtrLib {
 		return true;
 	}
 
+	bool OTRArchive::RenameFile(std::string oldPath, std::string newPath) {
+		if (!SFileRenameFile(mainMPQ, oldPath.c_str(), newPath.c_str())) {
+			spdlog::error("Failed to rename file {} to {} in archive {}", oldPath.c_str(), newPath.c_str(), mainPath.c_str());
+			return false;
+		}
+
+		return true;
+	}
+
 	bool OTRArchive::Load() {
 		return LoadMainMPQ() && LoadPatchMPQs();
 	}
