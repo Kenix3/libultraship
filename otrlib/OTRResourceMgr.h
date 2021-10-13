@@ -22,7 +22,7 @@ namespace OtrLib
 		DWORD LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		std::shared_ptr<OTRResource> LoadOTRFile(std::string filePath);
-		void CacheDirectory();
+		std::shared_ptr<std::vector<std::shared_ptr<OTRFile>>> CacheDirectory(std::string searchMask);
 
 	protected:
 		std::shared_ptr<OTRFile> LoadFileFromCache(std::string filePath);

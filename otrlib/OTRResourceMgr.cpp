@@ -27,7 +27,10 @@ namespace OtrLib {
 
 			auto file = archive.get()->LoadFile(filePath);
 
-			fileCache[filePath] = file;
+			if (file != nullptr) {
+				fileCache[filePath] = file;
+			}
+
 			return file;
 		}
 	}
@@ -72,13 +75,24 @@ namespace OtrLib {
 		BinaryReader reader = BinaryReader(&memStream);
 		resource = std::make_shared<OTRResource>(*OTRResourceLoader::LoadResource(&reader));
 
-		if (resource != nullptr)
+		if (resource != nullptr) {
 			otrCache[filePath] = resource;
+		}
 
 		return resource;
 	}
 
-	void OTRResourceMgr::CacheDirectory() {
-		// TODO: Figure out how "searching" works with StormLib...
+	std::shared_ptr<std::vector<std::shared_ptr<OTRFile>>> OTRResourceMgr::CacheDirectory(std::string searchMask) {
+		auto loadedList = std::make_shared<std::vector<std::shared_ptr<OTRFile>>>();
+		auto fileList = archive.get()->ListFiles(searchMask);
+
+		for (DWORD i = 0; i < fileList.get()->size(); i++) {
+			auto file = LoadFileFromCache(fileList.get()->operator[](i).cFileName);
+			if (file != nullptr) {
+				loadedList.get()->push_back(file);
+			}
+		}
+
+		return loadedList;
 	}
 }
