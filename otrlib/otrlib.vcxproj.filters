@@ -13,17 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Factories">
-      <UniqueIdentifier>{75c0ab92-1379-464e-a57f-045c91f85bc0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Lib">
       <UniqueIdentifier>{30686e92-4cb1-4204-ae0b-baf67e646ba9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Lib">
       <UniqueIdentifier>{50e27c70-2679-4f41-9127-fca2c66989ce}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Factories">
-      <UniqueIdentifier>{3376a196-8303-4613-9721-62f31e746b0d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Lib\tinyxml2">
       <UniqueIdentifier>{6b6658ad-694d-4943-83b8-c9dbd31ca67d}</UniqueIdentifier>
@@ -34,36 +28,33 @@
     <Filter Include="Source Files\Lib\Fast3D">
       <UniqueIdentifier>{19d4557f-ea31-4405-88d5-15504070f479}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Resources">
+      <UniqueIdentifier>{66433c93-f633-453e-8ff0-55c2af54906e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Resources">
+      <UniqueIdentifier>{12c0e217-75b9-47a5-bc2e-a2ea4e5dd992}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mpq">
+      <UniqueIdentifier>{6da4b969-8a27-4204-8105-39a91a2e3ef5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mpq">
+      <UniqueIdentifier>{dde367c4-c14a-4bf3-b6d9-bc0d2d7d34e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Resources\Factories">
+      <UniqueIdentifier>{3376a196-8303-4613-9721-62f31e746b0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Resources\Factories">
+      <UniqueIdentifier>{75c0ab92-1379-464e-a57f-045c91f85bc0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="OTRArchive.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRMaterial.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRResource.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRTexture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Factories\OTRMaterialFactory.cpp">
-      <Filter>Source Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Factories\OTRResourceLoader.cpp">
-      <Filter>Source Files\Factories</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRScene.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="OTRResourceMgr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRDisplayList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_cc.c">
@@ -81,39 +72,39 @@
     <ClCompile Include="OTRContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OTRDisplayList.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRMaterial.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRResource.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
     <ClCompile Include="OTRFile.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\mpq</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRArchive.cpp">
+      <Filter>Source Files\mpq</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRModel.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRTexture.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRScene.cpp">
+      <Filter>Source Files\Resources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="OTRArchive.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRMaterial.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRModel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRResource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRTexture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Factories\OTRMaterialFactory.h">
-      <Filter>Header Files\Factories</Filter>
+      <Filter>Header Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\OTRResourceLoader.h">
-      <Filter>Header Files\Factories</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRScene.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="OTRResourceMgr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRDisplayList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -134,8 +125,29 @@
     <ClInclude Include="OTRContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OTRDisplayList.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRMaterial.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRResource.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
     <ClInclude Include="OTRFile.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\mpq</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRArchive.h">
+      <Filter>Header Files\mpq</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRModel.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRTexture.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRScene.h">
+      <Filter>Header Files\Resources</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
