@@ -71,11 +71,20 @@ namespace OtrLib {
 		}
 
 		if (!SFileFinishFile(hFile)) {
-			spdlog::error("Failed to finish file {} in archive {}", dwFileSize, path.c_str(), mainPath.c_str());
+			spdlog::error("Failed to finish file {} in archive {}", path.c_str(), mainPath.c_str());
 			SFileCloseFile(hFile);
 			return false;
 		}
 
+		return true;
+	}
+
+	bool OTRArchive::RemoveFile(std::string path) {
+		if (!SFileRemoveFile(mainMPQ, path.c_str(), 0)) {
+			spdlog::error("Failed to remove file {} in archive {}", path.c_str(), mainPath.c_str());
+			return false;
+		}
+		
 		return true;
 	}
 
