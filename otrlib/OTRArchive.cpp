@@ -50,7 +50,7 @@ namespace OtrLib {
 		return file;
 	}
 
-	bool OTRArchive::AddFile(std::string path, char* fileData, DWORD dwFileSize) {
+	bool OTRArchive::AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize) {
 		HANDLE hFile;
 
 		SYSTEMTIME sysTime;
@@ -64,7 +64,7 @@ namespace OtrLib {
 		}
 
 
-		if (!SFileWriteFile(hFile, fileData, dwFileSize, MPQ_COMPRESSION_ZLIB)) {
+		if (!SFileWriteFile(hFile, (void*)fileData, dwFileSize, MPQ_COMPRESSION_ZLIB)) {
 			spdlog::error("Failed to write {} bytes to {} in archive {}", dwFileSize, path.c_str(), mainPath.c_str());
 			SFileCloseFile(hFile);
 			return false;

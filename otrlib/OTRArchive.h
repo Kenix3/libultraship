@@ -21,7 +21,7 @@ namespace OtrLib
 		~OTRArchive();
 
 		std::shared_ptr<OTRFile> LoadFile(std::string filePath);
-		bool AddFile(std::string path, char* fileData, DWORD dwFileSize);
+		bool AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize);
 	protected:
 		bool Load();
 		bool Unload();
