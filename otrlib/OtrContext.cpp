@@ -25,7 +25,8 @@ namespace OtrLib {
             std::cout << "Log initialization failed: " << ex.what() << std::endl;
         }
 
-        ResourceMgr = std::make_shared<OTRResourceMgr>();
+        // TODO: This should be read from either command line arguments, or a config file.
+        ResourceMgr = std::make_shared<OTRResourceMgr>("oot.otr", "patches");
     }
 
     OTRContext::~OTRContext() {

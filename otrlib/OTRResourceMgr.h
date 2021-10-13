@@ -4,35 +4,33 @@
 #include <string>
 #include "OTRResource.h"
 
+
 namespace OtrLib
 {
+	class OTRArchive;
 	class OTRFile;
 
+	// Resource manager caches any and all files it comes across into memory. This will be unoptimal in the future when modifications have gigabytes of assets.
+	// It works with the original game's assets because the entire ROM is 64MB and fits into RAM of any semi-modern PC.
 	class OTRResourceMgr
 	{
 	public:
-		OTRResourceMgr();
+		OTRResourceMgr(std::string mainPath, std::string patchesDirectory);
 		~OTRResourceMgr();
 
-		void LoadArchiveAndPatches(std::string mainArchivePath, std::string patchesPath);
-		void LoadPatchArchives(std::string patchesPath);
-		std::shared_ptr<OTRFile> LoadFileFromCache(std::string filePath);
-
+		
 		DWORD LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
-		void FreeFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
+		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		std::shared_ptr<OTRResource> LoadOTRFile(std::string filePath);
 		void CacheDirectory();
 
 	protected:
+		std::shared_ptr<OTRFile> LoadFileFromCache(std::string filePath);
+
+	private:
 		std::map<std::string, std::shared_ptr<OTRFile>> fileCache;
 		std::map<std::string, std::shared_ptr<OTRResource>> otrCache;
 		std::map<std::string, std::shared_ptr<std::unordered_set<uintptr_t>>> gameResourceAddresses;
-		std::map<std::string, HANDLE> mpqHandles;
-		// TODO: Replace this handle with OTRArchive
-		HANDLE mainMPQ;
-
-
-		void LoadMPQMain(std::string filePath);
-		void LoadMPQPatch(std::string patchFilePath);
+		std::shared_ptr<OTRArchive> archive;
 	};
 }

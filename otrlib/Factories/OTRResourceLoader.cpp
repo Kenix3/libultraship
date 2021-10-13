@@ -1,6 +1,5 @@
 #include "OTRResourceLoader.h"
 #include "OTRMaterialFactory.h"
-#include "OTRArchiveFactory.h"
 
 namespace OtrLib
 {
@@ -17,9 +16,6 @@ namespace OtrLib
         {
         case ResourceType::OTRMaterial:
             result = OTRMaterialFactory::ReadMaterial(reader);
-            break;
-        case ResourceType::OTRArchive:
-            result = OTRArchiveFactory::ReadArchive(reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED
