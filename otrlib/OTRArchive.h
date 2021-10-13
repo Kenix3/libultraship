@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <map>
+#include <string>
 #include "OTRResource.h"
 #include "Lib/StormLib/StormLib.h"
 
@@ -15,10 +16,12 @@ namespace OtrLib
 	class OTRArchive
 	{
 	public:
+		OTRArchive(std::string mainPath);
 		OTRArchive(std::string mainPath, std::string patchesDirectory);
 		~OTRArchive();
 
 		std::shared_ptr<OTRFile> LoadFile(std::string filePath);
+		bool AddFile(std::string path, char* fileData, DWORD dwFileSize);
 	protected:
 		bool Load();
 		bool Unload();

@@ -5,6 +5,10 @@
 #include <filesystem>
 
 namespace OtrLib {
+	OTRArchive::OTRArchive(std::string mainPath) {
+		OTRArchive(mainPath, "");
+	}
+
 	OTRArchive::OTRArchive(std::string mainPath, std::string patchesDirectory) : mainPath(mainPath), patchesDirectory(patchesDirectory) {
 		Load();
 	}
@@ -44,6 +48,35 @@ namespace OtrLib {
 		file.get()->path = filePath;
 
 		return file;
+	}
+
+	bool OTRArchive::AddFile(std::string path, char* fileData, DWORD dwFileSize) {
+		HANDLE hFile;
+
+		SYSTEMTIME sysTime;
+		GetSystemTime(&sysTime);
+		FILETIME t;
+		SystemTimeToFileTime(&sysTime, &t);
+		ULONGLONG stupidHack = static_cast<uint64_t>(t.dwHighDateTime) << (sizeof(t.dwHighDateTime) * 8) | t.dwLowDateTime;
+
+		if (!SFileCreateFile(mainMPQ, path.c_str(), stupidHack, dwFileSize, 0, MPQ_FILE_COMPRESS, &hFile)) {
+			spdlog::error("Failed to create file of {} bytes {} in archive {}", dwFileSize, path.c_str(), mainPath.c_str());
+		}
+
+
+		if (!SFileWriteFile(hFile, fileData, dwFileSize, MPQ_COMPRESSION_ZLIB)) {
+			spdlog::error("Failed to write {} bytes to {} in archive {}", dwFileSize, path.c_str(), mainPath.c_str());
+			SFileCloseFile(hFile);
+			return false;
+		}
+
+		if (!SFileFinishFile(hFile)) {
+			spdlog::error("Failed to finish file {} in archive {}", dwFileSize, path.c_str(), mainPath.c_str());
+			SFileCloseFile(hFile);
+			return false;
+		}
+
+		return true;
 	}
 
 	bool OTRArchive::Load() {
