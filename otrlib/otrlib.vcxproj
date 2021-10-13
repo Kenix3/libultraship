@@ -141,7 +141,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Factories\OTRArchiveFactory.cpp" />
     <ClCompile Include="Factories\OTRMaterialFactory.cpp" />
     <ClCompile Include="Factories\OTRResourceLoader.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_cc.c" />
@@ -150,7 +149,7 @@
     <ClCompile Include="Lib\Fast3D\gfx_sdl2.c" />
     <ClCompile Include="OTRArchive.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
-    <ClCompile Include="OtrContext.cpp" />
+    <ClCompile Include="OTRContext.cpp" />
     <ClCompile Include="OTRFile.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
     <ClCompile Include="OTRModel.cpp" />
@@ -160,7 +159,6 @@
     <ClCompile Include="OTRTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Factories\OTRArchiveFactory.h" />
     <ClInclude Include="Factories\OTRMaterialFactory.h" />
     <ClInclude Include="Factories\OTRResourceLoader.h" />
     <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
@@ -170,7 +168,7 @@
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OTRArchive.h" />
     <ClInclude Include="OTRDisplayList.h" />
-    <ClInclude Include="OtrContext.h" />
+    <ClInclude Include="OTRContext.h" />
     <ClInclude Include="OTRFile.h" />
     <ClInclude Include="OTRMaterial.h" />
     <ClInclude Include="OTRModel.h" />
