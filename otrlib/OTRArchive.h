@@ -1,5 +1,7 @@
 #pragma once
 
+#undef _DLL
+
 #include <string>
 
 #include <stdint.h>
@@ -7,6 +9,7 @@
 #include <string>
 #include <vector>
 #include "OTRResource.h"
+//#include "Lib/StrHash64.h"
 #include "Lib/StormLib/StormLib.h"
 
 
@@ -14,14 +17,17 @@ namespace OtrLib
 {
 	class OTRFile;
 
-	class OTRArchive
+	class OTRArchive : public std::enable_shared_from_this<OTRArchive>
 	{
 	public:
+		OTRArchive();
 		OTRArchive(std::string mainPath);
 		OTRArchive(std::string mainPath, std::string patchesDirectory);
 		~OTRArchive();
 
-		std::shared_ptr<OTRFile> LoadFile(std::string filePath);
+		static std::shared_ptr<OTRArchive> CreateArchive(std::string archivePath);
+
+		std::shared_ptr<OTRFile> LoadFile(std::string filePath, bool includeParent = true);
 
 		bool AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize);
 		bool RemoveFile(std::string path);
@@ -34,6 +40,8 @@ namespace OtrLib
 		std::string mainPath;
 		std::string patchesDirectory;
 		std::map<std::string, HANDLE> mpqHandles;
+		std::vector<std::string> addedFiles;
+		std::map<uint64_t, std::string> hashes;
 		HANDLE mainMPQ;
 
 		bool LoadMainMPQ();

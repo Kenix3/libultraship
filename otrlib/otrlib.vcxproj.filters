@@ -149,5 +149,8 @@
     <ClInclude Include="OTRScene.h">
       <Filter>Header Files\Resources</Filter>
     </ClInclude>
+    <ClInclude Include="Lib\StrHash64.h">
+      <Filter>Header Files\Lib</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

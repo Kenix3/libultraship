@@ -1595,8 +1595,11 @@ typedef struct {
  * Generic Gfx Packet
  */
 typedef struct {
-	unsigned int w0;
-	unsigned int w1;
+	//unsigned int w0;
+	//unsigned int w1;
+
+	unsigned long w0;
+	unsigned long w1;
 } Gwords;
 
 /*

@@ -2,11 +2,12 @@
 #include "OTRFile.h"
 #include "spdlog/spdlog.h"
 #include "Utils/StringHelper.h"
+#include "Lib/StrHash64.h"
 #include <filesystem>
 
 namespace OtrLib {
-	OTRArchive::OTRArchive(std::string mainPath) {
-		OTRArchive(mainPath, "");
+	OTRArchive::OTRArchive(std::string mainPath) : OTRArchive(mainPath, "")
+	{
 	}
 
 	OTRArchive::OTRArchive(std::string mainPath, std::string patchesDirectory) : mainPath(mainPath), patchesDirectory(patchesDirectory) {
@@ -17,8 +18,36 @@ namespace OtrLib {
 		Unload();
 	}
 
-	std::shared_ptr<OTRFile> OTRArchive::LoadFile(std::string filePath) {
-;		HANDLE fileHandle = NULL;
+	OTRArchive::OTRArchive()
+	{
+	}
+
+	std::shared_ptr<OTRArchive> OTRArchive::CreateArchive(std::string archivePath)
+	{
+		OTRArchive* otrArchive = new OTRArchive();
+		otrArchive->mainPath = archivePath;
+
+		TCHAR* t_filename = new TCHAR[archivePath.size() + 1];
+		t_filename[archivePath.size()] = 0;
+		std::copy(archivePath.begin(), archivePath.end(), t_filename);
+
+		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, 65536, &otrArchive->mainMPQ);
+		int error = GetLastError();
+
+		if (success)
+		{
+			otrArchive->mpqHandles[archivePath] = otrArchive->mainMPQ;
+			return std::make_shared<OTRArchive>(*otrArchive);
+		}
+		else
+		{
+			spdlog::error("({}) We tried to create an archive, but it has fallen and cannot get up.");
+			return nullptr;
+		}
+	}
+
+	std::shared_ptr<OTRFile> OTRArchive::LoadFile(std::string filePath, bool includeParent) {
+		;		HANDLE fileHandle = NULL;
 
 		if (!SFileOpenFileEx(mainMPQ, filePath.c_str(), 0, &fileHandle)) {
 			spdlog::error("({}) Failed to open file {} from mpq archive {}", GetLastError(), filePath.c_str(), mainPath.c_str());
@@ -44,7 +73,12 @@ namespace OtrLib {
 		auto file = std::make_shared<OTRFile>();
 		file.get()->buffer = fileData;
 		file.get()->dwBufferSize = dwFileSize;
-		file.get()->parent = std::make_shared<OTRArchive>(*this);
+
+		if (includeParent)
+			file.get()->parent = shared_from_this();
+		else
+			file.get()->parent = nullptr;
+
 		file.get()->path = filePath;
 
 		return file;
@@ -80,6 +114,9 @@ namespace OtrLib {
 			return false;
 		}
 		// SFileFinishFile already frees the handle, so no need to close it again.
+
+		addedFiles.push_back(path);
+		hashes[CRC64(path.c_str())] = path;
 
 		return true;
 	}
@@ -143,7 +180,8 @@ namespace OtrLib {
 		return LoadMainMPQ() && LoadPatchMPQs();
 	}
 
-	bool OTRArchive::Unload() {
+	bool OTRArchive::Unload() 
+	{
 		bool success = true;
 		for (auto mpqHandle : mpqHandles) {
 			if (!SFileCloseArchive(mpqHandle.second)) {
@@ -175,13 +213,27 @@ namespace OtrLib {
 	bool OTRArchive::LoadMainMPQ() {
 		HANDLE mpqHandle = NULL;
 
-		if (!SFileOpenArchive((TCHAR*)mainPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &mpqHandle)) {
+		TCHAR* t_filename = new TCHAR[mainPath.size() + 1];
+		t_filename[mainPath.size()] = 0;
+		std::copy(mainPath.begin(), mainPath.end(), t_filename);
+
+		if (!SFileOpenArchive(t_filename, 0, MPQ_OPEN_READ_ONLY, &mpqHandle)) {
 			spdlog::error("({}) Failed to open main mpq file {}.", GetLastError(), mainPath.c_str());
 			return false;
 		}
 
 		mpqHandles[mainPath] = mpqHandle;
 		mainMPQ = mpqHandle;
+
+		auto listFile = LoadFile("(listfile)", false);
+
+		std::vector<std::string> lines = StringHelper::Split(std::string(listFile->buffer.get(), listFile->dwBufferSize), "\n");
+
+		for (int i = 0; i < lines.size(); i++)
+		{
+			uint64_t hash = StringHelper::StrToL(lines[i], 16);
+			hashes[hash] = lines[i];
+		}
 
 		return true;
 	}
