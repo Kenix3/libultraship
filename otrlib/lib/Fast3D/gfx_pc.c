@@ -1485,7 +1485,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
                 break;
             case G_SETTIMGOTR:
-                gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
+                gfx_dp_set_texture_image_otr(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
                 break;
             case G_LOADBLOCK:
                 gfx_dp_load_block(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));

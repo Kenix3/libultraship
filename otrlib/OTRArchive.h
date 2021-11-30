@@ -32,7 +32,8 @@ namespace OtrLib
 		bool AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize);
 		bool RemoveFile(std::string path);
 		bool RenameFile(std::string oldPath, std::string newPath);
-		std::shared_ptr<std::vector<SFILE_FIND_DATA>> ListFiles(std::string searchMask);
+		std::vector<SFILE_FIND_DATA> ListFiles(std::string searchMask);
+		bool HasFile(std::string searchMask);
 	protected:
 		bool Load();
 		bool Unload();

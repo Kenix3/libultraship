@@ -86,8 +86,8 @@ namespace OtrLib {
 		auto loadedList = std::make_shared<std::vector<std::shared_ptr<OTRFile>>>();
 		auto fileList = archive.get()->ListFiles(searchMask);
 
-		for (DWORD i = 0; i < fileList.get()->size(); i++) {
-			auto file = LoadFileFromCache(fileList.get()->operator[](i).cFileName);
+		for (DWORD i = 0; i < fileList.size(); i++) {
+			auto file = LoadFileFromCache(fileList.operator[](i).cFileName);
 			if (file != nullptr) {
 				loadedList.get()->push_back(file);
 			}

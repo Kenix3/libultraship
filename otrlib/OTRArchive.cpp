@@ -1,4 +1,5 @@
 #include "OTRArchive.h"
+#include "OTRResource.h"
 #include "OTRFile.h"
 #include "spdlog/spdlog.h"
 #include "Utils/StringHelper.h"
@@ -31,7 +32,7 @@ namespace OtrLib {
 		t_filename[archivePath.size()] = 0;
 		std::copy(archivePath.begin(), archivePath.end(), t_filename);
 
-		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, 65536, &otrArchive->mainMPQ);
+		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, 65536 * 4, &otrArchive->mainMPQ);
 		int error = GetLastError();
 
 		if (success)
@@ -139,41 +140,59 @@ namespace OtrLib {
 		return true;
 	}
 
-	std::shared_ptr<std::vector<SFILE_FIND_DATA>> OTRArchive::ListFiles(std::string searchMask) {
-		auto fileList = std::make_shared<std::vector<SFILE_FIND_DATA>>();
+	std::vector<SFILE_FIND_DATA> OTRArchive::ListFiles(std::string searchMask) {
+		auto fileList = std::vector<SFILE_FIND_DATA>();
 		SFILE_FIND_DATA findContext;
 		HANDLE hFind;
 
+		
 		hFind = SFileFindFirstFile(mainMPQ, searchMask.c_str(), &findContext, nullptr);
-		if (hFind && GetLastError() != ERROR_NO_MORE_FILES) {
-			fileList.get()->push_back(findContext);
+		//if (hFind && GetLastError() != ERROR_NO_MORE_FILES) {
+		if (hFind != nullptr) {
+			fileList.push_back(findContext);
 
 			bool fileFound;
 			do {
 				fileFound = SFileFindNextFile(hFind, &findContext);
 
 				if (fileFound) {
-					fileList.get()->push_back(findContext);
+					fileList.push_back(findContext);
 				}
 				else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES) {
 					spdlog::error("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
 					if (!SListFileFindClose(hFind)) {
 						spdlog::error("({}) Failed to close file search {} after failure in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
 					}
-					return nullptr;
+					return fileList;
 				}
 			} while (fileFound);
 		}
-		else {
+		else if (GetLastError() != ERROR_NO_MORE_FILES) {
 			spdlog::error("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
-			return nullptr;
+			return fileList;
 		}
 
-		if (!SListFileFindClose(hFind)) {
+		if (!SFileFindClose(hFind)) {
 			spdlog::error("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
 		}
 
 		return fileList;
+	}
+
+	bool OTRArchive::HasFile(std::string filename)
+	{
+		auto lst = ListFiles(filename);
+		//auto lst = addedFiles;
+		
+		for (auto item : lst)
+		{
+			if (item.cFileName == filename)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	bool OTRArchive::Load() {
@@ -217,7 +236,7 @@ namespace OtrLib {
 		t_filename[mainPath.size()] = 0;
 		std::copy(mainPath.begin(), mainPath.end(), t_filename);
 
-		if (!SFileOpenArchive(t_filename, 0, MPQ_OPEN_READ_ONLY, &mpqHandle)) {
+		if (!SFileOpenArchive(t_filename, 0, 0 /*MPQ_OPEN_READ_ONLY*/, &mpqHandle)) {
 			spdlog::error("({}) Failed to open main mpq file {}.", GetLastError(), mainPath.c_str());
 			return false;
 		}

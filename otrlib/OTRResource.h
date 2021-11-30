@@ -4,7 +4,7 @@
 #include "Utils/BinaryReader.h"
 #include "Utils/BinaryWriter.h"
 #include "StrHash.h"
-#include "../lib/tinyxml2/tinyxml2.h"
+#include "lib/tinyxml2/tinyxml2.h"
 
 namespace OtrLib
 {

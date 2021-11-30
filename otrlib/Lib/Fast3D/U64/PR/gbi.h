@@ -134,7 +134,7 @@
 #define G_TEXRECT		0xe4	/* -28 */
 
 // CUSTOM OTR COMMANDS
-#define	G_SETTIMGOTR		0xC0
+#define	G_SETTIMGOTR		0x20
 
 /*
  * The following commands are the "generated" RDP commands; the user

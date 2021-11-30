@@ -10,10 +10,11 @@ namespace OtrLib {
 	class OTRContext
 	{
 	public:
+		std::shared_ptr<OTRResourceMgr> ResourceMgr;
+
 		OTRContext();
 		~OTRContext();
 	private:
-		std::shared_ptr<OTRResourceMgr> ResourceMgr;
 		std::shared_ptr<spdlog::logger> Logger;
 		std::string Name;
 		int32_t contextId;

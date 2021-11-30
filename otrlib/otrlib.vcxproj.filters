@@ -96,6 +96,12 @@
     <ClCompile Include="OTRScene.cpp">
       <Filter>Source Files\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Lib\StrHash64.cpp">
+      <Filter>Source Files\Lib</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp">
+      <Filter>Source Files\Lib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRMaterialFactory.h">
@@ -106,9 +112,6 @@
     </ClInclude>
     <ClInclude Include="OTRResourceMgr.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
-      <Filter>Header Files\Lib\tinyxml2</Filter>
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_cc.h">
       <Filter>Header Files\Lib\Fast3D</Filter>
@@ -151,6 +154,9 @@
     </ClInclude>
     <ClInclude Include="Lib\StrHash64.h">
       <Filter>Header Files\Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
+      <Filter>Header Files\Lib\tinyxml2</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

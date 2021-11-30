@@ -1,5 +1,6 @@
 #include "OTRResource.h"
 #include "Utils/BinaryReader.h"
+#include "lib/tinyxml2/tinyxml2.h"
 
 namespace OtrLib
 {
