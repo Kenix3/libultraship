@@ -1598,8 +1598,8 @@ typedef struct {
 	//unsigned int w0;
 	//unsigned int w1;
 
-	unsigned long w0;
-	unsigned long w1;
+	unsigned long long w0;
+	unsigned long long w1;
 } Gwords;
 
 /*
@@ -1608,6 +1608,7 @@ typedef struct {
  */
 typedef union {
 	Gwords		words;
+#if !defined(F3D_OLD) && IS_BIG_ENDIAN && !IS_64_BIT
 	Gdma		dma;
 	Gtri		tri;
 	Gline3D		line;
@@ -1625,6 +1626,7 @@ typedef union {
 	Gloadtile	loadtile;	/* use for loadblock also, th is dxt */
 	Gsettilesize	settilesize;
 	Gloadtlut	loadtlut;
+#endif
 	long long int	force_structure_alignment;
 } Gfx;
 
