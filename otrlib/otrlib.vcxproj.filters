@@ -102,6 +102,18 @@
     <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp">
       <Filter>Source Files\Lib</Filter>
     </ClCompile>
+    <ClCompile Include="Factories\OTRSceneFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRCollisionHeader.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRCollisionHeaderFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRDisplayListFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRMaterialFactory.h">
@@ -157,6 +169,18 @@
     </ClInclude>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
       <Filter>Header Files\Lib\tinyxml2</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRSceneFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRCollisionHeader.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRCollisionHeaderFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRDisplayListFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

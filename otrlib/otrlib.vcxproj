@@ -72,6 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)..\..\ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Lib\SDL\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -88,8 +90,12 @@
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,8 +150,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Factories\OTRCollisionHeaderFactory.cpp" />
+    <ClCompile Include="Factories\OTRDisplayListFactory.cpp" />
     <ClCompile Include="Factories\OTRMaterialFactory.cpp" />
     <ClCompile Include="Factories\OTRResourceLoader.cpp" />
+    <ClCompile Include="Factories\OTRSceneFactory.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_cc.c" />
     <ClCompile Include="Lib\Fast3D\gfx_opengl.c" />
     <ClCompile Include="Lib\Fast3D\gfx_pc.c" />
@@ -153,6 +162,7 @@
     <ClCompile Include="Lib\StrHash64.cpp" />
     <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="OTRArchive.cpp" />
+    <ClCompile Include="OTRCollisionHeader.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
     <ClCompile Include="OTRContext.cpp" />
     <ClCompile Include="OTRFile.cpp" />
@@ -164,8 +174,11 @@
     <ClCompile Include="OTRTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Factories\OTRCollisionHeaderFactory.h" />
+    <ClInclude Include="Factories\OTRDisplayListFactory.h" />
     <ClInclude Include="Factories\OTRMaterialFactory.h" />
     <ClInclude Include="Factories\OTRResourceLoader.h" />
+    <ClInclude Include="Factories\OTRSceneFactory.h" />
     <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_opengl.h" />
     <ClInclude Include="Lib\Fast3D\gfx_pc.h" />
@@ -173,6 +186,7 @@
     <ClInclude Include="Lib\StrHash64.h" />
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OTRArchive.h" />
+    <ClInclude Include="OTRCollisionHeader.h" />
     <ClInclude Include="OTRDisplayList.h" />
     <ClInclude Include="OTRContext.h" />
     <ClInclude Include="OTRFile.h" />

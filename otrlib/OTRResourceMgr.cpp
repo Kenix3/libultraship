@@ -4,6 +4,7 @@
 #include "spdlog/spdlog.h"
 #include "OTRFile.h"
 #include "OTRArchive.h"
+#include "OTRScene.h"
 
 namespace OtrLib {
 
@@ -56,6 +57,11 @@ namespace OtrLib {
 		}
 	}
 
+	std::string OTRResourceMgr::HashToString(uint64_t hash)
+	{
+		return archive->HashToString(hash);
+	}
+
 	std::shared_ptr<OTRResource> OTRResourceMgr::LoadOTRFile(std::string filePath) {
 		std::shared_ptr<OTRFile> fileData = LoadFileFromCache(filePath);
 		std::shared_ptr<OTRResource> resource;
@@ -71,9 +77,12 @@ namespace OtrLib {
 			}
 		}
 
-		MemoryStream memStream = MemoryStream(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
-		BinaryReader reader = BinaryReader(&memStream);
-		resource = std::make_shared<OTRResource>(*OTRResourceLoader::LoadResource(&reader));
+
+		auto memStream = std::make_shared<MemoryStream>(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
+		//MemoryStream memStream = MemoryStream(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
+		BinaryReader reader = BinaryReader(memStream);
+		auto unmanagedResource = OTRResourceLoader::LoadResource(&reader);
+		resource = std::shared_ptr<OTRResource>(unmanagedResource);
 
 		if (resource != nullptr) {
 			otrCache[filePath] = resource;

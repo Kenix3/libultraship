@@ -195,6 +195,11 @@ namespace OtrLib {
 		return false;
 	}
 
+	std::string OTRArchive::HashToString(uint64_t hash)
+	{
+		return hashes[hash];
+	}
+
 	bool OTRArchive::Load() {
 		return LoadMainMPQ() && LoadPatchMPQs();
 	}
@@ -250,8 +255,16 @@ namespace OtrLib {
 
 		for (int i = 0; i < lines.size(); i++)
 		{
-			uint64_t hash = StringHelper::StrToL(lines[i], 16);
-			hashes[hash] = lines[i];
+			std::string line = StringHelper::Strip(lines[i], "\r");
+			//uint64_t hash = StringHelper::StrToL(lines[i], 16);
+
+			if (line == "test01_scene\\test01_room_0DL_002220")
+			{
+				int bp = 0;
+			}
+
+			uint64_t hash = CRC64(line.c_str());
+			hashes[hash] = line;
 		}
 
 		return true;

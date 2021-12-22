@@ -1,4 +1,4 @@
-/*
+ /*
  * Below are the various copyright notices from the original source.
  * <http://www.mirrorservice.org/sites/download.sourceforge.net/pub/
  *	sourceforge/l/li/libcore/libcore_0.22.7.tar.gz/libcore/lib/hash/Crc.cpp>

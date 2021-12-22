@@ -2,6 +2,11 @@
 
 namespace OtrLib
 {
+	OTRScene::~OTRScene()
+	{
+		int bp = 0;
+	}
+
 	void OTRSceneV0::ParseFileBinary(BinaryReader* reader, OTRResource* res)
 	{
 		OTRScene* scene = (OTRScene*)res;
@@ -11,9 +16,7 @@ namespace OtrLib
 		int cmdCnt = reader->ReadInt32();
 
 		for (int i = 0; i < cmdCnt; i++)
-		{
 			scene->commands.push_back(ParseSceneCommand(reader));
-		}
 	}
 
 	OTRSceneCommand* OTRSceneV0::ParseSceneCommand(BinaryReader* reader)
@@ -21,6 +24,8 @@ namespace OtrLib
 		OTRSceneCommandID cmdID = (OTRSceneCommandID)reader->ReadInt32();
 
 		reader->Seek(-4, SeekOffsetType::Current);
+
+		printf("CMD: 0x%02X\n", cmdID);
 
 		switch (cmdID)
 		{
@@ -114,6 +119,20 @@ namespace OtrLib
 	{
 		data = reader->ReadByte();
 		meshHeaderType = reader->ReadByte();
+
+		int numPoly = reader->ReadByte();
+
+		if (meshHeaderType == 0)
+		{
+			int polyType = reader->ReadByte();
+
+			opa = reader->ReadString();
+			xlu = reader->ReadString();
+		}
+		else
+		{
+			int bp = 0;
+		}
 	}
 
 	OTRSetCameraSettings::OTRSetCameraSettings(BinaryReader* reader) : OTRSceneCommand(reader)
@@ -124,7 +143,7 @@ namespace OtrLib
 
 	OTRSetLightingSettings::OTRSetLightingSettings(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
-		int cnt = reader->ReadByte();
+		int cnt = reader->ReadInt32();
 
 		for (int i = 0; i < cnt; i++)
 		{
@@ -163,12 +182,19 @@ namespace OtrLib
 
 	OTRSetRoomList::OTRSetRoomList(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
-		// TODO: FINISH
+		uint32_t numRooms = reader->ReadInt32();
+
+		for (int i = 0; i < numRooms; i++)
+		{
+			std::string room = reader->ReadString();
+			rooms.push_back(room);
+		}
 	}
 
 	OTRSetCollisionHeader::OTRSetCollisionHeader(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
 		// TODO: FINISH
+		filePath = reader->ReadString();
 	}
 
 	OTRSetEntranceList::OTRSetEntranceList(BinaryReader* reader) : OTRSceneCommand(reader)

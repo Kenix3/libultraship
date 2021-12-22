@@ -158,6 +158,7 @@ namespace OtrLib
 	public:
 		uint8_t data;
 		uint8_t meshHeaderType;
+		std::string opa, xlu;
 		//std::shared_ptr<PolygonTypeBase> polyType;
 
 		OTRSetMesh(BinaryReader* reader);
@@ -183,15 +184,15 @@ namespace OtrLib
 	class OTRSetRoomList : public OTRSceneCommand
 	{
 	public:
-		//std::vector<OTRLightingSettings> settings;
-
+		std::vector<std::string> rooms;
+		
 		OTRSetRoomList(BinaryReader* reader);
 	};
 
 	class OTRSetCollisionHeader : public OTRSceneCommand
 	{
 	public:
-		//std::vector<OTRLightingSettings> settings;
+		std::string filePath;
 
 		OTRSetCollisionHeader(BinaryReader* reader);
 	};
@@ -260,6 +261,8 @@ namespace OtrLib
 	{
 	public:
 		std::vector<OTRSceneCommand*> commands;
+
+		~OTRScene();
 	};
 
 	class OTRSceneV0 : public OTRResourceFile

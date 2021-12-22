@@ -7,7 +7,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "PR/gbi.h"
+#include "PR/ultra64/gbi.h"
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1

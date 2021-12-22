@@ -34,6 +34,7 @@ namespace OtrLib
 		bool RenameFile(std::string oldPath, std::string newPath);
 		std::vector<SFILE_FIND_DATA> ListFiles(std::string searchMask);
 		bool HasFile(std::string searchMask);
+		std::string HashToString(uint64_t hash);
 	protected:
 		bool Load();
 		bool Unload();

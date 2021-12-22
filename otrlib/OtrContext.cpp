@@ -26,7 +26,8 @@ namespace OtrLib {
         }
 
         // TODO: This should be read from either command line arguments, or a config file.
-        ResourceMgr = std::make_shared<OTRResourceMgr>("oot.otr", "patches");
+        //ResourceMgr = std::make_shared<OTRResourceMgr>("oot.otr", "patches");
+        ResourceMgr = std::make_shared<OTRResourceMgr>("..\\..\\OTRExporter\\x64\\Debug\\oot.otr", "patches");
     }
 
     OTRContext::~OTRContext() {

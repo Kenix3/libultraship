@@ -8,7 +8,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include <PR/gbi.h>
+#include <PR/ultra64/gbi.h>
 
 #include "gfx_pc.h"
 #include "gfx_cc.h"
@@ -153,6 +153,8 @@ static size_t buf_vbo_num_tris;
 static struct GfxWindowManagerAPI *gfx_wapi;
 static struct GfxRenderingAPI *gfx_rapi;
 
+int markerOn;
+
 #ifdef _MSC_VER
 // TODO: Properly implement for MSVC
 static unsigned long get_time(void) 
@@ -172,6 +174,12 @@ static void gfx_flush(void) {
     if (buf_vbo_len > 0) {
         int num = buf_vbo_num_tris;
         unsigned long t0 = get_time();
+
+        if (markerOn)
+        {
+            int bp = 0;
+        }
+
         gfx_rapi->draw_triangles(buf_vbo, buf_vbo_len, buf_vbo_num_tris);
         buf_vbo_len = 0;
         buf_vbo_num_tris = 0;
@@ -193,6 +201,12 @@ static struct ShaderProgram *gfx_lookup_or_create_shader_program(uint32_t shader
 }
 
 static void gfx_generate_cc(struct ColorCombiner *comb, uint32_t cc_id) {
+    if (markerOn)
+    {
+        int bp = 0;
+    }
+
+
     uint8_t c[2][4];
     uint32_t shader_id = (cc_id >> 24) << 24;
     uint8_t shader_input_mapping[2][4] = {{0}};
@@ -553,7 +567,7 @@ static void gfx_matrix_mul(float res[4][4], const float a[4][4], const float b[4
                         a[i][2] * b[2][j] +
                         a[i][3] * b[3][j];
         }
-    }
+    }   
     memcpy(res, tmp, sizeof(tmp));
 }
 
@@ -615,12 +629,26 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
         const Vtx_t *v = &vertices[i].v;
         const Vtx_tn *vn = &vertices[i].n;
         struct LoadedVertex *d = &rsp.loaded_vertices[dest_index];
+
+        if (markerOn)
+        {
+            int bp = 0;
+        }
         
         float x = v->ob[0] * rsp.MP_matrix[0][0] + v->ob[1] * rsp.MP_matrix[1][0] + v->ob[2] * rsp.MP_matrix[2][0] + rsp.MP_matrix[3][0];
         float y = v->ob[0] * rsp.MP_matrix[0][1] + v->ob[1] * rsp.MP_matrix[1][1] + v->ob[2] * rsp.MP_matrix[2][1] + rsp.MP_matrix[3][1];
         float z = v->ob[0] * rsp.MP_matrix[0][2] + v->ob[1] * rsp.MP_matrix[1][2] + v->ob[2] * rsp.MP_matrix[2][2] + rsp.MP_matrix[3][2];
         float w = v->ob[0] * rsp.MP_matrix[0][3] + v->ob[1] * rsp.MP_matrix[1][3] + v->ob[2] * rsp.MP_matrix[2][3] + rsp.MP_matrix[3][3];
-        
+
+        if (markerOn)
+        {
+            int bp = 0;
+            //w = -w;
+            //w = 900;
+            //w *= 2;
+            //w *= 0.25f;
+        }
+
         x = gfx_adjust_x_for_aspect_ratio(x);
         
         short U = v->tc[0] * rsp.texture_scaling_factor.s >> 16;
@@ -722,10 +750,20 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
     struct LoadedVertex *v_arr[3] = {v1, v2, v3};
     
     //if (rand()%2) return;
+
+    if (markerOn)
+    {
+        int bp = 0;
+    }
     
     if (v1->clip_rej & v2->clip_rej & v3->clip_rej) {
         // The whole triangle lies outside the visible area
         return;
+    }
+
+    if (markerOn)
+    {
+        int bp = 0;
     }
     
     if ((rsp.geometry_mode & G_CULL_BOTH) != 0) {
@@ -824,8 +862,14 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
     }
     uint8_t num_inputs;
     bool used_textures[2];
+
+    if (markerOn)
+    {
+        int bp = 0;
+    }
+
     gfx_rapi->shader_get_info(prg, &num_inputs, used_textures);
-    
+
     for (int i = 0; i < 2; i++) {
         if (used_textures[i]) {
             if (rdp.textures_changed[i]) {
@@ -833,6 +877,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                 import_texture(i);
                 rdp.textures_changed[i] = false;
             }
+
             bool linear_filter = (rdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
             if (linear_filter != rendering_state.textures[i]->linear_filter || rdp.texture_tile.cms != rendering_state.textures[i]->cms || rdp.texture_tile.cmt != rendering_state.textures[i]->cmt) {
                 gfx_flush();
@@ -843,18 +888,24 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
             }
         }
     }
-    
+
     bool use_texture = used_textures[0] || used_textures[1];
     uint32_t tex_width = (rdp.texture_tile.lrs - rdp.texture_tile.uls + 4) / 4;
     uint32_t tex_height = (rdp.texture_tile.lrt - rdp.texture_tile.ult + 4) / 4;
     
     bool z_is_from_0_to_1 = gfx_rapi->z_is_from_0_to_1();
-    
+
     for (int i = 0; i < 3; i++) {
         float z = v_arr[i]->z, w = v_arr[i]->w;
         if (z_is_from_0_to_1) {
             z = (z + w) / 2.0f;
         }
+
+        if (markerOn)
+        {
+            //z = 10;
+        }
+
         buf_vbo[buf_vbo_len++] = v_arr[i]->x;
         buf_vbo[buf_vbo_len++] = v_arr[i]->y;
         buf_vbo[buf_vbo_len++] = z;
@@ -880,7 +931,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
         }
         
         for (int j = 0; j < num_inputs; j++) {
-            struct RGBA *color;
+            struct RGBA *color = 0;
             struct RGBA tmp;
             for (int k = 0; k < 1 + (use_alpha ? 1 : 0); k++) {
                 switch (comb->shader_input_mapping[k][j]) {
@@ -888,6 +939,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                         color = &rdp.prim_color;
                         break;
                     case CC_SHADE:
+                        //color = &rdp.prim_color;
                         color = &v_arr[i]->color;
                         break;
                     case CC_ENV:
@@ -905,33 +957,60 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                     default:
                         memset(&tmp, 0, sizeof(tmp));
                         color = &tmp;
+                        //color->r = 255;
+                        //color = &rdp.prim_color;
                         break;
                 }
                 if (k == 0) {
-                    //color->r = 255;
-                    //color->g = 0;
-                    //color->b = 255;
-                    //color->a = 255;
+                    if (markerOn)
+                    {
+                        //color->r = 255;
+                        //color->g = 0;
+                        //color->b = 255;
+                        //color->a = 255;
+                    }
+
+                    if (markerOn)
+                    {
+                        color->r = (int)v_arr[i]->x % 255;
+                        color->g = (int)v_arr[i]->y % 255;
+                        color->b = (int)v_arr[i]->z % 255;
+                    }
+
                     buf_vbo[buf_vbo_len++] = color->r / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->g / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->b / 255.0f;
+                    //buf_vbo[buf_vbo_len++] = 1.0f;
                 } else {
+                    if (markerOn)
+                    {
+                        int bp = 0;
+                    }
+
+
                     if (use_fog && color == &v_arr[i]->color) {
                         // Shade alpha is 100% for fog
                         buf_vbo[buf_vbo_len++] = 1.0f;
                     } else {
                         buf_vbo[buf_vbo_len++] = color->a / 255.0f;
+                        //buf_vbo[buf_vbo_len++] = 1.0f;
                     }
                 }
             }
         }
-        /*struct RGBA *color = &v_arr[i]->color;
-        buf_vbo[buf_vbo_len++] = color->r / 255.0f;
-        buf_vbo[buf_vbo_len++] = color->g / 255.0f;
-        buf_vbo[buf_vbo_len++] = color->b / 255.0f;
-        buf_vbo[buf_vbo_len++] = color->a / 255.0f;*/
+        //struct RGBA *color = &v_arr[i]->color;
+        //buf_vbo[buf_vbo_len++] = color->r / 255.0f;
+        //buf_vbo[buf_vbo_len++] = color->g / 255.0f;
+        //buf_vbo[buf_vbo_len++] = color->b / 255.0f;
+        //buf_vbo[buf_vbo_len++] = color->a / 255.0f;
     }
+    
     if (++buf_vbo_num_tris == MAX_BUFFERED) {
+     //if (++buf_vbo_num_tris == 1) {
+         if (markerOn)
+         {
+             int bp = 0;
+         }
         gfx_flush();
     }
 }
@@ -1079,6 +1158,12 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
 }
 
 static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
+    if (markerOn)
+    {
+        int bp = 0;
+    }
+
+
     if (tile == 1) return;
     SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(uls == 0);
@@ -1376,14 +1461,45 @@ static inline void *seg_addr(uintptr_t w1) {
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
+int dListBP;
+int matrixBP;
+int vtxHack;
+
+Vtx test01_room_0Vtx_000050[541];
+Vtx test01_room_0Vtx_0028C8[];
+Gfx test01_room_0DL_006438[];
+
 static void gfx_run_dl(Gfx* cmd) {
     int dummy = 0;
     for (;;) {
         uint32_t opcode = cmd->words.w0 >> 24;
+        //uint32_t opcode = cmd->words.w0 & 0xFF;
         
         switch (opcode) {
             // RSP commands:
+        case G_MARKER:
+        {
+            cmd++;
+            uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+            char dlName[4096];
+            ResourceMgr_GetNameFromCRC(hash, dlName);
+            int bp = 0;
+            //gfx_run_dl(test01_room_0DL_006438);
+            //return;
+
+            markerOn = true;
+        }
+
+            break;
+
+
             case G_MTX:
+                if (seg_addr(cmd->words.w1) == matrixBP)
+                {
+                    int bp = 0;
+                }
+
+
 #ifdef F3DEX_GBI_2
                 gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t *) seg_addr(cmd->words.w1));
 #else
@@ -1427,7 +1543,47 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), seg_addr(cmd->words.w1));
 #endif
                 break;
+            case G_VTX_OTR:
+            {
+                uint64_t offset = cmd->words.w1;
+                cmd++;
+                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+
+                char alloc[1024 * 64];
+                char fileName[4096];
+                //hash = 0xad0c2f3345f90b16;
+                ResourceMgr_GetNameFromCRC(hash, fileName);
+                Vtx* vtx = ResourceMgr_LoadVtxFromCRC(hash, alloc);
+
+                //if (hash == 0xad0c2f3345f90b16)
+                    //vtx = vtxHack;
+
+                //vtx = test01_room_0Vtx_000050;
+
+                //if (strcmp(fileName, "test01"))
+
+                if (vtx != NULL)
+                {
+                    uintptr_t vtxPtr = vtx;
+                    vtxPtr += offset;
+                    vtx = vtxPtr;
+
+                    cmd--;
+                    gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
+                    cmd++;
+                }
+                else
+                {
+                    int bp = 0; // UH OH!
+                }
+            }
+                break;
             case G_DL:
+                if (cmd->words.w1 == dListBP)
+                {
+                    int bp = 0;
+                }
+
                 if (C0(16, 1) == 0) {
                     // Push return address
                     gfx_run_dl((Gfx *)seg_addr(cmd->words.w1));
@@ -1436,7 +1592,34 @@ static void gfx_run_dl(Gfx* cmd) {
                     --cmd; // increase after break
                 }
                 break;
+            case G_DL_OTR:
+                if (C0(16, 1) == 0) {
+                //if (1)
+                //{
+                    // Push return address
+                    
+                    cmd++;
+
+                    //test01_room_0DL_006438
+                    
+                    uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                    char fileName[4096];
+                    ResourceMgr_GetNameFromCRC(hash, fileName);
+                    Gfx* gfx = ResourceMgr_LoadGfxFromCRC(hash);
+                    
+                    //if (hash == 0x85be029b654577f3)
+                        //gfx = test01_room_0DL_006438;
+
+                    gfx_run_dl(gfx);
+                }
+                else {
+                    cmd = (Gfx*)seg_addr(cmd->words.w1);
+                    cmd++;
+                    --cmd; // increase after break
+                }
+                break;
             case (uint8_t)G_ENDDL:
+                markerOn = false;
                 return;
 #ifdef F3DEX_GBI_2
             case G_GEOMETRYMODE:
@@ -1484,8 +1667,16 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_SETTIMG:
                 gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
                 break;
-            case G_SETTIMGOTR:
-                gfx_dp_set_texture_image_otr(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
+            case G_SETTIMG_OTR:
+            {
+                cmd++;
+                char alloc[1024 * 64];
+                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                char* tex = ResourceMgr_LoadTexFromCRC(hash, alloc);
+                cmd--;
+
+                gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), alloc);
+            }
                 break;
             case G_LOADBLOCK:
                 gfx_dp_load_block(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
