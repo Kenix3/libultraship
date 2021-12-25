@@ -3071,20 +3071,35 @@ _DW({                                   \
  *      TEXEL0, 0, SHADE, 0, TEXEL0, 0, SHADE, 0)
  */
 
+/*
 #if _MSC_VER
 #define gDPSetCombineMode(pkt, a, b)	gDPNoParam(pkt, G_NOOP)
 #else
 #define gDPSetCombineMode(pkt, a, b)    gDPSetCombineLERP(pkt, a, b)
 //#define gDPSetCombineMode(pkt, a, b)    gDPSetCombineLERP(pkt, ##a, b)
 #endif
+*/
+
+#ifdef _MSC_VER
+#define CALL_2(A,B) A B
+#define CALL_3(A,B,C) A B C
+
+#define gDPSetCombineMode(pkt, a, b)	CALL_3(gDPSetCombineLERP, (pkt, a, b))
+#define	gsDPSetCombineMode(a, b)	CALL_2(gsDPSetCombineLERP, (a, b))
+#else
+#define gDPSetCombineMode(pkt, a, b)	gDPSetCombineLERP(pkt, a, b)
+#define	gsDPSetCombineMode(a, b)	gsDPSetCombineLERP(a, b)
+#endif
 
 #if _MSC_VER
-#define gsDPSetCombineMode(a, b)    _SHIFTL(0, 24, 8), 0
+#define CALL_2(A,B) A B
+#define CALL_3(A,B,C) A B C
+
+#define	gsDPSetCombineMode(a, b)	CALL_2(gsDPSetCombineLERP, (a, b))
+//#define gsDPSetCombineMode(a, b)    _SHIFTL(0, 24, 8), 0
 #else
 #define gsDPSetCombineMode(a, b)    gsDPSetCombineLERP(a, b)
 #endif
-
-#define mymacrotest(pkt, ...) gsDPSetCombineLERP(pkt, __VA_ARGS__)
 
 #define gDPSetColor(pkt, c, d)                      \
 _DW({                                   \

@@ -123,7 +123,8 @@ static const char *shader_item_to_str(uint32_t item, bool with_alpha, bool only_
     } else {
         switch (item) {
             case SHADER_0:
-                return "0.0";
+                //return "0.0";
+                return "1.0";
             case SHADER_INPUT_1:
                 return "vInput1.a";
             case SHADER_INPUT_2:

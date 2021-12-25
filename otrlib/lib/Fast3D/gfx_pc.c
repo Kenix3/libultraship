@@ -939,8 +939,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                         color = &rdp.prim_color;
                         break;
                     case CC_SHADE:
-                        //color = &rdp.prim_color;
-                        color = &v_arr[i]->color;
+                        color = &rdp.prim_color;
                         break;
                     case CC_ENV:
                         color = &rdp.env_color;
@@ -957,43 +956,18 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                     default:
                         memset(&tmp, 0, sizeof(tmp));
                         color = &tmp;
-                        //color->r = 255;
-                        //color = &rdp.prim_color;
                         break;
                 }
                 if (k == 0) {
-                    if (markerOn)
-                    {
-                        //color->r = 255;
-                        //color->g = 0;
-                        //color->b = 255;
-                        //color->a = 255;
-                    }
-
-                    if (markerOn)
-                    {
-                        color->r = (int)v_arr[i]->x % 255;
-                        color->g = (int)v_arr[i]->y % 255;
-                        color->b = (int)v_arr[i]->z % 255;
-                    }
-
                     buf_vbo[buf_vbo_len++] = color->r / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->g / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->b / 255.0f;
-                    //buf_vbo[buf_vbo_len++] = 1.0f;
                 } else {
-                    if (markerOn)
-                    {
-                        int bp = 0;
-                    }
-
-
                     if (use_fog && color == &v_arr[i]->color) {
                         // Shade alpha is 100% for fog
                         buf_vbo[buf_vbo_len++] = 1.0f;
                     } else {
                         buf_vbo[buf_vbo_len++] = color->a / 255.0f;
-                        //buf_vbo[buf_vbo_len++] = 1.0f;
                     }
                 }
             }
@@ -1463,11 +1437,6 @@ static inline void *seg_addr(uintptr_t w1) {
 
 int dListBP;
 int matrixBP;
-int vtxHack;
-
-Vtx test01_room_0Vtx_000050[541];
-Vtx test01_room_0Vtx_0028C8[];
-Gfx test01_room_0DL_006438[];
 
 static void gfx_run_dl(Gfx* cmd) {
     int dummy = 0;
@@ -1484,9 +1453,6 @@ static void gfx_run_dl(Gfx* cmd) {
             char dlName[4096];
             ResourceMgr_GetNameFromCRC(hash, dlName);
             int bp = 0;
-            //gfx_run_dl(test01_room_0DL_006438);
-            //return;
-
             markerOn = true;
         }
 
@@ -1555,13 +1521,6 @@ static void gfx_run_dl(Gfx* cmd) {
                 ResourceMgr_GetNameFromCRC(hash, fileName);
                 Vtx* vtx = ResourceMgr_LoadVtxFromCRC(hash, alloc);
 
-                //if (hash == 0xad0c2f3345f90b16)
-                    //vtx = vtxHack;
-
-                //vtx = test01_room_0Vtx_000050;
-
-                //if (strcmp(fileName, "test01"))
-
                 if (vtx != NULL)
                 {
                     uintptr_t vtxPtr = vtx;
@@ -1599,16 +1558,11 @@ static void gfx_run_dl(Gfx* cmd) {
                     // Push return address
                     
                     cmd++;
-
-                    //test01_room_0DL_006438
                     
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                     char fileName[4096];
                     ResourceMgr_GetNameFromCRC(hash, fileName);
                     Gfx* gfx = ResourceMgr_LoadGfxFromCRC(hash);
-                    
-                    //if (hash == 0x85be029b654577f3)
-                        //gfx = test01_room_0DL_006438;
 
                     gfx_run_dl(gfx);
                 }
