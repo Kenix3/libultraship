@@ -6,43 +6,73 @@ void OtrLib::OTRCollisionHeaderV0::ParseFileBinary(BinaryReader* reader, OTRReso
 
 	OTRResourceFile::ParseFileBinary(reader, res);
 
-	absMinX = reader->ReadInt16();
-	absMinY = reader->ReadInt16();
-	absMinZ = reader->ReadInt16();
+	col->absMinX = reader->ReadInt16();
+	col->absMinY = reader->ReadInt16();
+	col->absMinZ = reader->ReadInt16();
 
-	absMaxX = reader->ReadInt16();
-	absMaxY = reader->ReadInt16();
-	absMaxZ = reader->ReadInt16();
+	col->absMaxX = reader->ReadInt16();
+	col->absMaxY = reader->ReadInt16();
+	col->absMaxZ = reader->ReadInt16();
 
 	int vtxCnt = reader->ReadInt32();
 
 	for (int i = 0; i < vtxCnt; i++)
 	{
-		vertices.push_back(Vec3f(reader->ReadInt16(), reader->ReadInt16(), reader->ReadInt16()));
+		float x = reader->ReadInt16();
+		float y = reader->ReadInt16();
+		float z = reader->ReadInt16();
+		col->vertices.push_back(Vec3f(x, y, z));
 	}
 
 	int polyCnt = reader->ReadInt32();
 
 	for (int i = 0; i < polyCnt; i++)
 	{
-		polygons.push_back(OtrLib::PolygonEntry(reader));
+		col->polygons.push_back(OtrLib::PolygonEntry(reader));
 	}
 
 	int polyTypesCnt = reader->ReadInt32();
 
 	for (int i = 0; i < polyTypesCnt; i++)
-		polygonTypes.push_back(reader->ReadUInt64());
+		col->polygonTypes.push_back(reader->ReadUInt64());
+
+	col->camData = new CameraDataList();
 
 	int camEntriesCnt = reader->ReadInt32();
 
-	// OTRTODO: FINISH THIS!!!
 	for (int i = 0; i < camEntriesCnt; i++)
 	{
-		/*OtrLib::CameraDataEntry* entry = new OtrLib::CameraDataEntry();
+		OtrLib::CameraDataEntry* entry = new OtrLib::CameraDataEntry();
 		entry->cameraSType = reader->ReadInt16();
 		entry->numData = reader->ReadInt16();
 		entry->cameraPosDataSeg = reader->ReadInt32();
-		camData->entries.push_back(entry);*/
+		col->camData->entries.push_back(entry);
+	}
+
+	int camPosCnt = reader->ReadInt32();
+
+	for (int i = 0; i < camPosCnt; i++)
+	{
+		OtrLib::CameraPositionData* entry = new OtrLib::CameraPositionData();
+		entry->x = reader->ReadInt16();
+		entry->y = reader->ReadInt16();
+		entry->z = reader->ReadInt16();
+		col->camData->cameraPositionData.push_back(entry);
+	}
+
+	int waterBoxCnt = reader->ReadInt32();
+
+	for (int i = 0; i < waterBoxCnt; i++)
+	{
+		OtrLib::WaterBoxHeader waterBox;
+		waterBox.xLength = reader->ReadInt16();
+		waterBox.ySurface = reader->ReadInt16();
+		waterBox.zMin = reader->ReadInt16();
+		waterBox.xLength = reader->ReadInt16();
+		waterBox.zLength = reader->ReadInt16();
+		waterBox.properties = reader->ReadInt16();
+
+		col->waterBoxes.push_back(waterBox);
 	}
 }
 
@@ -58,4 +88,8 @@ OtrLib::PolygonEntry::PolygonEntry(BinaryReader* reader)
 	b = reader->ReadUInt16();
 	c = reader->ReadUInt16();
 	d = reader->ReadUInt16();
+}
+
+OtrLib::WaterBoxHeader::WaterBoxHeader()
+{
 }

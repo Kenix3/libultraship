@@ -155,6 +155,11 @@ static struct GfxRenderingAPI *gfx_rapi;
 
 int markerOn;
 
+
+#define OTR_NUM_TEX_SLOTS 1024
+static char** otrTexSlots;
+static int otrTexSlotIndex;
+
 #ifdef _MSC_VER
 // TODO: Properly implement for MSVC
 static unsigned long get_time(void) 
@@ -1624,7 +1629,9 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_SETTIMG_OTR:
             {
                 cmd++;
-                char alloc[1024 * 64];
+                //char alloc[1024 * 64];
+                //char* alloc = malloc(1024 * 4);
+                char* alloc = otrTexSlots[otrTexSlotIndex++];
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 char* tex = ResourceMgr_LoadTexFromCRC(hash, alloc);
                 cmd--;
@@ -1745,6 +1752,13 @@ void gfx_init(struct GfxWindowManagerAPI *wapi, struct GfxRenderingAPI *rapi, co
     gfx_rapi = rapi;
     gfx_wapi->init(game_name, start_in_fullscreen);
     gfx_rapi->init();
+
+    // OTR INIT STUFF
+    otrTexSlots = malloc(sizeof(char*) * OTR_NUM_TEX_SLOTS);
+    otrTexSlotIndex = 0;
+
+    for (int i = 0; i < OTR_NUM_TEX_SLOTS; i++)
+        otrTexSlots[i] = malloc(1024 * 4);
     
     // Used in the 120 star TAS
     static uint32_t precomp_shaders[] = {
@@ -1799,6 +1813,8 @@ void gfx_run(Gfx *commands) {
     
     //puts("New frame");
     
+    otrTexSlotIndex = 0;
+
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
         return;
