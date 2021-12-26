@@ -154,7 +154,7 @@ static struct GfxWindowManagerAPI *gfx_wapi;
 static struct GfxRenderingAPI *gfx_rapi;
 
 int markerOn;
-
+uintptr_t segmentPointers[16];
 
 #define OTR_NUM_TEX_SLOTS 1024
 static char** otrTexSlots;
@@ -1067,6 +1067,10 @@ static void gfx_sp_moveword(uint8_t index, uint16_t offset, uint32_t data) {
             rsp.fog_mul = (int16_t)(data >> 16);
             rsp.fog_offset = (int16_t)data;
             break;
+        case G_MW_SEGMENT:
+            int segNumber = offset / 4;
+            segmentPointers[segNumber] = data;
+            break;
     }
 }
 
@@ -1433,8 +1437,22 @@ static void gfx_sp_set_other_mode(uint32_t shift, uint32_t num_bits, uint64_t mo
     rdp.other_mode_h = (uint32_t)(om >> 32);
 }
 
-static inline void *seg_addr(uintptr_t w1) {
-    return (void *) w1;
+static inline void* seg_addr(uintptr_t w1)
+{
+    // Segmented?
+    if (w1 >= 0xF0000000)
+    {
+        int segNum = (w1 >> 24) - 0xF0;
+
+        if (segmentPointers[segNum] != 0)
+            return segmentPointers[segNum];
+        else
+            return (void*)w1;
+    }
+    else
+    {
+        return (void*)w1;
+    }
 }
 
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
@@ -1760,6 +1778,11 @@ void gfx_init(struct GfxWindowManagerAPI *wapi, struct GfxRenderingAPI *rapi, co
     for (int i = 0; i < OTR_NUM_TEX_SLOTS; i++)
         otrTexSlots[i] = malloc(1024 * 4);
     
+    for (int i = 0; i < 16; i++)
+    {
+        segmentPointers[i] = NULL;
+    }
+
     // Used in the 120 star TAS
     static uint32_t precomp_shaders[] = {
         0x01200200,

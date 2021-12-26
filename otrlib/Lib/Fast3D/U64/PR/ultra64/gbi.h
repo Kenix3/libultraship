@@ -2150,7 +2150,7 @@ _DW({                                   \
 }
 #endif
 
-#define gSPSegment(pkt, segment, base)                  \
+#define __gSPSegment(pkt, segment, base)                  \
     gMoveWd(pkt, G_MW_SEGMENT, (segment)*4, base)
 #define gsSPSegment(segment, base)                  \
     gsMoveWd(    G_MW_SEGMENT, (segment)*4, base)

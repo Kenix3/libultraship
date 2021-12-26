@@ -15,9 +15,6 @@ namespace OtrLib
 		while (true)
 		{
 			uint64_t data = reader->ReadUInt64();
-			//uint8_t opcode = (uint8_t)reader->ReadUByte();
-
-			//reader->Seek(-1, SeekOffsetType::Current);
 
 			dl->instructions.push_back(data);
 				
