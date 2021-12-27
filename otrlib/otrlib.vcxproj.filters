@@ -46,6 +46,9 @@
     <Filter Include="Header Files\Resources\Factories">
       <UniqueIdentifier>{75c0ab92-1379-464e-a57f-045c91f85bc0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Controller">
+      <UniqueIdentifier>{081deaf2-9d13-4bfc-8b6c-ca984e0e7635}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\OTRMaterialFactory.cpp">
@@ -102,6 +105,15 @@
     <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp">
       <Filter>Source Files\Lib</Filter>
     </ClCompile>
+    <ClCompile Include="OTRController.cpp">
+      <Filter>Source Files\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyboardController.cpp">
+      <Filter>Source Files\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRInput.cpp">
+      <Filter>Source Files\Controller</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRMaterialFactory.h">
@@ -157,6 +169,18 @@
     </ClInclude>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
       <Filter>Header Files\Lib\tinyxml2</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRController.h">
+      <Filter>Source Files\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyboardController.h">
+      <Filter>Source Files\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="UltraController.h">
+      <Filter>Source Files\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRInput.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

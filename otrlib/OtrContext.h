@@ -1,22 +1,24 @@
 #pragma once
 
-#include "spdlog/spdlog.h"
 #include "stdint.h"
-
+#include "spdlog/spdlog.h"
+#include <memory>
 
 namespace OtrLib {
 	class OTRResourceMgr;
 
-	class OTRContext
-	{
-	public:
-		std::shared_ptr<OTRResourceMgr> ResourceMgr;
+	class OTRContext {
+		public:
+			std::shared_ptr<OTRResourceMgr> ResourceMgr;
 
-		OTRContext();
-		~OTRContext();
-	private:
-		std::shared_ptr<spdlog::logger> Logger;
-		std::string Name;
-		int32_t contextId;
+			OTRContext(std::string mainPath, std::string patchesDirectory);
+			~OTRContext();
+
+		protected:
+
+		private:
+			std::shared_ptr<spdlog::logger> Logger;
+			std::string Name;
+			int32_t contextId;
 	};
 }

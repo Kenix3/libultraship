@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -144,8 +144,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="OTRController.cpp" />
     <ClCompile Include="Factories\OTRMaterialFactory.cpp" />
     <ClCompile Include="Factories\OTRResourceLoader.cpp" />
+    <ClCompile Include="KeyboardController.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_cc.c" />
     <ClCompile Include="Lib\Fast3D\gfx_opengl.c" />
     <ClCompile Include="Lib\Fast3D\gfx_pc.c" />
@@ -156,6 +158,7 @@
     <ClCompile Include="OTRDisplayList.cpp" />
     <ClCompile Include="OTRContext.cpp" />
     <ClCompile Include="OTRFile.cpp" />
+    <ClCompile Include="OTRInput.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
     <ClCompile Include="OTRModel.cpp" />
     <ClCompile Include="OTRResource.cpp" />
@@ -164,8 +167,10 @@
     <ClCompile Include="OTRTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="OTRController.h" />
     <ClInclude Include="Factories\OTRMaterialFactory.h" />
     <ClInclude Include="Factories\OTRResourceLoader.h" />
+    <ClInclude Include="KeyboardController.h" />
     <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_opengl.h" />
     <ClInclude Include="Lib\Fast3D\gfx_pc.h" />
@@ -176,12 +181,14 @@
     <ClInclude Include="OTRDisplayList.h" />
     <ClInclude Include="OTRContext.h" />
     <ClInclude Include="OTRFile.h" />
+    <ClInclude Include="OTRInput.h" />
     <ClInclude Include="OTRMaterial.h" />
     <ClInclude Include="OTRModel.h" />
     <ClInclude Include="OTRResource.h" />
     <ClInclude Include="OTRResourceMgr.h" />
     <ClInclude Include="OTRScene.h" />
     <ClInclude Include="OTRTexture.h" />
+    <ClInclude Include="UltraController.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
