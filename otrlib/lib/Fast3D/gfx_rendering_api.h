@@ -11,8 +11,8 @@ struct GfxRenderingAPI {
     bool (*z_is_from_0_to_1)(void);
     void (*unload_shader)(struct ShaderProgram *old_prg);
     void (*load_shader)(struct ShaderProgram *new_prg);
-    struct ShaderProgram *(*create_and_load_new_shader)(uint32_t shader_id);
-    struct ShaderProgram *(*lookup_shader)(uint32_t shader_id);
+    struct ShaderProgram *(*create_and_load_new_shader)(uint64_t shader_id0, uint32_t shader_id1);
+    struct ShaderProgram *(*lookup_shader)(uint64_t shader_id0, uint32_t shader_id1);
     void (*shader_get_info)(struct ShaderProgram *prg, uint8_t *num_inputs, bool used_textures[2]);
     uint32_t (*new_texture)(void);
     void (*select_texture)(int tile, uint32_t texture_id);

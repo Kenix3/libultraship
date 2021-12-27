@@ -19,6 +19,7 @@ namespace OtrLib
 		~OTRResourceMgr();
 
 		
+		char* LoadFileOriginal(std::string filePath);
 		DWORD LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		std::string HashToString(uint64_t hash);

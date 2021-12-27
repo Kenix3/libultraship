@@ -114,6 +114,24 @@
     <ClCompile Include="Factories\OTRDisplayListFactory.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
+    <ClCompile Include="OTRPlayerAnimation.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRPlayerAnimationFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRSkeletonLimb.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRSkeleton.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRSkeletonFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRSkeletonLimbFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRMaterialFactory.h">
@@ -180,6 +198,24 @@
       <Filter>Header Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\OTRDisplayListFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRPlayerAnimation.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRPlayerAnimationFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRSkeleton.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRSkeletonLimb.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRSkeletonFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRSkeletonLimbFactory.h">
       <Filter>Header Files\Resources\Factories</Filter>
     </ClInclude>
   </ItemGroup>

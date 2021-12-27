@@ -3,6 +3,9 @@
 #include "OTRSceneFactory.h"
 #include "OTRCollisionHeaderFactory.h"
 #include "OTRDisplayListFactory.h"
+#include "OTRPlayerAnimationFactory.h"
+#include "OTRSkeletonFactory.h"
+#include "OTRSkeletonLimbFactory.h"
 
 namespace OtrLib
 {
@@ -28,6 +31,15 @@ namespace OtrLib
             break;
         case ResourceType::OTRDisplayList:
             result = OTRDisplayListFactory::ReadDisplayList(reader);
+            break;
+        case ResourceType::OTRPlayerAnimation:
+            result = OTRPlayerAnimationFactory::ReadPlayerAnimation(reader);
+            break;
+        case ResourceType::OTRSkeleton:
+            result = OTRSkeletonFactory::ReadSkeleton(reader);
+            break;
+        case ResourceType::OTRSkeletonLimb:
+            result = OTRSkeletonLimbFactory::ReadSkeletonLimb(reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED

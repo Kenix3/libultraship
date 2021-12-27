@@ -153,12 +153,22 @@ namespace OtrLib
 		OTRSetCsCamera(BinaryReader* reader);
 	};
 
+	class OTRMeshData
+	{
+	public:
+		int x, y, z;
+		int unk_06;
+		std::string opa, xlu;
+
+		OTRMeshData();
+	};
+
 	class OTRSetMesh : public OTRSceneCommand
 	{
 	public:
 		uint8_t data;
 		uint8_t meshHeaderType;
-		std::string opa, xlu;
+		std::vector<OTRMeshData> meshes;
 		//std::shared_ptr<PolygonTypeBase> polyType;
 
 		OTRSetMesh(BinaryReader* reader);
@@ -219,6 +229,14 @@ namespace OtrLib
 		uint16_t globalObject;
 		
 		OTRSetSpecialObjects(BinaryReader* reader);
+	};
+
+	class OTRSetObjectList : public OTRSceneCommand
+	{
+	public:
+		std::vector<uint16_t> objects;
+
+		OTRSetObjectList(BinaryReader* reader);
 	};
 
 	class OTRActorSpawnEntry

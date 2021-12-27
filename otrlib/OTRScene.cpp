@@ -46,9 +46,11 @@ namespace OtrLib
 		case OTRSceneCommandID::SetCollisionHeader: return new OTRSetCollisionHeader(reader);
 		case OTRSceneCommandID::SetEntranceList: return new OTRSetEntranceList(reader);
 		case OTRSceneCommandID::SetSpecialObjects: return new OTRSetSpecialObjects(reader);
+		case OTRSceneCommandID::SetObjectList: return new OTRSetObjectList(reader);
 		case OTRSceneCommandID::EndMarker: return new OTREndMarker(reader);
 		default:
 			printf("UNIMPLEMENTED COMMAND: %i\n", (int)cmdID);
+			reader->ReadInt32();
 			break;
 		}
 
@@ -115,6 +117,16 @@ namespace OtrLib
 		// TODO: FINISH!
 	}
 
+	OTRMeshData::OTRMeshData()
+	{
+		x = 0;
+		y = 0;
+		z = 0;
+		unk_06 = 0;
+		opa = "";
+		xlu = "";
+	}
+
 	OTRSetMesh::OTRSetMesh(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
 		data = reader->ReadByte();
@@ -122,16 +134,37 @@ namespace OtrLib
 
 		int numPoly = reader->ReadByte();
 
-		if (meshHeaderType == 0)
+		for (int i = 0; i < numPoly; i++)
 		{
+			OTRMeshData mesh;
+
 			int polyType = reader->ReadByte();
 
-			opa = reader->ReadString();
-			xlu = reader->ReadString();
-		}
-		else
-		{
-			int bp = 0;
+			// OTRTODO: FINISH THIS!
+			if (meshHeaderType == 0)
+			{
+				mesh.x = 0;
+				mesh.y = 0;
+				mesh.z = 0;
+				mesh.unk_06 = 0;
+			}
+			else if (meshHeaderType == 2)
+			{
+				mesh.x = reader->ReadInt16();
+				mesh.y = reader->ReadInt16();
+				mesh.z = reader->ReadInt16();
+				mesh.unk_06 = reader->ReadInt16();
+			}
+			else
+			{
+				int bp = 0;
+			}
+
+
+			mesh.opa = reader->ReadString();
+			mesh.xlu = reader->ReadString();
+
+			meshes.push_back(mesh);
 		}
 	}
 
@@ -215,6 +248,14 @@ namespace OtrLib
 	{
 		elfMessage = reader->ReadByte();
 		globalObject = reader->ReadInt16();
+	}
+
+	OTRSetObjectList::OTRSetObjectList(BinaryReader* reader) : OTRSceneCommand(reader)
+	{
+		int numEntries = reader->ReadInt32();
+
+		for (int i = 0; i < numEntries; i++)
+			objects.push_back(reader->ReadUInt16());
 	}
 
 	OTRSetStartPositionList::OTRSetStartPositionList(BinaryReader* reader) : OTRSceneCommand(reader)

@@ -46,7 +46,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -85,6 +85,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)..\..\ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Lib\SDL\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -139,8 +141,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,8 +158,11 @@
     <ClCompile Include="Factories\OTRCollisionHeaderFactory.cpp" />
     <ClCompile Include="Factories\OTRDisplayListFactory.cpp" />
     <ClCompile Include="Factories\OTRMaterialFactory.cpp" />
+    <ClCompile Include="Factories\OTRPlayerAnimationFactory.cpp" />
     <ClCompile Include="Factories\OTRResourceLoader.cpp" />
     <ClCompile Include="Factories\OTRSceneFactory.cpp" />
+    <ClCompile Include="Factories\OTRSkeletonFactory.cpp" />
+    <ClCompile Include="Factories\OTRSkeletonLimbFactory.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_cc.c" />
     <ClCompile Include="Lib\Fast3D\gfx_opengl.c" />
     <ClCompile Include="Lib\Fast3D\gfx_pc.c" />
@@ -168,17 +176,23 @@
     <ClCompile Include="OTRFile.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
     <ClCompile Include="OTRModel.cpp" />
+    <ClCompile Include="OTRPlayerAnimation.cpp" />
     <ClCompile Include="OTRResource.cpp" />
     <ClCompile Include="OTRResourceMgr.cpp" />
     <ClCompile Include="OTRScene.cpp" />
+    <ClCompile Include="OTRSkeleton.cpp" />
+    <ClCompile Include="OTRSkeletonLimb.cpp" />
     <ClCompile Include="OTRTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRCollisionHeaderFactory.h" />
     <ClInclude Include="Factories\OTRDisplayListFactory.h" />
     <ClInclude Include="Factories\OTRMaterialFactory.h" />
+    <ClInclude Include="Factories\OTRPlayerAnimationFactory.h" />
     <ClInclude Include="Factories\OTRResourceLoader.h" />
     <ClInclude Include="Factories\OTRSceneFactory.h" />
+    <ClInclude Include="Factories\OTRSkeletonFactory.h" />
+    <ClInclude Include="Factories\OTRSkeletonLimbFactory.h" />
     <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_opengl.h" />
     <ClInclude Include="Lib\Fast3D\gfx_pc.h" />
@@ -192,9 +206,12 @@
     <ClInclude Include="OTRFile.h" />
     <ClInclude Include="OTRMaterial.h" />
     <ClInclude Include="OTRModel.h" />
+    <ClInclude Include="OTRPlayerAnimation.h" />
     <ClInclude Include="OTRResource.h" />
     <ClInclude Include="OTRResourceMgr.h" />
     <ClInclude Include="OTRScene.h" />
+    <ClInclude Include="OTRSkeleton.h" />
+    <ClInclude Include="OTRSkeletonLimb.h" />
     <ClInclude Include="OTRTexture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

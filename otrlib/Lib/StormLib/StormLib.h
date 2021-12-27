@@ -135,7 +135,11 @@ extern "C" {
         #ifdef _DLL
           #pragma comment(lib, "StormLibRUD.lib") // Release Unicode CRT-DLL version
         #else
-          #pragma comment(lib, "StormLibRUS.lib") // Release Unicode CRT-LIB version
+#ifndef _WIN64
+          #pragma comment(lib, "StormLibRUS32.lib") // Release Unicode CRT-LIB version
+#else
+          #pragma comment(lib, "StormLibRUS64.lib") // Release Unicode CRT-LIB version
+#endif
         #endif
       #endif
     #endif

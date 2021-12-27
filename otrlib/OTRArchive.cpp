@@ -94,12 +94,16 @@ namespace OtrLib {
 		SystemTimeToFileTime(&sysTime, &t);
 		ULONGLONG stupidHack = static_cast<uint64_t>(t.dwHighDateTime) << (sizeof(t.dwHighDateTime) * 8) | t.dwLowDateTime;
 
-		if (!SFileCreateFile(mainMPQ, path.c_str(), stupidHack, dwFileSize, 0, MPQ_FILE_COMPRESS, &hFile)) {
+		if (!SFileCreateFile(mainMPQ, path.c_str(), stupidHack, dwFileSize, 0, MPQ_FILE_COMPRESS, &hFile))
+		//if (!SFileCreateFile(mainMPQ, path.c_str(), stupidHack, dwFileSize, 0, 0, &hFile))
+		{
 			spdlog::error("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), dwFileSize, path.c_str(), mainPath.c_str());
+			return false;
 		}
 
 
-		if (!SFileWriteFile(hFile, (void*)fileData, dwFileSize, MPQ_COMPRESSION_ZLIB)) {
+		if (!SFileWriteFile(hFile, (void*)fileData, dwFileSize, MPQ_COMPRESSION_ZLIB))
+		{
 			spdlog::error("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), dwFileSize, path.c_str(), mainPath.c_str());
 			if (!SFileCloseFile(hFile)) {
 				spdlog::error("({}) Failed to close file {} after write failure in archive {}", GetLastError(), path.c_str(), mainPath.c_str());
@@ -158,7 +162,9 @@ namespace OtrLib {
 				if (fileFound) {
 					fileList.push_back(findContext);
 				}
-				else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES) {
+				else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
+				//else if (!fileFound)
+				{
 					spdlog::error("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
 					if (!SListFileFindClose(hFind)) {
 						spdlog::error("({}) Failed to close file search {} after failure in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
@@ -172,8 +178,11 @@ namespace OtrLib {
 			return fileList;
 		}
 
-		if (!SFileFindClose(hFind)) {
-			spdlog::error("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
+		if (hFind != nullptr)
+		{
+			if (!SFileFindClose(hFind)) {
+				spdlog::error("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
+			}
 		}
 
 		return fileList;
@@ -181,6 +190,9 @@ namespace OtrLib {
 
 	bool OTRArchive::HasFile(std::string filename)
 	{
+		bool result = false;
+		auto start = std::chrono::steady_clock::now();
+
 		auto lst = ListFiles(filename);
 		//auto lst = addedFiles;
 		
@@ -188,11 +200,18 @@ namespace OtrLib {
 		{
 			if (item.cFileName == filename)
 			{
-				return true;
+				result = true;
+				break;
 			}
 		}
 
-		return false;
+		auto end = std::chrono::steady_clock::now();
+		auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+		if (diff > 2)
+			printf("HasFile call took %lims with a list of size %i\n", diff, lst.size());
+
+		return result;
 	}
 
 	std::string OTRArchive::HashToString(uint64_t hash)
@@ -257,11 +276,6 @@ namespace OtrLib {
 		{
 			std::string line = StringHelper::Strip(lines[i], "\r");
 			//uint64_t hash = StringHelper::StrToL(lines[i], 16);
-
-			if (line == "test01_scene\\test01_room_0DL_002220")
-			{
-				int bp = 0;
-			}
 
 			uint64_t hash = CRC64(line.c_str());
 			hashes[hash] = line;

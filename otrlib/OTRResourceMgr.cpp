@@ -5,6 +5,7 @@
 #include "OTRFile.h"
 #include "OTRArchive.h"
 #include "OTRScene.h"
+#include <Utils/StringHelper.h>
 
 namespace OtrLib {
 
@@ -18,7 +19,10 @@ namespace OtrLib {
 		gameResourceAddresses.clear();
 	}
 
-	std::shared_ptr<OTRFile> OTRResourceMgr::LoadFileFromCache(std::string filePath) {
+	std::shared_ptr<OTRFile> OTRResourceMgr::LoadFileFromCache(std::string filePath) 
+	{
+		filePath = StringHelper::Replace(filePath, "/", "\\");
+
 		// File already loaded...?
 		if (fileCache.find(filePath) != fileCache.end()) {
 			return fileCache[filePath];
@@ -34,6 +38,13 @@ namespace OtrLib {
 
 			return file;
 		}
+	}
+
+	char* OTRResourceMgr::LoadFileOriginal(std::string filePath)
+	{
+		std::shared_ptr<OTRFile> fileData = LoadFileFromCache(filePath);
+
+		return (char*)fileData.get()->buffer.get();
 	}
 
 	DWORD OTRResourceMgr::LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath) {
