@@ -1,44 +1,52 @@
 #include "OTRContext.h"
 #include <iostream>
 #include "OTRResourceMgr.h"
-#include "spdlog/spdlog.h"
+#include "OTRWindow.h"
 #include "spdlog/async.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
 namespace OtrLib {
-    static int32_t nextContextId;
+    std::shared_ptr<OTRContext> OTRContext::Context = nullptr;
 
-    OTRContext::OTRContext() {
-        try
-        {
-            contextId = nextContextId++;
-            Name = "OtrLib" + contextId;
-            Logger = spdlog::create_async<spdlog::sinks::basic_file_sink_mt>("async_file_logger", "logs/otr.txt");
-            Logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
+    std::shared_ptr<OTRContext> OTRContext::GetInstance() {
+        return Context;
+    }
 
-            if (contextId == 0) {
-                spdlog::set_default_logger(Logger);
+    std::shared_ptr<OTRContext> OTRContext::CreateInstance(std::string Name, std::string MainPath, std::string PatchesPath) {
+        if (Context == nullptr) {
+            if (!MainPath.empty()) {
+                Context = std::make_shared<OTRContext>(Name, MainPath, PatchesPath);
+            } else {
+                spdlog::error("No Main Archive passed to create instance");
             }
+        } else {
+            spdlog::info("Trying to create a context when it already exists.");
         }
-        catch (const spdlog::spdlog_ex& ex)
-        {
+
+        return Context;
+    }
+
+    OTRContext::OTRContext(std::string Name, std::string MainPath, std::string PatchesPath) : Name(Name) {
+        try {
+            // Setup Logging
+            Logger = spdlog::create_async<spdlog::sinks::basic_file_sink_mt>("async_file_logger", "logs/" + Name + ".log");
+            Logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
+            spdlog::set_default_logger(Logger);
+        }
+        catch (const spdlog::spdlog_ex& ex) {
             std::cout << "Log initialization failed: " << ex.what() << std::endl;
         }
 
-        // TODO: This should be read from either command line arguments, or a config file.
-        //ResourceMgr = std::make_shared<OTRResourceMgr>("oot.otr", "patches");
-        ResourceMgr = std::make_shared<OTRResourceMgr>("..\\..\\OTRExporter\\x64\\Debug\\oot.otr", "patches");
-        //ResourceMgr = std::make_shared<OTRResourceMgr>("..\\..\\OTRExporter\\x64\\Release\\oot.otr", "patches");
-        //ResourceMgr = std::make_shared<OTRResourceMgr>("..\\..\\OTRExporter\\oot.otr", "patches");
+        ResourceMgr = std::make_shared<OTRResourceMgr>(MainPath, PatchesPath);
+        Window = std::make_shared<OTRWindow>(std::make_shared<OTRContext>(*this));
     }
 
     OTRContext::~OTRContext() {
-        try
-        {
+        // Kill Logging
+        try {
             spdlog::drop(Name);
         }
-        catch (const spdlog::spdlog_ex& ex)
-        {
+        catch (const spdlog::spdlog_ex& ex) {
             std::cout << "Log de-initialization failed: " << ex.what() << std::endl;
         }
     }

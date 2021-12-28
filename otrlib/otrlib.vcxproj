@@ -126,8 +126,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -155,6 +155,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="OTRController.cpp" />
+    <ClCompile Include="KeyboardController.cpp" />
     <ClCompile Include="Factories\OTRCollisionHeaderFactory.cpp" />
     <ClCompile Include="Factories\OTRDisplayListFactory.cpp" />
     <ClCompile Include="Factories\OTRMaterialFactory.cpp" />
@@ -183,8 +185,11 @@
     <ClCompile Include="OTRSkeleton.cpp" />
     <ClCompile Include="OTRSkeletonLimb.cpp" />
     <ClCompile Include="OTRTexture.cpp" />
+    <ClCompile Include="OTRWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="OTRController.h" />
+    <ClInclude Include="KeyboardController.h" />
     <ClInclude Include="Factories\OTRCollisionHeaderFactory.h" />
     <ClInclude Include="Factories\OTRDisplayListFactory.h" />
     <ClInclude Include="Factories\OTRMaterialFactory.h" />
@@ -213,6 +218,7 @@
     <ClInclude Include="OTRSkeleton.h" />
     <ClInclude Include="OTRSkeletonLimb.h" />
     <ClInclude Include="OTRTexture.h" />
+    <ClInclude Include="OTRWindow.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
