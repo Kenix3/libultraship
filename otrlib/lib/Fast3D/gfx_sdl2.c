@@ -206,8 +206,12 @@ static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bo
     on_all_keys_up_callback = on_all_keys_up;
 }
 
+static int frameDivisor = 1;
+
 static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
-    while (1) {
+    while (1) 
+    {
+        SDL_GL_SetSwapInterval(frameDivisor);
         run_one_game_iter();
     }
 }
@@ -298,6 +302,12 @@ static double gfx_sdl_get_time(void) {
     return 0.0;
 }
 
+static void gfx_sdl_set_framedivisor(int divisor)
+{
+    frameDivisor = divisor;
+    SDL_GL_SetSwapInterval(frameDivisor);
+}
+
 struct GfxWindowManagerAPI gfx_sdl = {
     gfx_sdl_init,
     gfx_sdl_set_keyboard_callbacks,
@@ -309,7 +319,8 @@ struct GfxWindowManagerAPI gfx_sdl = {
     gfx_sdl_start_frame,
     gfx_sdl_swap_buffers_begin,
     gfx_sdl_swap_buffers_end,
-    gfx_sdl_get_time
+    gfx_sdl_get_time,
+    gfx_sdl_set_framedivisor
 };
 
 #endif

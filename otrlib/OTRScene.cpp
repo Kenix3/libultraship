@@ -42,11 +42,14 @@ namespace OtrLib
 		case OTRSceneCommandID::SetMesh: return new OTRSetMesh(reader);
 		case OTRSceneCommandID::SetCameraSettings: return new OTRSetCameraSettings(reader);
 		case OTRSceneCommandID::SetLightingSettings: return new OTRSetLightingSettings(reader);
+		case OTRSceneCommandID::SetLightList: return new OTRSetLightList(reader);
 		case OTRSceneCommandID::SetRoomList: return new OTRSetRoomList(reader);
 		case OTRSceneCommandID::SetCollisionHeader: return new OTRSetCollisionHeader(reader);
 		case OTRSceneCommandID::SetEntranceList: return new OTRSetEntranceList(reader);
 		case OTRSceneCommandID::SetSpecialObjects: return new OTRSetSpecialObjects(reader);
 		case OTRSceneCommandID::SetObjectList: return new OTRSetObjectList(reader);
+		case OTRSceneCommandID::SetAlternateHeaders: return new OTRSetAlternateHeaders(reader);
+		case OTRSceneCommandID::SetExitList: return new OTRExitList(reader);
 		case OTRSceneCommandID::EndMarker: return new OTREndMarker(reader);
 		default:
 			printf("UNIMPLEMENTED COMMAND: %i\n", (int)cmdID);
@@ -68,6 +71,14 @@ namespace OtrLib
 		windVertical = reader->ReadByte();
 		windSouth = reader->ReadByte();
 		clothFlappingStrength = reader->ReadByte();
+	}
+
+	OTRExitList::OTRExitList(BinaryReader* reader) : OTRSceneCommand(reader)
+	{
+		int numExits = reader->ReadInt32();
+
+		for (int i = 0; i < numExits; i++)
+			exits.push_back(reader->ReadUInt16());
 	}
 
 	OTRSetTimeSettings::OTRSetTimeSettings(BinaryReader* reader) : OTRSceneCommand(reader)
@@ -207,7 +218,7 @@ namespace OtrLib
 			entry.fogClrB = reader->ReadByte();
 
 			entry.unk = reader->ReadInt16();
-			entry.drawDistance = reader->ReadInt16();
+			entry.drawDistance = reader->ReadUInt16();
 
 			settings.push_back(entry);
 		}
@@ -226,7 +237,6 @@ namespace OtrLib
 
 	OTRSetCollisionHeader::OTRSetCollisionHeader(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
-		// TODO: FINISH
 		filePath = reader->ReadString();
 	}
 
@@ -302,5 +312,42 @@ namespace OtrLib
 
 	OTREndMarker::OTREndMarker(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
+	}
+
+	OTRLightInfo::OTRLightInfo()
+	{
+	}
+
+	OTRSetLightList::OTRSetLightList(BinaryReader* reader) : OTRSceneCommand(reader)
+	{
+		int cnt = reader->ReadInt32();
+
+		for (int i = 0; i < cnt; i++)
+		{
+			OTRLightInfo light = OTRLightInfo();
+
+			light.type = reader->ReadUByte();
+			
+			light.x = reader->ReadInt16();
+			light.y = reader->ReadInt16();			
+			light.z = reader->ReadInt16();
+
+			light.r = reader->ReadUByte();
+			light.g = reader->ReadUByte();
+			light.b = reader->ReadUByte();
+			
+			light.drawGlow = reader->ReadUByte();
+			light.radius = reader->ReadInt16();
+			
+			lights.push_back(light);
+		}
+	}
+
+	OTRSetAlternateHeaders::OTRSetAlternateHeaders(BinaryReader* reader) : OTRSceneCommand(reader)
+	{
+		int numHeaders = reader->ReadInt32();
+
+		for (int i = 0; i < numHeaders; i++)
+			headers.push_back(reader->ReadString());
 	}
 }

@@ -91,7 +91,7 @@ namespace OtrLib {
 
 		auto memStream = std::make_shared<MemoryStream>(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
 		//MemoryStream memStream = MemoryStream(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
-		BinaryReader reader = BinaryReader(memStream.get());
+		BinaryReader reader = BinaryReader(memStream);
 		auto unmanagedResource = OTRResourceLoader::LoadResource(&reader);
 		resource = std::shared_ptr<OTRResource>(unmanagedResource);
 

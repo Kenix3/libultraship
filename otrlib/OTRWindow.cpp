@@ -1,6 +1,9 @@
 #include "OTRWindow.h"
 #include "spdlog/spdlog.h"
 #include "KeyboardController.h"
+#include "Lib/Fast3D/gfx_pc.h"
+#include "Lib/Fast3D/gfx_sdl.h"
+#include "Lib/Fast3D/gfx_opengl.h"
 #include <map>
 
 extern "C" {
@@ -12,7 +15,7 @@ extern "C" {
 
         // TODO: Configuration should determine the type of controller and which are plugged in. Can also read from SDL to figure out if any controllers are plugged in.
         OtrLib::OTRController* pad = new OtrLib::KeyboardController(0);
-        OtrLib::OTRWindow::Controllers[0] = std::make_shared<OtrLib::OTRController>(*pad);
+        OtrLib::OTRWindow::Controllers[0] = std::shared_ptr<OtrLib::OTRController>(pad);
 
         for (size_t i = 0; i < __osMaxControllers; i++) {
             if (OtrLib::OTRWindow::Controllers[i] != nullptr) {
@@ -41,12 +44,17 @@ extern "C" {
     }
 }
 
+extern "C" struct GfxRenderingAPI gfx_opengl_api;
+extern "C" struct GfxWindowManagerAPI gfx_sdl;
+extern "C" void StupidShimThingy(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi);
+
 namespace OtrLib {
     std::shared_ptr<OtrLib::OTRController> OTRWindow::Controllers[MAXCONTROLLERS] = { nullptr };
 
     OTRWindow::OTRWindow(std::shared_ptr<OTRContext> Context) : Context(Context) {
-        WmApi = &gfx_sdl;
-        RenderingApi = &gfx_opengl_api;
+        StupidShimThingy(&WmApi, &RenderingApi);
+        //WmApi = &gfx_sdl;
+        //RenderingApi = &gfx_opengl_api;
     }
 
     void OTRWindow::Init() {
@@ -55,7 +63,14 @@ namespace OtrLib {
     }
 
     void OTRWindow::RunCommands(Gfx* Commands) {
+        gfx_start_frame();
         gfx_run(Commands);
+        gfx_end_frame();
+    }
+
+    void OTRWindow::SetFrameDivisor(int divisor)
+    {
+        gfx_set_framedivisor(divisor);
     }
 
     void OTRWindow::MainLoop(void (*MainFunction)(void)) {

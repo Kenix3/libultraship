@@ -150,6 +150,9 @@
     <ClCompile Include="OTRContext.cpp">
       <Filter>Source Files\Singleton</Filter>
     </ClCompile>
+    <ClCompile Include="OTRWindowShim.c">
+      <Filter>Source Files\Singleton</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRMaterialFactory.h">

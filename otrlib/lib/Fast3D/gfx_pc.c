@@ -161,10 +161,6 @@ static struct GfxRenderingAPI *gfx_rapi;
 int markerOn;
 uintptr_t segmentPointers[16];
 
-#define OTR_NUM_TEX_SLOTS 1024
-static char** otrTexSlots;
-static int otrTexSlotIndex;
-
 #ifdef _MSC_VER
 // TODO: Properly implement for MSVC
 static unsigned long get_time(void) 
@@ -1264,7 +1260,8 @@ static void gfx_dp_set_texture_image_otr(uint32_t format, uint32_t size, uint32_
 }
 
 static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette, uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks, uint32_t shifts) {
-    SUPPORT_CHECK(tmem == 0 || tmem == 256);
+    // OTRTODO:
+    //SUPPORT_CHECK(tmem == 0 || tmem == 256);
     rdp.texture_tile[tile].palette = palette; // palette should set upper 4 bits of color index in 4b mode
     rdp.texture_tile[tile].fmt = fmt;
     rdp.texture_tile[tile].siz = siz;
@@ -1650,6 +1647,9 @@ static void gfx_run_dl(Gfx* cmd) {
     for (;;) {
         uint32_t opcode = cmd->words.w0 >> 24;
         //uint32_t opcode = cmd->words.w0 & 0xFF;
+
+        //if (markerOn)
+            //printf("OP: %02X\n", opcode);
         
         switch (opcode) {
             // RSP commands:
@@ -1662,10 +1662,7 @@ static void gfx_run_dl(Gfx* cmd) {
             int bp = 0;
             markerOn++;
         }
-
             break;
-
-
             case G_MTX:
                 if (seg_addr(cmd->words.w1) == matrixBP)
                 {
@@ -1842,15 +1839,14 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_SETTIMG_OTR:
             {
                 cmd++;
-                //char alloc[1024 * 64];
-                //char* alloc = malloc(1024 * 4);
-                //char* alloc = otrTexSlots[otrTexSlotIndex++];
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 char* tex = ResourceMgr_LoadTexOriginalByCRC(hash);
                 cmd--;
 
                 if (tex != NULL)
                     gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), tex);
+
+                cmd++;
             }
                 break;
             case G_LOADBLOCK:
@@ -1970,17 +1966,8 @@ void gfx_init(struct GfxWindowManagerAPI *wapi, struct GfxRenderingAPI *rapi, co
     gfx_wapi->init(game_name, start_in_fullscreen);
     gfx_rapi->init();
 
-    // OTR INIT STUFF
-    otrTexSlots = malloc(sizeof(char*) * OTR_NUM_TEX_SLOTS);
-    otrTexSlotIndex = 0;
-
-    for (int i = 0; i < OTR_NUM_TEX_SLOTS; i++)
-        otrTexSlots[i] = malloc(1024 * 4);
-    
     for (int i = 0; i < 16; i++)
-    {
         segmentPointers[i] = NULL;
-    }
 
     // Used in the 120 star TAS
     static uint32_t precomp_shaders[] = {
@@ -2034,8 +2021,6 @@ void gfx_run(Gfx *commands) {
     gfx_sp_reset();
     
     //puts("New frame");
-    
-    otrTexSlotIndex = 0;
 
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
@@ -2058,4 +2043,9 @@ void gfx_end_frame(void) {
         gfx_rapi->finish_render();
         gfx_wapi->swap_buffers_end();
     }
+}
+
+void gfx_set_framedivisor(int divisor)
+{
+    gfx_wapi->set_frame_divisor(divisor);
 }

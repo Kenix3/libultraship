@@ -68,6 +68,18 @@ namespace OtrLib
 		uint16_t drawDistance;
 	};
 
+	class OTRLightInfo
+	{
+	public:
+		OTRLightInfo();
+	public:
+		uint8_t type;
+		int16_t x, y, z;
+		uint8_t r, g, b;
+		uint8_t drawGlow;
+		int16_t radius;
+	};
+
 
 	class OTRSetWind : public OTRSceneCommand
 	{
@@ -78,6 +90,14 @@ namespace OtrLib
 		uint8_t clothFlappingStrength;
 
 		OTRSetWind(BinaryReader* reader);
+	};
+
+	class OTRExitList : public OTRSceneCommand
+	{
+	public:
+		std::vector<uint16_t> exits;
+
+		OTRExitList(BinaryReader* reader);
 	};
 
 	class OTRSetTimeSettings : public OTRSceneCommand
@@ -191,6 +211,14 @@ namespace OtrLib
 		OTRSetLightingSettings(BinaryReader* reader);
 	};
 
+	class OTRSetLightList : public OTRSceneCommand
+	{
+	public:
+		std::vector<OTRLightInfo> lights;
+
+		OTRSetLightList(BinaryReader* reader);
+	};
+
 	class OTRSetRoomList : public OTRSceneCommand
 	{
 	public:
@@ -237,6 +265,14 @@ namespace OtrLib
 		std::vector<uint16_t> objects;
 
 		OTRSetObjectList(BinaryReader* reader);
+	};
+
+	class OTRSetAlternateHeaders : public OTRSceneCommand
+	{
+	public:
+		std::vector<std::string> headers;
+
+		OTRSetAlternateHeaders(BinaryReader* reader);
 	};
 
 	class OTRActorSpawnEntry

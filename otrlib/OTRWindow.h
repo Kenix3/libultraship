@@ -19,6 +19,7 @@ namespace OtrLib {
 			void MainLoop(void (*MainFunction)(void));
 			void Init();
 			void RunCommands(Gfx* Commands);
+			void SetFrameDivisor(int divisor);
 
 		protected:
 		private:

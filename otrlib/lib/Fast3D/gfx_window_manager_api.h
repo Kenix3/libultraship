@@ -16,6 +16,7 @@ struct GfxWindowManagerAPI {
     void (*swap_buffers_begin)(void);
     void (*swap_buffers_end)(void);
     double (*get_time)(void); // For debug
+    void (*set_frame_divisor)(int);
 };
 
 #endif

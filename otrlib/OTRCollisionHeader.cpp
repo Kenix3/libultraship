@@ -67,6 +67,7 @@ void OtrLib::OTRCollisionHeaderV0::ParseFileBinary(BinaryReader* reader, OTRReso
 		OtrLib::WaterBoxHeader waterBox;
 		waterBox.xLength = reader->ReadInt16();
 		waterBox.ySurface = reader->ReadInt16();
+		waterBox.xMin = reader->ReadInt16();
 		waterBox.zMin = reader->ReadInt16();
 		waterBox.xLength = reader->ReadInt16();
 		waterBox.zLength = reader->ReadInt16();
