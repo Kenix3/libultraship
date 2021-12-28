@@ -19,8 +19,10 @@ namespace OtrLib
 		~OTRResourceMgr();
 
 		
+		char* LoadFileOriginal(std::string filePath);
 		DWORD LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
+		std::string HashToString(uint64_t hash);
 		std::shared_ptr<OTRResource> LoadOTRFile(std::string filePath);
 		std::shared_ptr<std::vector<std::shared_ptr<OTRFile>>> CacheDirectory(std::string searchMask);
 

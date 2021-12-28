@@ -134,7 +134,8 @@
 #define G_TEXRECT		0xe4	/* -28 */
 
 // CUSTOM OTR COMMANDS
-#define	G_SETTIMGOTR		0x20
+#define	G_SETTIMG_OTR		0x20
+#define G_DL_OTR			0x31
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1595,11 +1596,11 @@ typedef struct {
  * Generic Gfx Packet
  */
 typedef struct {
-	//unsigned int w0;
-	//unsigned int w1;
+	unsigned int w0;
+	unsigned int w1;
 
-	unsigned long long w0;
-	unsigned long long w1;
+	//unsigned long long w0;
+	//unsigned long long w1;
 } Gwords;
 
 /*

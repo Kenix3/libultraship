@@ -1,5 +1,5 @@
-#ifndef _ULTRA64_TYPES_H_
-#define _ULTRA64_TYPES_H_
+#ifndef ULTRA64_TYPES_H
+#define ULTRA64_TYPES_H
 
 typedef signed char            s8;
 typedef unsigned char          u8;
@@ -9,6 +9,11 @@ typedef signed int             s32;
 typedef unsigned int           u32;
 typedef signed long long int   s64;
 typedef unsigned long long int u64;
+
+#ifndef WIN32
+#define u32 u64
+#define s32 s64
+#endif
 
 typedef volatile u8  vu8;
 typedef volatile u16 vu16;
@@ -32,11 +37,12 @@ typedef union {
 typedef float MtxF_t[4][4];
 typedef union {
     MtxF_t mf;
+
     struct {
-        float xx, xy, xz, xw,
-              yx, yy, yz, yw,
-              zx, zy, zz, zw,
-              wx, wy, wz, ww;
+        float xx, yx, zx, wx,
+              xy, yy, zy, wy,
+              xz, yz, zz, wz,
+              xw, yw, zw, ww;
     };
 } MtxF;
 

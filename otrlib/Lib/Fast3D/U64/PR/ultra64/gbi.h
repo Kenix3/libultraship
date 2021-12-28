@@ -1,7 +1,41 @@
-#include "ultra64/mbi.h"
+#include "mbi.h"
 
-#ifndef _ULTRA64_GBI_H_
-#define _ULTRA64_GBI_H_
+#ifndef ULTRA64_GBI_H
+#define ULTRA64_GBI_H
+
+#ifdef _MSC_VER
+#ifndef u8
+#define u8	uint8_t
+#endif
+
+#ifndef u16
+#define u16 uint16_t
+#endif
+
+#ifndef u32
+#define u32 uint32_t
+#endif
+
+#ifndef u64
+#define u64 uint64_t
+#endif
+
+#ifndef s8
+#define s8	int8_t
+#endif
+
+#ifndef s16
+#define s16 int16_t
+#endif
+
+#ifndef s32
+#define s32 int32_t
+#endif
+
+#ifndef s64
+#define s64 int64_t
+#endif
+#endif
 
 /* To enable Fast3DEX grucode support, define F3DEX_GBI. */
 
@@ -122,6 +156,11 @@
 #define G_TEXRECTFLIP       0xe5    /* -27 */
 #define G_TEXRECT       0xe4    /* -28 */
 
+// CUSTOM OTR COMMANDS
+#define	G_SETTIMG_OTR		0x20
+#define G_DL_OTR			0x31
+#define G_VTX_OTR			0x32
+#define G_MARKER			0x33
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -951,6 +990,10 @@
 #define G_DL_PUSH       0x00
 #define G_DL_NOPUSH     0x01
 
+#if _MSC_VER
+#define _LANGUAGE_C
+#endif
+
 /*
  * BEGIN C-specific section: (typedef's)
  */
@@ -1582,6 +1625,9 @@ typedef struct {
 typedef struct {
     unsigned int w0;
     unsigned int w1;
+
+    //unsigned long long w0;
+    //unsigned long long w1;
 } Gwords;
 
 /*
@@ -1590,6 +1636,7 @@ typedef struct {
  */
 typedef union {
     Gwords      words;
+#if !defined(F3D_OLD) && IS_BIG_ENDIAN && !IS_64_BIT
     Gdma        dma;
     Gtri        tri;
     Gline3D     line;
@@ -1607,6 +1654,7 @@ typedef union {
     Gloadtile   loadtile;   /* use for loadblock also, th is dxt */
     Gsettilesize    settilesize;
     Gloadtlut   loadtlut;
+#endif
         long long int   force_structure_alignment;
 } Gfx;
 
@@ -1618,12 +1666,12 @@ typedef union {
  * DMA macros
  */
 #define gDma0p(pkt, c, s, l)                        \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL((c), 24, 8) | _SHIFTL((l), 0, 24);   \
     _g->words.w1 = (unsigned int)(s);               \
-}
+})
 
 #define gsDma0p(c, s, l)                        \
 {                                   \
@@ -1742,11 +1790,11 @@ _DW({                                   \
  * RSP short command (no DMA required) macros
  */
 #define gImmp0(pkt, c)                          \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL((c), 24, 8);             \
-}
+})
 
 #define gsImmp0(c)                          \
 {                                   \
@@ -1767,12 +1815,12 @@ _DW({                                   \
 }
 
 #define gImmp2(pkt, c, p0, p1)                      \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL((c), 24, 8);             \
     _g->words.w1 = _SHIFTL((p0), 16, 16) | _SHIFTL((p1), 8, 8); \
-}
+})
 
 #define gsImmp2(c, p0, p1)                      \
 {                                   \
@@ -1780,13 +1828,13 @@ _DW({                                   \
 }
 
 #define gImmp3(pkt, c, p0, p1, p2)                  \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL((c), 24, 8);             \
     _g->words.w1 = (_SHIFTL((p0), 16, 16) | _SHIFTL((p1), 8, 8) |   \
             _SHIFTL((p2), 0, 8));               \
-}
+})
 
 #define gsImmp3(c, p0, p1, p2)                      \
 {                                   \
@@ -1824,7 +1872,7 @@ _DW({                                   \
 /* Sprite immediate macros, there is also a sprite dma macro above */
 
 #define gSPSprite2DScaleFlip(pkt, sx, sy, fx, fy)                       \
-{                                                                       \
+_DW({                                                                       \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = (_SHIFTL(G_SPRITE2D_SCALEFLIP, 24, 8) |          \
@@ -1832,7 +1880,7 @@ _DW({                                   \
             _SHIFTL((fy), 0, 8));                           \
     _g->words.w1 = (_SHIFTL((sx), 16, 16) |                         \
             _SHIFTL((sy),  0, 16));                         \
-}
+})
 
 #define gsSPSprite2DScaleFlip(sx, sy, fx, fy)                           \
 {                                                                       \
@@ -1844,13 +1892,13 @@ _DW({                                   \
 }
 
 #define gSPSprite2DDraw(pkt, px, py)                                    \
-{                                                                       \
+_DW({                                                                       \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = (_SHIFTL(G_SPRITE2D_DRAW, 24, 8));               \
     _g->words.w1 = (_SHIFTL((px), 16, 16) |                         \
             _SHIFTL((py),  0, 16));                         \
-}
+})
 
 #define gsSPSprite2DDraw(px, py)                                        \
 {                                                                       \
@@ -1917,13 +1965,13 @@ _DW({                                   \
  ***  Line
  ***/
 #define gSPLine3D(pkt, v0, v1, flag)                    \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL(G_LINE3D, 24, 8)|            \
             __gsSPLine3D_w1f(v0, v1, 0, flag);      \
     _g->words.w1 = 0;                       \
-}
+})
 #define gsSPLine3D(v0, v1, flag)                    \
 {                                   \
     _SHIFTL(G_LINE3D, 24, 8)|__gsSPLine3D_w1f(v0, v1, 0, flag), \
@@ -1940,13 +1988,13 @@ _DW({                                   \
  * a 2.0 pixels wide line.
  */
 #define gSPLineW3D(pkt, v0, v1, wd, flag)               \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL(G_LINE3D, 24, 8)|            \
             __gsSPLine3D_w1f(v0, v1, wd, flag);     \
     _g->words.w1 = 0;                       \
-}
+})
 #define gsSPLineW3D(v0, v1, wd, flag)                   \
 {                                   \
     _SHIFTL(G_LINE3D, 24, 8)|__gsSPLine3D_w1f(v0, v1, wd, flag),    \
@@ -2071,13 +2119,13 @@ _DW({                                   \
 
 #if (defined(F3DEX_GBI)||defined(F3DLP_GBI))
 #define gSPCullDisplayList(pkt,vstart,vend)             \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL(G_CULLDL, 24, 8) |           \
             _SHIFTL((vstart)*2, 0, 16);         \
     _g->words.w1 = _SHIFTL((vend)*2, 0, 16);            \
-}
+})
 
 #define gsSPCullDisplayList(vstart,vend)                \
 {                                   \
@@ -2102,7 +2150,7 @@ _DW({                                   \
 }
 #endif
 
-#define gSPSegment(pkt, segment, base)                  \
+#define __gSPSegment(pkt, segment, base)                  \
     gMoveWd(pkt, G_MW_SEGMENT, (segment)*4, base)
 #define gsSPSegment(segment, base)                  \
     gsMoveWd(    G_MW_SEGMENT, (segment)*4, base)
@@ -2126,12 +2174,12 @@ _DW({                                   \
  * r should be one of: FRUSTRATIO_1, FRUSTRATIO_2, FRUSTRATIO_3, ... FRUSTRATIO_6
  */
 #define gSPClipRatio(pkt, r)                        \
-{                                   \
+_DW({                                   \
     gMoveWd(pkt, G_MW_CLIP, G_MWO_CLIP_RNX, FR_NEG_##r);        \
     gMoveWd(pkt, G_MW_CLIP, G_MWO_CLIP_RNY, FR_NEG_##r);        \
     gMoveWd(pkt, G_MW_CLIP, G_MWO_CLIP_RPX, FR_POS_##r);        \
     gMoveWd(pkt, G_MW_CLIP, G_MWO_CLIP_RPY, FR_POS_##r);        \
-}
+})
 
 #define gsSPClipRatio(r)                        \
     gsMoveWd(G_MW_CLIP, G_MWO_CLIP_RNX, FR_NEG_##r),        \
@@ -2165,9 +2213,10 @@ _DW({                                   \
  */
 #ifdef  F3DEX_GBI_2
 #define gSPForceMatrix(pkt, mptr)                   \
-{   gDma2p((pkt),G_MOVEMEM,(mptr),sizeof(Mtx),G_MV_MATRIX,0);   \
+_DW({  \
+    gDma2p((pkt),G_MOVEMEM,(mptr),sizeof(Mtx),G_MV_MATRIX,0);   \
     gMoveWd((pkt), G_MW_FORCEMTX,0,0x00010000);         \
-}
+})
 #define gsSPForceMatrix(mptr)                       \
     gsDma2p(G_MOVEMEM,(mptr),sizeof(Mtx),G_MV_MATRIX,0),        \
     gsMoveWd(G_MW_FORCEMTX,0,0x00010000)
@@ -2196,12 +2245,12 @@ _DW({                                   \
  */
 #if (defined(F3DEX_GBI)||defined(F3DLP_GBI))
 # define gSPModifyVertex(pkt, vtx, where, val)              \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
     _g->words.w0 = (_SHIFTL(G_MODIFYVTX,24,8)|          \
                 _SHIFTL((where),16,8)|_SHIFTL((vtx)*2,0,16));   \
     _g->words.w1 = (unsigned int)(val);             \
-}
+})
 # define gsSPModifyVertex(vtx, where, val)              \
 {                                   \
     _SHIFTL(G_MODIFYVTX,24,8)|                  \
@@ -2242,7 +2291,7 @@ _DW({                                   \
     G_DEPTOZSrg(zval, near, far, flag, 0, G_MAXZ)
 
 #define gSPBranchLessZrg(pkt, dl, vtx, zval, near, far, flag, zmin, zmax) \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
     _g->words.w0 = _SHIFTL(G_RDPHALF_1,24,8);           \
     _g->words.w1 = (unsigned int)(dl);              \
@@ -2250,7 +2299,7 @@ _DW({                                   \
     _g->words.w0 = (_SHIFTL(G_BRANCH_Z,24,8)|           \
                 _SHIFTL((vtx)*5,12,12)|_SHIFTL((vtx)*2,0,12));  \
     _g->words.w1 = G_DEPTOZSrg(zval, near, far, flag, zmin, zmax);  \
-}
+})
 
 #define gsSPBranchLessZrg(dl, vtx, zval, near, far, flag, zmin, zmax)         \
 {   _SHIFTL(G_RDPHALF_1,24,8),                        \
@@ -2271,7 +2320,7 @@ _DW({                                   \
  *  zval = Raw value of screen depth
  */
 #define gSPBranchLessZraw(pkt, dl, vtx, zval)               \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
     _g->words.w0 = _SHIFTL(G_RDPHALF_1,24,8);           \
     _g->words.w1 = (unsigned int)(dl);              \
@@ -2279,7 +2328,7 @@ _DW({                                   \
     _g->words.w0 = (_SHIFTL(G_BRANCH_Z,24,8)|           \
                 _SHIFTL((vtx)*5,12,12)|_SHIFTL((vtx)*2,0,12));  \
     _g->words.w1 = (unsigned int)(zval);                \
-}
+})
 
 #define gsSPBranchLessZraw(dl, vtx, zval)               \
 {   _SHIFTL(G_RDPHALF_1,24,8),                        \
@@ -2329,12 +2378,12 @@ _DW({                                   \
  * gSPDma_io  DMA to/from DMEM/IMEM for DEBUG.
  */
 #define gSPDma_io(pkt, flag, dmem, dram, size)              \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
     _g->words.w0 = _SHIFTL(G_DMA_IO,24,8)|_SHIFTL((flag),23,1)| \
       _SHIFTL((dmem)/8,13,10)|_SHIFTL((size)-1,0,12);       \
     _g->words.w1 = (unsigned int)(dram);                \
-}
+})
 
 #define gsSPDma_io(flag, dmem, dram, size)              \
 {                                   \
@@ -2409,10 +2458,10 @@ _DW({                                   \
  * n should be one of LIGHT_1, LIGHT_2, ..., LIGHT_8
  */
 #define gSPLightColor(pkt, n, col)                  \
-{                                   \
+_DW({                                   \
     gMoveWd(pkt, G_MW_LIGHTCOL, G_MWO_a##n, col);           \
     gMoveWd(pkt, G_MW_LIGHTCOL, G_MWO_b##n, col);           \
-}
+})
 #define gsSPLightColor(n, col)                      \
     gsMoveWd(G_MW_LIGHTCOL, G_MWO_a##n, col),           \
     gsMoveWd(G_MW_LIGHTCOL, G_MWO_b##n, col)
@@ -2420,34 +2469,34 @@ _DW({                                   \
 /* These macros use a structure "name" which is init'd with the gdSPDefLights macros*/
 
 #define gSPSetLights0(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_0);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.a,2);                    \
-}
+})
 #define gsSPSetLights0(name)                        \
     gsSPNumLights(NUMLIGHTS_0),                 \
     gsSPLight(&name.l[0],1),                    \
     gsSPLight(&name.a,2)
 
 #define gSPSetLights1(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_1);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.a,2);                    \
-}
+})
 #define gsSPSetLights1(name)                        \
     gsSPNumLights(NUMLIGHTS_1),                 \
     gsSPLight(&name.l[0],1),                    \
     gsSPLight(&name.a,2)
 
 #define gSPSetLights2(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_2);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.l[1],2);                 \
     gSPLight(pkt,&name.a,3);                    \
-}
+})
 #define gsSPSetLights2(name)                        \
     gsSPNumLights(NUMLIGHTS_2),                 \
     gsSPLight(&name.l[0],1),                    \
@@ -2455,13 +2504,13 @@ _DW({                                   \
     gsSPLight(&name.a,3)
 
 #define gSPSetLights3(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_3);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.l[1],2);                 \
     gSPLight(pkt,&name.l[2],3);                 \
     gSPLight(pkt,&name.a,4);                    \
-}
+})
 #define gsSPSetLights3(name)                        \
     gsSPNumLights(NUMLIGHTS_3),                 \
     gsSPLight(&name.l[0],1),                    \
@@ -2470,14 +2519,14 @@ _DW({                                   \
     gsSPLight(&name.a,4)
 
 #define gSPSetLights4(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_4);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.l[1],2);                 \
     gSPLight(pkt,&name.l[2],3);                 \
     gSPLight(pkt,&name.l[3],4);                 \
     gSPLight(pkt,&name.a,5);                    \
-}
+})
 #define gsSPSetLights4(name)                        \
     gsSPNumLights(NUMLIGHTS_4),                 \
     gsSPLight(&name.l[0],1),                    \
@@ -2487,7 +2536,7 @@ _DW({                                   \
     gsSPLight(&name.a,5)
 
 #define gSPSetLights5(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_5);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.l[1],2);                 \
@@ -2495,7 +2544,7 @@ _DW({                                   \
     gSPLight(pkt,&name.l[3],4);                 \
     gSPLight(pkt,&name.l[4],5);                 \
     gSPLight(pkt,&name.a,6);                    \
-}
+})
 
 #define gsSPSetLights5(name)                        \
     gsSPNumLights(NUMLIGHTS_5),                 \
@@ -2507,7 +2556,7 @@ _DW({                                   \
     gsSPLight(&name.a,6)
 
 #define gSPSetLights6(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_6);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.l[1],2);                 \
@@ -2516,7 +2565,7 @@ _DW({                                   \
     gSPLight(pkt,&name.l[4],5);                 \
     gSPLight(pkt,&name.l[5],6);                 \
     gSPLight(pkt,&name.a,7);                    \
-}
+})
 
 #define gsSPSetLights6(name)                        \
     gsSPNumLights(NUMLIGHTS_6),                 \
@@ -2529,7 +2578,7 @@ _DW({                                   \
     gsSPLight(&name.a,7)
 
 #define gSPSetLights7(pkt,name)                     \
-{                                   \
+_DW({                                   \
     gSPNumLights(pkt,NUMLIGHTS_7);                  \
     gSPLight(pkt,&name.l[0],1);                 \
     gSPLight(pkt,&name.l[1],2);                 \
@@ -2539,7 +2588,7 @@ _DW({                                   \
     gSPLight(pkt,&name.l[5],6);                 \
     gSPLight(pkt,&name.l[6],7);                 \
     gSPLight(pkt,&name.a,8);                    \
-}
+})
 
 #define gsSPSetLights7(name)                        \
     gsSPNumLights(NUMLIGHTS_7),                 \
@@ -2654,7 +2703,7 @@ _DW({                                   \
  * which is currently reserved in the microcode.
  */
 # define gSPTextureL(pkt, s, t, level, xparam, tile, on)        \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = (_SHIFTL(G_TEXTURE,24,8) |           \
@@ -2662,7 +2711,7 @@ _DW({                                   \
             _SHIFTL((level),11,3) | _SHIFTL((tile),8,3) |   \
             _SHIFTL((on),1,7));             \
     _g->words.w1 = (_SHIFTL((s),16,16) | _SHIFTL((t),0,16));    \
-}
+})
 # define gsSPTextureL(s, t, level, xparam, tile, on)            \
 {                                   \
     (_SHIFTL(G_TEXTURE,24,8) | _SHIFTL((xparam),16,8) |     \
@@ -2947,12 +2996,12 @@ _DW({                                   \
  */
 
 #define gDPSetCombine(pkt, muxs0, muxs1)                \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL(G_SETCOMBINE, 24, 8) | _SHIFTL(muxs0, 0, 24);\
     _g->words.w1 = (unsigned int)(muxs1);               \
-}
+})
 
 #define gsDPSetCombine(muxs0, muxs1)                    \
 {                                   \
@@ -3022,8 +3071,35 @@ _DW({                                   \
  *      TEXEL0, 0, SHADE, 0, TEXEL0, 0, SHADE, 0)
  */
 
+/*
+#if _MSC_VER
+#define gDPSetCombineMode(pkt, a, b)	gDPNoParam(pkt, G_NOOP)
+#else
 #define gDPSetCombineMode(pkt, a, b)    gDPSetCombineLERP(pkt, a, b)
+//#define gDPSetCombineMode(pkt, a, b)    gDPSetCombineLERP(pkt, ##a, b)
+#endif
+*/
+
+#ifdef _MSC_VER
+#define CALL_2(A,B) A B
+#define CALL_3(A,B,C) A B C
+
+#define gDPSetCombineMode(pkt, a, b)	CALL_3(gDPSetCombineLERP, (pkt, a, b))
+#define	gsDPSetCombineMode(a, b)	CALL_2(gsDPSetCombineLERP, (a, b))
+#else
+#define gDPSetCombineMode(pkt, a, b)	gDPSetCombineLERP(pkt, a, b)
+#define	gsDPSetCombineMode(a, b)	gsDPSetCombineLERP(a, b)
+#endif
+
+#if _MSC_VER
+#define CALL_2(A,B) A B
+#define CALL_3(A,B,C) A B C
+
+#define	gsDPSetCombineMode(a, b)	CALL_2(gsDPSetCombineLERP, (a, b))
+//#define gsDPSetCombineMode(a, b)    _SHIFTL(0, 24, 8), 0
+#else
 #define gsDPSetCombineMode(a, b)    gsDPSetCombineLERP(a, b)
+#endif
 
 #define gDPSetColor(pkt, c, d)                      \
 _DW({                                   \
@@ -3287,7 +3363,7 @@ _DW({                                   \
 
 #define gDPLoadTextureBlock(pkt, timg, fmt, siz, width, height,     \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,     \
         0 , cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3303,11 +3379,11 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 #define gDPLoadTextureBlockYuv(pkt, timg, fmt, siz, width, height,  \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,     \
         0 , cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3323,14 +3399,14 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /* Load fix rww 27jun95 */
 /* The S at the end means odd lines are already word Swapped */
 
 #define gDPLoadTextureBlockS(pkt, timg, fmt, siz, width, height,    \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,     \
         0 , cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3345,7 +3421,7 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /*
  *  Allow tmem address and render tile to be specified.
@@ -3353,7 +3429,7 @@ _DW({                                   \
  */
 #define gDPLoadMultiBlockS(pkt, timg, tmem, rtile, fmt, siz, width,     \
            height, pal, cms, cmt, masks, maskt, shifts, shiftt) \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE,  \
         0 , cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3368,12 +3444,12 @@ _DW({                                   \
     gDPSetTileSize(pkt, rtile, 0, 0,                \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 
 #define gDPLoadTextureBlockYuvS(pkt, timg, fmt, siz, width, height, \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,     \
         0 , cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3388,14 +3464,14 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /*
  *  allows tmem address to be specified
  */
 #define _gDPLoadTextureBlock(pkt, timg, tmem, fmt, siz, width, height,  \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE,  \
         0, cmt, maskt, shiftt, cms, masks, shifts);     \
@@ -3410,14 +3486,14 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /*
  *  allows tmem address and render tile to be specified
  */
 #define _gDPLoadTextureBlockTile(pkt, timg, tmem, rtile, fmt, siz, width,  \
         height, pal, cms, cmt, masks, maskt, shifts, shiftt)    \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 0,\
         cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3432,14 +3508,14 @@ _DW({                                   \
     gDPSetTileSize(pkt, rtile, 0, 0,                \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /*
  *  allows tmem address and render tile to be specified
  */
 #define gDPLoadMultiBlock(pkt, timg, tmem, rtile, fmt, siz, width,      \
         height, pal, cms, cmt, masks, maskt, shifts, shiftt)    \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);    \
     gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 0,\
         cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3454,7 +3530,7 @@ _DW({                                   \
     gDPSetTileSize(pkt, rtile, 0, 0,                \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 #define gsDPLoadTextureBlock(timg, fmt, siz, width, height,     \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
@@ -3594,7 +3670,7 @@ _DW({                                   \
 
 #define gDPLoadTextureBlock_4b(pkt, timg, fmt, width, height,       \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);        \
     gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0,  \
         cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3609,14 +3685,14 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /* Load fix rww 27jun95 */
 /* The S at the end means odd lines are already word Swapped */
 
 #define gDPLoadTextureBlock_4bS(pkt, timg, fmt, width, height,      \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);        \
     gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0,  \
         cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3630,14 +3706,14 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /*
  *  4-bit load block.  Useful when loading multiple tiles
  */
 #define gDPLoadMultiBlock_4b(pkt, timg, tmem, rtile, fmt, width, height,\
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);        \
     gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0,   \
         cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3652,7 +3728,7 @@ _DW({                                   \
     gDPSetTileSize(pkt, rtile, 0, 0,                \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 /*
  *  4-bit load block.  Allows tmem and render tile to be specified.  Useful when
@@ -3660,7 +3736,7 @@ _DW({                                   \
  */
 #define gDPLoadMultiBlock_4bS(pkt, timg, tmem, rtile, fmt, width, height,\
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);        \
     gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0,   \
         cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3674,12 +3750,12 @@ _DW({                                   \
     gDPSetTileSize(pkt, rtile, 0, 0,                \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 
 #define _gDPLoadTextureBlock_4b(pkt, timg, tmem, fmt, width, height,    \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);        \
     gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0,   \
         cmt, maskt, shiftt, cms, masks, shifts);        \
@@ -3694,7 +3770,7 @@ _DW({                                   \
     gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,          \
         ((width)-1) << G_TEXTURE_IMAGE_FRAC,            \
         ((height)-1) << G_TEXTURE_IMAGE_FRAC);          \
-}
+})
 
 #define gsDPLoadTextureBlock_4b(timg, fmt, width, height,       \
         pal, cms, cmt, masks, maskt, shifts, shiftt)        \
@@ -3931,7 +4007,7 @@ _DW({                                   \
 #define gDPLoadTextureTile_4b(pkt, timg, fmt, width, height,        \
         uls, ult, lrs, lrt, pal,                \
         cms, cmt, masks, maskt, shifts, shiftt)         \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, G_IM_SIZ_8b, ((width)>>1), timg);  \
     gDPSetTile(pkt, fmt, G_IM_SIZ_8b,               \
            (((((lrs)-(uls)+1)>>1)+7)>>3), 0,            \
@@ -3953,7 +4029,7 @@ _DW({                                   \
             (ult)<<G_TEXTURE_IMAGE_FRAC,            \
             (lrs)<<G_TEXTURE_IMAGE_FRAC,            \
             (lrt)<<G_TEXTURE_IMAGE_FRAC);           \
-}
+})
 
 /*
  *  Load texture tile.  Allows tmem address and render tile to be specified.
@@ -3962,7 +4038,7 @@ _DW({                                   \
 #define gDPLoadMultiTile_4b(pkt, timg, tmem, rtile, fmt, width, height, \
         uls, ult, lrs, lrt, pal,                \
         cms, cmt, masks, maskt, shifts, shiftt)         \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, fmt, G_IM_SIZ_8b, ((width)>>1), timg);  \
     gDPSetTile(pkt, fmt, G_IM_SIZ_8b,                   \
            (((((lrs)-(uls)+1)>>1)+7)>>3), tmem,         \
@@ -3984,7 +4060,7 @@ _DW({                                   \
             (ult)<<G_TEXTURE_IMAGE_FRAC,            \
             (lrs)<<G_TEXTURE_IMAGE_FRAC,            \
             (lrt)<<G_TEXTURE_IMAGE_FRAC);           \
-}
+})
 
 #define gsDPLoadTextureTile_4b(timg, fmt, width, height,        \
         uls, ult, lrs, lrt, pal,                \
@@ -4045,7 +4121,7 @@ _DW({                                   \
 #ifndef _HW_VERSION_1
 
 #define gDPLoadTLUT_pal16(pkt, pal, dram)               \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);  \
     gDPTileSync(pkt);                       \
     gDPSetTile(pkt, 0, 0, 0, (256+(((pal)&0xf)*16)),        \
@@ -4053,7 +4129,7 @@ _DW({                                   \
     gDPLoadSync(pkt);                       \
     gDPLoadTLUTCmd(pkt, G_TX_LOADTILE, 15);             \
     gDPPipeSync(pkt);                       \
-}
+})
 
 #else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
 
@@ -4099,7 +4175,7 @@ _DW({                                   \
 #ifndef _HW_VERSION_1
 
 #define gDPLoadTLUT_pal256(pkt, dram)                   \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);  \
     gDPTileSync(pkt);                       \
     gDPSetTile(pkt, 0, 0, 0, 256,                   \
@@ -4107,7 +4183,7 @@ _DW({                                   \
     gDPLoadSync(pkt);                       \
     gDPLoadTLUTCmd(pkt, G_TX_LOADTILE, 255);            \
     gDPPipeSync(pkt);                       \
-}
+})
 
 #else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
 
@@ -4147,7 +4223,7 @@ _DW({                                   \
 #ifndef _HW_VERSION_1
 
 #define gDPLoadTLUT(pkt, count, tmemaddr, dram)             \
-{                                   \
+_DW({                                   \
     gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);  \
     gDPTileSync(pkt);                       \
     gDPSetTile(pkt, 0, 0, 0, tmemaddr,              \
@@ -4155,7 +4231,7 @@ _DW({                                   \
     gDPLoadSync(pkt);                       \
     gDPLoadTLUTCmd(pkt, G_TX_LOADTILE, ((count)-1));        \
     gDPPipeSync(pkt);                       \
-}
+})
 
 #else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
 
@@ -4253,7 +4329,7 @@ _DW({                                   \
 
 /* like gDPFillRectangle but accepts negative arguments */
 #define gDPScisFillRectangle(pkt, ulx, uly, lrx, lry)           \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = (_SHIFTL(G_FILLRECT, 24, 8) |            \
@@ -4261,10 +4337,10 @@ _DW({                                   \
             _SHIFTL(MAX((lry),0), 2, 10));          \
     _g->words.w1 = (_SHIFTL(MAX((ulx),0), 14, 10) |         \
             _SHIFTL(MAX((uly),0), 2, 10));          \
-}
+})
 
 #define gDPSetConvert(pkt, k0, k1, k2, k3, k4, k5)          \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = (_SHIFTL(G_SETCONVERT, 24, 8) |          \
@@ -4272,7 +4348,7 @@ _DW({                                   \
             _SHIFTR(k2, 5, 4));             \
     _g->words.w1 = (_SHIFTL(k2, 27, 5) | _SHIFTL(k3, 18, 9) |   \
             _SHIFTL(k4, 9, 9) | _SHIFTL(k5, 0, 9));     \
-}
+})
 
 #define gsDPSetConvert(k0, k1, k2, k3, k4, k5)              \
 {                                   \
@@ -4283,13 +4359,13 @@ _DW({                                   \
 }
 
 #define gDPSetKeyR(pkt, cR, sR, wR)                 \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL(G_SETKEYR, 24, 8);           \
     _g->words.w1 = (_SHIFTL(wR, 16, 12) | _SHIFTL(cR, 8, 8) |   \
             _SHIFTL(sR, 0, 8));             \
-}
+})
 
 #define gsDPSetKeyR(cR, sR, wR)                     \
 {                                   \
@@ -4298,14 +4374,14 @@ _DW({                                   \
 }
 
 #define gDPSetKeyGB(pkt, cG, sG, wG, cB, sB, wB)            \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = (_SHIFTL(G_SETKEYGB, 24, 8) |            \
             _SHIFTL(wG, 12, 12) | _SHIFTL(wB, 0, 12));  \
     _g->words.w1 = (_SHIFTL(cG, 24, 8) | _SHIFTL(sG, 16, 8) |   \
              _SHIFTL(cB, 8, 8) | _SHIFTL(sB, 0, 8));    \
-}
+})
 
 #define gsDPSetKeyGB(cG, sG, wG, cB, sB, wB)                \
 {                                   \
@@ -4329,12 +4405,12 @@ _DW({                                   \
 }
 
 #define gDPParam(pkt, cmd, param)                   \
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL(cmd, 24, 8);             \
     _g->words.w1 = (param);                     \
-}
+})
 
 #define gsDPParam(cmd, param)                       \
 {                                   \
@@ -4358,7 +4434,7 @@ _DW({                                   \
 }
 
 #define gDPTextureRectangle(pkt, xl, yl, xh, yh, tile, s, t, dsdx, dtdy)\
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
     if (pkt);                               \
     _g->words.w0 = (_SHIFTL(G_TEXRECT, 24, 8) | _SHIFTL(xh, 12, 12) |   \
@@ -4368,7 +4444,7 @@ _DW({                                   \
     _g ++;                              \
     _g->words.w0 = (_SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16));        \
     _g->words.w1 = (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16));  \
-}
+})
 
 #define gsDPTextureRectangleFlip(xl, yl, xh, yh, tile, s, t, dsdx, dtdy) \
 {                                   \
@@ -4382,7 +4458,7 @@ _DW({                                   \
 }
 
 #define gDPTextureRectangleFlip(pkt, xl, yl, xh, yh, tile, s, t, dsdx, dtdy)\
-{                                   \
+_DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
     if (pkt);                               \
     _g->words.w0 = (_SHIFTL(G_TEXRECTFLIP, 24, 8) | _SHIFTL(xh, 12, 12) | \
@@ -4392,7 +4468,7 @@ _DW({                                   \
     _g ++;                              \
     _g->words.w0 = (_SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16));        \
     _g->words.w1 = (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16));  \
-}
+})
 
 #define gsSPTextureRectangle(xl, yl, xh, yh, tile, s, t, dsdx, dtdy)    \
     (_SHIFTL(G_TEXRECT, 24, 8) | _SHIFTL(xh, 12, 12) | _SHIFTL(yh, 0, 12)),\
@@ -4414,7 +4490,7 @@ _DW({                                   \
 
 /* like gSPTextureRectangle but accepts negative position arguments */
 #define gSPScisTextureRectangle(pkt, xl, yl, xh, yh, tile, s, t, dsdx, dtdy) \
-{                                                                            \
+_DW({                                                                            \
     Gfx *_g = (Gfx *)(pkt);                                                  \
                                                                              \
     _g->words.w0 = (_SHIFTL(G_TEXRECT, 24, 8) |                              \
@@ -4438,7 +4514,7 @@ _DW({                                   \
              0, 16)));                                           \
     gImmp1(pkt, G_RDPHALF_2, (_SHIFTL((dsdx), 16, 16) |                      \
                               _SHIFTL((dtdy), 0, 16)));                      \
-}
+})
 
 #define gsSPTextureRectangleFlip(xl, yl, xh, yh, tile, s, t, dsdx, dtdy) \
     (_SHIFTL(G_TEXRECTFLIP, 24, 8) | _SHIFTL(xh, 12, 12) |      \
@@ -4448,7 +4524,7 @@ _DW({                                   \
     gsImmp1(G_RDPHALF_2, (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16)))
 
 #define gSPTextureRectangleFlip(pkt, xl, yl, xh, yh, tile, s, t, dsdx, dtdy) \
-{                                       \
+_DW({                                       \
     Gfx *_g = (Gfx *)(pkt);                         \
                                      \
     _g->words.w0 = (_SHIFTL(G_TEXRECTFLIP, 24, 8) | _SHIFTL(xh, 12, 12) |\
@@ -4457,19 +4533,19 @@ _DW({                                   \
             _SHIFTL(yl, 0, 12));                \
     gImmp1(pkt, G_RDPHALF_1, (_SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16))); \
     gImmp1(pkt, G_RDPHALF_2, (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16))); \
-}
+})
 
 #define gsDPWord(wordhi, wordlo)            \
     gsImmp1(G_RDPHALF_1, (unsigned int)(wordhi)),   \
     gsImmp1(G_RDPHALF_2, (unsigned int)(wordlo))
 
 #define gDPWord(pkt, wordhi, wordlo)            \
-{                           \
+_DW({                           \
     Gfx *_g = (Gfx *)(pkt);             \
                             \
     gImmp1(pkt, G_RDPHALF_1, (unsigned int)(wordhi));   \
     gImmp1(pkt, G_RDPHALF_2, (unsigned int)(wordlo));   \
-}
+})
 
 #define gDPFullSync(pkt)    gDPNoParam(pkt, G_RDPFULLSYNC)
 #define gsDPFullSync()      gsDPNoParam(G_RDPFULLSYNC)

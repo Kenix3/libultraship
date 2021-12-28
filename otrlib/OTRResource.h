@@ -10,12 +10,17 @@ namespace OtrLib
 {
     enum class ResourceType
     {
-        OTRArchive      =   0x4F415243, // OARC
-        OTRModel        =   0x4F4D444C, // OMDL
-        OTRTexture      =   0x4F544558, // OTEX
-        OTRMaterial     =   0x4F4D4154, // OMAT
-        OTRAnimation    =   0x4F414E4D, // OANM
-        OTRDisplayList  =   0x4F444C54, // ODLT
+        OTRArchive          =   0x4F415243,     // OARC
+        OTRModel            =   0x4F4D444C,     // OMDL
+        OTRTexture          =   0x4F544558,     // OTEX
+        OTRMaterial         =   0x4F4D4154,     // OMAT
+        OTRAnimation        =   0x4F414E4D,     // OANM
+        OTRPlayerAnimation  =   0x4F50414D,     // OPAM
+        OTRDisplayList      =   0x4F444C54,     // ODLT
+        OTRRoom             =   0x4F524F4D,     // OROM
+        OTRCollisionHeader  =   0x4F434F4C,     // OCOL
+        OTRSkeleton         =   0x4F534B4C,     // OSKL
+        OTRSkeletonLimb     =   0x4F534C42,     // OSLB
     };
 
     enum class DataType

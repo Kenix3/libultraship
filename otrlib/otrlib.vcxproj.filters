@@ -46,8 +46,14 @@
     <Filter Include="Header Files\Resources\Factories">
       <UniqueIdentifier>{75c0ab92-1379-464e-a57f-045c91f85bc0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\mpq\ResourceManager">
+      <UniqueIdentifier>{f55940df-9e1a-45fe-a380-69c9a3254fd0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\Controller">
-      <UniqueIdentifier>{081deaf2-9d13-4bfc-8b6c-ca984e0e7635}</UniqueIdentifier>
+      <UniqueIdentifier>{bec61d88-f3a8-466d-b3e8-cf2e7d963f1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Singleton">
+      <UniqueIdentifier>{c0f07350-c627-444e-9f66-23e19407ad9a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -56,9 +62,6 @@
     </ClCompile>
     <ClCompile Include="Factories\OTRResourceLoader.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRResourceMgr.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_cc.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
@@ -71,9 +74,6 @@
     </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_sdl2.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRContext.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OTRDisplayList.cpp">
       <Filter>Source Files\Resources</Filter>
@@ -105,14 +105,50 @@
     <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp">
       <Filter>Source Files\Lib</Filter>
     </ClCompile>
+    <ClCompile Include="Factories\OTRSceneFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRCollisionHeader.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRCollisionHeaderFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRDisplayListFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRPlayerAnimation.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRPlayerAnimationFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRSkeletonLimb.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRSkeleton.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRSkeletonFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRSkeletonLimbFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRResourceMgr.cpp">
+      <Filter>Source Files\mpq\ResourceManager</Filter>
+    </ClCompile>
     <ClCompile Include="OTRController.cpp">
       <Filter>Source Files\Controller</Filter>
     </ClCompile>
     <ClCompile Include="KeyboardController.cpp">
       <Filter>Source Files\Controller</Filter>
     </ClCompile>
-    <ClCompile Include="OTRInput.cpp">
-      <Filter>Source Files\Controller</Filter>
+    <ClCompile Include="OTRWindow.cpp">
+      <Filter>Source Files\Singleton</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRContext.cpp">
+      <Filter>Source Files\Singleton</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,9 +157,6 @@
     </ClInclude>
     <ClInclude Include="Factories\OTRResourceLoader.h">
       <Filter>Header Files\Resources\Factories</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRResourceMgr.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_cc.h">
       <Filter>Header Files\Lib\Fast3D</Filter>
@@ -136,9 +169,6 @@
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_sdl.h">
       <Filter>Header Files\Lib\Fast3D</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRContext.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OTRDisplayList.h">
       <Filter>Header Files\Resources</Filter>
@@ -170,17 +200,50 @@
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
       <Filter>Header Files\Lib\tinyxml2</Filter>
     </ClInclude>
+    <ClInclude Include="Factories\OTRSceneFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRCollisionHeader.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRCollisionHeaderFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRDisplayListFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRPlayerAnimation.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRPlayerAnimationFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRSkeleton.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRSkeletonLimb.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRSkeletonFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRSkeletonLimbFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRResourceMgr.h">
+      <Filter>Source Files\mpq\ResourceManager</Filter>
+    </ClInclude>
     <ClInclude Include="OTRController.h">
       <Filter>Source Files\Controller</Filter>
     </ClInclude>
     <ClInclude Include="KeyboardController.h">
       <Filter>Source Files\Controller</Filter>
     </ClInclude>
-    <ClInclude Include="UltraController.h">
-      <Filter>Source Files\Controller</Filter>
+    <ClInclude Include="OTRWindow.h">
+      <Filter>Source Files\Singleton</Filter>
     </ClInclude>
-    <ClInclude Include="OTRInput.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="OTRContext.h">
+      <Filter>Source Files\Singleton</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

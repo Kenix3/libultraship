@@ -1,5 +1,5 @@
-#ifndef _ULTRA64_CONTROLLER_H_
-#define _ULTRA64_CONTROLLER_H_
+#ifndef ULTRA64_CONTROLLER_H
+#define ULTRA64_CONTROLLER_H
 
 #include "ultra64.h"
 #include "ultra64/message.h"
@@ -102,20 +102,21 @@ typedef struct {
     /* 0x3C */ u32 status;
 } OSPifRam; // size = 0x40
 
-typedef struct {
+typedef struct OSContStatus {
     /* 0x00 */ u16 type; 
     /* 0x02 */ u8 status;
     /* 0x03 */ u8 errno;
 } OSContStatus; // size = 0x04
 
-typedef struct {
+typedef struct OSContPad {
     /* 0x00 */ u16 button;
     /* 0x02 */ s8 stick_x;
     /* 0x03 */ s8 stick_y;
     /* 0x04 */ u8 errno;
+    u8 padding;
 } OSContPad; // size = 0x06
 
-typedef struct {
+typedef struct OSContRamIo {
     /* 0x00 */ void* address;
     /* 0x04 */ u8 databuffer[32];
     /* 0x24 */ u8 addressCrc;

@@ -1,5 +1,5 @@
-#ifndef _ULTRA64_MBI_H_
-#define _ULTRA64_MBI_H_
+#ifndef ULTRA64_MBI_H
+#define ULTRA64_MBI_H
 
 /*
  * Header file for the Media Binary Interface
@@ -32,8 +32,8 @@
 #define G_ON    (1)
 #define G_OFF   (0)
 
-#include "ultra64/gbi.h"
-#include "ultra64/abi.h"
+#include "gbi.h"
+#include "abi.h"
 
 #define NUM_SEGMENTS        (16)
 #define SEGMENT_OFFSET(a)   ((u32)(a) & 0x00ffffff)

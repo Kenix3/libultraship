@@ -2,6 +2,11 @@
 
 namespace OtrLib
 {
+	OTRScene::~OTRScene()
+	{
+		int bp = 0;
+	}
+
 	void OTRSceneV0::ParseFileBinary(BinaryReader* reader, OTRResource* res)
 	{
 		OTRScene* scene = (OTRScene*)res;
@@ -11,9 +16,7 @@ namespace OtrLib
 		int cmdCnt = reader->ReadInt32();
 
 		for (int i = 0; i < cmdCnt; i++)
-		{
 			scene->commands.push_back(ParseSceneCommand(reader));
-		}
 	}
 
 	OTRSceneCommand* OTRSceneV0::ParseSceneCommand(BinaryReader* reader)
@@ -21,6 +24,8 @@ namespace OtrLib
 		OTRSceneCommandID cmdID = (OTRSceneCommandID)reader->ReadInt32();
 
 		reader->Seek(-4, SeekOffsetType::Current);
+
+		printf("CMD: 0x%02X\n", cmdID);
 
 		switch (cmdID)
 		{
@@ -41,9 +46,11 @@ namespace OtrLib
 		case OTRSceneCommandID::SetCollisionHeader: return new OTRSetCollisionHeader(reader);
 		case OTRSceneCommandID::SetEntranceList: return new OTRSetEntranceList(reader);
 		case OTRSceneCommandID::SetSpecialObjects: return new OTRSetSpecialObjects(reader);
+		case OTRSceneCommandID::SetObjectList: return new OTRSetObjectList(reader);
 		case OTRSceneCommandID::EndMarker: return new OTREndMarker(reader);
 		default:
 			printf("UNIMPLEMENTED COMMAND: %i\n", (int)cmdID);
+			reader->ReadInt32();
 			break;
 		}
 
@@ -110,10 +117,55 @@ namespace OtrLib
 		// TODO: FINISH!
 	}
 
+	OTRMeshData::OTRMeshData()
+	{
+		x = 0;
+		y = 0;
+		z = 0;
+		unk_06 = 0;
+		opa = "";
+		xlu = "";
+	}
+
 	OTRSetMesh::OTRSetMesh(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
 		data = reader->ReadByte();
 		meshHeaderType = reader->ReadByte();
+
+		int numPoly = reader->ReadByte();
+
+		for (int i = 0; i < numPoly; i++)
+		{
+			OTRMeshData mesh;
+
+			int polyType = reader->ReadByte();
+
+			// OTRTODO: FINISH THIS!
+			if (meshHeaderType == 0)
+			{
+				mesh.x = 0;
+				mesh.y = 0;
+				mesh.z = 0;
+				mesh.unk_06 = 0;
+			}
+			else if (meshHeaderType == 2)
+			{
+				mesh.x = reader->ReadInt16();
+				mesh.y = reader->ReadInt16();
+				mesh.z = reader->ReadInt16();
+				mesh.unk_06 = reader->ReadInt16();
+			}
+			else
+			{
+				int bp = 0;
+			}
+
+
+			mesh.opa = reader->ReadString();
+			mesh.xlu = reader->ReadString();
+
+			meshes.push_back(mesh);
+		}
 	}
 
 	OTRSetCameraSettings::OTRSetCameraSettings(BinaryReader* reader) : OTRSceneCommand(reader)
@@ -124,7 +176,7 @@ namespace OtrLib
 
 	OTRSetLightingSettings::OTRSetLightingSettings(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
-		int cnt = reader->ReadByte();
+		int cnt = reader->ReadInt32();
 
 		for (int i = 0; i < cnt; i++)
 		{
@@ -163,12 +215,19 @@ namespace OtrLib
 
 	OTRSetRoomList::OTRSetRoomList(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
-		// TODO: FINISH
+		uint32_t numRooms = reader->ReadInt32();
+
+		for (int i = 0; i < numRooms; i++)
+		{
+			std::string room = reader->ReadString();
+			rooms.push_back(room);
+		}
 	}
 
 	OTRSetCollisionHeader::OTRSetCollisionHeader(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
 		// TODO: FINISH
+		filePath = reader->ReadString();
 	}
 
 	OTRSetEntranceList::OTRSetEntranceList(BinaryReader* reader) : OTRSceneCommand(reader)
@@ -189,6 +248,14 @@ namespace OtrLib
 	{
 		elfMessage = reader->ReadByte();
 		globalObject = reader->ReadInt16();
+	}
+
+	OTRSetObjectList::OTRSetObjectList(BinaryReader* reader) : OTRSceneCommand(reader)
+	{
+		int numEntries = reader->ReadInt32();
+
+		for (int i = 0; i < numEntries; i++)
+			objects.push_back(reader->ReadUInt16());
 	}
 
 	OTRSetStartPositionList::OTRSetStartPositionList(BinaryReader* reader) : OTRSceneCommand(reader)

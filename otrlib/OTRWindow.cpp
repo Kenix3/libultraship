@@ -47,8 +47,6 @@ namespace OtrLib {
     OTRWindow::OTRWindow(std::shared_ptr<OTRContext> Context) : Context(Context) {
         WmApi = &gfx_sdl;
         RenderingApi = &gfx_opengl_api;
-
-        Init();
     }
 
     void OTRWindow::Init() {
@@ -56,26 +54,40 @@ namespace OtrLib {
         WmApi->set_keyboard_callbacks(OTRWindow::KeyDown, OTRWindow::KeyUp, OTRWindow::AllKeysUp);
     }
 
+    void OTRWindow::RunCommands(Gfx* Commands) {
+        gfx_run(Commands);
+    }
+
     void OTRWindow::MainLoop(void (*MainFunction)(void)) {
         WmApi->main_loop(MainFunction);
     }
 
     bool OTRWindow::KeyDown(int32_t dwScancode) {
+        bool bIsProcessed = false;
         for (size_t i = 0; i < __osMaxControllers; i++) {
             KeyboardController* pad = dynamic_cast<KeyboardController*>(OtrLib::OTRWindow::Controllers[i].get());
             if (pad != nullptr) {
-                pad->PressButton(dwScancode);
+                if (pad->PressButton(dwScancode)) {
+                    bIsProcessed = true;
+                }
             }
         }
+
+        return bIsProcessed;
     }
 
     bool OTRWindow::KeyUp(int32_t dwScancode) {
+        bool bIsProcessed = false;
         for (size_t i = 0; i < __osMaxControllers; i++) {
             KeyboardController* pad = dynamic_cast<KeyboardController*>(OtrLib::OTRWindow::Controllers[i].get());
             if (pad != nullptr) {
-                pad->ReleaseButton(dwScancode);
+                if (pad->ReleaseButton(dwScancode)) {
+                    bIsProcessed = true;
+                }
             }
         }
+
+        return bIsProcessed;
     }
 
     void OTRWindow::AllKeysUp(void) {

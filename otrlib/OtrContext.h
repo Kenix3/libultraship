@@ -2,11 +2,11 @@
 
 #include "stdint.h"
 #include "spdlog/spdlog.h"
-#include "OTRWindow.h"
 #include <memory>
 
 namespace OtrLib {
 	class OTRResourceMgr;
+	class OTRWindow;
 
 	class OTRContext {
 		public:
@@ -18,13 +18,13 @@ namespace OtrLib {
 			std::shared_ptr<OTRResourceMgr> GetResourceManager() { return ResourceMgr; }
 			std::shared_ptr<spdlog::logger> GetLogger() { return Logger; }
 
+			OTRContext(std::string Name, std::string mainPath, std::string patchesDirectory);
+			~OTRContext();
+
 		protected:
 
 		private:
 			static std::shared_ptr<OTRContext> Context;
-
-			OTRContext(std::string Name, std::string mainPath, std::string patchesDirectory);
-			~OTRContext();
 
 			std::shared_ptr<OTRResourceMgr> ResourceMgr;
 			std::shared_ptr<OTRWindow> Window;

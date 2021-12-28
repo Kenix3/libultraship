@@ -117,7 +117,11 @@ extern "C" {
         #ifdef _DLL
           #pragma comment(lib, "StormLibDUD.lib") // Debug Unicode CRT-DLL version
         #else
-          #pragma comment(lib, "StormLibDUS.lib") // Debug Unicode CRT-LIB version
+#ifndef _WIN64
+          #pragma comment(lib, "StormLibDUS32.lib") // Debug Unicode CRT-LIB version
+#else
+          #pragma comment(lib, "StormLibDUS64.lib") // Debug Unicode CRT-LIB version
+#endif
         #endif
       #endif
     #else                                         // RELEASE VERSIONS
@@ -131,7 +135,11 @@ extern "C" {
         #ifdef _DLL
           #pragma comment(lib, "StormLibRUD.lib") // Release Unicode CRT-DLL version
         #else
-          #pragma comment(lib, "StormLibRUS.lib") // Release Unicode CRT-LIB version
+#ifndef _WIN64
+          #pragma comment(lib, "StormLibRUS32.lib") // Release Unicode CRT-LIB version
+#else
+          #pragma comment(lib, "StormLibRUS64.lib") // Release Unicode CRT-LIB version
+#endif
         #endif
       #endif
     #endif

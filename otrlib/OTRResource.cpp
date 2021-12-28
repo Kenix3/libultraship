@@ -16,7 +16,7 @@ namespace OtrLib
 
     void OTRResourceFile::WriteFileBinary(BinaryWriter* writer, OTRResource* res)
     {
-
+        
     }
 
     void OTRResourceFile::WriteFileXML(tinyxml2::XMLElement* writer, OTRResource* res)
