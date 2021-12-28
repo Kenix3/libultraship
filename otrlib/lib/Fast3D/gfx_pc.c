@@ -427,7 +427,7 @@ static void import_texture_rgba16(int tile) {
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
 
     for (uint32_t i = 0; i < size_bytes / 2; i++) {
-        if (rdp.loaded_texture[tile].addr == 0)
+        if (rdp.loaded_texture[tile].addr == 0 || rdp.loaded_texture[tile].addr == 2)
             continue;
         
         uint16_t col16 = (addr[2 * i] << 8) | addr[2 * i + 1];
@@ -610,7 +610,8 @@ static void import_texture_ci8(int tile) {
     // OTRTODO:
     //return;
     
-    if ((uintptr_t)rdp.loaded_texture[tile].addr != 0x06000000 && (uintptr_t)rdp.loaded_texture[tile].addr != 0x06004000 && (uintptr_t)rdp.loaded_texture[tile].addr != 0x06008000)
+    // OTRTODO: DUMB DUMB HACK
+    if ((uintptr_t)addr != 0x06000000 && (uintptr_t)addr != 0x06004000 && (uintptr_t)addr != 0x06008000 && (uintptr_t)addr != 0x06000800 && ((uintptr_t)addr & 0xFF000000) != 0x06000000)
         for (uint32_t i = 0; i < size_bytes; i++) {
         uint8_t idx = addr[i];
         uint16_t col16 = (rdp.palette[idx * 2] << 8) | rdp.palette[idx * 2 + 1]; // Big endian load
@@ -1065,8 +1066,8 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
             float v = (v_arr[i]->v - rdp.texture_tile[rdp.first_tile_index].ult * 8) / 32.0f;
             if ((rdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT) {
                 // Linear filter adds 0.5f to the coordinates
-                u += 0.5f;
-                v += 0.5f;
+                //u += 0.5f;
+                //v += 0.5f;
             }
             buf_vbo[buf_vbo_len++] = u / tex_width;
             buf_vbo[buf_vbo_len++] = v / tex_height;
@@ -1622,7 +1623,9 @@ static inline void* seg_addr(uintptr_t w1)
     // Segmented?
     if (w1 >= 0xF0000000)
     {
-        int segNum = (w1 >> 24) - 0xF0;
+        int segNum = (w1 >> 24);
+
+        segNum -= 0xF0;
 
         if (segmentPointers[segNum] != 0)
             return segmentPointers[segNum];
@@ -1657,7 +1660,7 @@ static void gfx_run_dl(Gfx* cmd) {
             char dlName[4096];
             ResourceMgr_GetNameByCRC(hash, dlName);
             int bp = 0;
-            markerOn = true;
+            markerOn++;
         }
 
             break;
@@ -1669,8 +1672,18 @@ static void gfx_run_dl(Gfx* cmd) {
                     int bp = 0;
                 }
 
+                if (markerOn)
+                {
+                    int bp = 0;
+                }
+
 
 #ifdef F3DEX_GBI_2
+                if (cmd->words.w1 == 0xF1000000)
+                {
+                    int bp = 0;
+                }
+
                 gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t *) seg_addr(cmd->words.w1));
 #else
                 gfx_sp_matrix(C0(16, 8), (const int32_t *) seg_addr(cmd->words.w1));
@@ -1778,7 +1791,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 }
                 break;
             case (uint8_t)G_ENDDL:
-                markerOn = false;
+                markerOn--;
                 return;
 #ifdef F3DEX_GBI_2
             case G_GEOMETRYMODE:
