@@ -7,11 +7,10 @@
 #include <filesystem>
 
 namespace OtrLib {
-	OTRArchive::OTRArchive(std::string mainPath) : OTRArchive(mainPath, "")
-	{
+	OTRArchive::OTRArchive(std::string MainPath) : OTRArchive(MainPath, "") {
 	}
 
-	OTRArchive::OTRArchive(std::string mainPath, std::string patchesDirectory) : mainPath(mainPath), patchesDirectory(patchesDirectory) {
+	OTRArchive::OTRArchive(std::string MainPath, std::string PatchesPath) : MainPath(MainPath), PatchesPath(PatchesPath) {
 		Load();
 	}
 
@@ -19,14 +18,13 @@ namespace OtrLib {
 		Unload();
 	}
 
-	OTRArchive::OTRArchive()
-	{
+	OTRArchive::OTRArchive() {
 	}
 
 	std::shared_ptr<OTRArchive> OTRArchive::CreateArchive(std::string archivePath)
 	{
 		OTRArchive* otrArchive = new OTRArchive();
-		otrArchive->mainPath = archivePath;
+		otrArchive->MainPath = archivePath;
 
 		TCHAR* t_filename = new TCHAR[archivePath.size() + 1];
 		t_filename[archivePath.size()] = 0;
@@ -48,10 +46,10 @@ namespace OtrLib {
 	}
 
 	std::shared_ptr<OTRFile> OTRArchive::LoadFile(std::string filePath, bool includeParent) {
-		;		HANDLE fileHandle = NULL;
+		HANDLE fileHandle = NULL;
 
 		if (!SFileOpenFileEx(mainMPQ, filePath.c_str(), 0, &fileHandle)) {
-			spdlog::error("({}) Failed to open file {} from mpq archive {}", GetLastError(), filePath.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to open file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
 			return nullptr;
 		}
 
@@ -60,15 +58,15 @@ namespace OtrLib {
 		DWORD dwBytes;
 
 		if (!SFileReadFile(fileHandle, fileData.get(), dwFileSize, &dwBytes, NULL)) {
-			spdlog::error("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
 			if (!SFileCloseFile(fileHandle)) {
-				spdlog::error("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(), filePath.c_str(), mainPath.c_str());
+				spdlog::error("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
 			}
 			return nullptr;
 		}
 
 		if (!SFileCloseFile(fileHandle)) {
-			spdlog::error("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
 		}
 
 		auto file = std::make_shared<OTRFile>();
@@ -94,27 +92,24 @@ namespace OtrLib {
 		SystemTimeToFileTime(&sysTime, &t);
 		ULONGLONG stupidHack = static_cast<uint64_t>(t.dwHighDateTime) << (sizeof(t.dwHighDateTime) * 8) | t.dwLowDateTime;
 
-		if (!SFileCreateFile(mainMPQ, path.c_str(), stupidHack, dwFileSize, 0, MPQ_FILE_COMPRESS, &hFile))
-		//if (!SFileCreateFile(mainMPQ, path.c_str(), stupidHack, dwFileSize, 0, 0, &hFile))
-		{
-			spdlog::error("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), dwFileSize, path.c_str(), mainPath.c_str());
+		if (!SFileCreateFile(mainMPQ, path.c_str(), stupidHack, dwFileSize, 0, MPQ_FILE_COMPRESS, &hFile)) {
+			spdlog::error("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), dwFileSize, path.c_str(), MainPath.c_str());
 			return false;
 		}
 
 
-		if (!SFileWriteFile(hFile, (void*)fileData, dwFileSize, MPQ_COMPRESSION_ZLIB))
-		{
-			spdlog::error("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), dwFileSize, path.c_str(), mainPath.c_str());
+		if (!SFileWriteFile(hFile, (void*)fileData, dwFileSize, MPQ_COMPRESSION_ZLIB)) {
+			spdlog::error("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), dwFileSize, path.c_str(), MainPath.c_str());
 			if (!SFileCloseFile(hFile)) {
-				spdlog::error("({}) Failed to close file {} after write failure in archive {}", GetLastError(), path.c_str(), mainPath.c_str());
+				spdlog::error("({}) Failed to close file {} after write failure in archive {}", GetLastError(), path.c_str(), MainPath.c_str());
 			}
 			return false;
 		}
 
 		if (!SFileFinishFile(hFile)) {
-			spdlog::error("({}) Failed to finish file {} in archive {}", GetLastError(), path.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to finish file {} in archive {}", GetLastError(), path.c_str(), MainPath.c_str());
 			if (!SFileCloseFile(hFile)) {
-				spdlog::error("({}) Failed to close file {} after finish failure in archive {}", GetLastError(), path.c_str(), mainPath.c_str());
+				spdlog::error("({}) Failed to close file {} after finish failure in archive {}", GetLastError(), path.c_str(), MainPath.c_str());
 			}
 			return false;
 		}
@@ -128,7 +123,7 @@ namespace OtrLib {
 
 	bool OTRArchive::RemoveFile(std::string path) {
 		if (!SFileRemoveFile(mainMPQ, path.c_str(), 0)) {
-			spdlog::error("({}) Failed to remove file {} in archive {}", GetLastError(), path.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to remove file {} in archive {}", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
 		}
 		
@@ -137,7 +132,7 @@ namespace OtrLib {
 
 	bool OTRArchive::RenameFile(std::string oldPath, std::string newPath) {
 		if (!SFileRenameFile(mainMPQ, oldPath.c_str(), newPath.c_str())) {
-			spdlog::error("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldPath.c_str(), newPath.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldPath.c_str(), newPath.c_str(), MainPath.c_str());
 			return false;
 		}
 
@@ -165,23 +160,23 @@ namespace OtrLib {
 				else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
 				//else if (!fileFound)
 				{
-					spdlog::error("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
+					spdlog::error("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(), MainPath.c_str());
 					if (!SListFileFindClose(hFind)) {
-						spdlog::error("({}) Failed to close file search {} after failure in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
+						spdlog::error("({}) Failed to close file search {} after failure in archive {}", GetLastError(), searchMask.c_str(), MainPath.c_str());
 					}
 					return fileList;
 				}
 			} while (fileFound);
 		}
 		else if (GetLastError() != ERROR_NO_MORE_FILES) {
-			spdlog::error("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
+			spdlog::error("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(), MainPath.c_str());
 			return fileList;
 		}
 
 		if (hFind != nullptr)
 		{
 			if (!SFileFindClose(hFind)) {
-				spdlog::error("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(), mainPath.c_str());
+				spdlog::error("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(), MainPath.c_str());
 			}
 		}
 
@@ -194,7 +189,6 @@ namespace OtrLib {
 		auto start = std::chrono::steady_clock::now();
 
 		auto lst = ListFiles(filename);
-		//auto lst = addedFiles;
 		
 		for (auto item : lst)
 		{
@@ -240,8 +234,8 @@ namespace OtrLib {
 
 	bool OTRArchive::LoadPatchMPQs() {
 		// TODO: We also want to periodically scan the patch directories for new MPQs. When new MPQs are found we will load the contents to fileCache and then copy over to gameResourceAddresses
-		if (patchesDirectory.length() > 0) {
-			for (auto& p : std::filesystem::recursive_directory_iterator(patchesDirectory)) {
+		if (PatchesPath.length() > 0) {
+			for (auto& p : std::filesystem::recursive_directory_iterator(PatchesPath)) {
 				if (StringHelper::IEquals(p.path().extension().string(), ".otr") || StringHelper::IEquals(p.path().extension().string(), ".mpq")) {
 					if (!LoadPatchMPQ(p.path().string())) {
 						return false;
@@ -256,16 +250,16 @@ namespace OtrLib {
 	bool OTRArchive::LoadMainMPQ() {
 		HANDLE mpqHandle = NULL;
 
-		TCHAR* t_filename = new TCHAR[mainPath.size() + 1];
-		t_filename[mainPath.size()] = 0;
-		std::copy(mainPath.begin(), mainPath.end(), t_filename);
+		TCHAR* t_filename = new TCHAR[MainPath.size() + 1];
+		t_filename[MainPath.size()] = 0;
+		std::copy(MainPath.begin(), MainPath.end(), t_filename);
 
 		if (!SFileOpenArchive(t_filename, 0, 0 /*MPQ_OPEN_READ_ONLY*/, &mpqHandle)) {
-			spdlog::error("({}) Failed to open main mpq file {}.", GetLastError(), mainPath.c_str());
+			spdlog::error("({}) Failed to open main mpq file {}.", GetLastError(), MainPath.c_str());
 			return false;
 		}
 
-		mpqHandles[mainPath] = mpqHandle;
+		mpqHandles[MainPath] = mpqHandle;
 		mainMPQ = mpqHandle;
 
 		auto listFile = LoadFile("(listfile)", false);
@@ -288,12 +282,12 @@ namespace OtrLib {
 		HANDLE patchHandle = NULL;
 
 		if (!SFileOpenArchive((TCHAR*)path.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
-			spdlog::error("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
 		}
 
 		if (!SFileOpenPatchArchive(mainMPQ, (TCHAR*)path.c_str(), "", 0)) {
-			spdlog::error("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path.c_str(), mainPath.c_str());
+			spdlog::error("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
 		}
 

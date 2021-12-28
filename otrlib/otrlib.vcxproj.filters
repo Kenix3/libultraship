@@ -46,6 +46,15 @@
     <Filter Include="Header Files\Resources\Factories">
       <UniqueIdentifier>{75c0ab92-1379-464e-a57f-045c91f85bc0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\mpq\ResourceManager">
+      <UniqueIdentifier>{f55940df-9e1a-45fe-a380-69c9a3254fd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Controller">
+      <UniqueIdentifier>{bec61d88-f3a8-466d-b3e8-cf2e7d963f1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Singleton">
+      <UniqueIdentifier>{c0f07350-c627-444e-9f66-23e19407ad9a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\OTRMaterialFactory.cpp">
@@ -53,9 +62,6 @@
     </ClCompile>
     <ClCompile Include="Factories\OTRResourceLoader.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRResourceMgr.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_cc.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
@@ -68,9 +74,6 @@
     </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_sdl2.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
-    </ClCompile>
-    <ClCompile Include="OTRContext.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OTRDisplayList.cpp">
       <Filter>Source Files\Resources</Filter>
@@ -132,6 +135,21 @@
     <ClCompile Include="Factories\OTRSkeletonLimbFactory.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
+    <ClCompile Include="OTRResourceMgr.cpp">
+      <Filter>Source Files\mpq\ResourceManager</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRController.cpp">
+      <Filter>Source Files\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyboardController.cpp">
+      <Filter>Source Files\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRWindow.cpp">
+      <Filter>Source Files\Singleton</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRContext.cpp">
+      <Filter>Source Files\Singleton</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRMaterialFactory.h">
@@ -139,9 +157,6 @@
     </ClInclude>
     <ClInclude Include="Factories\OTRResourceLoader.h">
       <Filter>Header Files\Resources\Factories</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRResourceMgr.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_cc.h">
       <Filter>Header Files\Lib\Fast3D</Filter>
@@ -154,9 +169,6 @@
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_sdl.h">
       <Filter>Header Files\Lib\Fast3D</Filter>
-    </ClInclude>
-    <ClInclude Include="OTRContext.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OTRDisplayList.h">
       <Filter>Header Files\Resources</Filter>
@@ -217,6 +229,21 @@
     </ClInclude>
     <ClInclude Include="Factories\OTRSkeletonLimbFactory.h">
       <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRResourceMgr.h">
+      <Filter>Source Files\mpq\ResourceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRController.h">
+      <Filter>Source Files\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyboardController.h">
+      <Filter>Source Files\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRWindow.h">
+      <Filter>Source Files\Singleton</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRContext.h">
+      <Filter>Source Files\Singleton</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

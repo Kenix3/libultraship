@@ -9,8 +9,8 @@
 
 namespace OtrLib {
 
-	OTRResourceMgr::OTRResourceMgr(std::string mainPath, std::string patchesDirectory) {
-		archive = std::make_shared<OTRArchive>(mainPath, patchesDirectory);
+	OTRResourceMgr::OTRResourceMgr(std::string MainPath, std::string PatchesPath) {
+		archive = std::make_shared<OTRArchive>(MainPath, PatchesPath);
 	}
 
 	OTRResourceMgr::~OTRResourceMgr() {
@@ -91,7 +91,7 @@ namespace OtrLib {
 
 		auto memStream = std::make_shared<MemoryStream>(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
 		//MemoryStream memStream = MemoryStream(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
-		BinaryReader reader = BinaryReader(memStream);
+		BinaryReader reader = BinaryReader(memStream.get());
 		auto unmanagedResource = OTRResourceLoader::LoadResource(&reader);
 		resource = std::shared_ptr<OTRResource>(unmanagedResource);
 

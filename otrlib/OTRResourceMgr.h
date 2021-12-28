@@ -15,7 +15,7 @@ namespace OtrLib
 	class OTRResourceMgr
 	{
 	public:
-		OTRResourceMgr(std::string mainPath, std::string patchesDirectory);
+		OTRResourceMgr(std::string MainPath, std::string PatchesPath);
 		~OTRResourceMgr();
 
 		
