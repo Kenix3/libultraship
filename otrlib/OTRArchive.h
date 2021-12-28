@@ -21,8 +21,8 @@ namespace OtrLib
 	{
 	public:
 		OTRArchive();
-		OTRArchive(std::string mainPath);
-		OTRArchive(std::string mainPath, std::string patchesDirectory);
+		OTRArchive(std::string MainPath);
+		OTRArchive(std::string MainPath, std::string PatchesPath);
 		~OTRArchive();
 
 		static std::shared_ptr<OTRArchive> CreateArchive(std::string archivePath);
@@ -38,8 +38,8 @@ namespace OtrLib
 		bool Load();
 		bool Unload();
 	private:
-		std::string mainPath;
-		std::string patchesDirectory;
+		std::string MainPath;
+		std::string PatchesPath;
 		std::map<std::string, HANDLE> mpqHandles;
 		std::vector<std::string> addedFiles;
 		std::map<uint64_t, std::string> hashes;

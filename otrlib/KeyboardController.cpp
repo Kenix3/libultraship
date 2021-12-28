@@ -8,25 +8,24 @@ namespace OtrLib {
 		std::map<int32_t, int32_t> Defaults = std::map<int32_t, int32_t>();
 		switch (dwControllerNumber) {
 			case 0:
-				Defaults[SDL_Scancode::SDL_SCANCODE_RIGHT] = BTN_CRIGHT;
-				Defaults[SDL_Scancode::SDL_SCANCODE_LEFT] = BTN_CLEFT;
-				Defaults[SDL_Scancode::SDL_SCANCODE_DOWN] = BTN_CDOWN;
-				Defaults[SDL_Scancode::SDL_SCANCODE_UP] = BTN_CUP;
-				Defaults[SDL_Scancode::SDL_SCANCODE_RSHIFT] = BTN_R;
-				Defaults[SDL_Scancode::SDL_SCANCODE_SLASH] = BTN_L;
-				Defaults[SDL_Scancode::SDL_SCANCODE_H] = BTN_DRIGHT;
-				Defaults[SDL_Scancode::SDL_SCANCODE_F] = BTN_DLEFT;
-				Defaults[SDL_Scancode::SDL_SCANCODE_G] = BTN_DDOWN;
-				Defaults[SDL_Scancode::SDL_SCANCODE_T] = BTN_DUP;
-				Defaults[SDL_Scancode::SDL_SCANCODE_T] = BTN_DUP;
-				Defaults[SDL_Scancode::SDL_SCANCODE_SPACE] = BTN_START;
-				Defaults[SDL_Scancode::SDL_SCANCODE_K] = BTN_Z;
-				Defaults[SDL_Scancode::SDL_SCANCODE_COMMA] = BTN_B;
-				Defaults[SDL_Scancode::SDL_SCANCODE_L] = BTN_A;
-				Defaults[SDL_Scancode::SDL_SCANCODE_A] = BTN_STICKLEFT;
-				Defaults[SDL_Scancode::SDL_SCANCODE_D] = BTN_STICKRIGHT;
-				Defaults[SDL_Scancode::SDL_SCANCODE_S] = BTN_STICKDOWN;
-				Defaults[SDL_Scancode::SDL_SCANCODE_W] = BTN_STICKUP;
+				Defaults[0x14D] = BTN_CRIGHT;
+				Defaults[0x14B] = BTN_CLEFT;
+				Defaults[0x150] = BTN_CDOWN;
+				Defaults[0x148] = BTN_CUP;
+				Defaults[0x036] = BTN_R;
+				Defaults[0x035] = BTN_L;
+				Defaults[0x023] = BTN_DRIGHT;
+				Defaults[0x021] = BTN_DLEFT;
+				Defaults[0x022] = BTN_DDOWN;
+				Defaults[0x014] = BTN_DUP;
+				Defaults[0x039] = BTN_START;
+				Defaults[0x025] = BTN_Z;
+				Defaults[0x033] = BTN_B;
+				Defaults[0x026] = BTN_A;
+				Defaults[0x01E] = BTN_STICKLEFT;
+				Defaults[0x020] = BTN_STICKRIGHT;
+				Defaults[0x01F] = BTN_STICKDOWN;
+				Defaults[0x011] = BTN_STICKUP;
 				break;
 		}
 		return Defaults;
@@ -63,24 +62,28 @@ namespace OtrLib {
 		}
 	}
 
-	void KeyboardController::UpdateButtons() {
-		int32_t dwKeyCount;
-		auto keys = SDL_GetKeyboardState(&dwKeyCount);
-
-		for (const auto& [dwScancode, dwButtonMask] : ButtonMapping) {
-			if (dwScancode < dwKeyCount) {
-				UpdateButton(dwScancode, keys[dwScancode]);
-			}
+	bool KeyboardController::PressButton(int32_t dwScancode) {
+		if (ButtonMapping.contains(dwScancode)) {
+			dwPressedButtons |= ButtonMapping[dwScancode];
+			return true;
 		}
+
+		return false;
 	}
 
-	void KeyboardController::UpdateButton(int32_t dwScancode, bool bIsPressed) {
-		int32_t dwButtonMask = ButtonMapping[dwScancode];
-		
-		if (bIsPressed) {
-			dwPressedButtons |= dwButtonMask;
-		} else {
-			dwPressedButtons &= ~dwButtonMask;
+	bool KeyboardController::ReleaseButton(int32_t dwScancode) {
+		if (ButtonMapping.contains(dwScancode)) {
+			dwPressedButtons &= ~ButtonMapping[dwScancode];
+			return true;
 		}
+		return false;
+	}
+
+	void KeyboardController::ReleaseAllButtons() {
+		dwPressedButtons = 0;
+	}
+
+	void KeyboardController::SetButtonMapping(int32_t dwN64Button, int32_t dwScancode) {
+		ButtonMapping[dwN64Button] = dwScancode;
 	}
 }

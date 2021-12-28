@@ -4,7 +4,7 @@
 
 namespace OtrLib {
 	class KeyboardController : public OTRController {
-		friend class OTRInput;
+		friend class OTRWindow;
 
 		public:
 			static std::map<int32_t, int32_t> GetDefaultMapping(int32_t dwControllerNumber);
@@ -12,14 +12,15 @@ namespace OtrLib {
 			KeyboardController(int32_t dwControllerNumber);
 			~KeyboardController();
 			void Read(OSContPad* pad);
+			void SetButtonMapping(int32_t dwN64Button, int32_t dwScancode);
 
 		protected:
 
 		private:
-			void UpdateButtons();
-			void UpdateButton(int32_t dwScancode, bool bIsPressed);
+			bool PressButton(int32_t dwScancode);
+			bool ReleaseButton(int32_t dwScancode);
+			void ReleaseAllButtons();
 
-			int32_t dwPressedButtons;
 			std::map<int32_t, int32_t> ButtonMapping;
 	};
 }

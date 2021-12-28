@@ -9,6 +9,10 @@ namespace OtrLib {
 			OTRController(int32_t dwControllerNumber);
 			virtual void Read(OSContPad* pad);
 
+			int32_t GetContollerNumber() { return dwControllerNumber; }
+
+		protected:
+			int32_t dwPressedButtons;
 			int32_t dwControllerNumber;
 	};
 }

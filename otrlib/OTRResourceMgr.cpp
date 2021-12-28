@@ -7,8 +7,8 @@
 
 namespace OtrLib {
 
-	OTRResourceMgr::OTRResourceMgr(std::string mainPath, std::string patchesDirectory) {
-		archive = std::make_shared<OTRArchive>(mainPath, patchesDirectory);
+	OTRResourceMgr::OTRResourceMgr(std::string MainPath, std::string PatchesPath) {
+		archive = std::make_shared<OTRArchive>(MainPath, PatchesPath);
 	}
 
 	OTRResourceMgr::~OTRResourceMgr() {
