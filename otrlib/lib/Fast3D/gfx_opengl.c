@@ -183,7 +183,7 @@ static void append_formula(char *buf, size_t *len, uint8_t c[2][4], bool do_sing
     }
 }
 
-static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
     struct CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
@@ -271,23 +271,22 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint64_t shad
             append_str(fs_buf, &fs_len, ", ");
             append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][1], cc_features.do_multiply[c][1], cc_features.do_mix[c][1], true, true, true);
             append_str(fs_buf, &fs_len, ")");
-        } else {
+        }
+        else {
             append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0], cc_features.do_mix[c][0], cc_features.opt_alpha, false, cc_features.opt_alpha);
         }
         append_line(fs_buf, &fs_len, ";");
-        if (c == 0) {
-            // TODO discard if alpha is 0?
-            if (cc_features.opt_fog)
-            {
-                if (cc_features.opt_alpha)
-                {
-                    append_line(fs_buf, &fs_len, "texel = vec4(mix(texel.rgb, vFog.rgb, vFog.a), texel.a);");
-                }
-                else
-                {
-                    append_line(fs_buf, &fs_len, "texel = mix(texel, vFog.rgb, vFog.a);");
-                }
-            }
+    }
+    // TODO discard if alpha is 0?
+    if (cc_features.opt_fog)
+    {
+        if (cc_features.opt_alpha)
+        {
+            append_line(fs_buf, &fs_len, "texel = vec4(mix(texel.rgb, vFog.rgb, vFog.a), texel.a);");
+        }
+        else
+        {
+            append_line(fs_buf, &fs_len, "texel = mix(texel, vFog.rgb, vFog.a);");
         }
     }
 
