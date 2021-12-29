@@ -39,7 +39,7 @@ namespace OtrLib
 	public:
 		int16_t cameraSType;
 		int16_t numData;
-		int32_t cameraPosDataSeg;
+		int32_t cameraPosDataIdx;
 	};
 
 	class CameraPositionData

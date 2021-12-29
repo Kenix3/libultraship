@@ -64,8 +64,8 @@ namespace OtrLib
 		uint8_t diffuseClrB_R, diffuseClrB_G, diffuseClrB_B;
 		uint8_t diffuseDirB_X, diffuseDirB_Y, diffuseDirB_Z;
 		uint8_t fogClrR, fogClrG, fogClrB;
-		uint16_t unk;
-		uint16_t drawDistance;
+		uint16_t fogNear;
+		uint16_t fogFar;
 	};
 
 	class OTRLightInfo

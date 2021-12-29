@@ -23,6 +23,9 @@ namespace OtrLib {
 	{
 		filePath = StringHelper::Replace(filePath, "/", "\\");
 
+		if (StringHelper::StartsWith(filePath, "__OTR__"))
+			filePath = StringHelper::Split(filePath, "__OTR__")[1];
+
 		// File already loaded...?
 		if (fileCache.find(filePath) != fileCache.end()) {
 			return fileCache[filePath];

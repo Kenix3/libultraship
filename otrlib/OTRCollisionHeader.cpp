@@ -45,7 +45,7 @@ void OtrLib::OTRCollisionHeaderV0::ParseFileBinary(BinaryReader* reader, OTRReso
 		OtrLib::CameraDataEntry* entry = new OtrLib::CameraDataEntry();
 		entry->cameraSType = reader->ReadInt16();
 		entry->numData = reader->ReadInt16();
-		entry->cameraPosDataSeg = reader->ReadInt32();
+		entry->cameraPosDataIdx = reader->ReadInt32();
 		col->camData->entries.push_back(entry);
 	}
 

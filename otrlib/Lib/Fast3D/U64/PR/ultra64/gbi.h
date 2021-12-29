@@ -1777,7 +1777,7 @@ _DW({                                   \
         gsDma1p(      G_MOVEMEM, (v), sizeof(Vp), G_MV_VIEWPORT)
 #endif  /* F3DEX_GBI_2 */
 
-#define gSPDisplayList(pkt,dl)  gDma1p(pkt,G_DL,dl,0,G_DL_PUSH)
+#define __gSPDisplayList(pkt,dl)  gDma1p(pkt,G_DL,dl,0,G_DL_PUSH)
 #define gsSPDisplayList(   dl)  gsDma1p(   G_DL,dl,0,G_DL_PUSH)
 
 #define gSPBranchList(pkt,dl)   gDma1p(pkt,G_DL,dl,0,G_DL_NOPUSH)
@@ -2988,7 +2988,7 @@ _DW({                                   \
 #define gDPSetMaskImage(pkt, i)     gDPSetDepthImage(pkt, i)
 #define gsDPSetMaskImage(i)         gsDPSetDepthImage(i)
 
-#define gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
+#define __gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
 #define gsDPSetTextureImage(f, s, w, i) gsSetImage(G_SETTIMG, f, s, w, i)
 
 /*

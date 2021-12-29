@@ -217,8 +217,8 @@ namespace OtrLib
 			entry.fogClrG = reader->ReadByte();
 			entry.fogClrB = reader->ReadByte();
 
-			entry.unk = reader->ReadInt16();
-			entry.drawDistance = reader->ReadUInt16();
+			entry.fogNear = reader->ReadInt16();
+			entry.fogFar = reader->ReadUInt16();
 
 			settings.push_back(entry);
 		}

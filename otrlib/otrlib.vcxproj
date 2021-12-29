@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -80,12 +80,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPD\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -94,7 +94,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
