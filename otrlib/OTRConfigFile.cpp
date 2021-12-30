@@ -28,7 +28,7 @@ namespace OtrLib {
 		}
 	}
 
-	mINI::INIMap<std::string> OTRConfigFile::operator[](std::string Section) {
+	mINI::INIMap<std::string>& OTRConfigFile::operator[](std::string Section) {
 		return Val[Section];
 	}
 
@@ -136,9 +136,11 @@ namespace OtrLib {
 		(*this)["KEYBOARD SHORTCUTS"]["KEY_FULLSCREEN"] = std::to_string(0x044);
 		(*this)["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"] = std::to_string(0x029);
 
-		(*this)["WINDOW"]["WIDTH"] = std::to_string(320);
-		(*this)["WINDOW"]["HEIGHT"] = std::to_string(240);
-		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(true);
+		(*this)["WINDOW"]["WINDOW WIDTH"] = std::to_string(320);
+		(*this)["WINDOW"]["WINDOW HEIGHT"] = std::to_string(240);
+		(*this)["WINDOW"]["FULLSCREEN WIDTH"] = std::to_string(1920);
+		(*this)["WINDOW"]["FULLSCREEN HEIGHT"] = std::to_string(1080);
+		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(false);
 
 		(*this)["CONTROLLERS"]["CONTROLLER 1"] = "Keyboard";
 		(*this)["CONTROLLERS"]["CONTROLLER 2"] = "Unplugged";

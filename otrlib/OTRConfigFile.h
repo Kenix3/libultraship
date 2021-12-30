@@ -17,7 +17,7 @@ namespace OtrLib {
 			bool Save();
 
 			// Expose the ini values.
-			mINI::INIMap<std::string> operator[](std::string Section);
+			mINI::INIMap<std::string>& operator[](std::string Section);
 			mINI::INIMap<std::string> get(std::string Section);
 			bool has(std::string Section);
 			bool remove(std::string Section);
