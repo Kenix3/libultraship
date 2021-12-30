@@ -1616,8 +1616,10 @@ static inline void* seg_addr(uintptr_t w1)
 
         segNum -= 0xF0;
 
+        int offset = w1 & 0x00FFFFFF;
+
         if (segmentPointers[segNum] != 0)
-            return segmentPointers[segNum];
+            return segmentPointers[segNum] + offset;
         else
             return (void*)w1;
     }
@@ -1669,7 +1671,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
 
 #ifdef F3DEX_GBI_2
-                if (cmd->words.w1 == 0xF1000000)
+                if (cmd->words.w1 == 0xFD0003C0)
                 {
                     int bp = 0;
                 }

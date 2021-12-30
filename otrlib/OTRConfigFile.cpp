@@ -19,8 +19,6 @@ namespace OtrLib {
 	}
 
 	OTRConfigFile::~OTRConfigFile() {
-		(*this)["WINDOW"]["WIDTH"] = std::to_string(OTRContext::GetInstance()->GetWindow()->GetResolutionX());
-		(*this)["WINDOW"]["HEIGHT"] = std::to_string(OTRContext::GetInstance()->GetWindow()->GetResolutionY());
 		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(OTRContext::GetInstance()->GetWindow()->IsFullscreen());
 
 		if (!Save()) {
