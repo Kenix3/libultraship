@@ -19,6 +19,8 @@ namespace OtrLib {
 			void Init();
 			void RunCommands(Gfx* Commands);
 			void SetFrameDivisor(int divisor);
+			void ToggleFullscreen();
+			void SetFullscreen(bool bIsFullscreen);
 
 			bool IsFullscreen() { return bIsFullscreen; }
 			int32_t GetResolutionX();

@@ -88,6 +88,6 @@ namespace OtrLib {
 	}
 
 	std::string KeyboardController::GetConfSection() {
-		return "KEYBOARD CONTROLLER " + std::to_string(GetControllerNumber());
+		return "KEYBOARD CONTROLLER " + std::to_string(GetControllerNumber() + 1);
 	}
 }

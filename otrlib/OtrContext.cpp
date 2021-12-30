@@ -31,6 +31,7 @@ namespace OtrLib {
             // Setup Logging
             Logger = spdlog::create_async<spdlog::sinks::basic_file_sink_mt>("async_file_logger", "logs/" + Name + ".log");
             Logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
+            spdlog::set_level(spdlog::level::info);
             spdlog::set_default_logger(Logger);
         }
         catch (const spdlog::spdlog_ex& ex) {

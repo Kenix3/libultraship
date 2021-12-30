@@ -19,7 +19,7 @@ extern "C" {
         OtrLib::OTRConfigFile& Conf = *pConf.get();
 
         for (int32_t i = 0; i < __osMaxControllers; i++) {
-            std::string ControllerType = Conf["CONTROLLERS"]["CONTROLLER " + std::to_string(i)];
+            std::string ControllerType = Conf["CONTROLLERS"]["CONTROLLER " + std::to_string(i+1)];
             mINI::INIStringUtil::toLower(ControllerType);
 
             if (ControllerType == "keyboard") {
@@ -67,16 +67,20 @@ namespace OtrLib {
     std::shared_ptr<OtrLib::OTRController> OTRWindow::Controllers[MAXCONTROLLERS] = { nullptr };
 
     OTRWindow::OTRWindow(std::shared_ptr<OTRContext> Context) : Context(Context) {
+
+    }
+
+    void OTRWindow::Init() {
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
 
         SetWindowManager(&WmApi, &RenderingApi);
         bIsFullscreen = OtrLib::stob(Conf["WINDOW"]["FULLSCREEN"]);
-        dwWidth = OtrLib::stoi(Conf["WINDOW"]["WIDTH"], 320);
-        dwHeight = OtrLib::stoi(Conf["WINDOW"]["HEIGHT"], 240);
-    }
+        dwWidth = OtrLib::stoi(Conf["WINDOW"]["WINDOW WIDTH"], 320);
+        dwHeight = OtrLib::stoi(Conf["WINDOW"]["WINDOW HEIGHT"], 240);
+        dwWidth = OtrLib::stoi(Conf["WINDOW"]["FULLSCREEN WIDTH"], 1920);
+        dwHeight = OtrLib::stoi(Conf["WINDOW"]["FULLSCREEN HEIGHT"], 1080);
 
-    void OTRWindow::Init() {
         gfx_init(WmApi, RenderingApi, Context->GetName().c_str(), bIsFullscreen);
         WmApi->set_fullscreen_changed_callback(OTRWindow::OnFullscreenChanged);
         WmApi->set_keyboard_callbacks(OTRWindow::KeyDown, OTRWindow::KeyUp, OTRWindow::AllKeysUp);
@@ -88,9 +92,17 @@ namespace OtrLib {
         gfx_end_frame();
     }
 
-    void OTRWindow::SetFrameDivisor(int divisor)
-    {
+    void OTRWindow::SetFrameDivisor(int divisor) {
         gfx_set_framedivisor(divisor);
+    }
+
+    void OTRWindow::ToggleFullscreen() {
+        SetFullscreen(!bIsFullscreen);
+    }
+
+    void OTRWindow::SetFullscreen(bool bIsFullscreen) {
+        this->bIsFullscreen = bIsFullscreen;
+        WmApi->set_fullscreen(bIsFullscreen);
     }
 
     void OTRWindow::MainLoop(void (*MainFunction)(void)) {
@@ -112,11 +124,12 @@ namespace OtrLib {
     }
 
     bool OTRWindow::KeyUp(int32_t dwScancode) {
-        // Set fullscreen like so...
-        /*if (event.key.keysym.sym == SDLK_F10) {
-            set_fullscreen(!fullscreen_state, true);
-            break;
-        }*/
+        std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
+        OTRConfigFile& Conf = *pConf.get();
+
+        if (dwScancode == OtrLib::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_FULLSCREEN"])) {
+            OTRContext::GetInstance()->GetWindow()->ToggleFullscreen();
+        }
 
         bool bIsProcessed = false;
         for (size_t i = 0; i < __osMaxControllers; i++) {
