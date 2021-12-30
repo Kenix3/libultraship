@@ -9,7 +9,7 @@
 
 namespace OtrLib {
 
-	OTRResourceMgr::OTRResourceMgr(std::string MainPath, std::string PatchesPath) {
+	OTRResourceMgr::OTRResourceMgr(std::shared_ptr<OTRContext> Context, std::string MainPath, std::string PatchesPath) : Context(Context) {
 		archive = std::make_shared<OTRArchive>(MainPath, PatchesPath);
 	}
 

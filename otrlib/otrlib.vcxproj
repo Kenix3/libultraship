@@ -155,6 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="OTRConfigFile.cpp" />
     <ClCompile Include="OTRController.cpp" />
     <ClCompile Include="KeyboardController.cpp" />
     <ClCompile Include="Factories\OTRCollisionHeaderFactory.cpp" />
@@ -173,22 +174,29 @@
     <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="OTRArchive.cpp" />
     <ClCompile Include="OTRCollisionHeader.cpp" />
+    <ClCompile Include="OTRControllerAttachment.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
     <ClCompile Include="OTRContext.cpp" />
     <ClCompile Include="OTRFile.cpp" />
     <ClCompile Include="OTRMaterial.cpp" />
+    <ClCompile Include="OTRMemoryPack.cpp" />
     <ClCompile Include="OTRModel.cpp" />
     <ClCompile Include="OTRPlayerAnimation.cpp" />
     <ClCompile Include="OTRResource.cpp" />
     <ClCompile Include="OTRResourceMgr.cpp" />
+    <ClCompile Include="OTRRumblePack.cpp" />
     <ClCompile Include="OTRScene.cpp" />
     <ClCompile Include="OTRSkeleton.cpp" />
     <ClCompile Include="OTRSkeletonLimb.cpp" />
     <ClCompile Include="OTRTexture.cpp" />
     <ClCompile Include="OTRWindow.cpp" />
     <ClCompile Include="OTRWindowShim.c" />
+    <ClCompile Include="stox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="stox.h" />
+    <ClInclude Include="Lib\mINI\src\mini\ini.h" />
+    <ClInclude Include="OTRConfigFile.h" />
     <ClInclude Include="OTRController.h" />
     <ClInclude Include="KeyboardController.h" />
     <ClInclude Include="Factories\OTRCollisionHeaderFactory.h" />
@@ -207,19 +215,24 @@
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OTRArchive.h" />
     <ClInclude Include="OTRCollisionHeader.h" />
+    <ClInclude Include="OTRControllerAttachment.h" />
     <ClInclude Include="OTRDisplayList.h" />
     <ClInclude Include="OTRContext.h" />
     <ClInclude Include="OTRFile.h" />
+    <ClInclude Include="OTRMacros.h" />
     <ClInclude Include="OTRMaterial.h" />
+    <ClInclude Include="OTRMemoryPack.h" />
     <ClInclude Include="OTRModel.h" />
     <ClInclude Include="OTRPlayerAnimation.h" />
     <ClInclude Include="OTRResource.h" />
     <ClInclude Include="OTRResourceMgr.h" />
+    <ClInclude Include="OTRRumblePack.h" />
     <ClInclude Include="OTRScene.h" />
     <ClInclude Include="OTRSkeleton.h" />
     <ClInclude Include="OTRSkeletonLimb.h" />
     <ClInclude Include="OTRTexture.h" />
     <ClInclude Include="OTRWindow.h" />
+    <ClInclude Include="UltraController.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

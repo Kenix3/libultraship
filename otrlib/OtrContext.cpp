@@ -20,7 +20,7 @@ namespace OtrLib {
                 spdlog::error("No Main Archive passed to create instance");
             }
         } else {
-            spdlog::info("Trying to create a context when it already exists.");
+            spdlog::debug("Trying to create a context when it already exists.");
         }
 
         return Context;
@@ -37,8 +37,9 @@ namespace OtrLib {
             std::cout << "Log initialization failed: " << ex.what() << std::endl;
         }
 
-        ResourceMgr = std::make_shared<OTRResourceMgr>(MainPath, PatchesPath);
+        ResourceMgr = std::make_shared<OTRResourceMgr>(std::make_shared<OTRContext>(*this), MainPath, PatchesPath);
         Window = std::make_shared<OTRWindow>(std::make_shared<OTRContext>(*this));
+        Config = std::make_shared<OTRConfigFile>(std::make_shared<OTRContext>(*this), "otr.ini");
     }
 
     OTRContext::~OTRContext() {

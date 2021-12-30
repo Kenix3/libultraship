@@ -10,7 +10,6 @@
 #include "OTRContext.h"
 
 namespace OtrLib {
-	// TODO: GfxWindowManagerAPI and gfx_sdl2.c should be ported to C++ and placed here..
 	class OTRWindow {
 		public:
 			static std::shared_ptr<OtrLib::OTRController> Controllers[MAXCONTROLLERS];
@@ -21,16 +20,24 @@ namespace OtrLib {
 			void RunCommands(Gfx* Commands);
 			void SetFrameDivisor(int divisor);
 
+			bool IsFullscreen() { return bIsFullscreen; }
+			int32_t GetResolutionX();
+			int32_t GetResolutionY();
+
 		protected:
 		private:
 			static bool KeyDown(int32_t dwScancode);
 			static bool KeyUp(int32_t dwScancode);
 			static void AllKeysUp(void);
+			static void OnFullscreenChanged(bool bIsNowFullscreen);
 
 			std::shared_ptr<OTRContext> Context;
 
 			GfxWindowManagerAPI* WmApi;
 			GfxRenderingAPI* RenderingApi;
+			bool bIsFullscreen;
+			uint32_t dwWidth;
+			uint32_t dwHeight;
 	};
 }
 
