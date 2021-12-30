@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include "spdlog/spdlog.h"
 #include "OTRContext.h"
+#include "stox.h"
 
 namespace OtrLib {
 	KeyboardController::KeyboardController(int32_t dwControllerNumber) : OTRController(dwControllerNumber) {
@@ -55,24 +56,24 @@ namespace OtrLib {
 		std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
 		OTRConfigFile& Conf = *pConf.get();
 
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CRIGHT)])] = BTN_CRIGHT;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CLEFT)])] = BTN_CLEFT;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CDOWN)])] = BTN_CDOWN;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CUP)])] = BTN_CUP;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_R)])] = BTN_R;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_L)])] = BTN_L;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DRIGHT)])] = BTN_DRIGHT;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DLEFT)])] = BTN_DLEFT;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DDOWN)])] = BTN_DDOWN;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DUP)])] = BTN_DUP;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_START)])] = BTN_START;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_Z)])] = BTN_Z;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_B)])] = BTN_B;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_A)])] = BTN_A;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKRIGHT)])] = BTN_STICKRIGHT;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKLEFT)])] = BTN_STICKLEFT;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKDOWN)])] = BTN_STICKDOWN;
-		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKUP)])] = BTN_STICKUP;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_CRIGHT)])] = BTN_CRIGHT;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_CLEFT)])] = BTN_CLEFT;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_CDOWN)])] = BTN_CDOWN;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_CUP)])] = BTN_CUP;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_R)])] = BTN_R;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_L)])] = BTN_L;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_DRIGHT)])] = BTN_DRIGHT;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_DLEFT)])] = BTN_DLEFT;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_DDOWN)])] = BTN_DDOWN;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_DUP)])] = BTN_DUP;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_START)])] = BTN_START;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_Z)])] = BTN_Z;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_B)])] = BTN_B;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_A)])] = BTN_A;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_STICKRIGHT)])] = BTN_STICKRIGHT;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_STICKLEFT)])] = BTN_STICKLEFT;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_STICKDOWN)])] = BTN_STICKDOWN;
+		ButtonMapping[OtrLib::stoi(Conf[ConfSection][STR(BTN_STICKUP)])] = BTN_STICKUP;
 	}
 
 	void KeyboardController::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {

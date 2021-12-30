@@ -156,6 +156,9 @@
     <ClCompile Include="OTRResourceMgr.cpp">
       <Filter>Source Files\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="stox.cpp">
+      <Filter>Source Files\Lib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -271,6 +274,9 @@
     </ClInclude>
     <ClInclude Include="OTRMacros.h">
       <Filter>Source Files\Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="stox.h">
+      <Filter>Source Files\Lib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

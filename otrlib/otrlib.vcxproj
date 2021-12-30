@@ -191,8 +191,10 @@
     <ClCompile Include="OTRTexture.cpp" />
     <ClCompile Include="OTRWindow.cpp" />
     <ClCompile Include="OTRWindowShim.c" />
+    <ClCompile Include="stox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="stox.h" />
     <ClInclude Include="Lib\mINI\src\mini\ini.h" />
     <ClInclude Include="OTRConfigFile.h" />
     <ClInclude Include="OTRController.h" />

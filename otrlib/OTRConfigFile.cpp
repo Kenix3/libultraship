@@ -1,5 +1,7 @@
 #include "OTRConfigFile.h"
 #include "spdlog/spdlog.h"
+#include "OTRContext.h"
+#include "OTRWindow.h"
 
 namespace OtrLib {
 	OTRConfigFile::OTRConfigFile(std::shared_ptr<OTRContext> Context, std::string Path) : Context(Context), Path(Path), File(Path.c_str()) {
@@ -17,6 +19,10 @@ namespace OtrLib {
 	}
 
 	OTRConfigFile::~OTRConfigFile() {
+		(*this)["WINDOW"]["WIDTH"] = std::to_string(OTRContext::GetInstance()->GetWindow()->GetResolutionX());
+		(*this)["WINDOW"]["HEIGHT"] = std::to_string(OTRContext::GetInstance()->GetWindow()->GetResolutionY());
+		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(OTRContext::GetInstance()->GetWindow()->IsFullscreen());
+
 		if (!Save()) {
 			spdlog::error("Failed to save configs!!!");
 		}
@@ -130,9 +136,9 @@ namespace OtrLib {
 		(*this)["KEYBOARD SHORTCUTS"]["KEY_FULLSCREEN"] = std::to_string(0x044);
 		(*this)["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"] = std::to_string(0x029);
 
-		(*this)["WINDOW"]["RESOLUTION_X"] = std::to_string(320);
-		(*this)["WINDOW"]["RESOLUTION_Y"] = std::to_string(240);
-		(*this)["WINDOW"]["IS_FULLSCREEN"] = std::to_string(true);
+		(*this)["WINDOW"]["WIDTH"] = std::to_string(320);
+		(*this)["WINDOW"]["HEIGHT"] = std::to_string(240);
+		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(true);
 
 		(*this)["CONTROLLERS"]["CONTROLLER 1"] = "Keyboard";
 		(*this)["CONTROLLERS"]["CONTROLLER 2"] = "Unplugged";

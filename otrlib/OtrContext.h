@@ -28,10 +28,10 @@ namespace OtrLib {
 		private:
 			static std::shared_ptr<OTRContext> Context;
 
-			std::shared_ptr<OTRConfigFile> Config;
-			std::shared_ptr<OTRResourceMgr> ResourceMgr;
-			std::shared_ptr<OTRWindow> Window;
 			std::shared_ptr<spdlog::logger> Logger;
+			std::shared_ptr<OTRWindow> Window;
+			std::shared_ptr<OTRConfigFile> Config; // Config needs to be after the Window because we call the Window during it's destructor.
+			std::shared_ptr<OTRResourceMgr> ResourceMgr;
 			std::string Name;
 	};
 }
