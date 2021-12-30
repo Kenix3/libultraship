@@ -1,10 +1,12 @@
 #include "OTRWindow.h"
 #include "spdlog/spdlog.h"
 #include "KeyboardController.h"
+#include "OTRContext.h"
 #include "Lib/Fast3D/gfx_pc.h"
 #include "Lib/Fast3D/gfx_sdl.h"
 #include "Lib/Fast3D/gfx_opengl.h"
 #include <map>
+#include <string>
 
 extern "C" {
     struct OSMesgQueue;
@@ -12,10 +14,22 @@ extern "C" {
     uint8_t __osMaxControllers = MAXCONTROLLERS;
 
     int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status) {
+        std::shared_ptr<OtrLib::OTRConfigFile> pConf = OtrLib::OTRContext::GetInstance()->GetConfig();
+        OtrLib::OTRConfigFile& Conf = *pConf.get();
 
-        // TODO: Configuration should determine the type of controller and which are plugged in. Can also read from SDL to figure out if any controllers are plugged in.
-        OtrLib::OTRController* pad = new OtrLib::KeyboardController(0);
-        OtrLib::OTRWindow::Controllers[0] = std::shared_ptr<OtrLib::OTRController>(pad);
+        for (size_t i = 0; i < __osMaxControllers; i++) {
+            std::string ControllerType = Conf["CONTROLLERS"]["CONTROLLER " + std::to_string(i)];
+            mINI::INIStringUtil::toLower(ControllerType);
+
+            if (ControllerType == "keyboard") {
+                OtrLib::OTRController* pad = new OtrLib::KeyboardController(i);
+                OtrLib::OTRWindow::Controllers[i] = std::shared_ptr<OtrLib::OTRController>(pad);
+            } else if (ControllerType == "Unplugged") {
+                // Do nothing for unplugged controllers
+            } else {
+                spdlog::error("Invalid Controller Type: {}", ControllerType);
+            }
+        }
 
         for (size_t i = 0; i < __osMaxControllers; i++) {
             if (OtrLib::OTRWindow::Controllers[i] != nullptr) {

@@ -1,44 +1,11 @@
 #include "KeyboardController.h"
 #include <SDL2/SDL.h>
-#include <map>
 #include "spdlog/spdlog.h"
+#include "OTRContext.h"
 
 namespace OtrLib {
-	std::map<int32_t, int32_t> KeyboardController::GetDefaultMapping(int32_t dwControllerNumber) {
-		std::map<int32_t, int32_t> Defaults = std::map<int32_t, int32_t>();
-		switch (dwControllerNumber) {
-			case 0:
-				Defaults[0x14D] = BTN_CRIGHT;
-				Defaults[0x14B] = BTN_CLEFT;
-				Defaults[0x150] = BTN_CDOWN;
-				Defaults[0x148] = BTN_CUP;
-				Defaults[0x013] = BTN_R;
-				Defaults[0x012] = BTN_L;
-				Defaults[0x023] = BTN_DRIGHT;
-				Defaults[0x021] = BTN_DLEFT;
-				Defaults[0x022] = BTN_DDOWN;
-				Defaults[0x014] = BTN_DUP;
-				Defaults[0x039] = BTN_START;
-				Defaults[0x02C] = BTN_Z;
-				Defaults[0x02E] = BTN_B;
-				Defaults[0x02D] = BTN_A;
-				Defaults[0x01E] = BTN_STICKLEFT;
-				Defaults[0x020] = BTN_STICKRIGHT;
-				Defaults[0x01F] = BTN_STICKDOWN;
-				Defaults[0x011] = BTN_STICKUP;
-				break;
-		}
-		return Defaults;
-	}
-
-
 	KeyboardController::KeyboardController(int32_t dwControllerNumber) : OTRController(dwControllerNumber) {
-		dwPressedButtons = 0;
-
-		// TODO: Setup mappings from data. This is just the default from the SM64 guys. Note that L and the dpad have no values set.
-		if (dwControllerNumber == 0) {
-			ButtonMapping = GetDefaultMapping(dwControllerNumber);
-		}
+		LoadConfig();
 	}
 
 	KeyboardController::~KeyboardController() {
@@ -83,7 +50,43 @@ namespace OtrLib {
 		dwPressedButtons = 0;
 	}
 
-	void KeyboardController::SetButtonMapping(int32_t dwN64Button, int32_t dwScancode) {
-		ButtonMapping[dwN64Button] = dwScancode;
+	void KeyboardController::LoadConfig() {
+		std::string ConfSection = GetConfSection();
+		std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
+		OTRConfigFile& Conf = *pConf.get();
+
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CRIGHT)])] = BTN_CRIGHT;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CLEFT)])] = BTN_CLEFT;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CDOWN)])] = BTN_CDOWN;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_CUP)])] = BTN_CUP;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_R)])] = BTN_R;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_L)])] = BTN_L;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DRIGHT)])] = BTN_DRIGHT;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DLEFT)])] = BTN_DLEFT;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DDOWN)])] = BTN_DDOWN;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_DUP)])] = BTN_DUP;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_START)])] = BTN_START;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_Z)])] = BTN_Z;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_B)])] = BTN_B;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_A)])] = BTN_A;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKRIGHT)])] = BTN_STICKRIGHT;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKLEFT)])] = BTN_STICKLEFT;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKDOWN)])] = BTN_STICKDOWN;
+		ButtonMapping[std::stoi(Conf[ConfSection][STR(BTN_STICKUP)])] = BTN_STICKUP;
+	}
+
+	void KeyboardController::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {
+		// Update the config value.
+		std::string ConfSection = GetConfSection();
+		std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
+		OTRConfigFile& Conf = *pConf.get();
+		Conf[ConfSection][STR(BTN_CRIGHT)] = dwScancode;
+		
+		// Reload the button mapping from Config
+		LoadConfig();
+	}
+
+	std::string KeyboardController::GetConfSection() {
+		return "KEYBOARD CONTROLLER " + std::to_string(GetControllerNumber());
 	}
 }

@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <string>
 #include "OTRResource.h"
+#include "OTRContext.h"
 
 
 namespace OtrLib
@@ -15,7 +16,7 @@ namespace OtrLib
 	class OTRResourceMgr
 	{
 	public:
-		OTRResourceMgr(std::string MainPath, std::string PatchesPath);
+		OTRResourceMgr(std::shared_ptr<OTRContext> Context, std::string MainPath, std::string PatchesPath);
 		~OTRResourceMgr();
 
 		
@@ -30,6 +31,7 @@ namespace OtrLib
 		std::shared_ptr<OTRFile> LoadFileFromCache(std::string filePath);
 
 	private:
+		std::shared_ptr<OTRContext> Context;
 		std::map<std::string, std::shared_ptr<OTRFile>> fileCache;
 		std::map<std::string, std::shared_ptr<OTRResource>> otrCache;
 		std::map<std::string, std::shared_ptr<std::unordered_set<uintptr_t>>> gameResourceAddresses;

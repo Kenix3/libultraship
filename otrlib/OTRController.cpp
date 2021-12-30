@@ -3,9 +3,7 @@
 
 namespace OtrLib {
 	OTRController::OTRController(int32_t dwControllerNumber) : dwControllerNumber(dwControllerNumber) {
-
-	}
-	void OTRController::Read(OSContPad* pad)
-	{
+		dwPressedButtons = 0;
+		Attachment = nullptr;
 	}
 }
