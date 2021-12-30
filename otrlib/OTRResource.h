@@ -21,6 +21,8 @@ namespace OtrLib
         OTRCollisionHeader  =   0x4F434F4C,     // OCOL
         OTRSkeleton         =   0x4F534B4C,     // OSKL
         OTRSkeletonLimb     =   0x4F534C42,     // OSLB
+        OTRMatrix           =   0x4F4D5458,     // OMTX
+        OTRPath             =   0x4F505448,     // OPTH
     };
 
     enum class DataType
