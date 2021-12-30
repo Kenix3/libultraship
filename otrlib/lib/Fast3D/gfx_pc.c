@@ -1251,14 +1251,6 @@ static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t wi
     rdp.texture_to_load.siz = size;
 }
 
-static void gfx_dp_set_texture_image_otr(uint32_t format, uint32_t size, uint32_t width, const void* strAddr) 
-{
-    char* str = (char*)strAddr;
-
-    //rdp.texture_to_load.addr = addr;
-    //rdp.texture_to_load.siz = size;
-}
-
 static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette, uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks, uint32_t shifts) {
     // OTRTODO:
     //SUPPORT_CHECK(tmem == 0 || tmem == 256);
@@ -1659,6 +1651,7 @@ static void gfx_run_dl(Gfx* cmd) {
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             char dlName[4096];
             ResourceMgr_GetNameByCRC(hash, dlName);
+            printf("G_MARKER: %s\n", dlName);
             int bp = 0;
             markerOn++;
         }
@@ -1776,6 +1769,9 @@ static void gfx_run_dl(Gfx* cmd) {
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                     char fileName[4096];
                     ResourceMgr_GetNameByCRC(hash, fileName);
+                    
+                    printf("G_DL_OTR: %s\n", fileName);
+                    
                     Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
 
                     if (gfx != 0)
@@ -1811,6 +1807,9 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_tri1(C1(16, 8) / 10, C1(8, 8) / 10, C1(0, 8) / 10);
 #endif
                 break;
+#ifdef F3DEX_GBI_2
+            case G_QUAD:
+#endif
 #if defined(F3DEX_GBI) || defined(F3DLP_GBI)
             case (uint8_t)G_TRI2:
                 gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2);
@@ -1834,12 +1833,24 @@ static void gfx_run_dl(Gfx* cmd) {
             
             // RDP Commands:
             case G_SETTIMG:
-                gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), seg_addr(cmd->words.w1));
+                if (cmd->words.w1 == 0xF8000000)
+                {
+                    int bp = 0;
+                }
+
+                uintptr_t texPtr = seg_addr(cmd->words.w1);
+
+                if (texPtr != NULL)
+                    gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), texPtr);
                 break;
             case G_SETTIMG_OTR:
             {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                char fileName[4096];
+                ResourceMgr_GetNameByCRC(hash, fileName);
+                printf("G_SETTIMG_OTR: %s\n", fileName);
+
                 char* tex = ResourceMgr_LoadTexOriginalByCRC(hash);
                 cmd--;
 
