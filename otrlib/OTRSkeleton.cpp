@@ -19,6 +19,10 @@ namespace OtrLib
         int limbTblCnt = reader->ReadUInt32();
 
         for (int i = 0; i < limbTblCnt; i++)
-            skel->limbTable.push_back(reader->ReadString());
+        {
+            std::string limbPath = reader->ReadString();
+
+            skel->limbTable.push_back(limbPath);
+        }
     }
 }

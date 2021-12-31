@@ -30,7 +30,8 @@ namespace OtrLib {
 		if (fileCache.find(filePath) != fileCache.end()) {
 			return fileCache[filePath];
 		}
-		else {
+		else 
+		{
 			spdlog::debug("Cache miss on file load: {}", filePath.c_str());
 
 			auto file = archive.get()->LoadFile(filePath);

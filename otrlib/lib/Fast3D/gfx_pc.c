@@ -857,7 +857,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
         if (x > w) d->clip_rej |= 2;
         if (y < -w) d->clip_rej |= 4;
         if (y > w) d->clip_rej |= 8;
-        if (z < -w) d->clip_rej |= 16;
+        //if (z < -w) d->clip_rej |= 16;
         if (z > w) d->clip_rej |= 32;
         
         d->x = x;
@@ -1612,11 +1612,10 @@ static inline void* seg_addr(uintptr_t w1)
     // Segmented?
     if (w1 >= 0xF0000000)
     {
-        int segNum = (w1 >> 24);
-
+        uint32_t segNum = (w1 >> 24);
         segNum -= 0xF0;
 
-        int offset = w1 & 0x00FFFFFF;
+        uint32_t offset = w1 & 0x00FFFFFF;
 
         if (segmentPointers[segNum] != 0)
             return segmentPointers[segNum] + offset;
@@ -1634,6 +1633,10 @@ static inline void* seg_addr(uintptr_t w1)
 
 int dListBP;
 int matrixBP;
+
+extern Vtx object_ma1Vtx_004B18[];
+extern Vtx object_ma1Vtx_003318[];
+extern Vtx object_link_childVtx_01C978[];
 
 static void gfx_run_dl(Gfx* cmd) {
     //puts("dl");
@@ -1655,11 +1658,18 @@ static void gfx_run_dl(Gfx* cmd) {
             ResourceMgr_GetNameByCRC(hash, dlName);
             printf("G_MARKER: %s\n", dlName);
             int bp = 0;
-            markerOn++;
+            markerOn = true;
+
+
+            if (!strcmp(dlName, "object_link_child\\gLinkChildSwordAndSheathNearDL"))
+            {
+                 int bp = 0;
+            }
+
         }
             break;
             case G_MTX:
-                if (seg_addr(cmd->words.w1) == matrixBP)
+                if (seg_addr(cmd->words.w1) == (matrixBP + 0x3C0) && cmd->words.w1 == 0xFD0003C0)
                 {
                     int bp = 0;
                 }
@@ -1671,9 +1681,11 @@ static void gfx_run_dl(Gfx* cmd) {
 
 
 #ifdef F3DEX_GBI_2
-                if (cmd->words.w1 == 0xFD0003C0)
+                if (cmd->words.w1 == 0xFD0003C0 || cmd->words.w1 == 0xFD000000 || cmd->words.w1 & 0xFF000000 == 0xFD000000)
                 {
-                    int bp = 0;
+                    //int bp = 0;
+                    //++cmd;
+                    // continue;
                 }
 
                 gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t *) seg_addr(cmd->words.w1));
@@ -1726,9 +1738,37 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 char alloc[1024 * 64];
                 char fileName[4096];
-                //hash = 0xad0c2f3345f90b16;
                 ResourceMgr_GetNameByCRC(hash, fileName);
-                Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc);
+
+                printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
+
+                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc);
+
+                 /*if (strcmp(fileName, "object_ma1\\object_ma1Vtx_004B18") == 0)
+                 {
+                     int bp = 0;
+
+                     for (int i = 0; i < 533; i++)
+                     {
+                         if (vtx[i].force_structure_alignment != (Vtx*)object_ma1Vtx_004B18[i].force_structure_alignment)
+                             printf("OH NOOOOOOOOO!\n");
+                     }
+
+                     vtx = (Vtx*)object_ma1Vtx_004B18;
+                 }
+
+                if (strcmp(fileName, "object_ma1\\object_ma1Vtx_003318") == 0)
+                {
+                    int bp = 0;
+                    vtx = (Vtx*)object_ma1Vtx_003318;
+                }*/
+
+                 if (strcmp(fileName, "object_link_child\\object_link_childVtx_01C978") == 0)
+                 {
+                     int bp = 0;
+                     //vtx = (Vtx*)object_link_childVtx_01C978;
+                 }
+
 
                 if (vtx != NULL)
                 {
@@ -1771,8 +1811,13 @@ static void gfx_run_dl(Gfx* cmd) {
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                     char fileName[4096];
                     ResourceMgr_GetNameByCRC(hash, fileName);
+
+                    //if (!strcmp(fileName, "object_link_child\\gLinkChildDekuShieldAndSheathNearDL"))
+                    //{
+                        //int bp = 0;
+                    //}
                     
-                    printf("G_DL_OTR: %s\n", fileName);
+                    //printf("G_DL_OTR: %s\n", fileName);
                     
                     Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
 
@@ -1786,7 +1831,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 }
                 break;
             case (uint8_t)G_ENDDL:
-                markerOn--;
+                markerOn = false;
                 return;
 #ifdef F3DEX_GBI_2
             case G_GEOMETRYMODE:
@@ -1848,10 +1893,20 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_SETTIMG_OTR:
             {
                 cmd++;
-                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
                 char fileName[4096];
                 ResourceMgr_GetNameByCRC(hash, fileName);
-                printf("G_SETTIMG_OTR: %s\n", fileName);
+                //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
+
+                if (hash == 0x10e5dba950d5844d)
+                {
+                    int bp = 0;
+                }
+
+                if (!strcmp(fileName, "object_link_child\\gLinkChildDekuShieldBackTex"))
+                {
+                    int bp = 0;
+                }
 
                 char* tex = ResourceMgr_LoadTexOriginalByCRC(hash);
                 cmd--;
