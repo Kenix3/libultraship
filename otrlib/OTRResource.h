@@ -23,6 +23,7 @@ namespace OtrLib
         OTRSkeletonLimb     =   0x4F534C42,     // OSLB
         OTRMatrix           =   0x4F4D5458,     // OMTX
         OTRPath             =   0x4F505448,     // OPTH
+        OTRVtx              =   0x4F565458,     // OVTX
     };
 
     enum class DataType
