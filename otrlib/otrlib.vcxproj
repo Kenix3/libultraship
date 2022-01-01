@@ -189,11 +189,15 @@
     <ClCompile Include="OTRSkeleton.cpp" />
     <ClCompile Include="OTRSkeletonLimb.cpp" />
     <ClCompile Include="OTRTexture.cpp" />
+    <ClCompile Include="OTRVtx.cpp" />
+    <ClCompile Include="OTRVtxFactory.cpp" />
     <ClCompile Include="OTRWindow.cpp" />
     <ClCompile Include="OTRWindowShim.c" />
     <ClCompile Include="stox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="OTRVtx.h" />
+    <ClInclude Include="OTRVtxFactory.h" />
     <ClInclude Include="stox.h" />
     <ClInclude Include="Lib\mINI\src\mini\ini.h" />
     <ClInclude Include="OTRConfigFile.h" />
