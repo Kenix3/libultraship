@@ -6,6 +6,7 @@
 #include "OTRPlayerAnimationFactory.h"
 #include "OTRSkeletonFactory.h"
 #include "OTRSkeletonLimbFactory.h"
+#include "OTRVtxFactory.h"
 
 namespace OtrLib
 {
@@ -40,6 +41,9 @@ namespace OtrLib
             break;
         case ResourceType::OTRSkeletonLimb:
             result = OTRSkeletonLimbFactory::ReadSkeletonLimb(reader);
+            break;
+        case ResourceType::OTRVtx:
+            result = OTRVtxFactory::ReadVtx(reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED

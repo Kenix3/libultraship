@@ -1,5 +1,5 @@
 #pragma once
-#include "OTRVtx.h"
+#include "../OTRVtx.h"
 #include "Utils/BinaryReader.h"
 
 namespace OtrLib
