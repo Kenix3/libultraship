@@ -21,10 +21,10 @@ namespace OtrLib {
 
                 return Shared;
             } else {
-                spdlog::error("No Main Archive passed to create instance");
+                SPDLOG_ERROR("No Main Archive passed to create instance");
             }
         } else {
-            spdlog::debug("Trying to create a context when it already exists.");
+            SPDLOG_DEBUG("Trying to create a context when it already exists.");
         }
 
         return GetInstance();
@@ -35,7 +35,7 @@ namespace OtrLib {
     }
 
     OTRContext::~OTRContext() {
-        spdlog::info("destruct OTRContext");
+        SPDLOG_INFO("destruct OTRContext");
 
         Window = nullptr;
         ResourceMgr = nullptr;
