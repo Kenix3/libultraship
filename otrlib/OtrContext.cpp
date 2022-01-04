@@ -1,9 +1,11 @@
 #include "OTRContext.h"
 #include <iostream>
+#include <vector>
 #include "OTRResourceMgr.h"
 #include "OTRWindow.h"
 #include "spdlog/async.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace OtrLib {
     std::weak_ptr<OTRContext> OTRContext::Context;
@@ -51,10 +53,15 @@ namespace OtrLib {
     void OTRContext::InitLogging() {
         try {
             // Setup Logging
-            Logger = spdlog::create_async<spdlog::sinks::basic_file_sink_mt>("async_file_logger", "logs/" + Name + ".log");
-            Logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
+            spdlog::init_thread_pool(8192, 1);
+            auto ConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            auto FileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/" + GetName() + ".log");
+            std::vector<spdlog::sink_ptr> Sinks{ ConsoleSink, FileSink };
+            Logger = std::make_shared<spdlog::async_logger>(GetName(), Sinks.begin(), Sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+            GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
             spdlog::set_level(spdlog::level::trace);
-            spdlog::set_default_logger(Logger);
+            spdlog::register_logger(GetLogger());
+            spdlog::set_default_logger(GetLogger());
         }
         catch (const spdlog::spdlog_ex& ex) {
             std::cout << "Log initialization failed: " << ex.what() << std::endl;
