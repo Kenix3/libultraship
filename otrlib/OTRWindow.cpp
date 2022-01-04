@@ -165,12 +165,12 @@ namespace OtrLib {
         Conf["WINDOW"]["FULLSCREEN"] = std::to_string(OTRContext::GetInstance()->GetWindow()->IsFullscreen());
     }
 
-    int32_t OTRWindow::GetResolutionX() {
+    int32_t OTRWindow::GetCurrentWidth() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
         return dwWidth;
     }
 
-    int32_t OTRWindow::GetResolutionY() {
+    int32_t OTRWindow::GetCurrentHeight() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
         return dwHeight;
     }
