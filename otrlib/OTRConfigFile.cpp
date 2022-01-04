@@ -19,11 +19,11 @@ namespace OtrLib {
 	}
 
 	OTRConfigFile::~OTRConfigFile() {
-		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(OTRContext::GetInstance()->GetWindow()->IsFullscreen());
-
 		if (!Save()) {
 			spdlog::error("Failed to save configs!!!");
 		}
+
+		spdlog::info("destruct configfile");
 	}
 
 	mINI::INIMap<std::string>& OTRConfigFile::operator[](std::string Section) {

@@ -15,6 +15,7 @@ namespace OtrLib {
 			static std::shared_ptr<OtrLib::OTRController> Controllers[MAXCONTROLLERS];
 
 			OTRWindow(std::shared_ptr<OTRContext> Context);
+			~OTRWindow();
 			void MainLoop(void (*MainFunction)(void));
 			void Init();
 			void RunCommands(Gfx* Commands);
@@ -33,7 +34,7 @@ namespace OtrLib {
 			static void AllKeysUp(void);
 			static void OnFullscreenChanged(bool bIsNowFullscreen);
 
-			std::shared_ptr<OTRContext> Context;
+			std::weak_ptr<OTRContext> Context;
 
 			GfxWindowManagerAPI* WmApi;
 			GfxRenderingAPI* RenderingApi;

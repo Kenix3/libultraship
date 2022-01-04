@@ -6,16 +6,20 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 namespace OtrLib {
-    std::shared_ptr<OTRContext> OTRContext::Context = nullptr;
+    std::weak_ptr<OTRContext> OTRContext::Context;
 
     std::shared_ptr<OTRContext> OTRContext::GetInstance() {
-        return Context;
+        return Context.lock();
     }
 
     std::shared_ptr<OTRContext> OTRContext::CreateInstance(std::string Name, std::string MainPath, std::string PatchesPath) {
-        if (Context == nullptr) {
+        if (Context.expired()) {
             if (!MainPath.empty()) {
-                Context = std::make_shared<OTRContext>(Name, MainPath, PatchesPath);
+                auto Shared = std::make_shared<OTRContext>(Name, MainPath, PatchesPath);
+                Context = Shared;
+                Shared->InitWindow();
+
+                return Shared;
             } else {
                 spdlog::error("No Main Archive passed to create instance");
             }
@@ -23,33 +27,37 @@ namespace OtrLib {
             spdlog::debug("Trying to create a context when it already exists.");
         }
 
-        return Context;
+        return GetInstance();
     }
 
-    OTRContext::OTRContext(std::string Name, std::string MainPath, std::string PatchesPath) : Name(Name) {
+    OTRContext::OTRContext(std::string Name, std::string MainPath, std::string PatchesPath) : Name(Name), MainPath(MainPath), PatchesPath(PatchesPath) {
+        InitLogging();
+    }
+
+    OTRContext::~OTRContext() {
+        spdlog::info("destruct OTRContext");
+
+        Window = nullptr;
+        ResourceMgr = nullptr;
+        Config = nullptr;
+    }
+
+    void OTRContext::InitWindow() {
+        ResourceMgr = std::make_shared<OTRResourceMgr>(OTRContext::GetInstance(), MainPath, PatchesPath);
+        Window = std::make_shared<OTRWindow>(OTRContext::GetInstance());
+        Config = std::make_shared<OTRConfigFile>(OTRContext::GetInstance(), "otr.ini");
+    }
+
+    void OTRContext::InitLogging() {
         try {
             // Setup Logging
             Logger = spdlog::create_async<spdlog::sinks::basic_file_sink_mt>("async_file_logger", "logs/" + Name + ".log");
             Logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
-            spdlog::set_level(spdlog::level::info);
+            spdlog::set_level(spdlog::level::trace);
             spdlog::set_default_logger(Logger);
         }
         catch (const spdlog::spdlog_ex& ex) {
             std::cout << "Log initialization failed: " << ex.what() << std::endl;
-        }
-
-        ResourceMgr = std::make_shared<OTRResourceMgr>(std::make_shared<OTRContext>(*this), MainPath, PatchesPath);
-        Window = std::make_shared<OTRWindow>(std::make_shared<OTRContext>(*this));
-        Config = std::make_shared<OTRConfigFile>(std::make_shared<OTRContext>(*this), "otr.ini");
-    }
-
-    OTRContext::~OTRContext() {
-        // Kill Logging
-        try {
-            spdlog::drop(Name);
-        }
-        catch (const spdlog::spdlog_ex& ex) {
-            std::cout << "Log de-initialization failed: " << ex.what() << std::endl;
         }
     }
 }
