@@ -24,8 +24,9 @@ namespace OtrLib {
 			void SetFullscreen(bool bIsFullscreen);
 
 			bool IsFullscreen() { return bIsFullscreen; }
-			int32_t GetCurrentWidth();
-			int32_t GetCurrentHeight();
+			uint32_t GetCurrentWidth();
+			uint32_t GetCurrentHeight();
+			std::shared_ptr<OTRContext> GetContext() { return Context.lock(); }
 
 		protected:
 		private:

@@ -28,7 +28,7 @@ extern "C" {
             } else if (ControllerType == "Unplugged") {
                 // Do nothing for unplugged controllers
             } else {
-                spdlog::error("Invalid Controller Type: {}", ControllerType);
+                SPDLOG_ERROR("Invalid Controller Type: {}", ControllerType);
             }
         }
 
@@ -71,7 +71,7 @@ namespace OtrLib {
     }
 
     OTRWindow::~OTRWindow() {
-        spdlog::info("destruct window");
+        SPDLOG_INFO("destruct window");
     }
 
     void OTRWindow::Init() {
@@ -165,12 +165,12 @@ namespace OtrLib {
         Conf["WINDOW"]["FULLSCREEN"] = std::to_string(OTRContext::GetInstance()->GetWindow()->IsFullscreen());
     }
 
-    int32_t OTRWindow::GetCurrentWidth() {
+    uint32_t OTRWindow::GetCurrentWidth() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
         return dwWidth;
     }
 
-    int32_t OTRWindow::GetCurrentHeight() {
+    uint32_t OTRWindow::GetCurrentHeight() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
         return dwHeight;
     }
