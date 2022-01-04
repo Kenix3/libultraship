@@ -23,6 +23,7 @@ namespace OtrLib {
 			bool remove(std::string Section);
 			void clear();
 			std::size_t size() const;
+			std::shared_ptr<OTRContext> GetContext() { return Context.lock(); }
 
 		protected:
 			bool CreateDefaultConfig();
@@ -30,7 +31,7 @@ namespace OtrLib {
 		private:
 			mINI::INIFile File;
 			mINI::INIStructure Val;
-			std::shared_ptr<OTRContext> Context;
+			std::weak_ptr<OTRContext> Context;
 			std::string Path;
 	};
 }

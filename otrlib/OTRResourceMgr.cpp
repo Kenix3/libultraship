@@ -17,6 +17,8 @@ namespace OtrLib {
 		fileCache.clear();
 		otrCache.clear();
 		gameResourceAddresses.clear();
+
+		spdlog::info("destruct resourcemgr");
 	}
 
 	std::shared_ptr<OTRFile> OTRResourceMgr::LoadFileFromCache(std::string filePath) 

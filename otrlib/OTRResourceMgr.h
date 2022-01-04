@@ -19,7 +19,7 @@ namespace OtrLib
 		OTRResourceMgr(std::shared_ptr<OTRContext> Context, std::string MainPath, std::string PatchesPath);
 		~OTRResourceMgr();
 
-		
+		std::shared_ptr<OTRContext> GetContext() { return Context.lock(); }
 		char* LoadFileOriginal(std::string filePath);
 		DWORD LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
@@ -31,7 +31,7 @@ namespace OtrLib
 		std::shared_ptr<OTRFile> LoadFileFromCache(std::string filePath);
 
 	private:
-		std::shared_ptr<OTRContext> Context;
+		std::weak_ptr<OTRContext> Context;
 		std::map<std::string, std::shared_ptr<OTRFile>> fileCache;
 		std::map<std::string, std::shared_ptr<OTRResource>> otrCache;
 		std::map<std::string, std::shared_ptr<std::unordered_set<uintptr_t>>> gameResourceAddresses;
