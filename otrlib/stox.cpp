@@ -16,7 +16,7 @@ namespace OtrLib {
         }
 
         if (is.fail()) {
-            spdlog::debug("Failed to parse boolean from string: {}", s);
+            SPDLOG_DEBUG("Failed to parse boolean from string: {}", s);
             return defaultVal;
         }
 
@@ -27,9 +27,9 @@ namespace OtrLib {
         try {
             return std::stoi(s);
         } catch (const std::invalid_argument& e) {
-            spdlog::debug("Failed to parse int32_t from string due to invalid argument: {} ({})", e.what(), s);
+            SPDLOG_DEBUG("Failed to parse int32_t from string due to invalid argument: {} ({})", e.what(), s);
         } catch (const std::out_of_range& e) {
-            spdlog::debug("Failed to parse int32_t from string due to out of range: {} ({})", e.what(), s);
+            SPDLOG_DEBUG("Failed to parse int32_t from string due to out of range: {} ({})", e.what(), s);
         }
 
         return defaultVal;
@@ -39,9 +39,9 @@ namespace OtrLib {
         try {
             return std::stoll(s);
         } catch (const std::invalid_argument& e) {
-            spdlog::debug("Failed to parse int32_t from string due to invalid argument: {} ({})", e.what(), s);
+            SPDLOG_DEBUG("Failed to parse int32_t from string due to invalid argument: {} ({})", e.what(), s);
         } catch (const std::out_of_range& e) {
-            spdlog::debug("Failed to parse int32_t from string due to out of range: {} ({})", e.what(), s);
+            SPDLOG_DEBUG("Failed to parse int32_t from string due to out of range: {} ({})", e.what(), s);
         }
 
         return defaultVal;

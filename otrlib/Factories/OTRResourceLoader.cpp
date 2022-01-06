@@ -7,6 +7,7 @@
 #include "OTRSkeletonFactory.h"
 #include "OTRSkeletonLimbFactory.h"
 #include "OTRAnimationFactory.h"
+#include "OTRVtxFactory.h"
 
 namespace OtrLib
 {
@@ -41,6 +42,9 @@ namespace OtrLib
             break;
         case ResourceType::OTRSkeletonLimb:
             result = OTRSkeletonLimbFactory::ReadSkeletonLimb(reader);
+            break;
+        case ResourceType::OTRVtx:
+            result = OTRVtxFactory::ReadVtx(reader);
             break;
         case ResourceType::OTRAnimation:
             result = OTRAnimationFactory::ReadAnimation(reader);

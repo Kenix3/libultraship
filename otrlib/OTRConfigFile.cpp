@@ -6,24 +6,24 @@
 namespace OtrLib {
 	OTRConfigFile::OTRConfigFile(std::shared_ptr<OTRContext> Context, std::string Path) : Context(Context), Path(Path), File(Path.c_str()) {
 		if (Path.empty()) {
-			spdlog::error("OTRConfigFile received an empty file name");
+			SPDLOG_ERROR("OTRConfigFile received an empty file name");
 			exit(EXIT_FAILURE);
 		}
 
 		if (!File.read(Val)) {
 			if (!CreateDefaultConfig()) {
-				spdlog::error("Failed to create default configs");
+				SPDLOG_ERROR("Failed to create default configs");
 				exit(EXIT_FAILURE);
 			}
 		}
 	}
 
 	OTRConfigFile::~OTRConfigFile() {
-		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(OTRContext::GetInstance()->GetWindow()->IsFullscreen());
-
 		if (!Save()) {
-			spdlog::error("Failed to save configs!!!");
+			SPDLOG_ERROR("Failed to save configs!!!");
 		}
+
+		SPDLOG_INFO("destruct configfile");
 	}
 
 	mINI::INIMap<std::string>& OTRConfigFile::operator[](std::string Section) {

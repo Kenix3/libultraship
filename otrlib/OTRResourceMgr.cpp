@@ -17,6 +17,8 @@ namespace OtrLib {
 		fileCache.clear();
 		otrCache.clear();
 		gameResourceAddresses.clear();
+
+		SPDLOG_INFO("destruct resourcemgr");
 	}
 
 	std::shared_ptr<OTRFile> OTRResourceMgr::LoadFileFromCache(std::string filePath) 
@@ -32,7 +34,7 @@ namespace OtrLib {
 		}
 		else 
 		{
-			spdlog::debug("Cache miss on file load: {}", filePath.c_str());
+			SPDLOG_DEBUG("Cache miss on file load: {}", filePath.c_str());
 
 			auto file = archive.get()->LoadFile(filePath);
 

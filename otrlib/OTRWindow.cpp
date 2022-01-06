@@ -28,7 +28,7 @@ extern "C" {
             } else if (ControllerType == "Unplugged") {
                 // Do nothing for unplugged controllers
             } else {
-                spdlog::error("Invalid Controller Type: {}", ControllerType);
+                SPDLOG_ERROR("Invalid Controller Type: {}", ControllerType);
             }
         }
 
@@ -70,6 +70,10 @@ namespace OtrLib {
 
     }
 
+    OTRWindow::~OTRWindow() {
+        SPDLOG_INFO("destruct window");
+    }
+
     void OTRWindow::Init() {
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
@@ -81,7 +85,7 @@ namespace OtrLib {
         dwWidth = OtrLib::stoi(Conf["WINDOW"]["FULLSCREEN WIDTH"], 1920);
         dwHeight = OtrLib::stoi(Conf["WINDOW"]["FULLSCREEN HEIGHT"], 1080);
 
-        gfx_init(WmApi, RenderingApi, Context->GetName().c_str(), bIsFullscreen);
+        gfx_init(WmApi, RenderingApi, GetContext()->GetName().c_str(), bIsFullscreen);
         WmApi->set_fullscreen_changed_callback(OTRWindow::OnFullscreenChanged);
         WmApi->set_keyboard_callbacks(OTRWindow::KeyDown, OTRWindow::KeyUp, OTRWindow::AllKeysUp);
     }
@@ -158,14 +162,15 @@ namespace OtrLib {
         OTRConfigFile& Conf = *pConf.get();
 
         OTRContext::GetInstance()->GetWindow()->bIsFullscreen = bIsFullscreen;
+        Conf["WINDOW"]["FULLSCREEN"] = std::to_string(OTRContext::GetInstance()->GetWindow()->IsFullscreen());
     }
 
-    int32_t OTRWindow::GetResolutionX() {
+    uint32_t OTRWindow::GetCurrentWidth() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
         return dwWidth;
     }
 
-    int32_t OTRWindow::GetResolutionY() {
+    uint32_t OTRWindow::GetCurrentHeight() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
         return dwHeight;
     }
