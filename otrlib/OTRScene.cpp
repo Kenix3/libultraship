@@ -125,7 +125,7 @@ namespace OtrLib
 		reader->ReadByte(); // camSize
 		reader->ReadInt32(); // segOffset
 
-		// TODO: FINISH!
+		// OTRTODO: FINISH!
 	}
 
 	OTRMeshData::OTRMeshData()
@@ -143,17 +143,19 @@ namespace OtrLib
 		data = reader->ReadByte();
 		meshHeaderType = reader->ReadByte();
 
-		int numPoly = reader->ReadByte();
+		int numPoly = 1;
+
+		if (meshHeaderType != 1)
+			numPoly = reader->ReadByte();
 
 		for (int i = 0; i < numPoly; i++)
 		{
 			OTRMeshData mesh;
 
-			int polyType = reader->ReadByte();
-
 			// OTRTODO: FINISH THIS!
 			if (meshHeaderType == 0)
 			{
+				int polyType = reader->ReadByte();
 				mesh.x = 0;
 				mesh.y = 0;
 				mesh.z = 0;
@@ -161,6 +163,7 @@ namespace OtrLib
 			}
 			else if (meshHeaderType == 2)
 			{
+				int polyType = reader->ReadByte();
 				mesh.x = reader->ReadInt16();
 				mesh.y = reader->ReadInt16();
 				mesh.z = reader->ReadInt16();
@@ -168,12 +171,48 @@ namespace OtrLib
 			}
 			else
 			{
+				mesh.imgFmt = reader->ReadUByte();
+				mesh.imgOpa = reader->ReadString();
+				mesh.imgXlu = reader->ReadString();
+
+
+				int imgCnt = reader->ReadUInt32();
+
+				for (int i = 0; i < imgCnt; i++)
+				{
+					OTRBGImage img;
+
+					img.unk_00 = reader->ReadUInt16();
+					img.id = reader->ReadUByte();
+					img.sourceBackground = reader->ReadString();
+					img.unk_0C = reader->ReadUInt32();
+					img.tlut = reader->ReadUInt32();
+					img.width = reader->ReadUInt16();
+					img.height = reader->ReadUInt16();
+					img.fmt = reader->ReadUByte();
+					img.siz = reader->ReadUByte();
+					img.mode0 = reader->ReadUInt16();
+					img.tlutCount = reader->ReadUInt16();
+
+					mesh.images.push_back(img);
+				}
+
+				int polyType = reader->ReadByte();
+
 				int bp = 0;
 			}
 
 
-			mesh.opa = reader->ReadString();
-			mesh.xlu = reader->ReadString();
+			//if (meshHeaderType == 0 || meshHeaderType == 2)
+			{
+				mesh.opa = reader->ReadString();
+				mesh.xlu = reader->ReadString();
+			}
+			//else
+			//{
+				//mesh.opa = "";
+				//mesh.xlu = "";
+			//}
 
 			meshes.push_back(mesh);
 		}

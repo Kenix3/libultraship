@@ -6,11 +6,11 @@ namespace OtrLib
     {
         OTRCollisionHeader* colHeader = new OTRCollisionHeader();
 
-        uint32_t version = reader->ReadUInt32();
+        OTRVersion version = (OTRVersion)reader->ReadUInt32();
 
         switch (version)
         {
-        case 0:
+        case OTRVersion::Deckard:
         {
             OTRCollisionHeaderV0 otrCol = OTRCollisionHeaderV0();
             otrCol.ParseFileBinary(reader, colHeader);

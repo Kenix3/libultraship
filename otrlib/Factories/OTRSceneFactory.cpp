@@ -6,11 +6,11 @@ namespace OtrLib
     {
         OTRScene* scene = new OTRScene();
 
-        uint32_t version = reader->ReadUInt32();
+        OTRVersion version = (OTRVersion)reader->ReadUInt32();
 
         switch (version)
         {
-        case 0:
+        case OTRVersion::Deckard:
         {
             OTRSceneV0 otrScene = OTRSceneV0();
             otrScene.ParseFileBinary(reader, scene);

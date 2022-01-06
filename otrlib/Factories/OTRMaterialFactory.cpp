@@ -6,11 +6,11 @@ namespace OtrLib
     {
         OTRMaterial* mat = new OTRMaterial();
 
-        uint32_t version = reader->ReadUInt32();
-
+        OTRVersion version = (OTRVersion)reader->ReadUInt32();
+        
         switch (version)
         {
-        case 0:
+        case OTRVersion::Deckard:
         {
             OTRMaterialV0 otrMat = OTRMaterialV0();
             otrMat.ParseFileBinary(reader, mat);

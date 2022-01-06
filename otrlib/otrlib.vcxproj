@@ -155,6 +155,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Factories\OTRAnimationFactory.cpp" />
+    <ClCompile Include="OTRAnimation.cpp" />
     <ClCompile Include="OTRConfigFile.cpp" />
     <ClCompile Include="OTRController.cpp" />
     <ClCompile Include="KeyboardController.cpp" />
@@ -175,6 +177,7 @@
     <ClCompile Include="OTRArchive.cpp" />
     <ClCompile Include="OTRCollisionHeader.cpp" />
     <ClCompile Include="OTRControllerAttachment.cpp" />
+    <ClCompile Include="OTRCutscene.cpp" />
     <ClCompile Include="OTRDisplayList.cpp" />
     <ClCompile Include="OTRContext.cpp" />
     <ClCompile Include="OTRFile.cpp" />
@@ -194,6 +197,9 @@
     <ClCompile Include="stox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Factories\OTRAnimationFactory.h" />
+    <ClInclude Include="OTRAnimation.h" />
+    <ClInclude Include="OTRCutscene.h" />
     <ClInclude Include="stox.h" />
     <ClInclude Include="Lib\mINI\src\mini\ini.h" />
     <ClInclude Include="OTRConfigFile.h" />

@@ -27,9 +27,7 @@ void OtrLib::OTRCollisionHeaderV0::ParseFileBinary(BinaryReader* reader, OTRReso
 	int polyCnt = reader->ReadInt32();
 
 	for (int i = 0; i < polyCnt; i++)
-	{
 		col->polygons.push_back(OtrLib::PolygonEntry(reader));
-	}
 
 	int polyTypesCnt = reader->ReadInt32();
 
@@ -65,13 +63,12 @@ void OtrLib::OTRCollisionHeaderV0::ParseFileBinary(BinaryReader* reader, OTRReso
 	for (int i = 0; i < waterBoxCnt; i++)
 	{
 		OtrLib::WaterBoxHeader waterBox;
-		waterBox.xLength = reader->ReadInt16();
-		waterBox.ySurface = reader->ReadInt16();
 		waterBox.xMin = reader->ReadInt16();
+		waterBox.ySurface = reader->ReadInt16();
 		waterBox.zMin = reader->ReadInt16();
 		waterBox.xLength = reader->ReadInt16();
 		waterBox.zLength = reader->ReadInt16();
-		waterBox.properties = reader->ReadInt16();
+		waterBox.properties = reader->ReadInt32();
 
 		col->waterBoxes.push_back(waterBox);
 	}

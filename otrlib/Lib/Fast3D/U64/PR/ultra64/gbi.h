@@ -161,7 +161,6 @@
 #define G_DL_OTR			    0x31
 #define G_VTX_OTR			    0x32
 #define G_MARKER			    0x33
-#define G_LOADTLUT_OTR			0x34
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1732,7 +1731,7 @@ _DW({                                   \
  *        | |seg|         address             |
  *        +-+---+-----------------------------+
  */
-# define    gSPVertex(pkt, v, n, v0)                \
+# define    __gSPVertex(pkt, v, n, v0)                \
 _DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
     _g->words.w0 =                          \
