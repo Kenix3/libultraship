@@ -6,10 +6,15 @@ void OtrLib::OTRCutsceneV0::ParseFileBinary(BinaryReader* reader, OTRResource* r
 
 	OTRResourceFile::ParseFileBinary(reader, res);
 
-	bool cont = true;
-
-	while (cont)
+	int numEntries = reader->ReadUInt32();
+	
+	for (int i = 0; i < numEntries; i++)
 	{
+		uint32_t data = reader->ReadUInt32();
+		uint16_t opcode = data >> 16;
 
+		cs->commands.push_back(data);
 	}
+
+	int bp = 0;
 }

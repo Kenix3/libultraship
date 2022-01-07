@@ -65,6 +65,7 @@ extern "C" void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** 
 
 namespace OtrLib {
     std::shared_ptr<OtrLib::OTRController> OTRWindow::Controllers[MAXCONTROLLERS] = { nullptr };
+    int32_t OTRWindow::lastScancode;
 
     OTRWindow::OTRWindow(std::shared_ptr<OTRContext> Context) : Context(Context) {
 
@@ -124,8 +125,12 @@ namespace OtrLib {
             }
         }
 
+        lastScancode = dwScancode;
+
         return bIsProcessed;
     }
+
+    extern "C" void OTRToggleConsole();
 
     bool OTRWindow::KeyUp(int32_t dwScancode) {
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
@@ -133,6 +138,11 @@ namespace OtrLib {
 
         if (dwScancode == OtrLib::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_FULLSCREEN"])) {
             OTRContext::GetInstance()->GetWindow()->ToggleFullscreen();
+        }
+
+        if (dwScancode == OtrLib::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"])) 
+        {
+            OTRToggleConsole();
         }
 
         bool bIsProcessed = false;

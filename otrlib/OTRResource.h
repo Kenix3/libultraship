@@ -25,6 +25,7 @@ namespace OtrLib
         OTRPath             =   0x4F505448,     // OPTH
         OTRVtx              =   0x4F565458,     // OVTX
         OTRCutscene         =   0x4F435654,     // OCUT
+        OTRArray            =   0x4F415252,     // OARR
     };
 
     enum class DataType

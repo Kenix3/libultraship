@@ -130,6 +130,7 @@ static struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     
+    uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color;
     struct XYWidthHeight viewport, scissor;
     bool viewport_or_scissor_changed;
@@ -206,6 +207,52 @@ static struct ShaderProgram *gfx_lookup_or_create_shader_program(uint64_t shader
     return prg;
 }
 
+static const char* ccmux_to_string(uint32_t ccmux) {
+        static const char* const tbl[] = {
+            "G_CCMUX_COMBINED",
+            "G_CCMUX_TEXEL0",
+            "G_CCMUX_TEXEL1",
+            "G_CCMUX_PRIMITIVE",
+            "G_CCMUX_SHADE",
+            "G_CCMUX_ENVIRONMENT",
+            "G_CCMUX_1",
+            "G_CCMUX_COMBINED_ALPHA",
+            "G_CCMUX_TEXEL0_ALPHA",
+            "G_CCMUX_TEXEL1_ALPHA",
+            "G_CCMUX_PRIMITIVE_ALPHA",
+            "G_CCMUX_SHADE_ALPHA",
+            "G_CCMUX_ENV_ALPHA",
+            "G_CCMUX_LOD_FRACTION",
+            "G_CCMUX_PRIM_LOD_FRAC",
+            "G_CCMUX_K5",
+     };
+        if (ccmux > 15) {
+                return "G_CCMUX_0";
+        
+    }
+    else {
+                return tbl[ccmux];
+        
+    }
+    
+}
+
+static const char* acmux_to_string(uint32_t acmux) {
+        static const char* const tbl[] = {
+            "G_ACMUX_COMBINED or G_ACMUX_LOD_FRACTION",
+            "G_ACMUX_TEXEL0",
+            "G_ACMUX_TEXEL1",
+            "G_ACMUX_PRIMITIVE",
+            "G_ACMUX_SHADE",
+            "G_ACMUX_ENVIRONMENT",
+            "G_ACMUX_1 or G_ACMUX_PRIM_LOD_FRAC",
+            "G_ACMUX_0",
+     };
+        return tbl[acmux];
+    
+}
+
+
 static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
     if (markerOn)
     {
@@ -239,7 +286,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
             rgb_b = G_CCMUX_0;
             rgb_c = G_CCMUX_0;
         }
-        if (alpha_a == alpha_c || alpha_c == G_ACMUX_0) {
+        if (alpha_a == alpha_b || alpha_c == G_ACMUX_0) {
             // Normalize
             alpha_a = G_ACMUX_0;
             alpha_b = G_ACMUX_0;
@@ -251,8 +298,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                 // First cycle RGB not used, so clear it away
                 c[0][0][0] = c[0][0][1] = c[0][0][2] = c[0][0][3] = G_CCMUX_0;
             }
-            if (rgb_a != G_CCMUX_COMBINED_ALPHA && rgb_b != G_CCMUX_COMBINED_ALPHA && rgb_c != G_CCMUX_COMBINED_ALPHA && rgb_d != G_CCMUX_COMBINED_ALPHA
-                && alpha_a != G_ACMUX_COMBINED && alpha_b != G_ACMUX_COMBINED && alpha_c != G_ACMUX_COMBINED && alpha_d != G_ACMUX_COMBINED)
+            if (rgb_c != G_CCMUX_COMBINED_ALPHA && alpha_a != G_ACMUX_COMBINED && alpha_b != G_ACMUX_COMBINED && alpha_d != G_ACMUX_COMBINED)
             {
                 // First cycle ALPHA not used, so clear it away
                 c[0][1][0] = c[0][1][1] = c[0][1][2] = c[0][1][3] = G_ACMUX_0;
@@ -332,15 +378,19 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                 case G_ACMUX_0:
                     val = SHADER_0;
                     break;
-                case G_ACMUX_1:
-                    val = SHADER_1;
-                    break;
                 case G_ACMUX_TEXEL0:
                     val = SHADER_TEXEL0;
                     break;
                 case G_ACMUX_TEXEL1:
                     val = SHADER_TEXEL1;
                     break;
+                case G_ACMUX_1:
+                    //case G_ACMUX_PRIM_LOD_FRAC: same numerical value
+                    if (j != 2) {
+                        val = SHADER_1;
+                        break;
+                    }
+                    // fallthrough for G_ACMUX_PRIM_LOD_FRAC
                 case G_ACMUX_PRIMITIVE:
                 case G_ACMUX_SHADE:
                 case G_ACMUX_ENVIRONMENT:
@@ -352,6 +402,10 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                     val = input_number[c[i][1][j]];
                     break;
                 case G_ACMUX_COMBINED:
+                    if (j == 2) {
+                        fprintf(stderr, "Unsupported acmux: G_ACMUX_LOD_FRACTION\n");
+                    }
+
                     val = SHADER_COMBINED;
                     break;
                 }
@@ -1106,6 +1160,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                         color = &tmp;
                         break;
                     }
+                    case G_ACMUX_PRIM_LOD_FRAC:
+                        tmp.a = rdp.prim_lod_fraction;
+                        color = &tmp;
+                        break;
                     default:
                         memset(&tmp, 0, sizeof(tmp));
                         color = &tmp;
@@ -1400,7 +1458,8 @@ static void gfx_dp_set_env_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     rdp.env_color.a = a;
 }
 
-static void gfx_dp_set_prim_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+static void gfx_dp_set_prim_color(uint8_t m, uint8_t l, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    rdp.prim_lod_fraction = l;
     rdp.prim_color.r = r;
     rdp.prim_color.g = g;
     rdp.prim_color.b = b;
@@ -1719,7 +1778,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
 
-                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc);
+                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc, 1024 * 64);
 
                 if (vtx != NULL)
                 {
@@ -1759,11 +1818,14 @@ static void gfx_run_dl(Gfx* cmd) {
                     cmd++;
                     
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-                    //char fileName[4096];
-                    //ResourceMgr_GetNameByCRC(hash, fileName);
+                    
+#if _DEBUG
+                    char fileName[4096];
+                    ResourceMgr_GetNameByCRC(hash, fileName);
                     
                     //printf("G_DL_OTR: %s\n", fileName);
-                    
+#endif
+
                     Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
 
                     if (gfx != 0)
@@ -1881,7 +1943,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_dp_set_env_color(C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));
                 break;
             case G_SETPRIMCOLOR:
-                gfx_dp_set_prim_color(C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));
+                gfx_dp_set_prim_color(C0(8, 8), C0(0, 8), C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));
                 break;
             case G_SETFOGCOLOR:
                 gfx_dp_set_fog_color(C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));

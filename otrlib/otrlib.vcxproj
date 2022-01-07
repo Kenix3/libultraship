@@ -33,7 +33,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -77,6 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Lib\SDL\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -110,8 +112,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,8 +161,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Factories\OTRAnimationFactory.cpp" />
+    <ClCompile Include="Factories\OTRArrayFactory.cpp" />
+    <ClCompile Include="Factories\OTRCutsceneFactory.cpp" />
+    <ClCompile Include="Factories\OTRPathFactory.cpp" />
     <ClCompile Include="OTRAnimation.cpp" />
     <ClCompile Include="Factories\OTRVtxFactory.cpp" />
+    <ClCompile Include="OTRArray.cpp" />
     <ClCompile Include="OTRConfigFile.cpp" />
     <ClCompile Include="OTRController.cpp" />
     <ClCompile Include="KeyboardController.cpp" />
@@ -185,6 +194,7 @@
     <ClCompile Include="OTRMaterial.cpp" />
     <ClCompile Include="OTRMemoryPack.cpp" />
     <ClCompile Include="OTRModel.cpp" />
+    <ClCompile Include="OTRPath.cpp" />
     <ClCompile Include="OTRPlayerAnimation.cpp" />
     <ClCompile Include="OTRResource.cpp" />
     <ClCompile Include="OTRResourceMgr.cpp" />
@@ -199,6 +209,11 @@
     <ClCompile Include="stox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Factories\OTRArrayFactory.h" />
+    <ClInclude Include="Factories\OTRCutsceneFactory.h" />
+    <ClInclude Include="Factories\OTRPathFactory.h" />
+    <ClInclude Include="OTRArray.h" />
+    <ClInclude Include="OTRPath.h" />
     <ClInclude Include="stox.h" />
     <ClInclude Include="Lib\mINI\src\mini\ini.h" />
     <ClInclude Include="OTRConfigFile.h" />

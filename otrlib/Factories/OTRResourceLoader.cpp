@@ -8,6 +8,8 @@
 #include "OTRSkeletonLimbFactory.h"
 #include "OTRAnimationFactory.h"
 #include "OTRVtxFactory.h"
+#include "OTRCutsceneFactory.h"
+#include "OTRArrayFactory.h"
 
 namespace OtrLib
 {
@@ -48,6 +50,12 @@ namespace OtrLib
             break;
         case ResourceType::OTRAnimation:
             result = OTRAnimationFactory::ReadAnimation(reader);
+            break;
+        case ResourceType::OTRCutscene:
+            result = OTRCutsceneFactory::ReadCutscene(reader);
+            break;
+        case ResourceType::OTRArray:
+            result = OTRArrayFactory::ReadArray(reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED

@@ -15,12 +15,14 @@ namespace OtrLib
 	public:
 		uint32_t commandID;
 		uint32_t commandIndex;
+
+		CutsceneCommand() {};
 	};
 
 	class OTRCutscene : public OTRResource
 	{
 	public:
 		//int32_t endFrame;
-		std::vector<CutsceneCommand*> commands;
+		std::vector<uint32_t> commands;
 	};
 }

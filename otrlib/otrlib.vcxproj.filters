@@ -174,6 +174,21 @@
     <ClCompile Include="Factories\OTRVtxFactory.cpp">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClCompile>
+    <ClCompile Include="Factories\OTRCutsceneFactory.cpp">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRPath.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRPathFactory.cpp">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRArray.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRArrayFactory.cpp">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -293,20 +308,20 @@
     <ClInclude Include="stox.h">
       <Filter>Source Files\Lib</Filter>
     </ClInclude>
-    <ClInclude Include="OTRVtx.h">
-      <Filter>Source Files\Resources\Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Factories\OTRVtxFactory.h">
+    <ClInclude Include="Factories\OTRCutsceneFactory.h">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClInclude>
-    <ClInclude Include="OTRAnimation.h">
+    <ClInclude Include="OTRPath.h">
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
-    <ClInclude Include="Factories\OTRAnimationFactory.h">
+    <ClInclude Include="Factories\OTRPathFactory.h">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClInclude>
-    <ClInclude Include="OTRCutscene.h">
+    <ClInclude Include="OTRArray.h">
       <Filter>Source Files\Resources\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRArrayFactory.h">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

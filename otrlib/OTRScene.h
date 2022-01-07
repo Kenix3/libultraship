@@ -304,6 +304,19 @@ namespace OtrLib
 		OTRSetAlternateHeaders(BinaryReader* reader);
 	};
 
+	class OTRTransitionActorEntry
+	{
+	public:
+		uint8_t frontObjectRoom;
+		uint8_t frontTransitionReaction;
+		uint8_t backObjectRoom;
+		uint8_t backTransitionReaction;
+		uint16_t actorNum;
+		int16_t posX, posY, posZ;
+		int16_t rotY;
+		uint16_t initVar;
+	};
+
 	class OTRActorSpawnEntry
 	{
 	public:
@@ -333,6 +346,15 @@ namespace OtrLib
 
 		OTRSetActorList(BinaryReader* reader);
 	};
+
+	class OTRSetTransitionActorList : public OTRSceneCommand
+	{
+	public:
+		std::vector<OTRTransitionActorEntry> entries;
+
+		OTRSetTransitionActorList(BinaryReader* reader);
+	};
+
 
 	class OTREndMarker : public OTRSceneCommand
 	{
