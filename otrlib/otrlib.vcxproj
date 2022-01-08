@@ -207,6 +207,7 @@
     <ClCompile Include="OTRWindow.cpp" />
     <ClCompile Include="OTRWindowShim.c" />
     <ClCompile Include="stox.cpp" />
+    <ClCompile Include="SDLController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Factories\OTRArrayFactory.h" />
@@ -253,6 +254,7 @@
     <ClInclude Include="OTRTexture.h" />
     <ClInclude Include="OTRWindow.h" />
     <ClInclude Include="UltraController.h" />
+    <ClInclude Include="SDLController.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
