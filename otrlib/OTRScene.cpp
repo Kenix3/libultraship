@@ -31,6 +31,7 @@ namespace OtrLib
 		{
 		case OTRSceneCommandID::SetStartPositionList: return new OTRSetStartPositionList(reader);
 		case OTRSceneCommandID::SetActorList: return new OTRSetActorList(reader);
+		case OTRSceneCommandID::SetTransitionActorList: return new OTRSetTransitionActorList(reader);
 		case OTRSceneCommandID::SetWind: return new OTRSetWind(reader);
 		case OTRSceneCommandID::SetTimeSettings: return new OTRSetTimeSettings(reader);
 		case OTRSceneCommandID::SetSkyboxModifier: return new OTRSetSkyboxModifier(reader);
@@ -50,6 +51,7 @@ namespace OtrLib
 		case OTRSceneCommandID::SetObjectList: return new OTRSetObjectList(reader);
 		case OTRSceneCommandID::SetAlternateHeaders: return new OTRSetAlternateHeaders(reader);
 		case OTRSceneCommandID::SetExitList: return new OTRExitList(reader);
+		case OTRSceneCommandID::SetCutscenes: return new OTRSetCutscenes(reader);
 		case OTRSceneCommandID::EndMarker: return new OTREndMarker(reader);
 		default:
 			printf("UNIMPLEMENTED COMMAND: %i\n", (int)cmdID);
@@ -125,7 +127,7 @@ namespace OtrLib
 		reader->ReadByte(); // camSize
 		reader->ReadInt32(); // segOffset
 
-		// TODO: FINISH!
+		// OTRTODO: FINISH!
 	}
 
 	OTRMeshData::OTRMeshData()
@@ -143,17 +145,19 @@ namespace OtrLib
 		data = reader->ReadByte();
 		meshHeaderType = reader->ReadByte();
 
-		int numPoly = reader->ReadByte();
+		int numPoly = 1;
+
+		if (meshHeaderType != 1)
+			numPoly = reader->ReadByte();
 
 		for (int i = 0; i < numPoly; i++)
 		{
 			OTRMeshData mesh;
 
-			int polyType = reader->ReadByte();
-
 			// OTRTODO: FINISH THIS!
 			if (meshHeaderType == 0)
 			{
+				int polyType = reader->ReadByte();
 				mesh.x = 0;
 				mesh.y = 0;
 				mesh.z = 0;
@@ -161,6 +165,7 @@ namespace OtrLib
 			}
 			else if (meshHeaderType == 2)
 			{
+				int polyType = reader->ReadByte();
 				mesh.x = reader->ReadInt16();
 				mesh.y = reader->ReadInt16();
 				mesh.z = reader->ReadInt16();
@@ -168,12 +173,48 @@ namespace OtrLib
 			}
 			else
 			{
+				mesh.imgFmt = reader->ReadUByte();
+				mesh.imgOpa = reader->ReadString();
+				mesh.imgXlu = reader->ReadString();
+
+
+				int imgCnt = reader->ReadUInt32();
+
+				for (int i = 0; i < imgCnt; i++)
+				{
+					OTRBGImage img;
+
+					img.unk_00 = reader->ReadUInt16();
+					img.id = reader->ReadUByte();
+					img.sourceBackground = reader->ReadString();
+					img.unk_0C = reader->ReadUInt32();
+					img.tlut = reader->ReadUInt32();
+					img.width = reader->ReadUInt16();
+					img.height = reader->ReadUInt16();
+					img.fmt = reader->ReadUByte();
+					img.siz = reader->ReadUByte();
+					img.mode0 = reader->ReadUInt16();
+					img.tlutCount = reader->ReadUInt16();
+
+					mesh.images.push_back(img);
+				}
+
+				int polyType = reader->ReadByte();
+
 				int bp = 0;
 			}
 
 
-			mesh.opa = reader->ReadString();
-			mesh.xlu = reader->ReadString();
+			//if (meshHeaderType == 0 || meshHeaderType == 2)
+			{
+				mesh.opa = reader->ReadString();
+				mesh.xlu = reader->ReadString();
+			}
+			//else
+			//{
+				//mesh.opa = "";
+				//mesh.xlu = "";
+			//}
 
 			meshes.push_back(mesh);
 		}
@@ -310,6 +351,29 @@ namespace OtrLib
 		}
 	}
 
+	OTRSetTransitionActorList::OTRSetTransitionActorList(BinaryReader* reader) : OTRSceneCommand(reader)
+	{
+		int cnt = reader->ReadInt32();
+
+		for (int i = 0; i < cnt; i++)
+		{
+			OTRTransitionActorEntry entry = OTRTransitionActorEntry();
+
+			entry.frontObjectRoom = reader->ReadUByte();
+			entry.frontTransitionReaction = reader->ReadUByte();
+			entry.backObjectRoom = reader->ReadUByte();
+			entry.backTransitionReaction = reader->ReadUByte();
+			entry.actorNum = reader->ReadInt16();
+			entry.posX = reader->ReadInt16();
+			entry.posY = reader->ReadInt16();
+			entry.posZ = reader->ReadInt16();
+			entry.rotY = reader->ReadInt16();
+			entry.initVar = reader->ReadUInt16();
+
+			entries.push_back(entry);
+		}
+	}
+
 	OTREndMarker::OTREndMarker(BinaryReader* reader) : OTRSceneCommand(reader)
 	{
 	}
@@ -349,5 +413,10 @@ namespace OtrLib
 
 		for (int i = 0; i < numHeaders; i++)
 			headers.push_back(reader->ReadString());
+	}
+
+	OTRSetCutscenes::OTRSetCutscenes(BinaryReader* reader) : OTRSceneCommand(reader)
+	{
+		cutscenePath = reader->ReadString();
 	}
 }

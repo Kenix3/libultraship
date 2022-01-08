@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef __cplusplus
 #include <memory>
 #include "stdint.h"
 #include "spdlog/spdlog.h"
@@ -38,3 +39,4 @@ namespace OtrLib {
 			std::string PatchesPath;
 	};
 }
+#endif

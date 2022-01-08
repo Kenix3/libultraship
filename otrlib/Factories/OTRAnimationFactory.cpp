@@ -1,18 +1,17 @@
-#include "OTRPlayerAnimationFactory.h"
+#include "OTRAnimationFactory.h"
 
 namespace OtrLib
 {
-    OTRPlayerAnimation* OTRPlayerAnimationFactory::ReadPlayerAnimation(BinaryReader* reader)
+    OTRAnimation* OTRAnimationFactory::ReadAnimation(BinaryReader* reader)
     {
-        OTRPlayerAnimation* anim = new OTRPlayerAnimation();
-
+        OTRAnimation* anim = new OTRAnimation();
         OTRVersion version = (OTRVersion)reader->ReadUInt32();
 
         switch (version)
         {
         case OTRVersion::Deckard:
         {
-            OTRPlayerAnimationV0 otrAnim = OTRPlayerAnimationV0();
+            OTRAnimationV0 otrAnim = OTRAnimationV0();
             otrAnim.ParseFileBinary(reader, anim);
         }
         break;
@@ -22,6 +21,5 @@ namespace OtrLib
         }
 
         return anim;
-
     }
-}
+};

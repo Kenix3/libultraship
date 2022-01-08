@@ -159,6 +159,15 @@
     <ClCompile Include="stox.cpp">
       <Filter>Source Files\Lib</Filter>
     </ClCompile>
+    <ClCompile Include="OTRAnimation.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRAnimationFactory.cpp">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRCutscene.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
     <ClCompile Include="OTRVtx.cpp">
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
@@ -167,6 +176,20 @@
     </ClCompile>
     <ClCompile Include="SDLController.cpp">
       <Filter>Source Files\Controller</Filter>
+    </ClCompile>    <ClCompile Include="Factories\OTRCutsceneFactory.cpp">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRPath.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRPathFactory.cpp">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="OTRArray.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\OTRArrayFactory.cpp">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -287,14 +310,22 @@
     <ClInclude Include="stox.h">
       <Filter>Source Files\Lib</Filter>
     </ClInclude>
-    <ClInclude Include="OTRVtx.h">
+    <ClInclude Include="Factories\OTRCutsceneFactory.h">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRPath.h">
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
-    <ClInclude Include="Factories\OTRVtxFactory.h">
+    <ClInclude Include="Factories\OTRPathFactory.h">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClInclude>
     <ClInclude Include="SDLController.h">
       <Filter>Source Files\Controller</Filter>
+    </ClInclude>    <ClInclude Include="OTRArray.h">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\OTRArrayFactory.h">
+      <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

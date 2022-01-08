@@ -130,6 +130,7 @@ static struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     
+    uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color;
     struct XYWidthHeight viewport, scissor;
     bool viewport_or_scissor_changed;
@@ -206,6 +207,52 @@ static struct ShaderProgram *gfx_lookup_or_create_shader_program(uint64_t shader
     return prg;
 }
 
+static const char* ccmux_to_string(uint32_t ccmux) {
+        static const char* const tbl[] = {
+            "G_CCMUX_COMBINED",
+            "G_CCMUX_TEXEL0",
+            "G_CCMUX_TEXEL1",
+            "G_CCMUX_PRIMITIVE",
+            "G_CCMUX_SHADE",
+            "G_CCMUX_ENVIRONMENT",
+            "G_CCMUX_1",
+            "G_CCMUX_COMBINED_ALPHA",
+            "G_CCMUX_TEXEL0_ALPHA",
+            "G_CCMUX_TEXEL1_ALPHA",
+            "G_CCMUX_PRIMITIVE_ALPHA",
+            "G_CCMUX_SHADE_ALPHA",
+            "G_CCMUX_ENV_ALPHA",
+            "G_CCMUX_LOD_FRACTION",
+            "G_CCMUX_PRIM_LOD_FRAC",
+            "G_CCMUX_K5",
+     };
+        if (ccmux > 15) {
+                return "G_CCMUX_0";
+        
+    }
+    else {
+                return tbl[ccmux];
+        
+    }
+    
+}
+
+static const char* acmux_to_string(uint32_t acmux) {
+        static const char* const tbl[] = {
+            "G_ACMUX_COMBINED or G_ACMUX_LOD_FRACTION",
+            "G_ACMUX_TEXEL0",
+            "G_ACMUX_TEXEL1",
+            "G_ACMUX_PRIMITIVE",
+            "G_ACMUX_SHADE",
+            "G_ACMUX_ENVIRONMENT",
+            "G_ACMUX_1 or G_ACMUX_PRIM_LOD_FRAC",
+            "G_ACMUX_0",
+     };
+        return tbl[acmux];
+    
+}
+
+
 static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
     if (markerOn)
     {
@@ -239,7 +286,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
             rgb_b = G_CCMUX_0;
             rgb_c = G_CCMUX_0;
         }
-        if (alpha_a == alpha_c || alpha_c == G_ACMUX_0) {
+        if (alpha_a == alpha_b || alpha_c == G_ACMUX_0) {
             // Normalize
             alpha_a = G_ACMUX_0;
             alpha_b = G_ACMUX_0;
@@ -251,8 +298,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                 // First cycle RGB not used, so clear it away
                 c[0][0][0] = c[0][0][1] = c[0][0][2] = c[0][0][3] = G_CCMUX_0;
             }
-            if (rgb_a != G_CCMUX_COMBINED_ALPHA && rgb_b != G_CCMUX_COMBINED_ALPHA && rgb_c != G_CCMUX_COMBINED_ALPHA && rgb_d != G_CCMUX_COMBINED_ALPHA
-                && alpha_a != G_ACMUX_COMBINED && alpha_b != G_ACMUX_COMBINED && alpha_c != G_ACMUX_COMBINED && alpha_d != G_ACMUX_COMBINED)
+            if (rgb_c != G_CCMUX_COMBINED_ALPHA && alpha_a != G_ACMUX_COMBINED && alpha_b != G_ACMUX_COMBINED && alpha_d != G_ACMUX_COMBINED)
             {
                 // First cycle ALPHA not used, so clear it away
                 c[0][1][0] = c[0][1][1] = c[0][1][2] = c[0][1][3] = G_ACMUX_0;
@@ -332,15 +378,19 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                 case G_ACMUX_0:
                     val = SHADER_0;
                     break;
-                case G_ACMUX_1:
-                    val = SHADER_1;
-                    break;
                 case G_ACMUX_TEXEL0:
                     val = SHADER_TEXEL0;
                     break;
                 case G_ACMUX_TEXEL1:
                     val = SHADER_TEXEL1;
                     break;
+                case G_ACMUX_1:
+                    //case G_ACMUX_PRIM_LOD_FRAC: same numerical value
+                    if (j != 2) {
+                        val = SHADER_1;
+                        break;
+                    }
+                    // fallthrough for G_ACMUX_PRIM_LOD_FRAC
                 case G_ACMUX_PRIMITIVE:
                 case G_ACMUX_SHADE:
                 case G_ACMUX_ENVIRONMENT:
@@ -352,6 +402,10 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                     val = input_number[c[i][1][j]];
                     break;
                 case G_ACMUX_COMBINED:
+                    if (j == 2) {
+                        fprintf(stderr, "Unsupported acmux: G_ACMUX_LOD_FRACTION\n");
+                    }
+
                     val = SHADER_COMBINED;
                     break;
                 }
@@ -418,7 +472,7 @@ static bool gfx_texture_cache_lookup(int i, struct TextureHashmapNode **n, const
 }
 
 static void import_texture_rgba16(int tile) {
-    uint8_t rgba32_buf[8192];
+    uint8_t rgba32_buf[8192 * 8];
     uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
 
@@ -603,22 +657,22 @@ static void import_texture_ci8(int tile) {
     uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
 
-    // OTRTODO:
-    //return;
-    
     // OTRTODO: DUMB DUMB HACK
-    if ((uintptr_t)addr != 0x06000000 && (uintptr_t)addr != 0x06004000 && (uintptr_t)addr != 0x06008000 && (uintptr_t)addr != 0x06000800 && ((uintptr_t)addr & 0xFF000000) != 0x06000000)
-        for (uint32_t i = 0; i < size_bytes; i++) {
-        uint8_t idx = addr[i];
-        uint16_t col16 = (rdp.palette[idx * 2] << 8) | rdp.palette[idx * 2 + 1]; // Big endian load
-        uint8_t a = col16 & 1;
-        uint8_t r = col16 >> 11;
-        uint8_t g = (col16 >> 6) & 0x1f;
-        uint8_t b = (col16 >> 1) & 0x1f;
-        rgba32_buf[4*i + 0] = SCALE_5_8(r);
-        rgba32_buf[4*i + 1] = SCALE_5_8(g);
-        rgba32_buf[4*i + 2] = SCALE_5_8(b);
-        rgba32_buf[4*i + 3] = a ? 255 : 0;
+    //if ((uintptr_t)addr != 0x06000000 && (uintptr_t)addr != 0x06004000 && (uintptr_t)addr != 0x06008000 && (uintptr_t)addr != 0x06000800 && ((uintptr_t)addr & 0xFF000000) != 0x06000000)
+    {
+        for (uint32_t i = 0; i < size_bytes; i++) 
+        {
+            uint8_t idx = addr[i];
+            uint16_t col16 = (rdp.palette[idx * 2] << 8) | rdp.palette[idx * 2 + 1]; // Big endian load
+            uint8_t a = col16 & 1;
+            uint8_t r = col16 >> 11;
+            uint8_t g = (col16 >> 6) & 0x1f;
+            uint8_t b = (col16 >> 1) & 0x1f;
+            rgba32_buf[4 * i + 0] = SCALE_5_8(r);
+            rgba32_buf[4 * i + 1] = SCALE_5_8(g);
+            rgba32_buf[4 * i + 2] = SCALE_5_8(b);
+            rgba32_buf[4 * i + 3] = a ? 255 : 0;
+        }
     }
     
     uint32_t width = rdp.texture_tile[tile].line_size_bytes;
@@ -1106,6 +1160,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
                         color = &tmp;
                         break;
                     }
+                    case G_ACMUX_PRIM_LOD_FRAC:
+                        tmp.a = rdp.prim_lod_fraction;
+                        color = &tmp;
+                        break;
                     default:
                         memset(&tmp, 0, sizeof(tmp));
                         color = &tmp;
@@ -1316,8 +1374,8 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
 
 static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt) {
     SUPPORT_CHECK(tile == G_TX_LOADTILE);
-    SUPPORT_CHECK(uls == 0);
-    SUPPORT_CHECK(ult == 0);
+    //SUPPORT_CHECK(uls == 0);
+    //SUPPORT_CHECK(ult == 0);
 
     uint32_t word_size_shift;
     switch (rdp.texture_to_load.siz) {
@@ -1338,7 +1396,7 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
     uint32_t size_bytes = (((lrs >> G_TEXTURE_IMAGE_FRAC) + 1) * ((lrt >> G_TEXTURE_IMAGE_FRAC) + 1)) << word_size_shift;
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes = size_bytes;
 
-    assert(size_bytes <= 4096 && "bug: too big texture");
+    //assert(size_bytes <= 4096 && "bug: too big texture");
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr;
     rdp.texture_tile[tile].uls = uls;
     rdp.texture_tile[tile].ult = ult;
@@ -1400,7 +1458,8 @@ static void gfx_dp_set_env_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     rdp.env_color.a = a;
 }
 
-static void gfx_dp_set_prim_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+static void gfx_dp_set_prim_color(uint8_t m, uint8_t l, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    rdp.prim_lod_fraction = l;
     rdp.prim_color.r = r;
     rdp.prim_color.g = g;
     rdp.prim_color.b = b;
@@ -1634,10 +1693,6 @@ static inline void* seg_addr(uintptr_t w1)
 int dListBP;
 int matrixBP;
 
-extern Vtx object_ma1Vtx_004B18[];
-extern Vtx object_ma1Vtx_003318[];
-extern Vtx object_link_childVtx_01C978[];
-
 static void gfx_run_dl(Gfx* cmd) {
     //puts("dl");
     int dummy = 0;
@@ -1647,7 +1702,8 @@ static void gfx_run_dl(Gfx* cmd) {
 
         //if (markerOn)
             //printf("OP: %02X\n", opcode);
-        
+
+
         switch (opcode) {
             // RSP commands:
         case G_MARKER:
@@ -1656,38 +1712,18 @@ static void gfx_run_dl(Gfx* cmd) {
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             char dlName[4096];
             ResourceMgr_GetNameByCRC(hash, dlName);
-            printf("G_MARKER: %s\n", dlName);
+            //printf("G_MARKER: %s\n", dlName);
             int bp = 0;
             markerOn = true;
-
-
-            if (!strcmp(dlName, "object_link_child\\gLinkChildSwordAndSheathNearDL"))
-            {
-                 int bp = 0;
-            }
-
         }
             break;
             case G_MTX:
-                if (seg_addr(cmd->words.w1) == (matrixBP + 0x3C0) && cmd->words.w1 == 0xFD0003C0)
-                {
-                    int bp = 0;
-                }
-
                 if (markerOn)
                 {
                     int bp = 0;
                 }
 
-
 #ifdef F3DEX_GBI_2
-                if (cmd->words.w1 == 0xFD0003C0 || cmd->words.w1 == 0xFD000000 || cmd->words.w1 & 0xFF000000 == 0xFD000000)
-                {
-                    //int bp = 0;
-                    //++cmd;
-                    // continue;
-                }
-
                 gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t *) seg_addr(cmd->words.w1));
 #else
                 gfx_sp_matrix(C0(16, 8), (const int32_t *) seg_addr(cmd->words.w1));
@@ -1737,38 +1773,12 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
                 char alloc[1024 * 64];
-                char fileName[4096];
-                ResourceMgr_GetNameByCRC(hash, fileName);
+                //char fileName[4096];
+                //ResourceMgr_GetNameByCRC(hash, fileName);
 
-                printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
+                //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
 
-                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc);
-
-                 /*if (strcmp(fileName, "object_ma1\\object_ma1Vtx_004B18") == 0)
-                 {
-                     int bp = 0;
-
-                     for (int i = 0; i < 533; i++)
-                     {
-                         if (vtx[i].force_structure_alignment != (Vtx*)object_ma1Vtx_004B18[i].force_structure_alignment)
-                             printf("OH NOOOOOOOOO!\n");
-                     }
-
-                     vtx = (Vtx*)object_ma1Vtx_004B18;
-                 }
-
-                if (strcmp(fileName, "object_ma1\\object_ma1Vtx_003318") == 0)
-                {
-                    int bp = 0;
-                    vtx = (Vtx*)object_ma1Vtx_003318;
-                }*/
-
-                 if (strcmp(fileName, "object_link_child\\object_link_childVtx_01C978") == 0)
-                 {
-                     int bp = 0;
-                     //vtx = (Vtx*)object_link_childVtx_01C978;
-                 }
-
+                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc, 1024 * 64);
 
                 if (vtx != NULL)
                 {
@@ -1801,24 +1811,21 @@ static void gfx_run_dl(Gfx* cmd) {
                 }
                 break;
             case G_DL_OTR:
-                if (C0(16, 1) == 0) {
-                //if (1)
-                //{
+                if (C0(16, 1) == 0) 
+                {
                     // Push return address
                     
                     cmd++;
                     
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                    
+#if _DEBUG
                     char fileName[4096];
                     ResourceMgr_GetNameByCRC(hash, fileName);
-
-                    //if (!strcmp(fileName, "object_link_child\\gLinkChildDekuShieldAndSheathNearDL"))
-                    //{
-                        //int bp = 0;
-                    //}
                     
                     //printf("G_DL_OTR: %s\n", fileName);
-                    
+#endif
+
                     Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
 
                     if (gfx != 0)
@@ -1831,6 +1838,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 }
                 break;
             case (uint8_t)G_ENDDL:
+                //printf("END DL?!\n");
                 markerOn = false;
                 return;
 #ifdef F3DEX_GBI_2
@@ -1880,11 +1888,6 @@ static void gfx_run_dl(Gfx* cmd) {
             
             // RDP Commands:
             case G_SETTIMG:
-                if (cmd->words.w1 == 0xF8000000)
-                {
-                    int bp = 0;
-                }
-
                 uintptr_t texPtr = seg_addr(cmd->words.w1);
 
                 if (texPtr != NULL)
@@ -1894,25 +1897,29 @@ static void gfx_run_dl(Gfx* cmd) {
             {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
+
+#if _DEBUG
                 char fileName[4096];
                 ResourceMgr_GetNameByCRC(hash, fileName);
+
+                if (strcmp(fileName, "spot04_scene\\spot04_room_0Tex_01A490") == 0)
+                {
+                    int bp = 0;
+                }
+
                 //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
-
-                if (hash == 0x10e5dba950d5844d)
-                {
-                    int bp = 0;
-                }
-
-                if (!strcmp(fileName, "object_link_child\\gLinkChildDekuShieldBackTex"))
-                {
-                    int bp = 0;
-                }
-
+#endif
                 char* tex = ResourceMgr_LoadTexOriginalByCRC(hash);
                 cmd--;
 
                 if (tex != NULL)
                     gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), tex);
+                else
+                {
+#if _DEBUG
+                    //printf("WARNING: G_SETTIMG_OTR - tex == NULL!\n");
+#endif
+                }
 
                 cmd++;
             }
@@ -1936,7 +1943,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_dp_set_env_color(C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));
                 break;
             case G_SETPRIMCOLOR:
-                gfx_dp_set_prim_color(C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));
+                gfx_dp_set_prim_color(C0(8, 8), C0(0, 8), C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));
                 break;
             case G_SETFOGCOLOR:
                 gfx_dp_set_fog_color(C1(24, 8), C1(16, 8), C1(8, 8), C1(0, 8));

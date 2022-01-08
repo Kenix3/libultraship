@@ -27,6 +27,7 @@ namespace OtrLib {
 			uint32_t GetCurrentWidth();
 			uint32_t GetCurrentHeight();
 			std::shared_ptr<OTRContext> GetContext() { return Context.lock(); }
+			static int32_t lastScancode;
 
 		protected:
 		private:

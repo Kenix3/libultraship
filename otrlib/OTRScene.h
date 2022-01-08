@@ -173,12 +173,33 @@ namespace OtrLib
 		OTRSetCsCamera(BinaryReader* reader);
 	};
 
+	class OTRBGImage
+	{
+	public:
+		uint16_t unk_00;
+		uint8_t id;
+		std::string sourceBackground;
+		uint32_t unk_0C;
+		uint32_t tlut;
+		uint16_t width;
+		uint16_t height;
+		uint8_t fmt;
+		uint8_t siz;
+		uint16_t mode0;
+		uint16_t tlutCount;
+	};
+
 	class OTRMeshData
 	{
 	public:
 		int x, y, z;
 		int unk_06;
 		std::string opa, xlu;
+
+		// Do I look like I know what a JPEG is?
+		uint8_t imgFmt;
+		std::string imgOpa, imgXlu;
+		std::vector<OTRBGImage> images;
 
 		OTRMeshData();
 	};
@@ -266,6 +287,14 @@ namespace OtrLib
 
 		OTRSetObjectList(BinaryReader* reader);
 	};
+	
+	class OTRSetCutscenes : public OTRSceneCommand
+	{
+	public:
+		std::string cutscenePath;
+
+		OTRSetCutscenes(BinaryReader* reader);
+	};
 
 	class OTRSetAlternateHeaders : public OTRSceneCommand
 	{
@@ -273,6 +302,19 @@ namespace OtrLib
 		std::vector<std::string> headers;
 
 		OTRSetAlternateHeaders(BinaryReader* reader);
+	};
+
+	class OTRTransitionActorEntry
+	{
+	public:
+		uint8_t frontObjectRoom;
+		uint8_t frontTransitionReaction;
+		uint8_t backObjectRoom;
+		uint8_t backTransitionReaction;
+		uint16_t actorNum;
+		int16_t posX, posY, posZ;
+		int16_t rotY;
+		uint16_t initVar;
 	};
 
 	class OTRActorSpawnEntry
@@ -304,6 +346,15 @@ namespace OtrLib
 
 		OTRSetActorList(BinaryReader* reader);
 	};
+
+	class OTRSetTransitionActorList : public OTRSceneCommand
+	{
+	public:
+		std::vector<OTRTransitionActorEntry> entries;
+
+		OTRSetTransitionActorList(BinaryReader* reader);
+	};
+
 
 	class OTREndMarker : public OTRSceneCommand
 	{

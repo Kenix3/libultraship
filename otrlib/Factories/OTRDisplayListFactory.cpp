@@ -6,11 +6,11 @@ namespace OtrLib
     {
         OTRDisplayList* dl = new OTRDisplayList();
 
-        uint32_t version = reader->ReadUInt32();
+        OTRVersion version = (OTRVersion)reader->ReadUInt32();
 
         switch (version)
         {
-        case 0:
+        case OTRVersion::Deckard:
         {
             OTRDisplayListV0 otrDL = OTRDisplayListV0();
             otrDL.ParseFileBinary(reader, dl);

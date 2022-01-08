@@ -1,19 +1,18 @@
-#include "OTRSceneFactory.h"
+#include "OTRCutsceneFactory.h"
 
 namespace OtrLib
 {
-    OTRScene* OTRSceneFactory::ReadScene(BinaryReader* reader)
-    {
-        OTRScene* scene = new OTRScene();
-
+	OTRCutscene* OTRCutsceneFactory::ReadCutscene(BinaryReader* reader)
+	{
+        OTRCutscene* cs = new OTRCutscene();
         OTRVersion version = (OTRVersion)reader->ReadUInt32();
 
         switch (version)
         {
         case OTRVersion::Deckard:
         {
-            OTRSceneV0 otrScene = OTRSceneV0();
-            otrScene.ParseFileBinary(reader, scene);
+            OTRCutsceneV0 otrCS = OTRCutsceneV0();
+            otrCS.ParseFileBinary(reader, cs);
         }
         break;
         default:
@@ -21,6 +20,6 @@ namespace OtrLib
             break;
         }
 
-        return scene;
-    }
+        return cs;
+	}
 }

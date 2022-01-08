@@ -24,6 +24,8 @@ namespace OtrLib
         OTRMatrix           =   0x4F4D5458,     // OMTX
         OTRPath             =   0x4F505448,     // OPTH
         OTRVtx              =   0x4F565458,     // OVTX
+        OTRCutscene         =   0x4F435654,     // OCUT
+        OTRArray            =   0x4F415252,     // OARR
     };
 
     enum class DataType
@@ -88,6 +90,8 @@ namespace OtrLib
     public:
         uint64_t id; // Unique Resource ID
         bool isDirty = false;
+
+        void* cachedGameAsset = 0; // Conversion to OoT friendly struct cached...
     };
 
     class OTRResourceFile

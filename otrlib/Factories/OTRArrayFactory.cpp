@@ -1,19 +1,18 @@
-#include "OTRSkeletonFactory.h"
+#include "OTRArrayFactory.h"
 
 namespace OtrLib
 {
-    OTRSkeleton* OTRSkeletonFactory::ReadSkeleton(BinaryReader* reader)
+    OTRArray* OTRArrayFactory::ReadArray(BinaryReader* reader)
     {
-        OTRSkeleton* skel = new OTRSkeleton();
-
+        OTRArray* arr = new OTRArray();
         OTRVersion version = (OTRVersion)reader->ReadUInt32();
 
         switch (version)
         {
         case OTRVersion::Deckard:
         {
-            OTRSkeletonV0 otrSkel = OTRSkeletonV0();
-            otrSkel.ParseFileBinary(reader, skel);
+            OTRArrayV0 otrArr = OTRArrayV0();
+            otrArr.ParseFileBinary(reader, arr);
         }
         break;
         default:
@@ -21,6 +20,6 @@ namespace OtrLib
             break;
         }
 
-        return skel;
+        return arr;
     }
-}
+};
