@@ -102,7 +102,6 @@
 #define BTN_STICKDOWN   0x40000
 #define BTN_STICKUP     0x80000
 
-
 typedef struct {
     /* 0x00 */ int32_t ram[15];
     /* 0x3C */ int32_t status;

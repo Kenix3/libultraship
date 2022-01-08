@@ -165,6 +165,9 @@
     <ClCompile Include="Factories\OTRVtxFactory.cpp">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClCompile>
+    <ClCompile Include="SDLController.cpp">
+      <Filter>Source Files\Controller</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -289,6 +292,9 @@
     </ClInclude>
     <ClInclude Include="Factories\OTRVtxFactory.h">
       <Filter>Source Files\Resources\Files\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="SDLController.h">
+      <Filter>Source Files\Controller</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
