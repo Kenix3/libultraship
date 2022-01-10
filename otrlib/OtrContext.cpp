@@ -55,11 +55,12 @@ namespace OtrLib {
             // Setup Logging
             spdlog::init_thread_pool(8192, 1);
             auto ConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            ConsoleSink->set_level(spdlog::level::trace);
             auto FileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/" + GetName() + ".log");
+            FileSink->set_level(spdlog::level::trace);
             std::vector<spdlog::sink_ptr> Sinks{ ConsoleSink, FileSink };
             Logger = std::make_shared<spdlog::async_logger>(GetName(), Sinks.begin(), Sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
             GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
-            spdlog::set_level(spdlog::level::trace);
             spdlog::register_logger(GetLogger());
             spdlog::set_default_logger(GetLogger());
         }

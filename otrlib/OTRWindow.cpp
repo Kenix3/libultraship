@@ -92,7 +92,11 @@ namespace OtrLib {
     int32_t OTRWindow::lastScancode;
 
     OTRWindow::OTRWindow(std::shared_ptr<OTRContext> Context) : Context(Context) {
-
+        WmApi = nullptr;
+        RenderingApi = nullptr;
+        bIsFullscreen = false;
+        dwWidth = 320;
+        dwHeight = 240;
     }
 
     OTRWindow::~OTRWindow() {

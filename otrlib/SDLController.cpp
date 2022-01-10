@@ -2,18 +2,33 @@
 #include "OtrContext.h"
 #include "spdlog/spdlog.h"
 #include "stox.h"
+#include "OTRWindow.h"
+
+extern "C" uint8_t __osMaxControllers;
 
 namespace OtrLib {
+
+
 	SDLController::SDLController(int32_t dwControllerNumber) : OTRController(dwControllerNumber), Cont(nullptr), guid(INVALID_SDL_CONTROLLER_GUID) {
 
 	}
 
 	SDLController::~SDLController() {
-		if (Cont != nullptr) {
-			SDL_GameControllerClose(Cont);
-			Cont = nullptr;
-		}
+        Close();
 	}
+
+    bool SDLController::IsGuidInUse(std::string guid) {
+        // Check if the GUID is loaded in any other controller;
+        for (size_t i = 0; i < __osMaxControllers; i++) {
+            SDLController* OtherCont = dynamic_cast<SDLController*>(OTRWindow::Controllers[i].get());
+
+            if (OtherCont != nullptr && OtherCont->GetGuid().compare(guid) == 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     bool SDLController::Open() {
         std::string ConfSection = GetConfSection();
@@ -23,28 +38,44 @@ namespace OtrLib {
         for (int i = 0; i < SDL_NumJoysticks(); i++) {
             if (SDL_IsGameController(i)) {
                 // Get the GUID from SDL
-                char buf[33];
-                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), buf, sizeof(buf));
-                auto guid = std::string(buf);
+                char GuidBuf[33];
+                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), GuidBuf, sizeof(GuidBuf));
+                auto NewGuid = std::string(GuidBuf);
 
-                // If the GUID read from SDL is blank, then we abort.
-                if (guid.compare(INVALID_SDL_CONTROLLER_GUID) == 0) {
+                // Invalid GUID read. Go to next.
+                if (NewGuid.compare(INVALID_SDL_CONTROLLER_GUID) == 0) {
                     SPDLOG_ERROR("SDL Controller returned invalid guid");
                     continue;
                 }
 
-                // If the GUID is blank from the config, OR if the config GUID matches, load the controller.
-                if (Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(guid) == 0) {
-                    auto Cont = SDL_GameControllerOpen(i);
+                // The GUID is in use, we want to use a different physical controller. Go to next.
+                if (IsGuidInUse(NewGuid)) {
+                    continue;
+                }
 
-                    // We failed to load the controller. Abort.
-                    if (Cont == nullptr) {
+                // If the GUID is blank from the config, OR if the config GUID matches, load the controller.
+                if (Conf[ConfSection]["GUID"].compare("") == 0 || Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(NewGuid) == 0) {
+                    auto NewCont = SDL_GameControllerOpen(i);
+
+                    // We failed to load the controller. Go to next.
+                    if (NewCont == nullptr) {
                         SPDLOG_ERROR("SDL Controller failed to open: ({})", SDL_GetError());
                         continue;
                     }
 
-                    this->guid = guid;
-                    this->Cont = Cont;
+                    std::string BindingConfSection = GetBindingConfSection();
+                    std::shared_ptr<OTRConfigFile> pBindingConf = OTRContext::GetInstance()->GetConfig();
+                    OTRConfigFile& BindingConf = *pBindingConf.get();
+
+                    if (!BindingConf.has(BindingConfSection)) {
+                        CreateDefaultBinding(NewGuid);
+                    }
+
+                    LoadBinding();
+                    LoadAxisThresholds();
+
+                    guid = NewGuid;
+                    Cont = NewCont;
                     break;
                 }
             }
@@ -54,7 +85,9 @@ namespace OtrLib {
     }
 
     bool SDLController::Close() {
-        SDL_GameControllerClose(Cont);
+        if (Cont != nullptr) {
+            SDL_GameControllerClose(Cont);
+        }
         Cont = nullptr;
         guid = "";
         ButtonMapping.clear();
@@ -71,24 +104,29 @@ namespace OtrLib {
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
 
-        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERLEFT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT)]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERLEFT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"]);
     }
 
     void SDLController::NormalizeStickAxis(int16_t wAxisValueX, int16_t wAxisValueY, int16_t wAxisThreshold) {
         uint32_t MagSquared = (uint32_t)(wAxisValueX * wAxisValueX) + (uint32_t)(wAxisValueY * wAxisValueY);
-        if (MagSquared > (uint32_t)(wAxisThreshold * wAxisThreshold)) {
+        uint32_t ThresholdSquared = wAxisThreshold * wAxisThreshold;
+
+        if (MagSquared > ThresholdSquared) {
             wStickX = wAxisValueX / 256;
             int32_t StickY = -wAxisValueY / 256;
             wStickY = StickY == 128 ? 127 : StickY;
+        } else {
+            wStickX = 0;
+            wStickY = 0;
         }
     }
 
-    void SDLController::Read(OSContPad* pad) {
+    void SDLController::ReadFromSource() {
         std::string ConfSection = GetBindingConfSection();
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
@@ -100,22 +138,12 @@ namespace OtrLib {
             Close();
         }
 
-        // TODO: Skip controller if it's already opened.
-
-
         // Attempt to load the controller if it's not loaded
         if (Cont == nullptr) {
             // If we failed to load the controller, don't process it.
             if (!Open()) {
                 return;
             }
-            
-            if (!Conf.has(ConfSection)) {
-                CreateDefaultBinding();
-            }
-
-            LoadBinding();
-            LoadAxisThresholds();
         }
 
         for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
@@ -141,67 +169,76 @@ namespace OtrLib {
             auto NegButton = ButtonMapping[NegScancode];
             auto AxisValue = SDL_GameControllerGetAxis(Cont, Axis);
 
-            if (AxisValue > AxisThreshold) {
-                dwPressedButtons |= PosButton;
-                dwPressedButtons &= ~NegButton;
-            } else if (AxisValue < -AxisThreshold) {
-                dwPressedButtons &= ~PosButton;
-                dwPressedButtons |= NegButton;
+            // If the axis is NOT mapped to the control stick.
+            if (!(
+                PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT ||
+                PosButton == BTN_STICKUP || PosButton == BTN_STICKDOWN ||
+                NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT ||
+                NegButton == BTN_STICKUP || NegButton == BTN_STICKDOWN)) {
+                if (AxisValue > AxisThreshold) {
+                    dwPressedButtons |= PosButton;
+                    dwPressedButtons &= ~NegButton;
+                }
+                else if (AxisValue < -AxisThreshold) {
+                    dwPressedButtons &= ~PosButton;
+                    dwPressedButtons |= NegButton;
+                }
+                else {
+                    dwPressedButtons &= ~PosButton;
+                    dwPressedButtons &= ~NegButton;
+                }
             } else {
-                dwPressedButtons &= ~PosButton;
-                dwPressedButtons &= ~NegButton;
-            }
+                if (PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT) {
+                    if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
+                        SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", StickAxisX, Axis);
+                    }
 
-            if (PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT) {
-                if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
-                    SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", StickAxisX, Axis);
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisX = Axis;
                 }
 
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", StickDeadzone, AxisThreshold);
+                if (PosButton == BTN_STICKUP || PosButton == BTN_STICKDOWN) {
+                    if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
+                        SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", StickAxisY, Axis);
+                    }
+
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisY = Axis;
                 }
 
-                StickDeadzone = AxisThreshold;
-                StickAxisX = Axis;
-            }
+                if (NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT) {
+                    if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
+                        SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", StickAxisX, Axis);
+                    }
 
-            if (PosButton == BTN_STICKUP || PosButton == BTN_STICKDOWN) {
-                if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
-                    SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", StickAxisY, Axis);
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisX = Axis;
                 }
 
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                if (NegButton == BTN_STICKUP || NegButton == BTN_STICKDOWN) {
+                    if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
+                        SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", StickAxisY, Axis);
+                    }
+
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisY = Axis;
                 }
-
-                StickDeadzone = AxisThreshold;
-                StickAxisY = Axis;
-            }
-
-            if (NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT) {
-                if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
-                    SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", StickAxisX, Axis);
-                }
-
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
-                }
-
-                StickDeadzone = AxisThreshold;
-                StickAxisX = Axis;
-            }
-
-            if (NegButton == BTN_STICKUP || NegButton == BTN_STICKDOWN) {
-                if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
-                    SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", StickAxisY, Axis);
-                }
-
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
-                }
-
-                StickDeadzone = AxisThreshold;
-                StickAxisY = Axis;
             }
         }
 
@@ -210,27 +247,9 @@ namespace OtrLib {
             auto AxisValueY = SDL_GameControllerGetAxis(Cont, StickAxisY);
             NormalizeStickAxis(AxisValueX, AxisValueY, StickDeadzone);
         }
-            
-        pad->button = dwPressedButtons & 0xFFFF;
-
-        if (dwPressedButtons & BTN_STICKLEFT) {
-            pad->stick_x = -128;
-        } else if (dwPressedButtons & BTN_STICKRIGHT) {
-            pad->stick_x = 127;
-        } else {
-            pad->stick_x = wStickX;
-        }
-
-        if (dwPressedButtons & BTN_STICKDOWN) {
-            pad->stick_y = -128;
-        } else if (dwPressedButtons & BTN_STICKUP) {
-            pad->stick_y = 127;
-        } else {
-            pad->stick_x = wStickY;
-        }
 	}
 
-    void SDLController::CreateDefaultBinding() {
+    void SDLController::CreateDefaultBinding(std::string ContGuid) {
         std::string ConfSection = GetBindingConfSection();
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
@@ -254,12 +273,12 @@ namespace OtrLib {
         Conf[ConfSection][STR(BTN_STICKDOWN)] = std::to_string((SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_STICKUP)] = std::to_string(-(SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
 
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX)] = std::to_string(4960);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY)] = std::to_string(4960);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX)] = std::to_string(0x4000);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY)] = std::to_string(0x4000);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT)] = std::to_string(0x1E00);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT)] = std::to_string(0x1E00);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"] = std::to_string(4960);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"] = std::to_string(4960);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"] = std::to_string(0x4000);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(0x4000);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"] = std::to_string(0x1E00);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"] = std::to_string(0x1E00);
     }
 
     void SDLController::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {

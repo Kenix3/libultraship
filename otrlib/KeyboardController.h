@@ -8,7 +8,7 @@ namespace OtrLib {
 			KeyboardController(int32_t dwControllerNumber);
 			~KeyboardController();
 
-			void Read(OSContPad* pad);
+			void ReadFromSource();
 			bool PressButton(int32_t dwScancode);
 			bool ReleaseButton(int32_t dwScancode);
 			void ReleaseAllButtons();

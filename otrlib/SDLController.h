@@ -10,14 +10,16 @@ namespace OtrLib {
 			SDLController(int32_t dwControllerNumber);
 			~SDLController();
 
-			void Read(OSContPad* pad);
+			void ReadFromSource();
+			std::string GetGuid() { return guid; };
 
 		protected:
 			std::string GetControllerType();
 			void SetButtonMapping(std::string szButtonName, int32_t dwScancode);
 			std::string GetConfSection();
 			std::string GetBindingConfSection();
-			void CreateDefaultBinding();
+			void CreateDefaultBinding(std::string ContGuid);
+			static bool IsGuidInUse(std::string guid);
 
 		private:
 			std::string guid;
