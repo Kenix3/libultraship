@@ -43,6 +43,17 @@ namespace OtrLib {
                         continue;
                     }
 
+                    std::string BindingConfSection = GetBindingConfSection();
+                    std::shared_ptr<OTRConfigFile> pBindingConf = OTRContext::GetInstance()->GetConfig();
+                    OTRConfigFile& BindingConf = *pBindingConf.get();
+
+                    if (!BindingConf.has(BindingConfSection)) {
+                        CreateDefaultBinding(guid);
+                    }
+
+                    LoadBinding();
+                    LoadAxisThresholds();
+
                     this->guid = guid;
                     this->Cont = Cont;
                     break;
@@ -82,13 +93,11 @@ namespace OtrLib {
     void SDLController::NormalizeStickAxis(int16_t wAxisValueX, int16_t wAxisValueY, int16_t wAxisThreshold) {
         uint32_t MagSquared = (uint32_t)(wAxisValueX * wAxisValueX) + (uint32_t)(wAxisValueY * wAxisValueY);
         uint32_t ThresholdSquared = wAxisThreshold * wAxisThreshold;
-        SPDLOG_INFO("NormalizeStickAxis, wAxisValueX: {}, wAxisValueY: {}, wAxisThreshold: {}, MagSquared: {}, ThresholdSquared: {}", wAxisValueX, wAxisValueY, wAxisThreshold, MagSquared, ThresholdSquared);
 
         if (MagSquared > ThresholdSquared) {
             wStickX = wAxisValueX / 256;
             int32_t StickY = -wAxisValueY / 256;
             wStickY = StickY == 128 ? 127 : StickY;
-            SPDLOG_INFO("NormalizeStickAxis, wStickX: {}, wStickY: {}", wStickX, wStickY);
         } else {
             wStickX = 0;
             wStickY = 0;
@@ -107,22 +116,12 @@ namespace OtrLib {
             Close();
         }
 
-        // TODO: Skip controller if it's already opened.
-
-
         // Attempt to load the controller if it's not loaded
         if (Cont == nullptr) {
             // If we failed to load the controller, don't process it.
             if (!Open()) {
                 return;
             }
-            
-            if (!Conf.has(ConfSection)) {
-                CreateDefaultBinding(guid);
-            }
-
-            LoadBinding();
-            LoadAxisThresholds();
         }
 
         for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
