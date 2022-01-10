@@ -55,7 +55,7 @@ namespace OtrLib {
 			pad->stick_y = 127;
 		}
 		else {
-			pad->stick_x = wStickY;
+			pad->stick_y = wStickY;
 		}
 	}
 

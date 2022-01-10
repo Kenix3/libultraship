@@ -17,7 +17,7 @@ namespace OtrLib {
 			void SetButtonMapping(std::string szButtonName, int32_t dwScancode);
 			std::string GetConfSection();
 			std::string GetBindingConfSection();
-			void CreateDefaultBinding();
+			void CreateDefaultBinding(std::string ContGuid);
 
 		private:
 			std::string guid;

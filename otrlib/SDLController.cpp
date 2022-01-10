@@ -34,7 +34,7 @@ namespace OtrLib {
                 }
 
                 // If the GUID is blank from the config, OR if the config GUID matches, load the controller.
-                if (Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(guid) == 0) {
+                if (Conf[ConfSection]["GUID"].compare("") == 0 || Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(guid) == 0) {
                     auto Cont = SDL_GameControllerOpen(i);
 
                     // We failed to load the controller. Abort.
@@ -81,10 +81,17 @@ namespace OtrLib {
 
     void SDLController::NormalizeStickAxis(int16_t wAxisValueX, int16_t wAxisValueY, int16_t wAxisThreshold) {
         uint32_t MagSquared = (uint32_t)(wAxisValueX * wAxisValueX) + (uint32_t)(wAxisValueY * wAxisValueY);
-        if (MagSquared > (uint32_t)(wAxisThreshold * wAxisThreshold)) {
+        uint32_t ThresholdSquared = wAxisThreshold * wAxisThreshold;
+        SPDLOG_INFO("NormalizeStickAxis, wAxisValueX: {}, wAxisValueY: {}, wAxisThreshold: {}, MagSquared: {}, ThresholdSquared: {}", wAxisValueX, wAxisValueY, wAxisThreshold, MagSquared, ThresholdSquared);
+
+        if (MagSquared > ThresholdSquared) {
             wStickX = wAxisValueX / 256;
             int32_t StickY = -wAxisValueY / 256;
             wStickY = StickY == 128 ? 127 : StickY;
+            SPDLOG_INFO("NormalizeStickAxis, wStickX: {}, wStickY: {}", wStickX, wStickY);
+        } else {
+            wStickX = 0;
+            wStickY = 0;
         }
     }
 
@@ -111,7 +118,7 @@ namespace OtrLib {
             }
             
             if (!Conf.has(ConfSection)) {
-                CreateDefaultBinding();
+                CreateDefaultBinding(guid);
             }
 
             LoadBinding();
@@ -141,67 +148,76 @@ namespace OtrLib {
             auto NegButton = ButtonMapping[NegScancode];
             auto AxisValue = SDL_GameControllerGetAxis(Cont, Axis);
 
-            if (AxisValue > AxisThreshold) {
-                dwPressedButtons |= PosButton;
-                dwPressedButtons &= ~NegButton;
-            } else if (AxisValue < -AxisThreshold) {
-                dwPressedButtons &= ~PosButton;
-                dwPressedButtons |= NegButton;
+            // If the axis is NOT mapped to the control stick.
+            if (!(
+                PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT ||
+                PosButton == BTN_STICKUP || PosButton == BTN_STICKDOWN ||
+                NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT |
+                NegButton == BTN_STICKUP || NegButton == BTN_STICKDOWN)) {
+                if (AxisValue > AxisThreshold) {
+                    dwPressedButtons |= PosButton;
+                    dwPressedButtons &= ~NegButton;
+                }
+                else if (AxisValue < -AxisThreshold) {
+                    dwPressedButtons &= ~PosButton;
+                    dwPressedButtons |= NegButton;
+                }
+                else {
+                    dwPressedButtons &= ~PosButton;
+                    dwPressedButtons &= ~NegButton;
+                }
             } else {
-                dwPressedButtons &= ~PosButton;
-                dwPressedButtons &= ~NegButton;
-            }
+                if (PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT) {
+                    if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
+                        SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", StickAxisX, Axis);
+                    }
 
-            if (PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT) {
-                if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
-                    SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", StickAxisX, Axis);
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisX = Axis;
                 }
 
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", StickDeadzone, AxisThreshold);
+                if (PosButton == BTN_STICKUP || PosButton == BTN_STICKDOWN) {
+                    if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
+                        SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", StickAxisY, Axis);
+                    }
+
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisY = Axis;
                 }
 
-                StickDeadzone = AxisThreshold;
-                StickAxisX = Axis;
-            }
+                if (NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT) {
+                    if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
+                        SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", StickAxisX, Axis);
+                    }
 
-            if (PosButton == BTN_STICKUP || PosButton == BTN_STICKDOWN) {
-                if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
-                    SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", StickAxisY, Axis);
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisX = Axis;
                 }
 
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                if (NegButton == BTN_STICKUP || NegButton == BTN_STICKDOWN) {
+                    if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
+                        SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", StickAxisY, Axis);
+                    }
+
+                    if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
+                        SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
+                    }
+
+                    StickDeadzone = AxisThreshold;
+                    StickAxisY = Axis;
                 }
-
-                StickDeadzone = AxisThreshold;
-                StickAxisY = Axis;
-            }
-
-            if (NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT) {
-                if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
-                    SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", StickAxisX, Axis);
-                }
-
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
-                }
-
-                StickDeadzone = AxisThreshold;
-                StickAxisX = Axis;
-            }
-
-            if (NegButton == BTN_STICKUP || NegButton == BTN_STICKDOWN) {
-                if (StickAxisY != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != Axis) {
-                    SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", StickAxisY, Axis);
-                }
-
-                if (StickDeadzone != 0 && StickDeadzone != AxisThreshold) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", StickDeadzone, AxisThreshold);
-                }
-
-                StickDeadzone = AxisThreshold;
-                StickAxisY = Axis;
             }
         }
 
@@ -226,11 +242,11 @@ namespace OtrLib {
         } else if (dwPressedButtons & BTN_STICKUP) {
             pad->stick_y = 127;
         } else {
-            pad->stick_x = wStickY;
+            pad->stick_y = wStickY;
         }
 	}
 
-    void SDLController::CreateDefaultBinding() {
+    void SDLController::CreateDefaultBinding(std::string ContGuid) {
         std::string ConfSection = GetBindingConfSection();
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
