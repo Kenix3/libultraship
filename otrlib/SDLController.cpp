@@ -2,8 +2,13 @@
 #include "OtrContext.h"
 #include "spdlog/spdlog.h"
 #include "stox.h"
+#include "OTRWindow.h"
+
+extern "C" uint8_t __osMaxControllers;
 
 namespace OtrLib {
+
+
 	SDLController::SDLController(int32_t dwControllerNumber) : OTRController(dwControllerNumber), Cont(nullptr), guid(INVALID_SDL_CONTROLLER_GUID) {
 
 	}
@@ -11,6 +16,19 @@ namespace OtrLib {
 	SDLController::~SDLController() {
         Close();
 	}
+
+    bool SDLController::IsGuidInUse(std::string guid) {
+        // Check if the GUID is loaded in any other controller;
+        for (size_t i = 0; i < __osMaxControllers; i++) {
+            SDLController* OtherCont = dynamic_cast<SDLController*>(OTRWindow::Controllers[i].get());
+
+            if (OtherCont != nullptr && OtherCont->GetGuid().compare(guid) == 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     bool SDLController::Open() {
         std::string ConfSection = GetConfSection();
@@ -20,22 +38,27 @@ namespace OtrLib {
         for (int i = 0; i < SDL_NumJoysticks(); i++) {
             if (SDL_IsGameController(i)) {
                 // Get the GUID from SDL
-                char buf[33];
-                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), buf, sizeof(buf));
-                auto guid = std::string(buf);
+                char GuidBuf[33];
+                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), GuidBuf, sizeof(GuidBuf));
+                auto NewGuid = std::string(GuidBuf);
 
-                // If the GUID read from SDL is blank, then we abort.
-                if (guid.compare(INVALID_SDL_CONTROLLER_GUID) == 0) {
+                // Invalid GUID read. Go to next.
+                if (NewGuid.compare(INVALID_SDL_CONTROLLER_GUID) == 0) {
                     SPDLOG_ERROR("SDL Controller returned invalid guid");
                     continue;
                 }
 
-                // If the GUID is blank from the config, OR if the config GUID matches, load the controller.
-                if (Conf[ConfSection]["GUID"].compare("") == 0 || Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(guid) == 0) {
-                    auto Cont = SDL_GameControllerOpen(i);
+                // The GUID is in use, we want to use a different physical controller. Go to next.
+                if (IsGuidInUse(NewGuid)) {
+                    continue;
+                }
 
-                    // We failed to load the controller. Abort.
-                    if (Cont == nullptr) {
+                // If the GUID is blank from the config, OR if the config GUID matches, load the controller.
+                if (Conf[ConfSection]["GUID"].compare("") == 0 || Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(NewGuid) == 0) {
+                    auto NewCont = SDL_GameControllerOpen(i);
+
+                    // We failed to load the controller. Go to next.
+                    if (NewCont == nullptr) {
                         SPDLOG_ERROR("SDL Controller failed to open: ({})", SDL_GetError());
                         continue;
                     }
@@ -45,14 +68,14 @@ namespace OtrLib {
                     OTRConfigFile& BindingConf = *pBindingConf.get();
 
                     if (!BindingConf.has(BindingConfSection)) {
-                        CreateDefaultBinding(guid);
+                        CreateDefaultBinding(NewGuid);
                     }
 
                     LoadBinding();
                     LoadAxisThresholds();
 
-                    this->guid = guid;
-                    this->Cont = Cont;
+                    guid = NewGuid;
+                    Cont = NewCont;
                     break;
                 }
             }

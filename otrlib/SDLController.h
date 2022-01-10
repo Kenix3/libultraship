@@ -19,6 +19,7 @@ namespace OtrLib {
 			std::string GetConfSection();
 			std::string GetBindingConfSection();
 			void CreateDefaultBinding(std::string ContGuid);
+			static bool IsGuidInUse(std::string guid);
 
 		private:
 			std::string guid;
