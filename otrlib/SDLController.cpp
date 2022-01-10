@@ -81,12 +81,12 @@ namespace OtrLib {
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
 
-        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERLEFT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT)]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT)]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERLEFT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"]);
     }
 
     void SDLController::NormalizeStickAxis(int16_t wAxisValueX, int16_t wAxisValueY, int16_t wAxisThreshold) {
@@ -268,12 +268,12 @@ namespace OtrLib {
         Conf[ConfSection][STR(BTN_STICKDOWN)] = std::to_string((SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_STICKUP)] = std::to_string(-(SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
 
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX)] = std::to_string(4960);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY)] = std::to_string(4960);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX)] = std::to_string(0x4000);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY)] = std::to_string(0x4000);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT)] = std::to_string(0x1E00);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT)] = std::to_string(0x1E00);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"] = std::to_string(4960);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"] = std::to_string(4960);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"] = std::to_string(0x4000);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(0x4000);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"] = std::to_string(0x1E00);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"] = std::to_string(0x1E00);
     }
 
     void SDLController::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {
