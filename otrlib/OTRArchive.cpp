@@ -7,11 +7,11 @@
 #include <filesystem>
 
 namespace OtrLib {
-	OTRArchive::OTRArchive(std::string MainPath) : OTRArchive(MainPath, "") {
+	OTRArchive::OTRArchive(std::string MainPath) : OTRArchive(MainPath, "", false) {
 	}
 
-	OTRArchive::OTRArchive(std::string MainPath, std::string PatchesPath) : MainPath(MainPath), PatchesPath(PatchesPath) {
-		Load();
+	OTRArchive::OTRArchive(std::string MainPath, std::string PatchesPath, bool genCRCMap) : MainPath(MainPath), PatchesPath(PatchesPath) {
+		Load(genCRCMap);
 	}
 
 	OTRArchive::~OTRArchive() {
@@ -213,8 +213,8 @@ namespace OtrLib {
 		return hashes[hash];
 	}
 
-	bool OTRArchive::Load() {
-		return LoadMainMPQ() && LoadPatchMPQs();
+	bool OTRArchive::Load(bool genCRCMap) {
+		return LoadMainMPQ(genCRCMap) && LoadPatchMPQs();
 	}
 
 	bool OTRArchive::Unload() 
@@ -247,7 +247,7 @@ namespace OtrLib {
 		return true;
 	}
 
-	bool OTRArchive::LoadMainMPQ() {
+	bool OTRArchive::LoadMainMPQ(bool genCRCMap) {
 		HANDLE mpqHandle = NULL;
 
 		TCHAR* t_filename = new TCHAR[MainPath.size() + 1];
@@ -262,17 +262,20 @@ namespace OtrLib {
 		mpqHandles[MainPath] = mpqHandle;
 		mainMPQ = mpqHandle;
 
-		auto listFile = LoadFile("(listfile)", false);
-
-		std::vector<std::string> lines = StringHelper::Split(std::string(listFile->buffer.get(), listFile->dwBufferSize), "\n");
-
-		for (int i = 0; i < lines.size(); i++)
+		if (genCRCMap)
 		{
-			std::string line = StringHelper::Strip(lines[i], "\r");
-			//uint64_t hash = StringHelper::StrToL(lines[i], 16);
+			auto listFile = LoadFile("(listfile)", false);
 
-			uint64_t hash = CRC64(line.c_str());
-			hashes[hash] = line;
+			std::vector<std::string> lines = StringHelper::Split(std::string(listFile->buffer.get(), listFile->dwBufferSize), "\n");
+
+			for (int i = 0; i < lines.size(); i++)
+			{
+				std::string line = StringHelper::Strip(lines[i], "\r");
+				//uint64_t hash = StringHelper::StrToL(lines[i], 16);
+
+				uint64_t hash = CRC64(line.c_str());
+				hashes[hash] = line;
+			}
 		}
 
 		return true;

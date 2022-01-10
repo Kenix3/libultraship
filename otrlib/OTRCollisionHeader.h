@@ -37,7 +37,7 @@ namespace OtrLib
 	class CameraDataEntry
 	{
 	public:
-		int16_t cameraSType;
+		uint16_t cameraSType;
 		int16_t numData;
 		int32_t cameraPosDataIdx;
 	};

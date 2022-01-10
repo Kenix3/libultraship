@@ -11,6 +11,50 @@ namespace OtrLib
         limb->limbType = (LimbType)reader->ReadByte();
         limb->skinSegmentType = (ZLimbSkinType)reader->ReadByte();
 
+        limb->skinVtxCnt = reader->ReadUInt16();
+        uint32_t skinCnt = reader->ReadUInt32();
+
+        for (int i = 0; i < skinCnt; i++)
+        {
+            Struct_800A598C struc;
+
+            struc.unk_4 = reader->ReadUInt16();
+
+            int arrSize = reader->ReadInt32();
+
+            for (int k = 0; k < arrSize; k++)
+            {
+                Struct_800A57C0 struc2;
+
+                struc2.unk_0 = reader->ReadInt16();
+                struc2.unk_2 = reader->ReadInt16();
+                struc2.unk_4 = reader->ReadInt16();
+                struc2.unk_6 = reader->ReadByte();
+                struc2.unk_7 = reader->ReadByte();
+                struc2.unk_8 = reader->ReadByte();
+                struc2.unk_9 = reader->ReadUByte();
+
+                struc.unk_8_arr.push_back(struc2);
+            }
+
+            int arrSize2 = reader->ReadInt32();
+
+            for (int k = 0; k < arrSize2; k++)
+            {
+                Struct_800A598C_2 struc2;
+
+                struc2.unk_0 = reader->ReadUByte();
+                struc2.x = reader->ReadInt16();
+                struc2.y = reader->ReadInt16();
+                struc2.z = reader->ReadInt16();
+                struc2.unk_8 = reader->ReadUByte();
+
+                struc.unk_C_arr.push_back(struc2);
+            }
+
+            limb->skinData.push_back(struc);
+        }
+
         limb->legTransX = reader->ReadSingle();
         limb->legTransY = reader->ReadSingle();
         limb->legTransZ = reader->ReadSingle();

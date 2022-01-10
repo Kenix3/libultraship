@@ -22,7 +22,7 @@ namespace OtrLib
 	public:
 		OTRArchive();
 		OTRArchive(std::string MainPath);
-		OTRArchive(std::string MainPath, std::string PatchesPath);
+		OTRArchive(std::string MainPath, std::string PatchesPath, bool genCRCMap = true);
 		~OTRArchive();
 
 		static std::shared_ptr<OTRArchive> CreateArchive(std::string archivePath);
@@ -36,7 +36,7 @@ namespace OtrLib
 		bool HasFile(std::string searchMask);
 		std::string HashToString(uint64_t hash);
 	protected:
-		bool Load();
+		bool Load(bool genCRCMap = true);
 		bool Unload();
 	private:
 		std::string MainPath;
@@ -46,7 +46,7 @@ namespace OtrLib
 		std::map<uint64_t, std::string> hashes;
 		HANDLE mainMPQ;
 
-		bool LoadMainMPQ();
+		bool LoadMainMPQ(bool genCRCMap = true);
 		bool LoadPatchMPQs();
 		bool LoadPatchMPQ(std::string path);
 	};

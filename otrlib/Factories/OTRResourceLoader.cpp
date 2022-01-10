@@ -10,6 +10,7 @@
 #include "OTRVtxFactory.h"
 #include "OTRCutsceneFactory.h"
 #include "OTRArrayFactory.h"
+#include "OTRPathFactory.h"
 
 namespace OtrLib
 {
@@ -56,6 +57,9 @@ namespace OtrLib
             break;
         case ResourceType::OTRArray:
             result = OTRArrayFactory::ReadArray(reader);
+            break;
+        case ResourceType::OTRPath:
+            result = OTRPathFactory::ReadPath(reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED
