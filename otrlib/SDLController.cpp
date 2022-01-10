@@ -103,7 +103,7 @@ namespace OtrLib {
         }
     }
 
-    void SDLController::Read(OSContPad* pad) {
+    void SDLController::ReadFromSource() {
         std::string ConfSection = GetBindingConfSection();
         std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
         OTRConfigFile& Conf = *pConf.get();
@@ -150,7 +150,7 @@ namespace OtrLib {
             if (!(
                 PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT ||
                 PosButton == BTN_STICKUP || PosButton == BTN_STICKDOWN ||
-                NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT |
+                NegButton == BTN_STICKLEFT || NegButton == BTN_STICKRIGHT ||
                 NegButton == BTN_STICKUP || NegButton == BTN_STICKDOWN)) {
                 if (AxisValue > AxisThreshold) {
                     dwPressedButtons |= PosButton;
@@ -223,24 +223,6 @@ namespace OtrLib {
             auto AxisValueX = SDL_GameControllerGetAxis(Cont, StickAxisX);
             auto AxisValueY = SDL_GameControllerGetAxis(Cont, StickAxisY);
             NormalizeStickAxis(AxisValueX, AxisValueY, StickDeadzone);
-        }
-            
-        pad->button = dwPressedButtons & 0xFFFF;
-
-        if (dwPressedButtons & BTN_STICKLEFT) {
-            pad->stick_x = -128;
-        } else if (dwPressedButtons & BTN_STICKRIGHT) {
-            pad->stick_x = 127;
-        } else {
-            pad->stick_x = wStickX;
-        }
-
-        if (dwPressedButtons & BTN_STICKDOWN) {
-            pad->stick_y = -128;
-        } else if (dwPressedButtons & BTN_STICKUP) {
-            pad->stick_y = 127;
-        } else {
-            pad->stick_y = wStickY;
         }
 	}
 

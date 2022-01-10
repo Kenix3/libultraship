@@ -10,7 +10,7 @@ namespace OtrLib {
 			SDLController(int32_t dwControllerNumber);
 			~SDLController();
 
-			void Read(OSContPad* pad);
+			void ReadFromSource();
 			std::string GetGuid() { return guid; };
 
 		protected:

@@ -17,7 +17,8 @@ namespace OtrLib {
 		public:
 			OTRController(int32_t dwControllerNumber);
 
-			virtual void Read(OSContPad* pad) = 0;
+			void Read(OSContPad* pad);
+			virtual void ReadFromSource() = 0;
 
 			void SetButtonMapping(std::string szButtonName, int32_t dwScancode);
 			std::shared_ptr<OTRControllerAttachment> GetAttachment() { return Attachment; }
