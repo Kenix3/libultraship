@@ -11,6 +11,7 @@ namespace OtrLib {
 			~SDLController();
 
 			void Read(OSContPad* pad);
+			std::string GetGuid() { return guid; };
 
 		protected:
 			std::string GetControllerType();

@@ -9,10 +9,7 @@ namespace OtrLib {
 	}
 
 	SDLController::~SDLController() {
-		if (Cont != nullptr) {
-			SDL_GameControllerClose(Cont);
-			Cont = nullptr;
-		}
+        Close();
 	}
 
     bool SDLController::Open() {
@@ -65,7 +62,9 @@ namespace OtrLib {
     }
 
     bool SDLController::Close() {
-        SDL_GameControllerClose(Cont);
+        if (Cont != nullptr) {
+            SDL_GameControllerClose(Cont);
+        }
         Cont = nullptr;
         guid = "";
         ButtonMapping.clear();
