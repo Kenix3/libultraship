@@ -30,8 +30,8 @@ namespace Ship
 
 	private:
 		std::weak_ptr<GlobalCtx2> Context;
-		std::map<std::string, std::shared_ptr<File>> fileCache;
-		std::map<std::string, std::shared_ptr<Resource>> otrCache;
+		std::map<std::string, std::shared_ptr<File>> FileCache;
+		std::map<std::string, std::shared_ptr<Resource>> Cache;
 		std::map<std::string, std::shared_ptr<std::unordered_set<uintptr_t>>> gameResourceAddresses;
 		std::shared_ptr<Archive> archive;
 	};

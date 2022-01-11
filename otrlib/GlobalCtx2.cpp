@@ -47,7 +47,7 @@ namespace Ship {
     void GlobalCtx2::InitWindow() {
         ResMan = std::make_shared<ResourceMgr>(GlobalCtx2::GetInstance(), MainPath, PatchesPath);
         Win = std::make_shared<Window>(GlobalCtx2::GetInstance());
-        Config = std::make_shared<ConfigFile>(GlobalCtx2::GetInstance(), "otr.ini");
+        Config = std::make_shared<ConfigFile>(GlobalCtx2::GetInstance(), "shipofharkinian.ini");
     }
 
     void GlobalCtx2::InitLogging() {

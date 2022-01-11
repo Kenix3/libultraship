@@ -11,8 +11,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            ArrayV0 otrArr = ArrayV0();
-            otrArr.ParseFileBinary(reader, arr);
+            ArrayV0 arrayObj = ArrayV0();
+            arrayObj.ParseFileBinary(reader, arr);
         }
         break;
         default:

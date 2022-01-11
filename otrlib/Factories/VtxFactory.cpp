@@ -9,8 +9,8 @@ namespace Ship
 		{
 		case 0:
 		{
-			VertexV0 otrVtx = VertexV0();
-			otrVtx.ParseFileBinary(reader, vtx);
+			VertexV0 Vtx = VertexV0();
+			Vtx.ParseFileBinary(reader, vtx);
 		}
 		break;
 		default:

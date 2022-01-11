@@ -12,8 +12,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            PlayerAnimationV0 otrAnim = PlayerAnimationV0();
-            otrAnim.ParseFileBinary(reader, anim);
+            PlayerAnimationV0 Anim = PlayerAnimationV0();
+            Anim.ParseFileBinary(reader, anim);
         }
         break;
         default:

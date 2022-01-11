@@ -12,8 +12,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            MaterialV0 otrMat = MaterialV0();
-            otrMat.ParseFileBinary(reader, mat);
+            MaterialV0 Material = MaterialV0();
+            Material.ParseFileBinary(reader, mat);
         }
             break;
         default:
