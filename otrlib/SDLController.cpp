@@ -63,19 +63,20 @@ namespace Ship {
                         continue;
                     }
 
+                    guid = NewGuid;
+                    Cont = NewCont;
+
                     std::string BindingConfSection = GetBindingConfSection();
                     std::shared_ptr<ConfigFile> pBindingConf = GlobalCtx2::GetInstance()->GetConfig();
                     ConfigFile& BindingConf = *pBindingConf.get();
 
                     if (!BindingConf.has(BindingConfSection)) {
-                        CreateDefaultBinding(NewGuid);
+                        CreateDefaultBinding();
                     }
 
                     LoadBinding();
                     LoadAxisThresholds();
 
-                    guid = NewGuid;
-                    Cont = NewCont;
                     break;
                 }
             }
@@ -249,7 +250,7 @@ namespace Ship {
         }
 	}
 
-    void SDLController::CreateDefaultBinding(std::string ContGuid) {
+    void SDLController::CreateDefaultBinding() {
         std::string ConfSection = GetBindingConfSection();
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
@@ -279,6 +280,8 @@ namespace Ship {
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(0x4000);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"] = std::to_string(0x1E00);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"] = std::to_string(0x1E00);
+
+        Conf.Save();
     }
 
     void SDLController::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {

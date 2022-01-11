@@ -18,7 +18,7 @@ namespace Ship {
 			void SetButtonMapping(std::string szButtonName, int32_t dwScancode);
 			std::string GetConfSection();
 			std::string GetBindingConfSection();
-			void CreateDefaultBinding(std::string ContGuid);
+			void CreateDefaultBinding();
 			static bool IsGuidInUse(std::string guid);
 
 		private:

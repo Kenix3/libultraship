@@ -46,6 +46,15 @@
     <Filter Include="Source Files\Lib\tinyxml2">
       <UniqueIdentifier>{6b6658ad-694d-4943-83b8-c9dbd31ca67d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Resources">
+      <UniqueIdentifier>{ef3683ce-934c-44c3-ae84-99cf22764875}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Resources\Files">
+      <UniqueIdentifier>{58ff8972-9dba-4719-aec5-6edc5e6b033d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Resources\Files\Factories">
+      <UniqueIdentifier>{cf7f1b29-bb9a-4844-9ea5-4ac085f942e1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\MaterialFactory.cpp">

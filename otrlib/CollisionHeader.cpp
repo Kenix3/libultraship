@@ -41,7 +41,7 @@ void Ship::CollisionHeaderV0::ParseFileBinary(BinaryReader* reader, Resource* re
 	for (int i = 0; i < camEntriesCnt; i++)
 	{
 		Ship::CameraDataEntry* entry = new Ship::CameraDataEntry();
-		entry->cameraSType = reader->ReadInt16();
+		entry->cameraSType = reader->ReadUInt16();
 		entry->numData = reader->ReadInt16();
 		entry->cameraPosDataIdx = reader->ReadInt32();
 		col->camData->entries.push_back(entry);

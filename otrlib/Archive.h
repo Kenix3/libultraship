@@ -22,7 +22,7 @@ namespace Ship
 	public:
 		Archive();
 		Archive(std::string MainPath);
-		Archive(std::string MainPath, std::string PatchesPath);
+		Archive(std::string MainPath, std::string PatchesPath, bool genCRCMap = true);
 		~Archive();
 
 		static std::shared_ptr<Archive> CreateArchive(std::string archivePath);
@@ -36,7 +36,7 @@ namespace Ship
 		bool HasFile(std::string searchMask);
 		std::string HashToString(uint64_t hash);
 	protected:
-		bool Load();
+		bool Load(bool genCRCMap = true);
 		bool Unload();
 	private:
 		std::string MainPath;
@@ -46,7 +46,7 @@ namespace Ship
 		std::map<uint64_t, std::string> hashes;
 		HANDLE mainMPQ;
 
-		bool LoadMainMPQ();
+		bool LoadMainMPQ(bool genCRCMap);
 		bool LoadPatchMPQs();
 		bool LoadPatchMPQ(std::string path);
 	};
