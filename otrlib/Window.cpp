@@ -158,7 +158,7 @@ namespace Ship {
         return bIsProcessed;
     }
 
-    extern "C" void OTRToggleConsole();
+    extern "C" void ToggleConsole();
 
     bool Window::KeyUp(int32_t dwScancode) {
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
@@ -170,7 +170,7 @@ namespace Ship {
 
         if (dwScancode == Ship::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"])) 
         {
-            OTRToggleConsole();
+            ToggleConsole();
         }
 
         bool bIsProcessed = false;

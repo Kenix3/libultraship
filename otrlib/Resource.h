@@ -10,22 +10,22 @@ namespace Ship
 {
     enum class ResourceType
     {
-        OTRArchive          =   0x4F415243,     // OARC
-        OTRModel            =   0x4F4D444C,     // OMDL
-        OTRTexture          =   0x4F544558,     // OTEX
-        OTRMaterial         =   0x4F4D4154,     // OMAT
-        OTRAnimation        =   0x4F414E4D,     // OANM
-        OTRPlayerAnimation  =   0x4F50414D,     // OPAM
-        OTRDisplayList      =   0x4F444C54,     // ODLT
-        OTRRoom             =   0x4F524F4D,     // OROM
-        OTRCollisionHeader  =   0x4F434F4C,     // OCOL
-        OTRSkeleton         =   0x4F534B4C,     // OSKL
-        OTRSkeletonLimb     =   0x4F534C42,     // OSLB
-        OTRMatrix           =   0x4F4D5458,     // OMTX
-        OTRPath             =   0x4F505448,     // OPTH
-        OTRVtx              =   0x4F565458,     // OVTX
-        OTRCutscene         =   0x4F435654,     // OCUT
-        OTRArray            =   0x4F415252,     // OARR
+        Archive          =   0x4F415243,     // OARC
+        Model            =   0x4F4D444C,     // OMDL
+        Texture          =   0x4F544558,     // OTEX
+        Material         =   0x4F4D4154,     // OMAT
+        Animation        =   0x4F414E4D,     // OANM
+        PlayerAnimation  =   0x4F50414D,     // OPAM
+        DisplayList      =   0x4F444C54,     // ODLT
+        Room             =   0x4F524F4D,     // OROM
+        CollisionHeader  =   0x4F434F4C,     // OCOL
+        Skeleton         =   0x4F534B4C,     // OSKL
+        SkeletonLimb     =   0x4F534C42,     // OSLB
+        Matrix           =   0x4F4D5458,     // OMTX
+        Path             =   0x4F505448,     // OPTH
+        Vertex              =   0x4F565458,     // OVTX
+        Cutscene         =   0x4F435654,     // OCUT
+        Array            =   0x4F415252,     // OARR
     };
 
     enum class DataType
@@ -99,7 +99,7 @@ namespace Ship
     public:
         Endianess endianess;    // 0x00 - Endianess of the file
         uint32_t resourceType;  // 0x01 - 4 byte MAGIC
-        Version version;     // 0x05 - Based on OTR release numbers
+        Version version;     // 0x05 - Based on Ship release numbers
         uint64_t id;            // 0x09 - Unique Resource ID
 
         virtual void ParseFileBinary(BinaryReader* reader, Resource* res);

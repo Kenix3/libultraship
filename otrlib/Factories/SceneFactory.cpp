@@ -12,8 +12,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            SceneV0 otrScene = SceneV0();
-            otrScene.ParseFileBinary(reader, scene);
+            SceneV0 Scene = SceneV0();
+            Scene.ParseFileBinary(reader, scene);
         }
         break;
         default:

@@ -12,8 +12,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            DisplayListV0 otrDL = DisplayListV0();
-            otrDL.ParseFileBinary(reader, dl);
+            DisplayListV0 DL = DisplayListV0();
+            DL.ParseFileBinary(reader, dl);
         }
         break;
         default:

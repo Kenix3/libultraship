@@ -11,8 +11,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            PathV0 otrPath;
-            otrPath.ParseFileBinary(reader, path);
+            PathV0 Path;
+            Path.ParseFileBinary(reader, path);
         }
         break;
         default:

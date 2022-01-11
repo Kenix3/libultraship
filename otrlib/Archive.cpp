@@ -23,20 +23,20 @@ namespace Ship {
 
 	std::shared_ptr<Archive> Archive::CreateArchive(std::string archivePath)
 	{
-		Archive* otrArchive = new Archive();
-		otrArchive->MainPath = archivePath;
+		Archive* archive = new Archive();
+		archive->MainPath = archivePath;
 
 		TCHAR* t_filename = new TCHAR[archivePath.size() + 1];
 		t_filename[archivePath.size()] = 0;
 		std::copy(archivePath.begin(), archivePath.end(), t_filename);
 
-		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, 65536 * 4, &otrArchive->mainMPQ);
+		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, 65536 * 4, &archive->mainMPQ);
 		int error = GetLastError();
 
 		if (success)
 		{
-			otrArchive->mpqHandles[archivePath] = otrArchive->mainMPQ;
-			return std::make_shared<Archive>(*otrArchive);
+			archive->mpqHandles[archivePath] = archive->mainMPQ;
+			return std::make_shared<Archive>(*archive);
 		}
 		else
 		{

@@ -157,9 +157,9 @@
 #define G_TEXRECT       0xe4    /* -28 */
 
 // CUSTOM OTR COMMANDS
-#define	G_SETTIMG_OTR		    0x20
-#define G_DL_OTR			    0x31
-#define G_VTX_OTR			    0x32
+#define	G_SETTIMG_LUS		    0x20
+#define G_DL_LUS			    0x31
+#define G_VTX_LUS			    0x32
 #define G_MARKER			    0x33
 
 /*
