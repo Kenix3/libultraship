@@ -300,9 +300,10 @@
     </ClInclude>
     <ClInclude Include="OTRTexture.h">
       <Filter>Header Files\Resources\Files</Filter>
+    </ClInclude>
     <ClInclude Include="SDLController.h">
       <Filter>Source Files\Controller</Filter>
-    </ClInclude>    
+    </ClInclude>
     <ClInclude Include="OTRArray.h">
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
