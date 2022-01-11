@@ -1,11 +1,13 @@
 #include "OTRWindow.h"
 #include "spdlog/spdlog.h"
 #include "KeyboardController.h"
+#include "SDLController.h"
 #include "OTRContext.h"
 #include "Lib/Fast3D/gfx_pc.h"
 #include "Lib/Fast3D/gfx_sdl.h"
 #include "Lib/Fast3D/gfx_opengl.h"
 #include "stox.h"
+#include <SDL2/SDL.h>
 #include <map>
 #include <string>
 
@@ -18,6 +20,24 @@ extern "C" {
         std::shared_ptr<OtrLib::OTRConfigFile> pConf = OtrLib::OTRContext::GetInstance()->GetConfig();
         OtrLib::OTRConfigFile& Conf = *pConf.get();
 
+        if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
+            SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
+            exit(EXIT_FAILURE);
+        }
+
+        // TODO: THis for loop is debug. Burn it with fire.
+        for (int i = 0; i < SDL_NumJoysticks(); i++) {
+            if (SDL_IsGameController(i)) {
+                // Get the GUID from SDL
+                char buf[33];
+                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), buf, sizeof(buf));
+                auto guid = std::string(buf);
+                auto name = std::string(SDL_GameControllerNameForIndex(i));
+
+                SPDLOG_INFO("Found Controller \"{}\" with ID \"{}\"", name, guid);
+            }
+        }
+
         for (int32_t i = 0; i < __osMaxControllers; i++) {
             std::string ControllerType = Conf["CONTROLLERS"]["CONTROLLER " + std::to_string(i+1)];
             mINI::INIStringUtil::toLower(ControllerType);
@@ -25,7 +45,11 @@ extern "C" {
             if (ControllerType == "keyboard") {
                 OtrLib::OTRController* pad = new OtrLib::KeyboardController(i);
                 OtrLib::OTRWindow::Controllers[i] = std::shared_ptr<OtrLib::OTRController>(pad);
-            } else if (ControllerType == "Unplugged") {
+            } else if (ControllerType == "usb") {
+                // TODO: switch controller types based on the window used by Fast3D
+                OtrLib::OTRController* pad = new OtrLib::SDLController(i);
+                OtrLib::OTRWindow::Controllers[i] = std::shared_ptr<OtrLib::OTRController>(pad);
+            } else if (ControllerType == "unplugged") {
                 // Do nothing for unplugged controllers
             } else {
                 SPDLOG_ERROR("Invalid Controller Type: {}", ControllerType);
@@ -68,7 +92,11 @@ namespace OtrLib {
     int32_t OTRWindow::lastScancode;
 
     OTRWindow::OTRWindow(std::shared_ptr<OTRContext> Context) : Context(Context) {
-
+        WmApi = nullptr;
+        RenderingApi = nullptr;
+        bIsFullscreen = false;
+        dwWidth = 320;
+        dwHeight = 240;
     }
 
     OTRWindow::~OTRWindow() {

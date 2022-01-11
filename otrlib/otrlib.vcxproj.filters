@@ -183,7 +183,9 @@
     <ClCompile Include="Factories\OTRVtxFactory.cpp">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClCompile>
-    <ClCompile Include="Factories\OTRCutsceneFactory.cpp">
+    <ClCompile Include="SDLController.cpp">
+      <Filter>Source Files\Controller</Filter>
+    </ClCompile>    <ClCompile Include="Factories\OTRCutsceneFactory.cpp">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClCompile>
     <ClCompile Include="OTRPath.cpp">
@@ -298,6 +300,11 @@
     </ClInclude>
     <ClInclude Include="OTRTexture.h">
       <Filter>Header Files\Resources\Files</Filter>
+    <ClInclude Include="SDLController.h">
+      <Filter>Source Files\Controller</Filter>
+    </ClInclude>    
+    <ClInclude Include="OTRArray.h">
+      <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
     <ClInclude Include="Factories\OTRArrayFactory.h">
       <Filter>Header Files\Resources\Files\Factories</Filter>

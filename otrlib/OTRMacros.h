@@ -1,3 +1,3 @@
 #pragma once
 
-#define STR(define) (#define)
+#define STR(define) (std::string(#define))
