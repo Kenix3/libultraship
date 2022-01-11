@@ -1,9 +1,9 @@
 #pragma once
-#include "OTRController.h"
+#include "Controller.h"
 #include <string>
 
-namespace OtrLib {
-	class KeyboardController : public OTRController {
+namespace Ship {
+	class KeyboardController : public Controller {
 		public:
 			KeyboardController(int32_t dwControllerNumber);
 			~KeyboardController();
