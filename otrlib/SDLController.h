@@ -1,11 +1,11 @@
 #pragma once
-#include "OTRController.h"
+#include "Controller.h"
 #include <SDL2/SDL.h>
 
 #define INVALID_SDL_CONTROLLER_GUID (std::string("00000000000000000000000000000000"))
 
-namespace OtrLib {
-	class SDLController : public OTRController {
+namespace Ship {
+	class SDLController : public Controller {
 		public:
 			SDLController(int32_t dwControllerNumber);
 			~SDLController();
@@ -18,7 +18,7 @@ namespace OtrLib {
 			void SetButtonMapping(std::string szButtonName, int32_t dwScancode);
 			std::string GetConfSection();
 			std::string GetBindingConfSection();
-			void CreateDefaultBinding(std::string ContGuid);
+			void CreateDefaultBinding();
 			static bool IsGuidInUse(std::string guid);
 
 		private:

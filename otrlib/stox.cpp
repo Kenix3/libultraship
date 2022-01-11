@@ -1,7 +1,7 @@
 #include "stox.h"
 #include "spdlog/spdlog.h"
 
-namespace OtrLib {
+namespace Ship {
     bool stob(std::string s, bool defaultVal) {
         auto result = false;    // failure to assert is false
 

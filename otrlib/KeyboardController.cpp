@@ -1,8 +1,8 @@
 #include "KeyboardController.h"
-#include "OTRContext.h"
+#include "GlobalCtx2.h"
 
-namespace OtrLib {
-	KeyboardController::KeyboardController(int32_t dwControllerNumber) : OTRController(dwControllerNumber) {
+namespace Ship {
+	KeyboardController::KeyboardController(int32_t dwControllerNumber) : Controller(dwControllerNumber) {
 		LoadBinding();
 	}
 

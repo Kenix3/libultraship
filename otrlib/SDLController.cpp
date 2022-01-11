@@ -1,15 +1,15 @@
 #include "SDLController.h"
-#include "OtrContext.h"
+#include "GlobalCtx2.h"
 #include "spdlog/spdlog.h"
 #include "stox.h"
-#include "OTRWindow.h"
+#include "Window.h"
 
 extern "C" uint8_t __osMaxControllers;
 
-namespace OtrLib {
+namespace Ship {
 
 
-	SDLController::SDLController(int32_t dwControllerNumber) : OTRController(dwControllerNumber), Cont(nullptr), guid(INVALID_SDL_CONTROLLER_GUID) {
+	SDLController::SDLController(int32_t dwControllerNumber) : Controller(dwControllerNumber), Cont(nullptr), guid(INVALID_SDL_CONTROLLER_GUID) {
 
 	}
 
@@ -20,7 +20,7 @@ namespace OtrLib {
     bool SDLController::IsGuidInUse(std::string guid) {
         // Check if the GUID is loaded in any other controller;
         for (size_t i = 0; i < __osMaxControllers; i++) {
-            SDLController* OtherCont = dynamic_cast<SDLController*>(OTRWindow::Controllers[i].get());
+            SDLController* OtherCont = dynamic_cast<SDLController*>(Window::Controllers[i].get());
 
             if (OtherCont != nullptr && OtherCont->GetGuid().compare(guid) == 0) {
                 return true;
@@ -32,8 +32,8 @@ namespace OtrLib {
 
     bool SDLController::Open() {
         std::string ConfSection = GetConfSection();
-        std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
-        OTRConfigFile& Conf = *pConf.get();
+        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
+        ConfigFile& Conf = *pConf.get();
 
         for (int i = 0; i < SDL_NumJoysticks(); i++) {
             if (SDL_IsGameController(i)) {
@@ -63,19 +63,20 @@ namespace OtrLib {
                         continue;
                     }
 
+                    guid = NewGuid;
+                    Cont = NewCont;
+
                     std::string BindingConfSection = GetBindingConfSection();
-                    std::shared_ptr<OTRConfigFile> pBindingConf = OTRContext::GetInstance()->GetConfig();
-                    OTRConfigFile& BindingConf = *pBindingConf.get();
+                    std::shared_ptr<ConfigFile> pBindingConf = GlobalCtx2::GetInstance()->GetConfig();
+                    ConfigFile& BindingConf = *pBindingConf.get();
 
                     if (!BindingConf.has(BindingConfSection)) {
-                        CreateDefaultBinding(NewGuid);
+                        CreateDefaultBinding();
                     }
 
                     LoadBinding();
                     LoadAxisThresholds();
 
-                    guid = NewGuid;
-                    Cont = NewCont;
                     break;
                 }
             }
@@ -101,15 +102,15 @@ namespace OtrLib {
 
     void SDLController::LoadAxisThresholds() {
         std::string ConfSection = GetBindingConfSection();
-        std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
-        OTRConfigFile& Conf = *pConf.get();
+        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
+        ConfigFile& Conf = *pConf.get();
 
-        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTX] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTY] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERLEFT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"]);
-        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = OtrLib::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTX] = Ship::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_LEFTY] = Ship::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTX] = Ship::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_RIGHTY] = Ship::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERLEFT] = Ship::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"]);
+        ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = Ship::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"]);
     }
 
     void SDLController::NormalizeStickAxis(int16_t wAxisValueX, int16_t wAxisValueY, int16_t wAxisThreshold) {
@@ -128,8 +129,8 @@ namespace OtrLib {
 
     void SDLController::ReadFromSource() {
         std::string ConfSection = GetBindingConfSection();
-        std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
-        OTRConfigFile& Conf = *pConf.get();
+        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
+        ConfigFile& Conf = *pConf.get();
 
         SDL_GameControllerUpdate();
 
@@ -249,10 +250,10 @@ namespace OtrLib {
         }
 	}
 
-    void SDLController::CreateDefaultBinding(std::string ContGuid) {
+    void SDLController::CreateDefaultBinding() {
         std::string ConfSection = GetBindingConfSection();
-        std::shared_ptr<OTRConfigFile> pConf = OTRContext::GetInstance()->GetConfig();
-        OTRConfigFile& Conf = *pConf.get();
+        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
+        ConfigFile& Conf = *pConf.get();
 
         Conf[ConfSection][STR(BTN_CRIGHT)] = std::to_string((SDL_CONTROLLER_AXIS_RIGHTX + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_CLEFT)] = std::to_string(-(SDL_CONTROLLER_AXIS_RIGHTX + AXIS_SCANCODE_BIT));
@@ -279,6 +280,8 @@ namespace OtrLib {
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(0x4000);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"] = std::to_string(0x1E00);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"] = std::to_string(0x1E00);
+
+        Conf.Save();
     }
 
     void SDLController::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {
@@ -286,7 +289,7 @@ namespace OtrLib {
             return;
         }
 
-        OTRController::SetButtonMapping(szButtonName, dwScancode);
+        Controller::SetButtonMapping(szButtonName, dwScancode);
     }
 
 	std::string SDLController::GetControllerType() {
