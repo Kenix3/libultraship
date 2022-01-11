@@ -12,8 +12,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            CollisionHeaderV0 otrCol = CollisionHeaderV0();
-            otrCol.ParseFileBinary(reader, colHeader);
+            CollisionHeaderV0 col = CollisionHeaderV0();
+            col.ParseFileBinary(reader, colHeader);
         }
         break;
         default:

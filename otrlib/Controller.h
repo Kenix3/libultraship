@@ -12,7 +12,6 @@
 
 namespace Ship {
 	class Controller {
-		friend class OTRWindow;
 
 		public:
 			Controller(int32_t dwControllerNumber);

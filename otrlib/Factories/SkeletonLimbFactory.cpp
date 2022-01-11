@@ -12,8 +12,8 @@ namespace Ship
         {
         case Version::Deckard:
         {
-            SkeletonLimbV0 otrLimb = SkeletonLimbV0();
-            otrLimb.ParseFileBinary(reader, limb);
+            SkeletonLimbV0 Limb = SkeletonLimbV0();
+            Limb.ParseFileBinary(reader, limb);
         }
         break;
         default:

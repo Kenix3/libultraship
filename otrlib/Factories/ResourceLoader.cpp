@@ -24,37 +24,37 @@ namespace Ship
 
         switch (resourceType)
         {
-        case ResourceType::OTRMaterial:
+        case ResourceType::Material:
             result = MaterialFactory::ReadMaterial(reader);
             break;
-        case ResourceType::OTRRoom:
+        case ResourceType::Room:
             result = SceneFactory::ReadScene(reader);
             break;
-        case ResourceType::OTRCollisionHeader:
+        case ResourceType::CollisionHeader:
             result = CollisionHeaderFactory::ReadCollisionHeader(reader);
             break;
-        case ResourceType::OTRDisplayList:
+        case ResourceType::DisplayList:
             result = DisplayListFactory::ReadDisplayList(reader);
             break;
-        case ResourceType::OTRPlayerAnimation:
+        case ResourceType::PlayerAnimation:
             result = PlayerAnimationFactory::ReadPlayerAnimation(reader);
             break;
-        case ResourceType::OTRSkeleton:
+        case ResourceType::Skeleton:
             result = SkeletonFactory::ReadSkeleton(reader);
             break;
-        case ResourceType::OTRSkeletonLimb:
+        case ResourceType::SkeletonLimb:
             result = SkeletonLimbFactory::ReadSkeletonLimb(reader);
             break;
-        case ResourceType::OTRVtx:
+        case ResourceType::Vertex:
             result = VertexFactory::ReadVtx(reader);
             break;
-        case ResourceType::OTRAnimation:
+        case ResourceType::Animation:
             result = AnimationFactory::ReadAnimation(reader);
             break;
-        case ResourceType::OTRCutscene:
+        case ResourceType::Cutscene:
             result = CutsceneFactory::ReadCutscene(reader);
             break;
-        case ResourceType::OTRArray:
+        case ResourceType::Array:
             result = ArrayFactory::ReadArray(reader);
             break;
         default:

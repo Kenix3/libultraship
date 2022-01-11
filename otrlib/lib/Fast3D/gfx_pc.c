@@ -657,7 +657,7 @@ static void import_texture_ci8(int tile) {
     uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
 
-    // OTRTODO: DUMB DUMB HACK
+    // LUSTODO: DUMB DUMB HACK
     //if ((uintptr_t)addr != 0x06000000 && (uintptr_t)addr != 0x06004000 && (uintptr_t)addr != 0x06008000 && (uintptr_t)addr != 0x06000800 && ((uintptr_t)addr & 0xFF000000) != 0x06000000)
     {
         for (uint32_t i = 0; i < size_bytes; i++) 
@@ -1310,7 +1310,7 @@ static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t wi
 }
 
 static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette, uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks, uint32_t shifts) {
-    // OTRTODO:
+    // LUSTODO:
     //SUPPORT_CHECK(tmem == 0 || tmem == 256);
     rdp.texture_tile[tile].palette = palette; // palette should set upper 4 bits of color index in 4b mode
     rdp.texture_tile[tile].fmt = fmt;
@@ -1766,7 +1766,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), seg_addr(cmd->words.w1));
 #endif
                 break;
-            case G_VTX_OTR:
+            case G_VTX_LUS:
             {
                 uint64_t offset = cmd->words.w1;
                 cmd++;
@@ -1776,7 +1776,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 //char fileName[4096];
                 //ResourceMgr_GetNameByCRC(hash, fileName);
 
-                //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
+                //printf("G_VTX_LUS: %s, 0x%08X\n", fileName, hash);
 
                  Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc, 1024 * 64);
 
@@ -1810,7 +1810,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     --cmd; // increase after break
                 }
                 break;
-            case G_DL_OTR:
+            case G_DL_LUS:
                 if (C0(16, 1) == 0) 
                 {
                     // Push return address
@@ -1823,7 +1823,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     char fileName[4096];
                     ResourceMgr_GetNameByCRC(hash, fileName);
                     
-                    //printf("G_DL_OTR: %s\n", fileName);
+                    //printf("G_DL_LUS: %s\n", fileName);
 #endif
 
                     Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
@@ -1893,7 +1893,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 if (texPtr != NULL)
                     gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), texPtr);
                 break;
-            case G_SETTIMG_OTR:
+            case G_SETTIMG_LUS:
             {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
@@ -1907,7 +1907,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     int bp = 0;
                 }
 
-                //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
+                //printf("G_SETTIMG_LUS: %s, %08X\n", fileName, hash);
 #endif
                 char* tex = ResourceMgr_LoadTexOriginalByCRC(hash);
                 cmd--;
@@ -1917,7 +1917,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 else
                 {
 #if _DEBUG
-                    //printf("WARNING: G_SETTIMG_OTR - tex == NULL!\n");
+                    //printf("WARNING: G_SETTIMG_LUS - tex == NULL!\n");
 #endif
                 }
 

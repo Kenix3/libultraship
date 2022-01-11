@@ -127,7 +127,7 @@ namespace Ship
 		reader->ReadByte(); // camSize
 		reader->ReadInt32(); // segOffset
 
-		// OTRTODO: FINISH!
+		// LUSTODO: FINISH!
 	}
 
 	MeshData::MeshData()
@@ -154,7 +154,7 @@ namespace Ship
 		{
 			MeshData mesh;
 
-			// OTRTODO: FINISH THIS!
+			// LUSTODO: FINISH THIS!
 			if (meshHeaderType == 0)
 			{
 				int polyType = reader->ReadByte();
