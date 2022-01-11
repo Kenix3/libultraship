@@ -185,7 +185,8 @@
     </ClCompile>
     <ClCompile Include="SDLController.cpp">
       <Filter>Source Files\Controller</Filter>
-    </ClCompile>    <ClCompile Include="Factories\OTRCutsceneFactory.cpp">
+    </ClCompile>
+    <ClCompile Include="Factories\OTRCutsceneFactory.cpp">
       <Filter>Source Files\Resources\Files\Factories</Filter>
     </ClCompile>
     <ClCompile Include="OTRPath.cpp">
@@ -265,9 +266,6 @@
     <ClInclude Include="stox.h">
       <Filter>Source Files\Lib</Filter>
     </ClInclude>
-    <ClInclude Include="OTRArray.h">
-      <Filter>Header Files\Resources\Files</Filter>
-    </ClInclude>
     <ClInclude Include="OTRCollisionHeader.h">
       <Filter>Header Files\Resources\Files</Filter>
     </ClInclude>
@@ -339,6 +337,9 @@
     </ClInclude>
     <ClInclude Include="Factories\OTRSkeletonLimbFactory.h">
       <Filter>Header Files\Resources\Files\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="OTRArray.h">
+      <Filter>Header Files\Resources\Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
