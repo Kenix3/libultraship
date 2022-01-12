@@ -19,14 +19,14 @@ namespace Ship
 
 		std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
 		char* LoadFileOriginal(std::string filePath);
-		DWORD LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
+		DWORD LoadFileRaw(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		std::string HashToString(uint64_t hash);
-		std::shared_ptr<Resource> LoadFile(std::string filePath);
+		std::shared_ptr<Resource> LoadResource(std::string filePath);
 		std::shared_ptr<std::vector<std::shared_ptr<File>>> CacheDirectory(std::string searchMask);
 
 	protected:
-		std::shared_ptr<File> LoadFileFromCache(std::string filePath);
+		std::shared_ptr<File> LoadFile(std::string filePath);
 
 	private:
 		std::weak_ptr<GlobalCtx2> Context;

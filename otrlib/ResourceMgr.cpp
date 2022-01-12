@@ -22,7 +22,7 @@ namespace Ship {
 		SPDLOG_INFO("destruct resourcemgr");
 	}
 
-	std::shared_ptr<File> ResourceMgr::LoadFileFromCache(std::string filePath) 
+	std::shared_ptr<File> ResourceMgr::LoadFile(std::string filePath) 
 	{
 		filePath = StringHelper::Replace(filePath, "/", "\\");
 
@@ -49,13 +49,13 @@ namespace Ship {
 
 	char* ResourceMgr::LoadFileOriginal(std::string filePath)
 	{
-		std::shared_ptr<File> fileData = LoadFileFromCache(filePath);
+		std::shared_ptr<File> fileData = LoadFile(filePath);
 
 		return (char*)fileData.get()->buffer.get();
 	}
 
-	DWORD ResourceMgr::LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath) {
-		std::shared_ptr<File> fileData = LoadFileFromCache(filePath);
+	DWORD ResourceMgr::LoadFileRaw(uintptr_t destination, DWORD destinationSize, std::string filePath) {
+		std::shared_ptr<File> fileData = LoadFile(filePath);
 
 		DWORD copySize = destinationSize >= fileData.get()->dwBufferSize ? fileData.get()->dwBufferSize : destinationSize;
 		memcpy((void*)destination, fileData.get()->buffer.get(), copySize);
@@ -80,8 +80,8 @@ namespace Ship {
 		return archive->HashToString(hash);
 	}
 
-	std::shared_ptr<Resource> ResourceMgr::LoadFile(std::string filePath) {
-		std::shared_ptr<File> fileData = LoadFileFromCache(filePath);
+	std::shared_ptr<Resource> ResourceMgr::LoadResource(std::string filePath) {
+		std::shared_ptr<File> fileData = LoadFile(filePath);
 		std::shared_ptr<Resource> resource;
 
 		if (ResourceCache.find(filePath) != ResourceCache.end()) {
@@ -114,7 +114,7 @@ namespace Ship {
 		auto fileList = archive.get()->ListFiles(searchMask);
 
 		for (DWORD i = 0; i < fileList.size(); i++) {
-			auto file = LoadFileFromCache(fileList.operator[](i).cFileName);
+			auto file = LoadFile(fileList.operator[](i).cFileName);
 			if (file != nullptr) {
 				loadedList.get()->push_back(file);
 			}
