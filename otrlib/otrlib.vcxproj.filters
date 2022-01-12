@@ -353,5 +353,8 @@
     <ClInclude Include="Cutscene.h">
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
+    <ClInclude Include="OTRArray.h">
+      <Filter>Header Files\Resources\Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
