@@ -22,7 +22,7 @@ namespace Ship
 		DWORD LoadFile(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
 		std::string HashToString(uint64_t hash);
-		std::shared_ptr<Resource> LoadOTRFile(std::string filePath);
+		std::shared_ptr<Resource> LoadFile(std::string filePath);
 		std::shared_ptr<std::vector<std::shared_ptr<File>>> CacheDirectory(std::string searchMask);
 
 	protected:
@@ -31,7 +31,7 @@ namespace Ship
 	private:
 		std::weak_ptr<GlobalCtx2> Context;
 		std::map<std::string, std::shared_ptr<File>> FileCache;
-		std::map<std::string, std::shared_ptr<Resource>> Cache;
+		std::map<std::string, std::shared_ptr<Resource>> ResourceCache;
 		std::map<std::string, std::shared_ptr<std::unordered_set<uintptr_t>>> gameResourceAddresses;
 		std::shared_ptr<Archive> archive;
 	};
