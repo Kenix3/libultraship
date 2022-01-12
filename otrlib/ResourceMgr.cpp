@@ -15,8 +15,8 @@ namespace Ship {
 	}
 
 	ResourceMgr::~ResourceMgr() {
-		fileCache.clear();
-		otrCache.clear();
+		FileCache.clear();
+		ResourceCache.clear();
 		gameResourceAddresses.clear();
 
 		SPDLOG_INFO("destruct resourcemgr");
@@ -30,8 +30,8 @@ namespace Ship {
 			filePath = StringHelper::Split(filePath, "__OTR__")[1];
 
 		// File already loaded...?
-		if (fileCache.find(filePath) != fileCache.end()) {
-			return fileCache[filePath];
+		if (FileCache.find(filePath) != FileCache.end()) {
+			return FileCache[filePath];
 		}
 		else 
 		{
@@ -40,7 +40,7 @@ namespace Ship {
 			auto file = archive.get()->LoadFile(filePath);
 
 			if (file != nullptr) {
-				fileCache[filePath] = file;
+				FileCache[filePath] = file;
 			}
 
 			return file;
@@ -80,18 +80,18 @@ namespace Ship {
 		return archive->HashToString(hash);
 	}
 
-	std::shared_ptr<Resource> ResourceMgr::LoadOTRFile(std::string filePath) {
+	std::shared_ptr<Resource> ResourceMgr::LoadFile(std::string filePath) {
 		std::shared_ptr<File> fileData = LoadFileFromCache(filePath);
 		std::shared_ptr<Resource> resource;
 
-		if (otrCache.find(filePath) != otrCache.end()) {
-			resource = otrCache[filePath];
+		if (ResourceCache.find(filePath) != ResourceCache.end()) {
+			resource = ResourceCache[filePath];
 
 			if (!resource.get()->isDirty) {
 				return resource;
 			}
 			else {
-				otrCache.erase(filePath);
+				ResourceCache.erase(filePath);
 			}
 		}
 
@@ -103,7 +103,7 @@ namespace Ship {
 		resource = std::shared_ptr<Resource>(unmanagedResource);
 
 		if (resource != nullptr) {
-			otrCache[filePath] = resource;
+			ResourceCache[filePath] = resource;
 		}
 
 		return resource;
