@@ -13,7 +13,7 @@ namespace Ship
 
 		for (int i = 0; i < numEntries; i++)
 		{
-			anim->limbRotData.push_back(reader->ReadUInt16());
+			anim->limbRotData.push_back(reader->ReadInt16());
 		}
 	}
 }

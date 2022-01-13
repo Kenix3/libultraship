@@ -353,3 +353,4 @@ MigrationBackup/
 .ionide/
 
 !otrlib/Lib/**
+libultraship/DebugObj/*

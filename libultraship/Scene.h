@@ -296,6 +296,14 @@ namespace Ship
 		SetCutscenes(BinaryReader* reader);
 	};
 
+	class SetPathways : public SceneCommand
+	{
+	public:
+		std::vector<std::string> paths;
+
+		SetPathways(BinaryReader* reader);
+	};
+
 	class SetAlternateHeaders : public SceneCommand
 	{
 	public:

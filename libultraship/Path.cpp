@@ -8,15 +8,24 @@ namespace Ship
 
 		ResourceFile::ParseFileBinary(reader, res);
 
-		uint32_t numNodes = reader->ReadUInt32();
+		int numPaths = reader->ReadInt32();
 
-		for (int i = 0; i < numNodes; i++)
+		for (int k = 0; k < numPaths; k++)
 		{
-			int16_t x = reader->ReadInt16();
-			int16_t y = reader->ReadInt16();
-			int16_t z = reader->ReadInt16();
+			std::vector<Vec3s> nodes;
 
-			path->nodes.push_back(Vec3s(x, y, z));
+			uint32_t numNodes = reader->ReadUInt32();
+
+			for (int i = 0; i < numNodes; i++)
+			{
+				int16_t x = reader->ReadInt16();
+				int16_t y = reader->ReadInt16();
+				int16_t z = reader->ReadInt16();
+
+				nodes.push_back(Vec3s(x, y, z));
+			}
+
+			path->paths.push_back(nodes);
 		}
 	}
 }

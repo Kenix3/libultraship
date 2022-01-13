@@ -18,6 +18,6 @@ namespace Ship
 	class Path : public Resource
 	{
 	public:
-		std::vector<Vec3s> nodes;
+		std::vector<std::vector<Vec3s>> paths;
 	};
 }

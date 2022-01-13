@@ -17,6 +17,8 @@ namespace Ship
 
 		for (int i = 0; i < cmdCnt; i++)
 			scene->commands.push_back(ParseSceneCommand(reader));
+
+		printf("SCENE PARSE END\n");
 	}
 
 	SceneCommand* SceneV0::ParseSceneCommand(BinaryReader* reader)
@@ -52,6 +54,7 @@ namespace Ship
 		case SceneCommandID::SetAlternateHeaders: return new SetAlternateHeaders(reader);
 		case SceneCommandID::SetExitList: return new ExitList(reader);
 		case SceneCommandID::SetCutscenes: return new SetCutscenes(reader);
+		case SceneCommandID::SetPathways: return new SetPathways(reader);
 		case SceneCommandID::EndMarker: return new EndMarker(reader);
 		default:
 			printf("UNIMPLEMENTED COMMAND: %i\n", (int)cmdID);
@@ -418,5 +421,13 @@ namespace Ship
 	SetCutscenes::SetCutscenes(BinaryReader* reader) : SceneCommand(reader)
 	{
 		cutscenePath = reader->ReadString();
+	}
+
+	SetPathways::SetPathways(BinaryReader* reader) : SceneCommand(reader)
+	{
+		uint32_t numPaths = reader->ReadUInt32();
+
+		for (int i = 0; i < numPaths; i++)
+			paths.push_back(reader->ReadString());
 	}
 }

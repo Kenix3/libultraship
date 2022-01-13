@@ -23,7 +23,7 @@ namespace Ship
         SkeletonLimb     =   0x4F534C42,     // OSLB
         Matrix           =   0x4F4D5458,     // OMTX
         Path             =   0x4F505448,     // OPTH
-        Vertex              =   0x4F565458,     // OVTX
+        Vertex           =   0x4F565458,     // OVTX
         Cutscene         =   0x4F435654,     // OCUT
         Array            =   0x4F415252,     // OARR
     };

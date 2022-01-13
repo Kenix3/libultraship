@@ -10,6 +10,7 @@
 #include "VtxFactory.h"
 #include "CutsceneFactory.h"
 #include "ArrayFactory.h"
+#include "PathFactory.h"
 
 namespace Ship
 {
@@ -56,6 +57,9 @@ namespace Ship
             break;
         case ResourceType::Array:
             result = ArrayFactory::ReadArray(reader);
+            break;
+        case ResourceType::Path:
+            result = PathFactory::ReadPath(reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED

@@ -687,7 +687,8 @@ static void import_texture(int i, int tile) {
     uint32_t tmem_index = rdp.texture_tile[tile].tmem_index;
     
     if (gfx_texture_cache_lookup(i, &rendering_state.textures[i], rdp.loaded_texture[tmem_index].addr, fmt, siz, rdp.texture_tile[tile].palette)) {
-        return;
+        // OTRTODO: This isn't going to work with the game modifying textures at runtime
+        //return;
     }
     
     int t0 = get_time();
@@ -1712,7 +1713,7 @@ static void gfx_run_dl(Gfx* cmd) {
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             char dlName[4096];
             ResourceMgr_GetNameByCRC(hash, dlName);
-            //printf("G_MARKER: %s\n", dlName);
+            printf("G_MARKER: %s\n", dlName);
             int bp = 0;
             markerOn = true;
         }
