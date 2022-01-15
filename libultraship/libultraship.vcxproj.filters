@@ -22,9 +22,6 @@
     <Filter Include="Source Files\Resources">
       <UniqueIdentifier>{12c0e217-75b9-47a5-bc2e-a2ea4e5dd992}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\mpq">
-      <UniqueIdentifier>{dde367c4-c14a-4bf3-b6d9-bc0d2d7d34e6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Controller">
       <UniqueIdentifier>{bec61d88-f3a8-466d-b3e8-cf2e7d963f1b}</UniqueIdentifier>
     </Filter>
@@ -40,9 +37,6 @@
     <Filter Include="Source Files\Resources\Files">
       <UniqueIdentifier>{2aa34c3b-6148-480f-a4fc-19c4e0f8c822}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Resources\Files\Factories">
-      <UniqueIdentifier>{3376a196-8303-4613-9721-62f31e746b0d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Lib\tinyxml2">
       <UniqueIdentifier>{6b6658ad-694d-4943-83b8-c9dbd31ca67d}</UniqueIdentifier>
     </Filter>
@@ -55,13 +49,22 @@
     <Filter Include="Header Files\Resources\Files\Factories">
       <UniqueIdentifier>{cf7f1b29-bb9a-4844-9ea5-4ac085f942e1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Resources\mpq">
+      <UniqueIdentifier>{dde367c4-c14a-4bf3-b6d9-bc0d2d7d34e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Resources\Files\Zelda">
+      <UniqueIdentifier>{1f5e0ba2-0f3f-456c-9b66-873ed62e9fbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Resources\Factories">
+      <UniqueIdentifier>{3376a196-8303-4613-9721-62f31e746b0d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\MaterialFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Factories\ResourceLoader.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_cc.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
@@ -76,10 +79,10 @@
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
     <ClCompile Include="File.cpp">
-      <Filter>Source Files\mpq</Filter>
+      <Filter>Source Files\Resources\mpq</Filter>
     </ClCompile>
     <ClCompile Include="Archive.cpp">
-      <Filter>Source Files\mpq</Filter>
+      <Filter>Source Files\Resources\mpq</Filter>
     </ClCompile>
     <ClCompile Include="Lib\StrHash64.cpp">
       <Filter>Source Files\Lib</Filter>
@@ -88,22 +91,22 @@
       <Filter>Source Files\Lib</Filter>
     </ClCompile>
     <ClCompile Include="Factories\SceneFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Factories\CollisionHeaderFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Factories\DisplayListFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Factories\PlayerAnimationFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Factories\SkeletonFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Factories\SkeletonLimbFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Controller.cpp">
       <Filter>Source Files\Controller</Filter>
@@ -147,9 +150,6 @@
     <ClCompile Include="PlayerAnimation.cpp">
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
-    <ClCompile Include="Resource.cpp">
-      <Filter>Source Files\Resources\Files</Filter>
-    </ClCompile>
     <ClCompile Include="Scene.cpp">
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
@@ -172,7 +172,7 @@
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
     <ClCompile Include="Factories\AnimationFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Cutscene.cpp">
       <Filter>Source Files\Resources\Files</Filter>
@@ -181,25 +181,28 @@
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
     <ClCompile Include="Factories\VtxFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="SDLController.cpp">
       <Filter>Source Files\Controller</Filter>
     </ClCompile>
     <ClCompile Include="Factories\CutsceneFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Path.cpp">
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
     <ClCompile Include="Factories\PathFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
     <ClCompile Include="Array.cpp">
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
     <ClCompile Include="Factories\ArrayFactory.cpp">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource.cpp">
+      <Filter>Source Files\Resources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -237,28 +240,28 @@
       <Filter>Source Files\Config</Filter>
     </ClInclude>
     <ClInclude Include="Factories\CollisionHeaderFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\DisplayListFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\MaterialFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\PlayerAnimationFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\ResourceLoader.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\SceneFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\SkeletonFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\SkeletonLimbFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="CollisionHeader.h">
       <Filter>Source Files\Resources\Files</Filter>
@@ -273,9 +276,6 @@
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
     <ClInclude Include="PlayerAnimation.h">
-      <Filter>Source Files\Resources\Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
@@ -294,10 +294,10 @@
       <Filter>Source Files\Resources</Filter>
     </ClInclude>
     <ClInclude Include="Archive.h">
-      <Filter>Source Files\mpq</Filter>
+      <Filter>Source Files\Resources\mpq</Filter>
     </ClInclude>
     <ClInclude Include="File.h">
-      <Filter>Source Files\mpq</Filter>
+      <Filter>Source Files\Resources\mpq</Filter>
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_cc.h">
       <Filter>Source Files\Lib\Fast3D</Filter>
@@ -321,13 +321,13 @@
       <Filter>Source Files\Lib</Filter>
     </ClInclude>
     <ClInclude Include="Factories\CutsceneFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Path.h">
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
     <ClInclude Include="Factories\PathFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="SDLController.h">
       <Filter>Source Files\Controller</Filter>
@@ -336,13 +336,13 @@
       <Filter>Source Files\Resources\Files</Filter>
     </ClInclude>
     <ClInclude Include="Factories\ArrayFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\VtxFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Factories\AnimationFactory.h">
-      <Filter>Source Files\Resources\Files\Factories</Filter>
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
     <ClInclude Include="Animation.h">
       <Filter>Source Files\Resources\Files</Filter>
@@ -352,6 +352,9 @@
     </ClInclude>
     <ClInclude Include="Cutscene.h">
       <Filter>Source Files\Resources\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Source Files\Resources</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
