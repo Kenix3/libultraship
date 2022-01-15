@@ -204,6 +204,21 @@
     <ClCompile Include="Resource.cpp">
       <Filter>Source Files\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_direct3d_common.cpp">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_direct3d11.cpp">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_direct3d12.cpp">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_dxgi.cpp">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_glx.c">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -355,6 +370,33 @@
     </ClInclude>
     <ClInclude Include="Resource.h">
       <Filter>Source Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d_common.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d11.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d12.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d12_guids.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_dxgi.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_glx.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_rendering_api.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_screen_config.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_window_manager_api.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

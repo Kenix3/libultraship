@@ -180,6 +180,11 @@
     <ClCompile Include="Factories\SkeletonFactory.cpp" />
     <ClCompile Include="Factories\SkeletonLimbFactory.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_cc.c" />
+    <ClCompile Include="Lib\Fast3D\gfx_direct3d11.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_direct3d12.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_direct3d_common.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_dxgi.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_glx.c" />
     <ClCompile Include="Lib\Fast3D\gfx_opengl.c" />
     <ClCompile Include="Lib\Fast3D\gfx_pc.c" />
     <ClCompile Include="Lib\Fast3D\gfx_sdl2.c" />
@@ -219,6 +224,15 @@
     <ClInclude Include="Animation.h" />
     <ClInclude Include="Array.h" />
     <ClInclude Include="Cutscene.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d11.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d12.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d12_guids.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_direct3d_common.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_dxgi.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_glx.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_rendering_api.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_screen_config.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_window_manager_api.h" />
     <ClInclude Include="Path.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="stox.h" />
