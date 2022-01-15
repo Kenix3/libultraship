@@ -36,7 +36,8 @@
 #define RATIO_Y (gfx_current_dimensions.height / (2.0f * HALF_SCREEN_HEIGHT))
 
 #define MAX_BUFFERED 256
-#define MAX_LIGHTS 2
+//#define MAX_LIGHTS 2
+#define MAX_LIGHTS 32 // OTRTODO: Is this why we've been crashing...?
 #define MAX_VERTICES 64
 
 struct RGBA {
@@ -435,6 +436,11 @@ static struct ColorCombiner *gfx_lookup_or_create_color_combiner(uint64_t cc_id)
     return prev_combiner = comb;
 }
 
+static void gfx_texture_cache_clear()
+{
+    gfx_texture_cache.pool_pos = 0;
+}
+
 static bool gfx_texture_cache_lookup(int i, struct TextureHashmapNode **n, const uint8_t *orig_addr, uint32_t fmt, uint32_t siz, uint32_t palette_index) {
     size_t hash = (uintptr_t)orig_addr;
     hash = (hash >> 5) & 0x3ff;
@@ -687,8 +693,7 @@ static void import_texture(int i, int tile) {
     uint32_t tmem_index = rdp.texture_tile[tile].tmem_index;
     
     if (gfx_texture_cache_lookup(i, &rendering_state.textures[i], rdp.loaded_texture[tmem_index].addr, fmt, siz, rdp.texture_tile[tile].palette)) {
-        // OTRTODO: This isn't going to work with the game modifying textures at runtime
-        //return;
+        return;
     }
     
     int t0 = get_time();
@@ -698,7 +703,7 @@ static void import_texture(int i, int tile) {
         } else if (siz == G_IM_SIZ_32b) {
             import_texture_rgba32(tile);
         } else {
-            abort();
+            //abort(); // OTRTODO: WTF IS GOING ON
         }
     } else if (fmt == G_IM_FMT_IA) {
         if (siz == G_IM_SIZ_4b) {
@@ -1713,9 +1718,14 @@ static void gfx_run_dl(Gfx* cmd) {
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             char dlName[4096];
             ResourceMgr_GetNameByCRC(hash, dlName);
-            printf("G_MARKER: %s\n", dlName);
+            //printf("G_MARKER: %s\n", dlName);
             int bp = 0;
             markerOn = true;
+        }
+            break;
+        case G_INVALTEXCACHE:
+        {
+            gfx_texture_cache_clear();
         }
             break;
             case G_MTX:
@@ -1767,7 +1777,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), seg_addr(cmd->words.w1));
 #endif
                 break;
-            case G_VTX_LUS:
+            case G_VTX_OTR:
             {
                 uint64_t offset = cmd->words.w1;
                 cmd++;
@@ -1777,7 +1787,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 //char fileName[4096];
                 //ResourceMgr_GetNameByCRC(hash, fileName);
 
-                //printf("G_VTX_LUS: %s, 0x%08X\n", fileName, hash);
+                //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
 
                  Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc, 1024 * 64);
 
@@ -1811,7 +1821,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     --cmd; // increase after break
                 }
                 break;
-            case G_DL_LUS:
+            case G_DL_OTR:
                 if (C0(16, 1) == 0) 
                 {
                     // Push return address
@@ -1824,7 +1834,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     char fileName[4096];
                     ResourceMgr_GetNameByCRC(hash, fileName);
                     
-                    //printf("G_DL_LUS: %s\n", fileName);
+                    //printf("G_DL_OTR: %s\n", fileName);
 #endif
 
                     Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
@@ -1839,7 +1849,10 @@ static void gfx_run_dl(Gfx* cmd) {
                 }
                 break;
             case (uint8_t)G_ENDDL:
-                //printf("END DL?!\n");
+
+                //if (markerOn)
+                    //printf("END DL ON MARKER\n");
+
                 markerOn = false;
                 return;
 #ifdef F3DEX_GBI_2
@@ -1894,7 +1907,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 if (texPtr != NULL)
                     gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), texPtr);
                 break;
-            case G_SETTIMG_LUS:
+            case G_SETTIMG_OTR:
             {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
@@ -1908,7 +1921,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     int bp = 0;
                 }
 
-                //printf("G_SETTIMG_LUS: %s, %08X\n", fileName, hash);
+                //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
 #endif
                 char* tex = ResourceMgr_LoadTexOriginalByCRC(hash);
                 cmd--;
@@ -1918,7 +1931,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 else
                 {
 #if _DEBUG
-                    //printf("WARNING: G_SETTIMG_LUS - tex == NULL!\n");
+                    //printf("WARNING: G_SETTIMG_OTR - tex == NULL!\n");
 #endif
                 }
 

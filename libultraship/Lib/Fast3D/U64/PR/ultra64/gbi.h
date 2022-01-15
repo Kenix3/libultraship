@@ -157,10 +157,11 @@
 #define G_TEXRECT       0xe4    /* -28 */
 
 // CUSTOM OTR COMMANDS
-#define	G_SETTIMG_LUS		    0x20
-#define G_DL_LUS			    0x31
-#define G_VTX_LUS			    0x32
+#define	G_SETTIMG_OTR		    0x20
+#define G_DL_OTR			    0x31
+#define G_VTX_OTR			    0x32
 #define G_MARKER			    0x33
+#define G_INVALTEXCACHE         0x34
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -2782,6 +2783,19 @@ _DW({                                   \
 #define gsSPEndDisplayList()                        \
 {                                   \
     _SHIFTL(G_ENDDL, 24, 8), 0                  \
+}
+
+#define gSPInvalidateTexCache(pkt)                      \
+_DW({                                   \
+    Gfx *_g = (Gfx *)(pkt);                     \
+                                    \
+    _g->words.w0 = _SHIFTL(G_INVALTEXCACHE, 24, 8);             \
+    _g->words.w1 = 0;                       \
+})
+
+#define gsSPInvalidateTexCache()                        \
+{                                   \
+    _SHIFTL(G_INVALTEXCACHE, 24, 8), 0                  \
 }
 
 #ifdef  F3DEX_GBI_2

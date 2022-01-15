@@ -50,6 +50,7 @@ namespace Ship
 	{
 	public:
 		SceneCommandID cmdID;
+		void* cachedGameData = 0;
 
 		// Data for a given class goes here...
 		SceneCommand(BinaryReader* reader);

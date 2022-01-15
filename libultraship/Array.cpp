@@ -8,6 +8,7 @@ namespace Ship
 
 		ResourceFile::ParseFileBinary(reader, res);
 
+		uint32_t resType = reader->ReadUInt32();
 		uint32_t arrayCnt = reader->ReadUInt32();
 
 		for (int i = 0; i < arrayCnt; i++)
