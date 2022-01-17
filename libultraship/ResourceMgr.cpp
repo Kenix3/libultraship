@@ -231,6 +231,10 @@ namespace Ship {
 		return LoadedList;
 	}
 
+	void ResourceMgr::InvalidateResourceCache() {
+		ResourceCache.empty();
+	}
+
 	std::string ResourceMgr::HashToString(uint64_t Hash) {
 		return OTR->HashToString(Hash);
 	}

@@ -26,6 +26,8 @@ namespace Ship
 
 		std::string HashToString(uint64_t Hash);
 
+		void InvalidateResourceCache();
+
 		std::shared_ptr<Resource> LoadResource(std::string FilePath);
 		std::shared_ptr<ResourcePromise> LoadResourceAsync(std::string FilePath);
 		std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(std::string SearchMask);
