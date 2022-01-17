@@ -4,7 +4,7 @@
 #include "ResourceMgr.h"
 #include "Window.h"
 #include "spdlog/async.h"
-#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace Ship {
@@ -55,8 +55,8 @@ namespace Ship {
             // Setup Logging
             spdlog::init_thread_pool(8192, 1);
             auto ConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            auto FileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("logs/" + GetName() + ".log", 1024 * 1024 * 10, 10);
             ConsoleSink->set_level(spdlog::level::trace);
-            auto FileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/" + GetName() + ".log");
             FileSink->set_level(spdlog::level::trace);
             std::vector<spdlog::sink_ptr> Sinks{ ConsoleSink, FileSink };
             Logger = std::make_shared<spdlog::async_logger>(GetName(), Sinks.begin(), Sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
