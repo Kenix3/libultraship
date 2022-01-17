@@ -14,12 +14,9 @@ namespace Ship {
 		std::string path;
 		std::shared_ptr<char[]> buffer;
 		uint32_t dwBufferSize;
-		volatile bool bIsLoaded = false;
-		volatile bool bHasLoadError = false;
-		volatile bool bHasResourceLoaded = false;
+		bool bIsLoaded = false;
+		bool bHasLoadError = false;
 		std::condition_variable FileLoadNotifier;
 		std::mutex FileLoadMutex;
-		std::condition_variable ResourceLoadNotifier;
-		std::mutex ResourceLoadMutex;
 	};
 }

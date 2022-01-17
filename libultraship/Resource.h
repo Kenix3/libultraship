@@ -87,6 +87,7 @@ namespace Ship
         // ...
     };
 
+
     class Resource
     {
     public:
@@ -108,5 +109,14 @@ namespace Ship
         virtual void ParseFileXML(tinyxml2::XMLElement* reader, Resource* res);
         virtual void WriteFileBinary(BinaryWriter* writer, Resource* res);
         virtual void WriteFileXML(tinyxml2::XMLElement* writer, Resource* res);
+    };
+
+    class ResourcePromise {
+    public:
+        std::shared_ptr<Resource> Resource;
+        std::shared_ptr<File> File;
+        std::condition_variable ResourceLoadNotifier;
+        std::mutex ResourceLoadMutex;
+        bool bHasResourceLoaded = false;
     };
 }

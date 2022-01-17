@@ -25,8 +25,9 @@ namespace Ship
 		std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
 
 		std::string HashToString(uint64_t Hash);
-		std::shared_ptr<Resource> LoadResource(std::string FilePath, bool Blocks = true);
-		void CacheDirectory(std::string SearchMask, bool Blocks = true);
+		std::shared_ptr<Resource> LoadResource(std::string FilePath);
+		std::shared_ptr<ResourcePromise> LoadResourceAsync(std::string FilePath);
+		std::shared_ptr<std::vector<std::shared_ptr<File>>> CacheDirectory(std::string SearchMask, bool Blocks = true);
 
 	protected:
 		void Start();
@@ -40,7 +41,7 @@ namespace Ship
 		std::map<std::string, std::shared_ptr<File>> FileCache;
 		std::map<std::string, std::shared_ptr<Resource>> ResourceCache;
 		std::queue<std::shared_ptr<File>> FileLoadQueue;
-		std::queue<std::shared_ptr<File>> ResourceLoadQueue;
+		std::queue<std::shared_ptr<ResourcePromise>> ResourceLoadQueue;
 		std::shared_ptr<Archive> OTR;
 		std::shared_ptr<std::thread> FileLoadThread;
 		std::shared_ptr<std::thread> ResourceLoadThread;
