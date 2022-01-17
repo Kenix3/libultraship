@@ -33,21 +33,18 @@ namespace Ship {
     }
 
     GlobalCtx2::GlobalCtx2(std::string Name, std::string MainPath, std::string PatchesPath) : Name(Name), MainPath(MainPath), PatchesPath(PatchesPath) {
-        InitLogging();
+        
     }
 
     GlobalCtx2::~GlobalCtx2() {
         SPDLOG_INFO("destruct GlobalCtx2");
-
-        Win = nullptr;
-        ResMan = nullptr;
-        Config = nullptr;
     }
 
     void GlobalCtx2::InitWindow() {
+        InitLogging();
+        Config = std::make_shared<ConfigFile>(GlobalCtx2::GetInstance(), "shipofharkinian.ini");
         ResMan = std::make_shared<ResourceMgr>(GlobalCtx2::GetInstance(), MainPath, PatchesPath);
         Win = std::make_shared<Window>(GlobalCtx2::GetInstance());
-        Config = std::make_shared<ConfigFile>(GlobalCtx2::GetInstance(), "shipofharkinian.ini");
     }
 
     void GlobalCtx2::InitLogging() {
