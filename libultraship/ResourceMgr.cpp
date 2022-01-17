@@ -176,7 +176,7 @@ namespace Ship {
 		if (StringHelper::StartsWith(FilePath, "__OTR__"))
 			FilePath = StringHelper::Split(FilePath, "__OTR__")[1];
 
-		std::shared_ptr<File> FileData = LoadFile(FilePath, false);
+		std::shared_ptr<File> FileData = LoadFile(FilePath);
 		std::shared_ptr<ResourcePromise> Promise = std::make_shared<ResourcePromise>();
 		Promise->File = FileData;
 

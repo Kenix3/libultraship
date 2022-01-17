@@ -38,7 +38,7 @@ namespace Ship
 		void Stop();
 		void LoadFileThread();
 		void LoadResourceThread();
-		std::shared_ptr<File> LoadFile(std::string FilePath, bool Blocks = true);
+		std::shared_ptr<File> LoadFile(std::string FilePath, bool Blocks = false);
 
 	private:
 		std::weak_ptr<GlobalCtx2> Context;
