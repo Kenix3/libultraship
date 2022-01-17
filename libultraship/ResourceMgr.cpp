@@ -101,7 +101,7 @@ namespace Ship {
 
 			// Wait for the File to actually be loaded if we are told to block.
 			if (Blocks) {
-				while (!ToLoad->bIsLoaded) {
+				while (!ToLoad->bIsLoaded && !ToLoad->bHasLoadError) {
 					std::unique_lock<std::mutex> Lock(ToLoad->Mutex);
 					ToLoad->Notifier.wait(Lock);
 				}
@@ -117,8 +117,8 @@ namespace Ship {
 		return OTR->HashToString(Hash);
 	}
 
-	std::shared_ptr<Resource> ResourceMgr::LoadResource(std::string FilePath) {
-		std::shared_ptr<File> fileData = LoadFile(FilePath);
+	std::shared_ptr<Resource> ResourceMgr::LoadResource(std::string FilePath, bool Blocks) {
+		std::shared_ptr<File> fileData = LoadFile(FilePath, Blocks);
 		std::shared_ptr<Resource> resource;
 
 		if (ResourceCache.find(FilePath) != ResourceCache.end()) {
@@ -145,12 +145,12 @@ namespace Ship {
 		return resource;
 	}
 
-	std::shared_ptr<std::vector<std::shared_ptr<File>>> ResourceMgr::CacheDirectory(std::string SearchMask) {
+	std::shared_ptr<std::vector<std::shared_ptr<File>>> ResourceMgr::CacheDirectory(std::string SearchMask, bool Blocks) {
 		auto loadedList = std::make_shared<std::vector<std::shared_ptr<File>>>();
 		auto fileList = OTR->ListFiles(SearchMask);
 
 		for (DWORD i = 0; i < fileList.size(); i++) {
-			auto file = LoadFile(fileList.operator[](i).cFileName);
+			auto file = LoadFile(fileList.operator[](i).cFileName, Blocks);
 			if (file != nullptr) {
 				loadedList->push_back(file);
 			}

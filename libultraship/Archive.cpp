@@ -46,6 +46,7 @@ namespace Ship {
 
 		if (!SFileOpenFileEx(mainMPQ, filePath.c_str(), 0, &fileHandle)) {
 			SPDLOG_ERROR("({}) Failed to open file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
+			FileToLoad->bHasLoadError = true;
 			return nullptr;
 		}
 
@@ -58,6 +59,7 @@ namespace Ship {
 			if (!SFileCloseFile(fileHandle)) {
 				SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
 			}
+			FileToLoad->bHasLoadError = true;
 			return nullptr;
 		}
 
