@@ -2,7 +2,6 @@
 
 #ifdef __cplusplus
 #include <memory>
-#include "stdint.h"
 #include "spdlog/spdlog.h"
 #include "ConfigFile.h"
 

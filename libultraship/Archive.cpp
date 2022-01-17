@@ -18,13 +18,9 @@ namespace Ship {
 		Unload();
 	}
 
-	Archive::Archive() {
-	}
-
 	std::shared_ptr<Archive> Archive::CreateArchive(std::string archivePath)
 	{
-		Archive* archive = new Archive();
-		archive->MainPath = archivePath;
+		Archive* archive = new Archive(archivePath);
 
 		TCHAR* t_filename = new TCHAR[archivePath.size() + 1];
 		t_filename[archivePath.size()] = 0;
@@ -45,7 +41,7 @@ namespace Ship {
 		}
 	}
 
-	std::shared_ptr<File> Archive::LoadFile(std::string filePath, bool includeParent) {
+	std::shared_ptr<File> Archive::LoadFile(std::string filePath, bool includeParent, std::shared_ptr<File> FileToLoad) {
 		HANDLE fileHandle = NULL;
 
 		if (!SFileOpenFileEx(mainMPQ, filePath.c_str(), 0, &fileHandle)) {
@@ -69,18 +65,17 @@ namespace Ship {
 			SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
 		}
 
-		auto file = std::make_shared<File>();
-		file.get()->buffer = fileData;
-		file.get()->dwBufferSize = dwFileSize;
+		if (FileToLoad == nullptr) {
+			FileToLoad = std::make_shared<File>();
+			FileToLoad->path = filePath;
+		}
 
-		if (includeParent)
-			file.get()->parent = shared_from_this();
-		else
-			file.get()->parent = nullptr;
+		FileToLoad->parent = includeParent ? shared_from_this() : nullptr;
+		FileToLoad->buffer = fileData;
+		FileToLoad->dwBufferSize = dwFileSize;
+		FileToLoad->bIsLoaded = true;
 
-		file.get()->path = filePath;
-
-		return file;
+		return FileToLoad;
 	}
 
 	bool Archive::AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize) {
@@ -96,7 +91,6 @@ namespace Ship {
 			SPDLOG_ERROR("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), dwFileSize, path.c_str(), MainPath.c_str());
 			return false;
 		}
-
 
 		if (!SFileWriteFile(hFile, (void*)fileData, dwFileSize, MPQ_COMPRESSION_ZLIB)) {
 			SPDLOG_ERROR("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), dwFileSize, path.c_str(), MainPath.c_str());
@@ -122,6 +116,8 @@ namespace Ship {
 	}
 
 	bool Archive::RemoveFile(std::string path) {
+		// TODO: Notify the resource manager and child Files
+
 		if (!SFileRemoveFile(mainMPQ, path.c_str(), 0)) {
 			SPDLOG_ERROR("({}) Failed to remove file {} in archive {}", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
@@ -131,6 +127,8 @@ namespace Ship {
 	}
 
 	bool Archive::RenameFile(std::string oldPath, std::string newPath) {
+		// TODO: Notify the resource manager and child Files
+
 		if (!SFileRenameFile(mainMPQ, oldPath.c_str(), newPath.c_str())) {
 			SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldPath.c_str(), newPath.c_str(), MainPath.c_str());
 			return false;
@@ -183,17 +181,14 @@ namespace Ship {
 		return fileList;
 	}
 
-	bool Archive::HasFile(std::string filename)
-	{
+	bool Archive::HasFile(std::string filename) {
 		bool result = false;
 		auto start = std::chrono::steady_clock::now();
 
 		auto lst = ListFiles(filename);
 		
-		for (auto item : lst)
-		{
-			if (item.cFileName == filename)
-			{
+		for (auto item : lst) {
+			if (item.cFileName == filename) {
 				result = true;
 				break;
 			}
@@ -208,8 +203,7 @@ namespace Ship {
 		return result;
 	}
 
-	std::string Archive::HashToString(uint64_t hash)
-	{
+	std::string Archive::HashToString(uint64_t hash) {
 		return hashes[hash];
 	}
 
@@ -262,14 +256,12 @@ namespace Ship {
 		mpqHandles[MainPath] = mpqHandle;
 		mainMPQ = mpqHandle;
 
-		if (genCRCMap)
-		{
+		if (genCRCMap) {
 			auto listFile = LoadFile("(listfile)", false);
 
 			std::vector<std::string> lines = StringHelper::Split(std::string(listFile->buffer.get(), listFile->dwBufferSize), "\n");
 
-			for (int i = 0; i < lines.size(); i++)
-			{
+			for (int i = 0; i < lines.size(); i++) {
 				std::string line = StringHelper::Strip(lines[i], "\r");
 				//uint64_t hash = StringHelper::StrToL(lines[i], 16);
 

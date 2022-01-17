@@ -66,9 +66,6 @@
     <ClCompile Include="Factories\ResourceLoader.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\Fast3D\gfx_cc.c">
-      <Filter>Source Files\Lib\Fast3D</Filter>
-    </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_opengl.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
@@ -204,6 +201,9 @@
     <ClCompile Include="Resource.cpp">
       <Filter>Source Files\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Lib\Fast3D\gfx_cc.c">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_direct3d_common.cpp">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
@@ -314,9 +314,6 @@
     <ClInclude Include="File.h">
       <Filter>Source Files\Resources\mpq</Filter>
     </ClInclude>
-    <ClInclude Include="Lib\Fast3D\gfx_cc.h">
-      <Filter>Source Files\Lib\Fast3D</Filter>
-    </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_opengl.h">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClInclude>
@@ -371,6 +368,21 @@
     <ClInclude Include="Resource.h">
       <Filter>Source Files\Resources</Filter>
     </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_rendering_api.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_screen_config.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_window_manager_api.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowShim.h">
+      <Filter>Source Files\Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\Fast3D\gfx_cc.h">
+      <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_direct3d_common.h">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClInclude>
@@ -387,15 +399,6 @@
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_glx.h">
-      <Filter>Source Files\Lib\Fast3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Fast3D\gfx_rendering_api.h">
-      <Filter>Source Files\Lib\Fast3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Fast3D\gfx_screen_config.h">
-      <Filter>Source Files\Lib\Fast3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Lib\Fast3D\gfx_window_manager_api.h">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClInclude>
   </ItemGroup>

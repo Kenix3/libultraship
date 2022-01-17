@@ -1,7 +1,8 @@
 #pragma once
-#include "Lib/StormLib/StormLib.h"
+
 #include <string>
 #include <memory>
+#include "GlobalCtx2.h"
 
 namespace Ship {
 	class Archive;
@@ -12,6 +13,9 @@ namespace Ship {
 		std::shared_ptr<Archive> parent;
 		std::string path;
 		std::shared_ptr<char[]> buffer;
-		DWORD dwBufferSize;
+		uint32_t dwBufferSize;
+		bool bIsLoaded;
+		std::condition_variable Notifier;
+		std::mutex Mutex;
 	};
 }

@@ -86,6 +86,7 @@ extern "C" {
 extern "C" struct GfxRenderingAPI gfx_opengl_api;
 extern "C" struct GfxWindowManagerAPI gfx_sdl;
 extern "C" void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi);
+extern "C" void ToggleConsole();
 
 namespace Ship {
     std::shared_ptr<Ship::Controller> Window::Controllers[MAXCONTROLLERS] = { nullptr };
@@ -158,8 +159,6 @@ namespace Ship {
         return bIsProcessed;
     }
 
-    extern "C" void ToggleConsole();
-
     bool Window::KeyUp(int32_t dwScancode) {
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
@@ -168,8 +167,7 @@ namespace Ship {
             GlobalCtx2::GetInstance()->GetWindow()->ToggleFullscreen();
         }
 
-        if (dwScancode == Ship::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"])) 
-        {
+        if (dwScancode == Ship::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"])) {
             ToggleConsole();
         }
 

@@ -4,119 +4,155 @@
 #include "spdlog/spdlog.h"
 #include "File.h"
 #include "Archive.h"
-#include "Scene.h"
 #include <Utils/StringHelper.h>
 #include "Lib/StormLib/StormLib.h"
 
 namespace Ship {
 
-	ResourceMgr::ResourceMgr(std::shared_ptr<GlobalCtx2> Context, std::string MainPath, std::string PatchesPath) : Context(Context) {
-		archive = std::make_shared<Archive>(MainPath, PatchesPath);
+	ResourceMgr::ResourceMgr(std::shared_ptr<GlobalCtx2> Context, std::string MainPath, std::string PatchesPath) : Context(Context), bIsRunning(false), Thread(nullptr) {
+		OTR = std::make_shared<Archive>(MainPath, PatchesPath);
+
+		Start();
 	}
 
 	ResourceMgr::~ResourceMgr() {
+		SPDLOG_INFO("destruct ResourceMgr");
+		Stop();
+
 		FileCache.clear();
 		ResourceCache.clear();
-		gameResourceAddresses.clear();
-
-		SPDLOG_INFO("destruct resourcemgr");
 	}
 
-	std::shared_ptr<File> ResourceMgr::LoadFile(std::string filePath) 
-	{
-		filePath = StringHelper::Replace(filePath, "/", "\\");
-
-		if (StringHelper::StartsWith(filePath, "__OTR__"))
-			filePath = StringHelper::Split(filePath, "__OTR__")[1];
-
-		// File already loaded...?
-		if (FileCache.find(filePath) != FileCache.end()) {
-			return FileCache[filePath];
+	void ResourceMgr::Start() {
+		const std::lock_guard<std::mutex> Lock(Mutex);
+		if (!IsRunning()) {
+			bIsRunning = true;
+			Thread = std::make_shared<std::thread>(&ResourceMgr::Run, this);
 		}
-		else 
-		{
-			SPDLOG_DEBUG("Cache miss on file load: {}", filePath.c_str());
+	}
 
-			auto file = archive.get()->LoadFile(filePath);
+	void ResourceMgr::Stop() {
+		if (IsRunning()) {
+			{
+				const std::lock_guard<std::mutex> Lock(Mutex);
+				bIsRunning = false;
+			}
+			
+			Notifier.notify_all();
+			Thread->join();
+			if (!FileLoadQueue.empty()) {
+				SPDLOG_DEBUG("Resource manager stopped, but has {} items left to load.", FileLoadQueue.size());
+			}
+		}
+	}
 
-			if (file != nullptr) {
-				FileCache[filePath] = file;
+	bool ResourceMgr::IsRunning() {
+		return bIsRunning && Thread != nullptr;
+	}
+
+	void ResourceMgr::Run() {
+		SPDLOG_INFO("Resource Manager thread started");
+
+		while (true) {
+			std::unique_lock<std::mutex> Lock(Mutex);
+
+			while (bIsRunning && FileLoadQueue.empty()) {
+				Notifier.wait(Lock);
 			}
 
-			return file;
-		}
-	}
+			if (!bIsRunning) {
+				break;
+			}
 
-	char* ResourceMgr::LoadFileOriginal(std::string filePath)
-	{
-		std::shared_ptr<File> fileData = LoadFile(filePath);
-
-		return (char*)fileData.get()->buffer.get();
-	}
-
-	DWORD ResourceMgr::LoadFileRaw(uintptr_t destination, DWORD destinationSize, std::string filePath) {
-		std::shared_ptr<File> fileData = LoadFile(filePath);
-
-		DWORD copySize = destinationSize >= fileData.get()->dwBufferSize ? fileData.get()->dwBufferSize : destinationSize;
-		memcpy((void*)destination, fileData.get()->buffer.get(), copySize);
-
-		if (gameResourceAddresses.find(filePath) == gameResourceAddresses.end()) {
-			gameResourceAddresses[filePath] = std::make_shared<std::unordered_set<uintptr_t>>();
+			std::shared_ptr<File> ToLoad = FileLoadQueue.front();
+			SPDLOG_INFO("Loading file {} on ResourceMgr thread", ToLoad->path);
+			CacheFileFromArchive(ToLoad);
+			FileLoadQueue.pop();
+			ToLoad->Notifier.notify_all();
 		}
 
-		gameResourceAddresses[filePath].get()->insert(destination);
-
-		return copySize;
+		SPDLOG_INFO("Resource Manager thread ended");
 	}
 
-	void ResourceMgr::MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath) {
-		if (gameResourceAddresses.find(filePath) != gameResourceAddresses.end()) {
-			gameResourceAddresses[filePath].get()->erase(destination);
+	void ResourceMgr::CacheFileFromArchive(std::shared_ptr<File> ToLoad) {
+		SPDLOG_DEBUG("Loading file to cache: {}", filePath.c_str());
+
+		OTR->LoadFile(ToLoad->path, true, ToLoad);
+		FileCache[ToLoad->path] = ToLoad;
+	}
+
+	std::shared_ptr<File> ResourceMgr::LoadFile(std::string FilePath, bool Blocks) {
+		FilePath = StringHelper::Replace(FilePath, "/", "\\");
+
+		if (StringHelper::StartsWith(FilePath, "__OTR__"))
+			FilePath = StringHelper::Split(FilePath, "__OTR__")[1];
+
+		// File already loaded...?
+		if (FileCache.find(FilePath) == FileCache.end()) {
+			SPDLOG_DEBUG("Cache miss on file load: {}", filePath.c_str());
+			std::shared_ptr<File> ToLoad = std::make_shared<File>();
+			ToLoad->path = FilePath;
+
+			{
+				const std::lock_guard<std::mutex> Lock(Mutex);
+				FileLoadQueue.push(ToLoad);
+			}
+			Notifier.notify_all();
+
+			// Wait for the File to actually be loaded if we are told to block.
+			if (Blocks) {
+				while (!ToLoad->bIsLoaded) {
+					std::unique_lock<std::mutex> Lock(ToLoad->Mutex);
+					ToLoad->Notifier.wait(Lock);
+				}
+			}
+
+			return ToLoad;
 		}
+
+		return FileCache[FilePath];
 	}
 
-	std::string ResourceMgr::HashToString(uint64_t hash)
-	{
-		return archive->HashToString(hash);
+	std::string ResourceMgr::HashToString(uint64_t Hash) {
+		return OTR->HashToString(Hash);
 	}
 
-	std::shared_ptr<Resource> ResourceMgr::LoadResource(std::string filePath) {
-		std::shared_ptr<File> fileData = LoadFile(filePath);
+	std::shared_ptr<Resource> ResourceMgr::LoadResource(std::string FilePath) {
+		std::shared_ptr<File> fileData = LoadFile(FilePath);
 		std::shared_ptr<Resource> resource;
 
-		if (ResourceCache.find(filePath) != ResourceCache.end()) {
-			resource = ResourceCache[filePath];
+		if (ResourceCache.find(FilePath) != ResourceCache.end()) {
+			resource = ResourceCache[FilePath];
 
-			if (!resource.get()->isDirty) {
+			if (!resource->isDirty) {
 				return resource;
 			}
 			else {
-				ResourceCache.erase(filePath);
+				ResourceCache.erase(FilePath);
 			}
 		}
 
-
-		auto memStream = std::make_shared<MemoryStream>(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
-		//MemoryStream memStream = MemoryStream(fileData.get()->buffer.get(), fileData.get()->dwBufferSize);
+		auto memStream = std::make_shared<MemoryStream>(fileData->buffer.get(), fileData->dwBufferSize);
+		//MemoryStream memStream = MemoryStream(fileData->buffer.get(), fileData->dwBufferSize);
 		BinaryReader reader = BinaryReader(memStream);
 		auto unmanagedResource = ResourceLoader::LoadResource(&reader);
 		resource = std::shared_ptr<Resource>(unmanagedResource);
 
 		if (resource != nullptr) {
-			ResourceCache[filePath] = resource;
+			ResourceCache[FilePath] = resource;
 		}
 
 		return resource;
 	}
 
-	std::shared_ptr<std::vector<std::shared_ptr<File>>> ResourceMgr::CacheDirectory(std::string searchMask) {
+	std::shared_ptr<std::vector<std::shared_ptr<File>>> ResourceMgr::CacheDirectory(std::string SearchMask) {
 		auto loadedList = std::make_shared<std::vector<std::shared_ptr<File>>>();
-		auto fileList = archive.get()->ListFiles(searchMask);
+		auto fileList = OTR->ListFiles(SearchMask);
 
 		for (DWORD i = 0; i < fileList.size(); i++) {
 			auto file = LoadFile(fileList.operator[](i).cFileName);
 			if (file != nullptr) {
-				loadedList.get()->push_back(file);
+				loadedList->push_back(file);
 			}
 		}
 

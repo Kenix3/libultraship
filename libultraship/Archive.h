@@ -20,14 +20,13 @@ namespace Ship
 	class Archive : public std::enable_shared_from_this<Archive>
 	{
 	public:
-		Archive();
 		Archive(std::string MainPath);
 		Archive(std::string MainPath, std::string PatchesPath, bool genCRCMap = true);
 		~Archive();
 
 		static std::shared_ptr<Archive> CreateArchive(std::string archivePath);
 
-		std::shared_ptr<File> LoadFile(std::string filePath, bool includeParent = true);
+		std::shared_ptr<File> LoadFile(std::string filePath, bool includeParent = true, std::shared_ptr<File> FileToLoad = nullptr);
 
 		bool AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize);
 		bool RemoveFile(std::string path);

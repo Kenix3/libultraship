@@ -1,6 +1,9 @@
+#pragma once
+
 #include <map>
-#include <unordered_set>
 #include <string>
+#include <thread>
+#include <queue>
 #include "Resource.h"
 #include "GlobalCtx2.h"
 
@@ -11,28 +14,34 @@ namespace Ship
 
 	// Resource manager caches any and all files it comes across into memory. This will be unoptimal in the future when modifications have gigabytes of assets.
 	// It works with the original game's assets because the entire ROM is 64MB and fits into RAM of any semi-modern PC.
-	class ResourceMgr
-	{
+	class ResourceMgr {
 	public:
 		ResourceMgr(std::shared_ptr<GlobalCtx2> Context, std::string MainPath, std::string PatchesPath);
 		~ResourceMgr();
 
+		bool IsRunning();
+
 		std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
-		char* LoadFileOriginal(std::string filePath);
-		DWORD LoadFileRaw(uintptr_t destination, DWORD destinationSize, std::string filePath);
-		void MarkFileAsFree(uintptr_t destination, DWORD destinationSize, std::string filePath);
-		std::string HashToString(uint64_t hash);
-		std::shared_ptr<Resource> LoadResource(std::string filePath);
-		std::shared_ptr<std::vector<std::shared_ptr<File>>> CacheDirectory(std::string searchMask);
+		std::string HashToString(uint64_t Hash);
+		std::shared_ptr<Resource> LoadResource(std::string FilePath);
+		std::shared_ptr<std::vector<std::shared_ptr<File>>> CacheDirectory(std::string SearchMask);
 
 	protected:
-		std::shared_ptr<File> LoadFile(std::string filePath);
+		void Start();
+		void Stop();
+		void Run();
+		void CacheFileFromArchive(std::shared_ptr<File> ToLoad);
+		std::shared_ptr<File> LoadFile(std::string FilePath, bool Blocks = true);
 
 	private:
 		std::weak_ptr<GlobalCtx2> Context;
 		std::map<std::string, std::shared_ptr<File>> FileCache;
 		std::map<std::string, std::shared_ptr<Resource>> ResourceCache;
-		std::map<std::string, std::shared_ptr<std::unordered_set<uintptr_t>>> gameResourceAddresses;
-		std::shared_ptr<Archive> archive;
+		std::queue<std::shared_ptr<File>> FileLoadQueue;
+		std::shared_ptr<Archive> OTR;
+		std::shared_ptr<std::thread> Thread;
+		std::mutex Mutex;
+		std::condition_variable Notifier;
+		volatile bool bIsRunning;
 	};
 }

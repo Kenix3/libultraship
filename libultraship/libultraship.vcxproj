@@ -224,6 +224,7 @@
     <ClInclude Include="Animation.h" />
     <ClInclude Include="Array.h" />
     <ClInclude Include="Cutscene.h" />
+    <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_direct3d11.h" />
     <ClInclude Include="Lib\Fast3D\gfx_direct3d12.h" />
     <ClInclude Include="Lib\Fast3D\gfx_direct3d12_guids.h" />
@@ -248,7 +249,6 @@
     <ClInclude Include="Factories\SceneFactory.h" />
     <ClInclude Include="Factories\SkeletonFactory.h" />
     <ClInclude Include="Factories\SkeletonLimbFactory.h" />
-    <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_opengl.h" />
     <ClInclude Include="Lib\Fast3D\gfx_pc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_sdl.h" />
@@ -275,6 +275,7 @@
     <ClInclude Include="Window.h" />
     <ClInclude Include="UltraController.h" />
     <ClInclude Include="SDLController.h" />
+    <ClInclude Include="WindowShim.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
