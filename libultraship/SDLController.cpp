@@ -170,6 +170,17 @@ namespace Ship {
             auto NegButton = ButtonMapping[NegScancode];
             auto AxisValue = SDL_GameControllerGetAxis(Cont, Axis);
 
+#ifdef TARGET_WEB
+            // Firefox has a bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1606562
+            // It sets down y to 32768.0f / 32767.0f, which is greater than the allowed 1.0f,
+            // which SDL then converts to a int16_t by multiplying by 32767.0f, which overflows into -32768.
+            // Maximum up will hence never become -32768 with the current version of SDL2,
+            // so this workaround should be safe in compliant browsers.
+            if (AxisValue == -32768) {
+                AxisValue = 32767;
+            }
+#endif
+
             // If the axis is NOT mapped to the control stick.
             if (!(
                 PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT ||
