@@ -120,6 +120,7 @@ namespace Ship {
 			{
 				const std::lock_guard<std::mutex> ResGuard(ResourceLoadMutex);
 				ToLoad->bHasResourceLoaded = true;
+				ToLoad->Resource = Res;
 			}
 
 			ToLoad->ResourceLoadNotifier.notify_all();
@@ -198,18 +199,36 @@ namespace Ship {
 		return Promise;
 	}
 
-	std::shared_ptr<std::vector<std::shared_ptr<File>>> ResourceMgr::CacheDirectory(std::string SearchMask, bool Blocks) {
-		auto loadedList = std::make_shared<std::vector<std::shared_ptr<File>>>();
+	std::shared_ptr<std::vector<std::shared_ptr<ResourcePromise>>> ResourceMgr::CacheDirectoryAsync(std::string SearchMask) {
+		auto loadedList = std::make_shared<std::vector<std::shared_ptr<ResourcePromise>>>();
 		auto fileList = OTR->ListFiles(SearchMask);
 
 		for (DWORD i = 0; i < fileList.size(); i++) {
-			auto file = LoadFile(fileList.operator[](i).cFileName, Blocks);
+			auto file = LoadResourceAsync(fileList.operator[](i).cFileName);
 			if (file != nullptr) {
 				loadedList->push_back(file);
 			}
 		}
 
 		return loadedList;
+	}
+
+	std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::CacheDirectory(std::string SearchMask) {
+		auto PromiseList = CacheDirectoryAsync(SearchMask);
+		auto LoadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
+
+		for (int32_t i = 0; i < PromiseList->size(); i++) {
+			auto Promise = PromiseList->at(i);
+
+			std::unique_lock<std::mutex> Lock(Promise->ResourceLoadMutex);
+			while (!Promise->bHasResourceLoaded) {
+				Promise->ResourceLoadNotifier.wait(Lock);
+			}
+
+			LoadedList->push_back(Promise->Resource);
+		}
+
+		return LoadedList;
 	}
 
 	std::string ResourceMgr::HashToString(uint64_t Hash) {
