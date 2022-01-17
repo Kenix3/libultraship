@@ -3,7 +3,9 @@
 #include <stdint.h>
 #include "Utils/BinaryReader.h"
 #include "Utils/BinaryWriter.h"
+#include "GlobalCtx2.h"
 #include "StrHash.h"
+#include "File.h"
 #include "lib/tinyxml2/tinyxml2.h"
 
 namespace Ship
@@ -90,8 +92,8 @@ namespace Ship
     public:
         uint64_t id; // Unique Resource ID
         bool isDirty = false;
-
         void* cachedGameAsset = 0; // Conversion to OoT friendly struct cached...
+        std::shared_ptr<File> File;
     };
 
     class ResourceFile
@@ -101,8 +103,6 @@ namespace Ship
         uint32_t resourceType;  // 0x01 - 4 byte MAGIC
         Version version;     // 0x05 - Based on Ship release numbers
         uint64_t id;            // 0x09 - Unique Resource ID
-        bool bIsLoaded = false;
-        bool bHasLoadError = false;
 
         virtual void ParseFileBinary(BinaryReader* reader, Resource* res);
         virtual void ParseFileXML(tinyxml2::XMLElement* reader, Resource* res);

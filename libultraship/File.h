@@ -16,7 +16,10 @@ namespace Ship {
 		uint32_t dwBufferSize;
 		volatile bool bIsLoaded = false;
 		volatile bool bHasLoadError = false;
-		std::condition_variable Notifier;
-		std::mutex Mutex;
+		volatile bool bHasResourceLoaded = false;
+		std::condition_variable FileLoadNotifier;
+		std::mutex FileLoadMutex;
+		std::condition_variable ResourceLoadNotifier;
+		std::mutex ResourceLoadMutex;
 	};
 }
