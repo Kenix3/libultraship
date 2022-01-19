@@ -39,6 +39,9 @@ namespace Ship {
         InitLogging();
         Config = std::make_shared<ConfigFile>(GlobalCtx2::GetInstance(), "shipofharkinian.ini");
         MainPath = (*Config)["ARCHIVE"]["Main Archive"];
+        if (MainPath.empty()) {
+            MainPath = "oot.otr";
+        }
         PatchesPath = (*Config)["ARCHIVE"]["Patches Directory"];
         ResMan = std::make_shared<ResourceMgr>(GlobalCtx2::GetInstance(), MainPath, PatchesPath);
         Win = std::make_shared<Window>(GlobalCtx2::GetInstance());
