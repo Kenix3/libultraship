@@ -12,7 +12,7 @@ namespace Ship {
 	class GlobalCtx2 {
 		public:
 			static std::shared_ptr<GlobalCtx2> GetInstance();
-			static std::shared_ptr<GlobalCtx2> CreateInstance(std::string Name, std::string MainPath, std::string PatchesPath);
+			static std::shared_ptr<GlobalCtx2> CreateInstance(std::string Name);
 
 			std::string GetName() { return Name; }
 			std::shared_ptr<Window> GetWindow() { return Win; }
@@ -20,7 +20,7 @@ namespace Ship {
 			std::shared_ptr<spdlog::logger> GetLogger() { return Logger; }
 			std::shared_ptr<ConfigFile> GetConfig() { return Config; }
 
-			GlobalCtx2(std::string Name, std::string MainPath, std::string PatchesDirectory);
+			GlobalCtx2(std::string Name);
 			~GlobalCtx2();
 
 		protected:

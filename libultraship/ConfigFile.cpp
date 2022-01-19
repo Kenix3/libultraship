@@ -55,6 +55,14 @@ namespace Ship {
 	}
 
 	bool ConfigFile::CreateDefaultConfig() {
+		(*this)["ARCHIVE"]["Main Archive"] = "oot.otr";
+		(*this)["ARCHIVE"]["Patches Directory"] = "";
+
+		(*this)["CONTROLLERS"]["CONTROLLER 1"] = "Keyboard";
+		(*this)["CONTROLLERS"]["CONTROLLER 2"] = "Unplugged";
+		(*this)["CONTROLLERS"]["CONTROLLER 3"] = "Unplugged";
+		(*this)["CONTROLLERS"]["CONTROLLER 4"] = "Unplugged";
+
 		(*this)["KEYBOARD SHORTCUTS"]["KEY_FULLSCREEN"] = std::to_string(0x044);
 		(*this)["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"] = std::to_string(0x029);
 
@@ -63,11 +71,6 @@ namespace Ship {
 		(*this)["WINDOW"]["FULLSCREEN WIDTH"] = std::to_string(1920);
 		(*this)["WINDOW"]["FULLSCREEN HEIGHT"] = std::to_string(1080);
 		(*this)["WINDOW"]["FULLSCREEN"] = std::to_string(false);
-
-		(*this)["CONTROLLERS"]["CONTROLLER 1"] = "Keyboard";
-		(*this)["CONTROLLERS"]["CONTROLLER 2"] = "Unplugged";
-		(*this)["CONTROLLERS"]["CONTROLLER 3"] = "Unplugged";
-		(*this)["CONTROLLERS"]["CONTROLLER 4"] = "Unplugged";
 
 		(*this)["KEYBOARD CONTROLLER BINDING 1"][STR(BTN_CRIGHT)] = std::to_string(0x14D);
 		(*this)["KEYBOARD CONTROLLER BINDING 1"][STR(BTN_CLEFT)] = std::to_string(0x14B);

@@ -14,17 +14,12 @@ namespace Ship {
         return Context.lock();
     }
 
-    std::shared_ptr<GlobalCtx2> GlobalCtx2::CreateInstance(std::string Name, std::string MainPath, std::string PatchesPath) {
+    std::shared_ptr<GlobalCtx2> GlobalCtx2::CreateInstance(std::string Name) {
         if (Context.expired()) {
-            if (!MainPath.empty()) {
-                auto Shared = std::make_shared<GlobalCtx2>(Name, MainPath, PatchesPath);
-                Context = Shared;
-                Shared->InitWindow();
-
-                return Shared;
-            } else {
-                SPDLOG_ERROR("No Main Archive passed to create instance");
-            }
+            auto Shared = std::make_shared<GlobalCtx2>(Name);
+            Context = Shared;
+            Shared->InitWindow();
+            return Shared;
         } else {
             SPDLOG_DEBUG("Trying to create a context when it already exists.");
         }
@@ -32,7 +27,7 @@ namespace Ship {
         return GetInstance();
     }
 
-    GlobalCtx2::GlobalCtx2(std::string Name, std::string MainPath, std::string PatchesPath) : Name(Name), MainPath(MainPath), PatchesPath(PatchesPath) {
+    GlobalCtx2::GlobalCtx2(std::string Name) : Name(Name), MainPath(""), PatchesPath("") {
         
     }
 
@@ -43,6 +38,8 @@ namespace Ship {
     void GlobalCtx2::InitWindow() {
         InitLogging();
         Config = std::make_shared<ConfigFile>(GlobalCtx2::GetInstance(), "shipofharkinian.ini");
+        MainPath = (*Config)["ARCHIVE"]["Main Archive"];
+        PatchesPath = (*Config)["ARCHIVE"]["Patches Directory"];
         ResMan = std::make_shared<ResourceMgr>(GlobalCtx2::GetInstance(), MainPath, PatchesPath);
         Win = std::make_shared<Window>(GlobalCtx2::GetInstance());
     }

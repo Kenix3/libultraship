@@ -231,10 +231,12 @@ namespace Ship {
 	bool Archive::LoadPatchMPQs() {
 		// TODO: We also want to periodically scan the patch directories for new MPQs. When new MPQs are found we will load the contents to fileCache and then copy over to gameResourceAddresses
 		if (PatchesPath.length() > 0) {
-			for (auto& p : std::filesystem::recursive_directory_iterator(PatchesPath)) {
-				if (StringHelper::IEquals(p.path().extension().string(), ".otr") || StringHelper::IEquals(p.path().extension().string(), ".mpq")) {
-					if (!LoadPatchMPQ(p.path().string())) {
-						return false;
+			if (std::filesystem::is_directory(PatchesPath)) {
+				for (auto& p : std::filesystem::recursive_directory_iterator(PatchesPath)) {
+					if (StringHelper::IEquals(p.path().extension().string(), ".otr") || StringHelper::IEquals(p.path().extension().string(), ".mpq")) {
+						if (!LoadPatchMPQ(p.path().string())) {
+							return false;
+						}
 					}
 				}
 			}
