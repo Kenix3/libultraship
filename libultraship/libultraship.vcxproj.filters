@@ -219,6 +219,9 @@
     <ClCompile Include="Lib\Fast3D\gfx_glx.c">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
+    <ClCompile Include="Factories\TextureFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -400,6 +403,9 @@
     </ClInclude>
     <ClInclude Include="Lib\Fast3D\gfx_glx.h">
       <Filter>Source Files\Lib\Fast3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\TextureFactory.h">
+      <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

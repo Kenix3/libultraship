@@ -1923,7 +1923,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
 #endif
-                char* tex = ResourceMgr_LoadTexOriginalByCRC(hash);
+                char* tex = ResourceMgr_LoadTexByCRC(hash);
                 cmd--;
 
                 if (tex != NULL)

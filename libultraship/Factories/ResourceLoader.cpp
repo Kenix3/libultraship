@@ -11,8 +11,8 @@
 #include "CutsceneFactory.h"
 #include "ArrayFactory.h"
 #include "PathFactory.h"
+#include "TextureFactory.h"
 #include <Utils/MemoryStream.h>
-
 
 namespace Ship
 {
@@ -32,6 +32,9 @@ namespace Ship
         {
         case ResourceType::Material:
             result = MaterialFactory::ReadMaterial(&reader);
+            break;
+        case ResourceType::Texture:
+            result = TextureFactory::ReadTexture(&reader);
             break;
         case ResourceType::Room:
             result = SceneFactory::ReadScene(&reader);
@@ -73,6 +76,7 @@ namespace Ship
 
         if (result != nullptr) {
             result->File = FileToLoad;
+            result->resType = resourceType;
         }
 
         return result;

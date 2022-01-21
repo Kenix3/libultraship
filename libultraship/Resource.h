@@ -92,6 +92,7 @@ namespace Ship
     {
     public:
         uint64_t id; // Unique Resource ID
+        ResourceType resType;
         bool isDirty = false;
         void* cachedGameAsset = 0; // Conversion to OoT friendly struct cached...
         std::shared_ptr<File> File;

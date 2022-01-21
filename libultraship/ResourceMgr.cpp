@@ -114,9 +114,12 @@ namespace Ship {
 			auto UnmanagedRes = ResourceLoader::LoadResource(ToLoad->File);
 			auto Res = std::shared_ptr<Resource>(UnmanagedRes);
 
-			ResourceCache[Res->File->path] = Res;
-			ResourceLoadQueue.pop();
+			if (Res != nullptr)
+			{
+				ResourceCache[Res->File->path] = Res;
+			}
 
+			ResourceLoadQueue.pop();
 			{
 				const std::lock_guard<std::mutex> ResGuard(ResourceLoadMutex);
 				ToLoad->bHasResourceLoaded = true;
@@ -175,6 +178,11 @@ namespace Ship {
 
 		if (StringHelper::StartsWith(FilePath, "__OTR__"))
 			FilePath = StringHelper::Split(FilePath, "__OTR__")[1];
+
+		if (StringHelper::StartsWith(FilePath, "spot00_room"))
+		{
+			int bp = 0;
+		}
 
 		std::shared_ptr<File> FileData = LoadFile(FilePath);
 		std::shared_ptr<ResourcePromise> Promise = std::make_shared<ResourcePromise>();

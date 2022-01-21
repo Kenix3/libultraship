@@ -27,7 +27,8 @@ namespace Ship
 		std::string HashToString(uint64_t Hash);
 
 		void InvalidateResourceCache();
-
+		
+		std::shared_ptr<File> LoadFile(std::string FilePath, bool Blocks = false);
 		std::shared_ptr<Resource> LoadResource(std::string FilePath);
 		std::shared_ptr<ResourcePromise> LoadResourceAsync(std::string FilePath);
 		std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(std::string SearchMask);
@@ -38,7 +39,6 @@ namespace Ship
 		void Stop();
 		void LoadFileThread();
 		void LoadResourceThread();
-		std::shared_ptr<File> LoadFile(std::string FilePath, bool Blocks = false);
 
 	private:
 		std::weak_ptr<GlobalCtx2> Context;

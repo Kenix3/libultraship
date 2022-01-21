@@ -3,6 +3,9 @@
 #include "KeyboardController.h"
 #include "SDLController.h"
 #include "GlobalCtx2.h"
+#include "DisplayList.h"
+#include "ResourceMgr.h"
+#include "Texture.h"
 #include "Lib/Fast3D/gfx_pc.h"
 #include "Lib/Fast3D/gfx_sdl.h"
 #include "Lib/Fast3D/gfx_opengl.h"
@@ -80,6 +83,57 @@ extern "C" {
                 Ship::Window::Controllers[i]->Read(&pad[i]);
             }
         }
+    }
+
+    char* ResourceMgr_GetNameByCRC(uint64_t crc, char* alloc) {
+        std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
+        strcpy(alloc, hashStr.c_str());
+        return (char*)hashStr.c_str();
+    }
+
+    Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc)
+    {
+        std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
+
+        if (hashStr != "") {
+            return (Vtx*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadFile(hashStr)->buffer.get();
+        }
+        else {
+            return nullptr;
+        }
+    }
+
+    Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc) 
+    {
+        std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
+
+        if (hashStr != "") {
+            auto res = std::static_pointer_cast<Ship::DisplayList>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr));
+            return (Gfx*)&res->instructions[0];
+        }
+        else {
+            return nullptr;
+        }
+    }
+
+    char* ResourceMgr_LoadTexByCRC(uint64_t crc) 
+    {
+        std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
+
+        if (hashStr != "") 
+        {
+            auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr).get();
+            return (char*)res->imageData;
+        }
+        else {
+            return nullptr;
+        }
+    }
+
+    char* ResourceMgr_LoadTexByName(char* texPath) 
+    {
+        auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(texPath).get();
+        return (char*)res->imageData;
     }
 }
 
