@@ -1698,6 +1698,7 @@ static inline void* seg_addr(uintptr_t w1)
 
 int dListBP;
 int matrixBP;
+uintptr_t clearMtx;
 
 static void gfx_run_dl(Gfx* cmd) {
     //puts("dl");
@@ -1733,9 +1734,18 @@ static void gfx_run_dl(Gfx* cmd) {
                 {
                     int bp = 0;
                 }
+                
+                uintptr_t mtxAddr = cmd->words.w1;
+                
+                // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
+                if (mtxAddr == 0xF012DB20)
+                {
+                    printf("USING CLEAR\n");
+                    mtxAddr = clearMtx;
+                }
 
 #ifdef F3DEX_GBI_2
-                gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t *) seg_addr(cmd->words.w1));
+                gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t *) seg_addr(mtxAddr));
 #else
                 gfx_sp_matrix(C0(16, 8), (const int32_t *) seg_addr(cmd->words.w1));
 #endif

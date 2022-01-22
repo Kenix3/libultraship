@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resource.h"
+#include "Vertex.h"
 
 namespace Ship
 {
@@ -37,6 +38,37 @@ namespace Ship
 		ZSCALAR_F64
 	};
 
+	// OTRTODO: Replace this with something that can be shared between the exporter and importer...
+	enum class ZResourceType
+	{
+		Error,
+		Animation,
+		Array,
+		AltHeader,
+		Background,
+		Blob,
+		CollisionHeader,
+		Cutscene,
+		DisplayList,
+		Limb,
+		LimbTable,
+		Mtx,
+		Path,
+		PlayerAnimationData,
+		Room,
+		RoomCommand,
+		Scalar,
+		Scene,
+		Skeleton,
+		String,
+		Symbol,
+		Texture,
+		TextureAnimation,
+		TextureAnimationParams,
+		Vector,
+		Vertex,
+	};
+
 	class ArrayV0 : public ResourceFile
 	{
 	public:
@@ -47,6 +79,7 @@ namespace Ship
 	{
 	public:
 		std::vector<ScalarData> scalars;
+		std::vector<Vtx> vertices;
 
 	};
 }

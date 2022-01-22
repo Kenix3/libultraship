@@ -1,4 +1,5 @@
 #include "Array.h"
+#include "Vertex.h"
 
 namespace Ship
 {
@@ -8,26 +9,44 @@ namespace Ship
 
 		ResourceFile::ParseFileBinary(reader, res);
 
-		uint32_t resType = reader->ReadUInt32();
+		ZResourceType resType = (ZResourceType)reader->ReadUInt32();
 		uint32_t arrayCnt = reader->ReadUInt32();
 
 		for (int i = 0; i < arrayCnt; i++)
 		{
-			ScalarType scalType = (ScalarType)reader->ReadUInt32();
-			ScalarData data;
-
-			switch (scalType)
+			if (resType == ZResourceType::Vertex)
 			{
-			case ScalarType::ZSCALAR_S16:
-				data.s16 = reader->ReadInt16();
-				break;
-			case ScalarType::ZSCALAR_U16:
-				data.u16 = reader->ReadUInt16();
-				break;
-				// LUSTODO: IMPLEMENT OTHER TYPES!
+				Vtx data;
+				data.x = reader->ReadInt16();
+				data.y = reader->ReadInt16();
+				data.z = reader->ReadInt16();
+				data.flag = reader->ReadUInt16();
+				data.s = reader->ReadInt16();
+				data.t = reader->ReadInt16();
+				data.r = reader->ReadUByte();
+				data.g = reader->ReadUByte();
+				data.b = reader->ReadUByte();
+				data.a = reader->ReadUByte();
+				arr->vertices.push_back(data);
 			}
+			else
+			{
+				ScalarType scalType = (ScalarType)reader->ReadUInt32();
+				ScalarData data;
 
-			arr->scalars.push_back(data);
+				switch (scalType)
+				{
+				case ScalarType::ZSCALAR_S16:
+					data.s16 = reader->ReadInt16();
+					break;
+				case ScalarType::ZSCALAR_U16:
+					data.u16 = reader->ReadUInt16();
+					break;
+					// LUSTODO: IMPLEMENT OTHER TYPES!
+				}
+
+				arr->scalars.push_back(data);
+			}
 		}
 	}
 }

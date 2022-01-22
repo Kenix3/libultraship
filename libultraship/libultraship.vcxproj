@@ -166,6 +166,7 @@
     <ClCompile Include="Factories\CutsceneFactory.cpp" />
     <ClCompile Include="Factories\PathFactory.cpp" />
     <ClCompile Include="Animation.cpp" />
+    <ClCompile Include="Factories\TextFactory.cpp" />
     <ClCompile Include="Factories\TextureFactory.cpp" />
     <ClCompile Include="Factories\VtxFactory.cpp" />
     <ClCompile Include="Array.cpp" />
@@ -209,6 +210,7 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SkeletonLimb.cpp" />
+    <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -221,6 +223,7 @@
     <ClInclude Include="Factories\CutsceneFactory.h" />
     <ClInclude Include="Factories\AnimationFactory.h" />
     <ClInclude Include="Factories\PathFactory.h" />
+    <ClInclude Include="Factories\TextFactory.h" />
     <ClInclude Include="Factories\TextureFactory.h" />
     <ClInclude Include="Factories\VtxFactory.h" />
     <ClInclude Include="Animation.h" />
@@ -237,6 +240,7 @@
     <ClInclude Include="Lib\Fast3D\gfx_screen_config.h" />
     <ClInclude Include="Lib\Fast3D\gfx_window_manager_api.h" />
     <ClInclude Include="Path.h" />
+    <ClInclude Include="Text.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="stox.h" />
     <ClInclude Include="Lib\mINI\src\mini\ini.h" />

@@ -222,6 +222,12 @@
     <ClCompile Include="Factories\TextureFactory.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
+    <ClCompile Include="Text.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\TextFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -405,6 +411,12 @@
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClInclude>
     <ClInclude Include="Factories\TextureFactory.h">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="Text.h">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\TextFactory.h">
       <Filter>Source Files\Resources\Factories</Filter>
     </ClInclude>
   </ItemGroup>

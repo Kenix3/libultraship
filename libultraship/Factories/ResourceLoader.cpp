@@ -11,6 +11,7 @@
 #include "CutsceneFactory.h"
 #include "ArrayFactory.h"
 #include "PathFactory.h"
+#include "TextFactory.h"
 #include "TextureFactory.h"
 #include <Utils/MemoryStream.h>
 
@@ -68,6 +69,9 @@ namespace Ship
             break;
         case ResourceType::Path:
             result = PathFactory::ReadPath(&reader);
+            break;
+        case ResourceType::Text:
+            result = TextFactory::ReadText(&reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED
