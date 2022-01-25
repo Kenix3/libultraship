@@ -659,31 +659,35 @@ static void import_texture_ci4(int tile) {
 }
 
 static void import_texture_ci8(int tile) {
-    uint8_t rgba32_buf[16384];
+    uint8_t rgba32_buf[16384 * 8]; // Note: There's a buffer overflow here with skyboxes so I had to extend it.
     uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
 
-    // LUSTODO: DUMB DUMB HACK
-    //if ((uintptr_t)addr != 0x06000000 && (uintptr_t)addr != 0x06004000 && (uintptr_t)addr != 0x06008000 && (uintptr_t)addr != 0x06000800 && ((uintptr_t)addr & 0xFF000000) != 0x06000000)
+    for (uint32_t i = 0; i < size_bytes; i++)
     {
-        for (uint32_t i = 0; i < size_bytes; i++) 
-        {
-            uint8_t idx = addr[i];
-            uint16_t col16 = (rdp.palette[idx * 2] << 8) | rdp.palette[idx * 2 + 1]; // Big endian load
-            uint8_t a = col16 & 1;
-            uint8_t r = col16 >> 11;
-            uint8_t g = (col16 >> 6) & 0x1f;
-            uint8_t b = (col16 >> 1) & 0x1f;
-            rgba32_buf[4 * i + 0] = SCALE_5_8(r);
-            rgba32_buf[4 * i + 1] = SCALE_5_8(g);
-            rgba32_buf[4 * i + 2] = SCALE_5_8(b);
-            rgba32_buf[4 * i + 3] = a ? 255 : 0;
-        }
+        uint8_t idx = addr[i];
+        uint16_t col16 = (rdp.palette[idx * 2] << 8) | rdp.palette[idx * 2 + 1]; // Big endian load
+        uint8_t a = col16 & 1;
+        uint8_t r = col16 >> 11;
+        uint8_t g = (col16 >> 6) & 0x1f;
+        uint8_t b = (col16 >> 1) & 0x1f;
+        rgba32_buf[4 * i + 0] = SCALE_5_8(r);
+        rgba32_buf[4 * i + 1] = SCALE_5_8(g);
+        rgba32_buf[4 * i + 2] = SCALE_5_8(b);
+        rgba32_buf[4 * i + 3] = a ? 255 : 0;
     }
-    
+
     uint32_t width = rdp.texture_tile[tile].line_size_bytes;
     uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
-    
+
+    //width = 256;
+    //height = 255;
+
+    if (size_bytes > 15000)
+    {
+        int bp = 0;
+    }
+
     gfx_rapi->upload_texture(rgba32_buf, width, height);
 }
 
@@ -838,6 +842,9 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
             int bp = 0;
         }
         
+        if (v == NULL)
+            return;
+
         float x = v->ob[0] * rsp.MP_matrix[0][0] + v->ob[1] * rsp.MP_matrix[1][0] + v->ob[2] * rsp.MP_matrix[2][0] + rsp.MP_matrix[3][0];
         float y = v->ob[0] * rsp.MP_matrix[0][1] + v->ob[1] * rsp.MP_matrix[1][1] + v->ob[2] * rsp.MP_matrix[2][1] + rsp.MP_matrix[3][1];
         float z = v->ob[0] * rsp.MP_matrix[0][2] + v->ob[1] * rsp.MP_matrix[1][2] + v->ob[2] * rsp.MP_matrix[2][2] + rsp.MP_matrix[3][2];
@@ -1293,6 +1300,12 @@ static void gfx_sp_texture(uint16_t sc, uint16_t tc, uint8_t level, uint8_t tile
         rdp.textures_changed[0] = true;
         rdp.textures_changed[1] = true;
     }
+
+    if (tile > 8)
+    {
+        int bp = 0;
+    }
+
     rdp.first_tile_index = tile;
 }
 
@@ -1324,6 +1337,12 @@ static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t t
     rdp.texture_tile[tile].cms = cms;
     rdp.texture_tile[tile].cmt = cmt;
     rdp.texture_tile[tile].line_size_bytes = line * 8;
+
+    if (rdp.texture_tile[tile].line_size_bytes > 15000)
+    {
+        int bp = 0;
+    }
+
     rdp.texture_tile[tile].tmem_index = tmem / 256; // tmem is the 64-bit word offset, so 256 words means 2 kB
     rdp.textures_changed[0] = true;
     rdp.textures_changed[1] = true;
@@ -1631,6 +1650,15 @@ static void gfx_dp_fill_rectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t
     }
     uint32_t mode = (rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE));
     
+    // OTRTODO: This is a bit of a hack for widescreen screen fades, but it'll work for now...
+    if (ulx == 0 && uly == 0 && lrx == (319 * 4) && lry == (239 * 4))
+    {
+        ulx = -1024;
+        uly = -1024;
+        lrx = 2048;
+        lry = 2048;
+    }
+
     if (mode == G_CYC_COPY || mode == G_CYC_FILL) {
         // Per documentation one extra pixel is added in this modes to each edge
         lrx += 1 << 2;
@@ -1719,9 +1747,21 @@ static void gfx_run_dl(Gfx* cmd) {
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             char dlName[4096];
             ResourceMgr_GetNameByCRC(hash, dlName);
+
+            if (strcmp(dlName, "z_fbdemo_circle\\sCircleDList") == 0)
+            {
+                int bp2 = 0;
+            }
+
+
             //printf("G_MARKER: %s\n", dlName);
             int bp = 0;
             markerOn = true;
+        }
+            break;
+        case G_TESTOP:
+        {
+            int bp = 0;
         }
             break;
         case G_INVALTEXCACHE:
