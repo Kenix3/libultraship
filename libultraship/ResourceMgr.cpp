@@ -252,7 +252,8 @@ namespace Ship {
 				Promise->ResourceLoadNotifier.wait(Lock);
 			}
 
-			Promise->Resource->isDirty = true;
+			if (Promise->Resource != nullptr)
+				Promise->Resource->isDirty = true;
 
 			LoadedList->push_back(Promise->Resource);
 		}
