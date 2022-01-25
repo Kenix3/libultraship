@@ -1926,11 +1926,6 @@ static void gfx_run_dl(Gfx* cmd) {
                 char fileName[4096];
                 ResourceMgr_GetNameByCRC(hash, fileName);
 
-                if (strcmp(fileName, "spot04_scene\\spot04_room_0Tex_01A490") == 0)
-                {
-                    int bp = 0;
-                }
-
                 //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
 #endif
                 char* tex = ResourceMgr_LoadTexByCRC(hash);

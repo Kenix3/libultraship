@@ -68,6 +68,8 @@ namespace Ship
 		ZLimbSkinType skinSegmentType;
 		uint16_t skinVtxCnt;
 		std::vector<Struct_800A598C> skinData;
+		std::string skinDList;
+		std::string skinDList2;
 
 		float legTransX, legTransY, legTransZ;  // Vec3f
 		uint16_t rotX, rotY, rotZ;              // Vec3s

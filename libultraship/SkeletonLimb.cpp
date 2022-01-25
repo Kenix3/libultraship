@@ -10,6 +10,7 @@ namespace Ship
 
         limb->limbType = (LimbType)reader->ReadByte();
         limb->skinSegmentType = (ZLimbSkinType)reader->ReadByte();
+        limb->skinDList = reader->ReadString();
 
         limb->skinVtxCnt = reader->ReadUInt16();
         uint32_t skinCnt = reader->ReadUInt32();
@@ -54,6 +55,8 @@ namespace Ship
 
             limb->skinData.push_back(struc);
         }
+
+        limb->skinDList2 = reader->ReadString();
 
         limb->legTransX = reader->ReadSingle();
         limb->legTransY = reader->ReadSingle();

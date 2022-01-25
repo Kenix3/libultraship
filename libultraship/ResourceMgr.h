@@ -33,6 +33,7 @@ namespace Ship
 		std::shared_ptr<ResourcePromise> LoadResourceAsync(std::string FilePath);
 		std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(std::string SearchMask);
 		std::shared_ptr<std::vector<std::shared_ptr<ResourcePromise>>> CacheDirectoryAsync(std::string SearchMask);
+		std::shared_ptr<std::vector<std::shared_ptr<Resource>>> DirtyDirectory(std::string SearchMask);
 
 	protected:
 		void Start();

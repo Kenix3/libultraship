@@ -239,6 +239,27 @@ namespace Ship {
 		return LoadedList;
 	}
 
+	std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::DirtyDirectory(std::string SearchMask) 
+	{
+		auto PromiseList = CacheDirectoryAsync(SearchMask);
+		auto LoadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
+
+		for (int32_t i = 0; i < PromiseList->size(); i++) {
+			auto Promise = PromiseList->at(i);
+
+			std::unique_lock<std::mutex> Lock(Promise->ResourceLoadMutex);
+			while (!Promise->bHasResourceLoaded) {
+				Promise->ResourceLoadNotifier.wait(Lock);
+			}
+
+			Promise->Resource->isDirty = true;
+
+			LoadedList->push_back(Promise->Resource);
+		}
+
+		return LoadedList;
+	}
+
 	void ResourceMgr::InvalidateResourceCache() {
 		ResourceCache.empty();
 	}

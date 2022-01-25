@@ -182,6 +182,7 @@ namespace Ship {
 
     void Window::SetFrameDivisor(int divisor) {
         gfx_set_framedivisor(divisor);
+        //gfx_set_framedivisor(0);
     }
 
     void Window::ToggleFullscreen() {
