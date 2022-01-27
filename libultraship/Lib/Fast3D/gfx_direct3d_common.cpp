@@ -5,46 +5,6 @@
 #include "gfx_direct3d_common.h"
 #include "gfx_cc.h"
 
-void get_cc_features(uint32_t shader_id, CCFeatures *cc_features) {
-    for (int i = 0; i < 4; i++) {
-        cc_features->c[0][i] = (shader_id >> (i * 3)) & 7;
-        cc_features->c[1][i] = (shader_id >> (12 + i * 3)) & 7;
-    }
-
-    cc_features->opt_alpha = (shader_id & SHADER_OPT_ALPHA) != 0;
-    cc_features->opt_fog = (shader_id & SHADER_OPT_FOG) != 0;
-    cc_features->opt_texture_edge = (shader_id & SHADER_OPT_TEXTURE_EDGE) != 0;
-    cc_features->opt_noise = (shader_id & SHADER_OPT_NOISE) != 0;
-
-    cc_features->used_textures[0] = false;
-    cc_features->used_textures[1] = false;
-    cc_features->num_inputs = 0;
-
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 4; j++) {
-            if (cc_features->c[i][j] >= SHADER_INPUT_1 && cc_features->c[i][j] <= SHADER_INPUT_4) {
-                if (cc_features->c[i][j] > cc_features->num_inputs) {
-                    cc_features->num_inputs = cc_features->c[i][j];
-                }
-            }
-            if (cc_features->c[i][j] == SHADER_TEXEL0 || cc_features->c[i][j] == SHADER_TEXEL0A) {
-                cc_features->used_textures[0] = true;
-            }
-            if (cc_features->c[i][j] == SHADER_TEXEL1) {
-                cc_features->used_textures[1] = true;
-            }
-        }
-    }
-
-    cc_features->do_single[0] = cc_features->c[0][2] == 0;
-    cc_features->do_single[1] = cc_features->c[1][2] == 0;
-    cc_features->do_multiply[0] = cc_features->c[0][1] == 0 && cc_features->c[0][3] == 0;
-    cc_features->do_multiply[1] = cc_features->c[1][1] == 0 && cc_features->c[1][3] == 0;
-    cc_features->do_mix[0] = cc_features->c[0][1] == cc_features->c[0][3];
-    cc_features->do_mix[1] = cc_features->c[1][1] == cc_features->c[1][3];
-    cc_features->color_alpha_same = (shader_id & 0xfff) == ((shader_id >> 12) & 0xfff);
-}
-
 static void append_str(char *buf, size_t *len, const char *str) {
     while (*str != '\0') buf[(*len)++] = *str++;
 }
@@ -61,6 +21,8 @@ static const char *shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             default:
             case SHADER_0:
                 return with_alpha ? "float4(0.0, 0.0, 0.0, 0.0)" : "float3(0.0, 0.0, 0.0)";
+            case SHADER_1:
+                return with_alpha ? "float4(1.0, 1.0, 1.0, 1.0)" : "float3(1.0, 1.0, 1.0)";
             case SHADER_INPUT_1:
                 return with_alpha || !inputs_have_alpha ? "input.input1" : "input.input1.rgb";
             case SHADER_INPUT_2:
@@ -73,14 +35,20 @@ static const char *shader_item_to_str(uint32_t item, bool with_alpha, bool only_
                 return with_alpha ? "texVal0" : "texVal0.rgb";
             case SHADER_TEXEL0A:
                 return hint_single_element ? "texVal0.a" : (with_alpha ? "float4(texVal0.a, texVal0.a, texVal0.a, texVal0.a)" : "float3(texVal0.a, texVal0.a, texVal0.a)");
+            case SHADER_TEXEL1A:
+                return hint_single_element ? "texVal1.a" : (with_alpha ? "float4(texVal1.a, texVal1.a, texVal1.a, texVal1.a)" : "float3(texVal1.a, texVal1.a, texVal1.a)");
             case SHADER_TEXEL1:
                 return with_alpha ? "texVal1" : "texVal1.rgb";
+            case SHADER_COMBINED:
+                return with_alpha ? "texel" : "texel.rgb";
         }
     } else {
         switch (item) {
             default:
             case SHADER_0:
                 return "0.0";
+            case SHADER_1:
+                return "1.0";
             case SHADER_INPUT_1:
                 return "input.input1.a";
             case SHADER_INPUT_2:
@@ -93,8 +61,12 @@ static const char *shader_item_to_str(uint32_t item, bool with_alpha, bool only_
                 return "texVal0.a";
             case SHADER_TEXEL0A:
                 return "texVal0.a";
+            case SHADER_TEXEL1A:
+                return "texVal1.a";
             case SHADER_TEXEL1:
                 return "texVal1.a";
+            case SHADER_COMBINED:
+                return "texel.a";
         }
     }
 }
@@ -273,17 +245,20 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
         }
     }
 
-    append_str(buf, &len, cc_features.opt_alpha ? "    float4 texel = " : "    float3 texel = ");
-    if (!cc_features.color_alpha_same && cc_features.opt_alpha) {
-        append_str(buf, &len, "float4(");
-        append_formula(buf, &len, cc_features.c, cc_features.do_single[0], cc_features.do_multiply[0], cc_features.do_mix[0], false, false, true);
-        append_str(buf, &len, ", ");
-        append_formula(buf, &len, cc_features.c, cc_features.do_single[1], cc_features.do_multiply[1], cc_features.do_mix[1], true, true, true);
-        append_str(buf, &len, ")");
-    } else {
-        append_formula(buf, &len, cc_features.c, cc_features.do_single[0], cc_features.do_multiply[0], cc_features.do_mix[0], cc_features.opt_alpha, false, cc_features.opt_alpha);
+    append_str(buf, &len, cc_features.opt_alpha ? "    float4 texel;" : "    float3 texel;");
+    for (int c = 0; c < (cc_features.opt_2cyc ? 2 : 1); c++) {
+        append_str(buf, &len, "texel = ");
+        if (!cc_features.color_alpha_same[c] && cc_features.opt_alpha) {
+            append_str(buf, &len, "float4(");
+            append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0], cc_features.do_mix[c][0], false, false, true);
+            append_str(buf, &len, ", ");
+            append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][1], cc_features.do_multiply[c][1], cc_features.do_mix[c][1], true, true, true);
+            append_str(buf, &len, ")");
+        } else {
+            append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0], cc_features.do_mix[c][0], cc_features.opt_alpha, false, cc_features.opt_alpha);
+        }
+        append_line(buf, &len, ";");
     }
-    append_line(buf, &len, ";");
 
     if (cc_features.opt_texture_edge && cc_features.opt_alpha) {
         append_line(buf, &len, "    if (texel.a > 0.3) texel.a = 1.0; else discard;");

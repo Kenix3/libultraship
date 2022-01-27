@@ -15,7 +15,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include <PR/gbi.h>
+#include <PR/ultra64/gbi.h>
 
 #include "gfx_cc.h"
 #include "gfx_window_manager_api.h"
@@ -64,7 +64,8 @@ struct ShaderProgramD3D11 {
     ComPtr<ID3D11InputLayout> input_layout;
     ComPtr<ID3D11BlendState> blend_state;
 
-    uint32_t shader_id;
+    uint64_t shader_id0;
+    uint32_t shader_id1;
     uint8_t num_inputs;
     uint8_t num_floats;
     bool used_textures[2];
@@ -314,9 +315,9 @@ static void gfx_d3d11_load_shader(struct ShaderProgram *new_prg) {
     d3d.shader_program = (struct ShaderProgramD3D11 *)new_prg;
 }
 
-static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint32_t shader_id) {
+static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
     CCFeatures cc_features;
-    gfx_cc_get_features(shader_id, &cc_features);
+    gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
     char buf[4096];
     size_t len, num_floats;
@@ -335,14 +336,16 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint32_t shade
     HRESULT hr = d3d.D3DCompile(buf, len, nullptr, nullptr, nullptr, "VSMain", "vs_4_0_level_9_1", compile_flags, 0, vs.GetAddressOf(), error_blob.GetAddressOf());
 
     if (FAILED(hr)) {
-        MessageBox(gfx_dxgi_get_h_wnd(), (char *) error_blob->GetBufferPointer(), "Error", MB_OK | MB_ICONERROR);
+        char* err = (char*)error_blob->GetBufferPointer();
+        MessageBoxA(gfx_dxgi_get_h_wnd(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
     hr = d3d.D3DCompile(buf, len, nullptr, nullptr, nullptr, "PSMain", "ps_4_0_level_9_1", compile_flags, 0, ps.GetAddressOf(), error_blob.GetAddressOf());
 
     if (FAILED(hr)) {
-        MessageBox(gfx_dxgi_get_h_wnd(), (char *) error_blob->GetBufferPointer(), "Error", MB_OK | MB_ICONERROR);
+        char* err = (char*)error_blob->GetBufferPointer();
+        MessageBoxA(gfx_dxgi_get_h_wnd(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
@@ -392,7 +395,8 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint32_t shade
 
     // Save some values
 
-    prg->shader_id = shader_id;
+    prg->shader_id0 = shader_id0;
+    prg->shader_id1 = shader_id1;
     prg->num_inputs = cc_features.num_inputs;
     prg->num_floats = num_floats;
     prg->used_textures[0] = cc_features.used_textures[0];
@@ -401,9 +405,9 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint32_t shade
     return (struct ShaderProgram *)(d3d.shader_program = prg);
 }
 
-static struct ShaderProgram *gfx_d3d11_lookup_shader(uint32_t shader_id) {
+static struct ShaderProgram *gfx_d3d11_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
     for (size_t i = 0; i < d3d.shader_program_pool_size; i++) {
-        if (d3d.shader_program_pool[i].shader_id == shader_id) {
+        if (d3d.shader_program_pool[i].shader_id0 == shader_id0 && d3d.shader_program_pool[i].shader_id1 == shader_id1) {
             return (struct ShaderProgram *)&d3d.shader_program_pool[i];
         }
     }
@@ -429,6 +433,7 @@ static void gfx_d3d11_select_texture(int tile, uint32_t texture_id) {
 }
 
 static D3D11_TEXTURE_ADDRESS_MODE gfx_cm_to_d3d11(uint32_t val) {
+    // TODO: handle G_TX_MIRROR | G_TX_CLAMP
     if (val & G_TX_CLAMP) {
         return D3D11_TEXTURE_ADDRESS_CLAMP;
     }
@@ -700,7 +705,7 @@ static void gfx_d3d11_finish_render(void) {
 
 } // namespace
 
-struct GfxRenderingAPI gfx_direct3d11_api = {
+extern "C" struct GfxRenderingAPI gfx_direct3d11_api = {
     gfx_d3d11_z_is_from_0_to_1,
     gfx_d3d11_unload_shader,
     gfx_d3d11_load_shader,

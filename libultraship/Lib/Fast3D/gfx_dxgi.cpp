@@ -18,7 +18,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include <PR/gbi.h>
+#include <PR/ultra64/gbi.h>
 
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
@@ -33,11 +33,11 @@
 #define GFX_API_NAME "DirectX"
 
 #ifdef VERSION_EU
-#define FRAME_INTERVAL_US_NUMERATOR 40000
+#define FRAME_INTERVAL_US_NUMERATOR 60000
 #define FRAME_INTERVAL_US_DENOMINATOR 1
 #else
-#define FRAME_INTERVAL_US_NUMERATOR 100000
-#define FRAME_INTERVAL_US_DENOMINATOR 3
+#define FRAME_INTERVAL_US_NUMERATOR 50000
+#define FRAME_INTERVAL_US_DENOMINATOR 1
 #endif
 
 using namespace Microsoft::WRL; // For ComPtr
@@ -104,7 +104,7 @@ static void run_as_dpi_aware(Fun f) {
 
     DPI_AWARENESS_CONTEXT (WINAPI *SetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT dpiContext);
     *(FARPROC *)&SetThreadDpiAwarenessContext = GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetThreadDpiAwarenessContext");
-    DPI_AWARENESS_CONTEXT old_awareness_context;
+    DPI_AWARENESS_CONTEXT old_awareness_context = nullptr;
     if (SetThreadDpiAwarenessContext != nullptr) {
         old_awareness_context = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     } else {
@@ -508,6 +508,10 @@ static double gfx_dxgi_get_time(void) {
     return (double)(t.QuadPart - dxgi.qpc_init) / dxgi.qpc_freq;
 }
 
+static void gfx_dxgi_set_frame_divisor(int divisor) {
+    // TODO
+}
+
 void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version, bool (*create_device_fn)(IDXGIAdapter1 *adapter, bool test_only)) {
     if (dxgi.CreateDXGIFactory2 != nullptr) {
         ThrowIfFailed(dxgi.CreateDXGIFactory2(debug ? DXGI_CREATE_FACTORY_DEBUG : 0, __uuidof(IDXGIFactory2), &dxgi.factory));
@@ -592,12 +596,12 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char *message) {
         char full_message[256];
         sprintf(full_message, "%s\n\nHRESULT: 0x%08X", message, res);
         dxgi.showing_error = true;
-        MessageBox(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
         throw res;
     }
 }
 
-struct GfxWindowManagerAPI gfx_dxgi_api = {
+extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = {
     gfx_dxgi_init,
     gfx_dxgi_set_keyboard_callbacks,
     gfx_dxgi_set_fullscreen_changed_callback,
@@ -609,6 +613,7 @@ struct GfxWindowManagerAPI gfx_dxgi_api = {
     gfx_dxgi_swap_buffers_begin,
     gfx_dxgi_swap_buffers_end,
     gfx_dxgi_get_time,
+    gfx_dxgi_set_frame_divisor,
 };
 
 #endif

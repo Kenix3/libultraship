@@ -411,6 +411,7 @@ static void gfx_direct3d12_upload_texture(const uint8_t *rgba32_buf, int width, 
 }
 
 static int gfx_cm_to_index(uint32_t val) {
+    // TODO: handle G_TX_MIRROR | G_TX_CLAMP
     if (val & G_TX_CLAMP) {
         return 2;
     }

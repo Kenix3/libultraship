@@ -6,15 +6,16 @@ namespace Ship
 {
 	enum class TextureType
 	{
-		RGBA32bpp = 0,
-		RGBA16bpp = 1,
-		Palette4bpp = 2,
-		Palette8bpp = 3,
-		Grayscale4bpp = 4,
-		Grayscale8bpp = 5,
-		GrayscaleAlpha4bpp = 6,
-		GrayscaleAlpha8bpp = 7,
-		GrayscaleAlpha16bpp = 8,
+		Error = 0,
+		RGBA32bpp = 1,
+		RGBA16bpp = 2,
+		Palette4bpp = 3,
+		Palette8bpp = 4,
+		Grayscale4bpp = 5,
+		Grayscale8bpp = 6,
+		GrayscaleAlpha4bpp = 7,
+		GrayscaleAlpha8bpp = 8,
+		GrayscaleAlpha16bpp = 9,
 	};
 
 	class TextureV0 : public ResourceFile

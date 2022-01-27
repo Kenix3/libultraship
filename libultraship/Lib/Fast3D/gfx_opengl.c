@@ -440,10 +440,16 @@ static void gfx_opengl_upload_texture(const uint8_t *rgba32_buf, int width, int 
 }
 
 static uint32_t gfx_cm_to_opengl(uint32_t val) {
-    if (val & G_TX_CLAMP) {
-        return GL_CLAMP_TO_EDGE;
+    switch (val) {
+        case G_TX_NOMIRROR | G_TX_CLAMP:
+            return GL_CLAMP_TO_EDGE;
+        case G_TX_MIRROR | G_TX_WRAP:
+            return GL_MIRRORED_REPEAT;
+        case G_TX_MIRROR | G_TX_CLAMP:
+            return GL_MIRROR_CLAMP_TO_EDGE;
+        case G_TX_NOMIRROR | G_TX_WRAP:
+            return GL_REPEAT;
     }
-    return (val & G_TX_MIRROR) ? GL_MIRRORED_REPEAT : GL_REPEAT;
 }
 
 static void gfx_opengl_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
