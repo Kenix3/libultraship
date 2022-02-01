@@ -13,6 +13,7 @@
 #include "PathFactory.h"
 #include "TextFactory.h"
 #include "TextureFactory.h"
+#include "BlobFactory.h"
 #include <Utils/MemoryStream.h>
 
 namespace Ship
@@ -72,6 +73,9 @@ namespace Ship
             break;
         case ResourceType::Text:
             result = TextFactory::ReadText(&reader);
+            break;
+        case ResourceType::Blob:
+            result = BlobFactory::ReadBlob(&reader);
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED

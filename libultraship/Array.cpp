@@ -42,7 +42,7 @@ namespace Ship
 				case ScalarType::ZSCALAR_U16:
 					data.u16 = reader->ReadUInt16();
 					break;
-					// LUSTODO: IMPLEMENT OTHER TYPES!
+					// OTRTODO: IMPLEMENT OTHER TYPES!
 				}
 
 				arr->scalars.push_back(data);

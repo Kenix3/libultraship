@@ -161,8 +161,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Blob.cpp" />
     <ClCompile Include="Factories\AnimationFactory.cpp" />
     <ClCompile Include="Factories\ArrayFactory.cpp" />
+    <ClCompile Include="Factories\BlobFactory.cpp" />
     <ClCompile Include="Factories\CutsceneFactory.cpp" />
     <ClCompile Include="Factories\PathFactory.cpp" />
     <ClCompile Include="Animation.cpp" />
@@ -190,6 +192,7 @@
     <ClCompile Include="Lib\Fast3D\gfx_opengl.c" />
     <ClCompile Include="Lib\Fast3D\gfx_pc.c" />
     <ClCompile Include="Lib\Fast3D\gfx_sdl2.c" />
+    <ClCompile Include="Lib\picojpeg\picojpeg.c" />
     <ClCompile Include="Lib\StrHash64.cpp" />
     <ClCompile Include="Lib\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="Archive.cpp" />
@@ -219,7 +222,9 @@
     <ClCompile Include="SDLController.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Blob.h" />
     <ClInclude Include="Factories\ArrayFactory.h" />
+    <ClInclude Include="Factories\BlobFactory.h" />
     <ClInclude Include="Factories\CutsceneFactory.h" />
     <ClInclude Include="Factories\AnimationFactory.h" />
     <ClInclude Include="Factories\PathFactory.h" />
@@ -239,6 +244,7 @@
     <ClInclude Include="Lib\Fast3D\gfx_rendering_api.h" />
     <ClInclude Include="Lib\Fast3D\gfx_screen_config.h" />
     <ClInclude Include="Lib\Fast3D\gfx_window_manager_api.h" />
+    <ClInclude Include="Lib\picojpeg\picojpeg.h" />
     <ClInclude Include="Path.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="Vertex.h" />

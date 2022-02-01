@@ -196,9 +196,14 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     // Vertex shader
     append_line(vs_buf, &vs_len, "#version 110");
     append_line(vs_buf, &vs_len, "attribute vec4 aVtxPos;");
-    if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
-        append_line(vs_buf, &vs_len, "attribute vec2 aTexCoord;");
-        append_line(vs_buf, &vs_len, "varying vec2 vTexCoord;");
+    if (cc_features.used_textures[0]) {
+        append_line(vs_buf, &vs_len, "attribute vec2 aTexCoord0;");
+        append_line(vs_buf, &vs_len, "varying vec2 vTexCoord0;");
+        num_floats += 2;
+    }
+    if (cc_features.used_textures[1]) {
+        append_line(vs_buf, &vs_len, "attribute vec2 aTexCoord1;");
+        append_line(vs_buf, &vs_len, "varying vec2 vTexCoord1;");
         num_floats += 2;
     }
     if (cc_features.opt_fog) {
@@ -212,8 +217,11 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         num_floats += cc_features.opt_alpha ? 4 : 3;
     }
     append_line(vs_buf, &vs_len, "void main() {");
-    if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
-        append_line(vs_buf, &vs_len, "vTexCoord = aTexCoord;");
+    if (cc_features.used_textures[0]) {
+        append_line(vs_buf, &vs_len, "vTexCoord0 = aTexCoord0;");
+    }
+    if (cc_features.used_textures[1]) {
+        append_line(vs_buf, &vs_len, "vTexCoord1 = aTexCoord1;");
     }
     if (cc_features.opt_fog) {
         append_line(vs_buf, &vs_len, "vFog = aFog;");
@@ -227,8 +235,11 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     // Fragment shader
     append_line(fs_buf, &fs_len, "#version 110");
     //append_line(fs_buf, &fs_len, "precision mediump float;");
-    if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
-        append_line(fs_buf, &fs_len, "varying vec2 vTexCoord;");
+    if (cc_features.used_textures[0]) {
+        append_line(fs_buf, &fs_len, "varying vec2 vTexCoord0;");
+    }
+    if (cc_features.used_textures[1]) {
+        append_line(fs_buf, &fs_len, "varying vec2 vTexCoord1;");
     }
     if (cc_features.opt_fog) {
         append_line(fs_buf, &fs_len, "varying vec4 vFog;");
@@ -256,10 +267,10 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(fs_buf, &fs_len, "void main() {");
 
     if (cc_features.used_textures[0]) {
-        append_line(fs_buf, &fs_len, "vec4 texVal0 = texture2D(uTex0, vTexCoord);");
+        append_line(fs_buf, &fs_len, "vec4 texVal0 = texture2D(uTex0, vTexCoord0);");
     }
     if (cc_features.used_textures[1]) {
-        append_line(fs_buf, &fs_len, "vec4 texVal1 = texture2D(uTex1, vTexCoord);");
+        append_line(fs_buf, &fs_len, "vec4 texVal1 = texture2D(uTex1, vTexCoord1);");
     }
 
     append_line(fs_buf, &fs_len, cc_features.opt_alpha ? "vec4 texel;" : "vec3 texel;");
@@ -358,8 +369,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     prg->attrib_sizes[cnt] = 4;
     ++cnt;
 
-    if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
-        prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aTexCoord");
+    if (cc_features.used_textures[0]) {
+        prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aTexCoord0");
+        prg->attrib_sizes[cnt] = 2;
+        ++cnt;
+    }
+    if (cc_features.used_textures[1]) {
+        prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aTexCoord1");
         prg->attrib_sizes[cnt] = 2;
         ++cnt;
     }

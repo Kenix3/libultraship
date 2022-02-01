@@ -5,6 +5,7 @@
 #include "GlobalCtx2.h"
 #include "DisplayList.h"
 #include "Vertex.h"
+#include "Array.h"
 #include "ResourceMgr.h"
 #include "Texture.h"
 #include "Lib/Fast3D/gfx_pc.h"
@@ -97,12 +98,12 @@ extern "C" {
         std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
 
         if (hashStr != "") {
-            //auto res = std::static_pointer_cast<Ship::Vertex>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr));
+            auto res = std::static_pointer_cast<Ship::Array>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr));
 
             //if (res != nullptr)
-                //return (Vtx*)res->vtxList.data();
+                return (Vtx*)res->vertices.data();
             //else
-                return (Vtx*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadFile(hashStr)->buffer.get();
+                //return (Vtx*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadFile(hashStr)->buffer.get();
         }
         else {
             return nullptr;

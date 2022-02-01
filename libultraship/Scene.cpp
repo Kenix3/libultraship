@@ -130,7 +130,7 @@ namespace Ship
 		reader->ReadByte(); // camSize
 		reader->ReadInt32(); // segOffset
 
-		// LUSTODO: FINISH!
+		// OTRTODO: FINISH!
 	}
 
 	MeshData::MeshData()
@@ -157,7 +157,7 @@ namespace Ship
 		{
 			MeshData mesh;
 
-			// LUSTODO: FINISH THIS!
+			// OTRTODO: FINISH THIS!
 			if (meshHeaderType == 0)
 			{
 				int polyType = reader->ReadByte();
@@ -241,21 +241,21 @@ namespace Ship
 			entry.ambientClrG = reader->ReadByte();
 			entry.ambientClrB = reader->ReadByte();
 
-			entry.diffuseClrA_R = reader->ReadByte();
-			entry.diffuseClrA_G = reader->ReadByte();
-			entry.diffuseClrA_B = reader->ReadByte();
-
 			entry.diffuseDirA_X = reader->ReadByte();
 			entry.diffuseDirA_Y = reader->ReadByte();
 			entry.diffuseDirA_Z = reader->ReadByte();
 
-			entry.diffuseClrB_R = reader->ReadByte();
-			entry.diffuseClrB_G = reader->ReadByte();
-			entry.diffuseClrB_B = reader->ReadByte();
+			entry.diffuseClrA_R = reader->ReadByte();
+			entry.diffuseClrA_G = reader->ReadByte();
+			entry.diffuseClrA_B = reader->ReadByte();
 
 			entry.diffuseDirB_X = reader->ReadByte();
 			entry.diffuseDirB_Y = reader->ReadByte();
 			entry.diffuseDirB_Z = reader->ReadByte();
+
+			entry.diffuseClrB_R = reader->ReadByte();
+			entry.diffuseClrB_G = reader->ReadByte();
+			entry.diffuseClrB_B = reader->ReadByte();
 
 			entry.fogClrR = reader->ReadByte();
 			entry.fogClrG = reader->ReadByte();

@@ -162,7 +162,6 @@
 #define G_VTX_OTR			    0x32
 #define G_MARKER			    0x33
 #define G_INVALTEXCACHE         0x34
-#define G_TESTOP                0x35
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -2786,26 +2785,18 @@ _DW({                                   \
     _SHIFTL(G_ENDDL, 24, 8), 0                  \
 }
 
-#define gSPInvalidateTexCache(pkt)                      \
+#define gSPInvalidateTexCache(pkt, addr)                      \
 _DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \
     _g->words.w0 = _SHIFTL(G_INVALTEXCACHE, 24, 8);             \
-    _g->words.w1 = 0;                       \
+    _g->words.w1 = addr;                       \
 })
 
 #define gsSPInvalidateTexCache()                        \
 {                                   \
     _SHIFTL(G_INVALTEXCACHE, 24, 8), 0                  \
 }
-
-#define gSPTestOp(pkt)                      \
-_DW({                                   \
-    Gfx *_g = (Gfx *)(pkt);                     \
-                                    \
-    _g->words.w0 = _SHIFTL(G_TESTOP, 24, 8);             \
-    _g->words.w1 = 0;                       \
-})
 
 #ifdef  F3DEX_GBI_2
     /*

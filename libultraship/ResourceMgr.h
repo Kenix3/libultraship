@@ -28,7 +28,8 @@ namespace Ship
 
 		void InvalidateResourceCache();
 		
-		std::shared_ptr<File> LoadFile(std::string FilePath, bool Blocks = false);
+		std::shared_ptr<File> LoadFileAsync(std::string FilePath);
+		std::shared_ptr<File> LoadFile(std::string FilePath);
 		std::shared_ptr<Resource> LoadResource(std::string FilePath);
 		std::shared_ptr<ResourcePromise> LoadResourceAsync(std::string FilePath);
 		std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(std::string SearchMask);
