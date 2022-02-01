@@ -58,8 +58,8 @@
     <Filter Include="Header Files\Resources\Factories">
       <UniqueIdentifier>{cf7f1b29-bb9a-4844-9ea5-4ac085f942e1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Lib\picojpeg">
-      <UniqueIdentifier>{f04198fc-dfff-472d-85c0-f209cc662eeb}</UniqueIdentifier>
+    <Filter Include="Source Files\Lib\stb">
+      <UniqueIdentifier>{70cd453d-a4dc-4c56-b64e-e50394fd18ee}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -237,8 +237,8 @@
     <ClCompile Include="Blob.cpp">
       <Filter>Source Files\Resources\Files</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\picojpeg\picojpeg.c">
-      <Filter>Source Files\Lib\picojpeg</Filter>
+    <ClCompile Include="Lib\stb\stb_impl.c">
+      <Filter>Source Files\Lib\stb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -437,8 +437,8 @@
     <ClInclude Include="Vertex.h">
       <Filter>Header Files\Resources\Files</Filter>
     </ClInclude>
-    <ClInclude Include="Lib\picojpeg\picojpeg.h">
-      <Filter>Source Files\Lib\picojpeg</Filter>
+    <ClInclude Include="Lib\stb\stb_image.h">
+      <Filter>Source Files\Lib\stb</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

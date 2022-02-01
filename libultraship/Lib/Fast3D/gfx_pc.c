@@ -499,7 +499,7 @@ static void import_texture_rgba16(int tile) {
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
+    //SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     for (uint32_t i = 0; i < size_bytes / 2; i++) {
         if (rdp.loaded_texture[tile].addr == 0 || rdp.loaded_texture[tile].addr == 2)
