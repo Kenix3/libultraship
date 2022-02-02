@@ -122,12 +122,16 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
 
     append_line(buf, &len, "struct PSInput {");
     append_line(buf, &len, "    float4 position : SV_POSITION;");
-    if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
-        append_line(buf, &len, "    float2 uv : TEXCOORD;");
+    if (cc_features.used_textures[0]) {
+        append_line(buf, &len, "    float2 uv0 : TEXCOORD0;");
+        num_floats += 2;
+    }
+    if (cc_features.used_textures[1]) {
+        append_line(buf, &len, "    float2 uv1 : TEXCOORD1;");
         num_floats += 2;
     }
     if (cc_features.opt_alpha && cc_features.opt_noise) {
-        append_line(buf, &len, "    float4 screenPos : TEXCOORD1;");
+        append_line(buf, &len, "    float4 screenPos : TEXCOORD2;");
     }
     if (cc_features.opt_fog) {
         append_line(buf, &len, "    float4 fog : FOG;");
@@ -190,8 +194,12 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
     // Vertex shader
 
     append_str(buf, &len, "PSInput VSMain(float4 position : POSITION");
-    if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
-        append_str(buf, &len, ", float2 uv : TEXCOORD");
+    if (cc_features.used_textures[0]) {
+        append_str(buf, &len, ", float2 uv0 : TEXCOORD0");
+    }
+    if (cc_features.used_textures[1]) {
+        append_str(buf, &len, ", float2 uv1 : TEXCOORD1");
+    }
     }
     if (cc_features.opt_fog) {
         append_str(buf, &len, ", float4 fog : FOG");
@@ -205,9 +213,13 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
     if (cc_features.opt_alpha && cc_features.opt_noise) {
         append_line(buf, &len, "    result.screenPos = position;");
     }
-    if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
-        append_line(buf, &len, "    result.uv = uv;");
+    if (cc_features.used_textures[0]) {
+        append_line(buf, &len, "    result.uv0 = uv0;");
     }
+    if (cc_features.used_textures[1]) {
+        append_line(buf, &len, "    result.uv1 = uv1;");
+    }
+
     if (cc_features.opt_fog) {
         append_line(buf, &len, "    result.fog = fog;");
     }
@@ -226,22 +238,22 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
         if (three_point_filtering) {
             append_line(buf, &len, "    float4 texVal0;");
             append_line(buf, &len, "    if (textures[0].linear_filtering)");
-            append_line(buf, &len, "        texVal0 = tex2D3PointFilter(g_texture0, g_sampler0, input.uv, float2(textures[0].width, textures[0].height));");
+            append_line(buf, &len, "        texVal0 = tex2D3PointFilter(g_texture0, g_sampler0, input.uv0, float2(textures[0].width, textures[0].height));");
             append_line(buf, &len, "    else");
-            append_line(buf, &len, "        texVal0 = g_texture0.Sample(g_sampler0, input.uv);");
+            append_line(buf, &len, "        texVal0 = g_texture0.Sample(g_sampler0, input.uv0);");
         } else {
-            append_line(buf, &len, "    float4 texVal0 = g_texture0.Sample(g_sampler0, input.uv);");
+            append_line(buf, &len, "    float4 texVal0 = g_texture0.Sample(g_sampler0, input.uv0);");
         }
     }
     if (cc_features.used_textures[1]) {
         if (three_point_filtering) {
             append_line(buf, &len, "    float4 texVal1;");
             append_line(buf, &len, "    if (textures[1].linear_filtering)");
-            append_line(buf, &len, "        texVal1 = tex2D3PointFilter(g_texture1, g_sampler1, input.uv, float2(textures[1].width, textures[1].height));");
+            append_line(buf, &len, "        texVal1 = tex2D3PointFilter(g_texture1, g_sampler1, input.uv1, float2(textures[1].width, textures[1].height));");
             append_line(buf, &len, "    else");
-            append_line(buf, &len, "        texVal1 = g_texture1.Sample(g_sampler1, input.uv);");
+            append_line(buf, &len, "        texVal1 = g_texture1.Sample(g_sampler1, input.uv1);");
         } else {
-            append_line(buf, &len, "    float4 texVal1 = g_texture1.Sample(g_sampler1, input.uv);");
+            append_line(buf, &len, "    float4 texVal1 = g_texture1.Sample(g_sampler1, input.uv1);");
         }
     }
 

@@ -188,11 +188,6 @@ namespace Ship {
 		if (StringHelper::StartsWith(FilePath, "__OTR__"))
 			FilePath = StringHelper::Split(FilePath, "__OTR__")[1];
 
-		if (StringHelper::StartsWith(FilePath, "spot00_room"))
-		{
-			int bp = 0;
-		}
-
 		std::shared_ptr<File> FileData = LoadFile(FilePath);
 		std::shared_ptr<ResourcePromise> Promise = std::make_shared<ResourcePromise>();
 		Promise->File = FileData;

@@ -229,7 +229,7 @@ namespace Ship {
 	}
 
 	bool Archive::LoadPatchMPQs() {
-		// TODO: We also want to periodically scan the patch directories for new MPQs. When new MPQs are found we will load the contents to fileCache and then copy over to gameResourceAddresses
+		// OTRTODO: We also want to periodically scan the patch directories for new MPQs. When new MPQs are found we will load the contents to fileCache and then copy over to gameResourceAddresses
 		if (PatchesPath.length() > 0) {
 			if (std::filesystem::is_directory(PatchesPath)) {
 				for (auto& p : std::filesystem::recursive_directory_iterator(PatchesPath)) {
@@ -252,7 +252,7 @@ namespace Ship {
 		t_filename[MainPath.size()] = 0;
 		std::copy(MainPath.begin(), MainPath.end(), t_filename);
 
-		if (!SFileOpenArchive(t_filename, 0, 0 /*MPQ_OPEN_READ_ONLY*/, &mpqHandle)) {
+		if (!SFileOpenArchive(t_filename, 0, genCRCMap ? MPQ_OPEN_READ_ONLY : 0, &mpqHandle)) {
 			SPDLOG_ERROR("({}) Failed to open main mpq file {}.", GetLastError(), MainPath.c_str());
 			return false;
 		}
@@ -280,12 +280,16 @@ namespace Ship {
 	bool Archive::LoadPatchMPQ(std::string path) {
 		HANDLE patchHandle = NULL;
 
-		if (!SFileOpenArchive((TCHAR*)path.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
+		TCHAR* t_filename = new TCHAR[path.size() + 1];
+		t_filename[path.size()] = 0;
+		std::copy(path.begin(), path.end(), t_filename);
+
+		if (!SFileOpenArchive(t_filename, 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
 			SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
 		}
 
-		if (!SFileOpenPatchArchive(mainMPQ, (TCHAR*)path.c_str(), "", 0)) {
+		if (!SFileOpenPatchArchive(mainMPQ, t_filename, "", 0)) {
 			SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
 		}

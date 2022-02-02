@@ -8,6 +8,7 @@
 #include "Array.h"
 #include "ResourceMgr.h"
 #include "Texture.h"
+#include "Blob.h"
 #include "Lib/Fast3D/gfx_pc.h"
 #include "Lib/Fast3D/gfx_sdl.h"
 #include "Lib/Fast3D/gfx_opengl.h"
@@ -141,6 +142,12 @@ extern "C" {
     {
         auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(texPath).get();
         return (char*)res->imageData;
+    }
+
+    char* ResourceMgr_LoadBlobByName(char* blobPath)
+    {
+        auto res = (Ship::Blob*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(blobPath).get();
+        return (char*)res->data.data();
     }
 }
 
