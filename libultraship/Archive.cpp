@@ -252,7 +252,7 @@ namespace Ship {
 		t_filename[MainPath.size()] = 0;
 		std::copy(MainPath.begin(), MainPath.end(), t_filename);
 
-		if (!SFileOpenArchive(t_filename, 0, genCRCMap ? MPQ_OPEN_READ_ONLY : 0, &mpqHandle)) {
+		if (!SFileOpenArchive(t_filename, 0, 0, &mpqHandle)) {
 			SPDLOG_ERROR("({}) Failed to open main mpq file {}.", GetLastError(), MainPath.c_str());
 			return false;
 		}
