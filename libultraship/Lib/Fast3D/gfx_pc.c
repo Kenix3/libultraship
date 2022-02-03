@@ -38,7 +38,7 @@
 
 #define MAX_BUFFERED 256
 //#define MAX_LIGHTS 2
-#define MAX_LIGHTS 32 // OTRTODO: Is this why we've been crashing...?
+#define MAX_LIGHTS 32
 #define MAX_VERTICES 64
 
 struct RGBA {
@@ -1957,13 +1957,13 @@ static void gfx_run_dl(Gfx* cmd) {
                 
                 uintptr_t mtxAddr = cmd->words.w1;
                 
-                // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
                 if (mtxAddr == 0xFD000000)
                 {
                     int bp = 0;
                 }
 
 
+                // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
                 if (mtxAddr == 0xF012DB20)
                 {
                     printf("USING CLEAR\n");
