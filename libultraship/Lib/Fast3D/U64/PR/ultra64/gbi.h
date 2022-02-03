@@ -162,6 +162,7 @@
 #define G_VTX_OTR			    0x32
 #define G_MARKER			    0x33
 #define G_INVALTEXCACHE         0x34
+#define G_BRANCH_Z_OTR          0x35
 
 /*
  * The following commands are the "generated" RDP commands; the user

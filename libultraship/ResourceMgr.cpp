@@ -9,7 +9,7 @@
 namespace Ship {
 
 	ResourceMgr::ResourceMgr(std::shared_ptr<GlobalCtx2> Context, std::string MainPath, std::string PatchesPath) : Context(Context), bIsRunning(false), FileLoadThread(nullptr) {
-		OTR = std::make_shared<Archive>(MainPath, PatchesPath);
+		OTR = std::make_shared<Archive>(MainPath, PatchesPath, false);
 
 		Start();
 	}

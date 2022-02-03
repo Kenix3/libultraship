@@ -20,8 +20,8 @@ namespace Ship
 	class Archive : public std::enable_shared_from_this<Archive>
 	{
 	public:
-		Archive(std::string MainPath);
-		Archive(std::string MainPath, std::string PatchesPath, bool genCRCMap = true);
+		Archive(std::string MainPath, bool enableWriting);
+		Archive(std::string MainPath, std::string PatchesPath, bool enableWriting, bool genCRCMap = true);
 		~Archive();
 
 		static std::shared_ptr<Archive> CreateArchive(std::string archivePath);
@@ -35,7 +35,7 @@ namespace Ship
 		bool HasFile(std::string searchMask);
 		std::string HashToString(uint64_t hash);
 	protected:
-		bool Load(bool genCRCMap = true);
+		bool Load(bool enableWriting, bool genCRCMap);
 		bool Unload();
 	private:
 		std::string MainPath;
@@ -45,7 +45,7 @@ namespace Ship
 		std::map<uint64_t, std::string> hashes;
 		HANDLE mainMPQ;
 
-		bool LoadMainMPQ(bool genCRCMap);
+		bool LoadMainMPQ(bool enableWriting, bool genCRCMap);
 		bool LoadPatchMPQs();
 		bool LoadPatchMPQ(std::string path);
 	};

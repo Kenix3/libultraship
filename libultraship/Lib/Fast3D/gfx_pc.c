@@ -1922,11 +1922,15 @@ static void gfx_run_dl(Gfx* cmd) {
         case G_MARKER:
         {
             cmd++;
+
+#if _DEBUG
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             ResourceMgr_GetNameByCRC(hash, dlName);
 
             //printf("G_MARKER: %s\n", dlName);
             int bp = 0;
+#endif
+
             markerOn = true;
         }
             break;
@@ -2080,6 +2084,34 @@ static void gfx_run_dl(Gfx* cmd) {
                     --cmd; // increase after break
                 }
                 break;
+            case G_BRANCH_Z_OTR:
+            {
+                // Push return address
+
+                uint8_t vbidx = cmd->words.w0 & 0x00000FFF;
+                uint32_t zval = cmd->words.w1;
+
+                cmd++;
+
+                if (rsp.loaded_vertices[vbidx].z <= zval)
+                {
+
+                    uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+
+#if _DEBUG
+                    char fileName[4096];
+                    ResourceMgr_GetNameByCRC(hash, fileName);
+
+                    //printf("G_BRANCH_Z_OTR: %s\n", fileName);
+#endif
+
+                    Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
+
+                    if (gfx != 0)
+                        cmd = gfx;
+                }
+            }
+                break;
             case (uint8_t)G_ENDDL:
 
                 //if (markerOn)
@@ -2161,7 +2193,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 else
                 {
 #if _DEBUG
-                    //printf("WARNING: G_SETTIMG_OTR - tex == NULL!\n");
+                    printf("WARNING: G_SETTIMG_OTR - tex == NULL!\n");
 #endif
                 }
 

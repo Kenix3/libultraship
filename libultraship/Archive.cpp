@@ -7,11 +7,11 @@
 #include <filesystem>
 
 namespace Ship {
-	Archive::Archive(std::string MainPath) : Archive(MainPath, "") {
+	Archive::Archive(std::string MainPath, bool enableWriting) : Archive(MainPath, "", enableWriting) {
 	}
 
-	Archive::Archive(std::string MainPath, std::string PatchesPath, bool genCRCMap) : MainPath(MainPath), PatchesPath(PatchesPath) {
-		Load(genCRCMap);
+	Archive::Archive(std::string MainPath, std::string PatchesPath, bool enableWriting, bool genCRCMap) : MainPath(MainPath), PatchesPath(PatchesPath) {
+		Load(enableWriting, genCRCMap);
 	}
 
 	Archive::~Archive() {
@@ -20,7 +20,7 @@ namespace Ship {
 
 	std::shared_ptr<Archive> Archive::CreateArchive(std::string archivePath)
 	{
-		Archive* archive = new Archive(archivePath);
+		Archive* archive = new Archive(archivePath, true);
 
 		TCHAR* t_filename = new TCHAR[archivePath.size() + 1];
 		t_filename[archivePath.size()] = 0;
@@ -209,8 +209,8 @@ namespace Ship {
 		return hashes[hash];
 	}
 
-	bool Archive::Load(bool genCRCMap) {
-		return LoadMainMPQ(genCRCMap) && LoadPatchMPQs();
+	bool Archive::Load(bool enableWriting, bool genCRCMap) {
+		return LoadMainMPQ(enableWriting, genCRCMap) && LoadPatchMPQs();
 	}
 
 	bool Archive::Unload() 
@@ -245,14 +245,14 @@ namespace Ship {
 		return true;
 	}
 
-	bool Archive::LoadMainMPQ(bool genCRCMap) {
+	bool Archive::LoadMainMPQ(bool enableWriting, bool genCRCMap) {
 		HANDLE mpqHandle = NULL;
 
 		TCHAR* t_filename = new TCHAR[MainPath.size() + 1];
 		t_filename[MainPath.size()] = 0;
 		std::copy(MainPath.begin(), MainPath.end(), t_filename);
 
-		if (!SFileOpenArchive(t_filename, 0, 0, &mpqHandle)) {
+		if (!SFileOpenArchive(t_filename, 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
 			SPDLOG_ERROR("({}) Failed to open main mpq file {}.", GetLastError(), MainPath.c_str());
 			return false;
 		}
