@@ -355,6 +355,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                     val = SHADER_TEXEL1A;
                     break;
                 case G_CCMUX_PRIMITIVE:
+                case G_CCMUX_PRIMITIVE_ALPHA:
                 case G_CCMUX_SHADE:
                 case G_CCMUX_ENVIRONMENT:
                 case G_CCMUX_ENV_ALPHA:
@@ -1287,6 +1288,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                 case G_CCMUX_ENVIRONMENT:
                     color = &rdp.env_color;
                     break;
+                case G_CCMUX_PRIMITIVE_ALPHA:
+                    {
+                        tmp.r = tmp.g = tmp.b = rdp.prim_color.a;
+                        color = &tmp;
+                        break;
+                    }
                 case G_CCMUX_ENV_ALPHA:
                 {
                     tmp.r = tmp.g = tmp.b = rdp.env_color.a;
