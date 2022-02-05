@@ -356,6 +356,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                     break;
                 case G_CCMUX_PRIMITIVE:
                 case G_CCMUX_PRIMITIVE_ALPHA:
+                case G_CCMUX_PRIM_LOD_FRAC:
                 case G_CCMUX_SHADE:
                 case G_CCMUX_ENVIRONMENT:
                 case G_CCMUX_ENV_ALPHA:
@@ -1300,6 +1301,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                     color = &tmp;
                     break;
                 }
+                case G_CCMUX_PRIM_LOD_FRAC:
+                    {
+                        tmp.r = tmp.g = tmp.b = rdp.prim_lod_fraction;
+                        color = &tmp;
+                        break;
+                    }
                 case G_CCMUX_LOD_FRACTION:
                 {
                     float distance_frac = (v1->w - 3000.0f) / 3000.0f;
