@@ -2122,7 +2122,10 @@ static void gfx_run_dl(Gfx* cmd) {
                     Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
 
                     if (gfx != 0)
+                    {
                         cmd = gfx;
+                        --cmd; // increase after break
+                    }
                 }
             }
                 break;
