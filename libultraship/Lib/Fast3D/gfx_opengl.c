@@ -576,6 +576,7 @@ static void gfx_opengl_start_frame(void) {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_SCISSOR_TEST);
+    glEnable(GL_DEPTH_CLAMP);
 }
 
 static void gfx_opengl_end_frame(void) {
