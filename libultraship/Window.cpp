@@ -16,6 +16,7 @@
 #include <SDL2/SDL.h>
 #include <map>
 #include <string>
+#include <chrono>
 
 extern "C" {
     struct OSMesgQueue;
@@ -148,6 +149,15 @@ extern "C" {
     {
         auto res = (Ship::Blob*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(blobPath).get();
         return (char*)res->data.data();
+    }
+
+    /* Should these go in their own file?*/
+    uint64_t osGetTime(void) {
+        return std::chrono::steady_clock::now().time_since_epoch().count();
+    }
+
+    uint32_t osGetCount(void) {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     }
 }
 
