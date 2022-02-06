@@ -187,8 +187,8 @@ static void gfx_sdl_init(const char *game_name, bool start_in_fullscreen) {
     }
 
     for (size_t i = 0; i < sizeof(scancode_rmapping_nonextended) / sizeof(scancode_rmapping_nonextended[0]); i++) {
-        inverted_scancode_table[scancode_rmapping_extended[i][0]] = inverted_scancode_table[scancode_rmapping_extended[i][1]];
-        //inverted_scancode_table[scancode_rmapping_extended[i][1]] += 0x100; /* Adds 0x100 on Debug SOH, but not retail SOH? */
+        inverted_scancode_table[scancode_rmapping_nonextended[i][0]] = inverted_scancode_table[scancode_rmapping_nonextended[i][1]];
+        inverted_scancode_table[scancode_rmapping_nonextended[i][1]] += 0x100;
     }
 }
 
