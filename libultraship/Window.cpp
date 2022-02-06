@@ -63,6 +63,7 @@ extern "C" {
             }
         }
 
+        *controllerBits = 0;
         for (size_t i = 0; i < __osMaxControllers; i++) {
             if (Ship::Window::Controllers[i] != nullptr) {
                 *controllerBits |= 1 << i;
