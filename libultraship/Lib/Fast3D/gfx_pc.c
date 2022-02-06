@@ -76,7 +76,10 @@ static struct {
 
 struct ColorCombiner {
     uint64_t cc_id;
-    struct ShaderProgram *prg;
+    uint64_t shader_id0;
+    uint32_t shader_id1;
+    bool used_textures[2];
+    struct ShaderProgram *prg[16];
     uint8_t shader_input_mapping[2][7];
 };
 
@@ -160,7 +163,7 @@ struct GfxDimensions gfx_current_dimensions;
 
 static bool dropped_frame;
 
-static float buf_vbo[MAX_BUFFERED * (28 * 3)]; // 3 vertices in a triangle and 28 floats per vtx
+static float buf_vbo[MAX_BUFFERED * (32 * 3)]; // 3 vertices in a triangle and 32 floats per vtx
 static size_t buf_vbo_len;
 static size_t buf_vbo_num_tris;
 
@@ -273,6 +276,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
     uint64_t shader_id0 = 0;
     uint32_t shader_id1 = (cc_id >> CC_SHADER_OPT_POS);
     uint8_t shader_input_mapping[2][7] = {{0}};
+    bool used_textures[2] = {false, false};
     for (int i = 0; i < 2 && (i == 0 || is_2cyc); i++) {
         uint32_t rgb_a = (cc_id >> (i * 28)) & 0xf;
         uint32_t rgb_b = (cc_id >> (i * 28 + 4)) & 0xf;
@@ -344,15 +348,19 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                     break;
                 case G_CCMUX_TEXEL0:
                     val = SHADER_TEXEL0;
+                    used_textures[0] = true;
                     break;
                 case G_CCMUX_TEXEL1:
                     val = SHADER_TEXEL1;
+                    used_textures[1] = true;
                     break;
                 case G_CCMUX_TEXEL0_ALPHA:
                     val = SHADER_TEXEL0A;
+                    used_textures[0] = true;
                     break;
                 case G_CCMUX_TEXEL1_ALPHA:
                     val = SHADER_TEXEL1A;
+                    used_textures[1] = true;
                     break;
                 case G_CCMUX_PRIMITIVE:
                 case G_CCMUX_PRIMITIVE_ALPHA:
@@ -379,7 +387,7 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
         }
     }
     {
-        uint8_t input_number[8] = { 0 };
+        uint8_t input_number[16] = { 0 };
         int next_input_number = SHADER_INPUT_1;
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 4; j++) {
@@ -390,10 +398,20 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                     break;
                 case G_ACMUX_TEXEL0:
                     val = SHADER_TEXEL0;
+                    used_textures[0] = true;
                     break;
                 case G_ACMUX_TEXEL1:
                     val = SHADER_TEXEL1;
+                    used_textures[1] = true;
                     break;
+                case G_ACMUX_LOD_FRACTION:
+                //case G_ACMUX_COMBINED: same numerical value
+                    if (j != 2) {
+                        val = SHADER_COMBINED;
+                        break;
+                    }
+                    // fallthrough for G_ACMUX_LOD_FRACTION
+                    c[i][1][j] = G_CCMUX_LOD_FRACTION;
                 case G_ACMUX_1:
                     //case G_ACMUX_PRIM_LOD_FRAC: same numerical value
                     if (j != 2) {
@@ -404,19 +422,11 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
                 case G_ACMUX_PRIMITIVE:
                 case G_ACMUX_SHADE:
                 case G_ACMUX_ENVIRONMENT:
-                //case G_ACMUX_LOD_FRACTION:
                     if (input_number[c[i][1][j]] == 0) {
                         shader_input_mapping[1][next_input_number - 1] = c[i][1][j];
                         input_number[c[i][1][j]] = next_input_number++;
                     }
                     val = input_number[c[i][1][j]];
-                    break;
-                case G_ACMUX_COMBINED:
-                    if (j == 2) {
-                        fprintf(stderr, "Unsupported acmux: G_ACMUX_LOD_FRACTION\n");
-                    }
-
-                    val = SHADER_COMBINED;
                     break;
                 }
                 shader_id0 |= (uint64_t)val << (i * 32 + 16 + j * 4);
@@ -424,7 +434,11 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
         }
     }
     comb->cc_id = cc_id;
-    comb->prg = gfx_lookup_or_create_shader_program(shader_id0, shader_id1);
+    comb->shader_id0 = shader_id0;
+    comb->shader_id1 = shader_id1;
+    comb->used_textures[0] = used_textures[0];
+    comb->used_textures[1] = used_textures[1];
+    //comb->prg = gfx_lookup_or_create_shader_program(shader_id0, shader_id1);
     memcpy(comb->shader_input_mapping, shader_input_mapping, sizeof(shader_input_mapping));
 }
 
@@ -1131,7 +1145,76 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
 
     struct ColorCombiner* comb = gfx_lookup_or_create_color_combiner(cc_id);
-    struct ShaderProgram* prg = comb->prg;
+
+    uint32_t tm = 0;
+    uint32_t tex_width[2], tex_height[2], tex_width2[2], tex_height2[2];
+
+    for (int i = 0; i < 2; i++) {
+        uint32_t tile = rdp.first_tile_index + i;
+        if (comb->used_textures[i]) {
+            if (rdp.textures_changed[i]) {
+                gfx_flush();
+                import_texture(i, tile);
+                rdp.textures_changed[i] = false;
+            }
+
+            uint8_t cms = rdp.texture_tile[tile].cms;
+            uint8_t cmt = rdp.texture_tile[tile].cmt;
+
+            uint32_t tex_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
+            uint32_t line_size = rdp.texture_tile[tile].line_size_bytes;
+
+            // OTRTODO: UH OH!
+            if (line_size == 0)
+                line_size = 1;
+
+            tex_height[i] = tex_size_bytes / line_size;
+            switch (rdp.texture_tile[tile].siz) {
+            case G_IM_SIZ_4b:
+                line_size <<= 1;
+                break;
+            case G_IM_SIZ_8b:
+                break;
+            case G_IM_SIZ_16b:
+                line_size /= G_IM_SIZ_16b_LINE_BYTES;
+                break;
+            case G_IM_SIZ_32b:
+                line_size /= G_IM_SIZ_32b_LINE_BYTES; // this is 2!
+                tex_height[i] /= 2;
+                break;
+            }
+            tex_width[i] = line_size;
+
+            tex_width2[i] = (rdp.texture_tile[tile].lrs - rdp.texture_tile[tile].uls + 4) / 4;
+            tex_height2[i] = (rdp.texture_tile[tile].lrt - rdp.texture_tile[tile].ult + 4) / 4;
+
+            uint32_t tex_width1 = tex_width[i] << (cms & G_TX_MIRROR);
+            uint32_t tex_height1 = tex_height[i] << (cmt & G_TX_MIRROR);
+
+            if ((cms & G_TX_CLAMP) && ((cms & G_TX_MIRROR) || tex_width1 != tex_width2[i])) {
+                tm |= 1 << 2 * i;
+                cms &= ~G_TX_CLAMP;
+            }
+            if ((cmt & G_TX_CLAMP) && ((cmt & G_TX_MIRROR) || tex_height1 != tex_height2[i])) {
+                tm |= 1 << 2 * i + 1;
+                cmt &= ~G_TX_CLAMP;
+            }
+
+            bool linear_filter = (rdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
+            if (linear_filter != rendering_state.textures[i]->linear_filter || cms != rendering_state.textures[i]->cms || cmt != rendering_state.textures[i]->cmt) {
+                gfx_flush();
+                gfx_rapi->set_sampler_parameters(i, linear_filter, cms, cmt);
+                rendering_state.textures[i]->linear_filter = linear_filter;
+                rendering_state.textures[i]->cms = cms;
+                rendering_state.textures[i]->cmt = cmt;
+            }
+        }
+    }
+
+    struct ShaderProgram* prg = comb->prg[tm];
+    if (prg == NULL) {
+        comb->prg[tm] = prg = gfx_lookup_or_create_shader_program(comb->shader_id0, comb->shader_id1 | (tm * SHADER_OPT_TEXEL0_CLAMP_S));
+    }
     if (prg != rendering_state.shader_program) {
         gfx_flush();
         gfx_rapi->unload_shader(rendering_state.shader_program);
@@ -1152,59 +1235,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
 
     gfx_rapi->shader_get_info(prg, &num_inputs, used_textures);
-
-    for (int i = 0; i < 2; i++) {
-        uint32_t tile = rdp.first_tile_index + i;
-        if (used_textures[i]) {
-            if (rdp.textures_changed[i]) {
-                gfx_flush();
-                import_texture(i, tile);
-                rdp.textures_changed[i] = false;
-            }
-
-            bool linear_filter = (rdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
-            if (linear_filter != rendering_state.textures[i]->linear_filter || rdp.texture_tile[tile].cms != rendering_state.textures[i]->cms || rdp.texture_tile[tile].cmt != rendering_state.textures[i]->cmt) {
-                gfx_flush();
-                gfx_rapi->set_sampler_parameters(i, linear_filter, rdp.texture_tile[tile].cms, rdp.texture_tile[tile].cmt);
-                rendering_state.textures[i]->linear_filter = linear_filter;
-                rendering_state.textures[i]->cms = rdp.texture_tile[tile].cms;
-                rendering_state.textures[i]->cmt = rdp.texture_tile[tile].cmt;
-            }
-        }
-    }
-
-    bool use_texture = used_textures[0] || used_textures[1];
-    uint32_t tex_width[2], tex_height[2];
-    for (int t = 0; t < 2; t++) {
-        if (!used_textures[t]) {
-            continue;
-        }
-        uint32_t tex_size_bytes = rdp.loaded_texture[rdp.texture_tile[rdp.first_tile_index + t].tmem_index].size_bytes;
-        uint32_t line_size = rdp.texture_tile[rdp.first_tile_index + t].line_size_bytes;
-
-        // OTRTODO: UH OH!
-        if (line_size == 0)
-            line_size = 1;
-
-        tex_height[t] = tex_size_bytes / line_size;
-        switch (rdp.texture_tile[rdp.first_tile_index + t].siz) {
-        case G_IM_SIZ_4b:
-            line_size <<= 1;
-            break;
-        case G_IM_SIZ_8b:
-            break;
-        case G_IM_SIZ_16b:
-            line_size /= G_IM_SIZ_16b_LINE_BYTES;
-            break;
-        case G_IM_SIZ_32b:
-            line_size /= G_IM_SIZ_32b_LINE_BYTES; // this is 2!
-            tex_height[t] /= 2;
-            break;
-        }
-        tex_width[t] = line_size;
-        //uint32_t tex_width2 = (rdp.texture_tile[rdp.first_tile_index].lrs - rdp.texture_tile[rdp.first_tile_index].uls + 4) / 4;
-        //uint32_t tex_height2 = (rdp.texture_tile[rdp.first_tile_index].lrt - rdp.texture_tile[rdp.first_tile_index].ult + 4) / 4;
-    }
 
     bool z_is_from_0_to_1 = gfx_rapi->z_is_from_0_to_1();
 
@@ -1235,7 +1265,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             if (shifts != 0) {
                 if (shifts <= 10) {
                     u /= 1 << shifts;
-
                 } else {
                     u *= 1 << (16 - shifts);
                 }
@@ -1243,11 +1272,8 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             if (shiftt != 0) {
                 if (shiftt <= 10) {
                     v /= 1 << shiftt;
-
-                }
-                else {
+                } else {
                     v *= 1 << (16 - shiftt);
-
                 }
 
             }
@@ -1265,6 +1291,13 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
             buf_vbo[buf_vbo_len++] = u / tex_width[t];
             buf_vbo[buf_vbo_len++] = v / tex_height[t];
+
+            if (tm & (1 << 2 * t)) {
+                buf_vbo[buf_vbo_len++] = (tex_width2[t] - 0.5f) / tex_width[t];
+            }
+            if (tm & (1 << 2 * t + 1)) {
+                buf_vbo[buf_vbo_len++] = (tex_height2[t] - 0.5f) / tex_height[t];
+            }
         }
 
         if (use_fog) {
@@ -1290,11 +1323,11 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                     color = &rdp.env_color;
                     break;
                 case G_CCMUX_PRIMITIVE_ALPHA:
-                    {
-                        tmp.r = tmp.g = tmp.b = rdp.prim_color.a;
-                        color = &tmp;
-                        break;
-                    }
+                {
+                    tmp.r = tmp.g = tmp.b = rdp.prim_color.a;
+                    color = &tmp;
+                    break;
+                }
                 case G_CCMUX_ENV_ALPHA:
                 {
                     tmp.r = tmp.g = tmp.b = rdp.env_color.a;
@@ -1302,17 +1335,22 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                     break;
                 }
                 case G_CCMUX_PRIM_LOD_FRAC:
-                    {
-                        tmp.r = tmp.g = tmp.b = rdp.prim_lod_fraction;
-                        color = &tmp;
-                        break;
-                    }
+                {
+                    tmp.r = tmp.g = tmp.b = rdp.prim_lod_fraction;
+                    color = &tmp;
+                    break;
+                }
                 case G_CCMUX_LOD_FRACTION:
                 {
-                    float distance_frac = (v1->w - 3000.0f) / 3000.0f;
-                    if (distance_frac < 0.0f) distance_frac = 0.0f;
-                    if (distance_frac > 1.0f) distance_frac = 1.0f;
-                    tmp.r = tmp.g = tmp.b = tmp.a = distance_frac * 255.0f;
+                    if (rdp.other_mode_l & G_TL_LOD) {
+                        // "Hack" that works for Bowser - Peach painting
+                        float distance_frac = (v1->w - 3000.0f) / 3000.0f;
+                        if (distance_frac < 0.0f) distance_frac = 0.0f;
+                        if (distance_frac > 1.0f) distance_frac = 1.0f;
+                        tmp.r = tmp.g = tmp.b = tmp.a = distance_frac * 255.0f;
+                    } else {
+                        tmp.r = tmp.g = tmp.b = tmp.a = 255.0f;
+                    }
                     color = &tmp;
                     break;
                 }

@@ -122,13 +122,17 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
 
     append_line(buf, &len, "struct PSInput {");
     append_line(buf, &len, "    float4 position : SV_POSITION;");
-    if (cc_features.used_textures[0]) {
-        append_line(buf, &len, "    float2 uv0 : TEXCOORD0;");
-        num_floats += 2;
-    }
-    if (cc_features.used_textures[1]) {
-        append_line(buf, &len, "    float2 uv1 : TEXCOORD1;");
-        num_floats += 2;
+    for (int i = 0; i < 2; i++) {
+        if (cc_features.used_textures[i]) {
+            len += sprintf(buf + len, "    float2 uv%d : TEXCOORD%d;\r\n", i, i);
+            num_floats += 2;
+            for (int j = 0; j < 2; j++) {
+                if (cc_features.clamp[i][j]) {
+                    len += sprintf(buf + len, "    float texClamp%s%d : TEXCLAMP%s%d;\r\n", j == 0 ? "S" : "T", i, j == 0 ? "S" : "T", i);
+                    num_floats += 1;
+                }
+            }
+        }
     }
     if (cc_features.opt_alpha && cc_features.opt_noise) {
         append_line(buf, &len, "    float4 screenPos : TEXCOORD2;");
@@ -194,12 +198,15 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
     // Vertex shader
 
     append_str(buf, &len, "PSInput VSMain(float4 position : POSITION");
-    if (cc_features.used_textures[0]) {
-        append_str(buf, &len, ", float2 uv0 : TEXCOORD0");
-    }
-    if (cc_features.used_textures[1]) {
-        append_str(buf, &len, ", float2 uv1 : TEXCOORD1");
-    }
+    for (int i = 0; i < 2; i++) {
+        if (cc_features.used_textures[i]) {
+            len += sprintf(buf + len, ", float2 uv%d : TEXCOORD%d", i, i);
+            for (int j = 0; j < 2; j++) {
+                if (cc_features.clamp[i][j]) {
+                    len += sprintf(buf + len, ", float texClamp%s%d : TEXCLAMP%s%d", j == 0 ? "S" : "T", i, j == 0 ? "S" : "T", i);
+                }
+            }
+        }
     }
     if (cc_features.opt_fog) {
         append_str(buf, &len, ", float4 fog : FOG");
@@ -213,11 +220,15 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
     if (cc_features.opt_alpha && cc_features.opt_noise) {
         append_line(buf, &len, "    result.screenPos = position;");
     }
-    if (cc_features.used_textures[0]) {
-        append_line(buf, &len, "    result.uv0 = uv0;");
-    }
-    if (cc_features.used_textures[1]) {
-        append_line(buf, &len, "    result.uv1 = uv1;");
+    for (int i = 0; i < 2; i++) {
+        if (cc_features.used_textures[i]) {
+            len += sprintf(buf + len, "    result.uv%d = uv%d;\r\n", i, i);
+            for (int j = 0; j < 2; j++) {
+                if (cc_features.clamp[i][j]) {
+                    len += sprintf(buf + len, "    result.texClamp%s%d = texClamp%s%d;\r\n", j == 0 ? "S" : "T", i, j == 0 ? "S" : "T", i);
+                }
+            }
+        }
     }
 
     if (cc_features.opt_fog) {
@@ -234,26 +245,31 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
         append_line(buf, &len, "[RootSignature(RS)]");
     }
     append_line(buf, &len, "float4 PSMain(PSInput input) : SV_TARGET {");
-    if (cc_features.used_textures[0]) {
-        if (three_point_filtering) {
-            append_line(buf, &len, "    float4 texVal0;");
-            append_line(buf, &len, "    if (textures[0].linear_filtering)");
-            append_line(buf, &len, "        texVal0 = tex2D3PointFilter(g_texture0, g_sampler0, input.uv0, float2(textures[0].width, textures[0].height));");
-            append_line(buf, &len, "    else");
-            append_line(buf, &len, "        texVal0 = g_texture0.Sample(g_sampler0, input.uv0);");
-        } else {
-            append_line(buf, &len, "    float4 texVal0 = g_texture0.Sample(g_sampler0, input.uv0);");
-        }
-    }
-    if (cc_features.used_textures[1]) {
-        if (three_point_filtering) {
-            append_line(buf, &len, "    float4 texVal1;");
-            append_line(buf, &len, "    if (textures[1].linear_filtering)");
-            append_line(buf, &len, "        texVal1 = tex2D3PointFilter(g_texture1, g_sampler1, input.uv1, float2(textures[1].width, textures[1].height));");
-            append_line(buf, &len, "    else");
-            append_line(buf, &len, "        texVal1 = g_texture1.Sample(g_sampler1, input.uv1);");
-        } else {
-            append_line(buf, &len, "    float4 texVal1 = g_texture1.Sample(g_sampler1, input.uv1);");
+    for (int i = 0; i < 2; i++) {
+        if (cc_features.used_textures[i]) {
+            len += sprintf(buf + len, "    float2 tc%d = input.uv%d;\r\n", i, i);
+            bool s = cc_features.clamp[i][0], t = cc_features.clamp[i][1];
+            if (!s && !t) {
+            } else {
+                len += sprintf(buf + len, "    int2 texSize%d;\r\n", i);
+                len += sprintf(buf + len, "    g_texture%d.GetDimensions(texSize%d.x, texSize%d.y);\r\n", i, i, i);
+                if (s && t) {
+                    len += sprintf(buf + len, "    tc%d = clamp(tc%d, 0.5 / texSize%d, float2(input.texClampS%d, input.texClampT%d));\r\n", i, i, i, i, i);
+                } else if (s) {
+                    len += sprintf(buf + len, "    tc%d = float2(clamp(tc%d.x, 0.5 / texSize%d.x, input.texClampS%d), tc%d.y);\n", i, i, i, i, i);
+                } else {
+                    len += sprintf(buf + len, "    tc%d = float2(tc%d.x, clamp(tc%d.y, 0.5 / texSize%d.y, input.texClampT%d));\n", i, i, i, i, i);
+                }
+            }
+            if (three_point_filtering) {
+                len += sprintf(buf + len, "    float4 texVal%d;\r\n", i);
+                len += sprintf(buf + len, "    if (textures[%d].linear_filtering)\r\n", i);
+                len += sprintf(buf + len, "        texVal%d = tex2D3PointFilter(g_texture%d, g_sampler%d, tc%d, float2(textures[%d].width, textures[%d].height));\r\n", i, i, i, i, i, i);
+                len += sprintf(buf + len, "    else\r\n");
+                len += sprintf(buf + len, "        texVal%d = g_texture%d.Sample(g_sampler%d, tc%d);\r\n", i, i, i, i);
+            } else {
+                len += sprintf(buf + len, "    float4 texVal%d = g_texture%d.Sample(g_sampler%d, tc%d);\r\n", i, i, i, i);
+            }
         }
     }
 

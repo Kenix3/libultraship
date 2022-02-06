@@ -15,6 +15,11 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     cc_features->opt_noise = (shader_id1 & SHADER_OPT_NOISE) != 0;
     cc_features->opt_2cyc = (shader_id1 & SHADER_OPT_2CYC) != 0;
 
+    cc_features->clamp[0][0] = (shader_id1 & SHADER_OPT_TEXEL0_CLAMP_S);
+    cc_features->clamp[0][1] = (shader_id1 & SHADER_OPT_TEXEL0_CLAMP_T);
+    cc_features->clamp[1][0] = (shader_id1 & SHADER_OPT_TEXEL1_CLAMP_S);
+    cc_features->clamp[1][1] = (shader_id1 & SHADER_OPT_TEXEL1_CLAMP_T);
+
     cc_features->used_textures[0] = false;
     cc_features->used_textures[1] = false;
     cc_features->num_inputs = 0;

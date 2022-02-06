@@ -214,10 +214,7 @@ static void gfx_d3d11_init(void) {
         D3D_FEATURE_LEVEL FeatureLevels[] = {
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
-            D3D_FEATURE_LEVEL_10_0,
-            D3D_FEATURE_LEVEL_9_3,
-            D3D_FEATURE_LEVEL_9_2,
-            D3D_FEATURE_LEVEL_9_1
+            D3D_FEATURE_LEVEL_10_0
         };
 
         HRESULT res = d3d.D3D11CreateDevice(
@@ -265,7 +262,7 @@ static void gfx_d3d11_init(void) {
     ZeroMemory(&vertex_buffer_desc, sizeof(D3D11_BUFFER_DESC));
 
     vertex_buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
-    vertex_buffer_desc.ByteWidth = 256 * 28 * 3 * sizeof(float); // Same as buf_vbo size in gfx_pc
+    vertex_buffer_desc.ByteWidth = 256 * 32 * 3 * sizeof(float); // Same as buf_vbo size in gfx_pc
     vertex_buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertex_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     vertex_buffer_desc.MiscFlags = 0;
@@ -333,7 +330,7 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint64_t shade
     UINT compile_flags = D3DCOMPILE_OPTIMIZATION_LEVEL2;
 #endif
 
-    HRESULT hr = d3d.D3DCompile(buf, len, nullptr, nullptr, nullptr, "VSMain", "vs_4_0_level_9_1", compile_flags, 0, vs.GetAddressOf(), error_blob.GetAddressOf());
+    HRESULT hr = d3d.D3DCompile(buf, len, nullptr, nullptr, nullptr, "VSMain", "vs_4_0", compile_flags, 0, vs.GetAddressOf(), error_blob.GetAddressOf());
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
@@ -341,7 +338,7 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint64_t shade
         throw hr;
     }
 
-    hr = d3d.D3DCompile(buf, len, nullptr, nullptr, nullptr, "PSMain", "ps_4_0_level_9_1", compile_flags, 0, ps.GetAddressOf(), error_blob.GetAddressOf());
+    hr = d3d.D3DCompile(buf, len, nullptr, nullptr, nullptr, "PSMain", "ps_4_0", compile_flags, 0, ps.GetAddressOf(), error_blob.GetAddressOf());
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
@@ -356,15 +353,19 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint64_t shade
 
     // Input Layout
 
-    D3D11_INPUT_ELEMENT_DESC ied[7];
+    D3D11_INPUT_ELEMENT_DESC ied[16];
     uint8_t ied_index = 0;
     ied[ied_index++] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-    if (cc_features.used_textures[0]) {
-        ied[ied_index++] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-    }
-    if (cc_features.used_textures[1])
-    {
-        ied[ied_index++] = { "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+    for (UINT i = 0; i < 2; i++) {
+        if (cc_features.used_textures[i]) {
+            ied[ied_index++] = { "TEXCOORD", i, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+            if (cc_features.clamp[i][0]) {
+                ied[ied_index++] = { "TEXCLAMPS", i, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+            }
+            if (cc_features.clamp[i][1]) {
+                ied[ied_index++] = { "TEXCLAMPT", i, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+            }
+        }
     }
     if (cc_features.opt_fog) {
         ied[ied_index++] = { "FOG", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
