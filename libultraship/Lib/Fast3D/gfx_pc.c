@@ -83,7 +83,7 @@ struct ColorCombiner {
     uint8_t shader_input_mapping[2][7];
 };
 
-static struct ColorCombiner color_combiner_pool[64];
+static struct ColorCombiner color_combiner_pool[128];
 static uint8_t color_combiner_pool_size;
 
 static struct RSP {
@@ -1959,8 +1959,8 @@ uintptr_t clearMtx;
 static void gfx_run_dl(Gfx* cmd) {
     //puts("dl");
     int dummy = 0;
-    char dlName[4096];
-    char fileName[4096];
+    char dlName[128];
+    char fileName[128];
     for (;;) {
         uint32_t opcode = cmd->words.w0 >> 24;
         //uint32_t opcode = cmd->words.w0 & 0xFF;
