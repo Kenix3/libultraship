@@ -2071,13 +2071,9 @@ static void gfx_run_dl(Gfx* cmd) {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
-                char alloc[1024 * 64];
-                //char fileName[4096];
-                //ResourceMgr_GetNameByCRC(hash, fileName);
-
                 //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
 
-                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash, alloc, 1024 * 64);
+                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash);
 
                 if (vtx != NULL)
                 {
