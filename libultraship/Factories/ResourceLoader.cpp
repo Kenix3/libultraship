@@ -89,6 +89,12 @@ namespace Ship
         if (result != nullptr) {
             result->File = FileToLoad;
             result->resType = resourceType;
+        } else {
+            if (FileToLoad != nullptr) {
+                SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", resourceType, FileToLoad->path);
+            } else {
+                SPDLOG_ERROR("Failed to load resource because the file did not load.");
+            }
         }
 
         return result;
