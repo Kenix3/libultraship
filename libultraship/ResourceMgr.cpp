@@ -124,6 +124,7 @@ namespace Ship {
 			if (Res != nullptr) {
 				ToLoad->bHasResourceLoaded = true;
 				ToLoad->Resource = Res;
+				ResourceCache[Res->File->path] = Res;
 
 				SPDLOG_INFO("LOADED Resource {} on ResourceMgr thread", ToLoad->File->path);
 			} else {
@@ -134,7 +135,6 @@ namespace Ship {
 			}
 
 			//ResLock.lock();
-			ResourceCache[Res->File->path] = Res;
 			//ResLock.unlock();
 
 			ToLoad->ResourceLoadNotifier.notify_all();

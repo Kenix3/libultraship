@@ -4,13 +4,6 @@
 
 namespace Ship
 {
-    ResourceFile::~ResourceFile()
-    {
-#if _DEBUG
-        int bp = 0;
-#endif
-    }
-
     void ResourceFile::ParseFileBinary(BinaryReader* reader, Resource* res)
     {
         id = reader->ReadUInt64();
@@ -33,6 +26,9 @@ namespace Ship
 
     Resource::~Resource()
     {
+        free(cachedGameAsset); 
+        cachedGameAsset = nullptr;
+
 #if _DEBUG
         printf("Deconstructor called on file %s\n", File->path.c_str());
 #endif
