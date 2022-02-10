@@ -52,7 +52,7 @@ struct ShaderProgram {
 // If this proves too small, just increase it
 #define SHADER_POOL_MAX_SIZE 512
 static struct ShaderProgram shader_program_pool[SHADER_POOL_MAX_SIZE];
-static uint8_t shader_program_pool_size;
+static uint32_t shader_program_pool_size;
 static GLuint opengl_vbo;
 
 static uint32_t frame_count;
