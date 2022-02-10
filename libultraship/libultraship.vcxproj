@@ -166,6 +166,7 @@
     <ClCompile Include="Factories\ArrayFactory.cpp" />
     <ClCompile Include="Factories\BlobFactory.cpp" />
     <ClCompile Include="Factories\CutsceneFactory.cpp" />
+    <ClCompile Include="Factories\MtxFactory.cpp" />
     <ClCompile Include="Factories\PathFactory.cpp" />
     <ClCompile Include="Animation.cpp" />
     <ClCompile Include="Factories\TextFactory.cpp" />
@@ -203,6 +204,7 @@
     <ClCompile Include="GlobalCtx2.cpp" />
     <ClCompile Include="File.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="MemoryPack.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Path.cpp" />
@@ -227,6 +229,7 @@
     <ClInclude Include="Factories\BlobFactory.h" />
     <ClInclude Include="Factories\CutsceneFactory.h" />
     <ClInclude Include="Factories\AnimationFactory.h" />
+    <ClInclude Include="Factories\MtxFactory.h" />
     <ClInclude Include="Factories\PathFactory.h" />
     <ClInclude Include="Factories\TextFactory.h" />
     <ClInclude Include="Factories\TextureFactory.h" />
@@ -245,6 +248,7 @@
     <ClInclude Include="Lib\Fast3D\gfx_screen_config.h" />
     <ClInclude Include="Lib\Fast3D\gfx_window_manager_api.h" />
     <ClInclude Include="Lib\stb\stb_image.h" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="Path.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="Vertex.h" />

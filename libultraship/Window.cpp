@@ -9,6 +9,7 @@
 #include "ResourceMgr.h"
 #include "Texture.h"
 #include "Blob.h"
+#include "Matrix.h"
 #include "Lib/Fast3D/gfx_pc.h"
 #include "Lib/Fast3D/gfx_sdl.h"
 #include "Lib/Fast3D/gfx_opengl.h"
@@ -107,6 +108,19 @@ extern "C" {
                 return (Vtx*)res->vertices.data();
             //else
                 //return (Vtx*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadFile(hashStr)->buffer.get();
+        }
+        else {
+            return nullptr;
+        }
+    }
+
+    int32_t* ResourceMgr_LoadMtxByCRC(uint64_t crc)
+    {
+        std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
+
+        if (hashStr != "") {
+            auto res = std::static_pointer_cast<Ship::Matrix>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr));
+            return (int32_t*)res->mtx.data();
         }
         else {
             return nullptr;

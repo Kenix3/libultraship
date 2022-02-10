@@ -4,6 +4,13 @@
 
 namespace Ship
 {
+    ResourceFile::~ResourceFile()
+    {
+#if _DEBUG
+        int bp = 0;
+#endif
+    }
+
     void ResourceFile::ParseFileBinary(BinaryReader* reader, Resource* res)
     {
         id = reader->ReadUInt64();
@@ -22,5 +29,12 @@ namespace Ship
     void ResourceFile::WriteFileXML(tinyxml2::XMLElement* writer, Resource* res)
     {
 
+    }
+
+    Resource::~Resource()
+    {
+#if _DEBUG
+        printf("Deconstructor called on file %s\n", File->path.c_str());
+#endif
     }
 }

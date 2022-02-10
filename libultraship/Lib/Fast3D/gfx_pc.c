@@ -665,7 +665,7 @@ static void import_texture_i8(int tile) {
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
+    //SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     for (uint32_t i = 0; i < size_bytes; i++) {
         uint8_t intensity = addr[i];
@@ -1979,6 +1979,12 @@ static void gfx_run_dl(Gfx* cmd) {
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             ResourceMgr_GetNameByCRC(hash, dlName);
 
+            /*if (strcmp(dlName, "object_link_child") == 0)
+            {
+                int bp2 = 0;
+                return;
+            }*/
+
             //printf("G_MARKER: %s\n", dlName);
             int bp = 0;
 #endif
@@ -2028,6 +2034,31 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_matrix(C0(16, 8), (const int32_t *) seg_addr(cmd->words.w1));
 #endif
                 break;
+            case G_MTX_OTR:
+                cmd++;
+
+                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+
+#if _DEBUG
+                char fileName[4096];
+                ResourceMgr_GetNameByCRC(hash, fileName);
+
+                //printf("G_MTX_OTR: %s\n", fileName);
+#endif
+
+                int32_t* mtx = ResourceMgr_LoadMtxByCRC(hash);
+
+#ifdef F3DEX_GBI_2
+                if (mtx != NULL)
+                {
+                    cmd--;
+                    gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, mtx);
+                    cmd++;
+                }
+#else
+                gfx_sp_matrix(C0(16, 8), (const int32_t*)seg_addr(cmd->words.w1));
+#endif
+                break;
             case (uint8_t)G_POPMTX:
 #ifdef F3DEX_GBI_2
                 gfx_sp_pop_matrix(cmd->words.w1 / 64);
@@ -2071,7 +2102,13 @@ static void gfx_run_dl(Gfx* cmd) {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
+#if _DEBUG
+                char fileName[4096];
+                ResourceMgr_GetNameByCRC(hash, fileName);
+
                 //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
+#endif
+
 
                  Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash);
 
@@ -2233,6 +2270,11 @@ static void gfx_run_dl(Gfx* cmd) {
 
 #if _DEBUG
                 ResourceMgr_GetNameByCRC(hash, fileName);
+
+                if (strcmp(fileName, "gameplay_keep\\gSun1Tex") == 0)
+                {
+                    int bp = 0;
+                }
 
                 //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
 #endif

@@ -240,6 +240,12 @@
     <ClCompile Include="Lib\stb\stb_impl.c">
       <Filter>Source Files\Lib\stb</Filter>
     </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Source Files\Resources\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Factories\MtxFactory.cpp">
+      <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -439,6 +445,12 @@
     </ClInclude>
     <ClInclude Include="Lib\stb\stb_image.h">
       <Filter>Source Files\Lib\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Header Files\Resources\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Factories\MtxFactory.h">
+      <Filter>Header Files\Resources\Factories</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

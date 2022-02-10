@@ -21,7 +21,7 @@ namespace Ship
 			uint8_t opcode = data >> 24;
 
 			// These are 128-bit commands, so read an extra 64 bits...
-			if (opcode == G_SETTIMG_OTR || opcode == G_DL_OTR || opcode == G_VTX_OTR || opcode == G_BRANCH_Z_OTR || opcode == G_MARKER)
+			if (opcode == G_SETTIMG_OTR || opcode == G_DL_OTR || opcode == G_VTX_OTR || opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR)
 				dl->instructions.push_back(reader->ReadUInt64());
 
 			if (opcode == G_ENDDL)
