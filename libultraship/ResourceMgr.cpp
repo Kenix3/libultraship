@@ -264,7 +264,7 @@ namespace Ship {
 	}
 
 	void ResourceMgr::InvalidateResourceCache() {
-		ResourceCache.empty();
+		ResourceCache.clear();
 	}
 
 	std::string ResourceMgr::HashToString(uint64_t Hash) {

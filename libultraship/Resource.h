@@ -98,6 +98,7 @@ namespace Ship
         bool isDirty = false;
         void* cachedGameAsset = 0; // Conversion to OoT friendly struct cached...
         std::shared_ptr<File> File;
+        virtual ~Resource() { free(cachedGameAsset); cachedGameAsset = nullptr; }
     };
 
     class ResourceFile
