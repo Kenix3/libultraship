@@ -48,7 +48,10 @@ struct ShaderProgram {
     GLint window_height_location;
 };
 
-static struct ShaderProgram shader_program_pool[64];
+// OTRTODO The Shader pool needs to be able to dynamically grow, but for now just set it to a large value
+// If this proves too small, just increase it
+#define SHADER_POOL_MAX_SIZE 512
+static struct ShaderProgram shader_program_pool[SHADER_POOL_MAX_SIZE];
 static uint8_t shader_program_pool_size;
 static GLuint opengl_vbo;
 
@@ -388,6 +391,10 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     size_t cnt = 0;
 
     struct ShaderProgram *prg = &shader_program_pool[shader_program_pool_size++];
+    if (shader_program_pool_size >= SHADER_POOL_MAX_SIZE) {
+        // OTRTODO this is wrong because we can't reuse shader programs, but it is better than corrupting memory
+        shader_program_pool_size = SHADER_POOL_MAX_SIZE - 1;
+    }
     prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aVtxPos");
     prg->attrib_sizes[cnt] = 4;
     ++cnt;
@@ -580,6 +587,9 @@ static void gfx_opengl_start_frame(void) {
 }
 
 static void gfx_opengl_end_frame(void) {
+    if (shader_program_pool_size >= (SHADER_POOL_MAX_SIZE - 1)) {
+        fprintf(stderr, "Exhausted the shader program pool. Visual errors may be present.");
+    }
 }
 
 static void gfx_opengl_finish_render(void) {
