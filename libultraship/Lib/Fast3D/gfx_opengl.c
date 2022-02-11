@@ -32,6 +32,7 @@
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
+#include "../../SohImGuiImpl.h"
 
 struct ShaderProgram {
     uint64_t shader_id0;
@@ -89,6 +90,7 @@ static void gfx_opengl_unload_shader(struct ShaderProgram *old_prg) {
 }
 
 static void gfx_opengl_load_shader(struct ShaderProgram *new_prg) {
+    // if (!new_prg) return;
     glUseProgram(new_prg->opengl_program_id);
     gfx_opengl_vertex_array_set_attribs(new_prg);
     gfx_opengl_set_uniforms(new_prg);
@@ -563,11 +565,11 @@ static void gfx_opengl_init(void) {
 //#if FOR_WINDOWS
     glewInit();
 //#endif
-    
+
     glGenBuffers(1, &opengl_vbo);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
-    
+
     glDepthFunc(GL_LEQUAL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
@@ -587,6 +589,11 @@ static void gfx_opengl_start_frame(void) {
 }
 
 static void gfx_opengl_end_frame(void) {
+    GLint last_program;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+    glUseProgram(0);
+    c_draw();
+    glUseProgram(last_program);
     if (shader_program_pool_size >= (SHADER_POOL_MAX_SIZE - 1)) {
         fprintf(stderr, "Exhausted the shader program pool. Visual errors may be present.");
     }

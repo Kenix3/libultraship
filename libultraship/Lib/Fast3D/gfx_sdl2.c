@@ -19,12 +19,15 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
+#include "../../SohImGuiImpl.h"
+
 #include "gfx_window_manager_api.h"
 #include "gfx_screen_config.h"
 
 #define GFX_API_NAME "SDL2 - OpenGL"
 
 static SDL_Window *wnd;
+static SDL_GLContext* ctx;
 static int inverted_scancode_table[512];
 static int vsync_enabled = 0;
 static unsigned int window_width = DESIRED_SCREEN_WIDTH;
@@ -171,12 +174,14 @@ static void gfx_sdl_init(const char *game_name, bool start_in_fullscreen) {
         set_fullscreen(true, false);
     }
 
-    SDL_GL_CreateContext(wnd);
+    ctx = SDL_GL_CreateContext(wnd);
 
     SDL_GL_SetSwapInterval(1);
     test_vsync();
     if (!vsync_enabled)
         puts("Warning: VSync is not enabled or not working. Falling back to timer for synchronization");
+
+    c_init((WindowImpl) { wnd, ctx, NULL });
 
     for (size_t i = 0; i < sizeof(windows_scancode_table) / sizeof(SDL_Scancode); i++) {
         inverted_scancode_table[windows_scancode_table[i]] = i;
@@ -246,6 +251,7 @@ static void gfx_sdl_onkeyup(int scancode) {
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+        c_update((EventImpl){ &event });
         switch (event.type) {
 #ifndef TARGET_WEB
             // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

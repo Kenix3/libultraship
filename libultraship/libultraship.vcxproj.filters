@@ -61,6 +61,12 @@
     <Filter Include="Source Files\Lib\stb">
       <UniqueIdentifier>{70cd453d-a4dc-4c56-b64e-e50394fd18ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Lib\ImGui">
+      <UniqueIdentifier>{a66f6337-5cde-4e46-8f49-a6c991ea2fe7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CustomImpl">
+      <UniqueIdentifier>{11039197-0b49-4fb9-b9e6-56196220c9d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\MaterialFactory.cpp">
@@ -245,6 +251,39 @@
     </ClCompile>
     <ClCompile Include="Factories\MtxFactory.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\imgui.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\imgui_demo.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\imgui_draw.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\imgui_tables.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\imgui_widgets.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\backends\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\backends\imgui_impl_sdl.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="SohImGuiImpl.cpp">
+      <Filter>Source Files\CustomImpl</Filter>
+    </ClCompile>
+    <ClCompile Include="SohConsole.cpp">
+      <Filter>Source Files\CustomImpl</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\backends\imgui_impl_dx11.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\ImGui\backends\imgui_impl_win32.cpp">
+      <Filter>Source Files\Lib\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -451,6 +490,42 @@
     </ClInclude>
     <ClInclude Include="Factories\MtxFactory.h">
       <Filter>Header Files\Resources\Factories</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\imconfig.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\imgui.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\imgui_internal.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\imstb_rectpack.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\imstb_textedit.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\imstb_truetype.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\backends\imgui_impl_opengl3.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\backends\imgui_impl_sdl.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="SohImGuiImpl.h">
+      <Filter>Source Files\CustomImpl</Filter>
+    </ClInclude>
+    <ClInclude Include="SohConsole.h">
+      <Filter>Source Files\CustomImpl</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\backends\imgui_impl_dx11.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\ImGui\backends\imgui_impl_win32.h">
+      <Filter>Source Files\Lib\ImGui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

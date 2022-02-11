@@ -26,6 +26,7 @@
 #include "gfx_dxgi.h"
 
 #include "gfx_screen_config.h"
+#include "../../SohImGuiImpl.h"
 
 #define THREE_POINT_FILTERING 0
 #define DEBUG_D3D 0
@@ -298,6 +299,8 @@ static void gfx_d3d11_init(void) {
                   gfx_dxgi_get_h_wnd(), "Failed to create per-draw constant buffer.");
 
     d3d.context->PSSetConstantBuffers(1, 1, d3d.per_draw_cb.GetAddressOf());
+
+    SohImGui::init({ gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() });
 }
 
 
@@ -703,6 +706,7 @@ static void gfx_d3d11_start_frame(void) {
 }
 
 static void gfx_d3d11_end_frame(void) {
+    SohImGui::draw();
 }
 
 static void gfx_d3d11_finish_render(void) {
