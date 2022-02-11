@@ -241,10 +241,20 @@ namespace Ship
 		SetLightList(BinaryReader* reader);
 	};
 
+	class SetRoom
+	{
+	public:
+		std::string name;
+		uint32_t vromStart;
+		uint32_t vromEnd;
+
+		SetRoom(BinaryReader* reader);
+	};
+
 	class SetRoomList : public SceneCommand
 	{
 	public:
-		std::vector<std::string> rooms;
+		std::vector<SetRoom> rooms;
 		
 		SetRoomList(BinaryReader* reader);
 	};

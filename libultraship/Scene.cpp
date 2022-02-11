@@ -268,14 +268,20 @@ namespace Ship
 		}
 	}
 
+	SetRoom::SetRoom(BinaryReader* reader)
+	{
+		name = reader->ReadString();
+		vromStart = reader->ReadInt32();
+		vromEnd = reader->ReadInt32();
+	}
+
 	SetRoomList::SetRoomList(BinaryReader* reader) : SceneCommand(reader)
 	{
 		uint32_t numRooms = reader->ReadInt32();
 
 		for (int i = 0; i < numRooms; i++)
 		{
-			std::string room = reader->ReadString();
-			rooms.push_back(room);
+			rooms.push_back(SetRoom(reader));
 		}
 	}
 
