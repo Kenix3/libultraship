@@ -224,6 +224,10 @@ namespace Ship {
         //gfx_set_framedivisor(0);
     }
 
+    uint16_t Window::GetPixelDepth(float x, float y) {
+        return gfx_get_pixel_depth(x, y);
+    }
+
     void Window::ToggleFullscreen() {
         SetFullscreen(!bIsFullscreen);
     }

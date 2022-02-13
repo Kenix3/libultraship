@@ -602,7 +602,7 @@ static void gfx_opengl_end_frame(void) {
 static void gfx_opengl_finish_render(void) {
 }
 
-uint16_t get_pixel_depth(int x, int y) {
+static uint16_t gfx_opengl_get_pixel_depth(float x, float y) {
     float depth;
     glReadPixels(x, y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
     return depth * 65532.0f;
@@ -621,6 +621,7 @@ struct GfxRenderingAPI gfx_opengl_api = {
     gfx_opengl_set_sampler_parameters,
     gfx_opengl_set_depth_test,
     gfx_opengl_set_depth_mask,
+    gfx_opengl_get_pixel_depth,
     gfx_opengl_set_zmode_decal,
     gfx_opengl_set_viewport,
     gfx_opengl_set_scissor,

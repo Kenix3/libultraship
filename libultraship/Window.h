@@ -17,6 +17,7 @@ namespace Ship {
 			void Init();
 			void RunCommands(Gfx* Commands);
 			void SetFrameDivisor(int divisor);
+			uint16_t GetPixelDepth(float x, float y);
 			void ToggleFullscreen();
 			void SetFullscreen(bool bIsFullscreen);
 

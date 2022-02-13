@@ -712,6 +712,10 @@ static void gfx_d3d11_end_frame(void) {
 static void gfx_d3d11_finish_render(void) {
 }
 
+static uint16_t gfx_d3d11_get_pixel_depth(float x, float y) {
+    return 0; // OTRTODO
+}
+
 } // namespace
 
 extern "C" struct GfxRenderingAPI gfx_direct3d11_api = {
@@ -727,6 +731,7 @@ extern "C" struct GfxRenderingAPI gfx_direct3d11_api = {
     gfx_d3d11_set_sampler_parameters,
     gfx_d3d11_set_depth_test,
     gfx_d3d11_set_depth_mask,
+    gfx_d3d11_get_pixel_depth,
     gfx_d3d11_set_zmode_decal,
     gfx_d3d11_set_viewport,
     gfx_d3d11_set_scissor,

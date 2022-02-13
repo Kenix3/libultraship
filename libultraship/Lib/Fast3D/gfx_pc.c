@@ -2495,7 +2495,10 @@ void gfx_end_frame(void) {
     }
 }
 
-void gfx_set_framedivisor(int divisor)
-{
+void gfx_set_framedivisor(int divisor) {
     gfx_wapi->set_frame_divisor(divisor);
+}
+
+uint16_t gfx_get_pixel_depth(float x, float y) {
+    return gfx_rapi->get_pixel_depth(x * RATIO_Y - (SCREEN_WIDTH * RATIO_Y - gfx_current_dimensions.width) / 2, y * RATIO_Y);
 }

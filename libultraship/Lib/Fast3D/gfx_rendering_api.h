@@ -20,6 +20,7 @@ struct GfxRenderingAPI {
     void (*set_sampler_parameters)(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt);
     void (*set_depth_test)(bool depth_test);
     void (*set_depth_mask)(bool z_upd);
+    uint16_t (*get_pixel_depth)(float x, float y);
     void (*set_zmode_decal)(bool zmode_decal);
     void (*set_viewport)(int x, int y, int width, int height);
     void (*set_scissor)(int x, int y, int width, int height);
