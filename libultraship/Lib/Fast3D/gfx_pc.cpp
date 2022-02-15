@@ -1130,6 +1130,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool use_noise = (rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
     bool use_2cyc = (rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
     bool alpha_threshold = (rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
+    bool invisible = (rdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
 
     if (texture_edge) {
         use_alpha = true;
@@ -1141,6 +1142,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     if (use_noise) cc_id |= (uint64_t)SHADER_OPT_NOISE << CC_SHADER_OPT_POS;
     if (use_2cyc) cc_id |= (uint64_t)SHADER_OPT_2CYC << CC_SHADER_OPT_POS;
     if (alpha_threshold) cc_id |= (uint64_t)SHADER_OPT_ALPHA_THRESHOLD << CC_SHADER_OPT_POS;
+    if (invisible) cc_id |= (uint64_t)SHADER_OPT_INVISIBLE << CC_SHADER_OPT_POS;
 
     if (!use_alpha) {
         cc_id &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));

@@ -38,10 +38,11 @@ enum {
 #define SHADER_OPT_NOISE (1 << 3)
 #define SHADER_OPT_2CYC (1 << 4)
 #define SHADER_OPT_ALPHA_THRESHOLD (1 << 5)
-#define SHADER_OPT_TEXEL0_CLAMP_S (1 << 6)
-#define SHADER_OPT_TEXEL0_CLAMP_T (1 << 7)
-#define SHADER_OPT_TEXEL1_CLAMP_S (1 << 8)
-#define SHADER_OPT_TEXEL1_CLAMP_T (1 << 9)
+#define SHADER_OPT_INVISIBLE (1 << 6)
+#define SHADER_OPT_TEXEL0_CLAMP_S (1 << 7)
+#define SHADER_OPT_TEXEL0_CLAMP_T (1 << 8)
+#define SHADER_OPT_TEXEL1_CLAMP_S (1 << 9)
+#define SHADER_OPT_TEXEL1_CLAMP_T (1 << 10)
 #define CC_SHADER_OPT_POS 56
 
 struct CCFeatures {
@@ -52,6 +53,7 @@ struct CCFeatures {
     bool opt_noise;
     bool opt_2cyc;
     bool opt_alpha_threshold;
+    bool opt_invisible;
     bool used_textures[2];
     bool clamp[2][2];
     int num_inputs;

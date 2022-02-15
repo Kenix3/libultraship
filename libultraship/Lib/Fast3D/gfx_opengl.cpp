@@ -339,6 +339,9 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         if (cc_features.opt_alpha_threshold) {
             append_line(fs_buf, &fs_len, "if (texel.a < 8.0 / 256.0) discard;");
         }
+        if (cc_features.opt_invisible) {
+            append_line(fs_buf, &fs_len, "texel.a = 0.0;");
+        }
         append_line(fs_buf, &fs_len, "gl_FragColor = texel;");
     } else {
         append_line(fs_buf, &fs_len, "gl_FragColor = vec4(texel, 1.0);");
