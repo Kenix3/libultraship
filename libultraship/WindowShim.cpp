@@ -9,7 +9,7 @@
 #include "Lib/Fast3D/gfx_window_manager_api.h"
 
 /*
- * Begin shims for gfx_pc.c. Eventually, a file from SOH repo should be moved in here.
+ * Begin shims for gfx_pc.cpp. Eventually, a file from SOH repo should be moved in here.
  */
 
 //void ToggleConsole() 

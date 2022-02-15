@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <map>
+
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
@@ -17,6 +19,17 @@
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
 #include "gfx_screen_config.h"
+
+// TODO: fix header files for these
+extern "C" {
+    char* ResourceMgr_GetNameByCRC(uint64_t crc, char* alloc);
+    int32_t* ResourceMgr_LoadMtxByCRC(uint64_t crc);
+    Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc);
+    Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc);
+    char* ResourceMgr_LoadTexByCRC(uint64_t crc);
+}
+
+using namespace std;
 
 #define SUPPORT_CHECK(x) assert(x)
 
@@ -75,7 +88,6 @@ static struct {
 } gfx_texture_cache;
 
 struct ColorCombiner {
-    uint64_t cc_id;
     uint64_t shader_id0;
     uint32_t shader_id1;
     bool used_textures[2];
@@ -83,8 +95,8 @@ struct ColorCombiner {
     uint8_t shader_input_mapping[2][7];
 };
 
-static struct ColorCombiner color_combiner_pool[128];
-static uint8_t color_combiner_pool_size;
+static map<uint64_t, struct ColorCombiner> color_combiner_pool;
+static map<uint64_t, struct ColorCombiner>::iterator prev_combiner = color_combiner_pool.end();
 
 static struct RSP {
     float modelview_matrix_stack[11][4][4];
@@ -150,8 +162,7 @@ static struct RDP {
 } rdp;
 
 static struct RenderingState {
-    bool depth_test;
-    bool depth_mask;
+    uint8_t depth_test_and_mask; // 1: depth test, 2: depth mask
     bool decal_mode;
     bool alpha_blend;
     struct XYWidthHeight viewport, scissor;
@@ -433,7 +444,6 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
             }
         }
     }
-    comb->cc_id = cc_id;
     comb->shader_id0 = shader_id0;
     comb->shader_id1 = shader_id1;
     comb->used_textures[0] = used_textures[0];
@@ -443,20 +453,18 @@ static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
 }
 
 static struct ColorCombiner *gfx_lookup_or_create_color_combiner(uint64_t cc_id) {
-    static struct ColorCombiner *prev_combiner;
-    if (prev_combiner != NULL && prev_combiner->cc_id == cc_id) {
-        return prev_combiner;
+    if (prev_combiner != color_combiner_pool.end() && prev_combiner->first == cc_id) {
+        return &prev_combiner->second;
     }
     
-    for (size_t i = 0; i < color_combiner_pool_size; i++) {
-        if (color_combiner_pool[i].cc_id == cc_id) {
-            return prev_combiner = &color_combiner_pool[i];
-        }
+    prev_combiner = color_combiner_pool.find(cc_id);
+    if (prev_combiner != color_combiner_pool.end()) {
+        return &prev_combiner->second;
     }
     gfx_flush();
-    struct ColorCombiner *comb = &color_combiner_pool[color_combiner_pool_size++];
-    gfx_generate_cc(comb, cc_id);
-    return prev_combiner = comb;
+    prev_combiner = color_combiner_pool.insert(make_pair(cc_id, ColorCombiner())).first;
+    gfx_generate_cc(&prev_combiner->second, cc_id);
+    return &prev_combiner->second;
 }
 
 static void gfx_texture_cache_clear()
@@ -512,16 +520,13 @@ static void gfx_texture_cache_delete(int i, struct TextureHashmapNode** n, const
 
 static void import_texture_rgba16(int tile) {
     uint8_t rgba32_buf[480 * 240 * 4];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     //SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     for (uint32_t i = 0; i < size_bytes / 2; i++) {
-        if (rdp.loaded_texture[tile].addr == 0 || rdp.loaded_texture[tile].addr == 2)
-            continue;
-        
         uint16_t col16 = (addr[2 * i] << 8) | addr[2 * i + 1];
         uint8_t a = col16 & 1;
         uint8_t r = col16 >> 11;
@@ -540,7 +545,7 @@ static void import_texture_rgba16(int tile) {
 }
 
 static void import_texture_rgba32(int tile) {
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -553,7 +558,7 @@ static void import_texture_rgba32(int tile) {
 
 static void import_texture_ia4(int tile) {
     uint8_t rgba32_buf[32768];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -581,7 +586,7 @@ static void import_texture_ia4(int tile) {
 
 static void import_texture_ia8(int tile) {
     uint8_t rgba32_buf[16384];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -607,7 +612,7 @@ static void import_texture_ia8(int tile) {
 
 static void import_texture_ia16(int tile) {
     uint8_t rgba32_buf[8192];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -633,7 +638,7 @@ static void import_texture_ia16(int tile) {
 
 static void import_texture_i4(int tile) {
     uint8_t rgba32_buf[32768];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -661,7 +666,7 @@ static void import_texture_i4(int tile) {
 
 static void import_texture_i8(int tile) {
     uint8_t rgba32_buf[16384];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -688,11 +693,11 @@ static void import_texture_i8(int tile) {
 
 static void import_texture_ci4(int tile) {
     uint8_t rgba32_buf[32768];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    uint8_t *palette = rdp.palette + rdp.texture_tile[tile].palette * 16 * 2; // 16 pixel entries, 16 bits each
+    const uint8_t *palette = rdp.palette + rdp.texture_tile[tile].palette * 16 * 2; // 16 pixel entries, 16 bits each
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
     
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
@@ -717,7 +722,7 @@ static void import_texture_ci4(int tile) {
 
 static void import_texture_ci8(int tile) {
     uint8_t rgba32_buf[16384];
-    uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -1087,17 +1092,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
 
     bool depth_test = (rsp.geometry_mode & G_ZBUFFER) == G_ZBUFFER;
-    if (depth_test != rendering_state.depth_test) {
+    bool depth_mask = (rdp.other_mode_l & Z_UPD) == Z_UPD;
+    uint8_t depth_test_and_mask = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
+    if (depth_test_and_mask != rendering_state.depth_test_and_mask) {
         gfx_flush();
-        gfx_rapi->set_depth_test(depth_test);
-        rendering_state.depth_test = depth_test;
-    }
-
-    bool z_upd = (rdp.other_mode_l & Z_UPD) == Z_UPD;
-    if (z_upd != rendering_state.depth_mask) {
-        gfx_flush();
-        gfx_rapi->set_depth_mask(z_upd);
-        rendering_state.depth_mask = z_upd;
+        gfx_rapi->set_depth_test_and_mask(depth_test, depth_mask);
+        rendering_state.depth_test_and_mask = depth_test_and_mask;
     }
 
     bool zmode_decal = (rdp.other_mode_l & ZMODE_DEC) == ZMODE_DEC;
@@ -1127,8 +1127,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool use_alpha = (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) && (rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16);
     bool use_fog = (rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
-    bool use_noise = (rdp.other_mode_l & G_AC_DITHER) == G_AC_DITHER;
+    bool use_noise = (rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
     bool use_2cyc = (rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
+    bool alpha_threshold = (rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
 
     if (texture_edge) {
         use_alpha = true;
@@ -1139,6 +1140,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     if (texture_edge) cc_id |= (uint64_t)SHADER_OPT_TEXTURE_EDGE << CC_SHADER_OPT_POS;
     if (use_noise) cc_id |= (uint64_t)SHADER_OPT_NOISE << CC_SHADER_OPT_POS;
     if (use_2cyc) cc_id |= (uint64_t)SHADER_OPT_2CYC << CC_SHADER_OPT_POS;
+    if (alpha_threshold) cc_id |= (uint64_t)SHADER_OPT_ALPHA_THRESHOLD << CC_SHADER_OPT_POS;
 
     if (!use_alpha) {
         cc_id &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
@@ -1509,7 +1511,7 @@ static void gfx_dp_set_scissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32
 }
 
 static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const void* addr) {
-    rdp.texture_to_load.addr = addr;
+    rdp.texture_to_load.addr = (const uint8_t*)addr;
     rdp.texture_to_load.siz = size;
     rdp.texture_to_load.width = width;
 }
@@ -1939,7 +1941,7 @@ static inline void* seg_addr(uintptr_t w1)
         uint32_t offset = w1 & 0x00FFFFFF;
 
         if (segmentPointers[segNum] != 0)
-            return segmentPointers[segNum] + offset;
+            return (void*)(segmentPointers[segNum] + offset);
         else
             return (void*)w1;
     }
@@ -2007,7 +2009,7 @@ static void gfx_run_dl(Gfx* cmd) {
         {
         }
             break;
-            case G_MTX:
+            case G_MTX: {
                 if (markerOn)
                 {
                     int bp = 0;
@@ -2034,7 +2036,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_matrix(C0(16, 8), (const int32_t *) seg_addr(cmd->words.w1));
 #endif
                 break;
-            case G_MTX_OTR:
+            }
+            case G_MTX_OTR: {
                 cmd++;
 
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
@@ -2059,6 +2062,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_matrix(C0(16, 8), (const int32_t*)seg_addr(cmd->words.w1));
 #endif
                 break;
+            }
             case (uint8_t)G_POPMTX:
 #ifdef F3DEX_GBI_2
                 gfx_sp_pop_matrix(cmd->words.w1 / 64);
@@ -2089,7 +2093,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
             case G_VTX:
 #ifdef F3DEX_GBI_2
-                gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), seg_addr(cmd->words.w1));
+                gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (const Vtx*)seg_addr(cmd->words.w1));
 #elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
                 gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, seg_addr(cmd->words.w1));
 #else
@@ -2114,9 +2118,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 if (vtx != NULL)
                 {
-                    uintptr_t vtxPtr = vtx;
-                    vtxPtr += offset;
-                    vtx = vtxPtr;
+                    vtx = (Vtx*)((char*)vtx + offset);
 
                     cmd--;
                     gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
@@ -2257,12 +2259,13 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
             
             // RDP Commands:
-            case G_SETTIMG:
-                uintptr_t texPtr = seg_addr(cmd->words.w1);
+            case G_SETTIMG: {
+                void* texPtr = seg_addr(cmd->words.w1);
 
                 if (texPtr != NULL)
                     gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), texPtr);
                 break;
+            }
             case G_SETTIMG_OTR:
             {
                 cmd++;

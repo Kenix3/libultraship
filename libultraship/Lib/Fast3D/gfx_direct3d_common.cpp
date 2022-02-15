@@ -306,6 +306,9 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
     }
 
     if (cc_features.opt_alpha) {
+        if (cc_features.opt_alpha_threshold) {
+            append_line(buf, &len, "    if (texel.a < 8.0 / 256.0) discard;");
+        }
         append_line(buf, &len, "    return texel;");
     } else {
         append_line(buf, &len, "    return float4(texel, 1.0);");

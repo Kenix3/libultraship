@@ -27,7 +27,7 @@
 #define GFX_API_NAME "SDL2 - OpenGL"
 
 static SDL_Window *wnd;
-static SDL_GLContext* ctx;
+static SDL_GLContext ctx;
 static int inverted_scancode_table[512];
 static int vsync_enabled = 0;
 static unsigned int window_width = DESIRED_SCREEN_WIDTH;
@@ -112,7 +112,7 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
 }
 
-int test_vsync(void) {
+void test_vsync(void) {
     // Even if SDL_GL_SetSwapInterval succeeds, it doesn't mean that VSync actually works.
     // A 60 Hz monitor should have a swap interval of 16.67 milliseconds.
     // Try to detect the length of a vsync by swapping buffers some times.
@@ -181,7 +181,7 @@ static void gfx_sdl_init(const char *game_name, bool start_in_fullscreen) {
     if (!vsync_enabled)
         puts("Warning: VSync is not enabled or not working. Falling back to timer for synchronization");
 
-    c_init((WindowImpl) { wnd, ctx, NULL });
+    SohImGui::init(WindowImpl { wnd, ctx, NULL });
 
     for (size_t i = 0; i < sizeof(windows_scancode_table) / sizeof(SDL_Scancode); i++) {
         inverted_scancode_table[windows_scancode_table[i]] = i;
@@ -251,7 +251,7 @@ static void gfx_sdl_onkeyup(int scancode) {
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        c_update((EventImpl){ &event });
+        SohImGui::update(EventImpl { &event });
         switch (event.type) {
 #ifndef TARGET_WEB
             // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

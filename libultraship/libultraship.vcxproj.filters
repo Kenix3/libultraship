@@ -75,13 +75,13 @@
     <ClCompile Include="Factories\ResourceLoader.cpp">
       <Filter>Source Files\Resources\Factories</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\Fast3D\gfx_opengl.c">
+    <ClCompile Include="Lib\Fast3D\gfx_opengl.cpp">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\Fast3D\gfx_pc.c">
+    <ClCompile Include="Lib\Fast3D\gfx_pc.cpp">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\Fast3D\gfx_sdl2.c">
+    <ClCompile Include="Lib\Fast3D\gfx_sdl2.cpp">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
     <ClCompile Include="File.cpp">
@@ -126,7 +126,7 @@
     <ClCompile Include="GlobalCtx2.cpp">
       <Filter>Source Files\Globals</Filter>
     </ClCompile>
-    <ClCompile Include="WindowShim.c">
+    <ClCompile Include="WindowShim.cpp">
       <Filter>Source Files\Globals</Filter>
     </ClCompile>
     <ClCompile Include="ControllerAttachment.cpp">
@@ -210,7 +210,7 @@
     <ClCompile Include="Resource.cpp">
       <Filter>Source Files\Resources</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\Fast3D\gfx_cc.c">
+    <ClCompile Include="Lib\Fast3D\gfx_cc.cpp">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
     <ClCompile Include="Lib\Fast3D\gfx_direct3d_common.cpp">
@@ -225,7 +225,7 @@
     <ClCompile Include="Lib\Fast3D\gfx_dxgi.cpp">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
-    <ClCompile Include="Lib\Fast3D\gfx_glx.c">
+    <ClCompile Include="Lib\Fast3D\gfx_glx.cpp">
       <Filter>Source Files\Lib\Fast3D</Filter>
     </ClCompile>
     <ClCompile Include="Factories\TextureFactory.cpp">

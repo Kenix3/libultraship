@@ -522,11 +522,8 @@ static void gfx_d3d11_set_sampler_parameters(int tile, bool linear_filter, uint3
     ThrowIfFailed(d3d.device->CreateSamplerState(&sampler_desc, texture_data->sampler_state.GetAddressOf()));
 }
 
-static void gfx_d3d11_set_depth_test(bool depth_test) {
+static void gfx_d3d11_set_depth_test_and_mask(bool depth_test, bool depth_mask) {
     d3d.depth_test = depth_test;
-}
-
-static void gfx_d3d11_set_depth_mask(bool depth_mask) {
     d3d.depth_mask = depth_mask;
 }
 
@@ -571,9 +568,9 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         D3D11_DEPTH_STENCIL_DESC depth_stencil_desc;
         ZeroMemory(&depth_stencil_desc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
-        depth_stencil_desc.DepthEnable = d3d.depth_test;
+        depth_stencil_desc.DepthEnable = d3d.depth_test || d3d.depth_mask;
         depth_stencil_desc.DepthWriteMask = d3d.depth_mask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-        depth_stencil_desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+        depth_stencil_desc.DepthFunc = d3d.depth_test ? D3D11_COMPARISON_LESS_EQUAL : D3D11_COMPARISON_ALWAYS;
         depth_stencil_desc.StencilEnable = false;
 
         ThrowIfFailed(d3d.device->CreateDepthStencilState(&depth_stencil_desc, d3d.depth_stencil_state.GetAddressOf()));
@@ -718,7 +715,7 @@ static uint16_t gfx_d3d11_get_pixel_depth(float x, float y) {
 
 } // namespace
 
-extern "C" struct GfxRenderingAPI gfx_direct3d11_api = {
+struct GfxRenderingAPI gfx_direct3d11_api = {
     gfx_d3d11_z_is_from_0_to_1,
     gfx_d3d11_unload_shader,
     gfx_d3d11_load_shader,
@@ -729,8 +726,7 @@ extern "C" struct GfxRenderingAPI gfx_direct3d11_api = {
     gfx_d3d11_select_texture,
     gfx_d3d11_upload_texture,
     gfx_d3d11_set_sampler_parameters,
-    gfx_d3d11_set_depth_test,
-    gfx_d3d11_set_depth_mask,
+    gfx_d3d11_set_depth_test_and_mask,
     gfx_d3d11_get_pixel_depth,
     gfx_d3d11_set_zmode_decal,
     gfx_d3d11_set_viewport,

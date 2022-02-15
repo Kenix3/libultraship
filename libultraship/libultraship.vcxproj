@@ -131,7 +131,7 @@
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -255,15 +255,15 @@
     <ClCompile Include="Factories\SceneFactory.cpp" />
     <ClCompile Include="Factories\SkeletonFactory.cpp" />
     <ClCompile Include="Factories\SkeletonLimbFactory.cpp" />
-    <ClCompile Include="Lib\Fast3D\gfx_cc.c" />
+    <ClCompile Include="Lib\Fast3D\gfx_cc.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_direct3d11.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_direct3d12.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_direct3d_common.cpp" />
     <ClCompile Include="Lib\Fast3D\gfx_dxgi.cpp" />
-    <ClCompile Include="Lib\Fast3D\gfx_glx.c" />
-    <ClCompile Include="Lib\Fast3D\gfx_opengl.c" />
-    <ClCompile Include="Lib\Fast3D\gfx_pc.c" />
-    <ClCompile Include="Lib\Fast3D\gfx_sdl2.c" />
+    <ClCompile Include="Lib\Fast3D\gfx_glx.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_opengl.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_pc.cpp" />
+    <ClCompile Include="Lib\Fast3D\gfx_sdl2.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_sdl.cpp" />
     <ClCompile Include="Lib\ImGui\imgui.cpp" />
@@ -297,7 +297,7 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Window.cpp" />
-    <ClCompile Include="WindowShim.c" />
+    <ClCompile Include="WindowShim.cpp" />
     <ClCompile Include="stox.cpp" />
     <ClCompile Include="SDLController.cpp" />
   </ItemGroup>

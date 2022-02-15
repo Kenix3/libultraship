@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <map>
+
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
@@ -34,9 +36,9 @@
 #include "gfx_rendering_api.h"
 #include "../../SohImGuiImpl.h"
 
+using namespace std;
+
 struct ShaderProgram {
-    uint64_t shader_id0;
-    uint32_t shader_id1;
     GLuint opengl_program_id;
     uint8_t num_inputs;
     bool used_textures[2];
@@ -49,11 +51,7 @@ struct ShaderProgram {
     GLint window_height_location;
 };
 
-// OTRTODO The Shader pool needs to be able to dynamically grow, but for now just set it to a large value
-// If this proves too small, just increase it
-#define SHADER_POOL_MAX_SIZE 512
-static struct ShaderProgram shader_program_pool[SHADER_POOL_MAX_SIZE];
-static uint32_t shader_program_pool_size;
+static map<pair<uint64_t, uint32_t>, struct ShaderProgram> shader_program_pool;
 static GLuint opengl_vbo;
 
 static uint32_t frame_count;
@@ -338,6 +336,9 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha) {
+        if (cc_features.opt_alpha_threshold) {
+            append_line(fs_buf, &fs_len, "if (texel.a < 8.0 / 256.0) discard;");
+        }
         append_line(fs_buf, &fs_len, "gl_FragColor = texel;");
     } else {
         append_line(fs_buf, &fs_len, "gl_FragColor = vec4(texel, 1.0);");
@@ -392,11 +393,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 
     size_t cnt = 0;
 
-    struct ShaderProgram *prg = &shader_program_pool[shader_program_pool_size++];
-    if (shader_program_pool_size >= SHADER_POOL_MAX_SIZE) {
-        // OTRTODO this is wrong because we can't reuse shader programs, but it is better than corrupting memory
-        shader_program_pool_size = SHADER_POOL_MAX_SIZE - 1;
-    }
+    struct ShaderProgram* prg = &shader_program_pool[make_pair(shader_id0, shader_id1)];
     prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aVtxPos");
     prg->attrib_sizes[cnt] = 4;
     ++cnt;
@@ -434,8 +431,6 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         ++cnt;
     }
 
-    prg->shader_id0 = shader_id0;
-    prg->shader_id1 = shader_id1;
     prg->opengl_program_id = shader_program;
     prg->num_inputs = cc_features.num_inputs;
     prg->used_textures[0] = cc_features.used_textures[0];
@@ -466,12 +461,8 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 }
 
 static struct ShaderProgram *gfx_opengl_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
-    for (size_t i = 0; i < shader_program_pool_size; i++) {
-        if (shader_program_pool[i].shader_id0 == shader_id0 && shader_program_pool[i].shader_id1 == shader_id1) {
-            return &shader_program_pool[i];
-        }
-    }
-    return NULL;
+    auto it = shader_program_pool.find(make_pair(shader_id0, shader_id1));
+    return it == shader_program_pool.end() ? nullptr : &it->second;
 }
 
 static void gfx_opengl_shader_get_info(struct ShaderProgram *prg, uint8_t *num_inputs, bool used_textures[2]) {
@@ -516,16 +507,14 @@ static void gfx_opengl_set_sampler_parameters(int tile, bool linear_filter, uint
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));
 }
 
-static void gfx_opengl_set_depth_test(bool depth_test) {
-    if (depth_test) {
+static void gfx_opengl_set_depth_test_and_mask(bool depth_test, bool z_upd) {
+    if (depth_test || z_upd) {
         glEnable(GL_DEPTH_TEST);
+        glDepthMask(z_upd ? GL_TRUE : GL_FALSE);
+        glDepthFunc(depth_test ? GL_LEQUAL : GL_ALWAYS);
     } else {
         glDisable(GL_DEPTH_TEST);
     }
-}
-
-static void gfx_opengl_set_depth_mask(bool z_upd) {
-    glDepthMask(z_upd ? GL_TRUE : GL_FALSE);
 }
 
 static void gfx_opengl_set_zmode_decal(bool zmode_decal) {
@@ -592,11 +581,8 @@ static void gfx_opengl_end_frame(void) {
     GLint last_program;
     glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
     glUseProgram(0);
-    c_draw();
+    SohImGui::draw();
     glUseProgram(last_program);
-    if (shader_program_pool_size >= (SHADER_POOL_MAX_SIZE - 1)) {
-        fprintf(stderr, "Exhausted the shader program pool. Visual errors may be present.");
-    }
 }
 
 static void gfx_opengl_finish_render(void) {
@@ -619,8 +605,7 @@ struct GfxRenderingAPI gfx_opengl_api = {
     gfx_opengl_select_texture,
     gfx_opengl_upload_texture,
     gfx_opengl_set_sampler_parameters,
-    gfx_opengl_set_depth_test,
-    gfx_opengl_set_depth_mask,
+    gfx_opengl_set_depth_test_and_mask,
     gfx_opengl_get_pixel_depth,
     gfx_opengl_set_zmode_decal,
     gfx_opengl_set_viewport,

@@ -127,7 +127,7 @@ extern "C" {
         }
     }
 
-    Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc) 
+    Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc)
     {
         std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
 
@@ -176,9 +176,8 @@ extern "C" {
     }
 }
 
-extern "C" struct GfxRenderingAPI gfx_opengl_api;
 extern "C" struct GfxWindowManagerAPI gfx_sdl;
-extern "C" void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi);
+void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi);
 extern "C" void ToggleConsole();
 
 namespace Ship {
