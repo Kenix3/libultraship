@@ -1042,6 +1042,17 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
     }
 }
 
+static void gfx_sp_modify_vertex(uint16_t vtx_idx, uint8_t where, uint32_t val) {
+    SUPPORT_CHECK(where == G_MWO_POINT_ST);
+
+    int16_t s = (int16_t)(val >> 16);
+    int16_t t = (int16_t)val;
+
+    struct LoadedVertex* v = &rsp.loaded_vertices[vtx_idx];
+    v->u = s;
+    v->v = t;
+}
+
 static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool is_rect) {
     struct LoadedVertex* v1 = &rsp.loaded_vertices[vtx1_idx];
     struct LoadedVertex* v2 = &rsp.loaded_vertices[vtx2_idx];
@@ -1983,12 +1994,6 @@ static void gfx_run_dl(Gfx* cmd) {
             uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
             ResourceMgr_GetNameByCRC(hash, dlName);
 
-            /*if (strcmp(dlName, "object_link_child") == 0)
-            {
-                int bp2 = 0;
-                return;
-            }*/
-
             //printf("G_MARKER: %s\n", dlName);
             int bp = 0;
 #endif
@@ -2131,6 +2136,9 @@ static void gfx_run_dl(Gfx* cmd) {
                     int bp = 0; // UH OH!
                 }
             }
+                break;
+            case G_MODIFYVTX:
+                gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), cmd->words.w1);
                 break;
             case G_DL:
                 if (cmd->words.w1 == dListBP)
