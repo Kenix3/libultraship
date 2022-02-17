@@ -289,7 +289,7 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
     }
 
     if (cc_features.opt_texture_edge && cc_features.opt_alpha) {
-        append_line(buf, &len, "    if (texel.a > 0.3) texel.a = 1.0; else discard;");
+        append_line(buf, &len, "    if (texel.a > 0.19) texel.a = 1.0; else discard;");
     }
     // TODO discard if alpha is 0?
     if (cc_features.opt_fog) {
