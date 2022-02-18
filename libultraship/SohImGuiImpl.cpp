@@ -129,7 +129,7 @@ namespace SohImGui {
 #ifdef USE_VIEWPORTS
         flags |= ImGuiWindowFlags_NoBackground;
 #endif
-        ImGui::Begin("Game", nullptr, flags);
+        ImGui::Begin("OoT Master Quest", nullptr, flags);
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
 
