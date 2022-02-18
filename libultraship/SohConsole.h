@@ -1,111 +1,63 @@
 #pragma once
 
-#include "../../ImGui/imgui.h"
-#include <cstdlib>
 #include <map>
-#include <string>
 #include <vector>
+#include <string>
 #include <functional>
 
-class SohConsole;
+#include "Lib/ImGui/imgui.h"
 
-enum WarnLevels {
-    LVL_INFO,
-    LVL_LOG,
-    LVL_WARNING,
-    LVL_ERROR
-};
-
-struct ConsoleEntry {
-    const char* text;
-    WarnLevels level;
-};
-
-typedef std::function<void(SohConsole* console, std::vector<std::string> args)> CommandFunc;
-extern std::map<std::string, CommandFunc> Commands;
-
+#define LOG(msg, ...) SohImGui::console->Append("Main", Priority::LOG_LVL, msg, __VA_ARGS__)
+#define INFO(msg, ...) SohImGui::console->Append("Main", Priority::INFO_LVL, msg, __VA_ARGS__)
+#define WARNING(msg, ...) SohImGui::console->Append("Main", Priority::WARNING_LVL, msg, __VA_ARGS__)
+#define ERROR(msg, ...) SohImGui::console->Append("Main", Priority::ERROR_LVL, msg, __VA_ARGS__)
 #define CMD_SUCCESS true
-#define CMD_FAILED  false
+#define CMD_FAILED false
+#define MAX_BUFFER_SIZE 255
 
-#define LOG(console, msg, ...) console->AddLog(WarnLevels::LVL_LOG, msg, __VA_ARGS__)
-#define INFO(console, msg, ...) console->AddLog(WarnLevels::LVL_INFO, msg, __VA_ARGS__)
-#define WARNING(console, msg, ...) console->AddLog(WarnLevels::LVL_WARNING, msg, __VA_ARGS__)
-#define ERROR(console, msg, ...) console->AddLog(WarnLevels::LVL_ERROR, msg, __VA_ARGS__)
+typedef std::function<bool(std::vector<std::string> args)> CommandHandler;
 
+enum Priority {
+	INFO_LVL,
+	LOG_LVL,
+	WARNING_LVL,
+	ERROR_LVL
+};
 
-class SohConsole {
+struct CommandEntry {
+	CommandHandler handler;
+	std::string description;
+	std::string usage = "None";
+};
+
+struct ConsoleLine {
+	std::string text;
+	Priority priority = Priority::INFO_LVL;
+	std::string channel = "Main";
+};
+
+class Console {
+	int selectedId = -1;
+	std::vector<int> selectedEntries;
+	std::string filter;
+	std::string level_filter = "None";
+	std::vector<std::string> log_channels = { "Main", "SoH Logging"};
+	std::vector<std::string> priority_filters = { "None", "Info", "Log", "Warning", "Error" };
+	std::vector<ImVec4> priority_colors = {
+		ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
+		ImVec4(0.2f, 1.0f, 0.2f, 1.0f),
+		ImVec4(0.9f, 0.8f, 0.4f, 0.01f),
+		ImVec4(1.0f, 0.2f, 0.2f, 1.0f)
+	};
 public:
-    ImVector<ConsoleEntry>       History;
-
-    SohConsole();
-    ~SohConsole() {
-        ClearLog();
-    }
-
-	static char* strdup(const char* s) { IM_ASSERT(s); size_t len = strlen(s) + 1; void* buf = malloc(len); IM_ASSERT(buf); return (char*)memcpy(buf, (const void*)s, len); }
-    static void  strtrim(char* s) { char* str_end = s + strlen(s); while (str_end > s && str_end[-1] == ' ') str_end--; *str_end = 0; }
-
-    std::vector<std::string> split(std::string text, char separator = ' ', bool keep_quotes = false)
-    {
-        std::vector<std::string> args;
-        char* input = strdup(text.c_str());
-        const size_t length = strlen(input);
-
-        bool inQuotes = false;
-        size_t count = 0, from = 0;
-
-        for (size_t i = 0; i < length; i++)
-        {
-            if (input[i] == '"')
-            {
-                inQuotes = !inQuotes;
-            }
-            else if (input[i] == separator && !inQuotes)
-            {
-                size_t strlen = i - from;
-
-                if (strlen > 0)
-                {
-                    if (!keep_quotes && input[from] == '"' && input[i - 1] == '"')
-                    {
-                        from++; strlen -= 2;
-                    }
-
-                    char* tmp = new char[strlen + 1]();
-                    strncpy(tmp, &input[from], strlen);
-                    count++;
-                    args.emplace_back(tmp);
-                }
-
-                from = i + 1;
-            }
-        }
-
-        if (from < length)
-        {
-            size_t strlen = length - from;
-
-            if (!keep_quotes && input[from] == L'"' && input[length - 1] == L'"')
-            {
-                from++; strlen -= 2;
-            }
-
-            char* tmp = new char[strlen + 1]();
-            strncpy(tmp, &input[from], strlen);
-            count++;
-            args.emplace_back(tmp);
-        }
-
-        return args;
-    }
-
-    static void ClearLog();
-    static void AddLog( WarnLevels level, const char* fmt, ...);
-    void Draw(const char* title, bool* p_open);
-    void ExecCommand(const char* input);
-	static int TextEditCallbackStub(ImGuiInputTextCallbackData* data) {
-        SohConsole* console = static_cast<SohConsole*>(data->UserData);
-        return console->TextEditCallback(data);
-    }
-    int TextEditCallback(ImGuiInputTextCallbackData* data);
+	std::map<std::string, std::vector<ConsoleLine>> history;
+	std::map<std::string, CommandEntry> Commands;
+	std::string selected_channel = "Main";
+	bool opened = false;
+	void Init();
+	void Update();
+	void Draw();
+	void Append(std::string channel, Priority priority, const char* fmt, ...);
+	void Dispatch(std::string line);
+	static int CallbackStub(ImGuiInputTextCallbackData* data);
 };

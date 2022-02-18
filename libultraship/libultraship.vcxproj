@@ -229,6 +229,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Blob.cpp" />
+    <ClCompile Include="Environment.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="SohConsole.cpp" />
@@ -295,6 +296,7 @@
     <ClCompile Include="SkeletonLimb.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WindowShim.cpp" />
@@ -303,6 +305,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blob.h" />
+    <ClInclude Include="Environment.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_win32.h" />
     <ClInclude Include="SohConsole.h" />
@@ -341,6 +344,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Path.h" />
     <ClInclude Include="Text.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="stox.h" />
     <ClInclude Include="Lib\mINI\src\mini\ini.h" />

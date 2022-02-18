@@ -1,3 +1,4 @@
+#include "../../Window.h"
 #ifdef ENABLE_OPENGL
 
 #include <stdint.h>
@@ -35,6 +36,9 @@
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 #include "../../SohImGuiImpl.h"
+#include "../../Environment.h"
+#include "../../GlobalCtx2.h"
+#include "gfx_pc.h"
 
 using namespace std;
 
@@ -358,7 +362,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     puts("End");
 
     const GLchar *sources[2] = { vs_buf, fs_buf };
-    const GLint lengths[2] = { vs_len, fs_len };
+    const GLint lengths[2] = { (GLint) vs_len, (GLint) fs_len };
     GLint success;
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -553,15 +557,23 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
     glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_tris);
 }
 
+static unsigned int framebuffer;
+static unsigned int textureColorbuffer;
+static unsigned int rbo;
+
 static void gfx_opengl_init(void) {
 //#if FOR_WINDOWS
     glewInit();
 //#endif
 
     glGenBuffers(1, &opengl_vbo);
-
     glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
 
+    glGenFramebuffers(1, &framebuffer);
+    glGenTextures(1, &textureColorbuffer);
+    glGenRenderbuffers(1, &rbo);
+
+    SohUtils::saveEnvironmentVar("framebuffer", std::to_string(textureColorbuffer));
     glDepthFunc(GL_LEQUAL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
@@ -570,10 +582,24 @@ static void gfx_opengl_on_resize(void) {
 }
 
 static void gfx_opengl_start_frame(void) {
+    GLsizei framebuffer_width  = gfx_current_dimensions.width;
+    GLsizei framebuffer_height = gfx_current_dimensions.height;
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    std::shared_ptr<Ship::Window> wnd = Ship::GlobalCtx2::GetInstance()->GetWindow();
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, framebuffer_width, framebuffer_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebuffer_width, framebuffer_height); // use a single renderbuffer object for both a depth AND stencil buffer.
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
     frame_count++;
 
     glDisable(GL_SCISSOR_TEST);
-    glDepthMask(GL_TRUE); // Must be set to clear Z-buffer
+    glDepthMask(GL_TRUE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_SCISSOR_TEST);
@@ -581,6 +607,11 @@ static void gfx_opengl_start_frame(void) {
 }
 
 static void gfx_opengl_end_frame(void) {
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     GLint last_program;
     glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
     glUseProgram(0);

@@ -1,234 +1,156 @@
 #include "SohConsole.h"
 
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
+#include <iostream>
 
-std::map<std::string, CommandFunc> Commands;
-char                  InputBuf[256];
-ImVector<ConsoleEntry>       Items;
-int                   HistoryPos;
-ImGuiTextFilter       Filter;
-bool                  AutoScroll;
-bool                  ScrollToBottom;
+#include "Lib/ImGui/imgui.h"
+#include "Utils/StringHelper.h"
+#include "SohImGuiImpl.h"
 
-SohConsole::SohConsole() {
-    ClearLog();
-    memset(InputBuf, 0, sizeof(InputBuf));
-    HistoryPos = -1;
-    AutoScroll = true;
-    ScrollToBottom = false;
+static char filterBuffer[MAX_BUFFER_SIZE];
+
+static bool HelpCommand(std::vector<std::string> args) {
+	INFO("SoH Commands:");
+	for(auto cmd : SohImGui::console->Commands) {
+		INFO((" - " + cmd.first).c_str());
+	}
+	return CMD_SUCCESS;
 }
 
-void SohConsole::ClearLog() {
-    Items.clear();
+static bool ClearCommand(std::vector<std::string> args) {
+	SohImGui::console->history[SohImGui::console->selected_channel].clear();
+	return CMD_SUCCESS;
 }
 
-void SohConsole::AddLog( WarnLevels level, const char* fmt, ...) IM_FMTARGS(3) {
-    char buf[1024];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
-    buf[IM_ARRAYSIZE(buf) - 1] = 0;
-    va_end(args);
-    Items.push_back({ strdup(buf), level });
+
+void Console::Init() {
+	this->Commands["help"]  = { HelpCommand };
+	this->Commands["clear"] = { ClearCommand };
 }
 
-void SohConsole::Draw(const char* title, bool* p_open) {
-    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin(title, p_open)) {
-        ImGui::End();
-        return;
-    }
+void Console::Update() {
 
-    if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Close Console"))
-            *p_open = false;
-        ImGui::EndPopup();
-    }
-
-    if (ImGui::Button("Clear")) { ClearLog(); }
-    // static float t = 0.0f; if (ImGui::GetTime() - t > 0.02f) { t = ImGui::GetTime(); LOG(this, "Spam %f", t); }
-    ImGui::SameLine();
-
-    if (ImGui::BeginPopup("Options")) {
-        ImGui::Checkbox("Auto-scroll", &AutoScroll);
-        ImGui::EndPopup();
-    }
-
-    Filter.Draw(R"(Filter ("incl,-excl") ("error"))", 300);
-    ImGui::Separator();
-
-    const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-    ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-    if (ImGui::BeginPopupContextWindow()) {
-        if (ImGui::Selectable("Clear")) ClearLog();
-        ImGui::EndPopup();
-    }
-
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
-    for (int i = 0; i < Items.Size; i++)
-    {
-        ConsoleEntry entry = Items[i];
-
-        const char* item = Items[i].text;
-        if (!Filter.PassFilter(item))
-            continue;
-
-        ImVec4 warnColors[] = {
-            ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
-            ImVec4(0.2f, 1.0f, 0.2f, 1.0f),
-            ImVec4(0.9f, 0.8f, 0.4f, 0.01f),
-            ImVec4(1.0f, 0.2f, 0.2f, 1.0f),
-        };
-
-        ImGui::PushStyleColor(ImGuiCol_Text, warnColors[entry.level]);
-        ImGui::TextUnformatted(item);
-	ImGui::PopStyleColor();
-    }
-
-    if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-        ImGui::SetScrollHereY(1.0f);
-    ScrollToBottom = false;
-
-    ImGui::PopStyleVar();
-    ImGui::EndChild();
-    ImGui::Separator();
-
-    bool reclaim_focus = false;
-    ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
-    if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this)) {
-        char* s = InputBuf;
-        strtrim(s);
-        if (s[0]) ExecCommand(s);
-        strcpy(s, "");
-        reclaim_focus = true;
-    }
-
-    ImGui::SetItemDefaultFocus();
-    if (reclaim_focus)
-        ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
-
-    ImGui::End();
 }
 
-void SohConsole::ExecCommand(const char* command_line) {
+void Console::Draw() {
+	if (!this->opened) return;
+	ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Console", &this->opened);
+		if (ImGui::BeginPopupContextWindow("Context Menu")) {
+			if (ImGui::MenuItem("Copy Text")) {
+				ImGui::SetClipboardText(this->history[this->selected_channel][this->selectedId].text.c_str());
+				this->selectedId = -1;
+			}
+			ImGui::EndPopup();
+		}
+		if (this->selectedId != -1 && ImGui::IsMouseClicked(1)) {
+			ImGui::OpenPopup("Context Menu");
+		}
 
-    std::string cmd(command_line);
-    INFO(this, "[SOH] %s", command_line);
+		if (ImGui::Button("Clear")) this->history[this->selected_channel].clear();
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(150);
+		if (ImGui::BeginCombo("##channel", this->selected_channel.c_str())) {
+			for (auto channel : log_channels) {
+				const bool is_selected = (channel == std::string(this->selected_channel));
+				if (ImGui::Selectable(channel.c_str(), is_selected))
+					this->selected_channel = channel;
+				if (is_selected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(150);
+		if (ImGui::BeginCombo("##level", this->level_filter.c_str())) {
+			for (auto filter : priority_filters) {
+				const bool is_selected = (filter == std::string(this->level_filter));
+				if (ImGui::Selectable(filter.c_str(), is_selected))
+					this->level_filter = filter;
+					if (is_selected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SameLine();
+		ImGui::PushItemWidth(-1);
+		const size_t filterSize = IM_ARRAYSIZE(filterBuffer);
+		if (ImGui::InputTextWithHint("##input", "Filter", filterBuffer, filterSize))this->filter = std::string(filterBuffer);
+		ImGui::PopItemWidth();
+		const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(.3f, .3f, .3f, 1.0f));
+			if (ImGui::BeginTable("History", 1)) {
 
-    HistoryPos = -1;
-    for (int i = History.Size - 1; i >= 0; i--)
-        if (History[i].text == command_line) {
-            History.erase(History.begin() + i);
-            break;
-        }
+				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {
+					if (this->selectedId < this->history.size() - 1) { ++this->selectedId; }
+				}
+				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow))) {
+					if (this->selectedId > 0) { --this->selectedId; }
+				}
 
-    History.push_back({ command_line, LVL_INFO });
-    ScrollToBottom = true;
+				std::vector<ConsoleLine> channel = this->history[this->selected_channel];
+				for (int i = 0; i < channel.size(); i++) {
+					ConsoleLine line = channel[i];
+					if(!this->filter.empty() && line.text.find(this->filter) == std::string::npos) continue;
+					if(this->level_filter != "None" && line.priority != (std::ranges::find(priority_filters, this->level_filter) - priority_filters.begin()) - 1) continue;
+					std::string id = line.text + "##" + std::to_string(i);
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					const bool is_selected = (this->selectedId == i) || std::ranges::find(this->selectedEntries, i) != this->selectedEntries.end();
+					ImGui::PushStyleColor(ImGuiCol_Text, this->priority_colors[line.priority]);
+					if (ImGui::Selectable(id.c_str(), is_selected)) {
+						if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftCtrl)) && !is_selected)
+							this->selectedEntries.push_back(i);
 
-    if (cmd == "clear") {
-        ClearLog();
-        return;
-    }
-    if (cmd == "help") {
-        INFO(this, "Commands:");
-        for (auto const& cmd : Commands)
-            INFO(this, " - %s", cmd.first.c_str());
-        return;
-    }
-    if (cmd == "history") {
-        int first = History.Size - 10;
-        for (int i = first > 0 ? first : 0; i < History.Size; i++)
-            INFO(this, "[SOH] %3d: %s\n", i, History[i].text);
-        return;
-    }
-    std::vector<std::string> args = split(cmd);
-    if (Commands.contains(args[0])) {
-        Commands[args[0]](this, args);
-        return;
-    }
-    ERROR(this, "[SOH] Unknown command: '%s'\n", args[0].c_str());
+						else this->selectedEntries.clear();
+						this->selectedId = is_selected ? -1 : i;
+					}
+					ImGui::PopStyleColor();
+					if (is_selected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndTable();
+			}
+			ImGui::PopStyleColor();
+			if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+				ImGui::SetScrollHereY(1.0f);
+		ImGui::EndChild();
+
+		bool input_focus = false;
+		static char buffer[MAX_BUFFER_SIZE] = "";
+		constexpr size_t bufferSize = IM_ARRAYSIZE(buffer);
+		constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
+		ImGui::PushItemWidth(-1);
+		if(ImGui::InputTextWithHint("CMDInput", ">", buffer, bufferSize, flags, &Console::CallbackStub, this)) {
+			input_focus = true;
+			this->Dispatch(std::string(buffer));
+			memset(buffer, 0, bufferSize);
+		}
+		ImGui::SetItemDefaultFocus();
+		if (input_focus) ImGui::SetKeyboardFocusHere(-1);
+		ImGui::PopItemWidth();
+	ImGui::End();
 }
 
-int SohConsole::TextEditCallback(ImGuiInputTextCallbackData* data) {
-    switch (data->EventFlag) {
-	    case ImGuiInputTextFlags_CallbackCompletion: {
-	        const char* word_end = data->Buf + data->CursorPos;
-	        const char* word_start = word_end;
-	        while (word_start > data->Buf)
-	        {
-	            const char c = word_start[-1];
-	            if (c == ' ' || c == '\t' || c == ',' || c == ';')
-	                break;
-	            word_start--;
-	        }
+void Console::Dispatch(const std::string line) {
+	this->history[this->selected_channel].push_back({ "> " + line } );
+	const std::vector<std::string> cmd_args = StringHelper::Split(line, " ");
+	if (this->Commands.contains(cmd_args[0])) {
+		const CommandEntry entry = this->Commands[cmd_args[0]];
+		if(!entry.handler(cmd_args) && entry.usage != "None")
+			this->history[this->selected_channel].push_back({ "[SOH] Usage: " + entry.usage, ERROR_LVL });
+		return;
+	}
+	this->history[this->selected_channel].push_back({ "[SOH] Command not found", ERROR_LVL });
+}
 
-	        // Build a list of candidates
-	        ImVector<const char*> candidates;
-	        for (auto const& cmd : Commands)
-                if(cmd.first.find(std::string(word_start)) != std::string::npos)
-			candidates.push_back(cmd.first.c_str());
+int Console::CallbackStub(ImGuiInputTextCallbackData* data) {
+	return 0;
+}
 
-            if (candidates.Size == 0)
-                ERROR(this, "No match for \"%.*s\"!\n", (int)(word_end - word_start), word_start);
-	        else if (candidates.Size == 1) {
-	            data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
-	            data->InsertChars(data->CursorPos, candidates[0]);
-	            data->InsertChars(data->CursorPos, " ");
-	        } else {
-	            int match_len = (int)(word_end - word_start);
-	            for (;;)
-	            {
-	                int c = 0;
-	                bool all_candidates_matches = true;
-	                for (int i = 0; i < candidates.Size && all_candidates_matches; i++)
-	                    if (i == 0)
-	                        c = toupper(candidates[i][match_len]);
-	                    else if (c == 0 || c != toupper(candidates[i][match_len]))
-	                        all_candidates_matches = false;
-	                if (!all_candidates_matches)
-	                    break;
-	                match_len++;
-	            }
-
-	            if (match_len > 0)
-	            {
-	                data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
-	                data->InsertChars(data->CursorPos, candidates[0], candidates[0] + match_len);
-	            }
-
-	            INFO(this, "Possible matches:\n");
-	            for (int i = 0; i < candidates.Size; i++)
-                    INFO(this, "- %s\n", candidates[i]);
-	        }
-
-	        break;
-	    }
-	    case ImGuiInputTextFlags_CallbackHistory: {
-	        const int prev_history_pos = HistoryPos;
-	        if (data->EventKey == ImGuiKey_UpArrow)
-	        {
-	            if (HistoryPos == -1)
-	                HistoryPos = History.Size - 1;
-	            else if (HistoryPos > 0)
-	                HistoryPos--;
-	        }
-	        else if (data->EventKey == ImGuiKey_DownArrow)
-	        {
-	            if (HistoryPos != -1)
-	                if (++HistoryPos >= History.Size)
-	                    HistoryPos = -1;
-	        }
-
-	        // A better implementation would preserve the data on the current input line along with cursor position.
-	        if (prev_history_pos != HistoryPos)
-	        {
-	            const char* history_str = (HistoryPos >= 0) ? History[HistoryPos].text : "";
-	            data->DeleteChars(0, data->BufTextLen);
-	            data->InsertChars(0, history_str);
-	        }
-	    }
-    }
-    return 0;
+void Console::Append(std::string channel, Priority priority, const char* fmt, ...) IM_FMTARGS(4) {
+	char buf[1024];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
+	buf[IM_ARRAYSIZE(buf) - 1] = 0;
+	va_end(args);
+	this->history[channel].push_back({ std::string(buf), priority });
 }
