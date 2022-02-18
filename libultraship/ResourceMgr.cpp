@@ -174,9 +174,12 @@ namespace Ship {
 	std::shared_ptr<Resource> ResourceMgr::LoadResource(std::string FilePath) {
 		auto Promise = LoadResourceAsync(FilePath);
 
-		std::unique_lock<std::mutex> Lock(Promise->ResourceLoadMutex);
-		while (!Promise->bHasResourceLoaded) {
-			Promise->ResourceLoadNotifier.wait(Lock);
+		if (!Promise->bHasResourceLoaded)
+		{
+			std::unique_lock<std::mutex> Lock(Promise->ResourceLoadMutex);
+			while (!Promise->bHasResourceLoaded) {
+				Promise->ResourceLoadNotifier.wait(Lock);
+			}
 		}
 
 		return Promise->Resource;

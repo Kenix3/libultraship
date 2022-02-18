@@ -2023,19 +2023,10 @@ static void gfx_run_dl(Gfx* cmd) {
                 }
                 
                 uintptr_t mtxAddr = cmd->words.w1;
-                
-                if (mtxAddr == 0xFD000000)
-                {
-                    int bp = 0;
-                }
-
 
                 // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
                 if (mtxAddr == 0xF012DB20)
-                {
-                    printf("USING CLEAR\n");
                     mtxAddr = clearMtx;
-                }
 
 #ifdef F3DEX_GBI_2
                 gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t *) seg_addr(mtxAddr));
