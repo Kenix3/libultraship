@@ -28,7 +28,7 @@ namespace Ship
 		void ParseFileBinary(BinaryReader* reader, Resource* res) override;
 	};
 
-	class Struct_800A57C0
+	class Struct_800A57C0 // SkinVertex
 	{
 	public:
 		uint16_t unk_0;
@@ -40,7 +40,7 @@ namespace Ship
 		uint8_t unk_9;
 	};
 
-	class Struct_800A598C_2
+	class Struct_800A598C_2 // SkinTransformation
 	{
 	public:
 		uint8_t unk_0;
@@ -50,7 +50,7 @@ namespace Ship
 		uint8_t unk_8;
 	};
 
-	class Struct_800A598C
+	class Struct_800A598C // SkinLimbModif
 	{
 	public:
 		uint16_t unk_0;  // Length of unk_8
@@ -66,8 +66,9 @@ namespace Ship
 	public:
 		LimbType limbType;
 		ZLimbSkinType skinSegmentType;
-		uint16_t skinVtxCnt;
-		std::vector<Struct_800A598C> skinData;
+		uint16_t skinVtxCnt; // Struct_800A5E28
+		std::vector<Struct_800A598C> skinData; // SkinLimbModif
+		std::string skinDataDList;
 		std::string skinDList;
 		std::string skinDList2;
 
