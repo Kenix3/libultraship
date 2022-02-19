@@ -219,7 +219,7 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
 }
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
-    SohImGui::update({ h_wnd, static_cast<int>(message), static_cast<int>(w_param), l_param });
+    SohImGui::update({ h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) });
     switch (message) {
         case WM_SIZE:
             gfx_dxgi_on_resize();

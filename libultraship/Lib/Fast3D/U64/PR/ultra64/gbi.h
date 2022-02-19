@@ -165,6 +165,8 @@
 #define G_BRANCH_Z_OTR          0x35
 #define G_MTX_OTR          0x36
 
+#define G_TEXRECT_NEGATIVE          0x37
+
 /*
  * The following commands are the "generated" RDP commands; the user
  * never sees them, the RSP microcode generates them.
@@ -4503,6 +4505,19 @@ _DW({                                   \
     gImmp1(pkt, G_RDPHALF_1, (_SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16))); \
     gImmp1(pkt, G_RDPHALF_2, (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16)));\
 })
+
+#define gSPTextureNegativeRectangle(pkt, xl, yl, xh, yh, tile, s, t, dsdx, dtdy)\
+{									\
+    Gfx *_g0 = (Gfx *)(pkt), *_g1 = (Gfx *)(pkt), *_g2 = (Gfx *)(pkt);	\
+									\
+    _g0->words.w0 = _SHIFTL(G_TEXRECT_NEGATIVE, 24, 8) | 			\
+		       _SHIFTL((xh), 0, 24);				\
+    _g0->words.w1 = _SHIFTL((yh), 0, 24);				\
+    _g1->words.w0 = (_SHIFTL(tile, 24, 3) | _SHIFTL((xl), 0, 24));	\
+    _g1->words.w1 = _SHIFTL((yl), 0, 24);				\
+    _g2->words.w0 = (_SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16));		\
+    _g2->words.w1 = (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16));	\
+}
 
  /* like gSPTextureRectangle but accepts negative position arguments */
 #define gSPScisTextureRectangle(pkt, xl, yl, xh, yh, tile, s, t, dsdx, dtdy) \
