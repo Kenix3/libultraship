@@ -2366,7 +2366,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_dp_texture_rectangle(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, opcode == G_TEXRECTFLIP);
                 break;
             }
-			case G_TEXRECT_NEGATIVE:
+			case G_TEXRECT_WIDE:
             {
                 int32_t lrx, lry, tile, ulx, uly;
                 uint32_t uls, ult, dsdx, dtdy;
