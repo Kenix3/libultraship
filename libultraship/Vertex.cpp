@@ -7,6 +7,7 @@ namespace Ship
 		ResourceFile::ParseFileBinary(reader, res);
 
 		uint32_t count = reader->ReadUInt32();
+		vtx->vtxList.reserve(count);
 
 		for (uint32_t i = 0; i < count; i++) {
 			Vtx data;

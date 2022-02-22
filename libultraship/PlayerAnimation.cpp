@@ -9,11 +9,11 @@ namespace Ship
 
 		ResourceFile::ParseFileBinary(reader, res);
 
-		int numEntries = reader->ReadInt32();
+		uint32_t numEntries = reader->ReadUInt32();
+		anim->limbRotData.reserve(numEntries);
 
-		for (int i = 0; i < numEntries; i++)
-		{
+		for (uint32_t i = 0; i < numEntries; i++)
 			anim->limbRotData.push_back(reader->ReadInt16());
-		}
+
 	}
 }

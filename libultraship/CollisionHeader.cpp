@@ -14,9 +14,10 @@ void Ship::CollisionHeaderV0::ParseFileBinary(BinaryReader* reader, Resource* re
 	col->absMaxY = reader->ReadInt16();
 	col->absMaxZ = reader->ReadInt16();
 
-	int vtxCnt = reader->ReadInt32();
+	uint32_t vtxCnt = reader->ReadInt32();
+	col->vertices.reserve(vtxCnt);
 
-	for (int i = 0; i < vtxCnt; i++)
+	for (uint32_t i = 0; i < vtxCnt; i++)
 	{
 		float x = reader->ReadInt16();
 		float y = reader->ReadInt16();
@@ -24,21 +25,24 @@ void Ship::CollisionHeaderV0::ParseFileBinary(BinaryReader* reader, Resource* re
 		col->vertices.push_back(Vec3f(x, y, z));
 	}
 
-	int polyCnt = reader->ReadInt32();
+	uint32_t polyCnt = reader->ReadUInt32();
+	col->polygons.reserve(polyCnt);
 
-	for (int i = 0; i < polyCnt; i++)
+	for (uint32_t i = 0; i < polyCnt; i++)
 		col->polygons.push_back(Ship::PolygonEntry(reader));
 
-	int polyTypesCnt = reader->ReadInt32();
+	uint32_t polyTypesCnt = reader->ReadUInt32();
+	col->polygonTypes.reserve(polyTypesCnt);
 
-	for (int i = 0; i < polyTypesCnt; i++)
+	for (uint32_t i = 0; i < polyTypesCnt; i++)
 		col->polygonTypes.push_back(reader->ReadUInt64());
 
 	col->camData = new CameraDataList();
 
-	int camEntriesCnt = reader->ReadInt32();
+	uint32_t camEntriesCnt = reader->ReadUInt32();
+	col->camData->entries.reserve(camEntriesCnt);
 
-	for (int i = 0; i < camEntriesCnt; i++)
+	for (uint32_t i = 0; i < camEntriesCnt; i++)
 	{
 		Ship::CameraDataEntry* entry = new Ship::CameraDataEntry();
 		entry->cameraSType = reader->ReadUInt16();
@@ -47,9 +51,10 @@ void Ship::CollisionHeaderV0::ParseFileBinary(BinaryReader* reader, Resource* re
 		col->camData->entries.push_back(entry);
 	}
 
-	int camPosCnt = reader->ReadInt32();
+	uint32_t camPosCnt = reader->ReadInt32();
+	col->camData->cameraPositionData.reserve(camPosCnt);
 
-	for (int i = 0; i < camPosCnt; i++)
+	for (uint32_t i = 0; i < camPosCnt; i++)
 	{
 		Ship::CameraPositionData* entry = new Ship::CameraPositionData();
 		entry->x = reader->ReadInt16();
@@ -58,9 +63,10 @@ void Ship::CollisionHeaderV0::ParseFileBinary(BinaryReader* reader, Resource* re
 		col->camData->cameraPositionData.push_back(entry);
 	}
 
-	int waterBoxCnt = reader->ReadInt32();
+	uint32_t waterBoxCnt = reader->ReadInt32();
+	col->waterBoxes.reserve(waterBoxCnt);
 
-	for (int i = 0; i < waterBoxCnt; i++)
+	for (uint32_t i = 0; i < waterBoxCnt; i++)
 	{
 		Ship::WaterBoxHeader waterBox;
 		waterBox.xMin = reader->ReadInt16();

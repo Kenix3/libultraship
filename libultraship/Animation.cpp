@@ -13,18 +13,19 @@ void Ship::AnimationV0::ParseFileBinary(BinaryReader* reader, Resource* res)
 	{
 		anim->frameCount = reader->ReadInt16();
 
-		int rotValuesCnt = reader->ReadUInt32();
-		
-		for (int i = 0; i < rotValuesCnt; i++)
+		uint32_t rotValuesCnt = reader->ReadUInt32();
+		anim->rotationValues.reserve(rotValuesCnt);
+		for (uint32_t i = 0; i < rotValuesCnt; i++)
 			anim->rotationValues.push_back(reader->ReadUInt16());
 
-		int rotIndCnt = reader->ReadUInt32();
 
+		uint32_t rotIndCnt = reader->ReadUInt32();
+		anim->rotationIndices.reserve(rotIndCnt);
 		for (int i = 0; i < rotIndCnt; i++)
 		{
-			float x = reader->ReadUInt16();
-			float y = reader->ReadUInt16();
-			float z = reader->ReadUInt16();
+			uint16_t x = reader->ReadUInt16();
+			uint16_t y = reader->ReadUInt16();
+			uint16_t z = reader->ReadUInt16();
 			anim->rotationIndices.push_back(RotationIndex(x, y, z));
 		}
 		anim->limit = reader->ReadInt16();
@@ -33,14 +34,14 @@ void Ship::AnimationV0::ParseFileBinary(BinaryReader* reader, Resource* res)
 	{
 		anim->frameCount = reader->ReadInt16();
 
-		int refArrCnt = reader->ReadUInt32();
-
-		for (int i = 0; i < refArrCnt; i++)
+		uint32_t refArrCnt = reader->ReadUInt32();
+		anim->refIndexArr.reserve(refArrCnt);
+		for (uint32_t i = 0; i < refArrCnt; i++)
 			anim->refIndexArr.push_back(reader->ReadUByte());
 
-		int transformDataCnt = reader->ReadUInt32();
-
-		for (int i = 0; i < transformDataCnt; i++)
+		uint32_t transformDataCnt = reader->ReadUInt32();
+		anim->transformDataArr.reserve(transformDataCnt);
+		for (uint32_t i = 0; i < transformDataCnt; i++)
 		{
 			TransformData data;
 			data.unk_00 = reader->ReadUInt16();
@@ -52,9 +53,9 @@ void Ship::AnimationV0::ParseFileBinary(BinaryReader* reader, Resource* res)
 			anim->transformDataArr.push_back(data);
 		}
 
-		int copyValuesCnt = reader->ReadUInt32();
-
-		for (int i = 0; i < copyValuesCnt; i++)
+		uint32_t copyValuesCnt = reader->ReadUInt32();
+		anim->copyValuesArr.reserve(copyValuesCnt);
+		for (uint32_t i = 0; i < copyValuesCnt; i++)
 		{
 			anim->copyValuesArr.push_back(reader->ReadInt16());
 		}

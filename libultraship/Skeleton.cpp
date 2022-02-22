@@ -5,7 +5,7 @@ namespace Ship
     void SkeletonV0::ParseFileBinary(BinaryReader* reader, Resource* res)
     {
         Skeleton* skel = (Skeleton*)res;
-
+        
         ResourceFile::ParseFileBinary(reader, skel);
 
         skel->type = (SkeletonType)reader->ReadByte();
@@ -16,9 +16,10 @@ namespace Ship
 
         skel->limbTableType = (LimbType)reader->ReadByte();
 
-        int limbTblCnt = reader->ReadUInt32();
+        uint32_t limbTblCnt = reader->ReadUInt32();
+        skel->limbTable.reserve(limbTblCnt);
 
-        for (int i = 0; i < limbTblCnt; i++)
+        for (uint32_t i = 0; i < limbTblCnt; i++)
         {
             std::string limbPath = reader->ReadString();
 

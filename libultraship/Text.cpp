@@ -7,8 +7,9 @@ void Ship::TextV0::ParseFileBinary(BinaryReader* reader, Resource* res)
 	ResourceFile::ParseFileBinary(reader, txt);
 
 	uint32_t msgCount = reader->ReadUInt32();
+	txt->messages.reserve(msgCount);
 
-	for (int i = 0; i < msgCount; i++)
+	for (uint32_t i = 0; i < msgCount; i++)
 	{
 		MessageEntry entry;
 		entry.id = reader->ReadUInt16();

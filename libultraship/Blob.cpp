@@ -12,7 +12,7 @@ namespace Ship
 
         blob->data.reserve(dataSize);
 
-        for (int i = 0; i < dataSize; i++)
+        for (uint32_t i = 0; i < dataSize; i++)
             blob->data.push_back(reader->ReadUByte());
     }
 }

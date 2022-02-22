@@ -12,7 +12,7 @@ namespace Ship
 		ZResourceType resType = (ZResourceType)reader->ReadUInt32();
 		uint32_t arrayCnt = reader->ReadUInt32();
 
-		for (int i = 0; i < arrayCnt; i++)
+		for (uint32_t i = 0; i < arrayCnt; i++)
 		{
 			if (resType == ZResourceType::Vertex)
 			{

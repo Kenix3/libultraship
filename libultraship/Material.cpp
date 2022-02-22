@@ -23,10 +23,10 @@ namespace Ship
         offsetToShaderEntries = reader->ReadUInt32();
 
         mat->shaderID = shaderID;
-        for (int i = 0; i < shaderParamsCnt; i++)
-        {
+        mat->shaderParams.reserve(shaderParamsCnt);
+
+        for (uint32_t i = 0; i < shaderParamsCnt; i++)
             mat->shaderParams.push_back(new ShaderParam(reader));
-        }
 
         mat->cmtH = cmtH;
         mat->cmtV = cmtV;

@@ -43,7 +43,7 @@ namespace Ship
         {
             reader->Seek(headerStart + vertices, SeekOffsetType::Start);
 
-            for (int i = 0; i < numVerts; i++)
+            for (uint32_t i = 0; i < numVerts; i++)
                 vtxData[i].pos = reader->ReadVec3f();
         }
 
@@ -51,7 +51,7 @@ namespace Ship
         {
             reader->Seek(headerStart + normals, SeekOffsetType::Start);
 
-            for (int i = 0; i < numVerts; i++)
+            for (uint32_t i = 0; i < numVerts; i++)
                 vtxData[i].normal = reader->ReadVec3f();
         }
 
@@ -59,7 +59,7 @@ namespace Ship
         {
             reader->Seek(headerStart + vertexColors, SeekOffsetType::Start);
 
-            for (int i = 0; i < numVerts; i++)
+            for (uint32_t i = 0; i < numVerts; i++)
                 vtxData[i].color = reader->ReadColor3b();
         }
 
@@ -67,7 +67,7 @@ namespace Ship
         {
             reader->Seek(headerStart + uvCoords, SeekOffsetType::Start);
 
-            for (int i = 0; i < numVerts; i++)
+            for (uint32_t i = 0; i < numVerts; i++)
                 vtxData[i].uv = reader->ReadVec2f();
         }
 
@@ -77,7 +77,7 @@ namespace Ship
 
             mdl->boneWeights = new Vec2f[numVerts];
 
-            for (int i = 0; i < numVerts; i++)
+            for (uint32_t i = 0; i < numVerts; i++)
                 mdl->boneWeights[i] = reader->ReadVec2f();
         }
 

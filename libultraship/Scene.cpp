@@ -13,9 +13,10 @@ namespace Ship
 
 		ResourceFile::ParseFileBinary(reader, res);
 
-		int cmdCnt = reader->ReadInt32();
+		uint32_t cmdCnt = reader->ReadUInt32();
+		scene->commands.reserve(cmdCnt);
 
-		for (int i = 0; i < cmdCnt; i++)
+		for (uint32_t i = 0; i < cmdCnt; i++)
 			scene->commands.push_back(ParseSceneCommand(reader));
 
 		printf("SCENE PARSE END\n");
@@ -80,9 +81,10 @@ namespace Ship
 
 	ExitList::ExitList(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int numExits = reader->ReadInt32();
+		uint32_t numExits = reader->ReadUInt32();
 
-		for (int i = 0; i < numExits; i++)
+		exits.reserve(numExits);
+		for (uint32_t i = 0; i < numExits; i++)
 			exits.push_back(reader->ReadUInt16());
 	}
 
@@ -139,8 +141,8 @@ namespace Ship
 		y = 0;
 		z = 0;
 		unk_06 = 0;
-		opa = "";
-		xlu = "";
+		opa;
+		xlu;
 	}
 
 	SetMesh::SetMesh(BinaryReader* reader) : SceneCommand(reader)
@@ -148,12 +150,13 @@ namespace Ship
 		data = reader->ReadByte();
 		meshHeaderType = reader->ReadByte();
 
-		int numPoly = 1;
+		uint32_t numPoly = 1;
 
 		if (meshHeaderType != 1)
 			numPoly = reader->ReadByte();
 
-		for (int i = 0; i < numPoly; i++)
+		meshes.reserve(numPoly);
+		for (uint32_t i = 0; i < numPoly; i++)
 		{
 			MeshData mesh;
 
@@ -181,9 +184,10 @@ namespace Ship
 				mesh.imgXlu = reader->ReadString();
 
 
-				int imgCnt = reader->ReadUInt32();
+				uint32_t imgCnt = reader->ReadUInt32();
+				mesh.images.reserve(imgCnt);
 
-				for (int i = 0; i < imgCnt; i++)
+				for (uint32_t i = 0; i < imgCnt; i++)
 				{
 					BGImage img;
 
@@ -231,9 +235,10 @@ namespace Ship
 
 	SetLightingSettings::SetLightingSettings(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int cnt = reader->ReadInt32();
+		uint32_t cnt = reader->ReadInt32();
+		settings.reserve(cnt);
 
-		for (int i = 0; i < cnt; i++)
+		for (uint32_t i = 0; i < cnt; i++)
 		{
 			LightingSettings entry = LightingSettings();
 
@@ -278,11 +283,11 @@ namespace Ship
 	SetRoomList::SetRoomList(BinaryReader* reader) : SceneCommand(reader)
 	{
 		uint32_t numRooms = reader->ReadInt32();
+		rooms.reserve(numRooms);
 
-		for (int i = 0; i < numRooms; i++)
-		{
+		for (uint32_t i = 0; i < numRooms; i++)
 			rooms.push_back(SetRoom(reader));
-		}
+
 	}
 
 	SetCollisionHeader::SetCollisionHeader(BinaryReader* reader) : SceneCommand(reader)
@@ -292,14 +297,15 @@ namespace Ship
 
 	SetEntranceList::SetEntranceList(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int cnt = reader->ReadInt32();
+		uint32_t cnt = reader->ReadUInt32();
+		entrances.reserve(cnt);
 
-		for (int i = 0; i < cnt; i++)
+		for (uint32_t i = 0; i < cnt; i++)
 		{
 			EntranceEntry entry = EntranceEntry();
 			entry.startPositionIndex = reader->ReadByte();
 			entry.roomToLoad = reader->ReadByte();
-			
+
 			entrances.push_back(entry);
 		}
 	}
@@ -312,17 +318,19 @@ namespace Ship
 
 	SetObjectList::SetObjectList(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int numEntries = reader->ReadInt32();
+		uint32_t numEntries = reader->ReadUInt32();
+		objects.reserve(numEntries);
 
-		for (int i = 0; i < numEntries; i++)
+		for (uint32_t i = 0; i < numEntries; i++)
 			objects.push_back(reader->ReadUInt16());
 	}
 
 	SetStartPositionList::SetStartPositionList(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int cnt = reader->ReadInt32();
+		uint32_t cnt = reader->ReadUInt32();
+		entries.reserve(cnt);
 
-		for (int i = 0; i < cnt; i++)
+		for (uint32_t i = 0; i < cnt; i++)
 		{
 			ActorSpawnEntry entry = ActorSpawnEntry();
 
@@ -341,9 +349,10 @@ namespace Ship
 
 	SetActorList::SetActorList(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int cnt = reader->ReadInt32();
+		uint32_t cnt = reader->ReadUInt32();
+		entries.reserve(cnt);
 
-		for (int i = 0; i < cnt; i++)
+		for (uint32_t i = 0; i < cnt; i++)
 		{
 			ActorSpawnEntry entry = ActorSpawnEntry();
 
@@ -362,9 +371,10 @@ namespace Ship
 
 	SetTransitionActorList::SetTransitionActorList(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int cnt = reader->ReadInt32();
+		uint32_t cnt = reader->ReadUInt32();
+		entries.reserve(cnt);
 
-		for (int i = 0; i < cnt; i++)
+		for (uint32_t i = 0; i < cnt; i++)
 		{
 			TransitionActorEntry entry = TransitionActorEntry();
 
@@ -393,9 +403,10 @@ namespace Ship
 
 	SetLightList::SetLightList(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int cnt = reader->ReadInt32();
+		uint32_t cnt = reader->ReadUInt32();
+		lights.reserve(cnt);
 
-		for (int i = 0; i < cnt; i++)
+		for (uint32_t i = 0; i < cnt; i++)
 		{
 			LightInfo light = LightInfo();
 
@@ -418,9 +429,10 @@ namespace Ship
 
 	SetAlternateHeaders::SetAlternateHeaders(BinaryReader* reader) : SceneCommand(reader)
 	{
-		int numHeaders = reader->ReadInt32();
+		uint32_t numHeaders = reader->ReadUInt32();
+		headers.reserve(numHeaders);
 
-		for (int i = 0; i < numHeaders; i++)
+		for (uint32_t i = 0; i < numHeaders; i++)
 			headers.push_back(reader->ReadString());
 	}
 
@@ -432,8 +444,9 @@ namespace Ship
 	SetPathways::SetPathways(BinaryReader* reader) : SceneCommand(reader)
 	{
 		uint32_t numPaths = reader->ReadUInt32();
+		paths.reserve(numPaths);
 
-		for (int i = 0; i < numPaths; i++)
+		for (uint32_t i = 0; i < numPaths; i++)
 			paths.push_back(reader->ReadString());
 	}
 }

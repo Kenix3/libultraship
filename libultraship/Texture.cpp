@@ -16,7 +16,7 @@ namespace Ship
 
         tex->imageData = new uint8_t[dataSize];
 
-        for (int i = 0; i < dataSize; i++)
+        for (uint32_t i = 0; i < dataSize; i++)
             tex->imageData[i] = reader->ReadUByte();
     }
 }
