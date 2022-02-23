@@ -232,6 +232,8 @@
     <ClCompile Include="Environment.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="mixer.c" />
+    <ClCompile Include="SDLAudioPlayer.cpp" />
     <ClCompile Include="SohConsole.cpp" />
     <ClCompile Include="Factories\AnimationFactory.cpp" />
     <ClCompile Include="Factories\ArrayFactory.cpp" />
@@ -304,10 +306,14 @@
     <ClCompile Include="SDLController.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="abi.h" />
+    <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="Blob.h" />
     <ClInclude Include="Environment.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="mixer.h" />
+    <ClInclude Include="SDLAudioPlayer.h" />
     <ClInclude Include="SohConsole.h" />
     <ClInclude Include="Factories\ArrayFactory.h" />
     <ClInclude Include="Factories\BlobFactory.h" />

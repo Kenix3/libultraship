@@ -1995,7 +1995,6 @@ static void gfx_run_dl(Gfx* cmd) {
             ResourceMgr_GetNameByCRC(hash, dlName);
 
             //printf("G_MARKER: %s\n", dlName);
-            int bp = 0;
 #endif
 
             markerOn = true;
