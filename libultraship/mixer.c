@@ -500,8 +500,8 @@ void aFilterImpl(uint8_t flags, uint16_t count_or_buf, int16_t *state_or_filter)
             memcpy(tmp + 8, buf, 8 * sizeof(int16_t));
             for (int i = 0; i < 8; i++) {
                 int64_t sample = 0x4000; // round term
-                for (int j = 0; j <= 8; j++) {
-                    sample += rspa.filter[j] * tmp[8 + i - j];
+                for (int j = 0; j < 8; j++) {
+                    sample += tmp[i + j] * rspa.filter[7 - j];
                 }
                 buf[i] = clamp16((int32_t)(sample >> 15));
             }

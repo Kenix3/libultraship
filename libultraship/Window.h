@@ -7,6 +7,8 @@
 #include "GlobalCtx2.h"
 
 namespace Ship {
+	class AudioPlayer;
+
 	class Window {
 		public:
 			static std::shared_ptr<Ship::Controller> Controllers[MAXCONTROLLERS];
@@ -25,6 +27,7 @@ namespace Ship {
 			uint32_t GetCurrentWidth();
 			uint32_t GetCurrentHeight();
 			std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
+			std::shared_ptr<AudioPlayer> GetAudioPlayer() { return APlayer; }
 			static int32_t lastScancode;
 
 		protected:
@@ -33,8 +36,10 @@ namespace Ship {
 			static bool KeyUp(int32_t dwScancode);
 			static void AllKeysUp(void);
 			static void OnFullscreenChanged(bool bIsNowFullscreen);
+			void SetAudioPlayer();
 
 			std::weak_ptr<GlobalCtx2> Context;
+			std::shared_ptr<AudioPlayer> APlayer;
 
 			GfxWindowManagerAPI* WmApi;
 			GfxRenderingAPI* RenderingApi;

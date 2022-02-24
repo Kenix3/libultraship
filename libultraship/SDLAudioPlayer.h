@@ -3,7 +3,7 @@
 #include <SDL2/SDL.h>
 
 namespace Ship {
-	class SDLAudioPlayer : AudioPlayer {
+	class SDLAudioPlayer : public AudioPlayer {
 	public:
 		SDLAudioPlayer() {  };
 

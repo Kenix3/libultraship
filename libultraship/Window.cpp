@@ -10,6 +10,8 @@
 #include "Texture.h"
 #include "Blob.h"
 #include "Matrix.h"
+#include "AudioPlayer.h"
+#include "SDLAudioPlayer.h"
 #include "Lib/Fast3D/gfx_pc.h"
 #include "Lib/Fast3D/gfx_sdl.h"
 #include "Lib/Fast3D/gfx_opengl.h"
@@ -184,7 +186,7 @@ namespace Ship {
     std::shared_ptr<Ship::Controller> Window::Controllers[MAXCONTROLLERS] = { nullptr };
     int32_t Window::lastScancode;
 
-    Window::Window(std::shared_ptr<GlobalCtx2> Context) : Context(Context) {
+    Window::Window(std::shared_ptr<GlobalCtx2> Context) : Context(Context), APlayer(nullptr) {
         WmApi = nullptr;
         RenderingApi = nullptr;
         bIsFullscreen = false;
@@ -201,6 +203,7 @@ namespace Ship {
         ConfigFile& Conf = *pConf.get();
 
         SetWindowManager(&WmApi, &RenderingApi);
+        SetAudioPlayer();
         bIsFullscreen = Ship::stob(Conf["WINDOW"]["FULLSCREEN"]);
         dwWidth = Ship::stoi(Conf["WINDOW"]["WINDOW WIDTH"], 320);
         dwHeight = Ship::stoi(Conf["WINDOW"]["WINDOW HEIGHT"], 240);
@@ -306,5 +309,9 @@ namespace Ship {
     uint32_t Window::GetCurrentHeight() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
         return dwHeight;
+    }
+
+    void Window::SetAudioPlayer() {
+        APlayer = std::make_shared<SDLAudioPlayer>();
     }
 }

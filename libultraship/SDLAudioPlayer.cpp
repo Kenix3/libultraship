@@ -12,7 +12,7 @@ namespace Ship {
             want.freq = 32000;
             want.format = AUDIO_S16;
             want.channels = 2;
-            want.samples = 512;
+            want.samples = 1024;
             want.callback = NULL;
             Device = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
             if (Device == 0) {
@@ -29,7 +29,7 @@ namespace Ship {
 		}
 
 		int SDLAudioPlayer::GetDesiredBuffered(void) {
-            return 1120;
+            return 1680;
 		}
 
 		void SDLAudioPlayer::Play(const uint8_t* Buffer, uint32_t BufferLen) {
