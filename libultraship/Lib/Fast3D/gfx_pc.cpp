@@ -1952,6 +1952,7 @@ static inline void* seg_addr(uintptr_t w1)
         segNum -= 0xF0;
 
         uint32_t offset = w1 & 0x00FFFFFF;
+        //offset = 0; // Cursed Malon bug
 
         if (segmentPointers[segNum] != 0)
             return (void*)(segmentPointers[segNum] + offset);

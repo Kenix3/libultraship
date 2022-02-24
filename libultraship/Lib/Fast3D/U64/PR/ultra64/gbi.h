@@ -157,14 +157,15 @@
 #define G_TEXRECT       0xe4    /* -28 */
 
 // CUSTOM OTR COMMANDS
-#define	G_SETTIMG_OTR		    0x20
+#define	G_SETTIMG_OTR		  0x20
 #define G_DL_OTR			    0x31
 #define G_VTX_OTR			    0x32
 #define G_MARKER			    0x33
-#define G_INVALTEXCACHE         0x34
-#define G_BRANCH_Z_OTR          0x35
-#define G_MTX_OTR               0x36
-#define G_TEXRECT_WIDE          0x37
+#define G_INVALTEXCACHE   0x34
+#define G_BRANCH_Z_OTR    0x35
+#define G_MTX_OTR         0x36
+#define G_TEXRECT_WIDE    0x37
+#define G_TEXRECT_WIDE    0x37
 
 /*
  * The following commands are the "generated" RDP commands; the user
