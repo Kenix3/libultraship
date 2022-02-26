@@ -624,7 +624,9 @@ static void gfx_opengl_finish_render(void) {
 
 static uint16_t gfx_opengl_get_pixel_depth(float x, float y) {
     float depth;
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glReadPixels(x, y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return depth * 65532.0f;
 }
 

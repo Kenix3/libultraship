@@ -300,6 +300,7 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="Vertex.cpp" />
+    <ClCompile Include="WasapiAudioPlayer.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WindowShim.cpp" />
     <ClCompile Include="stox.cpp" />
@@ -388,6 +389,7 @@
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SkeletonLimb.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="WasapiAudioPlayer.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="UltraController.h" />
     <ClInclude Include="SDLController.h" />

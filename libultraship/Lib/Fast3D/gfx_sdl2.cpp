@@ -112,6 +112,8 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
 }
 
+extern float divisor_num;
+
 void test_vsync(void) {
     // Even if SDL_GL_SetSwapInterval succeeds, it doesn't mean that VSync actually works.
     // A 60 Hz monitor should have a swap interval of 16.67 milliseconds.
@@ -140,6 +142,8 @@ void test_vsync(void) {
     end = SDL_GetTicks();
 
     float average = 4.0 * 1000.0 / (end - start);
+
+    divisor_num = average;
 
     vsync_enabled = 1;
     if (average > 27 && average < 33) {

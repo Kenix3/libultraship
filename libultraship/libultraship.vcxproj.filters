@@ -306,6 +306,9 @@
     <ClCompile Include="Utils.cpp">
       <Filter>Source Files\CustomImpl\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="WasapiAudioPlayer.cpp">
+      <Filter>Source Files\Audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
@@ -564,6 +567,9 @@
       <Filter>Source Files\Audio</Filter>
     </ClInclude>
     <ClInclude Include="SDLAudioPlayer.h">
+      <Filter>Source Files\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="WasapiAudioPlayer.h">
       <Filter>Source Files\Audio</Filter>
     </ClInclude>
   </ItemGroup>
