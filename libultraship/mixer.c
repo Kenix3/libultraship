@@ -6,20 +6,16 @@
 
 #pragma GCC optimize ("unroll-loops")
 
-// DONE: Generic rounding macros
 #define ROUND_UP_64(v) (((v) + 63) & ~63)
 #define ROUND_UP_32(v) (((v) + 31) & ~31)
 #define ROUND_UP_16(v) (((v) + 15) & ~15)
 #define ROUND_UP_8(v) (((v) + 7) & ~7)
 #define ROUND_DOWN_16(v) ((v) & ~0xf)
 
-// DONE: dmem access macros
-// Hardware DMEM = 0x1000, take off 0x3C0 for the fixed data, and 0x50 for tmp data
 #define DMEM_BUF_SIZE (0x1000 - 0x3C0 - 0x40)
 #define BUF_U8(a) (rspa.buf.as_u8 + ((a) - 0x3C0))
 #define BUF_S16(a) (rspa.buf.as_s16 + ((a) - 0x3C0) / sizeof(int16_t))
 
-// TODO: Verify struct
 static struct {
     uint16_t in;
     uint16_t out;
@@ -43,7 +39,6 @@ static struct {
     } buf;
 } rspa;
 
-// DONE: Data appears identical to SM64 (might be worth checking every number to be 100% sure)
 static int16_t resample_table[64][4] = {
     {0x0c39, 0x66ad, 0x0d46, 0xffdf}, {0x0b39, 0x6696, 0x0e5f, 0xffd8},
     {0x0a44, 0x6669, 0x0f83, 0xffd0}, {0x095a, 0x6626, 0x10b4, 0xffc8},
@@ -79,7 +74,6 @@ static int16_t resample_table[64][4] = {
     {0xffd8, 0x0e5f, 0x6696, 0x0b39}, {0xffdf, 0x0d46, 0x66ad, 0x0c39}
 };
 
-// DONE: Generic clamp function
 static inline int16_t clamp16(int32_t v) {
     if (v < -0x8000) {
         return -0x8000;
@@ -89,7 +83,6 @@ static inline int16_t clamp16(int32_t v) {
     return (int16_t)v;
 }
 
-// DONE: Generic clamp function
 static inline int32_t clamp32(int64_t v) {
     if (v < -0x7fffffff - 1) {
         return -0x7fffffff - 1;
@@ -99,35 +92,29 @@ static inline int32_t clamp32(int64_t v) {
     return (int32_t)v;
 }
 
-// COMPLETE: Identical to SM64
 void aClearBufferImpl(uint16_t addr, int nbytes) {
     nbytes = ROUND_UP_16(nbytes);
     memset(BUF_U8(addr), 0, nbytes);
 }
 
-// TODO: Nearly Identical to NEW_AUDIO_UCODE
 void aLoadBufferImpl(const void *source_addr, uint16_t dest_addr, uint16_t nbytes) {
     memcpy(BUF_U8(dest_addr), source_addr, ROUND_DOWN_16(nbytes));
 }
 
-// TODO: Nearly Identical to NEW_AUDIO_UCODE
 void aSaveBufferImpl(uint16_t source_addr, int16_t *dest_addr, uint16_t nbytes) {
     memcpy(dest_addr, BUF_S16(source_addr), ROUND_DOWN_16(nbytes));
 }
 
-// TODO: Nearly Identical to SM64
 void aLoadADPCMImpl(int num_entries_times_16, const int16_t *book_source_addr) {
     memcpy(rspa.adpcm_table, book_source_addr, num_entries_times_16);
 }
 
-// COMPLETE: Identical to SM64
 void aSetBufferImpl(uint8_t flags, uint16_t in, uint16_t out, uint16_t nbytes) {
     rspa.in = in;
     rspa.out = out;
     rspa.nbytes = nbytes;
 }
 
-// COMPLETE: Identical to SM64
 void aInterleaveImpl(uint16_t dest, uint16_t left, uint16_t right, uint16_t c) {
     int count = ROUND_UP_8(c) / sizeof(int16_t) / 4;
     int16_t *l = BUF_S16(left);
@@ -154,18 +141,15 @@ void aInterleaveImpl(uint16_t dest, uint16_t left, uint16_t right, uint16_t c) {
     }
 }
 
-// COMPLETE: Identical to SM64
 void aDMEMMoveImpl(uint16_t in_addr, uint16_t out_addr, int nbytes) {
     nbytes = ROUND_UP_16(nbytes);
     memmove(BUF_U8(out_addr), BUF_U8(in_addr), nbytes);
 }
 
-// COMPLETE: Identical to SM64
 void aSetLoopImpl(ADPCM_STATE *adpcm_loop_state) {
     rspa.adpcm_loop_state = adpcm_loop_state;
 }
 
-// COMPLETE: New OoT functionality incorporated (should hopefully work)
 void aADPCMdecImpl(uint8_t flags, ADPCM_STATE state) {
     uint8_t *in = BUF_U8(rspa.in);
     int16_t *out = BUF_S16(rspa.out);
@@ -217,8 +201,6 @@ void aADPCMdecImpl(uint8_t flags, ADPCM_STATE state) {
     memcpy(state, out - 16, 16 * sizeof(int16_t));
 }
 
-// PSEUDOCOMPLETE: Appears very similar but with data_0040 and data_0060 extra
-// Should be similar, only DMA status stuff removed
 void aResampleImpl(uint8_t flags, uint16_t pitch, RESAMPLE_STATE state) {
     int16_t tmp[16];
     int16_t *in_initial = BUF_S16(rspa.in);
@@ -270,12 +252,6 @@ void aResampleImpl(uint8_t flags, uint16_t pitch, RESAMPLE_STATE state) {
     memcpy(state + 8, in, 8 * sizeof(int16_t));
 }
 
-    /* 0x00 */ uint16_t vol[2]; // 0 - 2
-    /* 0x04 */ uint16_t rate[2]; // 
-    /* 0x08 */ uint16_t vol_wet;
-    /* 0x0A */ uint16_t rate_wet;
-
-// COMPLETE: Identical to SM64
 void aEnvSetup1Impl(uint8_t initial_vol_wet, uint16_t rate_wet, uint16_t rate_left, uint16_t rate_right) {
     rspa.vol_wet = (uint16_t)(initial_vol_wet << 8);
     rspa.rate_wet = rate_wet;
@@ -283,13 +259,11 @@ void aEnvSetup1Impl(uint8_t initial_vol_wet, uint16_t rate_wet, uint16_t rate_le
     rspa.rate[1] = rate_right;
 }
 
-// COMPLETE: Identical to SM64
 void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right) {
     rspa.vol[0] = initial_vol_left;
     rspa.vol[1] = initial_vol_right;
 }
 
-// COMPLETE: Very similar to OoT but with extra loads
 void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
 				   bool neg_3, bool neg_2,
                    bool neg_left, bool neg_right,
@@ -326,8 +300,6 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
     } while (n > 0);
 }
 
-// PSEUDOCOMPLETE: Nearly Identical to SM64, code is identical. Only different is reordered arguments?
-// TODO: Double check and compare SM64 Versions
 void aMixImpl(uint16_t count, int16_t gain, uint16_t in_addr, uint16_t out_addr) {
     int nbytes = ROUND_UP_32(ROUND_DOWN_16(count << 4));
     int16_t *in = BUF_S16(in_addr);
@@ -355,7 +327,6 @@ void aMixImpl(uint16_t count, int16_t gain, uint16_t in_addr, uint16_t out_addr)
     }
 }
 
-// COMPLETE: unused, not updated or checked. Could make empty
 void aS8DecImpl(uint8_t flags, ADPCM_STATE state) {
     uint8_t *in = BUF_U8(rspa.in);
     int16_t *out = BUF_S16(rspa.out);
@@ -393,7 +364,6 @@ void aS8DecImpl(uint8_t flags, ADPCM_STATE state) {
     memcpy(state, out - 16, 16 * sizeof(int16_t));
 }
 
-// INCOMPLETE: OoT has extra argument a4 that replaces 0x7FFF (w0) from SM64, code is identical otherwise
 void aAddMixerImpl(uint16_t in_addr, uint16_t out_addr, uint16_t count) {
     int16_t *in = BUF_S16(in_addr);
     int16_t *out = BUF_S16(out_addr);
@@ -421,7 +391,6 @@ void aAddMixerImpl(uint16_t in_addr, uint16_t out_addr, uint16_t count) {
     } while (nbytes > 0);
 }
 
-// INCOMPLETE: OoT has extra argument a4 that replaces 0x80 (w1) from SM64, code is identical otherwise
 void aDuplicateImpl(uint16_t count, uint16_t in_addr, uint16_t out_addr) {
     uint8_t* in = BUF_U8(in_addr);
     uint8_t *out = BUF_U8(out_addr);
@@ -434,7 +403,6 @@ void aDuplicateImpl(uint16_t count, uint16_t in_addr, uint16_t out_addr) {
     } while (count-- > 0);
 }
 
-// COMPLETE: Identical to SM64
 void aResampleZohImpl(uint16_t pitch, uint16_t start_fract) {
     int16_t *in = BUF_S16(rspa.in);
     int16_t *out = BUF_S16(rspa.out);
@@ -452,7 +420,6 @@ void aResampleZohImpl(uint16_t pitch, uint16_t start_fract) {
     } while (nbytes > 0);
 }
 
-// COMPLETE: Nearly Identical to SM64's aDownsampleHalfImpl, code is identical. Only different is reordered arguments
 void aInterlImpl(uint16_t in_addr, uint16_t out_addr, uint16_t n_samples) {
     int16_t *in = BUF_S16(in_addr);
     int16_t *out = BUF_S16(out_addr);
@@ -472,9 +439,6 @@ void aInterlImpl(uint16_t in_addr, uint16_t out_addr, uint16_t n_samples) {
     } while (n > 0);
 }
 
-// INCOMPLETE: Appears similar but with minor differences
-// 0x20 instead of 0x10 in third line (@buffer2, tmpDataPtr, 0x20)
-// Otherwise, only DMA status differences
 void aFilterImpl(uint8_t flags, uint16_t count_or_buf, int16_t *state_or_filter) {
     if (flags > A_INIT) {
         rspa.filter_count = ROUND_UP_16(count_or_buf);
@@ -516,7 +480,6 @@ void aFilterImpl(uint8_t flags, uint16_t count_or_buf, int16_t *state_or_filter)
     }
 }
 
-// COMPLETE: Identical to SM64
 void aHiLoGainImpl(uint8_t g, uint16_t count, uint16_t addr) {
     int16_t *samples = BUF_S16(addr);
     int nbytes = ROUND_UP_32(count);
@@ -535,11 +498,9 @@ void aHiLoGainImpl(uint8_t g, uint16_t count, uint16_t addr) {
     } while (nbytes > 0);
 }
 
-// COMPLETE: unused, not updated or checked. Could make empty
 void aUnkCmd3Impl(uint16_t a, uint16_t b, uint16_t c) {
 }
 
-// COMPLETE: unused, not updated or checked. Could make empty
 void aUnkCmd19Impl(uint8_t f, uint16_t count, uint16_t out_addr, uint16_t in_addr) {
     int nbytes = ROUND_UP_64(count);
     int16_t *in = BUF_S16(in_addr + f);
