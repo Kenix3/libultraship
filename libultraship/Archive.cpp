@@ -247,17 +247,18 @@ namespace Ship {
 
 	bool Archive::LoadMainMPQ(bool enableWriting, bool genCRCMap) {
 		HANDLE mpqHandle = NULL;
+		auto fullPath = std::filesystem::absolute(MainPath).string();
 
-		TCHAR* t_filename = new TCHAR[MainPath.size() + 1];
-		t_filename[MainPath.size()] = 0;
-		std::copy(MainPath.begin(), MainPath.end(), t_filename);
+		TCHAR* t_filename = new TCHAR[fullPath.size() + 1];
+		t_filename[fullPath.size()] = 0;
+		std::copy(fullPath.begin(), fullPath.end(), t_filename);
 
 		if (!SFileOpenArchive(t_filename, 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
-			SPDLOG_ERROR("({}) Failed to open main mpq file {}.", GetLastError(), MainPath.c_str());
+			SPDLOG_ERROR("({}) Failed to open main mpq file {}.", GetLastError(), fullPath.c_str());
 			return false;
 		}
 
-		mpqHandles[MainPath] = mpqHandle;
+		mpqHandles[fullPath] = mpqHandle;
 		mainMPQ = mpqHandle;
 
 		if (genCRCMap) {
@@ -279,10 +280,15 @@ namespace Ship {
 
 	bool Archive::LoadPatchMPQ(std::string path) {
 		HANDLE patchHandle = NULL;
+		auto fullPath = std::filesystem::absolute(path).string();
 
-		TCHAR* t_filename = new TCHAR[path.size() + 1];
+		if (mpqHandles.contains(fullPath)) {
+			return true;
+		}
+
+		TCHAR* t_filename = new TCHAR[fullPath.size() + 1];
 		t_filename[path.size()] = 0;
-		std::copy(path.begin(), path.end(), t_filename);
+		std::copy(fullPath.begin(), fullPath.end(), t_filename);
 
 		if (!SFileOpenArchive(t_filename, 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
 			SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path.c_str(), MainPath.c_str());
@@ -294,7 +300,7 @@ namespace Ship {
 			return false;
 		}
 
-		mpqHandles[path] = patchHandle;
+		mpqHandles[fullPath] = patchHandle;
 
 		return true;
 	}
