@@ -44,6 +44,9 @@ namespace Ship {
             MainPath = "oot.otr";
         }
         PatchesPath = (*Config)["ARCHIVE"]["Patches Directory"];
+        if (PatchesPath.empty()) {
+            PatchesPath = "./";
+        }
         ResMan = std::make_shared<ResourceMgr>(GlobalCtx2::GetInstance(), MainPath, PatchesPath);
         Win = std::make_shared<Window>(GlobalCtx2::GetInstance());
     }
