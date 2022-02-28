@@ -37,7 +37,7 @@ extern "C" {
         }
 
         // TODO: THis for loop is debug. Burn it with fire.
-        for (int i = 0; i < SDL_NumJoysticks(); i++) {
+        for (size_t i = 0; i < SDL_NumJoysticks(); i++) {
             if (SDL_IsGameController(i)) {
                 // Get the GUID from SDL
                 char buf[33];
@@ -53,13 +53,13 @@ extern "C" {
             std::string ControllerType = Conf["CONTROLLERS"]["CONTROLLER " + std::to_string(i+1)];
             mINI::INIStringUtil::toLower(ControllerType);
 
-            if (ControllerType == "keyboard") {
-                Ship::Controller* pad = new Ship::KeyboardController(i);
-                Ship::Window::Controllers[i] = std::shared_ptr<Ship::Controller>(pad);
+            if (ControllerType == "auto") {
+                Ship::Window::Controllers[i].push_back(std::make_shared<Ship::KeyboardController>(i));
+                Ship::Window::Controllers[i].push_back(std::make_shared<Ship::SDLController>(i));
+            } else if (ControllerType == "keyboard") {
+                Ship::Window::Controllers[i].push_back(std::make_shared<Ship::KeyboardController>(i));
             } else if (ControllerType == "usb") {
-                // TODO: switch controller types based on the window used by Fast3D
-                Ship::Controller* pad = new Ship::SDLController(i);
-                Ship::Window::Controllers[i] = std::shared_ptr<Ship::Controller>(pad);
+                Ship::Window::Controllers[i].push_back(std::make_shared<Ship::SDLController>(i));
             } else if (ControllerType == "unplugged") {
                 // Do nothing for unplugged controllers
             } else {
@@ -69,7 +69,7 @@ extern "C" {
 
         *controllerBits = 0;
         for (size_t i = 0; i < __osMaxControllers; i++) {
-            if (Ship::Window::Controllers[i] != nullptr) {
+            if (Ship::Window::Controllers[i].size() > 0) {
                 *controllerBits |= 1 << i;
             }
         }
@@ -88,8 +88,8 @@ extern "C" {
         pad->err_no = 0;
 
         for (size_t i = 0; i < __osMaxControllers; i++) {
-            if (Ship::Window::Controllers[i] != nullptr) {
-                Ship::Window::Controllers[i]->Read(&pad[i]);
+            for (size_t j = 0; j < Ship::Window::Controllers[i].size(); j++) {
+                Ship::Window::Controllers[i][j]->Read(&pad[i]);
             }
         }
     }
@@ -100,8 +100,7 @@ extern "C" {
         return (char*)hashStr.c_str();
     }
 
-    Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc)
-    {
+    Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc) {
         std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
 
         if (hashStr != "") {
@@ -117,54 +116,45 @@ extern "C" {
         }
     }
 
-    int32_t* ResourceMgr_LoadMtxByCRC(uint64_t crc)
-    {
+    int32_t* ResourceMgr_LoadMtxByCRC(uint64_t crc) {
         std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
 
         if (hashStr != "") {
             auto res = std::static_pointer_cast<Ship::Matrix>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr));
             return (int32_t*)res->mtx.data();
-        }
-        else {
+        } else {
             return nullptr;
         }
     }
 
-    Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc)
-    {
+    Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc) {
         std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
 
         if (hashStr != "") {
             auto res = std::static_pointer_cast<Ship::DisplayList>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr));
             return (Gfx*)&res->instructions[0];
-        }
-        else {
+        } else {
             return nullptr;
         }
     }
 
-    char* ResourceMgr_LoadTexByCRC(uint64_t crc) 
-    {
+    char* ResourceMgr_LoadTexByCRC(uint64_t crc)  {
         std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
 
-        if (hashStr != "") 
-        {
+        if (hashStr != "")  {
             auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr).get();
             return (char*)res->imageData;
-        }
-        else {
+        } else {
             return nullptr;
         }
     }
 
-    char* ResourceMgr_LoadTexByName(char* texPath) 
-    {
+    char* ResourceMgr_LoadTexByName(char* texPath) {
         auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(texPath).get();
         return (char*)res->imageData;
     }
 
-    char* ResourceMgr_LoadBlobByName(char* blobPath)
-    {
+    char* ResourceMgr_LoadBlobByName(char* blobPath) {
         auto res = (Ship::Blob*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(blobPath).get();
         return (char*)res->data.data();
     }
@@ -179,12 +169,12 @@ extern "C" {
     }
 }
 
-extern "C" struct GfxWindowManagerAPI gfx_sdl;
+extern "C" GfxWindowManagerAPI gfx_sdl;
 void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi);
 extern "C" void ToggleConsole();
 
 namespace Ship {
-    std::shared_ptr<Ship::Controller> Window::Controllers[MAXCONTROLLERS] = { nullptr };
+    std::map<size_t, std::vector<std::shared_ptr<Controller>>> Window::Controllers;
     int32_t Window::lastScancode;
 
     Window::Window(std::shared_ptr<GlobalCtx2> Context) : Context(Context), APlayer(nullptr) {
@@ -247,10 +237,12 @@ namespace Ship {
     bool Window::KeyDown(int32_t dwScancode) {
         bool bIsProcessed = false;
         for (size_t i = 0; i < __osMaxControllers; i++) {
-            KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i].get());
-            if (pad != nullptr) {
-                if (pad->PressButton(dwScancode)) {
-                    bIsProcessed = true;
+            for (size_t j = 0; j < Controllers[i].size(); j++) {
+                KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i][j].get());
+                if (pad != nullptr) {
+                    if (pad->PressButton(dwScancode)) {
+                        bIsProcessed = true;
+                    }
                 }
             }
         }
@@ -274,10 +266,12 @@ namespace Ship {
 
         bool bIsProcessed = false;
         for (size_t i = 0; i < __osMaxControllers; i++) {
-            KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i].get());
-            if (pad != nullptr) {
-                if (pad->ReleaseButton(dwScancode)) {
-                    bIsProcessed = true;
+            for (size_t j = 0; j < Controllers[i].size(); j++) {
+                KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i][j].get());
+                if (pad != nullptr) {
+                    if (pad->ReleaseButton(dwScancode)) {
+                        bIsProcessed = true;
+                    }
                 }
             }
         }
@@ -287,9 +281,11 @@ namespace Ship {
 
     void Window::AllKeysUp(void) {
         for (size_t i = 0; i < __osMaxControllers; i++) {
-            KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i].get());
-            if (pad != nullptr) {
-                pad->ReleaseAllButtons();
+            for (size_t j = 0; j < Controllers[i].size(); j++) {
+                KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i][j].get());
+                if (pad != nullptr) {
+                    pad->ReleaseAllButtons();
+                }
             }
         }
     }

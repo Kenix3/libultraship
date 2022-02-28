@@ -11,7 +11,8 @@ namespace Ship {
 
 	class Window {
 		public:
-			static std::shared_ptr<Ship::Controller> Controllers[MAXCONTROLLERS];
+			static std::map<size_t, std::vector<std::shared_ptr<Controller>>> Controllers;
+			static int32_t lastScancode;
 
 			Window(std::shared_ptr<GlobalCtx2> Context);
 			~Window();
@@ -28,7 +29,6 @@ namespace Ship {
 			uint32_t GetCurrentHeight();
 			std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
 			std::shared_ptr<AudioPlayer> GetAudioPlayer() { return APlayer; }
-			static int32_t lastScancode;
 
 		protected:
 		private:

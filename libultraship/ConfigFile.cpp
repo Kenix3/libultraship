@@ -58,7 +58,7 @@ namespace Ship {
 		(*this)["ARCHIVE"]["Main Archive"] = "oot.otr";
 		(*this)["ARCHIVE"]["Patches Directory"] = "";
 
-		(*this)["CONTROLLERS"]["CONTROLLER 1"] = "Keyboard";
+		(*this)["CONTROLLERS"]["CONTROLLER 1"] = "Auto";
 		(*this)["CONTROLLERS"]["CONTROLLER 2"] = "Unplugged";
 		(*this)["CONTROLLERS"]["CONTROLLER 3"] = "Unplugged";
 		(*this)["CONTROLLERS"]["CONTROLLER 4"] = "Unplugged";

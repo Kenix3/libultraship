@@ -20,11 +20,13 @@ namespace Ship {
     bool SDLController::IsGuidInUse(std::string guid) {
         // Check if the GUID is loaded in any other controller;
         for (size_t i = 0; i < __osMaxControllers; i++) {
-            SDLController* OtherCont = dynamic_cast<SDLController*>(Window::Controllers[i].get());
+            for (size_t j = 0; j < Window::Controllers[i].size(); j++) {
+	            SDLController* OtherCont = dynamic_cast<SDLController*>(Window::Controllers[i][j].get());
 
-            if (OtherCont != nullptr && OtherCont->GetGuid().compare(guid) == 0) {
-                return true;
-            }
+	            if (OtherCont != nullptr && OtherCont->GetGuid().compare(guid) == 0) {
+	                return true;
+	            }
+			}
         }
 
         return false;

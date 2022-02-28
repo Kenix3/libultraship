@@ -6,32 +6,38 @@
 namespace Ship {
 	Controller::Controller(int32_t dwControllerNumber) : dwControllerNumber(dwControllerNumber) {
 		dwPressedButtons = 0;
+		wStickX = 0;
+		wStickY = 0;
 		Attachment = nullptr;
 	}
 
 	void Controller::Read(OSContPad* pad) {
 		ReadFromSource();
 
-		pad->button = dwPressedButtons & 0xFFFF;
+		pad->button |= dwPressedButtons & 0xFFFF;
 
-		if (dwPressedButtons & BTN_STICKLEFT) {
-			pad->stick_x = -128;
-		}
-		else if (dwPressedButtons & BTN_STICKRIGHT) {
-			pad->stick_x = 127;
-		}
-		else {
-			pad->stick_x = wStickX;
+		if (pad->stick_x == 0) {
+			if (dwPressedButtons & BTN_STICKLEFT) {
+				pad->stick_x = -128;
+			}
+			else if (dwPressedButtons & BTN_STICKRIGHT) {
+				pad->stick_x = 127;
+			}
+			else {
+				pad->stick_x = wStickX;
+			}
 		}
 
-		if (dwPressedButtons & BTN_STICKDOWN) {
-			pad->stick_y = -128;
-		}
-		else if (dwPressedButtons & BTN_STICKUP) {
-			pad->stick_y = 127;
-		}
-		else {
-			pad->stick_y = wStickY;
+		if (pad->stick_y == 0) {
+			if (dwPressedButtons & BTN_STICKDOWN) {
+				pad->stick_y = -128;
+			}
+			else if (dwPressedButtons & BTN_STICKUP) {
+				pad->stick_y = 127;
+			}
+			else {
+				pad->stick_y = wStickY;
+			}
 		}
 	}
 
