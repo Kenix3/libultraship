@@ -25,6 +25,7 @@ extern "C" {
     struct OSMesgQueue;
 
     uint8_t __osMaxControllers = MAXCONTROLLERS;
+    uint8_t __enableGameInput = 1;
 
     int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status) {
         std::shared_ptr<Ship::ConfigFile> pConf = Ship::GlobalCtx2::GetInstance()->GetConfig();
@@ -35,7 +36,7 @@ extern "C" {
             exit(EXIT_FAILURE);
         }
 
-        // TODO: THis for loop is debug. Burn it with fire.
+        // TODO: This for loop is debug. Burn it with fire.
         for (size_t i = 0; i < SDL_NumJoysticks(); i++) {
             if (SDL_IsGameController(i)) {
                 // Get the GUID from SDL
@@ -86,9 +87,12 @@ extern "C" {
         pad->stick_y = 0;
         pad->err_no = 0;
 
-        for (size_t i = 0; i < __osMaxControllers; i++) {
-            for (size_t j = 0; j < Ship::Window::Controllers[i].size(); j++) {
-                Ship::Window::Controllers[i][j]->Read(&pad[i]);
+        if (__enableGameInput)
+        {
+            for (size_t i = 0; i < __osMaxControllers; i++) {
+                for (size_t j = 0; j < Ship::Window::Controllers[i].size(); j++) {
+                    Ship::Window::Controllers[i][j]->Read(&pad[i]);
+                }
             }
         }
     }
@@ -170,7 +174,6 @@ extern "C" {
 
 extern "C" GfxWindowManagerAPI gfx_sdl;
 void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi);
-extern "C" void ToggleConsole();
 
 namespace Ship {
     std::map<size_t, std::vector<std::shared_ptr<Controller>>> Window::Controllers;
@@ -259,9 +262,10 @@ namespace Ship {
             GlobalCtx2::GetInstance()->GetWindow()->ToggleFullscreen();
         }
 
-        if (dwScancode == Ship::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"])) {
-            ToggleConsole();
-        }
+        // OTRTODO: Rig with Kirito's console?
+        //if (dwScancode == Ship::stoi(Conf["KEYBOARD SHORTCUTS"]["KEY_CONSOLE"])) {
+        //    ToggleConsole();
+        //}
 
         bool bIsProcessed = false;
         for (size_t i = 0; i < __osMaxControllers; i++) {

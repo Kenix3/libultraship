@@ -12,10 +12,6 @@
  * Begin shims for gfx_pc.cpp. Eventually, a file from SOH repo should be moved in here.
  */
 
-//void ToggleConsole() 
-//{
-//	
-//}
 /*
  * End empty shims
  */

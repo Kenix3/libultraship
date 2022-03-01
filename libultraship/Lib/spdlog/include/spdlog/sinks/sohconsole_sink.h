@@ -44,7 +44,7 @@ protected:
         }
         formatted.push_back('\0');
         const char *msg_output = formatted.data();
-        if (soh_settings.soh_sink && SohImGui::console->opened) 
+        if (SohSettings.soh_sink && SohImGui::console->opened) 
             SohImGui::console->Append("SoH Logging", priority, msg_output);
     }
 

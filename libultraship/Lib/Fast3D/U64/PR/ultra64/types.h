@@ -1,6 +1,8 @@
 #ifndef ULTRA64_TYPES_H
 #define ULTRA64_TYPES_H
 
+#include <stdint.h>
+
 typedef signed char            s8;
 typedef unsigned char          u8;
 typedef signed short int       s16;
@@ -21,10 +23,12 @@ typedef volatile s64 vs64;
 
 typedef float  f32;
 typedef double f64;
+#if 0
 
 typedef s32 ptrdiff_t;
 typedef s32 intptr_t;
 typedef u32 uintptr_t;
+#endif
 
 typedef long int Mtx_t[4][4];
 typedef union {

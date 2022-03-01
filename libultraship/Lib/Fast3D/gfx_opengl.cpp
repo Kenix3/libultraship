@@ -615,7 +615,7 @@ static void gfx_opengl_end_frame(void) {
     GLint last_program;
     glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
     glUseProgram(0);
-    SohImGui::draw();
+    SohImGui::Draw();
     glUseProgram(last_program);
 }
 

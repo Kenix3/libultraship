@@ -185,7 +185,7 @@ static void gfx_sdl_init(const char *game_name, bool start_in_fullscreen) {
     if (!vsync_enabled)
         puts("Warning: VSync is not enabled or not working. Falling back to timer for synchronization");
 
-    SohImGui::init(WindowImpl { wnd, ctx, NULL });
+    SohImGui::Init(WindowImpl { wnd, ctx, NULL });
 
     for (size_t i = 0; i < sizeof(windows_scancode_table) / sizeof(SDL_Scancode); i++) {
         inverted_scancode_table[windows_scancode_table[i]] = i;
@@ -255,7 +255,7 @@ static void gfx_sdl_onkeyup(int scancode) {
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        SohImGui::update(EventImpl { &event });
+        SohImGui::Update(EventImpl { &event });
         switch (event.type) {
 #ifndef TARGET_WEB
             // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

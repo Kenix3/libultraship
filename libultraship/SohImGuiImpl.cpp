@@ -8,6 +8,7 @@
 #include "SohHooks.h"
 #include "Lib/ImGui/imgui_internal.h"
 #include "GlobalCtx2.h"
+#include "stox.h"
 #include "Window.h"
 #include "../Fast3D/gfx_pc.h"
 
@@ -33,17 +34,19 @@ IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPAR
 
 #define USE_VIEWPORTS
 
-#define ImGuiWMInit() ImGui_ImplWin32_Init(impl.window);
-#define ImGuiBackendInit() ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.device), static_cast<ID3D11DeviceContext*>(impl.context));
-#define ImGuiProcessEvent(event) ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.handle), event.msg, event.wparam, event.lparam)
+#define ImGuiWMInit() ImGui_ImplWin32_Init(impl.window)
+#define ImGuiBackendInit() ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.device), static_cast<ID3D11DeviceContext*>(impl.context))
+#define ImGuiProcessEvent(event) ImGui_ImplWin32_WndProcHandler(static_cast<HWND>((event).handle), (event).msg, (event).wparam, (event).lparam)
 #define ImGuiWMNewFrame() ImGui_ImplWin32_NewFrame()
 #define ImGuiBackendNewFrame() ImGui_ImplDX11_NewFrame()
 #define ImGuiRenderDrawData(data) ImGui_ImplDX11_RenderDrawData(data);
 #endif
 
 using namespace Ship;
+SoHConfigType SohSettings;
 
-SoHSettings soh_settings;
+#define TOGGLE_BTN ImGuiKey_F1
+#define HOOK(b) if(b) needs_save = true;
 
 namespace SohImGui {
 
@@ -51,8 +54,33 @@ namespace SohImGui {
     ImGuiIO* io;
     Console* console = new Console;
     bool p_open = false;
+    bool needs_save = false;
 
-    void init( WindowImpl window_impl ) {
+    void LoadSettings() {
+        std::string ConfSection = GetDebugSection();
+        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
+        ConfigFile& Conf = *pConf.get();
+        console->opened      = stob(Conf[ConfSection]["console"]);
+        SohSettings.menu_bar = stob(Conf[ConfSection]["menu_bar"]);
+        SohSettings.soh      = stob(Conf[ConfSection]["soh_debug"]);
+#ifdef USE_INTERNAL_RES
+        SohSettings.n64mode  = stob(Conf[ConfSection]["n64_mode"]);
+#endif
+    }
+
+    void SaveSettings() {
+        std::string ConfSection = GetDebugSection();
+        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
+        ConfigFile& Conf = *pConf.get();
+        Conf[ConfSection]["console"]   = std::to_string(console->opened);
+        Conf[ConfSection]["menu_bar"]  = std::to_string(SohSettings.menu_bar);
+        Conf[ConfSection]["soh_debug"] = std::to_string(SohSettings.soh);
+        Conf[ConfSection]["n64_mode"]  = std::to_string(SohSettings.n64mode);
+        Conf.Save();
+    }
+
+    void Init( WindowImpl window_impl ) {
+        LoadSettings();
         ImGuiContext* ctx = ImGui::CreateContext();
         ImGui::SetCurrentContext(ctx);
         io = &ImGui::GetIO();
@@ -66,24 +94,28 @@ namespace SohImGui {
         ImGuiBackendInit();
     }
 
-    void update(EventImpl event) {
+    void Update(EventImpl event) {
+        if(needs_save) {
+            SaveSettings();
+            needs_save = false;
+        }
         ImGuiProcessEvent(event);
     }
 
-    void draw(void) {
+    void Draw(void) {
         console->Update();
         ImGuiBackendNewFrame();
         ImGuiWMNewFrame();
         ImGui::NewFrame();
 
-        std::shared_ptr<Window> wnd = GlobalCtx2::GetInstance()->GetWindow();
+        const std::shared_ptr<Window> wnd = GlobalCtx2::GetInstance()->GetWindow();
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking |
 										ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
 										ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
 #ifdef USE_VIEWPORTS
         window_flags |= ImGuiWindowFlags_NoBackground;
 #endif
-        if (soh_settings.menu_bar) window_flags |= ImGuiWindowFlags_MenuBar;
+        if (SohSettings.menu_bar) window_flags |= ImGuiWindowFlags_MenuBar;
 
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -106,17 +138,19 @@ namespace SohImGui {
 
         ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
-        if(ImGui::IsKeyPressed(ImGuiKey_F1))
-            soh_settings.menu_bar = !soh_settings.menu_bar;
+        if (ImGui::IsKeyPressed(TOGGLE_BTN)) {
+            SohSettings.menu_bar = !SohSettings.menu_bar;
+            needs_save = true;
+        }
 
         if (ImGui::BeginMenuBar()) {
             ImGui::Text("SoH Dev Menu");
             ImGui::Separator();
             if (ImGui::BeginMenu("View")) {
-                ImGui::MenuItem("Soh Debug", nullptr, &soh_settings.soh);
-                ImGui::MenuItem("Console", nullptr, &console->opened);
+                HOOK(ImGui::MenuItem("Soh Debug", nullptr, &SohSettings.soh));
+                HOOK(ImGui::MenuItem("Console", nullptr, &console->opened));
 #ifdef USE_INTERNAL_RES
-                ImGui::MenuItem("N64 Mode", nullptr, &soh_settings.n64mode);
+                HOOK(ImGui::MenuItem("N64 Mode", nullptr, &SohSettings.n64mode));
 #endif
                 ImGui::EndMenu();
             }
@@ -138,7 +172,7 @@ namespace SohImGui {
         gfx_current_dimensions.width = size.x * gfx_current_dimensions.internal_mul;
         gfx_current_dimensions.height = size.y * gfx_current_dimensions.internal_mul;
 #ifdef USE_INTERNAL_RES
-        if (soh_settings.n64mode) {
+        if (SohSettings.n64mode) {
             gfx_current_dimensions.width = 320;
             gfx_current_dimensions.height = 240;
             const int sw = size.y * 320 / 240;
@@ -153,7 +187,7 @@ namespace SohImGui {
 #endif
         ImGui::End();
 
-        if (soh_settings.soh) {
+        if (SohSettings.soh) {
 	        const float framerate = ImGui::GetIO().Framerate;
             ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
             ImGui::Begin("Debug Stats", nullptr, ImGuiWindowFlags_None);
@@ -181,14 +215,18 @@ namespace SohImGui {
     void BindCmd(const std::string& cmd, CommandEntry entry) {
         console->Commands[cmd] = std::move(entry);
     }
+
+    std::string GetDebugSection() {
+        return "DEBUG SETTINGS";
+    }
 }
 
 extern "C" void c_init(WindowImpl impl) {
-    SohImGui::init(impl);
+    SohImGui::Init(impl);
 }
 extern "C" void c_update(EventImpl event) {
-    SohImGui::update(event);
+    SohImGui::Update(event);
 }
 extern "C" void c_draw(void) {
-    SohImGui::draw();
+    SohImGui::Draw();
 }

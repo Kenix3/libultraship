@@ -300,7 +300,7 @@ static void gfx_d3d11_init(void) {
 
     d3d.context->PSSetConstantBuffers(1, 1, d3d.per_draw_cb.GetAddressOf());
 
-    SohImGui::init({ gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() });
+    SohImGui::Init({ gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() });
 }
 
 
@@ -703,7 +703,7 @@ static void gfx_d3d11_start_frame(void) {
 }
 
 static void gfx_d3d11_end_frame(void) {
-    SohImGui::draw();
+    SohImGui::Draw();
 }
 
 static void gfx_d3d11_finish_render(void) {

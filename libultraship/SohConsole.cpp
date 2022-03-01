@@ -5,10 +5,9 @@
 #include "Lib/ImGui/imgui.h"
 #include "Utils/StringHelper.h"
 #include "SohImGuiImpl.h"
+#include "Lib/ImGui/imgui_internal.h"
 
-static char filterBuffer[MAX_BUFFER_SIZE];
-
-static bool HelpCommand(std::vector<std::string> args) {
+static bool HelpCommand(const std::vector<std::string>&) {
 	INFO("SoH Commands:");
 	for(auto cmd : SohImGui::console->Commands) {
 		INFO((" - " + cmd.first).c_str());
@@ -16,41 +15,93 @@ static bool HelpCommand(std::vector<std::string> args) {
 	return CMD_SUCCESS;
 }
 
-static bool ClearCommand(std::vector<std::string> args) {
-	SohImGui::console->history[SohImGui::console->selected_channel].clear();
+static bool ClearCommand(const std::vector<std::string>&) {
+	SohImGui::console->Log[SohImGui::console->selected_channel].clear();
 	return CMD_SUCCESS;
 }
 
+std::string BuildUsage(const CommandEntry& entry) {
+	std::string usage;
+	for (auto& arg : entry.arguments)
+		usage += StringHelper::Sprintf(arg.optional ? "[%s] " : "<%s> ", arg.info.c_str());
+	return usage;
+}
 
 void Console::Init() {
-	this->Commands["help"]  = { HelpCommand };
-	this->Commands["clear"] = { ClearCommand };
+	this->InputBuffer = new char[MAX_BUFFER_SIZE];
+	strcpy(this->InputBuffer, "");
+	this->FilterBuffer = new char[MAX_BUFFER_SIZE];
+	strcpy(this->FilterBuffer, "");
+	this->Commands["help"]  = { HelpCommand, "Shows all the commands" };
+	this->Commands["clear"] = { ClearCommand, "Clear the console history" };
 }
 
-void Console::Update() {
+void Console::Update() {}
 
-}
+extern "C" uint8_t __enableGameInput;
 
 void Console::Draw() {
+	bool input_focus = false;
+	__enableGameInput = true;
 	if (!this->opened) return;
+
 	ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Console", &this->opened);
+		const ImVec2 pos = ImGui::GetWindowPos();
+		const ImVec2 size = ImGui::GetWindowSize();
+
+		__enableGameInput = !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+
+		// Renders autocomplete window
+		if(this->OpenAutocomplete) {
+			ImGui::SetNextWindowSize(ImVec2(350, std::min(static_cast<int>(this->Autocomplete.size()), 3) * 20.f), ImGuiCond_Once);
+			ImGui::SetNextWindowPos(ImVec2(pos.x + 8, pos.y + size.y - 1));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3, 3));
+			ImGui::Begin("##WndAutocomplete", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove );
+			ImGui::BeginChild("AC_Child", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(.3f, .3f, .3f, 1.0f));
+			if (ImGui::BeginTable("AC_History", 1)) {
+				for (const auto &cmd : this->Autocomplete) {
+					std::string usage   = BuildUsage(this->Commands[cmd]);
+					std::string preview = cmd + " - " + this->Commands[cmd].description;
+					std::string autocomplete = (usage == NULLSTR ? cmd : usage);
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					if (ImGui::Selectable(preview.c_str())) {
+						memset(this->InputBuffer, 0, MAX_BUFFER_SIZE);
+						memcpy(this->InputBuffer, autocomplete.c_str(), sizeof(char) * autocomplete.size());
+						this->OpenAutocomplete = false;
+						input_focus = true;
+					}
+				}
+				ImGui::EndTable();
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+				this->OpenAutocomplete = false;
+			}
+			ImGui::PopStyleColor();
+			ImGui::EndChild();
+			ImGui::End();
+			ImGui::PopStyleVar();
+		}
+
 		if (ImGui::BeginPopupContextWindow("Context Menu")) {
 			if (ImGui::MenuItem("Copy Text")) {
-				ImGui::SetClipboardText(this->history[this->selected_channel][this->selectedId].text.c_str());
+				ImGui::SetClipboardText(this->Log[this->selected_channel][this->selectedId].text.c_str());
 				this->selectedId = -1;
 			}
 			ImGui::EndPopup();
 		}
 		if (this->selectedId != -1 && ImGui::IsMouseClicked(1)) {
-			ImGui::OpenPopup("Context Menu");
+			ImGui::OpenPopup("##WndAutocomplete");
 		}
 
-		if (ImGui::Button("Clear")) this->history[this->selected_channel].clear();
+		// Renders top bar filters
+		if (ImGui::Button("Clear")) this->Log[this->selected_channel].clear();
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(150);
 		if (ImGui::BeginCombo("##channel", this->selected_channel.c_str())) {
-			for (auto channel : log_channels) {
+			for (const auto& channel : log_channels) {
 				const bool is_selected = (channel == std::string(this->selected_channel));
 				if (ImGui::Selectable(channel.c_str(), is_selected))
 					this->selected_channel = channel;
@@ -71,26 +122,25 @@ void Console::Draw() {
 		}
 		ImGui::SameLine();
 		ImGui::PushItemWidth(-1);
-		const size_t filterSize = IM_ARRAYSIZE(filterBuffer);
-		if (ImGui::InputTextWithHint("##input", "Filter", filterBuffer, filterSize))this->filter = std::string(filterBuffer);
+		if (ImGui::InputTextWithHint("##input", "Filter", this->FilterBuffer, MAX_BUFFER_SIZE))this->filter = std::string(this->FilterBuffer);
 		ImGui::PopItemWidth();
+
+		// Renders console history
 		const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(.3f, .3f, .3f, 1.0f));
 			if (ImGui::BeginTable("History", 1)) {
 
-				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {
-					if (this->selectedId < this->history.size() - 1) { ++this->selectedId; }
-				}
-				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow))) {
-					if (this->selectedId > 0) { --this->selectedId; }
-				}
+				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
+					if (this->selectedId < this->Log.size() - 1) ++this->selectedId;
+				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
+					if (this->selectedId > 0) --this->selectedId;
 
-				std::vector<ConsoleLine> channel = this->history[this->selected_channel];
-				for (int i = 0; i < channel.size(); i++) {
+				const std::vector<ConsoleLine> channel = this->Log[this->selected_channel];
+				for (int i = 0; i < static_cast<int>(channel.size()); i++) {
 					ConsoleLine line = channel[i];
 					if(!this->filter.empty() && line.text.find(this->filter) == std::string::npos) continue;
-					if(this->level_filter != "None" && line.priority != (std::ranges::find(priority_filters, this->level_filter) - priority_filters.begin()) - 1) continue;
+					if(this->level_filter != NULLSTR && line.priority != (std::ranges::find(priority_filters, this->level_filter) - priority_filters.begin()) - 1) continue;
 					std::string id = line.text + "##" + std::to_string(i);
 					ImGui::TableNextRow();
 					ImGui::TableSetColumnIndex(0);
@@ -113,44 +163,104 @@ void Console::Draw() {
 				ImGui::SetScrollHereY(1.0f);
 		ImGui::EndChild();
 
-		bool input_focus = false;
-		static char buffer[MAX_BUFFER_SIZE] = "";
-		constexpr size_t bufferSize = IM_ARRAYSIZE(buffer);
-		constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
+		// Renders input textfield
+		constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackEdit | 
+			                                  ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
 		ImGui::PushItemWidth(-1);
-		if(ImGui::InputTextWithHint("CMDInput", ">", buffer, bufferSize, flags, &Console::CallbackStub, this)) {
+		if(ImGui::InputTextWithHint("CMDInput", ">", this->InputBuffer, MAX_BUFFER_SIZE, flags, &Console::CallbackStub, this)) {
 			input_focus = true;
-			this->Dispatch(std::string(buffer));
-			memset(buffer, 0, bufferSize);
+			if(this->InputBuffer[0] != '\0' && this->InputBuffer[0] != ' ')
+				this->Dispatch(std::string(this->InputBuffer));
+			memset(this->InputBuffer, 0, MAX_BUFFER_SIZE);
 		}
+
+		if(this->CMDHint != NULLSTR) {
+			if (ImGui::IsItemFocused()) {
+				ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + size.y));
+				ImGui::SameLine();
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(this->CMDHint.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+		}
+
 		ImGui::SetItemDefaultFocus();
 		if (input_focus) ImGui::SetKeyboardFocusHere(-1);
 		ImGui::PopItemWidth();
 	ImGui::End();
 }
 
-void Console::Dispatch(const std::string line) {
-	this->history[this->selected_channel].push_back({ "> " + line } );
+void Console::Dispatch(const std::string& line) {
+	this->CMDHint = NULLSTR;
+	this->History.push_back(line);
+	this->Log[this->selected_channel].push_back({ "> " + line } );
 	const std::vector<std::string> cmd_args = StringHelper::Split(line, " ");
 	if (this->Commands.contains(cmd_args[0])) {
 		const CommandEntry entry = this->Commands[cmd_args[0]];
-		if(!entry.handler(cmd_args) && entry.usage != "None")
-			this->history[this->selected_channel].push_back({ "[SOH] Usage: " + entry.usage, ERROR_LVL });
+		if(!entry.handler(cmd_args) && !entry.arguments.empty())
+			this->Log[this->selected_channel].push_back({ "[SOH] Usage: " + cmd_args[0] + " " + BuildUsage(entry), ERROR_LVL});
 		return;
 	}
-	this->history[this->selected_channel].push_back({ "[SOH] Command not found", ERROR_LVL });
+	this->Log[this->selected_channel].push_back({ "[SOH] Command not found", ERROR_LVL });
 }
 
 int Console::CallbackStub(ImGuiInputTextCallbackData* data) {
+	const auto instance = static_cast<Console*>(data->UserData);
+	const bool empty_history = instance->History.empty();
+	const int  history_index = instance->HistoryIndex;
+	std::string history;
+
+	switch(data->EventKey) {
+		case ImGuiKey_Tab:
+			instance->Autocomplete.clear();
+			for (auto& [cmd, entry] : instance->Commands)
+				if (cmd.find(std::string(data->Buf)) != std::string::npos) instance->Autocomplete.push_back(cmd);
+			instance->OpenAutocomplete = !instance->Autocomplete.empty();
+			instance->CMDHint = NULLSTR;
+			break;
+		case ImGuiKey_UpArrow:
+			if (empty_history) break;
+			if(history_index < static_cast<int>(instance->History.size()) - 1) instance->HistoryIndex += 1;
+			data->DeleteChars(0, data->BufTextLen);
+			data->InsertChars(0, instance->History[instance->HistoryIndex].c_str());
+			instance->CMDHint = NULLSTR;
+			break;
+		case ImGuiKey_DownArrow:
+			if (empty_history) break;
+			if (history_index > -1) instance->HistoryIndex -= 1;
+			data->DeleteChars(0, data->BufTextLen);
+			if(history_index >= 0)
+				data->InsertChars(0, instance->History[history_index].c_str());
+			instance->CMDHint = NULLSTR;
+			break;
+		case ImGuiKey_Escape:
+			instance->HistoryIndex = -1;
+			data->DeleteChars(0, data->BufTextLen);
+			instance->OpenAutocomplete = false;
+			instance->CMDHint = NULLSTR;
+			break;
+		default:
+			instance->OpenAutocomplete = false;
+			for (auto& [cmd, entry] : instance->Commands) {
+				const std::vector<std::string> cmd_args = StringHelper::Split(std::string(data->Buf), " ");
+				if (data->BufTextLen > 2 && !cmd_args.empty() && cmd.find(cmd_args[0]) != std::string::npos) {
+					instance->CMDHint = cmd + " " + BuildUsage(entry);
+					break;
+				}
+				instance->CMDHint = NULLSTR;
+			}
+	}
 	return 0;
 }
 
-void Console::Append(std::string channel, Priority priority, const char* fmt, ...) IM_FMTARGS(4) {
+void Console::Append(const std::string& channel, Priority priority, const char* fmt, ...) IM_FMTARGS(4) {
 	char buf[1024];
 	va_list args;
 	va_start(args, fmt);
 	vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
 	buf[IM_ARRAYSIZE(buf) - 1] = 0;
 	va_end(args);
-	this->history[channel].push_back({ std::string(buf), priority });
+	this->Log[channel].push_back({ std::string(buf), priority });
 }

@@ -20,21 +20,21 @@ void c_draw(void);
 #else
 #include "SohConsole.h"
 
-struct SoHSettings {
+struct SoHConfigType {
 	bool soh = false;
-	bool console = false;
 	bool n64mode = false;
 	bool menu_bar = false;
 	bool soh_sink = true;
 };
 
-extern SoHSettings soh_settings;
+extern SoHConfigType SohSettings;
 
 namespace SohImGui {
 	extern Console* console;
-	void init(WindowImpl window_impl);
-	void update(EventImpl event);
-	void draw(void);
+	void Init(WindowImpl window_impl);
+	void Update(EventImpl event);
+	void Draw(void);
+	std::string GetDebugSection();
 	void BindCmd(const std::string& cmd, CommandEntry entry);
 }
 #endif
