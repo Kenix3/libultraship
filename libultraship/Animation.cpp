@@ -67,6 +67,6 @@ void Ship::AnimationV0::ParseFileBinary(BinaryReader* reader, Resource* res)
 	}
 	else if (animType == AnimationType::Legacy)
 	{
-		printf("BEYTAH?!\n");
+		SPDLOG_DEBUG("BEYTAH ANIMATION?!");
 	}
 }

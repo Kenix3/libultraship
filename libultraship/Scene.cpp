@@ -18,8 +18,6 @@ namespace Ship
 
 		for (uint32_t i = 0; i < cmdCnt; i++)
 			scene->commands.push_back(ParseSceneCommand(reader));
-
-		printf("SCENE PARSE END\n");
 	}
 
 	SceneCommand* SceneV0::ParseSceneCommand(BinaryReader* reader)
@@ -27,8 +25,6 @@ namespace Ship
 		SceneCommandID cmdID = (SceneCommandID)reader->ReadInt32();
 
 		reader->Seek(-4, SeekOffsetType::Current);
-
-		printf("CMD: 0x%02X\n", cmdID);
 
 		switch (cmdID)
 		{
@@ -58,7 +54,7 @@ namespace Ship
 		case SceneCommandID::SetPathways: return new SetPathways(reader);
 		case SceneCommandID::EndMarker: return new EndMarker(reader);
 		default:
-			printf("UNIMPLEMENTED COMMAND: %i\n", (int)cmdID);
+			SPDLOG_ERROR("UNIMPLEMENTED COMMAND: {}", (int)cmdID);
 			reader->ReadInt32();
 			break;
 		}

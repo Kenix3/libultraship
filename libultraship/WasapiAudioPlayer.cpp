@@ -94,7 +94,6 @@ namespace Ship {
 
 			UINT32 padding;
 			ThrowIfFailed(client->GetCurrentPadding(&padding));
-			//printf("%u %u\n", frames, padding);
 
 			UINT32 available = bufferFrameCount - padding;
 			if (available < frames) {

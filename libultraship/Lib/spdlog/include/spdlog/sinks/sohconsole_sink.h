@@ -54,11 +54,11 @@ private:
     static Priority convert_to_soh(spdlog::level::level_enum level) {
         switch (level) {
             case spdlog::level::trace:
-                return Priority::LOG_LVL;
+                return Priority::INFO_LVL;
             case spdlog::level::debug:
                 return Priority::LOG_LVL;
             case spdlog::level::info:
-                return Priority::INFO_LVL;
+                return Priority::LOG_LVL;
             case spdlog::level::warn:
                 return Priority::WARNING_LVL;
             case spdlog::level::err:

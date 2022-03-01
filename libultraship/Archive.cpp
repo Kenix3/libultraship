@@ -29,13 +29,10 @@ namespace Ship {
 		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, 65536 * 4, &archive->mainMPQ);
 		int error = GetLastError();
 
-		if (success)
-		{
+		if (success) {
 			archive->mpqHandles[archivePath] = archive->mainMPQ;
 			return std::make_shared<Archive>(*archive);
-		}
-		else
-		{
+		} else {
 			SPDLOG_ERROR("({}) We tried to create an archive, but it has fallen and cannot get up.");
 			return nullptr;
 		}
@@ -198,9 +195,6 @@ namespace Ship {
 
 		auto end = std::chrono::steady_clock::now();
 		auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-		if (diff > 2)
-			printf("HasFile call took %lims with a list of size %i\n", diff, lst.size());
 
 		return result;
 	}

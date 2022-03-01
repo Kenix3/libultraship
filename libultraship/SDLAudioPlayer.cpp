@@ -16,7 +16,7 @@ namespace Ship {
             want.callback = NULL;
             Device = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
             if (Device == 0) {
-                fprintf(stderr, "SDL_OpenAudio error: %s\n", SDL_GetError());
+                SPDLOG_ERROR("SDL_OpenAudio error: {}", SDL_GetError());
                 return false;
             }
             SDL_PauseAudioDevice(Device, 0);

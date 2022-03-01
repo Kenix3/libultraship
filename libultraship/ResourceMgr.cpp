@@ -46,11 +46,11 @@ namespace Ship {
 			ResourceLoadThread->join();
 
 			if (!FileLoadQueue.empty()) {
-				SPDLOG_DEBUG("Resource manager stopped, but has {} Files left to load.", FileLoadQueue.size());
+				SPDLOG_INFO("Resource manager stopped, but has {} Files left to load.", FileLoadQueue.size());
 			}
 
 			if (!ResourceLoadQueue.empty()) {
-				SPDLOG_DEBUG("Resource manager stopped, but has {} Resources left to load.", FileLoadQueue.size());
+				SPDLOG_INFO("Resource manager stopped, but has {} Resources left to load.", FileLoadQueue.size());
 			}
 		}
 	}
@@ -78,11 +78,12 @@ namespace Ship {
 			FileLoadQueue.pop();
 			//Lock.unlock();
 
-			SPDLOG_INFO("Loading File {} on ResourceMgr thread", ToLoad->path);
 			OTR->LoadFile(ToLoad->path, true, ToLoad);
 			//Lock.lock();
 			FileCache[ToLoad->path] = ToLoad->bIsLoaded && !ToLoad->bHasLoadError ? ToLoad : nullptr;
 			//Lock.unlock();
+
+			SPDLOG_DEBUG("Loaded File {} on ResourceMgr thread", ToLoad->path);
 
 			ToLoad->FileLoadNotifier.notify_all();
 		}
@@ -117,7 +118,6 @@ namespace Ship {
 				}
 			}
 
-			SPDLOG_INFO("Loading Resource {} on ResourceMgr thread", ToLoad->File->path);
 			auto UnmanagedRes = ResourceLoader::LoadResource(ToLoad->File);
 			auto Res = std::shared_ptr<Resource>(UnmanagedRes);
 
@@ -126,7 +126,7 @@ namespace Ship {
 				ToLoad->Resource = Res;
 				ResourceCache[Res->File->path] = Res;
 
-				SPDLOG_INFO("LOADED Resource {} on ResourceMgr thread", ToLoad->File->path);
+				SPDLOG_DEBUG("Loaded Resource {} on ResourceMgr thread", ToLoad->File->path);
 			} else {
 				ToLoad->bHasResourceLoaded = false;
 				ToLoad->Resource = nullptr;
@@ -147,7 +147,7 @@ namespace Ship {
 		const std::lock_guard<std::mutex> Lock(FileLoadMutex);
 		// File NOT already loaded...?
 		if (FileCache.find(FilePath) == FileCache.end()) {
-			SPDLOG_DEBUG("Cache miss on File load: {}", filePath.c_str());
+			SPDLOG_TRACE("Cache miss on File load: {}", FilePath.c_str());
 			std::shared_ptr<File> ToLoad = std::make_shared<File>();
 			ToLoad->path = FilePath;
 
@@ -198,7 +198,7 @@ namespace Ship {
 		const std::lock_guard<std::mutex> ResLock(ResourceLoadMutex);
 		if (ResourceCache.find(FilePath) == ResourceCache.end() || ResourceCache[FilePath]->isDirty/* || !FileData->bIsLoaded*/) {
 			if (ResourceCache.find(FilePath) == ResourceCache.end()) {
-				SPDLOG_DEBUG("Cache miss on Resource load: {}", filePath.c_str());
+				SPDLOG_TRACE("Cache miss on Resource load: {}", FilePath.c_str());
 			}
 
 			Promise->bHasResourceLoaded = false;
