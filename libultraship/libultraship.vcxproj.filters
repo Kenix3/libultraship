@@ -309,9 +309,6 @@
     <ClCompile Include="WasapiAudioPlayer.cpp">
       <Filter>Source Files\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="log.cpp">
-      <Filter>Source Files\Globals</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lib\tinyxml2\tinyxml2.h">
