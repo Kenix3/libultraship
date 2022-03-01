@@ -575,8 +575,5 @@
     <ClInclude Include="WasapiAudioPlayer.h">
       <Filter>Source Files\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="log.h">
-      <Filter>Source Files\Globals</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
-#include "log.h"
 #include "spdlog/spdlog.h"
+#include "stdint.h"
 #include <string>
 
 extern "C" {
