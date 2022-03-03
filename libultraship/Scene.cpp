@@ -156,7 +156,6 @@ namespace Ship
 		{
 			MeshData mesh;
 
-			// OTRTODO: FINISH THIS!
 			if (meshHeaderType == 0)
 			{
 				int polyType = reader->ReadByte();
@@ -208,16 +207,8 @@ namespace Ship
 			}
 
 
-			//if (meshHeaderType == 0 || meshHeaderType == 2)
-			{
-				mesh.opa = reader->ReadString();
-				mesh.xlu = reader->ReadString();
-			}
-			//else
-			//{
-				//mesh.opa = "";
-				//mesh.xlu = "";
-			//}
+			mesh.opa = reader->ReadString();
+			mesh.xlu = reader->ReadString();
 
 			meshes.push_back(mesh);
 		}

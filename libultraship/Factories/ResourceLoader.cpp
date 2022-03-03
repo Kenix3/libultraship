@@ -26,7 +26,7 @@ namespace Ship
 
         Endianess endianess = (Endianess)reader.ReadByte();
         
-        // TODO: Setup the binaryreader to use the resource's endianess
+        // OTRTODO: Setup the binaryreader to use the resource's endianess
         
         ResourceType resourceType = (ResourceType)reader.ReadUInt32();
         Resource* result = nullptr;

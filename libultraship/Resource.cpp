@@ -8,6 +8,7 @@ namespace Ship
     {
         id = reader->ReadUInt64();
         res->id = id;
+        reader->ReadUInt32(); // Resource minor version number
     }
     void ResourceFile::ParseFileXML(tinyxml2::XMLElement* reader, Resource* res)
     {

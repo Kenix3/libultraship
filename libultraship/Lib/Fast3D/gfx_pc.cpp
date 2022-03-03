@@ -20,6 +20,8 @@
 #include "gfx_rendering_api.h"
 #include "gfx_screen_config.h"
 
+#include "../StrHash64.h"
+
 // TODO: fix header files for these
 extern "C" {
     char* ResourceMgr_GetNameByCRC(uint64_t crc, char* alloc);
@@ -908,6 +910,11 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
             int bp = 0;
         }
 
+        if ((uintptr_t)vertices == 0x14913ec0)
+        {
+            int bp = 0;
+        }
+
         if (v == NULL)
             return;
 
@@ -919,10 +926,6 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
         if (markerOn)
         {
             int bp = 0;
-            //w = -w;
-            //w = 900;
-            //w *= 2;
-            //w *= 0.25f;
         }
 
         x = gfx_adjust_x_for_aspect_ratio(x);
@@ -1573,7 +1576,6 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
     //SUPPORT_CHECK(tile == G_TX_LOADTILE);
     //SUPPORT_CHECK(rdp.texture_to_load.siz == G_IM_SIZ_16b);
 
-    // OTRTODO
     rdp.palette = rdp.texture_to_load.addr;
 }
 
@@ -1972,6 +1974,11 @@ int dListBP;
 int matrixBP;
 uintptr_t clearMtx;
 
+extern "C"
+{
+    uintptr_t jsjutanShadowTex = 0;
+};
+
 static void gfx_run_dl(Gfx* cmd) {
     //puts("dl");
     int dummy = 0;
@@ -1992,8 +1999,8 @@ static void gfx_run_dl(Gfx* cmd) {
             cmd++;
 
 #if _DEBUG
-            uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-            ResourceMgr_GetNameByCRC(hash, dlName);
+            //uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+            //ResourceMgr_GetNameByCRC(hash, dlName);
 
             //printf("G_MARKER: %s\n", dlName);
 #endif
@@ -2041,8 +2048,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                char fileName[4096];
-                ResourceMgr_GetNameByCRC(hash, fileName);
+                //char fileName[4096];
+                //ResourceMgr_GetNameByCRC(hash, fileName);
 
                 //printf("G_MTX_OTR: %s\n", fileName);
 #endif
@@ -2105,8 +2112,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                char fileName[4096];
-                ResourceMgr_GetNameByCRC(hash, fileName);
+                //char fileName[4096];
+                //ResourceMgr_GetNameByCRC(hash, fileName);
 
                 //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
 #endif
@@ -2155,8 +2162,8 @@ static void gfx_run_dl(Gfx* cmd) {
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                    char fileName[4096];
-                    ResourceMgr_GetNameByCRC(hash, fileName);
+                    //char fileName[4096];
+                    //ResourceMgr_GetNameByCRC(hash, fileName);
 
                     //printf("G_DL_OTR: %s\n", fileName);
 #endif
@@ -2187,8 +2194,8 @@ static void gfx_run_dl(Gfx* cmd) {
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                    char fileName[4096];
-                    ResourceMgr_GetNameByCRC(hash, fileName);
+                    //char fileName[4096];
+                    //ResourceMgr_GetNameByCRC(hash, fileName);
 
                     //printf("G_BRANCH_Z_OTR: %s\n", fileName);
 #endif
@@ -2272,8 +2279,9 @@ static void gfx_run_dl(Gfx* cmd) {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
 
+
 #if _DEBUG
-                ResourceMgr_GetNameByCRC(hash, fileName);
+                //ResourceMgr_GetNameByCRC(hash, fileName);
 
                 if (strcmp(fileName, "gameplay_keep\\gSun1Tex") == 0)
                 {
@@ -2285,8 +2293,21 @@ static void gfx_run_dl(Gfx* cmd) {
                 char* tex = ResourceMgr_LoadTexByCRC(hash);
                 cmd--;
 
+                uint32_t fmt = C0(21, 3);
+                uint32_t size = C0(19, 2);
+                uint32_t width = C0(0, 10);
+
+                // OTRTODO: Look more into this...
+                if (jsjutanShadowTex != 0 && CRC64("ovl_En_Jsjutan\\sShadowTex") == hash)
+                {
+                    tex = (char*)jsjutanShadowTex;
+                    fmt = G_IM_FMT_I;
+                    size = G_IM_SIZ_8b;
+                    width = 64 << 2;
+                }
+
                 if (tex != NULL)
-                    gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), tex);
+                    gfx_dp_set_texture_image(fmt, size, width, tex);
                 else
                 {
 #if _DEBUG

@@ -146,7 +146,8 @@ namespace Ship {
 	std::shared_ptr<File> ResourceMgr::LoadFileAsync(std::string FilePath) {
 		const std::lock_guard<std::mutex> Lock(FileLoadMutex);
 		// File NOT already loaded...?
-		if (FileCache.find(FilePath) == FileCache.end()) {
+		auto fileCacheFind = FileCache.find(FilePath);
+		if (fileCacheFind == FileCache.end()) {
 			SPDLOG_TRACE("Cache miss on File load: {}", FilePath.c_str());
 			std::shared_ptr<File> ToLoad = std::make_shared<File>();
 			ToLoad->path = FilePath;
@@ -157,7 +158,7 @@ namespace Ship {
 			return ToLoad;
 		}
 
-		return FileCache[FilePath];
+		return fileCacheFind->second;
 	}
 
 	std::shared_ptr<File> ResourceMgr::LoadFile(std::string FilePath) {
@@ -196,8 +197,9 @@ namespace Ship {
 		Promise->File = FileData;
 
 		const std::lock_guard<std::mutex> ResLock(ResourceLoadMutex);
-		if (ResourceCache.find(FilePath) == ResourceCache.end() || ResourceCache[FilePath]->isDirty/* || !FileData->bIsLoaded*/) {
-			if (ResourceCache.find(FilePath) == ResourceCache.end()) {
+		auto resCacheFind = ResourceCache.find(FilePath);
+		if (resCacheFind == ResourceCache.end() || resCacheFind->second->isDirty/* || !FileData->bIsLoaded*/) {
+			if (resCacheFind == ResourceCache.end()) {
 				SPDLOG_TRACE("Cache miss on Resource load: {}", FilePath.c_str());
 			}
 
@@ -206,7 +208,7 @@ namespace Ship {
 			ResourceLoadNotifier.notify_all();
 		} else {
 			Promise->bHasResourceLoaded = true;
-			Promise->Resource = ResourceCache[FilePath];
+			Promise->Resource = resCacheFind->second;
 		}
 
 		return Promise;
