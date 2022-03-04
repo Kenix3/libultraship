@@ -127,6 +127,9 @@ namespace Ship {
 				ResourceCache[Res->File->path] = Res;
 
 				SPDLOG_DEBUG("Loaded Resource {} on ResourceMgr thread", ToLoad->File->path);
+				FileCache[Res->File->path] = nullptr;
+				FileCache.erase(FileCache.find(Res->File->path));
+				Res->File = nullptr;
 			} else {
 				ToLoad->bHasResourceLoaded = false;
 				ToLoad->Resource = nullptr;
