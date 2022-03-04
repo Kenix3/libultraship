@@ -4,6 +4,10 @@ namespace Ship
 {
 	void SceneV0::ParseFileBinary(BinaryReader* reader, Resource* res)
 	{
+		Scene::~Scene()
+		{
+		}
+		
 		Scene* scene = (Scene*)res;
 
 		ResourceFile::ParseFileBinary(reader, res);
