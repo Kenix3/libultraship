@@ -28,9 +28,7 @@ namespace Ship {
 			std::map<int32_t, int32_t> ButtonMapping;
 			int8_t wStickX;
 			int8_t wStickY;
-			float wGyroX;
-			float wGyroY;
-
+			
 			virtual std::string GetControllerType() = 0;
 			virtual std::string GetConfSection() = 0;
 			virtual std::string GetBindingConfSection() = 0;

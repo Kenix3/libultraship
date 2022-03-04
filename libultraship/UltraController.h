@@ -118,9 +118,7 @@ typedef struct {
     /* 0x02 */ int8_t stick_x;
     /* 0x03 */ int8_t stick_y;
     /* 0x04 */ uint8_t err_no;
-    float gyro_x;
-    float gyro_y;
-} OSContPad; // size = 0x0D
+} OSContPad; // size = 0x06
 
 typedef struct {
     /* 0x00 */ void* address;

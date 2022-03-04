@@ -86,8 +86,6 @@ extern "C" {
         pad->stick_x = 0;
         pad->stick_y = 0;
         pad->err_no = 0;
-        pad->gyro_x = 0;
-        pad->gyro_y = 0;
 
         if (__enableGameInput)
         {
