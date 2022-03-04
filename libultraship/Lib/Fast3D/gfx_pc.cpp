@@ -206,6 +206,11 @@ static void gfx_flush(void) {
         int num = buf_vbo_num_tris;
         unsigned long t0 = get_time();
 
+        if (markerOn)
+        {
+            int bp = 0;
+        }
+
         gfx_rapi->draw_triangles(buf_vbo, buf_vbo_len, buf_vbo_num_tris);
         buf_vbo_len = 0;
         buf_vbo_num_tris = 0;
@@ -273,6 +278,11 @@ static const char* acmux_to_string(uint32_t acmux) {
 
 
 static void gfx_generate_cc(struct ColorCombiner *comb, uint64_t cc_id) {
+    if (markerOn)
+    {
+        int bp = 0;
+    }
+
     bool is_2cyc = (cc_id & (uint64_t)SHADER_OPT_2CYC << CC_SHADER_OPT_POS) != 0;
 
     uint8_t c[2][2][4];
@@ -741,6 +751,11 @@ static void import_texture_ci8(int tile) {
     //width = 256;
     //height = 255;
 
+    if (size_bytes > 15000)
+    {
+        int bp = 0;
+    }
+
     gfx_rapi->upload_texture(rgba32_buf, width, height);
 }
 
@@ -890,6 +905,16 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
         const Vtx_tn *vn = &vertices[i].n;
         struct LoadedVertex *d = &rsp.loaded_vertices[dest_index];
 
+        if (markerOn)
+        {
+            int bp = 0;
+        }
+
+        if ((uintptr_t)vertices == 0x14913ec0)
+        {
+            int bp = 0;
+        }
+
         if (v == NULL)
             return;
 
@@ -897,6 +922,11 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
         float y = v->ob[0] * rsp.MP_matrix[0][1] + v->ob[1] * rsp.MP_matrix[1][1] + v->ob[2] * rsp.MP_matrix[2][1] + rsp.MP_matrix[3][1];
         float z = v->ob[0] * rsp.MP_matrix[0][2] + v->ob[1] * rsp.MP_matrix[1][2] + v->ob[2] * rsp.MP_matrix[2][2] + rsp.MP_matrix[3][2];
         float w = v->ob[0] * rsp.MP_matrix[0][3] + v->ob[1] * rsp.MP_matrix[1][3] + v->ob[2] * rsp.MP_matrix[2][3] + rsp.MP_matrix[3][3];
+
+        if (markerOn)
+        {
+            int bp = 0;
+        }
 
         x = gfx_adjust_x_for_aspect_ratio(x);
 
@@ -1034,9 +1064,19 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
     //if (rand()%2) return;
 
+    if (markerOn)
+    {
+        int bp = 0;
+    }
+
     if (v1->clip_rej & v2->clip_rej & v3->clip_rej) {
         // The whole triangle lies outside the visible area
         return;
+    }
+
+    if (markerOn)
+    {
+        int bp = 0;
     }
 
     if ((rsp.geometry_mode & G_CULL_BOTH) != 0) {
@@ -1207,6 +1247,11 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     uint8_t num_inputs;
     bool used_textures[2];
 
+    if (markerOn)
+    {
+        int bp = 0;
+    }
+
     gfx_rapi->shader_get_info(prg, &num_inputs, used_textures);
 
     bool z_is_from_0_to_1 = gfx_rapi->z_is_from_0_to_1();
@@ -1361,6 +1406,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
     if (++buf_vbo_num_tris == MAX_BUFFERED) {
         //if (++buf_vbo_num_tris == 1) {
+        if (markerOn)
+        {
+            int bp = 0;
+        }
         gfx_flush();
     }
 }
@@ -1455,6 +1504,11 @@ static void gfx_sp_texture(uint16_t sc, uint16_t tc, uint8_t level, uint8_t tile
         rdp.textures_changed[1] = true;
     }
 
+    if (tile > 8)
+    {
+        int bp = 0;
+    }
+
     rdp.first_tile_index = tile;
 }
 
@@ -1498,6 +1552,11 @@ static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t t
     rdp.texture_tile[tile].shiftt = shiftt;
     rdp.texture_tile[tile].line_size_bytes = line * 8;
 
+    if (rdp.texture_tile[tile].line_size_bytes > 15000)
+    {
+        int bp = 0;
+    }
+
     //rdp.texture_tile[tile].tmem_index = tmem / 256; // tmem is the 64-bit word offset, so 256 words means 2 kB
     rdp.texture_tile[tile].tmem_index = tmem != 0; // assume one texture is loaded at address 0 and another texture at any other address
     rdp.textures_changed[0] = true;
@@ -1521,6 +1580,11 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
 }
 
 static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
+    if (markerOn)
+    {
+        int bp = 0;
+    }
+
     SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(uls == 0);
     SUPPORT_CHECK(ult == 0);
@@ -1960,6 +2024,11 @@ static void gfx_run_dl(Gfx* cmd) {
         }
             break;
             case G_MTX: {
+                if (markerOn)
+                {
+                    int bp = 0;
+                }
+
                 uintptr_t mtxAddr = cmd->words.w1;
 
                 // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
@@ -2060,12 +2129,21 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
                     cmd++;
                 }
+                else
+                {
+                    int bp = 0; // UH OH!
+                }
             }
                 break;
             case G_MODIFYVTX:
                 gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), cmd->words.w1);
                 break;
             case G_DL:
+                if (cmd->words.w1 == dListBP)
+                {
+                    int bp = 0;
+                }
+
                 if (C0(16, 1) == 0) {
                     // Push return address
                     gfx_run_dl((Gfx *)seg_addr(cmd->words.w1));
@@ -2160,6 +2238,13 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_tri1(C1(16, 8) / 10, C1(8, 8) / 10, C1(0, 8) / 10, false);
 #endif
                 break;
+#ifdef F3DEX_GBI_2
+            case G_QUAD:
+            {
+                int bp = 0;
+                // fallthrough
+            }
+#endif
 #if defined(F3DEX_GBI) || defined(F3DLP_GBI)
             case (uint8_t)G_TRI2:
                 gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
@@ -2194,6 +2279,17 @@ static void gfx_run_dl(Gfx* cmd) {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
 
+
+#if _DEBUG
+                //ResourceMgr_GetNameByCRC(hash, fileName);
+
+                if (strcmp(fileName, "gameplay_keep\\gSun1Tex") == 0)
+                {
+                    int bp = 0;
+                }
+
+                //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
+#endif
                 char* tex = ResourceMgr_LoadTexByCRC(hash);
                 cmd--;
 

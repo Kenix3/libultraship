@@ -15,6 +15,9 @@ void LoadTest()
 	std::shared_ptr<OtrLib::OTRArchive> archPtr(new OtrLib::OTRArchive("myarch.mpq"));
 
 	archPtr->LoadFile("(crcfile)");
+
+	int bp = 0;
+
 }
 
 int main()
