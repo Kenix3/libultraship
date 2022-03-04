@@ -8,6 +8,8 @@ namespace Ship {
 		dwPressedButtons = 0;
 		wStickX = 0;
 		wStickY = 0;
+		wGyroX = 0;
+		wGyroY = 0;
 		Attachment = nullptr;
 	}
 
@@ -39,6 +41,9 @@ namespace Ship {
 				pad->stick_y = wStickY;
 			}
 		}
+
+		pad->gyro_x = wGyroX;
+		pad->gyro_y = wGyroY;
 	}
 
 	void Controller::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {

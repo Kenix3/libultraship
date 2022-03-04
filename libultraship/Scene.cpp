@@ -2,11 +2,6 @@
 
 namespace Ship
 {
-	Scene::~Scene()
-	{
-		int bp = 0;
-	}
-
 	void SceneV0::ParseFileBinary(BinaryReader* reader, Resource* res)
 	{
 		Scene* scene = (Scene*)res;
@@ -202,8 +197,6 @@ namespace Ship
 				}
 
 				int polyType = reader->ReadByte();
-
-				int bp = 0;
 			}
 
 

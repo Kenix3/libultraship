@@ -1,5 +1,9 @@
 #include "KeyboardController.h"
 #include "GlobalCtx2.h"
+#include <SDL2/SDL_mouse.h>
+
+float previousGyroX = 0.0f;
+float previousGyroY = 0.0f;
 
 namespace Ship {
 	KeyboardController::KeyboardController(int32_t dwControllerNumber) : Controller(dwControllerNumber) {
@@ -35,6 +39,15 @@ namespace Ship {
 	void KeyboardController::ReadFromSource() {
 		wStickX = 0;
 		wStickY = 0;
+
+		int x, y;
+		SDL_GetMouseState(&x, &y);
+
+		wGyroY = -float(x - previousGyroX) / 50.0f;
+		wGyroX = -float(y - previousGyroY) / 50.0f;
+
+		previousGyroX = x;
+		previousGyroY = y;
 	}
 
 	std::string KeyboardController::GetControllerType() {

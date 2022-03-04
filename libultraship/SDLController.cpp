@@ -5,9 +5,10 @@
 #include "Window.h"
 
 extern "C" uint8_t __osMaxControllers;
+float gyroDriftX;
+float gyroDriftY;
 
 namespace Ship {
-
 
 	SDLController::SDLController(int32_t dwControllerNumber) : Controller(dwControllerNumber), Cont(nullptr), guid(INVALID_SDL_CONTROLLER_GUID) {
 
@@ -59,6 +60,11 @@ namespace Ship {
                 if (Conf[ConfSection]["GUID"].compare("") == 0 || Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(NewGuid) == 0) {
                     auto NewCont = SDL_GameControllerOpen(i);
 
+                    if (SDL_GameControllerHasSensor(NewCont, SDL_SENSOR_GYRO))
+                    {
+                        SDL_GameControllerSetSensorEnabled(NewCont, SDL_SENSOR_GYRO, SDL_TRUE);
+                    }
+
                     // We failed to load the controller. Go to next.
                     if (NewCont == nullptr) {
                         SPDLOG_ERROR("SDL Controller failed to open: ({})", SDL_GetError());
@@ -98,6 +104,8 @@ namespace Ship {
         dwPressedButtons = 0;
         wStickX = 0;
         wStickY = 0;
+        wGyroX = 0;
+        wGyroY = 0;
 
         return true;
     }
@@ -147,6 +155,23 @@ namespace Ship {
             if (!Open()) {
                 return;
             }
+        }
+
+        if (SDL_GameControllerHasSensor(Cont, SDL_SENSOR_GYRO))
+        {
+            float gyroData[3];
+            SDL_GameControllerGetSensorData(Cont, SDL_SENSOR_GYRO, gyroData, 3);
+
+            if (gyroDriftX == 0) {
+                gyroDriftX = gyroData[0];
+            }
+
+            if (gyroDriftY == 0) {
+                gyroDriftY = gyroData[1];
+            }
+
+            wGyroX = gyroData[0] - gyroDriftX;
+            wGyroY = gyroData[1] - gyroDriftY;
         }
 
         for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
