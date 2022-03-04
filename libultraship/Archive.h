@@ -24,7 +24,7 @@ namespace Ship
 		Archive(std::string MainPath, std::string PatchesPath, bool enableWriting, bool genCRCMap = true);
 		~Archive();
 
-		static std::shared_ptr<Archive> CreateArchive(std::string archivePath);
+		static std::shared_ptr<Archive> CreateArchive(std::string archivePath, int fileCapacity);
 
 		std::shared_ptr<File> LoadFile(std::string filePath, bool includeParent = true, std::shared_ptr<File> FileToLoad = nullptr);
 

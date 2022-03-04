@@ -18,7 +18,7 @@ namespace Ship {
 		Unload();
 	}
 
-	std::shared_ptr<Archive> Archive::CreateArchive(std::string archivePath)
+	std::shared_ptr<Archive> Archive::CreateArchive(std::string archivePath, int fileCapacity)
 	{
 		Archive* archive = new Archive(archivePath, true);
 
@@ -26,7 +26,7 @@ namespace Ship {
 		t_filename[archivePath.size()] = 0;
 		std::copy(archivePath.begin(), archivePath.end(), t_filename);
 
-		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, 65536 * 4, &archive->mainMPQ);
+		bool success = SFileCreateArchive(t_filename, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2, fileCapacity, &archive->mainMPQ);
 		int error = GetLastError();
 
 		if (success) {
