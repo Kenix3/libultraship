@@ -31,7 +31,8 @@ namespace Ship
         cachedGameAsset = nullptr;
 
 #if _DEBUG
-        printf("Deconstructor called on file %s\n", File->path.c_str());
+        if (File != nullptr)
+            printf("Deconstructor called on file %s\n", File->path.c_str());
 #endif
     }
 }
