@@ -16,30 +16,15 @@
 #include "Lib/ImGui/backends/imgui_impl_opengl3.h"
 #include "Lib/ImGui/backends/imgui_impl_sdl.h"
 
-#define USE_INTERNAL_RES
+#endif
 
-#define ImGuiWMInit() ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.window), impl.context)
-#define ImGuiBackendInit() ImGui_ImplOpenGL3_Init("#version 120")
-#define ImGuiProcessEvent(event) ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.handle))
-#define ImGuiWMNewFrame() ImGui_ImplSDL2_NewFrame(static_cast<SDL_Window*>(impl.window))
-#define ImGuiBackendNewFrame() ImGui_ImplOpenGL3_NewFrame()
-#define ImGuiRenderDrawData(data) ImGui_ImplOpenGL3_RenderDrawData(data)
-
-#elif defined(ENABLE_DX11) || defined(ENABLE_DX12)
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 #include "Lib/ImGui/backends/imgui_impl_dx11.h"
 #include "Lib/ImGui/backends/imgui_impl_win32.h"
 #include <Windows.h>
 
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define USE_VIEWPORTS
-
-#define ImGuiWMInit() ImGui_ImplWin32_Init(impl.window)
-#define ImGuiBackendInit() ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.device), static_cast<ID3D11DeviceContext*>(impl.context))
-#define ImGuiProcessEvent(event) ImGui_ImplWin32_WndProcHandler(static_cast<HWND>((event).handle), (event).msg, (event).wparam, (event).lparam)
-#define ImGuiWMNewFrame() ImGui_ImplWin32_NewFrame()
-#define ImGuiBackendNewFrame() ImGui_ImplDX11_NewFrame()
-#define ImGuiRenderDrawData(data) ImGui_ImplDX11_RenderDrawData(data);
 #endif
 
 using namespace Ship;
@@ -56,6 +41,88 @@ namespace SohImGui {
     bool p_open = false;
     bool needs_save = false;
 
+    void ImGuiWMInit() {
+        switch (impl.backend) {
+        case Backend::SDL:
+            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.sdl.window), impl.sdl.context);
+            break;
+        case Backend::DX11:
+            ImGui_ImplWin32_Init(impl.dx11.window);
+            break;
+        }
+    }
+
+    void ImGuiBackendInit() {
+        switch (impl.backend) {
+        case Backend::SDL:
+            ImGui_ImplOpenGL3_Init("#version 120");
+            break;
+        case Backend::DX11:
+            ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.dx11.device), static_cast<ID3D11DeviceContext*>(impl.dx11.device_context));
+            break;
+        }
+    }
+
+    void ImGuiProcessEvent(EventImpl event) {
+        switch (impl.backend) {
+        case Backend::SDL:
+            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.sdl.event));
+            break;
+        case Backend::DX11:
+            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.win32.handle), event.win32.msg, event.win32.wparam, event.win32.lparam);
+            break;
+        }
+    }
+
+    void ImGuiWMNewFrame() {
+        switch (impl.backend) {
+        case Backend::SDL:
+            ImGui_ImplSDL2_NewFrame(static_cast<SDL_Window*>(impl.sdl.window));
+            break;
+        case Backend::DX11:
+            ImGui_ImplWin32_NewFrame();
+            break;
+        }
+    }
+
+    void ImGuiBackendNewFrame() {
+        switch (impl.backend) {
+        case Backend::SDL:
+            ImGui_ImplOpenGL3_NewFrame();
+            break;
+        case Backend::DX11:
+            ImGui_ImplDX11_NewFrame();
+            break;
+        }
+    }
+
+    void ImGuiRenderDrawData(ImDrawData* data) {
+        switch (impl.backend) {
+        case Backend::SDL:
+            ImGui_ImplOpenGL3_RenderDrawData(data);
+            break;
+        case Backend::DX11:
+            ImGui_ImplDX11_RenderDrawData(data);
+            break;
+        }
+    }
+
+    bool UseInternalRes() {
+        switch (impl.backend) {
+        case Backend::SDL:
+            return true;
+        }
+        return false;
+    }
+
+    bool UseViewports() {
+        switch (impl.backend) {
+        case Backend::DX11:
+            return true;
+        }
+        return false;
+    }
+
     void LoadSettings() {
         std::string ConfSection = GetDebugSection();
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
@@ -63,9 +130,9 @@ namespace SohImGui {
         console->opened      = stob(Conf[ConfSection]["console"]);
         SohSettings.menu_bar = stob(Conf[ConfSection]["menu_bar"]);
         SohSettings.soh      = stob(Conf[ConfSection]["soh_debug"]);
-#ifdef USE_INTERNAL_RES
-        SohSettings.n64mode  = stob(Conf[ConfSection]["n64_mode"]);
-#endif
+        if (UseInternalRes()) {
+            SohSettings.n64mode = stob(Conf[ConfSection]["n64_mode"]);
+        }
     }
 
     void SaveSettings() {
@@ -80,15 +147,15 @@ namespace SohImGui {
     }
 
     void Init( WindowImpl window_impl ) {
+        impl = window_impl;
         LoadSettings();
         ImGuiContext* ctx = ImGui::CreateContext();
         ImGui::SetCurrentContext(ctx);
         io = &ImGui::GetIO();
         io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-#ifdef USE_VIEWPORTS
-        io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-#endif
-        impl = window_impl;
+        if (UseViewports()) {
+            io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+        }
         console->Init();
         ImGuiWMInit();
         ImGuiBackendInit();
@@ -110,11 +177,11 @@ namespace SohImGui {
 
         const std::shared_ptr<Window> wnd = GlobalCtx2::GetInstance()->GetWindow();
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking |
-										ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
-										ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
-#ifdef USE_VIEWPORTS
-        window_flags |= ImGuiWindowFlags_NoBackground;
-#endif
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
+        if (UseViewports()) {
+            window_flags |= ImGuiWindowFlags_NoBackground;
+        }
         if (SohSettings.menu_bar) window_flags |= ImGuiWindowFlags_MenuBar;
 
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -149,9 +216,9 @@ namespace SohImGui {
             if (ImGui::BeginMenu("View")) {
                 HOOK(ImGui::MenuItem("Soh Debug", nullptr, &SohSettings.soh));
                 HOOK(ImGui::MenuItem("Console", nullptr, &console->opened));
-#ifdef USE_INTERNAL_RES
-                HOOK(ImGui::MenuItem("N64 Mode", nullptr, &SohSettings.n64mode));
-#endif
+                if (UseInternalRes()) {
+                    HOOK(ImGui::MenuItem("N64 Mode", nullptr, &SohSettings.n64mode));
+                }
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -160,9 +227,9 @@ namespace SohImGui {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-#ifdef USE_VIEWPORTS
-        flags |= ImGuiWindowFlags_NoBackground;
-#endif
+        if (UseViewports()) {
+            flags |= ImGuiWindowFlags_NoBackground;
+        }
         ImGui::Begin("OoT Master Quest", nullptr, flags);
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
@@ -171,33 +238,33 @@ namespace SohImGui {
         ImVec2 pos = ImVec2(0, 0);
         gfx_current_dimensions.width = size.x * gfx_current_dimensions.internal_mul;
         gfx_current_dimensions.height = size.y * gfx_current_dimensions.internal_mul;
-#ifdef USE_INTERNAL_RES
-        if (SohSettings.n64mode) {
-            gfx_current_dimensions.width = 320;
-            gfx_current_dimensions.height = 240;
-            const int sw = size.y * 320 / 240;
-            pos = ImVec2(size.x / 2 - sw / 2, 0);
-            size = ImVec2(sw, size.y);
+        if (UseInternalRes()) {
+            if (SohSettings.n64mode) {
+                gfx_current_dimensions.width = 320;
+                gfx_current_dimensions.height = 240;
+                const int sw = size.y * 320 / 240;
+                pos = ImVec2(size.x / 2 - sw / 2, 0);
+                size = ImVec2(sw, size.y);
+            }
         }
-#endif
 
-#ifdef ENABLE_OPENGL
-        int fbuf = std::stoi(SohUtils::getEnvironmentVar("framebuffer"));
-        ImGui::ImageRotated(reinterpret_cast<ImTextureID>(fbuf), pos, size, 0.0f);
-#endif
+        if (UseInternalRes()) {
+            int fbuf = std::stoi(SohUtils::getEnvironmentVar("framebuffer"));
+            ImGui::ImageRotated(reinterpret_cast<ImTextureID>(fbuf), pos, size, 0.0f);
+        }
         ImGui::End();
 
         if (SohSettings.soh) {
-	        const float framerate = ImGui::GetIO().Framerate;
+            const float framerate = ImGui::GetIO().Framerate;
             ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
             ImGui::Begin("Debug Stats", nullptr, ImGuiWindowFlags_None);
 
             ImGui::Text("Platform: Windows");
             ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", 1000.0f / framerate, framerate);
-#ifdef USE_INTERNAL_RES
-            ImGui::Text("Internal Resolution:");
-        	ImGui::SliderInt("Mul", reinterpret_cast<int*>(&gfx_current_dimensions.internal_mul), 1, 8);
-#endif
+            if (UseInternalRes()) {
+                ImGui::Text("Internal Resolution:");
+                ImGui::SliderInt("Mul", reinterpret_cast<int*>(&gfx_current_dimensions.internal_mul), 1, 8);
+            }
             ImGui::End();
             ImGui::PopStyleColor();
         }
@@ -206,10 +273,10 @@ namespace SohImGui {
 
         ImGui::Render();
         ImGuiRenderDrawData(ImGui::GetDrawData());
-#ifdef USE_VIEWPORTS
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-#endif
+        if (UseViewports()) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
     }
 
     void BindCmd(const std::string& cmd, CommandEntry entry) {
@@ -219,14 +286,4 @@ namespace SohImGui {
     std::string GetDebugSection() {
         return "DEBUG SETTINGS";
     }
-}
-
-extern "C" void c_init(WindowImpl impl) {
-    SohImGui::Init(impl);
-}
-extern "C" void c_update(EventImpl event) {
-    SohImGui::Update(event);
-}
-extern "C" void c_draw(void) {
-    SohImGui::Draw();
 }

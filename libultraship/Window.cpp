@@ -173,7 +173,7 @@ extern "C" {
 }
 
 extern "C" GfxWindowManagerAPI gfx_sdl;
-void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi);
+void SetWindowManager(GfxWindowManagerAPI** WmApi, GfxRenderingAPI** RenderingApi, const std::string& gfx_backend);
 
 namespace Ship {
     std::map<size_t, std::vector<std::shared_ptr<Controller>>> Window::Controllers;
@@ -195,13 +195,14 @@ namespace Ship {
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
 
-        SetWindowManager(&WmApi, &RenderingApi);
         SetAudioPlayer();
         bIsFullscreen = Ship::stob(Conf["WINDOW"]["FULLSCREEN"]);
         dwWidth = Ship::stoi(Conf["WINDOW"]["WINDOW WIDTH"], 320);
         dwHeight = Ship::stoi(Conf["WINDOW"]["WINDOW HEIGHT"], 240);
         dwWidth = Ship::stoi(Conf["WINDOW"]["FULLSCREEN WIDTH"], 1920);
         dwHeight = Ship::stoi(Conf["WINDOW"]["FULLSCREEN HEIGHT"], 1080);
+        const std::string& gfx_backend = Conf["WINDOW"]["GFX BACKEND"];
+        SetWindowManager(&WmApi, &RenderingApi, gfx_backend);
 
         gfx_init(WmApi, RenderingApi, GetContext()->GetName().c_str(), bIsFullscreen);
         WmApi->set_fullscreen_changed_callback(Window::OnFullscreenChanged);

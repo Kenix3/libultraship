@@ -34,12 +34,14 @@
 #define GFX_API_NAME "DirectX"
 
 #ifdef VERSION_EU
-#define FRAME_INTERVAL_US_NUMERATOR 60000
-#define FRAME_INTERVAL_US_DENOMINATOR 1
+#define FRAME_INTERVAL_US_NUMERATOR_ 60000
+#define FRAME_INTERVAL_US_DENOMINATOR 3
 #else
-#define FRAME_INTERVAL_US_NUMERATOR 50000
-#define FRAME_INTERVAL_US_DENOMINATOR 1
+#define FRAME_INTERVAL_US_NUMERATOR_ 50000
+#define FRAME_INTERVAL_US_DENOMINATOR 3
 #endif
+
+#define FRAME_INTERVAL_US_NUMERATOR (FRAME_INTERVAL_US_NUMERATOR_ * dxgi.frame_divisor)
 
 using namespace Microsoft::WRL; // For ComPtr
 
@@ -68,6 +70,10 @@ static struct {
     bool dropped_frame;
     bool sync_interval_means_frames_to_wait;
     UINT length_in_vsync_frames;
+    uint32_t frame_divisor;
+    HANDLE timer;
+    bool use_timer;
+    LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     void (*run_one_game_iter)(void);
@@ -219,7 +225,9 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
 }
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
-    SohImGui::Update({ h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) });
+    SohImGui::EventImpl event_impl;
+    event_impl.win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
+    SohImGui::Update(event_impl);
     switch (message) {
         case WM_SIZE:
             gfx_dxgi_on_resize();
@@ -259,12 +267,15 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     return 0;
 }
 
-static void gfx_dxgi_init(const char *game_name, bool start_in_fullscreen) {
+void gfx_dxgi_init(const char *game_name, bool start_in_fullscreen) {
     LARGE_INTEGER qpc_init, qpc_freq;
     QueryPerformanceCounter(&qpc_init);
     QueryPerformanceFrequency(&qpc_freq);
     dxgi.qpc_init = qpc_init.QuadPart;
     dxgi.qpc_freq = qpc_freq.QuadPart;
+
+    dxgi.frame_divisor = 1;
+    dxgi.timer = CreateWaitableTimer(nullptr, false, nullptr);
 
     // Prepare window title
 
@@ -354,6 +365,10 @@ static uint64_t qpc_to_us(uint64_t qpc) {
     return qpc / dxgi.qpc_freq * 1000000 + qpc % dxgi.qpc_freq * 1000000 / dxgi.qpc_freq;
 }
 
+static uint64_t qpc_to_100ns(uint64_t qpc) {
+    return qpc / dxgi.qpc_freq * 10000000 + qpc % dxgi.qpc_freq * 10000000 / dxgi.qpc_freq;
+}
+
 static bool gfx_dxgi_start_frame(void) {
     DXGI_FRAME_STATISTICS stats;
     if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK && (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -379,6 +394,8 @@ static bool gfx_dxgi_start_frame(void) {
         // Just make sure the list doesn't grow too large if GetFrameStatistics fails.
         dxgi.pending_frame_stats.erase(dxgi.pending_frame_stats.begin());
     }
+
+    dxgi.use_timer = false;
 
     dxgi.frame_timestamp += FRAME_INTERVAL_US_NUMERATOR;
 
@@ -461,8 +478,9 @@ static bool gfx_dxgi_start_frame(void) {
         }
         //printf("v: %d\n", (int)vsyncs_to_wait);
         if (vsyncs_to_wait > 4) {
-            // Invalid, so change to 4
+            // Invalid, so use timer based solution
             vsyncs_to_wait = 4;
+            dxgi.use_timer = true;
         }
         dxgi.length_in_vsync_frames = vsyncs_to_wait;
     } else {
@@ -474,6 +492,21 @@ static bool gfx_dxgi_start_frame(void) {
 
 static void gfx_dxgi_swap_buffers_begin(void) {
     //dxgi.length_in_vsync_frames = 1;
+    LARGE_INTEGER t;
+    if (dxgi.use_timer) {
+        QueryPerformanceCounter(&t);
+        int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
+        int64_t left = next - qpc_to_100ns(t.QuadPart);
+        if (left > 0) {
+            LARGE_INTEGER li;
+            li.QuadPart = -left;
+            SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
+            WaitForSingleObject(dxgi.timer, INFINITE);
+        }
+    }
+    QueryPerformanceCounter(&t);
+    dxgi.previous_present_time = t;
+
     ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
     UINT this_present_id;
     if (dxgi.swap_chain->GetLastPresentCount(&this_present_id) == S_OK) {
@@ -511,7 +544,7 @@ static double gfx_dxgi_get_time(void) {
 }
 
 static void gfx_dxgi_set_frame_divisor(int divisor) {
-    // TODO
+    dxgi.frame_divisor = divisor;
 }
 
 void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version, bool (*create_device_fn)(IDXGIAdapter1 *adapter, bool test_only)) {

@@ -91,6 +91,9 @@ static struct {
     ComPtr<ID3D11Buffer> vertex_buffer;
     ComPtr<ID3D11Buffer> per_frame_cb;
     ComPtr<ID3D11Buffer> per_draw_cb;
+    ComPtr<ID3D11Texture2D> depth_stencil_texture;
+    ComPtr<ID3D11Texture2D> depth_stencil_copy_texture;
+    bool copied_depth_buffer;
 
 #if DEBUG_D3D
     ComPtr<ID3D11Debug> debug;
@@ -101,8 +104,7 @@ static struct {
     PerFrameCB per_frame_cb_data;
     PerDrawCB per_draw_cb_data;
 
-    struct ShaderProgramD3D11 shader_program_pool[64];
-    uint8_t shader_program_pool_size;
+    std::map<std::pair<uint64_t, uint32_t>, struct ShaderProgramD3D11> shader_program_pool;
 
     std::vector<struct TextureData> textures;
     int current_tile;
@@ -179,9 +181,24 @@ static void create_render_target_views(bool is_resize) {
     depth_stencil_texture_desc.CPUAccessFlags = 0;
     depth_stencil_texture_desc.MiscFlags = 0;
 
-    ComPtr<ID3D11Texture2D> depth_stencil_texture;
-    ThrowIfFailed(d3d.device->CreateTexture2D(&depth_stencil_texture_desc, nullptr, depth_stencil_texture.GetAddressOf()));
-    ThrowIfFailed(d3d.device->CreateDepthStencilView(depth_stencil_texture.Get(), nullptr, d3d.depth_stencil_view.GetAddressOf()));
+    ThrowIfFailed(d3d.device->CreateTexture2D(&depth_stencil_texture_desc, nullptr, d3d.depth_stencil_texture.GetAddressOf()));
+    ThrowIfFailed(d3d.device->CreateDepthStencilView(d3d.depth_stencil_texture.Get(), nullptr, d3d.depth_stencil_view.GetAddressOf()));
+
+    // Create texture that can be used to retrieve depth value
+
+    D3D11_TEXTURE2D_DESC depth_texture = {};
+    depth_texture.Width = desc1.Width;
+    depth_texture.Height = desc1.Height;
+    depth_texture.MipLevels = 1;
+    depth_texture.ArraySize = 1;
+    depth_texture.Format = DXGI_FORMAT_D32_FLOAT;
+    depth_texture.SampleDesc.Count = 1;
+    depth_texture.SampleDesc.Quality = 0;
+    depth_texture.Usage = D3D11_USAGE_STAGING;
+    depth_texture.BindFlags = 0;
+    depth_texture.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    depth_texture.MiscFlags = 0;
+    ThrowIfFailed(d3d.device->CreateTexture2D(&depth_texture, nullptr, d3d.depth_stencil_copy_texture.GetAddressOf()));
 
     // Save resolution
 
@@ -300,7 +317,10 @@ static void gfx_d3d11_init(void) {
 
     d3d.context->PSSetConstantBuffers(1, 1, d3d.per_draw_cb.GetAddressOf());
 
-    SohImGui::Init({ gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() });
+    SohImGui::WindowImpl window_impl;
+    window_impl.backend = SohImGui::Backend::DX11;
+    window_impl.dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
+    SohImGui::Init(window_impl);
 }
 
 
@@ -349,7 +369,7 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint64_t shade
         throw hr;
     }
 
-    struct ShaderProgramD3D11 *prg = &d3d.shader_program_pool[d3d.shader_program_pool_size++];
+    struct ShaderProgramD3D11 *prg = &d3d.shader_program_pool[std::make_pair(shader_id0, shader_id1)];
 
     ThrowIfFailed(d3d.device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, prg->vertex_shader.GetAddressOf()));
     ThrowIfFailed(d3d.device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, prg->pixel_shader.GetAddressOf()));
@@ -414,12 +434,8 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint64_t shade
 }
 
 static struct ShaderProgram *gfx_d3d11_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
-    for (size_t i = 0; i < d3d.shader_program_pool_size; i++) {
-        if (d3d.shader_program_pool[i].shader_id0 == shader_id0 && d3d.shader_program_pool[i].shader_id1 == shader_id1) {
-            return (struct ShaderProgram *)&d3d.shader_program_pool[i];
-        }
-    }
-    return nullptr;
+    auto it = d3d.shader_program_pool.find(std::make_pair(shader_id0, shader_id1));
+    return it == d3d.shader_program_pool.end() ? nullptr : (struct ShaderProgram *)&it->second;
 }
 
 static void gfx_d3d11_shader_get_info(struct ShaderProgram *prg, uint8_t *num_inputs, bool used_textures[2]) {
@@ -700,6 +716,8 @@ static void gfx_d3d11_start_frame(void) {
     d3d.context->Map(d3d.per_frame_cb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
     memcpy(ms.pData, &d3d.per_frame_cb_data, sizeof(PerFrameCB));
     d3d.context->Unmap(d3d.per_frame_cb.Get(), 0);
+
+    d3d.copied_depth_buffer = false;
 }
 
 static void gfx_d3d11_end_frame(void) {
@@ -710,7 +728,25 @@ static void gfx_d3d11_finish_render(void) {
 }
 
 static uint16_t gfx_d3d11_get_pixel_depth(float x, float y) {
-    return 0; // OTRTODO
+    if (!d3d.copied_depth_buffer) {
+        d3d.context->CopyResource(d3d.depth_stencil_copy_texture.Get(), d3d.depth_stencil_texture.Get());
+        d3d.copied_depth_buffer = true;
+    }
+
+    D3D11_MAPPED_SUBRESOURCE mapping_desc;
+    d3d.context->Map(d3d.depth_stencil_copy_texture.Get(), 0, D3D11_MAP_READ, 0, &mapping_desc);
+    float res = 0;
+    if (mapping_desc.pData != nullptr) {
+        float *addr = (float *)mapping_desc.pData;
+        uint32_t num_pixels = mapping_desc.DepthPitch / sizeof(float);
+        uint32_t width = mapping_desc.RowPitch / sizeof(float);
+        uint32_t height = width == 0 ? 0 : num_pixels / width;
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            res = addr[width * (height - 1 - (int)y) + (int)x];
+        }
+    }
+    d3d.context->Unmap(d3d.depth_stencil_copy_texture.Get(), 0);
+    return res * 65532.0f;
 }
 
 } // namespace
