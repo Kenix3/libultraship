@@ -122,6 +122,8 @@ namespace Ship {
 			auto Res = std::shared_ptr<Resource>(UnmanagedRes);
 
 			if (Res != nullptr) {
+				std::unique_lock<std::mutex> Lock(ToLoad->ResourceLoadMutex);
+
 				ToLoad->bHasResourceLoaded = true;
 				ToLoad->Resource = Res;
 				ResourceCache[Res->File->path] = Res;

@@ -43,6 +43,7 @@ namespace Ship {
 
 		if (!SFileOpenFileEx(mainMPQ, filePath.c_str(), 0, &fileHandle)) {
 			SPDLOG_ERROR("({}) Failed to open file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
+			std::unique_lock<std::mutex> Lock(FileToLoad->FileLoadMutex);
 			FileToLoad->bHasLoadError = true;
 			return nullptr;
 		}
@@ -56,6 +57,7 @@ namespace Ship {
 			if (!SFileCloseFile(fileHandle)) {
 				SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
 			}
+			std::unique_lock<std::mutex> Lock(FileToLoad->FileLoadMutex);
 			FileToLoad->bHasLoadError = true;
 			return nullptr;
 		}
@@ -69,6 +71,7 @@ namespace Ship {
 			FileToLoad->path = filePath;
 		}
 
+		std::unique_lock<std::mutex> Lock(FileToLoad->FileLoadMutex);
 		FileToLoad->parent = includeParent ? shared_from_this() : nullptr;
 		FileToLoad->buffer = fileData;
 		FileToLoad->dwBufferSize = dwFileSize;
