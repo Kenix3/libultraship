@@ -143,6 +143,7 @@ static void create_render_target_views(bool is_resize) {
 
         d3d.backbuffer_view.Reset();
         d3d.depth_stencil_view.Reset();
+        d3d.depth_stencil_copy_texture.Reset();
 
         // Resize swap chain buffers
 
