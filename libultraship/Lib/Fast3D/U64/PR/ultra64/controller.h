@@ -112,7 +112,9 @@ typedef struct {
     /* 0x02 */ s8 stick_x;
     /* 0x03 */ s8 stick_y;
     /* 0x04 */ u8 err_no;
-} OSContPad; // size = 0x06
+	/* 0x05 */ f32 gyro_x;
+	/* 0x09 */ f32 gyro_y;
+} OSContPad; // size = 0x0D
 
 typedef struct {
     /* 0x00 */ void* address;
