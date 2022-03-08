@@ -49,6 +49,12 @@ namespace Ship {
         }
         ResMan = std::make_shared<ResourceMgr>(GlobalCtx2::GetInstance(), MainPath, PatchesPath);
         Win = std::make_shared<Window>(GlobalCtx2::GetInstance());
+
+        if (!ResMan->DidLoadSuccessfully())
+        {
+            MessageBox(NULL, L"Main OTR file not found!", L"Uh oh", MB_OK);
+            exit(1);
+        }
     }
 
     void GlobalCtx2::InitLogging() {

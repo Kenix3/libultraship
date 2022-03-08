@@ -7,15 +7,23 @@
 #include <filesystem>
 
 namespace Ship {
-	Archive::Archive(std::string MainPath, bool enableWriting) : Archive(MainPath, "", enableWriting) {
+	Archive::Archive(std::string MainPath, bool enableWriting) : Archive(MainPath, "", enableWriting) 
+	{
+		mainMPQ = nullptr;
 	}
 
 	Archive::Archive(std::string MainPath, std::string PatchesPath, bool enableWriting, bool genCRCMap) : MainPath(MainPath), PatchesPath(PatchesPath) {
+		mainMPQ = nullptr;
 		Load(enableWriting, genCRCMap);
 	}
 
 	Archive::~Archive() {
 		Unload();
+	}
+
+	bool Archive::IsMainMPQValid()
+	{
+		return mainMPQ != nullptr;
 	}
 
 	std::shared_ptr<Archive> Archive::CreateArchive(std::string archivePath, int fileCapacity)

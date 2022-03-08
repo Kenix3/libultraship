@@ -20,6 +20,7 @@ namespace Ship
 		~ResourceMgr();
 
 		bool IsRunning();
+		bool DidLoadSuccessfully();
 
 		std::shared_ptr<Archive> GetArchive() { return OTR; }
 		std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
