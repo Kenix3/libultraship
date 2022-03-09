@@ -7,12 +7,12 @@
 #include <filesystem>
 
 namespace Ship {
-	Archive::Archive(std::string MainPath, bool enableWriting) : Archive(MainPath, "", enableWriting) 
+	Archive::Archive(const std::string& MainPath, bool enableWriting) : Archive(MainPath, "", enableWriting) 
 	{
 		mainMPQ = nullptr;
 	}
 
-	Archive::Archive(std::string MainPath, std::string PatchesPath, bool enableWriting, bool genCRCMap) : MainPath(MainPath), PatchesPath(PatchesPath) {
+	Archive::Archive(const std::string& MainPath, const std::string& PatchesPath, bool enableWriting, bool genCRCMap) : MainPath(MainPath), PatchesPath(PatchesPath) {
 		mainMPQ = nullptr;
 		Load(enableWriting, genCRCMap);
 	}
@@ -26,7 +26,7 @@ namespace Ship {
 		return mainMPQ != nullptr;
 	}
 
-	std::shared_ptr<Archive> Archive::CreateArchive(std::string archivePath, int fileCapacity)
+	std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, int fileCapacity)
 	{
 		Archive* archive = new Archive(archivePath, true);
 
@@ -46,7 +46,7 @@ namespace Ship {
 		}
 	}
 
-	std::shared_ptr<File> Archive::LoadFile(std::string filePath, bool includeParent, std::shared_ptr<File> FileToLoad) {
+	std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, bool includeParent, std::shared_ptr<File> FileToLoad) {
 		HANDLE fileHandle = NULL;
 
 		if (!SFileOpenFileEx(mainMPQ, filePath.c_str(), 0, &fileHandle)) {
@@ -88,7 +88,7 @@ namespace Ship {
 		return FileToLoad;
 	}
 
-	bool Archive::AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize) {
+	bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD dwFileSize) {
 		HANDLE hFile;
 
 		SYSTEMTIME sysTime;
@@ -125,7 +125,7 @@ namespace Ship {
 		return true;
 	}
 
-	bool Archive::RemoveFile(std::string path) {
+	bool Archive::RemoveFile(const std::string& path) {
 		// TODO: Notify the resource manager and child Files
 
 		if (!SFileRemoveFile(mainMPQ, path.c_str(), 0)) {
@@ -136,7 +136,7 @@ namespace Ship {
 		return true;
 	}
 
-	bool Archive::RenameFile(std::string oldPath, std::string newPath) {
+	bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath) {
 		// TODO: Notify the resource manager and child Files
 
 		if (!SFileRenameFile(mainMPQ, oldPath.c_str(), newPath.c_str())) {
@@ -147,7 +147,7 @@ namespace Ship {
 		return true;
 	}
 
-	std::vector<SFILE_FIND_DATA> Archive::ListFiles(std::string searchMask) {
+	std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) {
 		auto fileList = std::vector<SFILE_FIND_DATA>();
 		SFILE_FIND_DATA findContext;
 		HANDLE hFind;
@@ -191,7 +191,7 @@ namespace Ship {
 		return fileList;
 	}
 
-	bool Archive::HasFile(std::string filename) {
+	bool Archive::HasFile(const std::string& filename) {
 		bool result = false;
 		auto start = std::chrono::steady_clock::now();
 
@@ -283,24 +283,21 @@ namespace Ship {
 		return true;
 	}
 
-	bool Archive::LoadPatchMPQ(std::string path) {
+	bool Archive::LoadPatchMPQ(const std::string& path) {
 		HANDLE patchHandle = NULL;
 		auto fullPath = std::filesystem::absolute(path).string();
-
 		if (mpqHandles.contains(fullPath)) {
 			return true;
 		}
 
-		TCHAR* t_filename = new TCHAR[fullPath.size() + 1];
-		t_filename[path.size()] = 0;
-		std::copy(fullPath.begin(), fullPath.end(), t_filename);
+		std::wstring wPath = std::filesystem::absolute(path).wstring();
 
-		if (!SFileOpenArchive(t_filename, 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
+		if (!SFileOpenArchive(wPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
 			SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
 		}
 
-		if (!SFileOpenPatchArchive(mainMPQ, t_filename, "", 0)) {
+		if (!SFileOpenPatchArchive(mainMPQ, wPath.c_str(), "", 0)) {
 			SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path.c_str(), MainPath.c_str());
 			return false;
 		}

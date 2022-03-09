@@ -20,21 +20,21 @@ namespace Ship
 	class Archive : public std::enable_shared_from_this<Archive>
 	{
 	public:
-		Archive(std::string MainPath, bool enableWriting);
-		Archive(std::string MainPath, std::string PatchesPath, bool enableWriting, bool genCRCMap = true);
+		Archive(const std::string& MainPath, bool enableWriting);
+		Archive(const std::string& MainPath, const std::string& PatchesPath, bool enableWriting, bool genCRCMap = true);
 		~Archive();
 
 		bool IsMainMPQValid();
 
-		static std::shared_ptr<Archive> CreateArchive(std::string archivePath, int fileCapacity);
+		static std::shared_ptr<Archive> CreateArchive(const std::string& archivePath, int fileCapacity);
 
-		std::shared_ptr<File> LoadFile(std::string filePath, bool includeParent = true, std::shared_ptr<File> FileToLoad = nullptr);
+		std::shared_ptr<File> LoadFile(const std::string& filePath, bool includeParent = true, std::shared_ptr<File> FileToLoad = nullptr);
 
-		bool AddFile(std::string path, uintptr_t fileData, DWORD dwFileSize);
-		bool RemoveFile(std::string path);
-		bool RenameFile(std::string oldPath, std::string newPath);
-		std::vector<SFILE_FIND_DATA> ListFiles(std::string searchMask);
-		bool HasFile(std::string searchMask);
+		bool AddFile(const std::string& path, uintptr_t fileData, DWORD dwFileSize);
+		bool RemoveFile(const std::string& path);
+		bool RenameFile(const std::string& oldPath, const std::string& newPath);
+		std::vector<SFILE_FIND_DATA> ListFiles(const std::string& searchMask);
+		bool HasFile(const std::string& searchMask);
 		std::string HashToString(uint64_t hash);
 	protected:
 		bool Load(bool enableWriting, bool genCRCMap);
@@ -49,6 +49,6 @@ namespace Ship
 
 		bool LoadMainMPQ(bool enableWriting, bool genCRCMap);
 		bool LoadPatchMPQs();
-		bool LoadPatchMPQ(std::string path);
+		bool LoadPatchMPQ(const std::string& path);
 	};
 }
