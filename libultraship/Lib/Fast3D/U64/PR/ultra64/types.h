@@ -30,7 +30,7 @@ typedef s32 intptr_t;
 typedef u32 uintptr_t;
 #endif
 
-typedef long int Mtx_t[4][4];
+typedef int Mtx_t[4][4];
 typedef union {
     Mtx_t m;
     struct {
