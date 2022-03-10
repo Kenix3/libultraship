@@ -161,15 +161,29 @@ namespace Ship {
             float gyroData[3];
             SDL_GameControllerGetSensorData(Cont, SDL_SENSOR_GYRO, gyroData, 3);
 
+            const char* contName = SDL_GameControllerName(Cont);
+            const int isSpecialController = strcmp("PS5 Controller", contName);
+
             if (gyroDriftX == 0) {
-                gyroDriftX = gyroData[0];
+                if (isSpecialController == 0) {
+                    gyroDriftX = gyroData[2];
+                }
+                else {
+                    gyroDriftX = gyroData[0];
+                }
             }
 
             if (gyroDriftY == 0) {
                 gyroDriftY = gyroData[1];
             }
 
-            wGyroX = gyroData[0] - gyroDriftX;
+            if (isSpecialController == 0) {
+                wGyroX = gyroData[2] - gyroDriftX;
+            }
+            else {
+                wGyroX = gyroData[0] - gyroDriftX;
+            }
+
             wGyroY = gyroData[1] - gyroDriftY;
         }
 
