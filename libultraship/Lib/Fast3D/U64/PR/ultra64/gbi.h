@@ -2788,7 +2788,7 @@ _DW({                                   \
     _SHIFTL(G_ENDDL, 24, 8), 0                  \
 }
 
-#define gSPInvalidateTexCache(pkt, addr)                      \
+#define __gSPInvalidateTexCache(pkt, addr)                      \
 _DW({                                   \
     Gfx *_g = (Gfx *)(pkt);                     \
                                     \

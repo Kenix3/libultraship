@@ -83,6 +83,42 @@ struct TextureHashmapNode {
     bool linear_filter;
     bool isInvalid;
 };
+
+struct TextureCacheLookup
+{
+    const uint8_t* texture_addr;
+    uint8_t fmt, siz;
+    uint8_t palette_index;
+
+    TextureCacheLookup()
+    {
+        texture_addr = 0;
+        fmt = 0;
+        siz = 0;
+        palette_index = 0;
+    }
+
+    TextureCacheLookup(uint8_t* nAddr, uint8_t nFmt, uint8_t nSiz, uint8_t nPalIdx)
+    {
+        texture_addr = nAddr;
+        fmt = nFmt;
+        siz = nSiz;
+        palette_index = nPalIdx;
+    }
+
+    bool operator==(const TextureCacheLookup& other) const {
+        return texture_addr == other.texture_addr && fmt == other.fmt && siz == other.siz && palette_index == other.palette_index;
+    }
+
+    bool operator<(const TextureCacheLookup& other) const 
+    {
+        // OTRTODO: Would this work on 64-bit...?
+        uint64_t test = (uintptr_t)texture_addr + fmt + siz + palette_index;
+        uint64_t test2 = (uintptr_t)other.texture_addr + other.fmt + other.siz + other.palette_index;
+        return test < test2;
+    }
+};
+
 static struct {
     struct TextureHashmapNode *hashmap[1024];
     struct TextureHashmapNode pool[512];
@@ -99,6 +135,8 @@ struct ColorCombiner {
 
 static map<uint64_t, struct ColorCombiner> color_combiner_pool;
 static map<uint64_t, struct ColorCombiner>::iterator prev_combiner = color_combiner_pool.end();
+static map<TextureCacheLookup, TextureHashmapNode*> texture_cache;
+static map<uint8_t*, TextureCacheLookup> texture_cache2;
 
 static struct RSP {
     float modelview_matrix_stack[11][4][4];
@@ -471,10 +509,48 @@ static struct ColorCombiner *gfx_lookup_or_create_color_combiner(uint64_t cc_id)
 
 static void gfx_texture_cache_clear()
 {
-    gfx_texture_cache.pool_pos = 0;
+    texture_cache.clear();
+    //gfx_texture_cache.pool_pos = 0;
 }
 
 static bool gfx_texture_cache_lookup(int i, struct TextureHashmapNode **n, const uint8_t *orig_addr, uint32_t fmt, uint32_t siz, uint32_t palette_index) {
+#if 1
+    TextureCacheLookup lookup = TextureCacheLookup((uint8_t*)orig_addr, (uint8_t)fmt, (uint8_t)siz, (uint8_t)palette_index);
+    auto texFind = texture_cache.find(lookup);
+    
+    if (texFind != texture_cache.end() && true)
+    {
+        gfx_rapi->select_texture(i, texFind->second->texture_id);
+        *n = texFind->second;
+        return true;
+    }
+    else
+    {
+        TextureHashmapNode* entry = new TextureHashmapNode();
+
+        entry->texture_id = gfx_rapi->new_texture();
+
+        gfx_rapi->select_texture(i, entry->texture_id);
+        gfx_rapi->set_sampler_parameters(i, false, 0, 0);
+
+        entry->cms = 0;
+        entry->cmt = 0;
+        entry->linear_filter = false;
+        entry->texture_addr = orig_addr;
+        entry->fmt = fmt;
+        entry->siz = siz;
+        entry->next = NULL;
+        entry->isInvalid = false;
+        entry->palette_index = palette_index;
+        entry->isInvalid = false;
+
+        texture_cache[lookup] = entry;
+        texture_cache2[(uint8_t*)orig_addr] = lookup;
+        *n = entry;
+
+        return false;
+    }
+#else
     size_t hash = (uintptr_t)orig_addr;
     hash = (hash >> 5) & 0x3ff;
     struct TextureHashmapNode **node = &gfx_texture_cache.hashmap[hash];
@@ -509,15 +585,36 @@ static bool gfx_texture_cache_lookup(int i, struct TextureHashmapNode **n, const
     (*node)->isInvalid = false;
     *n = *node;
     return false;
+#endif
 }
 
-static void gfx_texture_cache_delete(int i, struct TextureHashmapNode** n, const uint8_t* orig_addr) {
+static void gfx_texture_cache_delete(int i, struct TextureHashmapNode** n, const uint8_t* orig_addr) 
+{
+#if 1
+    auto lookupFind = texture_cache2.find((uint8_t*)orig_addr);
+
+    if (lookupFind != texture_cache2.end())
+    {
+        auto texFind = texture_cache.find(lookupFind->second);
+
+        if (texFind != texture_cache.end())
+        {
+            delete texFind->second;
+            texture_cache.erase(texFind->first);
+        }
+
+        texture_cache2.erase(lookupFind->first);
+    }
+#else
+    /*
     size_t hash = (uintptr_t)orig_addr;
     hash = (hash >> 5) & 0x3ff;
     struct TextureHashmapNode** node = &gfx_texture_cache.hashmap[hash];
 
     if (*(node) != NULL)
         (*node)->isInvalid = true;
+    */
+#endif
 }
 
 static void import_texture_rgba16(int tile) {
@@ -764,7 +861,8 @@ static void import_texture(int i, int tile) {
     uint8_t siz = rdp.texture_tile[tile].siz;
     uint32_t tmem_index = rdp.texture_tile[tile].tmem_index;
 
-    if (gfx_texture_cache_lookup(i, &rendering_state.textures[i], rdp.loaded_texture[tmem_index].addr, fmt, siz, rdp.texture_tile[tile].palette)) {
+    if (gfx_texture_cache_lookup(i, &rendering_state.textures[i], rdp.loaded_texture[tmem_index].addr, fmt, siz, rdp.texture_tile[tile].palette)) 
+    {
         return;
     }
 
@@ -2013,10 +2111,10 @@ static void gfx_run_dl(Gfx* cmd) {
             uintptr_t texAddr = cmd->words.w1;
 
             // OTRTODO: Figure out how to do this hashmap justice
-            //if (texAddr == 0)
+            if (texAddr == 0)
                 gfx_texture_cache_clear();
-            //else
-                //gfx_texture_cache_delete(0, &rendering_state.textures[0], texAddr);
+            else
+                gfx_texture_cache_delete(0, &rendering_state.textures[0], (const uint8_t*)texAddr);
         }
             break;
         case G_NOOP:
