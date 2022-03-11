@@ -197,7 +197,7 @@ namespace Ship {
 
 		auto lst = ListFiles(filename);
 		
-		for (auto item : lst) {
+		for (const auto& item : lst) {
 			if (item.cFileName == filename) {
 				result = true;
 				break;
@@ -221,7 +221,7 @@ namespace Ship {
 	bool Archive::Unload() 
 	{
 		bool success = true;
-		for (auto mpqHandle : mpqHandles) {
+		for (const auto& mpqHandle : mpqHandles) {
 			if (!SFileCloseArchive(mpqHandle.second)) {
 				SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mpqHandle.first.c_str());
 				success = false;
@@ -237,7 +237,7 @@ namespace Ship {
 		// OTRTODO: We also want to periodically scan the patch directories for new MPQs. When new MPQs are found we will load the contents to fileCache and then copy over to gameResourceAddresses
 		if (PatchesPath.length() > 0) {
 			if (std::filesystem::is_directory(PatchesPath)) {
-				for (auto& p : std::filesystem::recursive_directory_iterator(PatchesPath)) {
+				for (const auto& p : std::filesystem::recursive_directory_iterator(PatchesPath)) {
 					if (StringHelper::IEquals(p.path().extension().string(), ".otr") || StringHelper::IEquals(p.path().extension().string(), ".mpq")) {
 						if (!LoadPatchMPQ(p.path().string())) {
 							return false;
@@ -252,13 +252,11 @@ namespace Ship {
 
 	bool Archive::LoadMainMPQ(bool enableWriting, bool genCRCMap) {
 		HANDLE mpqHandle = NULL;
-		auto fullPath = std::filesystem::absolute(MainPath).string();
+		std::string fullPath = std::filesystem::absolute(MainPath).string();
 
-		TCHAR* t_filename = new TCHAR[fullPath.size() + 1];
-		t_filename[fullPath.size()] = 0;
-		std::copy(fullPath.begin(), fullPath.end(), t_filename);
+		std::wstring wFileName = std::filesystem::absolute(MainPath).wstring();
 
-		if (!SFileOpenArchive(t_filename, 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
+		if (!SFileOpenArchive(wFileName.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
 			SPDLOG_ERROR("({}) Failed to open main mpq file {}.", GetLastError(), fullPath.c_str());
 			return false;
 		}
@@ -271,7 +269,7 @@ namespace Ship {
 
 			std::vector<std::string> lines = StringHelper::Split(std::string(listFile->buffer.get(), listFile->dwBufferSize), "\n");
 
-			for (int i = 0; i < lines.size(); i++) {
+			for (size_t i = 0; i < lines.size(); i++) {
 				std::string line = StringHelper::Strip(lines[i], "\r");
 				//uint64_t hash = StringHelper::StrToL(lines[i], 16);
 
@@ -285,7 +283,7 @@ namespace Ship {
 
 	bool Archive::LoadPatchMPQ(const std::string& path) {
 		HANDLE patchHandle = NULL;
-		auto fullPath = std::filesystem::absolute(path).string();
+		std::string fullPath = std::filesystem::absolute(path).string();
 		if (mpqHandles.contains(fullPath)) {
 			return true;
 		}

@@ -3,6 +3,6 @@
 #include <string>
 
 namespace SohUtils {
-    void saveEnvironmentVar(std::string key, std::string value);
-    std::string getEnvironmentVar(std::string key);
+    void saveEnvironmentVar(const std::string& key, const std::string& value);
+    std::string getEnvironmentVar(const std::string& key);
 }

@@ -9,7 +9,7 @@
 
 static bool HelpCommand(const std::vector<std::string>&) {
 	INFO("SoH Commands:");
-	for(auto cmd : SohImGui::console->Commands) {
+	for(const auto& cmd : SohImGui::console->Commands) {
 		INFO((" - " + cmd.first).c_str());
 	}
 	return CMD_SUCCESS;
@@ -22,7 +22,7 @@ static bool ClearCommand(const std::vector<std::string>&) {
 
 std::string BuildUsage(const CommandEntry& entry) {
 	std::string usage;
-	for (auto& arg : entry.arguments)
+	for (const auto& arg : entry.arguments)
 		usage += StringHelper::Sprintf(arg.optional ? "[%s] " : "<%s> ", arg.info.c_str());
 	return usage;
 }
@@ -112,7 +112,7 @@ void Console::Draw() {
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(150);
 		if (ImGui::BeginCombo("##level", this->level_filter.c_str())) {
-			for (auto filter : priority_filters) {
+			for (const auto& filter : priority_filters) {
 				const bool is_selected = (filter == std::string(this->level_filter));
 				if (ImGui::Selectable(filter.c_str(), is_selected))
 					this->level_filter = filter;
