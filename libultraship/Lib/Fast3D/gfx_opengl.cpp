@@ -60,6 +60,7 @@ static GLuint opengl_vbo;
 
 static uint32_t frame_count;
 static uint32_t current_height;
+static map<int, int> fb2tex;
 
 static bool gfx_opengl_z_is_from_0_to_1(void) {
     return false;
@@ -484,6 +485,10 @@ static GLuint gfx_opengl_new_texture(void) {
     return ret;
 }
 
+static void gfx_opengl_delete_texture(uint32_t texID) {
+    glDeleteTextures(1, &texID);
+}
+
 static void gfx_opengl_select_texture(int tile, GLuint texture_id) {
     glActiveTexture(GL_TEXTURE0 + tile);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -622,6 +627,48 @@ static void gfx_opengl_end_frame(void) {
 static void gfx_opengl_finish_render(void) {
 }
 
+static int gfx_opengl_create_framebuffer(int width, int height)
+{
+    unsigned int textureColorbuffer;
+
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    unsigned int fbo;
+    glGenFramebuffers(1, &fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+    fb2tex[fbo] = textureColorbuffer;
+
+    //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    return fbo;
+}
+
+static void gfx_opengl_set_framebuffer(int fb) 
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
+
+    glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+static void gfx_opengl_reset_framebuffer(void) 
+{
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
+}
+
+static void gfx_opengl_select_texture_fb(int fbID)
+{
+    glActiveTexture(GL_TEXTURE0 + 0);
+    glBindTexture(GL_TEXTURE_2D, fb2tex[fbID]);
+    //glBindTexture(GL_TEXTURE_2D, 0x40);
+}
+
 static uint16_t gfx_opengl_get_pixel_depth(float x, float y) {
     float depth;
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -653,6 +700,11 @@ struct GfxRenderingAPI gfx_opengl_api = {
     gfx_opengl_start_frame,
     gfx_opengl_end_frame,
     gfx_opengl_finish_render,
+    gfx_opengl_create_framebuffer,
+    gfx_opengl_set_framebuffer,
+    gfx_opengl_reset_framebuffer,
+    gfx_opengl_select_texture_fb,
+    gfx_opengl_delete_texture
 };
 
 #endif

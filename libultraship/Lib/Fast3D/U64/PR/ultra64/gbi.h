@@ -157,14 +157,17 @@
 #define G_TEXRECT       0xe4    /* -28 */
 
 // CUSTOM OTR COMMANDS
-#define	G_SETTIMG_OTR		  0x20
+#define	G_SETTIMG_OTR		    0x20
+#define	G_SETFB		            0x21
+#define	G_RESETFB		        0x22
+#define G_SETTIMG_FB            0x23
 #define G_DL_OTR			    0x31
 #define G_VTX_OTR			    0x32
 #define G_MARKER			    0x33
-#define G_INVALTEXCACHE   0x34
-#define G_BRANCH_Z_OTR    0x35
-#define G_MTX_OTR         0x36
-#define G_TEXRECT_WIDE    0x37
+#define G_INVALTEXCACHE         0x34
+#define G_BRANCH_Z_OTR          0x35
+#define G_MTX_OTR               0x36
+#define G_TEXRECT_WIDE          0x37
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -2801,6 +2804,22 @@ _DW({                                   \
     _SHIFTL(G_INVALTEXCACHE, 24, 8), 0                  \
 }
 
+#define gsSPSetFB(pkt, fb)                        \
+{                                   \
+    Gfx *_g = (Gfx *)(pkt);                     \
+                                    \
+    _g->words.w0 = _SHIFTL(G_SETFB, 24, 8);             \
+    _g->words.w1 = fb;                       \
+}
+
+#define gsSPResetFB(pkt)                        \
+{                                   \
+    Gfx *_g = (Gfx *)(pkt);                     \
+                                    \
+    _g->words.w0 = _SHIFTL(G_RESETFB, 24, 8);             \
+    _g->words.w1 = 0;                       \
+}
+
 #ifdef  F3DEX_GBI_2
     /*
      *  One gSPGeometryMode(pkt,c,s) GBI is equal to these two GBIs.
@@ -3007,6 +3026,7 @@ _DW({                                   \
 
 #define __gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
 #define gsDPSetTextureImage(f, s, w, i) gsSetImage(G_SETTIMG, f, s, w, i)
+#define __gDPSetTextureImageFB(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG_FB, f, s, w, i)
 
 /*
  * RDP macros

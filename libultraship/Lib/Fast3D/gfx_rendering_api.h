@@ -30,6 +30,12 @@ struct GfxRenderingAPI {
     void (*start_frame)(void);
     void (*end_frame)(void);
     void (*finish_render)(void);
+    int (*create_framebuffer)(int width, int height);
+    void (*set_framebuffer)(int fb);
+    void (*reset_framebuffer)();
+    void (*select_texture_fb)(int fbID);
+    void (*delete_texture)(uint32_t texID);
+
 };
 
 #endif
