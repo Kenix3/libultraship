@@ -46,7 +46,7 @@ namespace Ship {
 		pad->gyro_y = wGyroY;
 	}
 
-	void Controller::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {
+	void Controller::SetButtonMapping(const std::string& szButtonName, int32_t dwScancode) {
 		// Update the config value.
 		std::string ConfSection = GetBindingConfSection();
 		std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();

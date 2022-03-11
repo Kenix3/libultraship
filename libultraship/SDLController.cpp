@@ -19,7 +19,7 @@ namespace Ship {
         Close();
 	}
 
-    bool SDLController::IsGuidInUse(std::string guid) {
+    bool SDLController::IsGuidInUse(const std::string& guid) {
         // Check if the GUID is loaded in any other controller;
         for (size_t i = 0; i < __osMaxControllers; i++) {
             for (size_t j = 0; j < Window::Controllers[i].size(); j++) {
@@ -335,7 +335,7 @@ namespace Ship {
         Conf.Save();
     }
 
-    void SDLController::SetButtonMapping(std::string szButtonName, int32_t dwScancode) {
+    void SDLController::SetButtonMapping(const std::string& szButtonName, int32_t dwScancode) {
         if (guid.compare(INVALID_SDL_CONTROLLER_GUID)) {
             return;
         }

@@ -15,7 +15,7 @@ namespace Ship {
         return Context.lock();
     }
 
-    std::shared_ptr<GlobalCtx2> GlobalCtx2::CreateInstance(std::string Name) {
+    std::shared_ptr<GlobalCtx2> GlobalCtx2::CreateInstance(const std::string& Name) {
         if (Context.expired()) {
             auto Shared = std::make_shared<GlobalCtx2>(Name);
             Context = Shared;
@@ -28,7 +28,7 @@ namespace Ship {
         return GetInstance();
     }
 
-    GlobalCtx2::GlobalCtx2(std::string Name) : Name(Name), MainPath(""), PatchesPath("") {
+    GlobalCtx2::GlobalCtx2(const std::string& Name) : Name(Name), MainPath(""), PatchesPath("") {
         
     }
 

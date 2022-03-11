@@ -2,7 +2,7 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-    bool stob(std::string s, bool defaultVal) {
+    bool stob(const std::string& s, bool defaultVal) {
         auto result = false;    // failure to assert is false
 
         std::istringstream is(s);
@@ -23,7 +23,7 @@ namespace Ship {
         return result;
     }
 
-    int32_t stoi(std::string s, int32_t defaultVal) {
+    int32_t stoi(const std::string& s, int32_t defaultVal) {
         try {
             return std::stoi(s);
         } catch (const std::invalid_argument& e) {
@@ -35,7 +35,7 @@ namespace Ship {
         return defaultVal;
     }
 
-    int64_t stoll(std::string s, int64_t defaultVal) {
+    int64_t stoll(const std::string& s, int64_t defaultVal) {
         try {
             return std::stoll(s);
         } catch (const std::invalid_argument& e) {

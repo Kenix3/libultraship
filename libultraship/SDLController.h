@@ -15,11 +15,11 @@ namespace Ship {
 
 		protected:
 			std::string GetControllerType();
-			void SetButtonMapping(std::string szButtonName, int32_t dwScancode);
+			void SetButtonMapping(const std::string& szButtonName, int32_t dwScancode);
 			std::string GetConfSection();
 			std::string GetBindingConfSection();
 			void CreateDefaultBinding();
-			static bool IsGuidInUse(std::string guid);
+			static bool IsGuidInUse(const std::string& guid);
 
 		private:
 			std::string guid;

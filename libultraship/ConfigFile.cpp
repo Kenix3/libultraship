@@ -4,7 +4,7 @@
 #include "Window.h"
 
 namespace Ship {
-	ConfigFile::ConfigFile(std::shared_ptr<GlobalCtx2> Context, std::string Path) : Context(Context), Path(Path), File(Path.c_str()) {
+	ConfigFile::ConfigFile(std::shared_ptr<GlobalCtx2> Context, const std::string& Path) : Context(Context), Path(Path), File(Path.c_str()) {
 		if (Path.empty()) {
 			SPDLOG_ERROR("ConfigFile received an empty file name");
 			exit(EXIT_FAILURE);
@@ -26,19 +26,19 @@ namespace Ship {
 		SPDLOG_INFO("destruct configfile");
 	}
 
-	mINI::INIMap<std::string>& ConfigFile::operator[](std::string Section) {
+	mINI::INIMap<std::string>& ConfigFile::operator[](const std::string& Section) {
 		return Val[Section];
 	}
 
-	mINI::INIMap<std::string> ConfigFile::get(std::string Section) {
+	mINI::INIMap<std::string> ConfigFile::get(const std::string& Section) {
 		return Val.get(Section);
 	}
 
-	bool ConfigFile::has(std::string Section) {
+	bool ConfigFile::has(const std::string& Section) {
 		return Val.has(Section);
 	}
 
-	bool ConfigFile::remove(std::string Section) {
+	bool ConfigFile::remove(const std::string& Section) {
 		return Val.remove(Section);
 	}
 

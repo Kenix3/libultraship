@@ -19,7 +19,7 @@ namespace Ship {
 			void Read(OSContPad* pad);
 			virtual void ReadFromSource() = 0;
 
-			void SetButtonMapping(std::string szButtonName, int32_t dwScancode);
+			void SetButtonMapping(const std::string& szButtonName, int32_t dwScancode);
 			std::shared_ptr<ControllerAttachment> GetAttachment() { return Attachment; }
 			int32_t GetControllerNumber() { return dwControllerNumber; }
 

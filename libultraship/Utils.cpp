@@ -1,7 +1,7 @@
 #include "Utils.h"
 
 namespace Utils {
-	std::vector<std::string> SplitText(std::string text, char separator = ' ', bool keep_quotes = false) {
+	std::vector<std::string> SplitText(const std::string text, char separator = ' ', bool keep_quotes = false) {
 		std::vector<std::string> args;
 		char* input = _strdup(text.c_str());
 		const size_t length = strlen(input);
