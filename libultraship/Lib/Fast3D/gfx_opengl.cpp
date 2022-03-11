@@ -627,46 +627,76 @@ static void gfx_opengl_end_frame(void) {
 static void gfx_opengl_finish_render(void) {
 }
 
-static int gfx_opengl_create_framebuffer(int width, int height)
+int gfx_opengl_create_framebuffer(int width, int height)
 {
     unsigned int textureColorbuffer;
 
     glGenTextures(1, &textureColorbuffer);
     glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
     unsigned int fbo;
     glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    int t = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+    {
+        int bp = 0;
+    }
 
     fb2tex[fbo] = textureColorbuffer;
 
-    //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     return fbo;
 }
 
-static void gfx_opengl_set_framebuffer(int fb) 
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, fb);
+extern "C" int tFlag = 0;
 
-    glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void gfx_opengl_set_framebuffer(int fb) 
+{
+    
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, fb);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+
+    if (tFlag == 0)
+    {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        tFlag = 1;
+    }
 }
 
-static void gfx_opengl_reset_framebuffer(void) 
+void gfx_opengl_reset_framebuffer(void) 
 {
+    unsigned int pixel[4];
+    glReadPixels(2, 2, 1, 1, GL_RGB, GL_UNSIGNED_INT, pixel);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
 }
 
-static void gfx_opengl_select_texture_fb(int fbID)
+void gfx_opengl_select_texture_fb(int fbID)
 {
+    //glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_2D, fb2tex[fbID]);
-    //glBindTexture(GL_TEXTURE_2D, 0x40);
 }
 
 static uint16_t gfx_opengl_get_pixel_depth(float x, float y) {

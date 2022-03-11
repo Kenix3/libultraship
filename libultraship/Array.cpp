@@ -32,20 +32,29 @@ namespace Ship
 			else
 			{
 				ScalarType scalType = (ScalarType)reader->ReadUInt32();
-				ScalarData data;
 
-				switch (scalType)
+				int iter = 1;
+
+				if (resType == ZResourceType::Vector)
+					iter = reader->ReadUInt32();
+
+				for (int k = 0; k < iter; k++)
 				{
-				case ScalarType::ZSCALAR_S16:
-					data.s16 = reader->ReadInt16();
-					break;
-				case ScalarType::ZSCALAR_U16:
-					data.u16 = reader->ReadUInt16();
-					break;
-					// OTRTODO: IMPLEMENT OTHER TYPES!
-				}
+					ScalarData data;
 
-				arr->scalars.push_back(data);
+					switch (scalType)
+					{
+					case ScalarType::ZSCALAR_S16:
+						data.s16 = reader->ReadInt16();
+						break;
+					case ScalarType::ZSCALAR_U16:
+						data.u16 = reader->ReadUInt16();
+						break;
+						// OTRTODO: IMPLEMENT OTHER TYPES!
+					}
+
+					arr->scalars.push_back(data);
+				}
 			}
 		}
 	}

@@ -452,6 +452,10 @@ static uint32_t gfx_d3d11_new_texture(void) {
     return (uint32_t)(d3d.textures.size() - 1);
 }
 
+static void gfx_d3d11_delete_texture(uint32_t texID) {
+    //glDeleteTextures(1, &texID);
+}
+
 static void gfx_d3d11_select_texture(int tile, uint32_t texture_id) {
     d3d.current_tile = tile;
     d3d.current_texture_ids[tile] = texture_id;
@@ -728,6 +732,71 @@ static void gfx_d3d11_end_frame(void) {
 static void gfx_d3d11_finish_render(void) {
 }
 
+int gfx_d3d11_create_framebuffer(int width, int height)
+{
+    /*unsigned int textureColorbuffer;
+
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    unsigned int fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    int t = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+    {
+        int bp = 0;
+    }
+
+    fb2tex[fbo] = textureColorbuffer;*/
+
+    //return fbo;
+    return 0;
+}
+
+//extern "C" int tFlag = 0;
+
+void gfx_d3d11_set_framebuffer(int fb)
+{
+    //glBindFramebuffer(GL_FRAMEBUFFER_EXT, fb);
+    //glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_SCISSOR_TEST);
+
+    //if (tFlag == 0)
+    //{
+    //    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    //    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //    tFlag = 1;
+    //}
+}
+
+void gfx_d3d11_reset_framebuffer(void)
+{
+    //glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
+}
+
+void gfx_d3d11_select_texture_fb(int fbID)
+{
+    //glActiveTexture(GL_TEXTURE0 + 0);
+    //glBindTexture(GL_TEXTURE_2D, fb2tex[fbID]);
+}
+
 static uint16_t gfx_d3d11_get_pixel_depth(float x, float y) {
     if (!d3d.copied_depth_buffer) {
         d3d.context->CopyResource(d3d.depth_stencil_copy_texture.Get(), d3d.depth_stencil_texture.Get());
@@ -774,7 +843,12 @@ struct GfxRenderingAPI gfx_direct3d11_api = {
     gfx_d3d11_on_resize,
     gfx_d3d11_start_frame,
     gfx_d3d11_end_frame,
-    gfx_d3d11_finish_render
+    gfx_d3d11_finish_render,
+    gfx_d3d11_create_framebuffer,
+    gfx_d3d11_set_framebuffer,
+    gfx_d3d11_reset_framebuffer,
+    gfx_d3d11_select_texture_fb,
+    gfx_d3d11_delete_texture
 };
 
 #endif
