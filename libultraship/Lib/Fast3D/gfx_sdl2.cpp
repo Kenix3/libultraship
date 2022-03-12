@@ -23,6 +23,7 @@
 
 #include "gfx_window_manager_api.h"
 #include "gfx_screen_config.h"
+#include <WTypesbase.h>
 
 #define GFX_API_NAME "SDL2 - OpenGL"
 
@@ -112,19 +113,22 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
 }
 
-extern float divisor_num;
-
-static double frame_rate = 0.0f;
-static double frame_time = 0.0f;
-static double perf_freq = 0.0f;
+static uint64_t previous_time;
+static HANDLE timer;
 
 static int frameDivisor = 1;
+
+#define FRAME_INTERVAL_US_NUMERATOR_ 50000
+#define FRAME_INTERVAL_US_DENOMINATOR 3
+#define FRAME_INTERVAL_US_NUMERATOR (FRAME_INTERVAL_US_NUMERATOR_ * frameDivisor)
 
 static void gfx_sdl_init(const char *game_name, bool start_in_fullscreen) {
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+    timer = CreateWaitableTimer(nullptr, false, nullptr);
 
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
@@ -179,7 +183,6 @@ static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bo
 static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
     while (1) 
     {
-        SDL_GL_SetSwapInterval(frameDivisor);
         run_one_game_iter();
     }
 }
@@ -240,26 +243,38 @@ static void gfx_sdl_handle_events(void) {
 }
 
 static bool gfx_sdl_start_frame(void) {
-    perf_freq = SDL_GetPerformanceFrequency();
-    frame_time = SDL_GetPerformanceCounter();
-    frame_rate = perf_freq / (60 / frameDivisor);
     return true;
 }
-static inline void sync_framerate_with_timer(void) {
-    const double frame_length = SDL_GetPerformanceCounter() - frame_time;
 
-    if (frame_length < frame_rate) {
-        const double remaining = frame_rate - frame_length;
-        SDL_Delay(remaining / perf_freq * 1000.0f);
+static uint64_t qpc_to_100ns(uint64_t qpc) {
+    const uint64_t qpc_freq = SDL_GetPerformanceFrequency();
+    return qpc / qpc_freq * 10000000 + qpc % qpc_freq * 10000000 / qpc_freq;
+}
+
+static inline void sync_framerate_with_timer(void) {
+    uint64_t t;
+    t = SDL_GetPerformanceCounter();
+
+    int64_t next = qpc_to_100ns(previous_time) + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
+    int64_t left = next - qpc_to_100ns(t);
+    if (left > 0) {
+        LARGE_INTEGER li;
+        li.QuadPart = -left;
+        SetWaitableTimer(timer, &li, 0, nullptr, nullptr, false);
+        WaitForSingleObject(timer, INFINITE);
     }
+
+    t = SDL_GetPerformanceCounter();
+    previous_time = t;
 }
 
 static void gfx_sdl_swap_buffers_begin(void) {
+    sync_framerate_with_timer();
     SDL_GL_SwapWindow(wnd);
 }
 
 static void gfx_sdl_swap_buffers_end(void) {
-    sync_framerate_with_timer();
+
 }
 
 static double gfx_sdl_get_time(void) {
@@ -269,7 +284,6 @@ static double gfx_sdl_get_time(void) {
 static void gfx_sdl_set_framedivisor(int divisor)
 {
     frameDivisor = divisor;
-    SDL_GL_SetSwapInterval(frameDivisor);
 }
 
 struct GfxWindowManagerAPI gfx_sdl = {
