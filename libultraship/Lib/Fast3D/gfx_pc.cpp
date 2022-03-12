@@ -2587,6 +2587,8 @@ void gfx_start_frame(void) {
         gfx_current_dimensions.height = 1;
     }
     gfx_current_dimensions.aspect_ratio = (float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height;
+
+    fbActive = 0;
 }
 
 void gfx_run(Gfx *commands) {

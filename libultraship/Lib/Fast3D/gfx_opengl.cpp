@@ -652,13 +652,6 @@ int gfx_opengl_create_framebuffer(int width, int height)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    int t = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-    {
-        int bp = 0;
-    }
-
     fb2tex[fbo] = textureColorbuffer;
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);

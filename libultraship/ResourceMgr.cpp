@@ -200,14 +200,12 @@ namespace Ship {
 	}
 
 	std::shared_ptr<ResourcePromise> ResourceMgr::LoadResourceAsync(std::string FilePath) {
-		FilePath = StringHelper::Replace(FilePath, "/", "\\");
+		StringHelper::ReplaceOriginal(FilePath, "/", "\\");
 
 		if (StringHelper::StartsWith(FilePath, "__OTR__"))
 			FilePath = StringHelper::Split(FilePath, "__OTR__")[1];
 
-		std::shared_ptr<File> FileData = LoadFile(FilePath);
 		std::shared_ptr<ResourcePromise> Promise = std::make_shared<ResourcePromise>();
-		Promise->File = FileData;
 
 		const std::lock_guard<std::mutex> ResLock(ResourceLoadMutex);
 		auto resCacheFind = ResourceCache.find(FilePath);
@@ -215,6 +213,9 @@ namespace Ship {
 			if (resCacheFind == ResourceCache.end()) {
 				SPDLOG_TRACE("Cache miss on Resource load: {}", FilePath.c_str());
 			}
+
+			std::shared_ptr<File> FileData = LoadFile(FilePath);
+			Promise->File = FileData;
 
 			Promise->bHasResourceLoaded = false;
 			ResourceLoadQueue.push(Promise);
