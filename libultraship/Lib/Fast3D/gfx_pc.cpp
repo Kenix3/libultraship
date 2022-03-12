@@ -195,6 +195,7 @@ static struct GfxRenderingAPI *gfx_rapi;
 
 int markerOn;
 uintptr_t segmentPointers[16];
+int fbActive = 0;
 
 #ifdef _MSC_VER
 // TODO: Properly implement for MSVC
@@ -985,8 +986,12 @@ static void gfx_sp_pop_matrix(uint32_t count) {
     }
 }
 
-static float gfx_adjust_x_for_aspect_ratio(float x) {
-    return x * (4.0f / 3.0f) / ((float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height);
+static float gfx_adjust_x_for_aspect_ratio(float x) 
+{
+    if (fbActive)
+        return x;
+    else
+        return x * (4.0f / 3.0f) / ((float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height);
 }
 
 static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *vertices) {
@@ -1506,10 +1511,19 @@ static void gfx_calc_and_set_viewport(const Vp_t *viewport) {
     float x = (viewport->vtrans[0] / 4.0f) - width / 2.0f;
     float y = SCREEN_HEIGHT - ((viewport->vtrans[1] / 4.0f) + height / 2.0f);
 
-    width *= RATIO_X;
-    height *= RATIO_Y;
-    x *= RATIO_X;
-    y *= RATIO_Y;
+    if (!fbActive)
+    {
+        width *= RATIO_X;
+        height *= RATIO_Y;
+        x *= RATIO_X;
+        y *= RATIO_Y;
+    }
+    else
+    {
+        // OTRTODO: This is a hardcoded hack and we nede to remove this later...
+        width *= 6;
+        height *= 6;
+    }
 
     rdp.viewport.x = x;
     rdp.viewport.y = y;
@@ -2408,14 +2422,17 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_SETFB:
             {
                 gfx_flush();
-
+                fbActive = 1;
                 gfx_rapi->set_framebuffer(cmd->words.w1);
             }
                 break;
             case G_RESETFB:
             {
+                gfx_flush();
+                fbActive = 0;
                 gfx_rapi->reset_framebuffer();
             }
+            break;
             case G_SETTIMG_FB:
             {
                 gfx_flush();
