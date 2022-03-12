@@ -24,13 +24,14 @@
 
 #include "../StrHash64.h"
 
-// TODO: fix header files for these
+// OTRTODO: fix header files for these
 extern "C" {
     char* ResourceMgr_GetNameByCRC(uint64_t crc, char* alloc);
     int32_t* ResourceMgr_LoadMtxByCRC(uint64_t crc);
     Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc);
     Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc);
     char* ResourceMgr_LoadTexByCRC(uint64_t crc);
+    void ResourceMgr_RegisterResourcePatch(uint64_t hash, uint32_t instrIndex, uintptr_t origData);
 }
 
 using namespace std;
@@ -685,7 +686,7 @@ static void import_texture_i4(int tile) {
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
+    //SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
         uint8_t byte = addr[i / 2];
@@ -2029,6 +2030,10 @@ static void gfx_run_dl(Gfx* cmd) {
     int dummy = 0;
     char dlName[128];
     char fileName[128];
+
+    Gfx* dListStart = cmd;
+    uint64_t ourHash = -1;
+
     for (;;) {
         uint32_t opcode = cmd->words.w0 >> 24;
         //uint32_t opcode = cmd->words.w0 & 0xFF;
@@ -2042,6 +2047,8 @@ static void gfx_run_dl(Gfx* cmd) {
         case G_MARKER:
         {
             cmd++;
+
+            ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
             //uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
@@ -2075,11 +2082,6 @@ static void gfx_run_dl(Gfx* cmd) {
         }
             break;
             case G_MTX: {
-                if (markerOn)
-                {
-                    int bp = 0;
-                }
-
                 uintptr_t mtxAddr = cmd->words.w1;
 
                 // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
@@ -2158,7 +2160,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
             case G_VTX_OTR:
             {
-                uint64_t offset = cmd->words.w1;
+                uintptr_t offset = cmd->words.w1;
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
@@ -2168,21 +2170,30 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 //printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
 #endif
-
-
-                 Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash);
-
-                if (vtx != NULL)
+                if (offset > 0xFFFFF)
                 {
-                    vtx = (Vtx*)((char*)vtx + offset);
-
                     cmd--;
-                    gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
+                    gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (Vtx*)offset);
                     cmd++;
                 }
                 else
                 {
-                    int bp = 0; // UH OH!
+                    Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash);
+
+                    if (vtx != NULL)
+                    {
+                        vtx = (Vtx*)((char*)vtx + offset);
+
+                        cmd--;
+
+                        if (ourHash != -1)
+                            ResourceMgr_RegisterResourcePatch(ourHash, cmd - dListStart, cmd->words.w1);
+
+                        cmd->words.w1 = (uintptr_t)vtx;
+
+                        gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
+                        cmd++;
+                    }
                 }
             }
                 break;
@@ -2327,21 +2338,38 @@ static void gfx_run_dl(Gfx* cmd) {
             }
             case G_SETTIMG_OTR:
             {
+                uintptr_t addr = cmd->words.w1;
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
 
 
 #if _DEBUG
                 //ResourceMgr_GetNameByCRC(hash, fileName);
-
-                if (strcmp(fileName, "gameplay_keep\\gSun1Tex") == 0)
-                {
-                    int bp = 0;
-                }
-
                 //printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
 #endif
-                char* tex = ResourceMgr_LoadTexByCRC(hash);
+                char* tex = NULL;
+
+                if (addr != NULL)
+                {
+                    tex = (char*)addr;
+                }
+                else
+                {
+                    tex = ResourceMgr_LoadTexByCRC(hash);
+
+                    if (tex != nullptr)
+                    {
+                        cmd--;
+                        uintptr_t oldData = cmd->words.w1;
+                        cmd->words.w1 = (uintptr_t)tex;
+                        
+                        if (ourHash  != -1)
+                            ResourceMgr_RegisterResourcePatch(ourHash, cmd - dListStart, oldData);
+                        
+                        cmd++;
+                    }
+                }
+
                 cmd--;
 
                 uint32_t fmt = C0(21, 3);
@@ -2362,7 +2390,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 else
                 {
 #if _DEBUG
-                    printf("WARNING: G_SETTIMG_OTR - tex == NULL!\n");
+                    //printf("WARNING: G_SETTIMG_OTR - tex == NULL!\n");
 #endif
                 }
 

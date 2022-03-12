@@ -85,19 +85,31 @@ namespace Ship
     enum class Version
     {
         // Blade Runner
-        Deckard = 0,
+        Deckard     = 0,
+        Roy         = 1,
+        Rachael     = 2,
+        Leon        = 3,
+        Zhora       = 4,
         // ...
     };
 
+    struct Patch
+    {
+        uint64_t crc;
+        uint32_t index;
+        uintptr_t origData;
+    };
 
     class Resource
     {
     public:
+        ResourceMgr* resMgr;
         uint64_t id; // Unique Resource ID
         ResourceType resType;
         bool isDirty = false;
         void* cachedGameAsset = 0; // Conversion to OoT friendly struct cached...
-        std::shared_ptr<File> File;
+        std::shared_ptr<File> file;
+        std::vector<Patch> patches;
         virtual ~Resource();
     };
 

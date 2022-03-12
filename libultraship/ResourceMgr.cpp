@@ -125,6 +125,7 @@ namespace Ship {
 			}
 
 			auto UnmanagedRes = ResourceLoader::LoadResource(ToLoad->File);
+			UnmanagedRes->resMgr = this;
 			auto Res = std::shared_ptr<Resource>(UnmanagedRes);
 
 			if (Res != nullptr) {
@@ -132,14 +133,14 @@ namespace Ship {
 
 				ToLoad->bHasResourceLoaded = true;
 				ToLoad->Resource = Res;
-				ResourceCache[Res->File->path] = Res;
+				ResourceCache[Res->file->path] = Res;
 
 				SPDLOG_DEBUG("Loaded Resource {} on ResourceMgr thread", ToLoad->File->path);
 
 				// Disabled for now because it can cause random crashes
 				//FileCache[Res->File->path] = nullptr;
 				//FileCache.erase(FileCache.find(Res->File->path));
-				Res->File = nullptr;
+				Res->file = nullptr;
 			} else {
 				ToLoad->bHasResourceLoaded = false;
 				ToLoad->Resource = nullptr;
@@ -183,6 +184,15 @@ namespace Ship {
 		}
 
 		return ToLoad;
+	}
+
+	std::shared_ptr<Ship::Resource> ResourceMgr::GetCachedFile(std::string FilePath) {
+		auto resCacheFind = ResourceCache.find(FilePath);
+		
+		if (resCacheFind != ResourceCache.end())
+			return resCacheFind->second;
+		else
+			return nullptr;
 	}
 
 	std::shared_ptr<Resource> ResourceMgr::LoadResource(std::string FilePath) {

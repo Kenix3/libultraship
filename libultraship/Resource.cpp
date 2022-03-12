@@ -1,6 +1,9 @@
 #include "Resource.h"
+#include "DisplayList.h"
+#include "ResourceMgr.h"
 #include "Utils/BinaryReader.h"
 #include "lib/tinyxml2/tinyxml2.h"
+#include "lib/Fast3D/U64/PR/ultra64/gbi.h"
 
 namespace Ship
 {
@@ -30,9 +33,24 @@ namespace Ship
         free(cachedGameAsset); 
         cachedGameAsset = nullptr;
 
+        for (int i = 0; i < patches.size(); i++)
+        {
+            std::string hashStr = resMgr->HashToString(patches[i].crc);
+            auto resShared = resMgr->GetCachedFile(hashStr);
+            if (resShared != nullptr)
+            {
+                auto res = (Ship::DisplayList*)resShared.get();
+                
+                Gfx* gfx = (Gfx*)&res->instructions[patches[i].index];
+                gfx->words.w1 = patches[i].origData;
+            }
+        }
+
+        patches.clear();
+
 #if _DEBUG
-        if (File != nullptr)
-            printf("Deconstructor called on file %s\n", File->path.c_str());
+        if (file != nullptr)
+            printf("Deconstructor called on file %s\n", file->path.c_str());
 #endif
     }
 }

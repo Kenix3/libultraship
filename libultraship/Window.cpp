@@ -154,6 +154,23 @@ extern "C" {
         }
     }
 
+    void ResourceMgr_RegisterResourcePatch(uint64_t hash, uint32_t instrIndex, uintptr_t origData)
+    {
+        std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(hash);
+
+        if (hashStr != "") 
+        {
+            auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr).get();
+            
+            Ship::Patch patch;
+            patch.crc = hash;
+            patch.index = instrIndex;
+            patch.origData = origData;
+
+            res->patches.push_back(patch);
+        }
+    }
+
     char* ResourceMgr_LoadTexByName(char* texPath) {
         auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(texPath).get();
         return (char*)res->imageData;

@@ -87,7 +87,7 @@ namespace Ship
         }
 
         if (result != nullptr) {
-            result->File = FileToLoad;
+            result->file = FileToLoad;
             result->resType = resourceType;
         } else {
             if (FileToLoad != nullptr) {
