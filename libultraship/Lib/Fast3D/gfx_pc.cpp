@@ -98,7 +98,12 @@ struct TextureCacheValue {
     uint8_t cms, cmt;
     bool linear_filter;
 
+    // Old versions of libstdc++ fail to compile this
+#ifdef _MSC_VER
     list<TextureCacheMap::iterator>::iterator lru_location;
+#else
+    list<int>::iterator lru_location;
+#endif
 };
 
 static struct {
@@ -504,7 +509,7 @@ static bool gfx_texture_cache_lookup(int i, TextureCacheNode **n, const uint8_t 
     if (it != gfx_texture_cache.map.end()) {
         gfx_rapi->select_texture(i, it->second.texture_id);
         *n = &*it;
-        gfx_texture_cache.lru.splice(gfx_texture_cache.lru.end(), gfx_texture_cache.lru, it->second.lru_location); // move to back
+        gfx_texture_cache.lru.splice(gfx_texture_cache.lru.end(), gfx_texture_cache.lru, *(list<TextureCacheMap::iterator>::iterator*)&it->second.lru_location); // move to back
         return true;
     }
 
@@ -527,7 +532,7 @@ static bool gfx_texture_cache_lookup(int i, TextureCacheNode **n, const uint8_t 
     it = gfx_texture_cache.map.insert(make_pair(key, TextureCacheValue())).first;
     TextureCacheNode* node = &*it;
     node->second.texture_id = texture_id;
-    node->second.lru_location = gfx_texture_cache.lru.insert(gfx_texture_cache.lru.end(), it);
+    *(list<TextureCacheMap::iterator>::iterator*)&node->second.lru_location = gfx_texture_cache.lru.insert(gfx_texture_cache.lru.end(), it);
 
     gfx_rapi->select_texture(i, texture_id);
     gfx_rapi->set_sampler_parameters(i, false, 0, 0);
@@ -543,7 +548,7 @@ static void gfx_texture_cache_delete(const uint8_t* orig_addr)
         bool again = false;
         for (auto it = gfx_texture_cache.map.begin(bucket); it != gfx_texture_cache.map.end(bucket); ++it) {
             if (it->first.texture_addr == orig_addr) {
-                gfx_texture_cache.lru.erase(it->second.lru_location);
+                gfx_texture_cache.lru.erase(*(list<TextureCacheMap::iterator>::iterator*)&it->second.lru_location);
                 gfx_texture_cache.free_texture_ids.push_back(it->second.texture_id);
                 gfx_texture_cache.map.erase(it);
                 again = true;
