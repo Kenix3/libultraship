@@ -123,6 +123,11 @@ typedef struct {
 } OSContPad; // size = 0x0D
 
 typedef struct {
+    /* 0x00 */ uint8_t rumble;
+    /* 0x01 */ uint8_t ledColor;
+} ControllerCallback; // size = 0x02
+
+typedef struct {
     /* 0x00 */ void* address;
     /* 0x04 */ uint8_t databuffer[32];
     /* 0x24 */ uint8_t addressCrc;

@@ -59,6 +59,12 @@ struct TextureData {
     bool linear_filtering;
 };
 
+struct FramebufferData {
+    ComPtr<ID3D11RenderTargetView> render_target_view;
+    ComPtr<ID3D11DepthStencilView> depth_stencil_view;
+    uint32_t texture_id;
+};
+
 struct ShaderProgramD3D11 {
     ComPtr<ID3D11VertexShader> vertex_shader;
     ComPtr<ID3D11PixelShader> pixel_shader;
@@ -109,6 +115,8 @@ static struct {
     std::vector<struct TextureData> textures;
     int current_tile;
     uint32_t current_texture_ids[2];
+
+    std::vector<FramebufferData> framebuffers;
 
     // Current state
 
@@ -734,67 +742,103 @@ static void gfx_d3d11_finish_render(void) {
 
 int gfx_d3d11_create_framebuffer(int width, int height)
 {
-    /*unsigned int textureColorbuffer;
+    D3D11_TEXTURE2D_DESC texture_desc;
+    texture_desc.Width = width;
+    texture_desc.Height = height;
+    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+    texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    texture_desc.CPUAccessFlags = 0;
+    texture_desc.MiscFlags = 0;
+    texture_desc.ArraySize = 1;
+    texture_desc.MipLevels = 1;
+    texture_desc.SampleDesc.Count = 1;
+    texture_desc.SampleDesc.Quality = 0;
 
-    glGenTextures(1, &textureColorbuffer);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    D3D11_TEXTURE2D_DESC depth_stencil_texture_desc;
+    depth_stencil_texture_desc.Width = width;
+    depth_stencil_texture_desc.Height = height;
+    depth_stencil_texture_desc.MipLevels = 1;
+    depth_stencil_texture_desc.ArraySize = 1;
+    depth_stencil_texture_desc.Format = d3d.feature_level >= D3D_FEATURE_LEVEL_10_0 ?
+        DXGI_FORMAT_D32_FLOAT : DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depth_stencil_texture_desc.SampleDesc.Count = 1;
+    depth_stencil_texture_desc.SampleDesc.Quality = 0;
+    depth_stencil_texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    depth_stencil_texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depth_stencil_texture_desc.CPUAccessFlags = 0;
+    depth_stencil_texture_desc.MiscFlags = 0;
 
-    unsigned int rbo;
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    ComPtr<ID3D11Texture2D> texture, depth_stencil_texture;
+    ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, texture.GetAddressOf()));
+    ThrowIfFailed(d3d.device->CreateTexture2D(&depth_stencil_texture_desc, nullptr, depth_stencil_texture.GetAddressOf()));
 
-    unsigned int fbo;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    D3D11_RENDER_TARGET_VIEW_DESC render_target_view_desc;
+    render_target_view_desc.Format = texture_desc.Format;
+    render_target_view_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    render_target_view_desc.Texture2D.MipSlice = 0;
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    ComPtr<ID3D11RenderTargetView> render_target_view;
+    ThrowIfFailed(d3d.device->CreateRenderTargetView(texture.Get(), &render_target_view_desc, render_target_view.GetAddressOf()));
 
-    int t = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    ComPtr<ID3D11DepthStencilView> depth_stencil_view;
+    ThrowIfFailed(d3d.device->CreateDepthStencilView(depth_stencil_texture.Get(), nullptr, depth_stencil_view.GetAddressOf()));
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-    {
-        int bp = 0;
-    }
+    D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
 
-    fb2tex[fbo] = textureColorbuffer;*/
+    resource_view_desc.Format = texture_desc.Format;
+    resource_view_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    resource_view_desc.Texture2D.MostDetailedMip = 0;
+    resource_view_desc.Texture2D.MipLevels = -1;
 
-    //return fbo;
-    return 0;
+    ComPtr<ID3D11ShaderResourceView> shader_resource_view;
+    ThrowIfFailed(d3d.device->CreateShaderResourceView(texture.Get(), &resource_view_desc, shader_resource_view.GetAddressOf()));
+
+    uint32_t texture_id = gfx_d3d11_new_texture();
+    TextureData& t = d3d.textures[texture_id];
+    t.width = width;
+    t.height = height;
+    t.resource_view = shader_resource_view;
+
+    size_t index = d3d.framebuffers.size();
+    d3d.framebuffers.resize(d3d.framebuffers.size() + 1);
+    FramebufferData& data = d3d.framebuffers.back();
+    data.render_target_view = render_target_view;
+    data.depth_stencil_view = depth_stencil_view;
+    data.texture_id = texture_id;
+
+    uint32_t tile = 0;
+    uint32_t saved = d3d.current_texture_ids[tile];
+    d3d.current_texture_ids[tile] = texture_id;
+    gfx_d3d11_set_sampler_parameters(0, true, G_TX_WRAP, G_TX_WRAP);
+    d3d.current_texture_ids[tile] = saved;
+
+    return (int)index;
 }
 
-//extern "C" int tFlag = 0;
+extern "C" int tFlag;
 
 void gfx_d3d11_set_framebuffer(int fb)
 {
-    //glBindFramebuffer(GL_FRAMEBUFFER_EXT, fb);
-    //glDisable(GL_DEPTH_TEST);
-    //glDisable(GL_SCISSOR_TEST);
+    d3d.context->OMSetRenderTargets(1, d3d.framebuffers[fb].render_target_view.GetAddressOf(), d3d.framebuffers[fb].depth_stencil_view.Get());
 
-    //if (tFlag == 0)
-    //{
-    //    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    //    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //    tFlag = 1;
-    //}
+    const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    if (tFlag == 0) {
+        d3d.context->ClearRenderTargetView(d3d.framebuffers[fb].render_target_view.Get(), clearColor);
+        d3d.context->ClearDepthStencilView(d3d.framebuffers[fb].depth_stencil_view.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+        tFlag = 1;
+    }
 }
 
 void gfx_d3d11_reset_framebuffer(void)
 {
-    //glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
+    d3d.context->OMSetRenderTargets(1, d3d.backbuffer_view.GetAddressOf(), d3d.depth_stencil_view.Get());
 }
 
 void gfx_d3d11_select_texture_fb(int fbID)
 {
-    //glActiveTexture(GL_TEXTURE0 + 0);
-    //glBindTexture(GL_TEXTURE_2D, fb2tex[fbID]);
+    int tile = 0;
+    gfx_d3d11_select_texture(tile, d3d.framebuffers[fbID].texture_id);
 }
 
 static uint16_t gfx_d3d11_get_pixel_depth(float x, float y) {

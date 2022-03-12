@@ -301,6 +301,20 @@ namespace Ship {
         }
 	}
 
+    void SDLController::WriteToSource(ControllerCallback* controller)
+    {
+        if (controller->rumble > 0) {
+            SDL_GameControllerRumble(Cont, 0x8000, 0x8000, 1);
+        }
+
+        if (controller->ledColor == 1) {
+            SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 255, 0, 0);
+        }
+        else {
+            SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 0, 255, 0);
+        }
+    }
+
     void SDLController::CreateDefaultBinding() {
         std::string ConfSection = GetBindingConfSection();
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();

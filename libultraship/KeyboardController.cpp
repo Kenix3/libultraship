@@ -37,6 +37,11 @@ namespace Ship {
 		wStickY = 0;
 	}
 
+	void KeyboardController::WriteToSource(ControllerCallback* controller)
+	{
+
+	}
+
 	std::string KeyboardController::GetControllerType() {
 		return "KEYBOARD";
 	}

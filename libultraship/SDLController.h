@@ -11,6 +11,8 @@ namespace Ship {
 			~SDLController();
 
 			void ReadFromSource();
+			void WriteToSource(ControllerCallback* controller);
+
 			std::string GetGuid() { return guid; };
 
 		protected:

@@ -18,6 +18,8 @@ namespace Ship {
 
 			void Read(OSContPad* pad);
 			virtual void ReadFromSource() = 0;
+			virtual void WriteToSource(ControllerCallback* controller) = 0;
+			bool isRumbling;
 
 			void SetButtonMapping(const std::string& szButtonName, int32_t dwScancode);
 			std::shared_ptr<ControllerAttachment> GetAttachment() { return Attachment; }

@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 #ifndef _LANGUAGE_C
@@ -34,8 +35,6 @@ extern "C" {
 
 using namespace std;
 
-#define USE_NEW_TEXCACHE
-
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
@@ -59,6 +58,8 @@ using namespace std;
 #define MAX_LIGHTS 32
 #define MAX_VERTICES 64
 
+#define TEXTURE_CACHE_MAX_SIZE 500
+
 struct RGBA {
     uint8_t r, g, b, a;
 };
@@ -74,26 +75,37 @@ struct LoadedVertex {
     uint8_t clip_rej;
 };
 
-struct TextureHashmapNode {
-    struct TextureHashmapNode *next;
-
-    const uint8_t *texture_addr;
+struct TextureCacheKey {
+    const uint8_t* texture_addr;
     uint8_t fmt, siz;
     uint8_t palette_index;
 
+    bool operator==(const TextureCacheKey&) const noexcept = default;
+
+    struct Hasher {
+        size_t operator()(const TextureCacheKey& key) const noexcept {
+            uintptr_t addr = (uintptr_t)key.texture_addr;
+            return (size_t)(addr ^ (addr >> 5));
+        }
+    };
+};
+
+typedef unordered_map<TextureCacheKey, struct TextureCacheValue, TextureCacheKey::Hasher> TextureCacheMap;
+typedef pair<const TextureCacheKey, struct TextureCacheValue> TextureCacheNode;
+
+struct TextureCacheValue {
     uint32_t texture_id;
     uint8_t cms, cmt;
     bool linear_filter;
-    bool isInvalid;
+
+    list<TextureCacheMap::iterator>::iterator lru_location;
 };
 
-#ifndef USE_NEW_TEXCACHE
 static struct {
-    struct TextureHashmapNode *hashmap[1024];
-    struct TextureHashmapNode pool[512];
-    uint32_t pool_pos;
+    TextureCacheMap map;
+    list<TextureCacheMap::iterator> lru;
+    vector<uint32_t> free_texture_ids;
 } gfx_texture_cache;
-#endif
 
 struct ColorCombiner {
     uint64_t shader_id0;
@@ -105,10 +117,6 @@ struct ColorCombiner {
 
 static map<uint64_t, struct ColorCombiner> color_combiner_pool;
 static map<uint64_t, struct ColorCombiner>::iterator prev_combiner = color_combiner_pool.end();
-
-#ifdef USE_NEW_TEXCACHE
-static map<uintptr_t, std::vector<TextureHashmapNode*>> texture_cache;
-#endif
 
 static struct RSP {
     float modelview_matrix_stack[11][4][4];
@@ -179,7 +187,7 @@ static struct RenderingState {
     bool alpha_blend;
     struct XYWidthHeight viewport, scissor;
     struct ShaderProgram *shader_program;
-    struct TextureHashmapNode *textures[2];
+    TextureCacheNode *textures[2];
 } rendering_state;
 
 struct GfxDimensions gfx_current_dimensions;
@@ -482,132 +490,70 @@ static struct ColorCombiner *gfx_lookup_or_create_color_combiner(uint64_t cc_id)
 
 static void gfx_texture_cache_clear()
 {
-#ifdef USE_NEW_TEXCACHE
-    for (auto texPair : texture_cache)
-    {
-        for (auto texItem : texPair.second)
-        {
-            gfx_rapi->delete_texture(texItem->texture_id);
-            delete texItem;
-        }
+    for (const auto& entry : gfx_texture_cache.map) {
+        gfx_texture_cache.free_texture_ids.push_back(entry.second.texture_id);
     }
-
-    texture_cache.clear();
-    //texture_cache2.clear();
-#else
-    gfx_texture_cache.pool_pos = 0;
-#endif
+    gfx_texture_cache.map.clear();
+    gfx_texture_cache.lru.clear();
 }
 
-static bool gfx_texture_cache_lookup(int i, struct TextureHashmapNode **n, const uint8_t *orig_addr, uint32_t fmt, uint32_t siz, uint32_t palette_index) {
-#ifdef USE_NEW_TEXCACHE
-    auto texFind = texture_cache.find((uintptr_t)orig_addr);
-    
-    if (texFind != texture_cache.end())
-    {
-        for (int k = 0; k < texFind->second.size(); k++)
-        {
-            if (texFind->second[k]->fmt == fmt && texFind->second[k]->siz == siz && texFind->second[k]->palette_index == palette_index)
-            {
-                gfx_rapi->select_texture(i, texFind->second[k]->texture_id);
-                *n = texFind->second[k];
-                return true;
+static bool gfx_texture_cache_lookup(int i, TextureCacheNode **n, const uint8_t *orig_addr, uint32_t fmt, uint32_t siz, uint32_t palette_index) {
+    TextureCacheKey key = { orig_addr, fmt, siz, palette_index };
+    auto it = gfx_texture_cache.map.find(key);
+
+    if (it != gfx_texture_cache.map.end()) {
+        gfx_rapi->select_texture(i, it->second.texture_id);
+        *n = &*it;
+        gfx_texture_cache.lru.splice(gfx_texture_cache.lru.end(), gfx_texture_cache.lru, it->second.lru_location); // move to back
+        return true;
+    }
+
+    if (gfx_texture_cache.map.size() >= TEXTURE_CACHE_MAX_SIZE) {
+        // Remove the texture that was least recently used
+        it = gfx_texture_cache.lru.front();
+        gfx_texture_cache.free_texture_ids.push_back(it->second.texture_id);
+        gfx_texture_cache.map.erase(it);
+        gfx_texture_cache.lru.pop_front();
+    }
+
+    uint32_t texture_id;
+    if (!gfx_texture_cache.free_texture_ids.empty()) {
+        texture_id = gfx_texture_cache.free_texture_ids.back();
+        gfx_texture_cache.free_texture_ids.pop_back();
+    } else {
+        texture_id = gfx_rapi->new_texture();
+    }
+
+    it = gfx_texture_cache.map.insert(make_pair(key, TextureCacheValue())).first;
+    TextureCacheNode* node = &*it;
+    node->second.texture_id = texture_id;
+    node->second.lru_location = gfx_texture_cache.lru.insert(gfx_texture_cache.lru.end(), it);
+
+    gfx_rapi->select_texture(i, texture_id);
+    gfx_rapi->set_sampler_parameters(i, false, 0, 0);
+    *n = node;
+    return false;
+}
+
+static void gfx_texture_cache_delete(const uint8_t* orig_addr) 
+{
+    while (gfx_texture_cache.map.bucket_count() > 0) {
+        TextureCacheKey key = { orig_addr, 0, 0, 0 }; // bucket index only depends on the address
+        size_t bucket = gfx_texture_cache.map.bucket(key);
+        bool again = false;
+        for (auto it = gfx_texture_cache.map.begin(bucket); it != gfx_texture_cache.map.end(bucket); ++it) {
+            if (it->first.texture_addr == orig_addr) {
+                gfx_texture_cache.lru.erase(it->second.lru_location);
+                gfx_texture_cache.free_texture_ids.push_back(it->second.texture_id);
+                gfx_texture_cache.map.erase(it);
+                again = true;
+                break;
             }
         }
-    }
-    else
-    {
-        texture_cache[(uintptr_t)orig_addr] = std::vector<TextureHashmapNode*>();
-    }
-
-    
-    TextureHashmapNode* entry = new TextureHashmapNode();
-
-    entry->texture_id = gfx_rapi->new_texture();
-
-    gfx_rapi->select_texture(i, entry->texture_id);
-    gfx_rapi->set_sampler_parameters(i, false, 0, 0);
-
-    entry->cms = 0;
-    entry->cmt = 0;
-    entry->linear_filter = false;
-    entry->texture_addr = orig_addr;
-    entry->fmt = fmt;
-    entry->siz = siz;
-    entry->next = NULL;
-    entry->isInvalid = false;
-    entry->palette_index = palette_index;
-    entry->isInvalid = false;
-
-    texture_cache[(uintptr_t)orig_addr].push_back(entry);
-    *n = entry;
-
-    return false;
-#else
-    size_t hash = (uintptr_t)orig_addr;
-    hash = (hash >> 5) & 0x3ff;
-    struct TextureHashmapNode **node = &gfx_texture_cache.hashmap[hash];
-    while (*node != NULL && *node - gfx_texture_cache.pool < (int)gfx_texture_cache.pool_pos) {
-        if (!(*node)->isInvalid && (*node)->texture_addr == orig_addr && (*node)->fmt == fmt && (*node)->siz == siz && (*node)->palette_index == palette_index) {
-            gfx_rapi->select_texture(i, (*node)->texture_id);
-            *n = *node;
-            return true;
+        if (!again) {
+            break;
         }
-        node = &(*node)->next;
     }
-    if (gfx_texture_cache.pool_pos == sizeof(gfx_texture_cache.pool) / sizeof(struct TextureHashmapNode)) {
-        // Pool is full. We just invalidate everything and start over.
-        gfx_texture_cache.pool_pos = 0;
-        node = &gfx_texture_cache.hashmap[hash];
-        //puts("Clearing texture cache");
-    }
-    *node = &gfx_texture_cache.pool[gfx_texture_cache.pool_pos++];
-    if ((*node)->texture_addr == NULL) {
-        (*node)->texture_id = gfx_rapi->new_texture();
-    }
-    gfx_rapi->select_texture(i, (*node)->texture_id);
-    gfx_rapi->set_sampler_parameters(i, false, 0, 0);
-    (*node)->cms = 0;
-    (*node)->cmt = 0;
-    (*node)->linear_filter = false;
-    (*node)->next = NULL;
-    (*node)->texture_addr = orig_addr;
-    (*node)->fmt = fmt;
-    (*node)->siz = siz;
-    (*node)->palette_index = palette_index;
-    (*node)->isInvalid = false;
-    *n = *node;
-    return false;
-#endif
-}
-
-static void gfx_texture_cache_delete(int i, struct TextureHashmapNode** n, const uint8_t* orig_addr) 
-{
-#ifdef USE_NEW_TEXCACHE
-    //auto lookupFind = texture_cache2.find((uint8_t*)orig_addr);
-    auto lookupFind = texture_cache.find((uintptr_t)orig_addr);
-
-    if (lookupFind != texture_cache.end())
-    {
-        for (int i = 0; i < lookupFind->second.size(); i++)
-        {
-            gfx_rapi->delete_texture(lookupFind->second[i]->texture_id);
-            delete lookupFind->second[i];
-        }
-
-        lookupFind->second.clear();
-    }
-    
-#else
-    /*
-    size_t hash = (uintptr_t)orig_addr;
-    hash = (hash >> 5) & 0x3ff;
-    struct TextureHashmapNode** node = &gfx_texture_cache.hashmap[hash];
-
-    if (*(node) != NULL)
-        (*node)->isInvalid = true;
-    */
-#endif
 }
 
 static void import_texture_rgba16(int tile) {
@@ -1304,12 +1250,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             }
 
             bool linear_filter = (rdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
-            if (linear_filter != rendering_state.textures[i]->linear_filter || cms != rendering_state.textures[i]->cms || cmt != rendering_state.textures[i]->cmt) {
+            if (linear_filter != rendering_state.textures[i]->second.linear_filter || cms != rendering_state.textures[i]->second.cms || cmt != rendering_state.textures[i]->second.cmt) {
                 gfx_flush();
                 gfx_rapi->set_sampler_parameters(i, linear_filter, cms, cmt);
-                rendering_state.textures[i]->linear_filter = linear_filter;
-                rendering_state.textures[i]->cms = cms;
-                rendering_state.textures[i]->cmt = cmt;
+                rendering_state.textures[i]->second.linear_filter = linear_filter;
+                rendering_state.textures[i]->second.cms = cms;
+                rendering_state.textures[i]->second.cmt = cmt;
             }
         }
     }
@@ -2110,17 +2056,16 @@ static void gfx_run_dl(Gfx* cmd) {
             if (texAddr == 0)
                 gfx_texture_cache_clear();
             else
-                gfx_texture_cache_delete(0, &rendering_state.textures[0], (const uint8_t*)texAddr);
+                gfx_texture_cache_delete((const uint8_t*)texAddr);
         }
             break;
         case G_NOOP:
         {
-            if (cmd->words.w1 != 0)
-            {
-                if (!strcmp("T5ST", (const char*)cmd->words.w1))
-                {
-                    int bp = 0;
-                }
+            uint32_t index = C0(0, 16);
+            uint32_t type = C0(16, 8);
+            if (type == 2) {
+                const char* str = (const char *)cmd->words.w1;
+                //printf("%s, %u\n", str, index);
             }
         }
             break;
@@ -2431,6 +2376,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_flush();
                 fbActive = 0;
                 gfx_rapi->reset_framebuffer();
+                break;
             }
             break;
             case G_SETTIMG_FB:

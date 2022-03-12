@@ -9,6 +9,8 @@ namespace Ship {
 			~KeyboardController();
 
 			void ReadFromSource();
+			void WriteToSource(ControllerCallback* controller);
+
 			bool PressButton(int32_t dwScancode);
 			bool ReleaseButton(int32_t dwScancode);
 			void ReleaseAllButtons();
