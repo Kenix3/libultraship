@@ -25,7 +25,7 @@ void gfx_start_frame(void);
 void gfx_run(Gfx* commands);
 void gfx_end_frame(void);
 void gfx_set_framedivisor(int);
-int gfx_create_framebuffer(int width, int height);
+int gfx_create_framebuffer(uint32_t width, uint32_t height);
 uint16_t gfx_get_pixel_depth(float x, float y);
 
 #ifdef __cplusplus

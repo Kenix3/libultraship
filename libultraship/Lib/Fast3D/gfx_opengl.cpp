@@ -60,7 +60,8 @@ static GLuint opengl_vbo;
 
 static uint32_t frame_count;
 static uint32_t current_height;
-static map<int, int> fb2tex;
+static map<int, pair<GLuint, GLuint>> fb2tex;
+static bool current_depth_mask;
 
 static bool gfx_opengl_z_is_from_0_to_1(void) {
     return false;
@@ -494,7 +495,7 @@ static void gfx_opengl_select_texture(int tile, GLuint texture_id) {
     glBindTexture(GL_TEXTURE_2D, texture_id);
 }
 
-static void gfx_opengl_upload_texture(const uint8_t *rgba32_buf, int width, int height) {
+static void gfx_opengl_upload_texture(const uint8_t *rgba32_buf, uint32_t width, uint32_t height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
 }
 
@@ -524,6 +525,7 @@ static void gfx_opengl_set_depth_test_and_mask(bool depth_test, bool z_upd) {
         glEnable(GL_DEPTH_TEST);
         glDepthMask(z_upd ? GL_TRUE : GL_FALSE);
         glDepthFunc(depth_test ? GL_LEQUAL : GL_ALWAYS);
+        current_depth_mask = z_upd;
     } else {
         glDisable(GL_DEPTH_TEST);
     }
@@ -609,6 +611,7 @@ static void gfx_opengl_start_frame(void) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_DEPTH_CLAMP);
+    current_depth_mask = true;
 }
 
 static void gfx_opengl_end_frame(void) {
@@ -627,9 +630,8 @@ static void gfx_opengl_end_frame(void) {
 static void gfx_opengl_finish_render(void) {
 }
 
-int gfx_opengl_create_framebuffer(int width, int height)
-{
-    unsigned int textureColorbuffer;
+static int gfx_opengl_create_framebuffer(uint32_t width, uint32_t height) {
+    GLuint textureColorbuffer;
 
     glGenTextures(1, &textureColorbuffer);
     glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
@@ -638,13 +640,13 @@ int gfx_opengl_create_framebuffer(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    unsigned int rbo;
+    GLuint rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    unsigned int fbo;
+    GLuint fbo;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -652,28 +654,32 @@ int gfx_opengl_create_framebuffer(int width, int height)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    fb2tex[fbo] = textureColorbuffer;
+    fb2tex[fbo] = make_pair(textureColorbuffer, rbo);
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     return fbo;
 }
 
-extern "C" int tFlag = 0;
+static void gfx_opengl_resize_framebuffer(int fb, uint32_t width, uint32_t height) {
+    glBindTexture(GL_TEXTURE_2D, fb2tex[fb].first);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, fb2tex[fb].second);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
 
 void gfx_opengl_set_framebuffer(int fb) 
 {
-    
+    glClipControl(GL_UPPER_LEFT, GL_NEGATIVE_ONE_TO_ONE); // Set origin to upper left corner, to match N64 and DX11
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, fb);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_SCISSOR_TEST);
 
-    if (tFlag == 0)
-    {
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        tFlag = 1;
-    }
+    glDepthMask(GL_TRUE);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDepthMask(current_depth_mask ? GL_TRUE : GL_FALSE);
 }
 
 void gfx_opengl_reset_framebuffer(void) 
@@ -683,13 +689,14 @@ void gfx_opengl_reset_framebuffer(void)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
+    glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 }
 
 void gfx_opengl_select_texture_fb(int fbID)
 {
     //glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0 + 0);
-    glBindTexture(GL_TEXTURE_2D, fb2tex[fbID]);
+    glBindTexture(GL_TEXTURE_2D, fb2tex[fbID].first);
 }
 
 static uint16_t gfx_opengl_get_pixel_depth(float x, float y) {
@@ -724,6 +731,7 @@ struct GfxRenderingAPI gfx_opengl_api = {
     gfx_opengl_end_frame,
     gfx_opengl_finish_render,
     gfx_opengl_create_framebuffer,
+    gfx_opengl_resize_framebuffer,
     gfx_opengl_set_framebuffer,
     gfx_opengl_reset_framebuffer,
     gfx_opengl_select_texture_fb,

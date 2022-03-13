@@ -24,6 +24,7 @@
 #include "gfx_window_manager_api.h"
 #include "gfx_screen_config.h"
 #include <WTypesbase.h>
+#include <time.h>
 
 #define GFX_API_NAME "SDL2 - OpenGL"
 
@@ -255,13 +256,18 @@ static inline void sync_framerate_with_timer(void) {
     uint64_t t;
     t = SDL_GetPerformanceCounter();
 
-    int64_t next = qpc_to_100ns(previous_time) + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
-    int64_t left = next - qpc_to_100ns(t);
+    const int64_t next = qpc_to_100ns(previous_time) + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
+    const int64_t left = next - qpc_to_100ns(t);
     if (left > 0) {
+#ifdef __linux__
+        const timespec spec = { 0, left * 100 };
+        nanosleep(&spec, nullptr);
+#else
         LARGE_INTEGER li;
         li.QuadPart = -left;
         SetWaitableTimer(timer, &li, 0, nullptr, nullptr, false);
         WaitForSingleObject(timer, INFINITE);
+#endif
     }
 
     t = SDL_GetPerformanceCounter();

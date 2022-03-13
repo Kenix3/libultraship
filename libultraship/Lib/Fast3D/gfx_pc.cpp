@@ -197,6 +197,7 @@ static struct RenderingState {
 } rendering_state;
 
 struct GfxDimensions gfx_current_dimensions;
+static struct GfxDimensions gfx_prev_dimensions;
 
 static bool dropped_frame;
 
@@ -207,9 +208,17 @@ static size_t buf_vbo_num_tris;
 static struct GfxWindowManagerAPI *gfx_wapi;
 static struct GfxRenderingAPI *gfx_rapi;
 
-int markerOn;
-uintptr_t segmentPointers[16];
-int fbActive = 0;
+static int markerOn;
+static uintptr_t segmentPointers[16];
+
+struct FBInfo {
+    uint32_t orig_width, orig_height;
+    uint32_t applied_width, applied_height;
+};
+
+static bool fbActive = 0;
+static map<int, FBInfo>::iterator active_fb;
+static map<int, FBInfo> framebuffers;
 
 #ifdef _MSC_VER
 // TODO: Properly implement for MSVC
@@ -946,6 +955,17 @@ static float gfx_adjust_x_for_aspect_ratio(float x)
         return x * (4.0f / 3.0f) / ((float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height);
 }
 
+static void gfx_adjust_width_height_for_scale(uint32_t& width, uint32_t& height) {
+    width = round(width * RATIO_Y);
+    height = round(height * RATIO_Y);
+    if (width == 0) {
+        width = 1;
+    }
+    if (height == 0) {
+        height = 1;
+    }
+}
+
 static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *vertices) {
     for (size_t i = 0; i < n_vertices; i++, dest_index++) {
         const Vtx_t *v = &vertices[i].v;
@@ -1461,20 +1481,20 @@ static void gfx_calc_and_set_viewport(const Vp_t *viewport) {
     float width = 2.0f * viewport->vscale[0] / 4.0f;
     float height = 2.0f * viewport->vscale[1] / 4.0f;
     float x = (viewport->vtrans[0] / 4.0f) - width / 2.0f;
-    float y = SCREEN_HEIGHT - ((viewport->vtrans[1] / 4.0f) + height / 2.0f);
+    float y = ((viewport->vtrans[1] / 4.0f) + height / 2.0f);
 
-    if (!fbActive)
-    {
+    if (!fbActive) {
         width *= RATIO_X;
         height *= RATIO_Y;
         x *= RATIO_X;
+        y = SCREEN_HEIGHT - y;
         y *= RATIO_Y;
-    }
-    else
-    {
-        // OTRTODO: This is a hardcoded hack and we nede to remove this later...
-        width *= 6;
-        height *= 6;
+    } else {
+        width *= RATIO_Y;
+        height *= RATIO_Y;
+        x *= RATIO_Y;
+        y = active_fb->second.orig_height - y;
+        y *= RATIO_Y;
     }
 
     rdp.viewport.x = x;
@@ -1559,10 +1579,24 @@ static void gfx_sp_texture(uint16_t sc, uint16_t tc, uint8_t level, uint8_t tile
 }
 
 static void gfx_dp_set_scissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32_t lrx, uint32_t lry) {
-    float x = ulx / 4.0f * RATIO_X;
-    float y = (SCREEN_HEIGHT - lry / 4.0f) * RATIO_Y;
-    float width = (lrx - ulx) / 4.0f * RATIO_X;
-    float height = (lry - uly) / 4.0f * RATIO_Y;
+    float x = ulx / 4.0f;
+    float y = lry / 4.0f;
+    float width = (lrx - ulx) / 4.0f;
+    float height = (lry - uly) / 4.0f;
+
+    if (!fbActive) {
+        x *= RATIO_X;
+        y = SCREEN_HEIGHT - y;
+        y *= RATIO_Y;
+        width *= RATIO_X;
+        height *= RATIO_Y;
+    } else {
+        width *= RATIO_Y;
+        height *= RATIO_Y;
+        x *= RATIO_Y;
+        y = active_fb->second.orig_height - y;
+        y *= RATIO_Y;
+    }
 
     rdp.scissor.x = x;
     rdp.scissor.y = y;
@@ -2401,7 +2435,8 @@ static void gfx_run_dl(Gfx* cmd) {
             {
                 gfx_flush();
                 fbActive = 1;
-                gfx_rapi->set_framebuffer(cmd->words.w1);
+                active_fb = framebuffers.find(cmd->words.w1);
+                gfx_rapi->set_framebuffer(active_fb->first);
             }
                 break;
             case G_RESETFB:
@@ -2492,7 +2527,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_dp_texture_rectangle(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, opcode == G_TEXRECTFLIP);
                 break;
             }
-			case G_TEXRECT_WIDE:
+            case G_TEXRECT_WIDE:
             {
                 int32_t lrx, lry, tile, ulx, uly;
                 uint32_t uls, ult, dsdx, dtdy;
@@ -2565,6 +2600,8 @@ void gfx_init(struct GfxWindowManagerAPI *wapi, struct GfxRenderingAPI *rapi, co
     gfx_wapi->init(game_name, start_in_fullscreen);
     gfx_rapi->init();
     gfx_current_dimensions.internal_mul = 1;
+    gfx_current_dimensions.width = SCREEN_WIDTH;
+    gfx_current_dimensions.height = SCREEN_HEIGHT;
 
     for (int i = 0; i < 16; i++)
         segmentPointers[i] = NULL;
@@ -2616,6 +2653,19 @@ void gfx_start_frame(void) {
     }
     gfx_current_dimensions.aspect_ratio = (float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height;
 
+    if (gfx_current_dimensions.height != gfx_prev_dimensions.height) {
+        for (auto& fb : framebuffers) {
+            uint32_t width = fb.second.orig_width, height = fb.second.orig_height;
+            gfx_adjust_width_height_for_scale(width, height);
+            if (width != fb.second.applied_width || height != fb.second.applied_height) {
+                gfx_rapi->resize_framebuffer(fb.first, width, height);
+                fb.second.applied_width = width;
+                fb.second.applied_height = height;
+            }
+        }
+    }
+    gfx_prev_dimensions = gfx_current_dimensions;
+
     fbActive = 0;
 }
 
@@ -2651,8 +2701,12 @@ void gfx_set_framedivisor(int divisor) {
     gfx_wapi->set_frame_divisor(divisor);
 }
 
-int gfx_create_framebuffer(int width, int height) {
-    return gfx_rapi->create_framebuffer(width, height);
+int gfx_create_framebuffer(uint32_t width, uint32_t height) {
+    uint32_t orig_width = width, orig_height = height;
+    gfx_adjust_width_height_for_scale(width, height);
+    int fb = gfx_rapi->create_framebuffer(width, height);
+    framebuffers[fb] = { orig_width, orig_height, width, height };
+    return fb;
 }
 
 void gfx_set_framebuffer(int fb)

@@ -123,6 +123,7 @@ static struct {
     struct ShaderProgramD3D11 *shader_program;
 
     uint32_t current_width, current_height;
+    uint32_t render_target_height;
 
     int8_t depth_test;
     int8_t depth_mask;
@@ -143,6 +144,25 @@ static struct {
 
 static LARGE_INTEGER last_time, accumulated_time, frequency;
 
+void create_depth_stencil_objects(uint32_t width, uint32_t height, ID3D11Texture2D **texture, ID3D11DepthStencilView **view) {
+    D3D11_TEXTURE2D_DESC texture_desc;
+    texture_desc.Width = width;
+    texture_desc.Height = height;
+    texture_desc.MipLevels = 1;
+    texture_desc.ArraySize = 1;
+    texture_desc.Format = d3d.feature_level >= D3D_FEATURE_LEVEL_10_0 ?
+        DXGI_FORMAT_D32_FLOAT : DXGI_FORMAT_D24_UNORM_S8_UINT;
+    texture_desc.SampleDesc.Count = 1;
+    texture_desc.SampleDesc.Quality = 0;
+    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    texture_desc.CPUAccessFlags = 0;
+    texture_desc.MiscFlags = 0;
+
+    ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, texture));
+    ThrowIfFailed(d3d.device->CreateDepthStencilView(*texture, nullptr, view));
+}
+
 static void create_render_target_views(bool is_resize) {
     DXGI_SWAP_CHAIN_DESC1 desc1;
 
@@ -150,6 +170,7 @@ static void create_render_target_views(bool is_resize) {
         // Release previous stuff (if any)
 
         d3d.backbuffer_view.Reset();
+        d3d.depth_stencil_texture.Reset();
         d3d.depth_stencil_view.Reset();
         d3d.depth_stencil_copy_texture.Reset();
 
@@ -174,24 +195,7 @@ static void create_render_target_views(bool is_resize) {
                   gfx_dxgi_get_h_wnd(), "Failed to create render target view.");
 
     // Create depth buffer
-
-    D3D11_TEXTURE2D_DESC depth_stencil_texture_desc;
-    ZeroMemory(&depth_stencil_texture_desc, sizeof(D3D11_TEXTURE2D_DESC));
-
-    depth_stencil_texture_desc.Width = desc1.Width;
-    depth_stencil_texture_desc.Height = desc1.Height;
-    depth_stencil_texture_desc.MipLevels = 1;
-    depth_stencil_texture_desc.ArraySize = 1;
-    depth_stencil_texture_desc.Format = d3d.feature_level >= D3D_FEATURE_LEVEL_10_0 ?
-                                        DXGI_FORMAT_D32_FLOAT : DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depth_stencil_texture_desc.SampleDesc = d3d.sample_description;
-    depth_stencil_texture_desc.Usage = D3D11_USAGE_DEFAULT;
-    depth_stencil_texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    depth_stencil_texture_desc.CPUAccessFlags = 0;
-    depth_stencil_texture_desc.MiscFlags = 0;
-
-    ThrowIfFailed(d3d.device->CreateTexture2D(&depth_stencil_texture_desc, nullptr, d3d.depth_stencil_texture.GetAddressOf()));
-    ThrowIfFailed(d3d.device->CreateDepthStencilView(d3d.depth_stencil_texture.Get(), nullptr, d3d.depth_stencil_view.GetAddressOf()));
+    create_depth_stencil_objects(desc1.Width, desc1.Height, d3d.depth_stencil_texture.GetAddressOf(), d3d.depth_stencil_view.GetAddressOf());
 
     // Create texture that can be used to retrieve depth value
 
@@ -477,7 +481,7 @@ static D3D11_TEXTURE_ADDRESS_MODE gfx_cm_to_d3d11(uint32_t val) {
     return (val & G_TX_MIRROR) ? D3D11_TEXTURE_ADDRESS_MIRROR : D3D11_TEXTURE_ADDRESS_WRAP;
 }
 
-static void gfx_d3d11_upload_texture(const uint8_t *rgba32_buf, int width, int height) {
+static void gfx_d3d11_upload_texture(const uint8_t *rgba32_buf, uint32_t width, uint32_t height) {
     // Create texture
 
     D3D11_TEXTURE2D_DESC texture_desc;
@@ -503,26 +507,18 @@ static void gfx_d3d11_upload_texture(const uint8_t *rgba32_buf, int width, int h
     ComPtr<ID3D11Texture2D> texture;
     ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, &resource_data, texture.GetAddressOf()));
 
-    // Create shader resource view from texture
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
-    ZeroMemory(&resource_view_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-
-    resource_view_desc.Format = texture_desc.Format;
-    resource_view_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    resource_view_desc.Texture2D.MostDetailedMip = 0;
-    resource_view_desc.Texture2D.MipLevels = -1;
-
     TextureData *texture_data = &d3d.textures[d3d.current_texture_ids[d3d.current_tile]];
     texture_data->width = width;
     texture_data->height = height;
+
+    // Create shader resource view from texture
 
     if (texture_data->resource_view.Get() != nullptr) {
         // Free the previous texture in this slot
         texture_data->resource_view.Reset();
     }
 
-    ThrowIfFailed(d3d.device->CreateShaderResourceView(texture.Get(), &resource_view_desc, texture_data->resource_view.GetAddressOf()));
+    ThrowIfFailed(d3d.device->CreateShaderResourceView(texture.Get(), nullptr, texture_data->resource_view.GetAddressOf()));
 }
 
 static void gfx_d3d11_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
@@ -563,7 +559,7 @@ static void gfx_d3d11_set_zmode_decal(bool zmode_decal) {
 static void gfx_d3d11_set_viewport(int x, int y, int width, int height) {
     D3D11_VIEWPORT viewport;
     viewport.TopLeftX = x;
-    viewport.TopLeftY = d3d.current_height - y - height;
+    viewport.TopLeftY = d3d.render_target_height - y - height;
     viewport.Width = width;
     viewport.Height = height;
     viewport.MinDepth = 0.0f;
@@ -575,9 +571,9 @@ static void gfx_d3d11_set_viewport(int x, int y, int width, int height) {
 static void gfx_d3d11_set_scissor(int x, int y, int width, int height) {
     D3D11_RECT rect;
     rect.left = x;
-    rect.top = d3d.current_height - y - height;
+    rect.top = d3d.render_target_height - y - height;
     rect.right = x + width;
-    rect.bottom = d3d.current_height - y;
+    rect.bottom = d3d.render_target_height - y;
 
     d3d.context->RSSetScissorRects(1, &rect);
 }
@@ -721,6 +717,7 @@ static void gfx_d3d11_start_frame(void) {
         d3d.per_frame_cb_data.noise_frame = 0;
     }
     float aspect_ratio = (float) d3d.current_width / (float) d3d.current_height;
+    d3d.render_target_height = d3d.current_height;
     d3d.per_frame_cb_data.noise_scale_x = 120 * aspect_ratio; // 120 = N64 height resolution (240) / 2
     d3d.per_frame_cb_data.noise_scale_y = 120;
 
@@ -740,8 +737,12 @@ static void gfx_d3d11_end_frame(void) {
 static void gfx_d3d11_finish_render(void) {
 }
 
-int gfx_d3d11_create_framebuffer(int width, int height)
-{
+void gfx_d3d11_resize_framebuffer(int fb, uint32_t width, uint32_t height) {
+    FramebufferData& fd = d3d.framebuffers[fb];
+    TextureData& td = d3d.textures[fd.texture_id];
+
+    ComPtr<ID3D11Texture2D> texture, depth_stencil_texture;
+
     D3D11_TEXTURE2D_DESC texture_desc;
     texture_desc.Width = width;
     texture_desc.Height = height;
@@ -755,56 +756,24 @@ int gfx_d3d11_create_framebuffer(int width, int height)
     texture_desc.SampleDesc.Count = 1;
     texture_desc.SampleDesc.Quality = 0;
 
-    D3D11_TEXTURE2D_DESC depth_stencil_texture_desc;
-    depth_stencil_texture_desc.Width = width;
-    depth_stencil_texture_desc.Height = height;
-    depth_stencil_texture_desc.MipLevels = 1;
-    depth_stencil_texture_desc.ArraySize = 1;
-    depth_stencil_texture_desc.Format = d3d.feature_level >= D3D_FEATURE_LEVEL_10_0 ?
-        DXGI_FORMAT_D32_FLOAT : DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depth_stencil_texture_desc.SampleDesc.Count = 1;
-    depth_stencil_texture_desc.SampleDesc.Quality = 0;
-    depth_stencil_texture_desc.Usage = D3D11_USAGE_DEFAULT;
-    depth_stencil_texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    depth_stencil_texture_desc.CPUAccessFlags = 0;
-    depth_stencil_texture_desc.MiscFlags = 0;
-
-    ComPtr<ID3D11Texture2D> texture, depth_stencil_texture;
     ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, texture.GetAddressOf()));
-    ThrowIfFailed(d3d.device->CreateTexture2D(&depth_stencil_texture_desc, nullptr, depth_stencil_texture.GetAddressOf()));
+    create_depth_stencil_objects(width, height, depth_stencil_texture.GetAddressOf(), fd.depth_stencil_view.ReleaseAndGetAddressOf());
+    ThrowIfFailed(d3d.device->CreateRenderTargetView(texture.Get(), nullptr, fd.render_target_view.ReleaseAndGetAddressOf()));
+    ThrowIfFailed(d3d.device->CreateShaderResourceView(texture.Get(), nullptr, td.resource_view.ReleaseAndGetAddressOf()));
 
-    D3D11_RENDER_TARGET_VIEW_DESC render_target_view_desc;
-    render_target_view_desc.Format = texture_desc.Format;
-    render_target_view_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-    render_target_view_desc.Texture2D.MipSlice = 0;
+    td.width = width;
+    td.height = height;
+}
 
-    ComPtr<ID3D11RenderTargetView> render_target_view;
-    ThrowIfFailed(d3d.device->CreateRenderTargetView(texture.Get(), &render_target_view_desc, render_target_view.GetAddressOf()));
-
-    ComPtr<ID3D11DepthStencilView> depth_stencil_view;
-    ThrowIfFailed(d3d.device->CreateDepthStencilView(depth_stencil_texture.Get(), nullptr, depth_stencil_view.GetAddressOf()));
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
-
-    resource_view_desc.Format = texture_desc.Format;
-    resource_view_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    resource_view_desc.Texture2D.MostDetailedMip = 0;
-    resource_view_desc.Texture2D.MipLevels = -1;
-
-    ComPtr<ID3D11ShaderResourceView> shader_resource_view;
-    ThrowIfFailed(d3d.device->CreateShaderResourceView(texture.Get(), &resource_view_desc, shader_resource_view.GetAddressOf()));
-
+int gfx_d3d11_create_framebuffer(uint32_t width, uint32_t height) {
     uint32_t texture_id = gfx_d3d11_new_texture();
     TextureData& t = d3d.textures[texture_id];
     t.width = width;
     t.height = height;
-    t.resource_view = shader_resource_view;
 
     size_t index = d3d.framebuffers.size();
     d3d.framebuffers.resize(d3d.framebuffers.size() + 1);
     FramebufferData& data = d3d.framebuffers.back();
-    data.render_target_view = render_target_view;
-    data.depth_stencil_view = depth_stencil_view;
     data.texture_id = texture_id;
 
     uint32_t tile = 0;
@@ -813,35 +782,32 @@ int gfx_d3d11_create_framebuffer(int width, int height)
     gfx_d3d11_set_sampler_parameters(0, true, G_TX_WRAP, G_TX_WRAP);
     d3d.current_texture_ids[tile] = saved;
 
+    gfx_d3d11_resize_framebuffer(index, width, height);
+
     return (int)index;
 }
 
-extern "C" int tFlag;
+void gfx_d3d11_set_framebuffer(int fb) {
+    d3d.render_target_height = d3d.textures[d3d.framebuffers[fb].texture_id].height;
 
-void gfx_d3d11_set_framebuffer(int fb)
-{
     d3d.context->OMSetRenderTargets(1, d3d.framebuffers[fb].render_target_view.GetAddressOf(), d3d.framebuffers[fb].depth_stencil_view.Get());
 
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    if (tFlag == 0) {
-        d3d.context->ClearRenderTargetView(d3d.framebuffers[fb].render_target_view.Get(), clearColor);
-        d3d.context->ClearDepthStencilView(d3d.framebuffers[fb].depth_stencil_view.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-        tFlag = 1;
-    }
+    d3d.context->ClearRenderTargetView(d3d.framebuffers[fb].render_target_view.Get(), clearColor);
+    d3d.context->ClearDepthStencilView(d3d.framebuffers[fb].depth_stencil_view.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-void gfx_d3d11_reset_framebuffer(void)
-{
+void gfx_d3d11_reset_framebuffer(void) {
+    d3d.render_target_height = d3d.current_height;
     d3d.context->OMSetRenderTargets(1, d3d.backbuffer_view.GetAddressOf(), d3d.depth_stencil_view.Get());
 }
 
-void gfx_d3d11_select_texture_fb(int fbID)
-{
+void gfx_d3d11_select_texture_fb(int fbID) {
     int tile = 0;
     gfx_d3d11_select_texture(tile, d3d.framebuffers[fbID].texture_id);
 }
 
-static uint16_t gfx_d3d11_get_pixel_depth(float x, float y) {
+uint16_t gfx_d3d11_get_pixel_depth(float x, float y) {
     if (!d3d.copied_depth_buffer) {
         d3d.context->CopyResource(d3d.depth_stencil_copy_texture.Get(), d3d.depth_stencil_texture.Get());
         d3d.copied_depth_buffer = true;
@@ -889,6 +855,7 @@ struct GfxRenderingAPI gfx_direct3d11_api = {
     gfx_d3d11_end_frame,
     gfx_d3d11_finish_render,
     gfx_d3d11_create_framebuffer,
+    gfx_d3d11_resize_framebuffer,
     gfx_d3d11_set_framebuffer,
     gfx_d3d11_reset_framebuffer,
     gfx_d3d11_select_texture_fb,
