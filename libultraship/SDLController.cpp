@@ -123,11 +123,13 @@ namespace Ship {
     }
 
     void SDLController::NormalizeStickAxis(int16_t wAxisValueX, int16_t wAxisValueY, int16_t wAxisThreshold) {
-        uint32_t MagSquared = (uint32_t)(wAxisValueX * wAxisValueX) + (uint32_t)(wAxisValueY * wAxisValueY);
-        uint32_t ThresholdSquared = wAxisThreshold * wAxisThreshold;
+        uint32_t MagSquared = abs((int)(wAxisValueX * wAxisValueX) + (int)(wAxisValueY * wAxisValueY));
+        uint32_t ThresholdSquared = abs(wAxisThreshold * wAxisThreshold);
 
         if (MagSquared > ThresholdSquared) {
-            wStickX = wAxisValueX / 256;
+            int32_t StickX = wAxisValueX / 256;
+            wStickX = StickX == 128 ? 127 : StickX;
+
             int32_t StickY = -wAxisValueY / 256;
             wStickY = StickY == 128 ? 127 : StickY;
         } else {
@@ -303,15 +305,19 @@ namespace Ship {
 
     void SDLController::WriteToSource(ControllerCallback* controller)
     {
-        if (controller->rumble > 0) {
-            SDL_GameControllerRumble(Cont, 0x8000, 0x8000, 1);
+        if (SDL_GameControllerHasRumble(Cont)) {
+            if (controller->rumble > 0) {
+                SDL_GameControllerRumble(Cont, 0x8000, 0x8000, 1);
+            }
         }
 
-        if (controller->ledColor == 1) {
-            SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 255, 0, 0);
-        }
-        else {
-            SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 0, 255, 0);
+        if (SDL_GameControllerHasLED(Cont)) {
+            if (controller->ledColor == 1) {
+                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 255, 0, 0);
+            }
+            else {
+                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 0, 255, 0);
+            }
         }
     }
 
@@ -332,17 +338,17 @@ namespace Ship {
         Conf[ConfSection][STR(BTN_DUP)] = std::to_string(SDL_CONTROLLER_BUTTON_DPAD_UP);
         Conf[ConfSection][STR(BTN_START)] = std::to_string(SDL_CONTROLLER_BUTTON_START);
         Conf[ConfSection][STR(BTN_Z)] = std::to_string((SDL_CONTROLLER_AXIS_TRIGGERLEFT + AXIS_SCANCODE_BIT));
-        Conf[ConfSection][STR(BTN_B)] = std::to_string(SDL_CONTROLLER_BUTTON_X);
+        Conf[ConfSection][STR(BTN_B)] = std::to_string(SDL_CONTROLLER_BUTTON_B);
         Conf[ConfSection][STR(BTN_A)] = std::to_string(SDL_CONTROLLER_BUTTON_A);
         Conf[ConfSection][STR(BTN_STICKRIGHT)] = std::to_string((SDL_CONTROLLER_AXIS_LEFTX + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_STICKLEFT)] = std::to_string(-(SDL_CONTROLLER_AXIS_LEFTX + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_STICKDOWN)] = std::to_string((SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_STICKUP)] = std::to_string(-(SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
 
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"] = std::to_string(4960);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"] = std::to_string(4960);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"] = std::to_string(0x4000);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(0x4000);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"] = std::to_string(0x2400);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"] = std::to_string(0x2400);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"] = std::to_string(0x4800);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(0x4800);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"] = std::to_string(0x1E00);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"] = std::to_string(0x1E00);
 
