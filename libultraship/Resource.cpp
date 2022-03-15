@@ -12,6 +12,11 @@ namespace Ship
         id = reader->ReadUInt64();
         res->id = id;
         reader->ReadUInt32(); // Resource minor version number
+        reader->ReadUInt64(); // ROM CRC
+        reader->ReadUInt32(); // ROM Enum
+
+        // Reserved for future file format versions...
+        reader->Seek(64, SeekOffsetType::Start);
     }
     void ResourceFile::ParseFileXML(tinyxml2::XMLElement* reader, Resource* res)
     {

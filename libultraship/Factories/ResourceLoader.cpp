@@ -25,6 +25,9 @@ namespace Ship
         BinaryReader reader = BinaryReader(memStream);
 
         Endianess endianess = (Endianess)reader.ReadByte();
+
+        for (int i = 0; i < 3; i++)
+            reader.ReadByte();
         
         // OTRTODO: Setup the binaryreader to use the resource's endianess
         

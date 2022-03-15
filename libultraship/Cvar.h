@@ -16,26 +16,33 @@ typedef struct CVar {
     } value;
 } CVar;
 
-#ifndef __cplusplus
-#include <ultra64.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+//#include <ultra64.h>
 
 
 CVar* CVar_Get(char* name);
 s32 CVar_GetS32(char* name, s32 defaultValue);
 float CVar_GetFloat(char* name, float defaultValue);
 char* CVar_GetString(char* name, char* defaultValue);
+void CVar_SetS32(char* name, s32 value);
 
 void CVar_RegisterS32(char* name, s32 defaultValue);
 void CVar_RegisterFloat(char* name, float defaultValue);
 void CVar_RegisterString(char* name, char* defaultValue);
 
-#else
+#ifdef __cplusplus
+};
+#endif
+
+#ifdef __cplusplus
 #include <map>
 #include <string>
 
 extern std::map<std::string, CVar*> cvars;
 CVar* CVar_GetVar(char* name);
-void CVar_SetS32(char* name, s32 value);
 void CVar_SetFloat(char* name, float value);
 void CVar_SetString(char* name, char* value);
 #endif

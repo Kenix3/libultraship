@@ -47,7 +47,7 @@ extern "C" char* CVar_GetString(char* name, char* defaultValue) {
     return defaultValue;
 }
 
-void CVar_SetS32(char* name, s32 value) {
+extern "C" void CVar_SetS32(char* name, s32 value) {
     CVar* cvar = CVar_Get(name);
     if (!cvar) {
         cvar = new CVar;
