@@ -76,6 +76,9 @@
     <Filter Include="Source Files\CustomImpl\Utils">
       <UniqueIdentifier>{0dca2d94-45ba-4916-b03a-1dd5f949114c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Logging">
+      <UniqueIdentifier>{bd6557f1-9480-413b-b0cd-843f8efc1939}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\MaterialFactory.cpp">
@@ -311,6 +314,9 @@
     </ClCompile>
     <ClCompile Include="Cvar.cpp">
       <Filter>Source Files\Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="luslog.cpp">
+      <Filter>Source Files\Logging</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -577,6 +583,9 @@
     </ClInclude>
     <ClInclude Include="Cvar.h">
       <Filter>Source Files\Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="luslog.h">
+      <Filter>Source Files\Logging</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
