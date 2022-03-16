@@ -125,33 +125,38 @@ namespace Ship {
 			}
 
 			auto UnmanagedRes = ResourceLoader::LoadResource(ToLoad->File);
-			UnmanagedRes->resMgr = this;
-			auto Res = std::shared_ptr<Resource>(UnmanagedRes);
 
-			if (Res != nullptr) {
-				std::unique_lock<std::mutex> Lock(ToLoad->ResourceLoadMutex);
+			if (UnmanagedRes != nullptr)
+			{
+				UnmanagedRes->resMgr = this;
+				auto Res = std::shared_ptr<Resource>(UnmanagedRes);
 
-				ToLoad->bHasResourceLoaded = true;
-				ToLoad->Resource = Res;
-				ResourceCache[Res->file->path] = Res;
+				if (Res != nullptr) {
+					std::unique_lock<std::mutex> Lock(ToLoad->ResourceLoadMutex);
 
-				SPDLOG_DEBUG("Loaded Resource {} on ResourceMgr thread", ToLoad->File->path);
+					ToLoad->bHasResourceLoaded = true;
+					ToLoad->Resource = Res;
+					ResourceCache[Res->file->path] = Res;
 
-				// Disabled for now because it can cause random crashes
-				//FileCache[Res->File->path] = nullptr;
-				//FileCache.erase(FileCache.find(Res->File->path));
-				Res->file = nullptr;
-			} else {
-				ToLoad->bHasResourceLoaded = false;
-				ToLoad->Resource = nullptr;
+					SPDLOG_DEBUG("Loaded Resource {} on ResourceMgr thread", ToLoad->File->path);
 
-				SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", ToLoad->File->path);
+					// Disabled for now because it can cause random crashes
+					//FileCache[Res->File->path] = nullptr;
+					//FileCache.erase(FileCache.find(Res->File->path));
+					Res->file = nullptr;
+				}
+				else {
+					ToLoad->bHasResourceLoaded = false;
+					ToLoad->Resource = nullptr;
+
+					SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", ToLoad->File->path);
+				}
+
+				//ResLock.lock();
+				//ResLock.unlock();
+
+				ToLoad->ResourceLoadNotifier.notify_all();
 			}
-
-			//ResLock.lock();
-			//ResLock.unlock();
-
-			ToLoad->ResourceLoadNotifier.notify_all();
 		}
 
 		SPDLOG_INFO("Resource Manager LoadResourceThread ended");

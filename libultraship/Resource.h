@@ -52,39 +52,10 @@ namespace Ship
         Little = 0,
         Big = 1,
     };
-    
-    /*
-        - Blade Runner:        1982
-        - Tron:                1982
-        - The Thing:           1982
-        - Star Wars ROJ:       1983
-        - Predator:            1984
-        - Terminator:          1984
-        - Mad Max Thunderdome: 1985
-        - Back to the Future:  1985
-        - Aliens:              1986
-        - Star Trek TNG:       1987
-        - Robocop:             1987
-        - Spaceballs:          1987
-        - Terminator 2:        1991
-        - Jurassic Park:       1993
-        - Demolition Man:      1993
-        - Judge Dredd:         1995
-        - Star Trek Voyager:   1995
-        - The Fifth Element:   1995
-        - Waterworld:          1995
-        - Stargate:            1997
-        - Starship Troopers:   1997
-        - Men in Black:        1997
-        - Armageddon:          1998
-        - Blade:               1998
-        - Matrix:              1999
-        - Star Wars TPM:       1999
-    */
 
     enum class Version
     {
-        // Blade Runner
+        // BR
         Deckard     = 0,
         Roy         = 1,
         Rachael     = 2,

@@ -2406,6 +2406,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 cmd--;
 
+
                 uint32_t fmt = C0(21, 3);
                 uint32_t size = C0(19, 2);
                 uint32_t width = C0(0, 10);
