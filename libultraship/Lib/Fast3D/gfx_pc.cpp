@@ -2086,9 +2086,9 @@ static void gfx_run_dl(Gfx* cmd) {
             ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-            uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-            ResourceMgr_GetNameByCRC(hash, dlName);
-            lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
+            //uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+            //ResourceMgr_GetNameByCRC(hash, dlName);
+            //lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
 #endif
 
             markerOn = true;
