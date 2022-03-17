@@ -1240,7 +1240,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             uint32_t tex_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
             uint32_t line_size = rdp.texture_tile[tile].line_size_bytes;
 
-            // OTRTODO: UH OH!
             if (line_size == 0)
                 line_size = 1;
 
@@ -2098,7 +2097,6 @@ static void gfx_run_dl(Gfx* cmd) {
         {
             uintptr_t texAddr = cmd->words.w1;
 
-            // OTRTODO: Figure out how to do this hashmap justice
             if (texAddr == 0)
                 gfx_texture_cache_clear();
             else

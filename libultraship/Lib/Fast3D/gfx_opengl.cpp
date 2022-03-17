@@ -684,8 +684,6 @@ void gfx_opengl_set_framebuffer(int fb)
 
 void gfx_opengl_reset_framebuffer(void) 
 {
-    unsigned int pixel[4];
-    glReadPixels(2, 2, 1, 1, GL_RGB, GL_UNSIGNED_INT, pixel);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
