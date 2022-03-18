@@ -164,8 +164,6 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
             ShowWindow(dxgi.h_wnd, SW_RESTORE);
         }
 
-        ShowCursor(TRUE);
-
         dxgi.is_full_screen = false;
     } else {
         // Save if window is maximized or not
@@ -189,8 +187,6 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
         // Set borderless full screen to that monitor
         SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
         SetWindowPos(dxgi.h_wnd, HWND_TOP, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_FRAMECHANGED);
-
-        ShowCursor(FALSE);
 
         dxgi.is_full_screen = true;
     }
@@ -326,6 +322,15 @@ void gfx_dxgi_init(const char *game_name, bool start_in_fullscreen) {
 
 static void gfx_dxgi_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
     dxgi.on_fullscreen_changed = on_fullscreen_changed;
+}
+
+static void gfx_dxgi_show_cursor(bool hide) {
+    /**
+      * @bug When menubar is open in windowed mode and you toggle fullscreen
+      * ShowCursor no longer responds. Debugging shows the bool to be correct.
+    **/
+    INFO("renderer: %s", hide ? "true" : "false");
+    ShowCursor(hide);
 }
 
 static void gfx_dxgi_set_fullscreen(bool enable) {
@@ -641,6 +646,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = {
     gfx_dxgi_set_keyboard_callbacks,
     gfx_dxgi_set_fullscreen_changed_callback,
     gfx_dxgi_set_fullscreen,
+    gfx_dxgi_show_cursor,
     gfx_dxgi_main_loop,
     gfx_dxgi_get_dimensions,
     gfx_dxgi_handle_events,

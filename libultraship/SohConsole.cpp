@@ -7,6 +7,7 @@
 #include "SohImGuiImpl.h"
 #include "Lib/ImGui/imgui_internal.h"
 
+
 static bool HelpCommand(const std::vector<std::string>&) {
 	INFO("SoH Commands:");
 	for(const auto& cmd : SohImGui::console->Commands) {
@@ -51,6 +52,8 @@ void Console::Draw() {
 		const ImVec2 size = ImGui::GetWindowSize();
 
 		__enableGameInput = !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+
+		SohImGui::ShowCursor(ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_RectOnly), SohImGui::Dialogues::dConsole);
 
 		// Renders autocomplete window
 		if(this->OpenAutocomplete) {

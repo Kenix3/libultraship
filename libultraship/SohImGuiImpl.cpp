@@ -30,6 +30,9 @@ IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPAR
 using namespace Ship;
 SoHConfigType SohSettings;
 
+bool oldCursorState = true;
+
+
 #define TOGGLE_BTN ImGuiKey_F1
 #define HOOK(b) if(b) needs_save = true;
 
@@ -123,15 +126,48 @@ namespace SohImGui {
         return false;
     }
 
+    void SohImGui::ShowCursor(bool hide, Dialogues d) {
+        if (d == Dialogues::dLoadSettings) {
+            Ship::GlobalCtx2::GetInstance()->GetWindow()->ShowCursor(hide);
+            return;
+        }
+
+        if (d == Dialogues::dConsole && SohSettings.menu_bar) {
+            return;
+        }
+        if (!Ship::GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen()) {
+            oldCursorState = false;
+            return;
+        }
+
+        if (oldCursorState != hide) {
+            oldCursorState = hide;
+            Ship::GlobalCtx2::GetInstance()->GetWindow()->ShowCursor(hide);
+        }
+    }
+
     void LoadSettings() {
         std::string ConfSection = GetDebugSection();
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
-        console->opened      = stob(Conf[ConfSection]["console"]);
-        SohSettings.menu_bar = stob(Conf[ConfSection]["menu_bar"]);
-        SohSettings.soh      = stob(Conf[ConfSection]["soh_debug"]);
+        console->opened        = stob(Conf[ConfSection]["console"]);
+        SohSettings.menu_bar   = stob(Conf[ConfSection]["menu_bar"]);
+        SohSettings.soh        = stob(Conf[ConfSection]["soh_debug"]);
         if (UseInternalRes()) {
             SohSettings.n64mode = stob(Conf[ConfSection]["n64_mode"]);
+        }
+
+        // @bug DX ignores ShowCursor call if set here.
+        if (impl.backend == Backend::SDL) {
+            if (Ship::GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen()) {
+                if (SohSettings.menu_bar) {
+                    SohImGui::ShowCursor(true, SohImGui::Dialogues::dLoadSettings);
+
+                }
+                else {
+                    SohImGui::ShowCursor(false, SohImGui::Dialogues::dLoadSettings);
+                }
+            }
         }
     }
 
@@ -139,10 +175,10 @@ namespace SohImGui {
         std::string ConfSection = GetDebugSection();
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
-        Conf[ConfSection]["console"]   = std::to_string(console->opened);
-        Conf[ConfSection]["menu_bar"]  = std::to_string(SohSettings.menu_bar);
-        Conf[ConfSection]["soh_debug"] = std::to_string(SohSettings.soh);
-        Conf[ConfSection]["n64_mode"]  = std::to_string(SohSettings.n64mode);
+        Conf[ConfSection]["console"]    = std::to_string(console->opened);
+        Conf[ConfSection]["menu_bar"]   = std::to_string(SohSettings.menu_bar);
+        Conf[ConfSection]["soh_debug"]  = std::to_string(SohSettings.soh);
+        Conf[ConfSection]["n64_mode"]   = std::to_string(SohSettings.n64mode);
         Conf.Save();
     }
 
@@ -208,6 +244,8 @@ namespace SohImGui {
         if (ImGui::IsKeyPressed(TOGGLE_BTN)) {
             SohSettings.menu_bar = !SohSettings.menu_bar;
             needs_save = true;
+            GlobalCtx2::GetInstance()->GetWindow()->dwMenubar = SohSettings.menu_bar;
+            SohImGui::ShowCursor(SohSettings.menu_bar, Dialogues::dMenubar);
         }
 
         if (ImGui::BeginMenuBar()) {
@@ -223,6 +261,7 @@ namespace SohImGui {
             }
             ImGui::EndMenuBar();
         }
+
         ImGui::End();
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));

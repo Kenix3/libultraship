@@ -23,10 +23,12 @@ namespace Ship {
 			uint16_t GetPixelDepth(float x, float y);
 			void ToggleFullscreen();
 			void SetFullscreen(bool bIsFullscreen);
+			void ShowCursor(bool hide);
 
 			bool IsFullscreen() { return bIsFullscreen; }
 			uint32_t GetCurrentWidth();
 			uint32_t GetCurrentHeight();
+			uint32_t dwMenubar;
 			std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
 			std::shared_ptr<AudioPlayer> GetAudioPlayer() { return APlayer; }
 

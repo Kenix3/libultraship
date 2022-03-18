@@ -102,12 +102,14 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_GetDesktopDisplayMode(0, &mode);
         window_width = mode.w;
         window_height = mode.h;
+        SDL_ShowCursor(false);
     } else {
         window_width = DESIRED_SCREEN_WIDTH;
         window_height = DESIRED_SCREEN_HEIGHT;
     }
     SDL_SetWindowSize(wnd, window_width, window_height);
     SDL_SetWindowFullscreen(wnd, on ? SDL_WINDOW_FULLSCREEN : 0);
+    SDL_SetCursor(SDL_DISABLE);
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
         on_fullscreen_changed_callback(on);
@@ -173,6 +175,10 @@ static void gfx_sdl_set_fullscreen_changed_callback(void (*on_fullscreen_changed
 
 static void gfx_sdl_set_fullscreen(bool enable) {
     set_fullscreen(enable, true);
+}
+
+static void gfx_sdl_show_cursor(bool hide) {
+    SDL_ShowCursor(hide);
 }
 
 static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode), void (*on_all_keys_up)(void)) {
@@ -297,6 +303,7 @@ struct GfxWindowManagerAPI gfx_sdl = {
     gfx_sdl_set_keyboard_callbacks,
     gfx_sdl_set_fullscreen_changed_callback,
     gfx_sdl_set_fullscreen,
+    gfx_sdl_show_cursor,
     gfx_sdl_main_loop,
     gfx_sdl_get_dimensions,
     gfx_sdl_handle_events,

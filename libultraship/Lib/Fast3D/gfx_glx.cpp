@@ -237,7 +237,7 @@ static void init_keymap(void) {
     XkbFreeKeyboard(desc, 0, True);
 }
 
-static void gfx_glx_hide_mouse(bool hide) {
+static void gfx_glx_show_cursor(bool hide) {
     // Removes distracting mouse cursor during fullscreen play
     if (hide) {
         Cursor hideCursor;
@@ -276,7 +276,7 @@ static void gfx_glx_set_fullscreen_state(bool on, bool call_callback) {
     xev.xclient.data.l[2] = 0;
     xev.xclient.data.l[3] = 0;
     XSendEvent(glx.dpy, glx.root, 0, SubstructureNotifyMask | SubstructureRedirectMask, &xev);
-    gfx_glx_hide_mouse(on);
+    gfx_glx_ShowHideMouse(on);
     
     if (glx.on_fullscreen_changed != NULL && call_callback) {
         glx.on_fullscreen_changed(on);
@@ -605,6 +605,7 @@ struct GfxWindowManagerAPI gfx_glx = {
     gfx_glx_set_keyboard_callbacks,
     gfx_glx_set_fullscreen_changed_callback,
     gfx_glx_set_fullscreen,
+    gfx_glx_show_cursor,
     gfx_glx_main_loop,
     gfx_glx_get_dimensions,
     gfx_glx_handle_events,

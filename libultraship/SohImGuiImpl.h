@@ -17,6 +17,12 @@ namespace SohImGui {
         SDL
     };
 
+    enum class Dialogues {
+        dConsole,
+        dMenubar,
+        dLoadSettings,
+    };
+
     typedef struct {
         Backend backend;
         union {
@@ -48,6 +54,7 @@ namespace SohImGui {
     void Init(WindowImpl window_impl);
     void Update(EventImpl event);
     void Draw(void);
+    void ShowCursor(bool hide, Dialogues w);
     std::string GetDebugSection();
     void BindCmd(const std::string& cmd, CommandEntry entry);
 }

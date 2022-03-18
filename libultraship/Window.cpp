@@ -20,6 +20,8 @@
 #include <map>
 #include <string>
 #include <chrono>
+#include "SohConsole.h"
+#include <iostream>
 
 extern "C" {
     struct OSMesgQueue;
@@ -220,6 +222,7 @@ namespace Ship {
         dwHeight = Ship::stoi(Conf["WINDOW"]["WINDOW HEIGHT"], 240);
         dwWidth = Ship::stoi(Conf["WINDOW"]["FULLSCREEN WIDTH"], 1920);
         dwHeight = Ship::stoi(Conf["WINDOW"]["FULLSCREEN HEIGHT"], 1080);
+        dwMenubar = Ship::stoi(Conf["WINDOW"]["menubar"], 0);
         const std::string& gfx_backend = Conf["WINDOW"]["GFX BACKEND"];
         SetWindowManager(&WmApi, &RenderingApi, gfx_backend);
 
@@ -252,28 +255,18 @@ namespace Ship {
         WmApi->set_fullscreen(bIsFullscreen);
     }
 
+    void Window::ShowCursor(bool hide) {
+        if (!this->bIsFullscreen || this->dwMenubar) {
+            WmApi->show_cursor(true);
+        }
+        else {
+            WmApi->show_cursor(hide);
+        }
+    }
+
     void Window::MainLoop(void (*MainFunction)(void)) {
         WmApi->main_loop(MainFunction);
     }
-
-    bool Window::KeyDown(int32_t dwScancode) {
-        bool bIsProcessed = false;
-        for (size_t i = 0; i < __osMaxControllers; i++) {
-            for (size_t j = 0; j < Controllers[i].size(); j++) {
-                KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i][j].get());
-                if (pad != nullptr) {
-                    if (pad->PressButton(dwScancode)) {
-                        bIsProcessed = true;
-                    }
-                }
-            }
-        }
-
-        lastScancode = dwScancode;
-
-        return bIsProcessed;
-    }
-
     bool Window::KeyUp(int32_t dwScancode) {
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
@@ -302,6 +295,25 @@ namespace Ship {
         return bIsProcessed;
     }
 
+    bool Window::KeyDown(int32_t dwScancode) {
+        bool bIsProcessed = false;
+        for (size_t i = 0; i < __osMaxControllers; i++) {
+            for (size_t j = 0; j < Controllers[i].size(); j++) {
+                KeyboardController* pad = dynamic_cast<KeyboardController*>(Ship::Window::Controllers[i][j].get());
+                if (pad != nullptr) {
+                    if (pad->PressButton(dwScancode)) {
+                        bIsProcessed = true;
+                    }
+                }
+            }
+        }
+
+        lastScancode = dwScancode;
+
+        return bIsProcessed;
+    }
+
+
     void Window::AllKeysUp(void) {
         for (size_t i = 0; i < __osMaxControllers; i++) {
             for (size_t j = 0; j < Controllers[i].size(); j++) {
@@ -316,10 +328,12 @@ namespace Ship {
     void Window::OnFullscreenChanged(bool bIsFullscreen) {
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
-
         GlobalCtx2::GetInstance()->GetWindow()->bIsFullscreen = bIsFullscreen;
-        Conf["WINDOW"]["FULLSCREEN"] = std::to_string(GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen());
+        Conf["WINDOW"]["FULLSCREEN"] = std::to_string(bIsFullscreen);
+        GlobalCtx2::GetInstance()->GetWindow()->ShowCursor(!bIsFullscreen);
     }
+
+
 
     uint32_t Window::GetCurrentWidth() {
         WmApi->get_dimensions(&dwWidth, &dwHeight);
