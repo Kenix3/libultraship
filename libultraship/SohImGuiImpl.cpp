@@ -26,6 +26,7 @@
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif
+#include "Cvar.h"
 
 using namespace Ship;
 SoHConfigType SohSettings;
@@ -148,15 +149,32 @@ namespace SohImGui {
 
     void LoadSettings() {
         std::string ConfSection = GetDebugSection();
+        std::string EnhancementSection = GetEnhancementSection();
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
-        console->opened        = stob(Conf[ConfSection]["console"]);
-        SohSettings.menu_bar   = stob(Conf[ConfSection]["menu_bar"]);
-        SohSettings.soh        = stob(Conf[ConfSection]["soh_debug"]);
+
+        // Debug
+        console->opened = stob(Conf[ConfSection]["console"]);
+        SohSettings.menu_bar = stob(Conf[ConfSection]["menu_bar"]);
+        SohSettings.soh = stob(Conf[ConfSection]["soh_debug"]);
+
         if (UseInternalRes()) {
             SohSettings.n64mode = stob(Conf[ConfSection]["n64_mode"]);
         }
 
+        // Enhancements
+        SohSettings.fast_text = stob(Conf[EnhancementSection]["fast_text"]);
+        CVar_SetS32((char*)"gFastText", SohSettings.fast_text);
+
+        SohSettings.disable_lod = stob(Conf[EnhancementSection]["disable_lod"]);
+        CVar_SetS32((char*)"gDisableLOD", SohSettings.disable_lod);
+
+        SohSettings.animated_pause_menu = stob(Conf[EnhancementSection]["animated_pause_menu"]);
+        CVar_SetS32((char*)"gPauseLiveLink", SohSettings.animated_pause_menu);
+
+        SohSettings.debug_mode = stob(Conf[EnhancementSection]["debug_mode"]);
+        CVar_SetS32((char*)"gDebugEnabled", SohSettings.debug_mode);
+      
         // @bug DX ignores ShowCursor call if set here.
         if (impl.backend == Backend::SDL) {
             if (Ship::GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen()) {
@@ -173,16 +191,26 @@ namespace SohImGui {
 
     void SaveSettings() {
         std::string ConfSection = GetDebugSection();
+        std::string EnhancementSection = GetEnhancementSection();
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
-        Conf[ConfSection]["console"]    = std::to_string(console->opened);
-        Conf[ConfSection]["menu_bar"]   = std::to_string(SohSettings.menu_bar);
-        Conf[ConfSection]["soh_debug"]  = std::to_string(SohSettings.soh);
-        Conf[ConfSection]["n64_mode"]   = std::to_string(SohSettings.n64mode);
+
+        // Debug
+        Conf[ConfSection]["console"] = std::to_string(console->opened);
+        Conf[ConfSection]["menu_bar"] = std::to_string(SohSettings.menu_bar);
+        Conf[ConfSection]["soh_debug"] = std::to_string(SohSettings.soh);
+        Conf[ConfSection]["n64_mode"] = std::to_string(SohSettings.n64mode);
+
+        // Enhancements
+        Conf[EnhancementSection]["fast_text"] = std::to_string(SohSettings.fast_text);
+        Conf[EnhancementSection]["disable_lod"] = std::to_string(SohSettings.disable_lod);
+        Conf[EnhancementSection]["animated_pause_menu"] = std::to_string(SohSettings.animated_pause_menu);
+        Conf[EnhancementSection]["debug_mode"] = std::to_string(SohSettings.debug_mode);
+
         Conf.Save();
     }
 
-    void Init( WindowImpl window_impl ) {
+    void Init(WindowImpl window_impl) {
         impl = window_impl;
         LoadSettings();
         ImGuiContext* ctx = ImGui::CreateContext();
@@ -198,7 +226,7 @@ namespace SohImGui {
     }
 
     void Update(EventImpl event) {
-        if(needs_save) {
+        if (needs_save) {
             SaveSettings();
             needs_save = false;
         }
@@ -251,14 +279,50 @@ namespace SohImGui {
         if (ImGui::BeginMenuBar()) {
             ImGui::Text("SoH Dev Menu");
             ImGui::Separator();
-            if (ImGui::BeginMenu("View")) {
-                HOOK(ImGui::MenuItem("Soh Debug", nullptr, &SohSettings.soh));
+
+            if (ImGui::BeginMenu("Enhancements")) {
+
+                ImGui::Text("Gameplay");
+                ImGui::Separator();
+
+                if (ImGui::Checkbox("Fast Text", &SohSettings.fast_text)) {
+                    CVar_SetS32((char*)"gFastText", SohSettings.fast_text);
+                    needs_save = true;
+                }
+
+                ImGui::Text("Graphics");
+                ImGui::Separator();
+
+                if (ImGui::Checkbox("Animated Link in Pause Menu", &SohSettings.animated_pause_menu)) {
+                    CVar_SetS32((char*)"gPauseLiveLink", SohSettings.animated_pause_menu);
+                    needs_save = true;
+                }
+
+                if (ImGui::Checkbox("Disable LOD", &SohSettings.disable_lod)) {
+                    CVar_SetS32((char*)"gDisableLOD", SohSettings.disable_lod);
+                    needs_save = true;
+                }
+
+                ImGui::Text("Debugging");
+                ImGui::Separator();
+
+                if (ImGui::Checkbox("Debug Mode", &SohSettings.debug_mode)) {
+                    CVar_SetS32((char*)"gDebugEnabled", SohSettings.debug_mode);
+                    needs_save = true;
+                }
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Developer Tools")) {
+                HOOK(ImGui::MenuItem("Stats", nullptr, &SohSettings.soh));
                 HOOK(ImGui::MenuItem("Console", nullptr, &console->opened));
                 if (UseInternalRes()) {
                     HOOK(ImGui::MenuItem("N64 Mode", nullptr, &SohSettings.n64mode));
                 }
                 ImGui::EndMenu();
             }
+
             ImGui::EndMenuBar();
         }
 
@@ -324,5 +388,9 @@ namespace SohImGui {
 
     std::string GetDebugSection() {
         return "DEBUG SETTINGS";
+    }
+
+    std::string GetEnhancementSection() {
+        return "ENHANCEMENT SETTINGS";
     }
 }

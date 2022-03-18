@@ -122,20 +122,40 @@ namespace Ship {
         ThresholdMapping[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = Ship::stoi(Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"]);
     }
 
+
     void SDLController::NormalizeStickAxis(int16_t wAxisValueX, int16_t wAxisValueY, int16_t wAxisThreshold) {
-        uint32_t MagSquared = abs((int)(wAxisValueX * wAxisValueX) + (int)(wAxisValueY * wAxisValueY));
-        uint32_t ThresholdSquared = abs(wAxisThreshold * wAxisThreshold);
+        //scale {-32768 ... +32767} to {-84 ... +84}
+        auto ax = wAxisValueX * 85.0 / 32767.0;
+        auto ay = wAxisValueY * 85.0 / 32767.0;
 
-        if (MagSquared > ThresholdSquared) {
-            int32_t StickX = wAxisValueX / 256;
-            wStickX = StickX == 128 ? 127 : StickX;
-
-            int32_t StickY = -wAxisValueY / 256;
-            wStickY = StickY == 128 ? 127 : StickY;
-        } else {
-            wStickX = 0;
-            wStickY = 0;
+        //create scaled circular dead-zone in range {-15 ... +15}
+        auto len = sqrt(ax * ax + ay * ay);
+        if (len < 16.0) {
+            len = 0;
         }
+        else if (len > 85.0) {
+            len = 85.0 / len;
+        }
+        else {
+            len = (len - 16.0) * 85.0 / (85.0 - 16.0) / len;
+        }
+        ax *= len;
+        ay *= len;
+
+        //bound diagonals to an octagonal range {-68 ... +68}
+        if (ax != 0.0 && ay != 0.0) {
+            auto slope = ay / ax;
+            auto edgex = copysign(85.0 / (abs(slope) + 16.0 / 69.0), ax);
+            auto edgey = copysign(std::min(abs(edgex * slope), 85.0 / (1.0 / abs(slope) + 16.0 / 69.0)), ay);
+            edgex = edgey / slope;
+
+            auto scale = sqrt(edgex * edgex + edgey * edgey) / 85.0;
+            ax *= scale;
+            ay *= scale;
+        }
+
+        wStickX = +ax;
+        wStickY = -ay;
     }
 
     void SDLController::ReadFromSource() {
@@ -345,10 +365,10 @@ namespace Ship {
         Conf[ConfSection][STR(BTN_STICKDOWN)] = std::to_string((SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_STICKUP)] = std::to_string(-(SDL_CONTROLLER_AXIS_LEFTY + AXIS_SCANCODE_BIT));
 
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"] = std::to_string(0x1000);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"] = std::to_string(0x1000);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"] = std::to_string(0x4800);
-        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(0x4800);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTX) + "_threshold"] = std::to_string(40);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_LEFTY) + "_threshold"] = std::to_string(40);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTX) + "_threshold"] = std::to_string(40);
+        Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_RIGHTY) + "_threshold"] = std::to_string(40);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERLEFT) + "_threshold"] = std::to_string(0x1E00);
         Conf[ConfSection][STR(SDL_CONTROLLER_AXIS_TRIGGERRIGHT) + "_threshold"] = std::to_string(0x1E00);
 
