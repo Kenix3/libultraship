@@ -69,6 +69,7 @@ namespace Ship {
 		ButtonMapping[Ship::stoi(Conf[ConfSection][STR(BTN_CRIGHT + "_2")])] = BTN_CRIGHT;
 		ButtonMapping[Ship::stoi(Conf[ConfSection][STR(BTN_CLEFT + "_2")])] = BTN_CLEFT;
 		ButtonMapping[Ship::stoi(Conf[ConfSection][STR(BTN_CDOWN + "_2")])] = BTN_CDOWN;
+		ButtonMapping[Ship::stoi(Conf[ConfSection][STR(BTN_CUP + "_2")])] = BTN_CUP;
 		ButtonMapping[Ship::stoi(Conf[ConfSection][STR(BTN_R)])] = BTN_R;
 		ButtonMapping[Ship::stoi(Conf[ConfSection][STR(BTN_L)])] = BTN_L;
 		ButtonMapping[Ship::stoi(Conf[ConfSection][STR(BTN_DRIGHT)])] = BTN_DRIGHT;
