@@ -35,6 +35,20 @@ namespace Ship {
         return defaultVal;
     }
 
+    float stof(const std::string& s, float defaultVal) {
+        try {
+            return std::stof(s);
+        }
+        catch (const std::invalid_argument& e) {
+            SPDLOG_DEBUG("Failed to parse float from string due to invalid argument: {} ({})", e.what(), s);
+        }
+        catch (const std::out_of_range& e) {
+            SPDLOG_DEBUG("Failed to parse float from string due to out of range: {} ({})", e.what(), s);
+        }
+
+        return defaultVal;
+    }
+
     int64_t stoll(const std::string& s, int64_t defaultVal) {
         try {
             return std::stoll(s);

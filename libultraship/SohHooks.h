@@ -5,13 +5,16 @@ struct HookParameter {
     void* parameter;
 };
 
-#define TEXTURE_BIND  "TextureBind"
-#define PRE_HUD_DRAW  "PreHudDraw"
-#define HUD_DRAW      "HudDraw"
-#define POST_HUD_DRAW "PostHudDraw"
+#define LOOKUP_TEXTURE  "F3D::LookupCacheTexture"
+#define GRAYOUT_TEXTURE "Kaleido::GrayOutTexture"
+#define INVALIDATE_TEXTURE "GBI::gSPInvalidateTexCache"
+#define CONTROLLER_READ "N64::ControllerRead"
 
-#define SAVE_GRAPH_NODE "SaveGraphNode"
-#define LOAD_GRAPH_NODE "LoadGraphNode"
+#define AUDIO_INIT      "AudioMgr::Init"
+
+#define LOAD_TEXTURE    "ResourceMgr::LoadTexByName"
+
+#define UPDATE_VOLUME   "AudioVolume::Bind"
 
 #define IMGUI_API_INIT "ImGuiApiInit"
 #define IMGUI_API_DRAW "ImGuiApiDraw"
@@ -35,6 +38,12 @@ struct HookParameter {
 
 #ifdef __cplusplus
 
+#define HOOK_PARAMETER(name, ptr) HookParameter({ name, static_cast<void*>(ptr) })
+#define BIND_HOOK(name, func) ModInternal::registerHookListener({ name, [this](HookEvent call) { func(call); }})
+#define BIND_PTR(name, type) static_cast<type>(call->baseArgs[name])
+#define BIND_VAR(name, type) *BIND_PTR(name, type)
+
+
 #include <functional>
 #include <string>
 #include <map>
@@ -46,18 +55,16 @@ struct HookCall {
     bool cancelled = false;
 };
 
-typedef std::function<void(HookCall)> HookFunc;
+typedef std::shared_ptr<HookCall> HookEvent;
+typedef std::function<void(HookEvent)> HookFunc;
 struct HookListener {
     std::string hookName;
     HookFunc callback;
     int priority = 0;
 };
 
-namespace Moon {
+namespace ModInternal {
     void registerHookListener(HookListener listener);
-}
-
-namespace MoonInternal {
     void bindHook(std::string name);
     void initBindHook(int length, ...);
     bool callBindHook(int length, ...);
@@ -65,8 +72,8 @@ namespace MoonInternal {
 
 #else
 
-void moon_bind_hook(char* name);
-void moon_init_hook(int length, ...);
-bool moon_call_hook(int length, ...);
+void bind_hook(char* name);
+void init_hook(int length, ...);
+bool call_hook(int length, ...);
 
 #endif

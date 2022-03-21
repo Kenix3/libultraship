@@ -20,6 +20,7 @@
 #include <map>
 #include <string>
 #include <chrono>
+#include "SohHooks.h"
 #include "SohConsole.h"
 #include <iostream>
 
@@ -99,6 +100,12 @@ extern "C" {
                 }
             }
         }
+
+        ModInternal::bindHook(CONTROLLER_READ);
+        ModInternal::initBindHook(1,
+            HookParameter({ .name = "cont_pad", .parameter = (void*)pad })
+        );
+        ModInternal::callBindHook(0);
     }
 
     char* ResourceMgr_GetNameByCRC(uint64_t crc, char* alloc) {
@@ -146,11 +153,19 @@ extern "C" {
     }
 
     char* ResourceMgr_LoadTexByCRC(uint64_t crc)  {
-        std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
+        const std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(crc);
 
-        if (hashStr != "")  {
-            auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr).get();
-            return (char*)res->imageData;
+        if (!hashStr.empty())  {
+            const auto res = static_cast<Ship::Texture*>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr).get());
+
+            ModInternal::bindHook(LOAD_TEXTURE);
+            ModInternal::initBindHook(2,
+                HookParameter({.name = "path", .parameter = (void*)hashStr.c_str() }),
+                HookParameter({.name = "texture", .parameter = static_cast<void*>(&res->imageData) })
+            );
+            ModInternal::callBindHook(0);
+
+            return reinterpret_cast<char*>(res->imageData);
         } else {
             return nullptr;
         }
@@ -160,10 +175,10 @@ extern "C" {
     {
         std::string hashStr = Ship::GlobalCtx2::GetInstance()->GetResourceManager()->HashToString(hash);
 
-        if (hashStr != "") 
+        if (hashStr != "")
         {
             auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(hashStr).get();
-            
+
             Ship::Patch patch;
             patch.crc = hash;
             patch.index = instrIndex;
@@ -174,7 +189,13 @@ extern "C" {
     }
 
     char* ResourceMgr_LoadTexByName(char* texPath) {
-        auto res = (Ship::Texture*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(texPath).get();
+        const auto res = static_cast<Ship::Texture*>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(texPath).get());
+        ModInternal::bindHook(LOAD_TEXTURE);
+        ModInternal::initBindHook(2,
+            HookParameter({ .name = "path", .parameter = (void*)texPath }),
+            HookParameter({ .name = "texture", .parameter = static_cast<void*>(&res->imageData) })
+        );
+        ModInternal::callBindHook(0);
         return (char*)res->imageData;
     }
 

@@ -6,24 +6,6 @@
 #include <iostream>
 
 std::map<std::string, std::vector<HookFunc>> listeners;
-
-namespace Moon {
-    void registerHookListener(HookListener listener) {
-        listeners[listener.hookName].push_back(listener.callback);
-    }
-}
-
-namespace MoonInternal {
-    bool handleHook(HookCall call) {
-        std::string hookName = std::string(call.name);
-        for (int l = 0; l < listeners[hookName].size(); l++) {
-            (listeners[hookName][l])(call);
-        }
-        return call.cancelled;
-    }
-}
-
-
 std::string hookName;
 std::map<std::string, void*> initArgs;
 std::map<std::string, void*> hookArgs;
@@ -34,7 +16,20 @@ std::map<std::string, void*> hookArgs;
 #############################
 */
 
-namespace MoonInternal {
+namespace ModInternal {
+
+    void registerHookListener(HookListener listener) {
+        listeners[listener.hookName].push_back(listener.callback);
+    }
+
+    bool handleHook(std::shared_ptr<HookCall> call) {
+        std::string hookName = std::string(call->name);
+        for (int l = 0; l < listeners[hookName].size(); l++) {
+            (listeners[hookName][l])(call);
+        }
+        return call->cancelled;
+    }
+
     void bindHook(std::string name) {
         hookName = name;
     }
@@ -62,11 +57,12 @@ namespace MoonInternal {
             va_end(args);
         }
 
-        bool cancelled = MoonInternal::handleHook({
+        HookCall call = {
             .name = hookName,
             .baseArgs = initArgs,
             .hookedArgs = hookArgs
-            });
+		};
+        const bool cancelled = handleHook(std::make_shared<HookCall>(call));
 
         hookName = "";
         initArgs.clear();
@@ -84,11 +80,11 @@ namespace MoonInternal {
 
 extern "C" {
 
-    void moon_bind_hook(char* name) {
+    void bind_hook(char* name) {
         hookName = std::string(name);
     }
 
-    void moon_init_hook(int length, ...) {
+    void init_hook(int length, ...) {
         if (length > 0) {
             va_list args;
             va_start(args, length);
@@ -100,7 +96,7 @@ extern "C" {
         }
     }
 
-    bool moon_call_hook(int length, ...) {
+    bool call_hook(int length, ...) {
         if (length > 0) {
             va_list args;
             va_start(args, length);
@@ -111,11 +107,13 @@ extern "C" {
             va_end(args);
         }
 
-        bool cancelled = MoonInternal::handleHook({
+        HookCall call = {
             .name = hookName,
             .baseArgs = initArgs,
             .hookedArgs = hookArgs
-            });
+        };
+
+        const bool cancelled = ModInternal::handleHook(std::make_shared<HookCall>(call));
 
         hookName = "";
         initArgs.clear();

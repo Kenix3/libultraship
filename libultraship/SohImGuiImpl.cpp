@@ -3,14 +3,21 @@
 #include <iostream>
 #include <utility>
 
+#include "Archive.h"
 #include "Environment.h"
+#include "GameSettings.h"
 #include "SohConsole.h"
 #include "SohHooks.h"
 #include "Lib/ImGui/imgui_internal.h"
 #include "GlobalCtx2.h"
-#include "stox.h"
+#include "ResourceMgr.h"
+#include "TextureMod.h"
 #include "Window.h"
+#include "Cvar.h"
 #include "../Fast3D/gfx_pc.h"
+#include "Lib/stb/stb_image.h"
+#include "Lib/Fast3D/gfx_rendering_api.h"
+#include "Utils/StringHelper.h"
 
 #ifdef ENABLE_OPENGL
 #include "Lib/ImGui/backends/imgui_impl_opengl3.h"
@@ -26,16 +33,15 @@
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif
-#include "Cvar.h"
 
 using namespace Ship;
-SoHConfigType SohSettings;
-
 bool oldCursorState = true;
-
 
 #define TOGGLE_BTN ImGuiKey_F1
 #define HOOK(b) if(b) needs_save = true;
+OSContPad* pads;
+
+std::map<std::string, GameAsset*> DefaultAssets;
 
 namespace SohImGui {
 
@@ -129,90 +135,47 @@ namespace SohImGui {
 
     void SohImGui::ShowCursor(bool hide, Dialogues d) {
         if (d == Dialogues::dLoadSettings) {
-            Ship::GlobalCtx2::GetInstance()->GetWindow()->ShowCursor(hide);
+            GlobalCtx2::GetInstance()->GetWindow()->ShowCursor(hide);
             return;
         }
 
-        if (d == Dialogues::dConsole && SohSettings.menu_bar) {
+        if (d == Dialogues::dConsole && Game::Settings.debug.menu_bar) {
             return;
         }
-        if (!Ship::GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen()) {
+        if (!GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen()) {
             oldCursorState = false;
             return;
         }
 
         if (oldCursorState != hide) {
             oldCursorState = hide;
-            Ship::GlobalCtx2::GetInstance()->GetWindow()->ShowCursor(hide);
+            GlobalCtx2::GetInstance()->GetWindow()->ShowCursor(hide);
         }
     }
 
-    void LoadSettings() {
-        std::string ConfSection = GetDebugSection();
-        std::string EnhancementSection = GetEnhancementSection();
-        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
-        ConfigFile& Conf = *pConf.get();
+    void LoadTexture(std::string name, std::string path) {
+        GfxRenderingAPI* api = gfx_get_current_rendering_api();
+        const auto res = GlobalCtx2::GetInstance()->GetResourceManager()->LoadFile(normalize(path));
+        
+        const auto asset = new GameAsset{ api->new_texture() };
+        uint8_t* img_data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->buffer.get()), res->dwBufferSize, &asset->width, &asset->height, nullptr, 4);
 
-        // Debug
-        console->opened = stob(Conf[ConfSection]["console"]);
-        SohSettings.menu_bar = stob(Conf[ConfSection]["menu_bar"]);
-        SohSettings.soh = stob(Conf[ConfSection]["soh_debug"]);
-
-        if (UseInternalRes()) {
-            SohSettings.n64mode = stob(Conf[ConfSection]["n64_mode"]);
+        if (img_data == nullptr) {
+            std::cout << "Found error: " << stbi_failure_reason() << std::endl;
+            return;
         }
+        
+        api->select_texture(0, asset->textureId);
+        api->set_sampler_parameters(0, false, 0, 0);
+        api->upload_texture(img_data, asset->width, asset->height);
 
-        // Enhancements
-        SohSettings.fast_text = stob(Conf[EnhancementSection]["fast_text"]);
-        CVar_SetS32((char*)"gFastText", SohSettings.fast_text);
-
-        SohSettings.disable_lod = stob(Conf[EnhancementSection]["disable_lod"]);
-        CVar_SetS32((char*)"gDisableLOD", SohSettings.disable_lod);
-
-        SohSettings.animated_pause_menu = stob(Conf[EnhancementSection]["animated_pause_menu"]);
-        CVar_SetS32((char*)"gPauseLiveLink", SohSettings.animated_pause_menu);
-
-        SohSettings.debug_mode = stob(Conf[EnhancementSection]["debug_mode"]);
-        CVar_SetS32((char*)"gDebugEnabled", SohSettings.debug_mode);
-      
-        // @bug DX ignores ShowCursor call if set here.
-        if (impl.backend == Backend::SDL) {
-            if (Ship::GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen()) {
-                if (SohSettings.menu_bar) {
-                    SohImGui::ShowCursor(true, SohImGui::Dialogues::dLoadSettings);
-
-                }
-                else {
-                    SohImGui::ShowCursor(false, SohImGui::Dialogues::dLoadSettings);
-                }
-            }
-        }
-    }
-
-    void SaveSettings() {
-        std::string ConfSection = GetDebugSection();
-        std::string EnhancementSection = GetEnhancementSection();
-        std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
-        ConfigFile& Conf = *pConf.get();
-
-        // Debug
-        Conf[ConfSection]["console"] = std::to_string(console->opened);
-        Conf[ConfSection]["menu_bar"] = std::to_string(SohSettings.menu_bar);
-        Conf[ConfSection]["soh_debug"] = std::to_string(SohSettings.soh);
-        Conf[ConfSection]["n64_mode"] = std::to_string(SohSettings.n64mode);
-
-        // Enhancements
-        Conf[EnhancementSection]["fast_text"] = std::to_string(SohSettings.fast_text);
-        Conf[EnhancementSection]["disable_lod"] = std::to_string(SohSettings.disable_lod);
-        Conf[EnhancementSection]["animated_pause_menu"] = std::to_string(SohSettings.animated_pause_menu);
-        Conf[EnhancementSection]["debug_mode"] = std::to_string(SohSettings.debug_mode);
-
-        Conf.Save();
+        DefaultAssets[name] = asset;
+        stbi_image_free(img_data);
     }
 
     void Init(WindowImpl window_impl) {
         impl = window_impl;
-        LoadSettings();
+        Game::LoadSettings();
         ImGuiContext* ctx = ImGui::CreateContext();
         ImGui::SetCurrentContext(ctx);
         io = &ImGui::GetIO();
@@ -223,17 +186,53 @@ namespace SohImGui {
         console->Init();
         ImGuiWMInit();
         ImGuiBackendInit();
+
+        ModInternal::registerHookListener({ GFX_INIT, [](const HookEvent ev) {
+
+            if (GlobalCtx2::GetInstance()->GetWindow()->IsFullscreen())
+                ShowCursor(Game::Settings.debug.menu_bar, Dialogues::dLoadSettings);
+
+            LoadTexture("Game_Icon", "assets/ship_of_harkinian/icons/gSohIcon.png");
+            LoadTexture("A-Btn", "assets/ship_of_harkinian/buttons/ABtn.png");
+            LoadTexture("B-Btn", "assets/ship_of_harkinian/buttons/BBtn.png");
+            LoadTexture("L-Btn", "assets/ship_of_harkinian/buttons/LBtn.png");
+            LoadTexture("R-Btn", "assets/ship_of_harkinian/buttons/RBtn.png");
+            LoadTexture("Z-Btn", "assets/ship_of_harkinian/buttons/ZBtn.png");
+            LoadTexture("Start-Btn", "assets/ship_of_harkinian/buttons/StartBtn.png");
+            LoadTexture("C-Left", "assets/ship_of_harkinian/buttons/CLeft.png");
+            LoadTexture("C-Right", "assets/ship_of_harkinian/buttons/CRight.png");
+            LoadTexture("C-Up", "assets/ship_of_harkinian/buttons/CUp.png");
+            LoadTexture("C-Down", "assets/ship_of_harkinian/buttons/CDown.png");
+        }});
+
+        ModInternal::registerHookListener({ CONTROLLER_READ, [](const HookEvent ev) {
+            pads = static_cast<OSContPad*>(ev->baseArgs["cont_pad"]);
+        }});
+        Game::InitSettings();
     }
 
     void Update(EventImpl event) {
         if (needs_save) {
-            SaveSettings();
+	         Game::SaveSettings();
             needs_save = false;
         }
         ImGuiProcessEvent(event);
     }
 
-    void Draw(void) {
+#define BindButton(btn, status) ImGui::Image((ImTextureID)(DefaultAssets[btn]->textureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0)); 
+
+    void BindAudioSlider(const char* name, const char* key, float* value, SeqPlayers playerId) {
+        ImGui::Text(name, static_cast<int>(100 * *(value)));
+        if (ImGui::SliderFloat((std::string("##") + key).c_str(), value, 0.0f, 1.0f, "")) {
+            const float volume = floorf(*(value) * 100) / 100;
+            CVar_SetFloat(const_cast<char*>(key), volume);
+            needs_save = true;
+            Game::SetSeqPlayerVolume(playerId, volume);
+        }
+    }
+
+    void Draw() {
+
         console->Update();
         ImGuiBackendNewFrame();
         ImGuiWMNewFrame();
@@ -246,7 +245,7 @@ namespace SohImGui {
         if (UseViewports()) {
             window_flags |= ImGuiWindowFlags_NoBackground;
         }
-        if (SohSettings.menu_bar) window_flags |= ImGuiWindowFlags_MenuBar;
+        if (Game::Settings.debug.menu_bar) window_flags |= ImGuiWindowFlags_MenuBar;
 
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -270,44 +269,92 @@ namespace SohImGui {
         ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
         if (ImGui::IsKeyPressed(TOGGLE_BTN)) {
-            SohSettings.menu_bar = !SohSettings.menu_bar;
+            Game::Settings.debug.menu_bar = !Game::Settings.debug.menu_bar;
             needs_save = true;
-            GlobalCtx2::GetInstance()->GetWindow()->dwMenubar = SohSettings.menu_bar;
-            SohImGui::ShowCursor(SohSettings.menu_bar, Dialogues::dMenubar);
+            GlobalCtx2::GetInstance()->GetWindow()->dwMenubar = Game::Settings.debug.menu_bar;
+            ShowCursor(Game::Settings.debug.menu_bar, Dialogues::dMenubar);
         }
 
         if (ImGui::BeginMenuBar()) {
-            ImGui::Text("SoH Dev Menu");
+            if(DefaultAssets.contains("Game_Icon")) {
+                ImGui::SetCursorPos(ImVec2(5, 2.5f));
+                ImGui::Image(reinterpret_cast<ImTextureID>(DefaultAssets["Game_Icon"]->textureId), ImVec2(16.0f, 16.0f));
+                ImGui::SameLine();
+                ImGui::SetCursorPos(ImVec2(25, 0));
+            }
+            ImGui::Text("Shipwright");
             ImGui::Separator();
+
+            if (ImGui::BeginMenu("Audio")) {
+                const float volume = Game::Settings.audio.master;
+                ImGui::Text("Master Volume: %d %%", static_cast<int>(100 * volume));
+                if (ImGui::SliderFloat("##Master_Vol", &Game::Settings.audio.master, 0.0f, 1.0f, "")) {
+                    CVar_SetFloat(const_cast<char*>("gGameMasterVolume"), volume);
+                    needs_save = true;
+                }
+
+                BindAudioSlider("Main Music Volume: %d %%", "gMainMusicVolume", &Game::Settings.audio.music_main, SEQ_BGM_MAIN);
+                BindAudioSlider("Sub Music Volume: %d %%", "gSubMusicVolume", &Game::Settings.audio.music_sub, SEQ_BGM_SUB);
+                BindAudioSlider("Sound Effects Volume: %d %%", "gSFXMusicVolume", &Game::Settings.audio.sfx, SEQ_SFX);
+                BindAudioSlider("Fanfare Volume: %d %%", "gFanfareVolume", &Game::Settings.audio.fanfare, SEQ_FANFARE);
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Controller")) {
+                ImGui::Text("Gyro Sensitivity: %d %%", static_cast<int>(100 * Game::Settings.controller.gyro_sensitivity));
+                if (ImGui::SliderFloat("##GYROSCOPE", &Game::Settings.controller.gyro_sensitivity, 0.0f, 1.0f, "")) {
+                    needs_save = true;
+                }
+                ImGui::Text("Rumble Strength: %d %%", static_cast<int>(100 * Game::Settings.controller.rumble_strength));
+                if (ImGui::SliderFloat("##RUMBLE", &Game::Settings.controller.rumble_strength, 0.0f, 1.0f, "")) {
+                    needs_save = true;
+                }
+
+                if (ImGui::Checkbox("Show Inputs", &Game::Settings.controller.input_enabled)) {
+                    needs_save = true;
+                }
+
+                ImGui::Text("Input Scale: %.1f", Game::Settings.controller.input_scale);
+                if (ImGui::SliderFloat("##Input", &Game::Settings.controller.input_scale, 1.0f, 3.0f, "")) {
+                    needs_save = true;
+                }
+
+                ImGui::EndMenu();
+            }
 
             if (ImGui::BeginMenu("Enhancements")) {
 
                 ImGui::Text("Gameplay");
                 ImGui::Separator();
 
-                if (ImGui::Checkbox("Fast Text", &SohSettings.fast_text)) {
-                    CVar_SetS32((char*)"gFastText", SohSettings.fast_text);
+                if (ImGui::Checkbox("Fast Text", &Game::Settings.enhancements.fast_text)) {
+                    CVar_SetS32(const_cast<char*>("gFastText"), Game::Settings.enhancements.fast_text);
                     needs_save = true;
                 }
 
                 ImGui::Text("Graphics");
                 ImGui::Separator();
 
-                if (ImGui::Checkbox("Animated Link in Pause Menu", &SohSettings.animated_pause_menu)) {
-                    CVar_SetS32((char*)"gPauseLiveLink", SohSettings.animated_pause_menu);
+                if (UseInternalRes()) {
+                    HOOK(ImGui::Checkbox("N64 Mode", &Game::Settings.debug.n64mode));
+                }
+
+                if (ImGui::Checkbox("Animated Link in Pause Menu", &Game::Settings.enhancements.animated_pause_menu)) {
+                    CVar_SetS32(const_cast<char*>("gPauseLiveLink"), Game::Settings.enhancements.animated_pause_menu);
                     needs_save = true;
                 }
 
-                if (ImGui::Checkbox("Disable LOD", &SohSettings.disable_lod)) {
-                    CVar_SetS32((char*)"gDisableLOD", SohSettings.disable_lod);
+                if (ImGui::Checkbox("Disable LOD", &Game::Settings.enhancements.disable_lod)) {
+                    CVar_SetS32(const_cast<char*>("gDisableLOD"), Game::Settings.enhancements.disable_lod);
                     needs_save = true;
                 }
 
                 ImGui::Text("Debugging");
                 ImGui::Separator();
 
-                if (ImGui::Checkbox("Debug Mode", &SohSettings.debug_mode)) {
-                    CVar_SetS32((char*)"gDebugEnabled", SohSettings.debug_mode);
+                if (ImGui::Checkbox("Debug Mode", &Game::Settings.enhancements.debug_mode)) {
+                    CVar_SetS32(const_cast<char*>("gDebugEnabled"), Game::Settings.enhancements.debug_mode);
                     needs_save = true;
                 }
 
@@ -315,11 +362,8 @@ namespace SohImGui {
             }
 
             if (ImGui::BeginMenu("Developer Tools")) {
-                HOOK(ImGui::MenuItem("Stats", nullptr, &SohSettings.soh));
+                HOOK(ImGui::MenuItem("Stats", nullptr, &Game::Settings.debug.soh));
                 HOOK(ImGui::MenuItem("Console", nullptr, &console->opened));
-                if (UseInternalRes()) {
-                    HOOK(ImGui::MenuItem("N64 Mode", nullptr, &SohSettings.n64mode));
-                }
                 ImGui::EndMenu();
             }
 
@@ -342,7 +386,7 @@ namespace SohImGui {
         gfx_current_dimensions.width = size.x * gfx_current_dimensions.internal_mul;
         gfx_current_dimensions.height = size.y * gfx_current_dimensions.internal_mul;
         if (UseInternalRes()) {
-            if (SohSettings.n64mode) {
+            if (Game::Settings.debug.n64mode) {
                 gfx_current_dimensions.width = 320;
                 gfx_current_dimensions.height = 240;
                 const int sw = size.y * 320 / 240;
@@ -357,7 +401,7 @@ namespace SohImGui {
         }
         ImGui::End();
 
-        if (SohSettings.soh) {
+        if (Game::Settings.debug.soh) {
             const float framerate = ImGui::GetIO().Framerate;
             ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
             ImGui::Begin("Debug Stats", nullptr, ImGuiWindowFlags_None);
@@ -372,6 +416,53 @@ namespace SohImGui {
             ImGui::PopStyleColor();
         }
 
+        const float scale = Game::Settings.controller.input_scale;
+
+        if (Game::Settings.controller.input_enabled && pads != nullptr && ImGui::Begin("Game Buttons", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground)) {
+
+            ImGui::SetWindowSize(ImVec2(160 * scale, 85 * scale));
+
+            ImGui::SetCursorPosY(32 * scale);
+
+            ImGui::BeginGroup();
+				const ImVec2 cPos = ImGui::GetCursorPos();
+                ImGui::SetCursorPos(ImVec2(cPos.x + 10 * scale, cPos.y - 20 * scale));
+                BindButton("L-Btn", pads[0].button & BTN_L);
+				ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y));
+                BindButton("C-Up", pads[0].button & BTN_CUP);
+                ImGui::SetCursorPos(ImVec2(cPos.x, cPos.y + 16 * scale));
+                BindButton("C-Left", pads[0].button & BTN_CLEFT);
+                ImGui::SetCursorPos(ImVec2(cPos.x + 32 * scale, cPos.y + 16 * scale));
+                BindButton("C-Right", pads[0].button & BTN_CRIGHT);
+                ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y + 32 * scale));
+                BindButton("C-Down", pads[0].button & BTN_CDOWN);
+            ImGui::EndGroup();
+
+            ImGui::SameLine();
+            
+            ImGui::BeginGroup();
+				const ImVec2 sPos = ImGui::GetCursorPos();
+	            ImGui::SetCursorPos(ImVec2(sPos.x + 21, sPos.y - 20 * scale));
+                BindButton("Z-Btn", pads[0].button& BTN_Z);
+                ImGui::SetCursorPos(ImVec2(sPos.x + 22, sPos.y + 16 * scale));
+                BindButton("Start-Btn", pads[0].button & BTN_START);
+            ImGui::EndGroup();
+
+            ImGui::SameLine();
+
+            ImGui::BeginGroup();
+	            const ImVec2 bPos = ImGui::GetCursorPos();
+	            ImGui::SetCursorPos(ImVec2(bPos.x + 20 * scale, bPos.y - 20 * scale));
+	            BindButton("R-Btn", pads[0].button & BTN_R);
+	            ImGui::SetCursorPos(ImVec2(bPos.x + 12 * scale, bPos.y + 8 * scale));
+	            BindButton("B-Btn", pads[0].button & BTN_B);
+	            ImGui::SetCursorPos(ImVec2(bPos.x + 28 * scale, bPos.y + 24 * scale));
+	            BindButton("A-Btn", pads[0].button & BTN_A);
+            ImGui::EndGroup();
+
+            ImGui::End();
+        }
+
         console->Draw();
 
         ImGui::Render();
@@ -384,13 +475,5 @@ namespace SohImGui {
 
     void BindCmd(const std::string& cmd, CommandEntry entry) {
         console->Commands[cmd] = std::move(entry);
-    }
-
-    std::string GetDebugSection() {
-        return "DEBUG SETTINGS";
-    }
-
-    std::string GetEnhancementSection() {
-        return "ENHANCEMENT SETTINGS";
     }
 }

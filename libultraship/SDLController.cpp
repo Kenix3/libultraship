@@ -1,4 +1,6 @@
 #include "SDLController.h"
+
+#include "GameSettings.h"
 #include "GlobalCtx2.h"
 #include "spdlog/spdlog.h"
 #include "stox.h"
@@ -61,9 +63,38 @@ namespace Ship {
                 if (Conf[ConfSection]["GUID"].compare("") == 0 || Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(NewGuid) == 0) {
                     auto NewCont = SDL_GameControllerOpen(i);
 
-                    if (SDL_GameControllerHasSensor(NewCont, SDL_SENSOR_GYRO))
-                    {
-                        SDL_GameControllerSetSensorEnabled(NewCont, SDL_SENSOR_GYRO, SDL_TRUE);
+                    if (SDL_GameControllerHasSensor(Cont, SDL_SENSOR_GYRO)){
+                        float gyroData[3];
+                        SDL_GameControllerGetSensorData(Cont, SDL_SENSOR_GYRO, gyroData, 3);
+
+                        const char* contName = SDL_GameControllerName(Cont);
+                        const int isSpecialController = strcmp("PS5 Controller", contName);
+                        const float gyroSensitivity = Game::Settings.controller.gyro_sensitivity;
+
+                        if (gyroDriftX == 0) {
+                            if (isSpecialController == 0) {
+                                gyroDriftX = gyroData[2];
+                            }
+                            else {
+                                gyroDriftX = gyroData[0];
+                            }
+                        }
+
+                        if (gyroDriftY == 0) {
+                            gyroDriftY = gyroData[1];
+                        }
+
+                        if (isSpecialController == 0) {
+                            wGyroX = gyroData[2] - gyroDriftX;
+                        }
+                        else {
+                            wGyroX = gyroData[0] - gyroDriftX;
+                        }
+
+                        wGyroY = gyroData[1] - gyroDriftY;
+
+                        wGyroX *= gyroSensitivity;
+                        wGyroY *= gyroSensitivity;
                     }
 
                     // We failed to load the controller. Go to next.
@@ -327,7 +358,7 @@ namespace Ship {
     {
         if (SDL_GameControllerHasRumble(Cont)) {
             if (controller->rumble > 0) {
-                SDL_GameControllerRumble(Cont, 0x8000, 0x8000, 1);
+                SDL_GameControllerRumble(Cont, 0xFFFF * Game::Settings.controller.rumble_strength, 0xFFFF * Game::Settings.controller.rumble_strength, 1);
             }
         }
 

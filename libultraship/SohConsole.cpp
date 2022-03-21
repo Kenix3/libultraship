@@ -1,12 +1,17 @@
 #include "SohConsole.h"
 
 #include <iostream>
+#include <sstream>
 
+#include "Cvar.h"
+#include "GlobalCtx2.h"
+#include "SohImGuiImpl.h"
 #include "Lib/ImGui/imgui.h"
 #include "Utils/StringHelper.h"
-#include "SohImGuiImpl.h"
 #include "Lib/ImGui/imgui_internal.h"
 
+std::map<ImGuiKey, std::string> Bindings;
+std::map<ImGuiKey, std::string> BindingToggle;
 
 static bool HelpCommand(const std::vector<std::string>&) {
 	INFO("SoH Commands:");
@@ -18,6 +23,48 @@ static bool HelpCommand(const std::vector<std::string>&) {
 
 static bool ClearCommand(const std::vector<std::string>&) {
 	SohImGui::console->Log[SohImGui::console->selected_channel].clear();
+	return CMD_SUCCESS;
+}
+
+std::string toLowerCase(std::string in) {
+	std::string cpy(in);
+	std::ranges::transform(cpy, cpy.begin(), [](unsigned char c) { return std::tolower(c); });
+	return cpy;
+}
+
+static bool BindCommand(const std::vector<std::string>& args) {
+	if(args.size() > 2) {
+		const ImGuiIO* io = &ImGui::GetIO();;
+		for (int k = 0; k < std::size(io->KeysData); k++) {
+			std::string key(ImGui::GetKeyName(k));
+
+			if(toLowerCase(args[1]) == toLowerCase(key)) {
+				std::vector<std::string> tmp;
+				const char* const delim = " ";
+				std::ostringstream imploded;
+				std::copy(args.begin() + 2, args.end(), std::ostream_iterator<std::string>(imploded, delim));
+				Bindings[k] = imploded.str();
+				INFO("Binding '%s' to %s", args[1].c_str(), Bindings[k].c_str());
+				break;
+			}
+		}
+	}
+	return CMD_SUCCESS;
+}
+
+static bool BindToggleCommand(const std::vector<std::string>& args) {
+	if (args.size() > 2) {
+		const ImGuiIO* io = &ImGui::GetIO();;
+		for (int k = 0; k < std::size(io->KeysData); k++) {
+			std::string key(ImGui::GetKeyName(k));
+
+			if (toLowerCase(args[1]) == toLowerCase(key)) {
+				BindingToggle[k] = args[2];
+				INFO("Binding toggle '%s' to %s", args[1].c_str(), BindingToggle[k].c_str());
+				break;
+			}
+		}
+	}
 	return CMD_SUCCESS;
 }
 
@@ -35,9 +82,21 @@ void Console::Init() {
 	strcpy(this->FilterBuffer, "");
 	this->Commands["help"]  = { HelpCommand, "Shows all the commands" };
 	this->Commands["clear"] = { ClearCommand, "Clear the console history" };
+	this->Commands["bind"]  = { BindCommand, "Binds key to commands" };
+	this->Commands["bind-toggle"] = { BindToggleCommand, "Bind key as a bool toggle" };
 }
 
-void Console::Update() {}
+void Console::Update() {
+	for(auto [key, cmd] : Bindings) {
+		if (ImGui::IsKeyPressed(key)) Dispatch(cmd);
+	}
+	for (auto [key, var] : BindingToggle) {
+		if (ImGui::IsKeyPressed(key)) {
+			CVar* cvar = CVar_GetVar(const_cast<char*>(var.c_str()));
+			Dispatch("set " + var + " " + std::to_string(cvar == nullptr ? 0 : !static_cast<bool>(cvar->value.valueS32)));
+		}
+	}
+}
 
 extern "C" uint8_t __enableGameInput;
 
@@ -53,7 +112,7 @@ void Console::Draw() {
 
 		__enableGameInput = !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 
-		SohImGui::ShowCursor(ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_RectOnly), SohImGui::Dialogues::dConsole);
+		// SohImGui::ShowCursor(ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_RectOnly), SohImGui::Dialogues::dConsole);
 
 		// Renders autocomplete window
 		if(this->OpenAutocomplete) {

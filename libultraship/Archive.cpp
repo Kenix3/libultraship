@@ -88,6 +88,55 @@ namespace Ship {
 		return FileToLoad;
 	}
 
+	std::shared_ptr<File> Archive::LoadPatchFile(const std::string& filePath, bool includeParent, std::shared_ptr<File> FileToLoad) {
+		HANDLE fileHandle = NULL;
+		HANDLE mpqHandle = NULL;
+
+		for(auto [path, handle] : mpqHandles) {
+			if (SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle)) {
+				std::unique_lock Lock(FileToLoad->FileLoadMutex);
+				FileToLoad->bHasLoadError = false;
+				mpqHandle = handle;
+			}
+		}
+
+		if(!mpqHandle) {
+			FileToLoad->bHasLoadError = true;
+			return FileToLoad;
+		}
+
+		DWORD dwFileSize = SFileGetFileSize(fileHandle, 0);
+		std::shared_ptr<char[]> fileData(new char[dwFileSize]);
+		DWORD dwBytes;
+
+		if (!SFileReadFile(fileHandle, fileData.get(), dwFileSize, &dwBytes, NULL)) {
+			SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
+			if (!SFileCloseFile(fileHandle)) {
+				SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
+			}
+			std::unique_lock<std::mutex> Lock(FileToLoad->FileLoadMutex);
+			FileToLoad->bHasLoadError = true;
+			return nullptr;
+		}
+
+		if (!SFileCloseFile(fileHandle)) {
+			SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(), MainPath.c_str());
+		}
+
+		if (FileToLoad == nullptr) {
+			FileToLoad = std::make_shared<File>();
+			FileToLoad->path = filePath;
+		}
+
+		std::unique_lock<std::mutex> Lock(FileToLoad->FileLoadMutex);
+		FileToLoad->parent = includeParent ? shared_from_this() : nullptr;
+		FileToLoad->buffer = fileData;
+		FileToLoad->dwBufferSize = dwFileSize;
+		FileToLoad->bIsLoaded = true;
+
+		return FileToLoad;
+	}
+
 	bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD dwFileSize) {
 		HANDLE hFile;
 
@@ -239,6 +288,7 @@ namespace Ship {
 			if (std::filesystem::is_directory(PatchesPath)) {
 				for (const auto& p : std::filesystem::recursive_directory_iterator(PatchesPath)) {
 					if (StringHelper::IEquals(p.path().extension().string(), ".otr") || StringHelper::IEquals(p.path().extension().string(), ".mpq")) {
+						SPDLOG_ERROR("Reading {} mpq patch", p.path().string().c_str());
 						if (!LoadPatchMPQ(p.path().string())) {
 							return false;
 						}

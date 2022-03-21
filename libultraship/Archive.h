@@ -27,8 +27,9 @@ namespace Ship
 		bool IsMainMPQValid();
 
 		static std::shared_ptr<Archive> CreateArchive(const std::string& archivePath, int fileCapacity);
-
+		
 		std::shared_ptr<File> LoadFile(const std::string& filePath, bool includeParent = true, std::shared_ptr<File> FileToLoad = nullptr);
+		std::shared_ptr<File> LoadPatchFile(const std::string& filePath, bool includeParent = true, std::shared_ptr<File> FileToLoad = nullptr);
 
 		bool AddFile(const std::string& path, uintptr_t fileData, DWORD dwFileSize);
 		bool RemoveFile(const std::string& path);

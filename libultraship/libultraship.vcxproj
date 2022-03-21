@@ -238,10 +238,12 @@
     <ClCompile Include="Blob.cpp" />
     <ClCompile Include="Cvar.cpp" />
     <ClCompile Include="Environment.cpp" />
+    <ClCompile Include="GameSettings.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="luslog.cpp" />
     <ClCompile Include="mixer.c" />
+    <ClCompile Include="ModManager.cpp" />
     <ClCompile Include="SDLAudioPlayer.cpp" />
     <ClCompile Include="SohConsole.cpp" />
     <ClCompile Include="Factories\AnimationFactory.cpp" />
@@ -257,6 +259,7 @@
     <ClCompile Include="Array.cpp" />
     <ClCompile Include="ConfigFile.cpp" />
     <ClCompile Include="Controller.cpp" />
+    <ClCompile Include="SohHooks.cpp" />
     <ClCompile Include="SohImGuiImpl.cpp" />
     <ClCompile Include="KeyboardController.cpp" />
     <ClCompile Include="Factories\CollisionHeaderFactory.cpp" />
@@ -307,6 +310,7 @@
     <ClCompile Include="SkeletonLimb.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureMod.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="WasapiAudioPlayer.cpp" />
@@ -321,10 +325,14 @@
     <ClInclude Include="Blob.h" />
     <ClInclude Include="Cvar.h" />
     <ClInclude Include="Environment.h" />
+    <ClInclude Include="GameSettings.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="Lib\stb\stb_image_write.h" />
     <ClInclude Include="luslog.h" />
     <ClInclude Include="mixer.h" />
+    <ClInclude Include="ModManager.h" />
+    <ClInclude Include="ModModule.h" />
     <ClInclude Include="SDLAudioPlayer.h" />
     <ClInclude Include="SohConsole.h" />
     <ClInclude Include="Factories\ArrayFactory.h" />
@@ -339,6 +347,7 @@
     <ClInclude Include="Animation.h" />
     <ClInclude Include="Array.h" />
     <ClInclude Include="Cutscene.h" />
+    <ClInclude Include="SohHooks.h" />
     <ClInclude Include="SohImGuiImpl.h" />
     <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_direct3d11.h" />
@@ -362,6 +371,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Path.h" />
     <ClInclude Include="Text.h" />
+    <ClInclude Include="TextureMod.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="stox.h" />

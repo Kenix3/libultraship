@@ -9,6 +9,7 @@
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/details/synchronous_factory.h>
 #include "SohImGuiImpl.h"
+#include "GameSettings.h"
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -44,7 +45,7 @@ protected:
         }
         formatted.push_back('\0');
         const char *msg_output = formatted.data();
-        if (SohSettings.soh_sink && SohImGui::console->opened) 
+        if (Game::Settings.debug.soh_sink && SohImGui::console->opened) 
             SohImGui::console->Append("SoH Logging", priority, msg_output);
     }
 

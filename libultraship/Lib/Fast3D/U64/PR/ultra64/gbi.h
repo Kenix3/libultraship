@@ -168,6 +168,7 @@
 #define G_BRANCH_Z_OTR          0x35
 #define G_MTX_OTR               0x36
 #define G_TEXRECT_WIDE          0x37
+#define G_FILLWIDERECT          0x38
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -4345,6 +4346,16 @@ _DW({                                   \
     _SHIFTL(mode, 24, 2) |                      \
     _SHIFTL((int)(lrx), 12, 12) |                   \
     _SHIFTL((int)(lry), 0, 12)                  \
+}
+
+#define gDPFillWideRectangle(pkt, ulx, uly, lrx, lry)           \
+{									\
+	Gfx *_g0 = (Gfx *)(pkt), *_g1 = (Gfx *)(pkt);			\
+	_g0->words.w0 = _SHIFTL(G_FILLWIDERECT, 24, 8) | 			\
+		       _SHIFTL((lrx), 2, 22);				\
+	_g0->words.w1 = _SHIFTL((lry), 2, 22);				\
+        _g1->words.w0 = _SHIFTL((ulx), 2, 22);				\
+	_g1->words.w1 = _SHIFTL((uly), 2, 22);				\
 }
 
             /* Fraction never used in fill */

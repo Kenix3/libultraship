@@ -2,21 +2,11 @@
 
 #include "SohConsole.h"
 
-struct SoHConfigType {
-    // Debug
-    bool soh = false;
-    bool n64mode = false;
-    bool menu_bar = false;
-    bool soh_sink = true;
-
-    // Enhancements
-    bool fast_text = false;
-    bool disable_lod = false;
-    bool animated_pause_menu = false;
-    bool debug_mode = false;
+struct GameAsset {
+    uint32_t textureId;
+    int width;
+    int height;
 };
-
-extern SoHConfigType SohSettings;
 
 namespace SohImGui {
     enum class Backend {
@@ -62,7 +52,5 @@ namespace SohImGui {
     void Update(EventImpl event);
     void Draw(void);
     void ShowCursor(bool hide, Dialogues w);
-    std::string GetDebugSection();
-    std::string GetEnhancementSection();
     void BindCmd(const std::string& cmd, CommandEntry entry);
 }
