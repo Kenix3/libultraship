@@ -34,6 +34,7 @@ namespace Ship
 	public:
 		TextureType texType;
 		uint16_t width, height;
+		uint32_t imageDataSize;
 		uint8_t* imageData;
 		uint8_t* paletteData;
 	};

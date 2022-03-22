@@ -199,6 +199,21 @@ extern "C" {
         return (char*)res->imageData;
     }
 
+    void ResourceMgr_WriteTexS16ByName(char* texPath, int index, s16 value) {
+        const auto res = static_cast<Ship::Texture*>(Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(texPath).get());
+
+        if (res != nullptr)
+        {
+            if (index < res->imageDataSize)
+                res->imageData[index] = value;
+            else
+            {
+                // Dangit Morita
+                int bp = 0;
+            }
+        }
+    }
+
     char* ResourceMgr_LoadBlobByName(char* blobPath) {
         auto res = (Ship::Blob*)Ship::GlobalCtx2::GetInstance()->GetResourceManager()->LoadResource(blobPath).get();
         return (char*)res->data.data();

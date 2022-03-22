@@ -22,67 +22,67 @@ namespace Ship
     Resource* ResourceLoader::LoadResource(std::shared_ptr<File> FileToLoad)
     {
         auto memStream = std::make_shared<MemoryStream>(FileToLoad->buffer.get(), FileToLoad->dwBufferSize);
-        BinaryReader reader = BinaryReader(memStream);
+        auto reader = std::make_shared<BinaryReader>(memStream);
 
-        Endianess endianess = (Endianess)reader.ReadByte();
+        Endianess endianess = (Endianess)reader->ReadByte();
 
         for (int i = 0; i < 3; i++)
-            reader.ReadByte();
+            reader->ReadByte();
         
         // OTRTODO: Setup the binaryreader to use the resource's endianess
         
-        ResourceType resourceType = (ResourceType)reader.ReadUInt32();
+        ResourceType resourceType = (ResourceType)reader->ReadUInt32();
         Resource* result = nullptr;
 
         switch (resourceType)
         {
         case ResourceType::Material:
-            result = MaterialFactory::ReadMaterial(&reader);
+            result = MaterialFactory::ReadMaterial(reader.get());
             break;
         case ResourceType::Texture:
-            result = TextureFactory::ReadTexture(&reader);
+            result = TextureFactory::ReadTexture(reader.get());
             break;
         case ResourceType::Room:
-            result = SceneFactory::ReadScene(&reader);
+            result = SceneFactory::ReadScene(reader.get());
             break;
         case ResourceType::CollisionHeader:
-            result = CollisionHeaderFactory::ReadCollisionHeader(&reader);
+            result = CollisionHeaderFactory::ReadCollisionHeader(reader.get());
             break;
         case ResourceType::DisplayList:
-            result = DisplayListFactory::ReadDisplayList(&reader);
+            result = DisplayListFactory::ReadDisplayList(reader.get());
             break;
         case ResourceType::PlayerAnimation:
-            result = PlayerAnimationFactory::ReadPlayerAnimation(&reader);
+            result = PlayerAnimationFactory::ReadPlayerAnimation(reader.get());
             break;
         case ResourceType::Skeleton:
-            result = SkeletonFactory::ReadSkeleton(&reader);
+            result = SkeletonFactory::ReadSkeleton(reader.get());
             break;
         case ResourceType::SkeletonLimb:
-            result = SkeletonLimbFactory::ReadSkeletonLimb(&reader);
+            result = SkeletonLimbFactory::ReadSkeletonLimb(reader.get());
             break;
         case ResourceType::Vertex:
-            result = VertexFactory::ReadVtx(&reader);
+            result = VertexFactory::ReadVtx(reader.get());
             break;
         case ResourceType::Animation:
-            result = AnimationFactory::ReadAnimation(&reader);
+            result = AnimationFactory::ReadAnimation(reader.get());
             break;
         case ResourceType::Cutscene:
-            result = CutsceneFactory::ReadCutscene(&reader);
+            result = CutsceneFactory::ReadCutscene(reader.get());
             break;
         case ResourceType::Array:
-            result = ArrayFactory::ReadArray(&reader);
+            result = ArrayFactory::ReadArray(reader.get());
             break;
         case ResourceType::Path:
-            result = PathFactory::ReadPath(&reader);
+            result = PathFactory::ReadPath(reader.get());
             break;
         case ResourceType::Text:
-            result = TextFactory::ReadText(&reader);
+            result = TextFactory::ReadText(reader.get());
             break;
         case ResourceType::Blob:
-            result = BlobFactory::ReadBlob(&reader);
+            result = BlobFactory::ReadBlob(reader.get());
             break;
         case ResourceType::Matrix:
-            result = MtxFactory::ReadMtx(&reader);
+            result = MtxFactory::ReadMtx(reader.get());
             break;
         default:
             // RESOURCE TYPE NOT SUPPORTED

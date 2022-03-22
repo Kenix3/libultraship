@@ -799,6 +799,7 @@ static void import_texture(int i, int tile) {
     uint8_t siz = rdp.texture_tile[tile].siz;
     uint32_t tmem_index = rdp.texture_tile[tile].tmem_index;
 
+    /*
     ModInternal::bindHook(LOOKUP_TEXTURE);
     ModInternal::initBindHook(8,
         HOOK_PARAMETER("gfx_api", gfx_get_current_rendering_api()),
@@ -813,6 +814,7 @@ static void import_texture(int i, int tile) {
 
     if (ModInternal::callBindHook(0))
         return;
+    */
 
     if (gfx_texture_cache_lookup(i, &rendering_state.textures[i], rdp.loaded_texture[tmem_index].addr, fmt, siz, rdp.texture_tile[tile].palette))
     {

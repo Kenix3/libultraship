@@ -14,6 +14,7 @@ namespace Ship
 
         uint32_t dataSize = reader->ReadUInt32();
 
+        tex->imageDataSize = dataSize;
         tex->imageData = new uint8_t[dataSize];
 
         for (uint32_t i = 0; i < dataSize; i++)
