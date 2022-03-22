@@ -53,4 +53,5 @@ namespace SohImGui {
     void Draw(void);
     void ShowCursor(bool hide, Dialogues w);
     void BindCmd(const std::string& cmd, CommandEntry entry);
+    void* GetTextureByID(int id);
 }

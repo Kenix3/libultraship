@@ -47,7 +47,8 @@ using namespace Microsoft::WRL; // For ComPtr
 
 static struct {
     HWND h_wnd;
-    bool showing_error;
+    bool in_paint;
+    bool recursive_paint_detected;
     uint32_t current_width, current_height;
     std::string game_name;
 
@@ -68,7 +69,7 @@ static struct {
     std::map<UINT, DXGI_FRAME_STATISTICS> frame_stats;
     std::set<std::pair<UINT, UINT>> pending_frame_stats;
     bool dropped_frame;
-    bool sync_interval_means_frames_to_wait;
+    bool zero_latency;
     UINT length_in_vsync_frames;
     uint32_t frame_divisor;
     HANDLE timer;
@@ -231,11 +232,19 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_DESTROY:
             exit(0);
         case WM_PAINT:
-            if (dxgi.showing_error) {
+            if (dxgi.in_paint) {
+                dxgi.recursive_paint_detected = true;
                 return DefWindowProcW(h_wnd, message, w_param, l_param);
             } else {
                 if (dxgi.run_one_game_iter != nullptr) {
+                    dxgi.in_paint = true;
                     dxgi.run_one_game_iter();
+                    dxgi.in_paint = false;
+                    if (dxgi.recursive_paint_detected) {
+                        dxgi.recursive_paint_detected = false;
+                        InvalidateRect(h_wnd, nullptr, false);
+                        UpdateWindow(h_wnd);
+                    }
                 }
             }
             break;
@@ -395,9 +404,12 @@ static bool gfx_dxgi_start_frame(void) {
             dxgi.pending_frame_stats.erase(dxgi.pending_frame_stats.begin());
         }
     }
-    while (dxgi.pending_frame_stats.size() > 15) {
+    while (dxgi.pending_frame_stats.size() > 40) {
         // Just make sure the list doesn't grow too large if GetFrameStatistics fails.
         dxgi.pending_frame_stats.erase(dxgi.pending_frame_stats.begin());
+
+        // These are not that useful anymore
+        dxgi.frame_stats.clear();
     }
 
     dxgi.use_timer = false;
@@ -428,10 +440,10 @@ static bool gfx_dxgi_start_frame(void) {
         UINT queued_vsyncs = 0;
         bool is_first = true;
         for (const std::pair<UINT, UINT>& p : dxgi.pending_frame_stats) {
-            if (is_first && dxgi.sync_interval_means_frames_to_wait) {
+            /*if (is_first && dxgi.zero_latency) {
                 is_first = false;
                 continue;
-            }
+            }*/
             queued_vsyncs += p.second;
         }
 
@@ -458,6 +470,7 @@ static bool gfx_dxgi_start_frame(void) {
                 return false;
             }
         }
+        double orig_wait = vsyncs_to_wait;
         if (floor(vsyncs_to_wait) != vsyncs_to_wait) {
             uint64_t left = last_end_us + floor(vsyncs_to_wait) * estimated_vsync_interval_us;
             uint64_t right = last_end_us + ceil(vsyncs_to_wait) * estimated_vsync_interval_us;
@@ -489,7 +502,8 @@ static bool gfx_dxgi_start_frame(void) {
         }
         dxgi.length_in_vsync_frames = vsyncs_to_wait;
     } else {
-        dxgi.length_in_vsync_frames = 2;
+        dxgi.length_in_vsync_frames = 1;
+        dxgi.use_timer = true;
     }
 
     return true;
@@ -537,9 +551,9 @@ static void gfx_dxgi_swap_buffers_end(void) {
 
     QueryPerformanceCounter(&t2);
 
-    dxgi.sync_interval_means_frames_to_wait = dxgi.pending_frame_stats.rbegin()->first == stats.PresentCount;
+    dxgi.zero_latency = dxgi.pending_frame_stats.rbegin()->first == stats.PresentCount;
 
-    //printf("done %llu gpu:%d wait:%d freed:%llu frame:%u %u monitor:%u t:%llu\n", (unsigned long long)(t0.QuadPart - dxgi.qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned long long)(t2.QuadPart - dxgi.qpc_init), dxgi.pending_frame_stats.rbegin()->first, stats.PresentCount, stats.SyncRefreshCount, (unsigned long long)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init));
+    //printf(L"done %I64u gpu:%d wait:%d freed:%I64u frame:%u %u monitor:%u t:%I64u\n", (unsigned long long)(t0.QuadPart - dxgi.qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned long long)(t2.QuadPart - dxgi.qpc_init), dxgi.pending_frame_stats.rbegin()->first, stats.PresentCount, stats.SyncRefreshCount, (unsigned long long)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init));
 }
 
 static double gfx_dxgi_get_time(void) {
@@ -635,7 +649,6 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char *message) {
     if (FAILED(res)) {
         char full_message[256];
         sprintf(full_message, "%s\n\nHRESULT: 0x%08X", message, res);
-        dxgi.showing_error = true;
         MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
         throw res;
     }

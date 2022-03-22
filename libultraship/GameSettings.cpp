@@ -44,7 +44,7 @@ namespace Game {
         SohImGui::console->opened = stob(Conf[ConfSection]["console"]);
         Settings.debug.menu_bar = stob(Conf[ConfSection]["menu_bar"]);
         Settings.debug.soh = stob(Conf[ConfSection]["soh_debug"]);
-        
+
     	Settings.debug.n64mode = stob(Conf[ConfSection]["n64_mode"]);
 
         // Enhancements
@@ -84,8 +84,8 @@ namespace Game {
         Settings.controller.input_scale = Ship::stof(Conf[ControllerSection]["input_scale"]);
         CVar_SetFloat(const_cast<char*>("gInputScale"), Settings.controller.input_scale);
 
-        Settings.controller.input_enabled = Ship::stof(Conf[ControllerSection]["input_enabled"]);
-        CVar_SetS32(const_cast<char*>("gGyroSensitivity"), Settings.controller.input_enabled);
+        Settings.controller.input_enabled = stob(Conf[ControllerSection]["input_enabled"]);
+        CVar_SetS32(const_cast<char*>("gInputEnabled"), Settings.controller.input_enabled);
 
         UpdateAudio();
     }

@@ -840,9 +840,11 @@ static void gfx_d3d11_start_frame(void) {
 
 static void gfx_d3d11_end_frame(void) {
     SohImGui::Draw();
+    d3d.context->Flush();
 }
 
 static void gfx_d3d11_finish_render(void) {
+    d3d.context->Flush();
 }
 
 void gfx_d3d11_resize_framebuffer(int fb, uint32_t width, uint32_t height) {
@@ -974,6 +976,10 @@ uint16_t gfx_d3d11_get_pixel_depth_old(float x, float y) {
 }
 
 } // namespace
+
+void* SohImGui::GetTextureByID(int id) {
+    return d3d.textures[id].resource_view.Get();
+}
 
 struct GfxRenderingAPI gfx_direct3d11_api = {
     gfx_d3d11_z_is_from_0_to_1,

@@ -244,7 +244,8 @@ namespace Ship {
             if (ButtonMapping.contains(i)) {
                 if (SDL_GameControllerGetButton(Cont, (SDL_GameControllerButton)i)) {
                     dwPressedButtons |= ButtonMapping[i];
-                } else {
+                }
+                else {
                     dwPressedButtons &= ~ButtonMapping[i];
                 }
             }
@@ -288,11 +289,12 @@ namespace Ship {
                     dwPressedButtons &= ~PosButton;
                     dwPressedButtons |= NegButton;
                 }
-                else if (PosButton != BTN_CLEFT && PosButton != BTN_CDOWN && PosButton != BTN_CRIGHT && PosButton != BTN_CUP) {
+                else {
                     dwPressedButtons &= ~PosButton;
                     dwPressedButtons &= ~NegButton;
                 }
-            } else {
+            }
+            else {
                 if (PosButton == BTN_STICKLEFT || PosButton == BTN_STICKRIGHT) {
                     if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisX != Axis) {
                         SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", StickAxisX, Axis);
@@ -345,14 +347,14 @@ namespace Ship {
                     StickAxisY = Axis;
                 }
             }
-        }
 
-        if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != SDL_CONTROLLER_AXIS_INVALID) {
-            auto AxisValueX = SDL_GameControllerGetAxis(Cont, StickAxisX);
-            auto AxisValueY = SDL_GameControllerGetAxis(Cont, StickAxisY);
-            NormalizeStickAxis(AxisValueX, AxisValueY, StickDeadzone);
+            if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != SDL_CONTROLLER_AXIS_INVALID) {
+                auto AxisValueX = SDL_GameControllerGetAxis(Cont, StickAxisX);
+                auto AxisValueY = SDL_GameControllerGetAxis(Cont, StickAxisY);
+                NormalizeStickAxis(AxisValueX, AxisValueY, StickDeadzone);
+            }
         }
-	}
+    }
 
     void SDLController::WriteToSource(ControllerCallback* controller)
     {
@@ -381,10 +383,10 @@ namespace Ship {
         Conf[ConfSection][STR(BTN_CLEFT)] = std::to_string(-(SDL_CONTROLLER_AXIS_RIGHTX + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_CDOWN)] = std::to_string((SDL_CONTROLLER_AXIS_RIGHTY + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_CUP)] = std::to_string(-(SDL_CONTROLLER_AXIS_RIGHTY + AXIS_SCANCODE_BIT));
-        Conf[ConfSection][STR(BTN_CRIGHT + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_X);
-        Conf[ConfSection][STR(BTN_CLEFT + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_Y);
-        Conf[ConfSection][STR(BTN_CDOWN + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-        Conf[ConfSection][STR(BTN_CUP + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_RIGHTSTICK);
+        //Conf[ConfSection][STR(BTN_CRIGHT + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_X);
+        //Conf[ConfSection][STR(BTN_CLEFT + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_Y);
+        //Conf[ConfSection][STR(BTN_CDOWN + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+        //Conf[ConfSection][STR(BTN_CUP + "_2")] = std::to_string(SDL_CONTROLLER_BUTTON_RIGHTSTICK);
         Conf[ConfSection][STR(BTN_R)] = std::to_string((SDL_CONTROLLER_AXIS_TRIGGERRIGHT + AXIS_SCANCODE_BIT));
         Conf[ConfSection][STR(BTN_L)] = std::to_string(SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
         Conf[ConfSection][STR(BTN_DRIGHT)] = std::to_string(SDL_CONTROLLER_BUTTON_DPAD_RIGHT);

@@ -799,22 +799,21 @@ static void import_texture(int i, int tile) {
     uint8_t siz = rdp.texture_tile[tile].siz;
     uint32_t tmem_index = rdp.texture_tile[tile].tmem_index;
 
-    /*
-    ModInternal::bindHook(LOOKUP_TEXTURE);
-    ModInternal::initBindHook(8,
-        HOOK_PARAMETER("gfx_api", gfx_get_current_rendering_api()),
-        HOOK_PARAMETER("path", rdp.loaded_texture[tmem_index].otr_path),
-        HOOK_PARAMETER("node", &rendering_state.textures[i]),
-        HOOK_PARAMETER("fmt", &fmt),
-        HOOK_PARAMETER("siz", &siz),
-        HOOK_PARAMETER("tile", &i),
-        HOOK_PARAMETER("palette", &rdp.texture_tile[tile].palette),
-        HOOK_PARAMETER("addr", const_cast<uint8_t*>(rdp.loaded_texture[tmem_index].addr))
-    );
-
-    if (ModInternal::callBindHook(0))
-        return;
-    */
+    // OTRTODO: Move it to a function to be faster 
+    // ModInternal::bindHook(LOOKUP_TEXTURE);
+    // ModInternal::initBindHook(8,
+    //     HOOK_PARAMETER("gfx_api", gfx_get_current_rendering_api()),
+    //     HOOK_PARAMETER("path", rdp.loaded_texture[tmem_index].otr_path),
+    //     HOOK_PARAMETER("node", &rendering_state.textures[i]),
+    //     HOOK_PARAMETER("fmt", &fmt),
+    //     HOOK_PARAMETER("siz", &siz),
+    //     HOOK_PARAMETER("tile", &i),
+    //     HOOK_PARAMETER("palette", &rdp.texture_tile[tile].palette),
+    //     HOOK_PARAMETER("addr", const_cast<uint8_t*>(rdp.loaded_texture[tmem_index].addr))
+    // );
+    //
+    // if (ModInternal::callBindHook(0))
+    //     return;
 
     if (gfx_texture_cache_lookup(i, &rendering_state.textures[i], rdp.loaded_texture[tmem_index].addr, fmt, siz, rdp.texture_tile[tile].palette))
     {

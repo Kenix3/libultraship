@@ -156,7 +156,7 @@ namespace SohImGui {
     void LoadTexture(std::string name, std::string path) {
         GfxRenderingAPI* api = gfx_get_current_rendering_api();
         const auto res = GlobalCtx2::GetInstance()->GetResourceManager()->LoadFile(normalize(path));
-        
+
         const auto asset = new GameAsset{ api->new_texture() };
         uint8_t* img_data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->buffer.get()), res->dwBufferSize, &asset->width, &asset->height, nullptr, 4);
 
@@ -164,7 +164,7 @@ namespace SohImGui {
             std::cout << "Found error: " << stbi_failure_reason() << std::endl;
             return;
         }
-        
+
         api->select_texture(0, asset->textureId);
         api->set_sampler_parameters(0, false, 0, 0);
         api->upload_texture(img_data, asset->width, asset->height);
@@ -203,23 +203,23 @@ namespace SohImGui {
             LoadTexture("C-Right", "assets/ship_of_harkinian/buttons/CRight.png");
             LoadTexture("C-Up", "assets/ship_of_harkinian/buttons/CUp.png");
             LoadTexture("C-Down", "assets/ship_of_harkinian/buttons/CDown.png");
-        }});
+        } });
 
         ModInternal::registerHookListener({ CONTROLLER_READ, [](const HookEvent ev) {
             pads = static_cast<OSContPad*>(ev->baseArgs["cont_pad"]);
-        }});
+        } });
         Game::InitSettings();
     }
 
     void Update(EventImpl event) {
         if (needs_save) {
-	         Game::SaveSettings();
+            Game::SaveSettings();
             needs_save = false;
         }
         ImGuiProcessEvent(event);
     }
 
-#define BindButton(btn, status) ImGui::Image((ImTextureID)(DefaultAssets[btn]->textureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0)); 
+#define BindButton(btn, status) ImGui::Image(impl.backend == Backend::DX11 ? GetTextureByID(DefaultAssets[btn]->textureId) : (ImTextureID)(DefaultAssets[btn]->textureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
 
     void BindAudioSlider(const char* name, const char* key, float* value, SeqPlayers playerId) {
         ImGui::Text(name, static_cast<int>(100 * *(value)));
@@ -276,9 +276,9 @@ namespace SohImGui {
         }
 
         if (ImGui::BeginMenuBar()) {
-            if(DefaultAssets.contains("Game_Icon")) {
+            if (DefaultAssets.contains("Game_Icon")) {
                 ImGui::SetCursorPos(ImVec2(5, 2.5f));
-                ImGui::Image(reinterpret_cast<ImTextureID>(DefaultAssets["Game_Icon"]->textureId), ImVec2(16.0f, 16.0f));
+                ImGui::Image(impl.backend == Backend::DX11 ? GetTextureByID(DefaultAssets["Game_Icon"]->textureId) : reinterpret_cast<ImTextureID>(DefaultAssets["Game_Icon"]->textureId), ImVec2(16.0f, 16.0f));
                 ImGui::SameLine();
                 ImGui::SetCursorPos(ImVec2(25, 0));
             }
@@ -381,6 +381,7 @@ namespace SohImGui {
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
 
+        ImVec2 main_pos = ImGui::GetWindowPos();
         ImVec2 size = ImGui::GetContentRegionAvail();
         ImVec2 pos = ImVec2(0, 0);
         gfx_current_dimensions.width = size.x * gfx_current_dimensions.internal_mul;
@@ -417,47 +418,48 @@ namespace SohImGui {
         }
 
         const float scale = Game::Settings.controller.input_scale;
+        ImVec2 BtnPos = ImVec2(160 * scale, 85 * scale);
+
+        ImGui::SetNextWindowSize(BtnPos);
+        ImGui::SetNextWindowPos(ImVec2(main_pos.x + size.x - BtnPos.x - 20, main_pos.y + size.y - BtnPos.y - 20));
 
         if (Game::Settings.controller.input_enabled && pads != nullptr && ImGui::Begin("Game Buttons", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground)) {
-
-            ImGui::SetWindowSize(ImVec2(160 * scale, 85 * scale));
-
             ImGui::SetCursorPosY(32 * scale);
 
             ImGui::BeginGroup();
-				const ImVec2 cPos = ImGui::GetCursorPos();
-                ImGui::SetCursorPos(ImVec2(cPos.x + 10 * scale, cPos.y - 20 * scale));
-                BindButton("L-Btn", pads[0].button & BTN_L);
-				ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y));
-                BindButton("C-Up", pads[0].button & BTN_CUP);
-                ImGui::SetCursorPos(ImVec2(cPos.x, cPos.y + 16 * scale));
-                BindButton("C-Left", pads[0].button & BTN_CLEFT);
-                ImGui::SetCursorPos(ImVec2(cPos.x + 32 * scale, cPos.y + 16 * scale));
-                BindButton("C-Right", pads[0].button & BTN_CRIGHT);
-                ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y + 32 * scale));
-                BindButton("C-Down", pads[0].button & BTN_CDOWN);
-            ImGui::EndGroup();
-
-            ImGui::SameLine();
-            
-            ImGui::BeginGroup();
-				const ImVec2 sPos = ImGui::GetCursorPos();
-	            ImGui::SetCursorPos(ImVec2(sPos.x + 21, sPos.y - 20 * scale));
-                BindButton("Z-Btn", pads[0].button& BTN_Z);
-                ImGui::SetCursorPos(ImVec2(sPos.x + 22, sPos.y + 16 * scale));
-                BindButton("Start-Btn", pads[0].button & BTN_START);
+            const ImVec2 cPos = ImGui::GetCursorPos();
+            ImGui::SetCursorPos(ImVec2(cPos.x + 10 * scale, cPos.y - 20 * scale));
+            BindButton("L-Btn", pads[0].button & BTN_L);
+            ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y));
+            BindButton("C-Up", pads[0].button & BTN_CUP);
+            ImGui::SetCursorPos(ImVec2(cPos.x, cPos.y + 16 * scale));
+            BindButton("C-Left", pads[0].button & BTN_CLEFT);
+            ImGui::SetCursorPos(ImVec2(cPos.x + 32 * scale, cPos.y + 16 * scale));
+            BindButton("C-Right", pads[0].button & BTN_CRIGHT);
+            ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y + 32 * scale));
+            BindButton("C-Down", pads[0].button & BTN_CDOWN);
             ImGui::EndGroup();
 
             ImGui::SameLine();
 
             ImGui::BeginGroup();
-	            const ImVec2 bPos = ImGui::GetCursorPos();
-	            ImGui::SetCursorPos(ImVec2(bPos.x + 20 * scale, bPos.y - 20 * scale));
-	            BindButton("R-Btn", pads[0].button & BTN_R);
-	            ImGui::SetCursorPos(ImVec2(bPos.x + 12 * scale, bPos.y + 8 * scale));
-	            BindButton("B-Btn", pads[0].button & BTN_B);
-	            ImGui::SetCursorPos(ImVec2(bPos.x + 28 * scale, bPos.y + 24 * scale));
-	            BindButton("A-Btn", pads[0].button & BTN_A);
+            const ImVec2 sPos = ImGui::GetCursorPos();
+            ImGui::SetCursorPos(ImVec2(sPos.x + 21, sPos.y - 20 * scale));
+            BindButton("Z-Btn", pads[0].button & BTN_Z);
+            ImGui::SetCursorPos(ImVec2(sPos.x + 22, sPos.y + 16 * scale));
+            BindButton("Start-Btn", pads[0].button & BTN_START);
+            ImGui::EndGroup();
+
+            ImGui::SameLine();
+
+            ImGui::BeginGroup();
+            const ImVec2 bPos = ImGui::GetCursorPos();
+            ImGui::SetCursorPos(ImVec2(bPos.x + 20 * scale, bPos.y - 20 * scale));
+            BindButton("R-Btn", pads[0].button & BTN_R);
+            ImGui::SetCursorPos(ImVec2(bPos.x + 12 * scale, bPos.y + 8 * scale));
+            BindButton("B-Btn", pads[0].button & BTN_B);
+            ImGui::SetCursorPos(ImVec2(bPos.x + 28 * scale, bPos.y + 24 * scale));
+            BindButton("A-Btn", pads[0].button & BTN_A);
             ImGui::EndGroup();
 
             ImGui::End();
