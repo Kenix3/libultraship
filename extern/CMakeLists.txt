@@ -1,0 +1,133 @@
+find_package(OpenGL QUIET)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+    find_package(SDL2 CONFIG REQUIRED)
+else()
+    find_package(SDL2 REQUIRED)
+endif()
+
+#=================== DrLibs ===================
+
+set(DRLIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dr_libs)
+add_library(DrLibs INTERFACE)
+
+target_include_directories(DrLibs INTERFACE ${DRLIBS_DIR})
+
+#=================== Storm ===================
+
+set(STORMLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StormLib)
+add_subdirectory(${STORMLIB_DIR})
+
+#=================== ImGui ===================
+
+set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ImGui)
+add_library(ImGui STATIC)
+set_property(TARGET ImGui PROPERTY CXX_STANDARD 20)
+
+target_sources(ImGui
+    PRIVATE
+    ${IMGUI_DIR}/imgui_demo.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/imgui.cpp
+)
+
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    target_sources(ImGui
+        PRIVATE
+        ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_sdl.cpp
+    )
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_sources(ImGui
+        PRIVATE
+        ${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_win32.cpp
+    )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+
+    target_sources(ImGui
+        PRIVATE
+        ${IMGUI_DIR}/backends/imgui_impl_wiiu.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_gx2.cpp
+    )
+endif()
+
+target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(ImGui PUBLIC storm)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    target_link_libraries(ImGui PUBLIC SDL2::SDL2-static)
+else()
+    target_link_libraries(ImGui PUBLIC SDL2::SDL2)
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    find_package(GLEW REQUIRED)
+    target_link_libraries(ImGui PUBLIC opengl32 GLEW::GLEW)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    find_package(GLEW REQUIRED)
+    target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(GLEW REQUIRED)
+    target_link_libraries(ImGui PUBLIC ${OPENGL_glx_LIBRARY} ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
+endif()
+
+#=================== tinyxml2 ===================
+
+set(TINYXML2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2)
+add_library(tinyxml2 STATIC)
+
+target_sources(tinyxml2 PRIVATE ${TINYXML2_DIR}/tinyxml2.cpp)
+target_include_directories(tinyxml2 PUBLIC ${TINYXML2_DIR})
+
+#=================== ZAPDUtils ===================
+
+set(ZAPDUTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ZAPDUtils)
+add_subdirectory(${ZAPDUTILS_DIR})
+
+#=================== nlohmann-json ===================
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+
+set(NLOHMANN_JSON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann-json)
+add_subdirectory(${NLOHMANN_JSON_DIR})
+
+#=================== Mercury ===================
+
+set(MERCURY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Mercury)
+add_library(Mercury STATIC)
+set_property(TARGET Mercury PROPERTY CXX_STANDARD 20)
+
+target_sources(Mercury PRIVATE ${MERCURY_DIR}/Mercury.cpp)
+target_include_directories(Mercury PUBLIC ${MERCURY_DIR} ${ZAPDUTILS_DIR})
+
+target_link_libraries(Mercury PUBLIC ZAPDUTILS nlohmann_json::nlohmann_json)
+
+#=================== STB ===================
+
+set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb)
+add_library(stb STATIC)
+
+target_sources(stb PRIVATE ${STB_DIR}/stb_impl.c)
+
+target_include_directories(stb PUBLIC ${STB_DIR})
+
+#=================== StrHash64 ===================
+
+set(STRHASH64_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StrHash64)
+add_library(StrHash64 STATIC)
+
+target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
+
+target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
+
+#=================== spdlog ===================
+
+set(SPDLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
+add_subdirectory(${SPDLOG_DIR})
