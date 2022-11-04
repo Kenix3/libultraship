@@ -122,59 +122,6 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, bool includ
     return LoadFileFromHandle(filePath, includeParent, FileToLoad, nullptr);
 }
 
-std::shared_ptr<File> Archive::LoadPatchFile(const std::string& filePath, bool includeParent,
-                                             std::shared_ptr<File> FileToLoad) {
-    HANDLE fileHandle = NULL;
-    HANDLE mpqHandle = NULL;
-
-    if (FileToLoad == nullptr) {
-        FileToLoad = std::make_shared<File>();
-        FileToLoad->path = filePath;
-    }
-
-    for (auto [path, handle] : mpqHandles) {
-        if (SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle)) {
-            std::unique_lock Lock(FileToLoad->FileLoadMutex);
-            FileToLoad->bHasLoadError = false;
-            mpqHandle = handle;
-        }
-    }
-
-    if (!mpqHandle) {
-        FileToLoad->bHasLoadError = true;
-        return FileToLoad;
-    }
-
-    DWORD dwFileSize = SFileGetFileSize(fileHandle, 0);
-    std::shared_ptr<char[]> fileData(new char[dwFileSize]);
-    DWORD dwBytes;
-
-    if (!SFileReadFile(fileHandle, fileData.get(), dwFileSize, &dwBytes, NULL)) {
-        SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath.c_str(),
-                     MainPath.c_str());
-        if (!SFileCloseFile(fileHandle)) {
-            SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
-                         filePath.c_str(), MainPath.c_str());
-        }
-        std::unique_lock<std::mutex> Lock(FileToLoad->FileLoadMutex);
-        FileToLoad->bHasLoadError = true;
-        return FileToLoad;
-    }
-
-    if (!SFileCloseFile(fileHandle)) {
-        SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(),
-                     MainPath.c_str());
-    }
-
-    std::unique_lock<std::mutex> Lock(FileToLoad->FileLoadMutex);
-    FileToLoad->parent = includeParent ? shared_from_this() : nullptr;
-    FileToLoad->buffer = fileData;
-    FileToLoad->dwBufferSize = dwFileSize;
-    FileToLoad->bIsLoaded = true;
-
-    return FileToLoad;
-}
-
 bool Archive::AddFile(const std::string& oPath, uintptr_t fileData, DWORD dwFileSize) {
     HANDLE hFile;
 #ifdef _WIN32
