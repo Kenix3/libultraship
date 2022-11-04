@@ -317,7 +317,7 @@ void Archive::GenerateCRCMap() {
     }
 }
 
-bool Archive::PushGameVersion(HANDLE mpqHandle) {
+bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
     auto t = LoadFileFromHandle("version", false, nullptr, mpqHandle);
     if (!t->bHasLoadError) {
         auto stream = std::make_shared<MemoryStream>(t->buffer.get(), t->dwBufferSize);
@@ -326,7 +326,7 @@ bool Archive::PushGameVersion(HANDLE mpqHandle) {
         reader->SetEndianness(endianness);
         uint32_t version = reader->ReadUInt32();
         if (ValidHashes.empty() || ValidHashes.contains(version)) {
-            gameVersions.push_back(version);
+            PushGameVersion(version);
             return true;
         }
     }
@@ -377,7 +377,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool genCRCMap) {
 #endif
             SPDLOG_INFO("Opened mpq file {}.", fullPath.c_str());
             mainMPQ = mpqHandle;
-            if (!PushGameVersion()) {
+            if (!ProcessOtrVersion()) {
                 SPDLOG_WARN("Attempted to load invalid OTR file {}", OTRFiles[i].c_str());
                 SFileCloseArchive(mpqHandle);
                 mainMPQ = nullptr;
@@ -442,7 +442,7 @@ bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
         // We don't always want to validate the "version" file, only when we're loading standalone OTRs as patches
         // i.e. Ocarina of Time along with Master Quest.
         if (validateVersion) {
-            if (!PushGameVersion(patchHandle)) {
+            if (!ProcessOtrVersion(patchHandle)) {
                 SPDLOG_INFO("({}) Missing version file. Attempting to apply patch anyway.", path.c_str());
             }
         }
@@ -460,5 +460,14 @@ bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
     mpqHandles[fullPath] = patchHandle;
 
     return true;
+}
+
+std::vector<uint32_t> Archive::GetGameVersions() {
+    return gameVersions;
+}
+
+
+void Archive::PushGameVersion(uint32_t newGameVersion) {
+    gameVersions.push_back(newGameVersion);
 }
 } // namespace Ship
