@@ -337,5 +337,6 @@ MigrationBackup/
 !libultraship/Lib/**
 libultraship/DebugObj/*
 build/
+build-cmake/
 libultraship.a
 .DS_Store
