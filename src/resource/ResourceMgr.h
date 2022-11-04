@@ -33,8 +33,6 @@ class ResourceMgr {
     void InvalidateResourceCache();
     uint32_t GetGameVersion();
     void SetGameVersion(uint32_t newGameVersion);
-    std::vector<uint32_t> GetGameVersions();
-    void PushGameVersion(uint32_t newGameVersion);
     std::shared_ptr<File> LoadFileAsync(const std::string& FilePath);
     std::shared_ptr<File> LoadFile(const std::string& FilePath);
     std::shared_ptr<Resource> GetCachedFile(const char* FilePath) const;

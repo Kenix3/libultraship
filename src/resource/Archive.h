@@ -38,7 +38,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
     std::vector<SFILE_FIND_DATA> ListFiles(const std::string& searchMask) const;
     bool HasFile(const std::string& searchMask) const;
     const std::string* HashToString(uint64_t hash) const;
-    std::vector<uint32_t> gameVersions;
+    std::vector<uint32_t> GetGameVersions();
 
   protected:
     bool Load(bool enableWriting, bool genCRCMap);
@@ -51,6 +51,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
     std::unordered_set<uint32_t> ValidHashes;
     std::map<std::string, HANDLE> mpqHandles;
     std::vector<std::string> addedFiles;
+    std::vector<uint32_t> gameVersions;
     std::unordered_map<uint64_t, std::string> hashes;
     HANDLE mainMPQ;
 
@@ -58,7 +59,8 @@ class Archive : public std::enable_shared_from_this<Archive> {
     bool LoadPatchMPQs();
     bool LoadPatchMPQ(const std::string& path, bool validateVersion = false);
     void GenerateCRCMap();
-    bool PushGameVersion(HANDLE mpqHandle = nullptr);
+    bool ProcessOtrVersion(HANDLE mpqHandle = nullptr);
+    void PushGameVersion(uint32_t newGameVersion);
     std::shared_ptr<File> LoadFileFromHandle(const std::string& filePath, bool includeParent = true,
                                              std::shared_ptr<File> FileToLoad = nullptr, HANDLE mpqHandle = nullptr);
 };
