@@ -36,7 +36,7 @@ class BinaryWriter {
     void Write(char* srcBuffer, size_t length);
 
   protected:
-    std::shared_ptr<Stream> stream;
-    Endianness endianness = Endianness::Native;
+    std::shared_ptr<Stream> mStream;
+    Endianness mEndianness = Endianness::Native;
 };
 } // namespace Ship

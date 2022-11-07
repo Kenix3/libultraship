@@ -1,28 +1,28 @@
 #include "DummyController.h"
 
 namespace Ship {
-DummyController::DummyController(const std::string& CUID, const std::string& KeyName, bool Connected) {
-    GUID = CUID;
-    isConnected = Connected;
-    ButtonName = KeyName;
+DummyController::DummyController(const std::string& guid, const std::string& keyName, bool connected) {
+    mGuid = guid;
+    mIsConnected = connected;
+    mButtonName = keyName;
 }
 
 void DummyController::ReadFromSource(int32_t virtualSlot) {
 }
 
 const std::string DummyController::GetControllerName() {
-    return GUID;
+    return mGuid;
 }
 
 const std::string DummyController::GetButtonName(int32_t virtualSlot, int32_t n64Button) {
-    return ButtonName;
+    return mButtonName;
 }
 
 void DummyController::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
 }
 
 bool DummyController::Connected() const {
-    return isConnected;
+    return mIsConnected;
 }
 
 bool DummyController::CanRumble() const {

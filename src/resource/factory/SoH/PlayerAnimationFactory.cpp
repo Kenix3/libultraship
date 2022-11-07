@@ -8,8 +8,8 @@ PlayerAnimation* PlayerAnimationFactory::ReadPlayerAnimation(BinaryReader* reade
 
     switch (version) {
         case Version::Deckard: {
-            PlayerAnimationV0 Anim = PlayerAnimationV0();
-            Anim.ParseFileBinary(reader, anim);
+            PlayerAnimationV0 animFac = PlayerAnimationV0();
+            animFac.ParseFileBinary(reader, anim);
         } break;
         default:
             // VERSION NOT SUPPORTED

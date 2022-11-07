@@ -45,7 +45,7 @@ class Controller {
     virtual const std::string GetButtonName(int32_t virtualSlot, int32_t n64Button) = 0;
     virtual const std::string GetControllerName() = 0;
     void Read(OSContPad* pad, int32_t virtualSlot);
-    void SetButtonMapping(int32_t virtualSlot, int32_t n64Button, int32_t dwScancode);
+    void SetButtonMapping(int32_t virtualSlot, int32_t n64Button, int32_t scancode);
     std::shared_ptr<ControllerAttachment> GetAttachment();
     std::shared_ptr<DeviceProfile> getProfile(int32_t virtualSlot);
     int8_t& getLeftStickX(int32_t virtualSlot);
@@ -59,25 +59,25 @@ class Controller {
     std::string GetGuid();
 
   protected:
-    std::shared_ptr<ControllerAttachment> Attachment;
-    std::string GUID;
-    bool isRumbling;
+    std::shared_ptr<ControllerAttachment> mAttachment;
+    std::string mGuid;
+    bool mIsRumbling;
 
     void LoadBinding();
 
   private:
     struct Buttons {
-        int32_t pressedButtons = 0;
-        int8_t leftStickX = 0;
-        int8_t leftStickY = 0;
-        int8_t rightStickX = 0;
-        int8_t rightStickY = 0;
-        float gyroX = 0.0f;
-        float gyroY = 0.0f;
+        int32_t PressedButtons = 0;
+        int8_t LeftStickX = 0;
+        int8_t LeftStickY = 0;
+        int8_t RightStickX = 0;
+        int8_t RightStickY = 0;
+        float GyroX = 0.0f;
+        float GyroY = 0.0f;
     };
 
-    std::unordered_map<int32_t, std::shared_ptr<DeviceProfile>> profiles;
-    std::unordered_map<int32_t, std::shared_ptr<Buttons>> ButtonData = {};
-    std::deque<OSContPad> padBuffer;
+    std::unordered_map<int32_t, std::shared_ptr<DeviceProfile>> mProfiles;
+    std::unordered_map<int32_t, std::shared_ptr<Buttons>> mButtonData = {};
+    std::deque<OSContPad> mPadBuffer;
 };
 } // namespace Ship

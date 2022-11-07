@@ -1,7 +1,7 @@
 #include "ResourceMgr.h"
 #include "factory/SoH/ResourceLoader.h"
 #include <spdlog/spdlog.h>
-#include "File.h"
+#include "OtrFile.h"
 #include "Archive.h"
 #include "GameVersions.h"
 #include <Utils/StringHelper.h>
@@ -9,26 +9,26 @@
 
 namespace Ship {
 
-ResourceMgr::ResourceMgr(std::shared_ptr<Window> Context, const std::string& MainPath, const std::string& PatchesPath,
-                         const std::unordered_set<uint32_t>& ValidHashes)
-    : Context(Context), bIsRunning(false), FileLoadThread(nullptr) {
-    OTR = std::make_shared<Archive>(MainPath, PatchesPath, ValidHashes, false);
+ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
+                         const std::unordered_set<uint32_t>& validHashes)
+    : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
+    mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
 
-    gameVersion = UNKNOWN;
+    mGameVersion = UNKNOWN;
 
-    if (OTR->IsMainMPQValid()) {
+    if (mArchive->IsMainMPQValid()) {
         Start();
     }
 }
 
-ResourceMgr::ResourceMgr(std::shared_ptr<Window> Context, const std::vector<std::string>& OTRFiles,
-                         const std::unordered_set<uint32_t>& ValidHashes)
-    : Context(Context), bIsRunning(false), FileLoadThread(nullptr) {
-    OTR = std::make_shared<Archive>(OTRFiles, ValidHashes, false);
+ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
+                         const std::unordered_set<uint32_t>& validHashes)
+    : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
+    mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
 
-    gameVersion = UNKNOWN;
+    mGameVersion = UNKNOWN;
 
-    if (OTR->IsMainMPQValid()) {
+    if (mArchive->IsMainMPQValid()) {
         Start();
     }
 }
@@ -37,77 +37,77 @@ ResourceMgr::~ResourceMgr() {
     SPDLOG_INFO("destruct ResourceMgr");
     Stop();
 
-    FileCache.clear();
-    ResourceCache.clear();
+    mFileCache.clear();
+    mResourceCache.clear();
 }
 
 void ResourceMgr::Start() {
-    const std::lock_guard<std::mutex> FileLock(FileLoadMutex);
-    const std::lock_guard<std::mutex> ResLock(ResourceLoadMutex);
+    const std::lock_guard<std::mutex> fileLock(mFileLoadMutex);
+    const std::lock_guard<std::mutex> resLock(mResourceLoadMutex);
     if (!IsRunning()) {
-        bIsRunning = true;
-        FileLoadThread = std::make_shared<std::thread>(&ResourceMgr::LoadFileThread, this);
-        ResourceLoadThread = std::make_shared<std::thread>(&ResourceMgr::LoadResourceThread, this);
+        mIsRunning = true;
+        mFileLoadThread = std::make_shared<std::thread>(&ResourceMgr::LoadFileThread, this);
+        mResourceLoadThread = std::make_shared<std::thread>(&ResourceMgr::LoadResourceThread, this);
     }
 }
 
 void ResourceMgr::Stop() {
     if (IsRunning()) {
         {
-            const std::lock_guard<std::mutex> FileLock(FileLoadMutex);
-            const std::lock_guard<std::mutex> ResLock(ResourceLoadMutex);
-            bIsRunning = false;
+            const std::lock_guard<std::mutex> fileLock(mFileLoadMutex);
+            const std::lock_guard<std::mutex> resLock(mResourceLoadMutex);
+            mIsRunning = false;
         }
 
-        FileLoadNotifier.notify_all();
-        ResourceLoadNotifier.notify_all();
-        FileLoadThread->join();
-        ResourceLoadThread->join();
+        mFileLoadNotifier.notify_all();
+        mResourceLoadNotifier.notify_all();
+        mFileLoadThread->join();
+        mResourceLoadThread->join();
 
-        if (!FileLoadQueue.empty()) {
-            SPDLOG_INFO("Resource manager stopped, but has {} Files left to load.", FileLoadQueue.size());
+        if (!mFileLoadQueue.empty()) {
+            SPDLOG_INFO("Resource manager stopped, but has {} Files left to load.", mFileLoadQueue.size());
         }
 
-        if (!ResourceLoadQueue.empty()) {
-            SPDLOG_INFO("Resource manager stopped, but has {} Resources left to load.", FileLoadQueue.size());
+        if (!mResourceLoadQueue.empty()) {
+            SPDLOG_INFO("Resource manager stopped, but has {} Resources left to load.", mFileLoadQueue.size());
         }
     }
 }
 
 bool ResourceMgr::IsRunning() {
-    return bIsRunning && FileLoadThread != nullptr;
+    return mIsRunning && mFileLoadThread != nullptr;
 }
 
 bool ResourceMgr::DidLoadSuccessfully() {
-    return OTR != nullptr && OTR->IsMainMPQValid();
+    return mArchive != nullptr && mArchive->IsMainMPQValid();
 }
 
 void ResourceMgr::LoadFileThread() {
     SPDLOG_INFO("Resource Manager LoadFileThread started");
 
     while (true) {
-        std::unique_lock<std::mutex> Lock(FileLoadMutex);
+        std::unique_lock<std::mutex> lock(mFileLoadMutex);
 
-        while (bIsRunning && FileLoadQueue.empty()) {
-            FileLoadNotifier.wait(Lock);
+        while (mIsRunning && mFileLoadQueue.empty()) {
+            mFileLoadNotifier.wait(lock);
         }
 
-        if (!bIsRunning) {
+        if (!mIsRunning) {
             break;
         }
 
-        std::shared_ptr<File> ToLoad = FileLoadQueue.front();
-        FileLoadQueue.pop();
+        std::shared_ptr<OtrFile> toLoad = mFileLoadQueue.front();
+        mFileLoadQueue.pop();
 
-        OTR->LoadFile(ToLoad->path, true, ToLoad);
+        mArchive->LoadFile(toLoad->Path, true, toLoad);
 
-        if (!ToLoad->bHasLoadError) {
-            FileCache[ToLoad->path] = ToLoad->bIsLoaded && !ToLoad->bHasLoadError ? ToLoad : nullptr;
+        if (!toLoad->HasLoadError) {
+            mFileCache[toLoad->Path] = toLoad->IsLoaded && !toLoad->HasLoadError ? toLoad : nullptr;
         }
 
         SPDLOG_TRACE("Loaded File {} on ResourceMgr thread", ToLoad->path);
 
-        ToLoad->FileLoadNotifier.notify_all();
+        toLoad->FileLoadNotifier.notify_all();
     }
 
     SPDLOG_INFO("Resource Manager LoadFileThread ended");
@@ -117,171 +117,170 @@ void ResourceMgr::LoadResourceThread() {
     SPDLOG_INFO("Resource Manager LoadResourceThread started");
 
     while (true) {
-        std::unique_lock<std::mutex> ResLock(ResourceLoadMutex);
-        while (bIsRunning && ResourceLoadQueue.empty()) {
-            ResourceLoadNotifier.wait(ResLock);
+        std::unique_lock<std::mutex> resLock(mResourceLoadMutex);
+        while (mIsRunning && mResourceLoadQueue.empty()) {
+            mResourceLoadNotifier.wait(resLock);
         }
 
-        if (!bIsRunning) {
+        if (!mIsRunning) {
             break;
         }
 
-        std::shared_ptr<ResourcePromise> ToLoad = nullptr;
-        ToLoad = ResourceLoadQueue.front();
-        ResourceLoadQueue.pop();
+        std::shared_ptr<ResourcePromise> toLoad = mResourceLoadQueue.front();
+        mResourceLoadQueue.pop();
 
         // Wait for the underlying File to complete loading
         {
-            std::unique_lock<std::mutex> FileLock(ToLoad->file->FileLoadMutex);
-            while (!ToLoad->file->bIsLoaded && !ToLoad->file->bHasLoadError) {
-                ToLoad->file->FileLoadNotifier.wait(FileLock);
+            std::unique_lock<std::mutex> fileLock(toLoad->File->FileLoadMutex);
+            while (!toLoad->File->IsLoaded && !toLoad->File->HasLoadError) {
+                toLoad->File->FileLoadNotifier.wait(fileLock);
             }
         }
 
-        if (!ToLoad->file->bHasLoadError) {
-            auto UnmanagedRes = ResourceLoader::LoadResource(ToLoad->file);
+        if (!toLoad->File->HasLoadError) {
+            auto unmanagedRes = ResourceLoader::LoadResource(toLoad->File);
 
-            if (UnmanagedRes != nullptr) {
-                UnmanagedRes->resMgr = this;
-                auto Res = std::shared_ptr<Resource>(UnmanagedRes);
+            if (unmanagedRes != nullptr) {
+                unmanagedRes->ResourceManager = this;
+                auto resource = std::shared_ptr<Resource>(unmanagedRes);
 
-                if (Res != nullptr) {
-                    std::unique_lock<std::mutex> Lock(ToLoad->resourceLoadMutex);
+                if (resource != nullptr) {
+                    std::unique_lock<std::mutex> lock(toLoad->ResourceLoadMutex);
 
-                    ToLoad->bHasResourceLoaded = true;
-                    ToLoad->resource = Res;
-                    ResourceCache[Res->file->path] = Res;
+                    toLoad->HasResourceLoaded = true;
+                    toLoad->Res = resource;
+                    mResourceCache[resource->File->Path] = resource;
 
                     SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", ToLoad->file->path);
 
-                    Res->file = nullptr;
+                    resource->File = nullptr;
                 } else {
-                    ToLoad->bHasResourceLoaded = false;
-                    ToLoad->resource = nullptr;
+                    toLoad->HasResourceLoaded = false;
+                    toLoad->Res = nullptr;
 
-                    SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", ToLoad->file->path);
+                    SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", toLoad->File->Path);
                 }
             }
         } else {
-            ToLoad->bHasResourceLoaded = false;
-            ToLoad->resource = nullptr;
+            toLoad->HasResourceLoaded = false;
+            toLoad->Res = nullptr;
         }
 
-        ToLoad->resourceLoadNotifier.notify_all();
+        toLoad->ResourceLoadNotifier.notify_all();
     }
 
     SPDLOG_INFO("Resource Manager LoadResourceThread ended");
 }
 
 uint32_t ResourceMgr::GetGameVersion() {
-    return gameVersion;
+    return mGameVersion;
 }
 
 void ResourceMgr::SetGameVersion(uint32_t newGameVersion) {
-    gameVersion = newGameVersion;
+    mGameVersion = newGameVersion;
 }
 
-std::shared_ptr<File> ResourceMgr::LoadFileAsync(const std::string& FilePath) {
-    const std::lock_guard<std::mutex> Lock(FileLoadMutex);
+std::shared_ptr<OtrFile> ResourceMgr::LoadFileAsync(const std::string& filePath) {
+    const std::lock_guard<std::mutex> lock(mFileLoadMutex);
     // File NOT already loaded...?
-    auto fileCacheFind = FileCache.find(FilePath);
-    if (fileCacheFind == FileCache.end()) {
+    auto fileCacheFind = mFileCache.find(filePath);
+    if (fileCacheFind == mFileCache.end()) {
         SPDLOG_TRACE("Cache miss on File load: {}", FilePath.c_str());
-        std::shared_ptr<File> ToLoad = std::make_shared<File>();
-        ToLoad->path = FilePath;
+        std::shared_ptr<OtrFile> toLoad = std::make_shared<OtrFile>();
+        toLoad->Path = filePath;
 
-        FileLoadQueue.push(ToLoad);
-        FileLoadNotifier.notify_all();
+        mFileLoadQueue.push(toLoad);
+        mFileLoadNotifier.notify_all();
 
-        return ToLoad;
+        return toLoad;
     }
 
     return fileCacheFind->second;
 }
 
-std::shared_ptr<File> ResourceMgr::LoadFile(const std::string& FilePath) {
-    auto ToLoad = LoadFileAsync(FilePath);
+std::shared_ptr<OtrFile> ResourceMgr::LoadFile(const std::string& filePath) {
+    auto toLoad = LoadFileAsync(filePath);
     // Wait for the File to actually be loaded if we are told to block.
-    std::unique_lock<std::mutex> Lock(ToLoad->FileLoadMutex);
-    while (!ToLoad->bIsLoaded && !ToLoad->bHasLoadError) {
-        ToLoad->FileLoadNotifier.wait(Lock);
+    std::unique_lock<std::mutex> lock(toLoad->FileLoadMutex);
+    while (!toLoad->IsLoaded && !toLoad->HasLoadError) {
+        toLoad->FileLoadNotifier.wait(lock);
     }
 
-    return ToLoad;
+    return toLoad;
 }
 
-std::shared_ptr<Ship::Resource> ResourceMgr::GetCachedFile(const char* FilePath) const {
-    auto resCacheFind = ResourceCache.find(FilePath);
+std::shared_ptr<Ship::Resource> ResourceMgr::GetCachedFile(const char* filePath) const {
+    auto resCacheFind = mResourceCache.find(filePath);
 
-    if (resCacheFind != ResourceCache.end() && resCacheFind->second.use_count() > 0) {
+    if (resCacheFind != mResourceCache.end() && resCacheFind->second.use_count() > 0) {
         return resCacheFind->second;
     } else {
         return nullptr;
     }
 }
 
-std::shared_ptr<Resource> ResourceMgr::LoadResource(const char* FilePath) {
-    auto Res = LoadResourceAsync(FilePath);
+std::shared_ptr<Resource> ResourceMgr::LoadResource(const char* filePath) {
+    auto resource = LoadResourceAsync(filePath);
 
-    if (std::holds_alternative<std::shared_ptr<Resource>>(Res)) {
-        return std::get<std::shared_ptr<Resource>>(Res);
+    if (std::holds_alternative<std::shared_ptr<Resource>>(resource)) {
+        return std::get<std::shared_ptr<Resource>>(resource);
     }
 
-    auto& Promise = std::get<std::shared_ptr<ResourcePromise>>(Res);
+    auto& promise = std::get<std::shared_ptr<ResourcePromise>>(resource);
 
-    if (!Promise->bHasResourceLoaded) {
-        std::unique_lock<std::mutex> Lock(Promise->resourceLoadMutex);
-        while (!Promise->bHasResourceLoaded) {
-            Promise->resourceLoadNotifier.wait(Lock);
+    if (!promise->HasResourceLoaded) {
+        std::unique_lock<std::mutex> lock(promise->ResourceLoadMutex);
+        while (!promise->HasResourceLoaded) {
+            promise->ResourceLoadNotifier.wait(lock);
         }
     }
 
-    return Promise->resource;
+    return promise->Res;
 }
 
 std::variant<std::shared_ptr<Resource>, std::shared_ptr<ResourcePromise>>
-ResourceMgr::LoadResourceAsync(const char* FilePath) {
-    if (FilePath[0] == '_' && FilePath[1] == '_' && FilePath[2] == 'O' && FilePath[3] == 'T' && FilePath[4] == 'R' &&
-        FilePath[5] == '_' && FilePath[6] == '_') {
-        FilePath += 7;
+ResourceMgr::LoadResourceAsync(const char* filePath) {
+    if (filePath[0] == '_' && filePath[1] == '_' && filePath[2] == 'O' && filePath[3] == 'T' && filePath[4] == 'R' &&
+        filePath[5] == '_' && filePath[6] == '_') {
+        filePath += 7;
     }
 
-    const std::lock_guard<std::mutex> ResLock(ResourceLoadMutex);
-    auto resCacheFind = ResourceCache.find(FilePath);
-    if (resCacheFind == ResourceCache.end() || resCacheFind->second->isDirty /* || !FileData->bIsLoaded*/) {
-        if (resCacheFind == ResourceCache.end()) {
+    const std::lock_guard<std::mutex> resLock(mResourceLoadMutex);
+    auto resCacheFind = mResourceCache.find(filePath);
+    if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty /* || !FileData->IsLoaded*/) {
+        if (resCacheFind == mResourceCache.end()) {
             SPDLOG_TRACE("Cache miss on Resource load: {}", FilePath);
         }
 
-        std::shared_ptr<ResourcePromise> Promise = std::make_shared<ResourcePromise>();
-        std::shared_ptr<File> FileData = LoadFile(FilePath);
-        Promise->file = FileData;
+        std::shared_ptr<ResourcePromise> promise = std::make_shared<ResourcePromise>();
+        std::shared_ptr<OtrFile> fileData = LoadFile(filePath);
+        promise->File = fileData;
 
-        if (Promise->file->bHasLoadError) {
-            Promise->bHasResourceLoaded = true;
+        if (promise->File->HasLoadError) {
+            promise->HasResourceLoaded = true;
         } else {
-            Promise->bHasResourceLoaded = false;
-            ResourceLoadQueue.push(Promise);
-            ResourceLoadNotifier.notify_all();
+            promise->HasResourceLoaded = false;
+            mResourceLoadQueue.push(promise);
+            mResourceLoadNotifier.notify_all();
         }
 
-        return Promise;
+        return promise;
     } else {
         return resCacheFind->second;
     }
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<ResourcePromise>>>
-ResourceMgr::CacheDirectoryAsync(const std::string& SearchMask) {
+ResourceMgr::CacheDirectoryAsync(const std::string& searchMask) {
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<ResourcePromise>>>();
-    auto fileList = OTR->ListFiles(SearchMask);
+    auto fileList = mArchive->ListFiles(searchMask);
 
     for (DWORD i = 0; i < fileList.size(); i++) {
         auto resource = LoadResourceAsync(fileList.operator[](i).cFileName);
         if (std::holds_alternative<std::shared_ptr<Resource>>(resource)) {
             auto promise = std::make_shared<ResourcePromise>();
-            promise->bHasResourceLoaded = true;
-            promise->resource = std::get<std::shared_ptr<Resource>>(resource);
+            promise->HasResourceLoaded = true;
+            promise->Res = std::get<std::shared_ptr<Resource>>(resource);
             resource = promise;
         }
         loadedList->push_back(std::get<std::shared_ptr<ResourcePromise>>(resource));
@@ -290,49 +289,49 @@ ResourceMgr::CacheDirectoryAsync(const std::string& SearchMask) {
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::CacheDirectory(const std::string& SearchMask) {
-    auto PromiseList = CacheDirectoryAsync(SearchMask);
-    auto LoadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
+std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::CacheDirectory(const std::string& searchMask) {
+    auto promiseList = CacheDirectoryAsync(searchMask);
+    auto loadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
 
-    for (size_t i = 0; i < PromiseList->size(); i++) {
-        auto Promise = PromiseList->at(i);
+    for (size_t i = 0; i < promiseList->size(); i++) {
+        auto promise = promiseList->at(i);
 
-        std::unique_lock<std::mutex> Lock(Promise->resourceLoadMutex);
-        while (!Promise->bHasResourceLoaded) {
-            Promise->resourceLoadNotifier.wait(Lock);
+        std::unique_lock<std::mutex> lock(promise->ResourceLoadMutex);
+        while (!promise->HasResourceLoaded) {
+            promise->ResourceLoadNotifier.wait(lock);
         }
 
-        LoadedList->push_back(Promise->resource);
+        loadedList->push_back(promise->Res);
     }
 
-    return LoadedList;
+    return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::DirtyDirectory(const std::string& SearchMask) {
-    auto PromiseList = CacheDirectoryAsync(SearchMask);
-    auto LoadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
+std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::DirtyDirectory(const std::string& searchMask) {
+    auto promiseList = CacheDirectoryAsync(searchMask);
+    auto loadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
 
-    for (size_t i = 0; i < PromiseList->size(); i++) {
-        auto Promise = PromiseList->at(i);
+    for (size_t i = 0; i < promiseList->size(); i++) {
+        auto promise = promiseList->at(i);
 
-        std::unique_lock<std::mutex> Lock(Promise->resourceLoadMutex);
-        while (!Promise->bHasResourceLoaded) {
-            Promise->resourceLoadNotifier.wait(Lock);
+        std::unique_lock<std::mutex> lock(promise->ResourceLoadMutex);
+        while (!promise->HasResourceLoaded) {
+            promise->ResourceLoadNotifier.wait(lock);
         }
 
-        if (Promise->resource != nullptr) {
-            Promise->resource->isDirty = true;
+        if (promise->Res != nullptr) {
+            promise->Res->IsDirty = true;
         }
 
-        LoadedList->push_back(Promise->resource);
+        loadedList->push_back(promise->Res);
     }
 
-    return LoadedList;
+    return loadedList;
 }
 
-std::shared_ptr<std::vector<std::string>> ResourceMgr::ListFiles(std::string SearchMask) {
+std::shared_ptr<std::vector<std::string>> ResourceMgr::ListFiles(std::string searchMask) {
     auto result = std::make_shared<std::vector<std::string>>();
-    auto fileList = OTR->ListFiles(SearchMask);
+    auto fileList = mArchive->ListFiles(searchMask);
 
     for (DWORD i = 0; i < fileList.size(); i++) {
         result->push_back(fileList[i].cFileName);
@@ -342,23 +341,23 @@ std::shared_ptr<std::vector<std::string>> ResourceMgr::ListFiles(std::string Sea
 }
 
 void ResourceMgr::InvalidateResourceCache() {
-    ResourceCache.clear();
+    mResourceCache.clear();
 }
 
-const std::string* ResourceMgr::HashToString(uint64_t Hash) const {
-    return OTR->HashToString(Hash);
+const std::string* ResourceMgr::HashToString(uint64_t hash) const {
+    return mArchive->HashToString(hash);
 }
 
 std::shared_ptr<Archive> ResourceMgr::GetArchive() {
-    return OTR;
+    return mArchive;
 }
 
 std::shared_ptr<Window> ResourceMgr::GetContext() {
-    return Context;
+    return mContext;
 }
 
-std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& FilePath) {
-    return LoadResource(FilePath.c_str());
+std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath) {
+    return LoadResource(filePath.c_str());
 }
 
 } // namespace Ship

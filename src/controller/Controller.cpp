@@ -10,12 +10,12 @@
 
 namespace Ship {
 
-Controller::Controller() : isRumbling(false) {
-    Attachment = nullptr;
+Controller::Controller() : mIsRumbling(false) {
+    mAttachment = nullptr;
 
     for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-        profiles[virtualSlot] = std::make_shared<DeviceProfile>();
-        ButtonData[virtualSlot] = std::make_shared<Buttons>();
+        mProfiles[virtualSlot] = std::make_shared<DeviceProfile>();
+        mButtonData[virtualSlot] = std::make_shared<Buttons>();
     }
 }
 
@@ -77,9 +77,9 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     padToBuffer.gyro_x = getGyroX(virtualSlot);
     padToBuffer.gyro_y = getGyroY(virtualSlot);
 
-    padBuffer.push_front(padToBuffer);
+    mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
-        auto& padFromBuffer = padBuffer[std::min(padBuffer.size() - 1, (size_t)CVar_GetS32("gSimulatedInputLag", 0))];
+        auto& padFromBuffer = mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVar_GetS32("gSimulatedInputLag", 0))];
         pad->button |= padFromBuffer.button;
         if (pad->stick_x == 0) {
             pad->stick_x = padFromBuffer.stick_x;
@@ -101,58 +101,58 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
         }
     }
 
-    while (padBuffer.size() > 6) {
-        padBuffer.pop_back();
+    while (mPadBuffer.size() > 6) {
+        mPadBuffer.pop_back();
     }
 }
 
-void Controller::SetButtonMapping(int32_t virtualSlot, int32_t n64Button, int32_t dwScancode) {
-    std::map<int32_t, int32_t>& Mappings = getProfile(virtualSlot)->Mappings;
-    std::erase_if(Mappings, [n64Button](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Button; });
-    Mappings[dwScancode] = n64Button;
+void Controller::SetButtonMapping(int32_t virtualSlot, int32_t n64Button, int32_t scancode) {
+    std::map<int32_t, int32_t>& mappings = getProfile(virtualSlot)->Mappings;
+    std::erase_if(mappings, [n64Button](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Button; });
+    mappings[scancode] = n64Button;
 }
 
 int8_t& Controller::getLeftStickX(int32_t virtualSlot) {
-    return ButtonData[virtualSlot]->leftStickX;
+    return mButtonData[virtualSlot]->LeftStickX;
 }
 
 int8_t& Controller::getLeftStickY(int32_t virtualSlot) {
-    return ButtonData[virtualSlot]->leftStickY;
+    return mButtonData[virtualSlot]->LeftStickY;
 }
 
 int8_t& Controller::getRightStickX(int32_t virtualSlot) {
-    return ButtonData[virtualSlot]->rightStickX;
+    return mButtonData[virtualSlot]->RightStickX;
 }
 
 int8_t& Controller::getRightStickY(int32_t virtualSlot) {
-    return ButtonData[virtualSlot]->rightStickY;
+    return mButtonData[virtualSlot]->RightStickY;
 }
 
 int32_t& Controller::getPressedButtons(int32_t virtualSlot) {
-    return ButtonData[virtualSlot]->pressedButtons;
+    return mButtonData[virtualSlot]->PressedButtons;
 }
 
 float& Controller::getGyroX(int32_t virtualSlot) {
-    return ButtonData[virtualSlot]->gyroX;
+    return mButtonData[virtualSlot]->GyroX;
 }
 
 float& Controller::getGyroY(int32_t virtualSlot) {
-    return ButtonData[virtualSlot]->gyroY;
+    return mButtonData[virtualSlot]->GyroY;
 }
 
 std::shared_ptr<DeviceProfile> Controller::getProfile(int32_t virtualSlot) {
-    return profiles[virtualSlot];
+    return mProfiles[virtualSlot];
 }
 
 std::shared_ptr<ControllerAttachment> Controller::GetAttachment() {
-    return Attachment;
+    return mAttachment;
 }
 
 bool Controller::IsRumbling() {
-    return isRumbling;
+    return mIsRumbling;
 }
 
 std::string Controller::GetGuid() {
-    return GUID;
+    return mGuid;
 }
 } // namespace Ship

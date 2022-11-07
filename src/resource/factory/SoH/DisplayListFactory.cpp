@@ -8,8 +8,8 @@ DisplayList* DisplayListFactory::ReadDisplayList(BinaryReader* reader) {
 
     switch (version) {
         case Version::Deckard: {
-            DisplayListV0 DL = DisplayListV0();
-            DL.ParseFileBinary(reader, dl);
+            DisplayListV0 dlFac = DisplayListV0();
+            dlFac.ParseFileBinary(reader, dl);
         } break;
         default:
             // VERSION NOT SUPPORTED

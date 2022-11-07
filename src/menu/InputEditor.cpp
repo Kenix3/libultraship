@@ -12,7 +12,7 @@ namespace Ship {
 #define SEPARATION() ImGui::Dummy(ImVec2(0, 5))
 
 void InputEditor::Init() {
-    BtnReading = -1;
+    mBtnReading = -1;
 }
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
@@ -51,10 +51,10 @@ void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentP
         }
     }
 
-    const std::string BtnName = backend->GetButtonName(currentPort, n64Btn);
+    const std::string btnName = backend->GetButtonName(currentPort, n64Btn);
 
     if (ImGui::Button(
-            StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : BtnName.c_str(), n64Btn).c_str())) {
+            StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(), n64Btn).c_str())) {
         *btnReading = n64Btn;
         backend->ClearRawPress();
     }
@@ -67,15 +67,15 @@ void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentP
 
 void InputEditor::DrawControllerSelect(int32_t currentPort) {
     auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
-    std::string ControllerName = controlDeck->GetPhysicalDeviceFromVirtualSlot(currentPort)->GetControllerName();
+    std::string controllerName = controlDeck->GetPhysicalDeviceFromVirtualSlot(currentPort)->GetControllerName();
 
-    if (ImGui::BeginCombo("##ControllerEntries", ControllerName.c_str())) {
+    if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
         for (uint8_t i = 0; i < controlDeck->GetNumPhysicalDevices(); i++) {
-            std::string DeviceName = controlDeck->GetPhysicalDevice(i)->GetControllerName();
-            if (DeviceName != "Keyboard" && DeviceName != "Auto") {
-                DeviceName += "##" + std::to_string(i);
+            std::string deviceName = controlDeck->GetPhysicalDevice(i)->GetControllerName();
+            if (deviceName != "Keyboard" && deviceName != "Auto") {
+                deviceName += "##" + std::to_string(i);
             }
-            if (ImGui::Selectable(DeviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort))) {
+            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort))) {
                 controlDeck->SetPhysicalDevice(currentPort, i);
             }
         }
@@ -92,7 +92,7 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
 void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 5, ImGui::GetCursorPos().y));
     ImGui::BeginChild(label, ImVec2(68, 75), false);
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
     const ImVec2 p = ImGui::GetCursorScreenPos();
 
     float sz = 45.0f;
@@ -103,56 +103,56 @@ void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
     float stickY = -(stick.y / 83.0f) * (rad * 0.5f);
 
     ImVec4 rect = ImVec4(p.x + 2, p.y + 2, 65, 65);
-    draw_list->AddRect(ImVec2(rect.x, rect.y), ImVec2(rect.x + rect.z, rect.y + rect.w), ImColor(100, 100, 100, 255),
-                       0.0f, 0, 1.5f);
-    draw_list->AddCircleFilled(pos, rad, ImColor(130, 130, 130, 255), 8);
-    draw_list->AddCircleFilled(ImVec2(pos.x + stickX, pos.y + stickY), 5, ImColor(15, 15, 15, 255), 7);
+    drawList->AddRect(ImVec2(rect.x, rect.y), ImVec2(rect.x + rect.z, rect.y + rect.w), ImColor(100, 100, 100, 255),
+                      0.0f, 0, 1.5f);
+    drawList->AddCircleFilled(pos, rad, ImColor(130, 130, 130, 255), 8);
+    drawList->AddCircleFilled(ImVec2(pos.x + stickX, pos.y + stickY), 5, ImColor(15, 15, 15, 255), 7);
     ImGui::EndChild();
 }
 
 void InputEditor::DrawControllerSchema() {
-    auto Backend = Ship::Window::GetInstance()->GetControlDeck()->GetPhysicalDeviceFromVirtualSlot(CurrentPort);
-    auto profile = Backend->getProfile(CurrentPort);
-    bool IsKeyboard = Backend->GetGuid() == "Keyboard" || Backend->GetGuid() == "Auto" || !Backend->Connected();
+    auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetPhysicalDeviceFromVirtualSlot(mCurrentPort);
+    auto profile = backend->getProfile(mCurrentPort);
+    bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
-    DrawControllerSelect(CurrentPort);
+    DrawControllerSelect(mCurrentPort);
 
     SohImGui::BeginGroupPanel("Buttons", ImVec2(150, 20));
-    DrawButton("A", BTN_A, CurrentPort, &BtnReading);
-    DrawButton("B", BTN_B, CurrentPort, &BtnReading);
-    DrawButton("L", BTN_L, CurrentPort, &BtnReading);
-    DrawButton("R", BTN_R, CurrentPort, &BtnReading);
-    DrawButton("Z", BTN_Z, CurrentPort, &BtnReading);
-    DrawButton("START", BTN_START, CurrentPort, &BtnReading);
+    DrawButton("A", BTN_A, mCurrentPort, &mBtnReading);
+    DrawButton("B", BTN_B, mCurrentPort, &mBtnReading);
+    DrawButton("L", BTN_L, mCurrentPort, &mBtnReading);
+    DrawButton("R", BTN_R, mCurrentPort, &mBtnReading);
+    DrawButton("Z", BTN_Z, mCurrentPort, &mBtnReading);
+    DrawButton("START", BTN_START, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
     SohImGui::EndGroupPanel(IsKeyboard ? 7.0f : 56.0f);
 #else
-    SohImGui::EndGroupPanel(IsKeyboard ? 7.0f : 48.0f);
+    SohImGui::EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
 #endif
     ImGui::SameLine();
     SohImGui::BeginGroupPanel("Digital Pad", ImVec2(150, 20));
-    DrawButton("Up", BTN_DUP, CurrentPort, &BtnReading);
-    DrawButton("Down", BTN_DDOWN, CurrentPort, &BtnReading);
-    DrawButton("Left", BTN_DLEFT, CurrentPort, &BtnReading);
-    DrawButton("Right", BTN_DRIGHT, CurrentPort, &BtnReading);
+    DrawButton("Up", BTN_DUP, mCurrentPort, &mBtnReading);
+    DrawButton("Down", BTN_DDOWN, mCurrentPort, &mBtnReading);
+    DrawButton("Left", BTN_DLEFT, mCurrentPort, &mBtnReading);
+    DrawButton("Right", BTN_DRIGHT, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
     SohImGui::EndGroupPanel(IsKeyboard ? 53.0f : 122.0f);
 #else
-    SohImGui::EndGroupPanel(IsKeyboard ? 53.0f : 94.0f);
+    SohImGui::EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
 #endif
     ImGui::SameLine();
     SohImGui::BeginGroupPanel("Analog Stick", ImVec2(150, 20));
-    DrawButton("Up", BTN_STICKUP, CurrentPort, &BtnReading);
-    DrawButton("Down", BTN_STICKDOWN, CurrentPort, &BtnReading);
-    DrawButton("Left", BTN_STICKLEFT, CurrentPort, &BtnReading);
-    DrawButton("Right", BTN_STICKRIGHT, CurrentPort, &BtnReading);
+    DrawButton("Up", BTN_STICKUP, mCurrentPort, &mBtnReading);
+    DrawButton("Down", BTN_STICKDOWN, mCurrentPort, &mBtnReading);
+    DrawButton("Left", BTN_STICKLEFT, mCurrentPort, &mBtnReading);
+    DrawButton("Right", BTN_STICKRIGHT, mCurrentPort, &mBtnReading);
 
-    if (!IsKeyboard) {
+    if (!isKeyboard) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
         DrawVirtualStick("##MainVirtualStick",
-                         ImVec2(Backend->getLeftStickX(CurrentPort), Backend->getLeftStickY(CurrentPort)));
+                         ImVec2(backend->getLeftStickX(mCurrentPort), backend->getLeftStickY(mCurrentPort)));
         ImGui::SameLine();
 
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -182,23 +182,23 @@ void InputEditor::DrawControllerSchema() {
 #ifdef __SWITCH__
     SohImGui::EndGroupPanel(IsKeyboard ? 52.0f : 52.0f);
 #else
-    SohImGui::EndGroupPanel(IsKeyboard ? 52.0f : 24.0f);
+    SohImGui::EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
 #endif
     ImGui::SameLine();
 
-    if (!IsKeyboard) {
+    if (!isKeyboard) {
         ImGui::SameLine();
         SohImGui::BeginGroupPanel("Right Stick", ImVec2(150, 20));
-        DrawButton("Up", BTN_VSTICKUP, CurrentPort, &BtnReading);
-        DrawButton("Down", BTN_VSTICKDOWN, CurrentPort, &BtnReading);
-        DrawButton("Left", BTN_VSTICKLEFT, CurrentPort, &BtnReading);
-        DrawButton("Right", BTN_VSTICKRIGHT, CurrentPort, &BtnReading);
+        DrawButton("Up", BTN_VSTICKUP, mCurrentPort, &mBtnReading);
+        DrawButton("Down", BTN_VSTICKDOWN, mCurrentPort, &mBtnReading);
+        DrawButton("Left", BTN_VSTICKLEFT, mCurrentPort, &mBtnReading);
+        DrawButton("Right", BTN_VSTICKRIGHT, mCurrentPort, &mBtnReading);
 
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
         // 2 is the SDL value for right stick X axis
         // 3 is the SDL value for right stick Y axis.
         DrawVirtualStick("##RightVirtualStick",
-                         ImVec2(Backend->getRightStickX(CurrentPort), Backend->getRightStickY(CurrentPort)));
+                         ImVec2(backend->getRightStickX(mCurrentPort), backend->getRightStickY(mCurrentPort)));
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -228,7 +228,7 @@ void InputEditor::DrawControllerSchema() {
 #endif
     }
 
-    if (Backend->CanGyro()) {
+    if (backend->CanGyro()) {
 #ifndef __WIIU__
         ImGui::SameLine();
 #endif
@@ -254,7 +254,7 @@ void InputEditor::DrawControllerSchema() {
         }
         ImGui::SetCursorPosX(cursorX);
         DrawVirtualStick("##GyroPreview",
-                         ImVec2(-10.0f * Backend->getGyroY(CurrentPort), 10.0f * Backend->getGyroX(CurrentPort)));
+                         ImVec2(-10.0f * backend->getGyroY(mCurrentPort), 10.0f * backend->getGyroX(mCurrentPort)));
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -292,10 +292,10 @@ void InputEditor::DrawControllerSchema() {
     const ImVec2 cursor = ImGui::GetCursorPos();
 
     SohImGui::BeginGroupPanel("C-Buttons", ImVec2(158, 20));
-    DrawButton("Up", BTN_CUP, CurrentPort, &BtnReading);
-    DrawButton("Down", BTN_CDOWN, CurrentPort, &BtnReading);
-    DrawButton("Left", BTN_CLEFT, CurrentPort, &BtnReading);
-    DrawButton("Right", BTN_CRIGHT, CurrentPort, &BtnReading);
+    DrawButton("Up", BTN_CUP, mCurrentPort, &mBtnReading);
+    DrawButton("Down", BTN_CDOWN, mCurrentPort, &mBtnReading);
+    DrawButton("Left", BTN_CLEFT, mCurrentPort, &mBtnReading);
+    DrawButton("Right", BTN_CRIGHT, mCurrentPort, &mBtnReading);
     ImGui::Dummy(ImVec2(0, 5));
     SohImGui::EndGroupPanel();
 
@@ -311,7 +311,7 @@ void InputEditor::DrawControllerSchema() {
     float cursorX = ImGui::GetCursorPosX() + 5;
     ImGui::SetCursorPosX(cursorX);
     ImGui::Checkbox("Rumble Enabled", &profile->UseRumble);
-    if (Backend->CanRumble()) {
+    if (backend->CanRumble()) {
         ImGui::SetCursorPosX(cursorX);
         ImGui::Text("Rumble Force: %d%%", static_cast<int>(100.0f * profile->RumbleStrength));
         ImGui::SetCursorPosX(cursorX);
@@ -324,12 +324,12 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
     }
     ImGui::Dummy(ImVec2(0, 5));
-    SohImGui::EndGroupPanel(IsKeyboard ? 0.0f : 2.0f);
+    SohImGui::EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 }
 
 void InputEditor::DrawHud() {
-    if (!this->Opened) {
-        BtnReading = -1;
+    if (!this->mOpened) {
+        mBtnReading = -1;
         CVar_SetS32("gControllerConfigurationEnabled", 0);
         return;
     }
@@ -348,14 +348,14 @@ void InputEditor::DrawHud() {
     ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
     // OTRTODO: Disable this stupid workaround ( ReadRawPress() only works when the window is on the main viewport )
     ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-    ImGui::Begin("Controller Configuration", &this->Opened,
+    ImGui::Begin("Controller Configuration", &this->mOpened,
                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
 
     ImGui::BeginTabBar("##Controllers");
 
     for (int i = 0; i < 4; i++) {
         if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d", i + 1).c_str())) {
-            CurrentPort = i;
+            mCurrentPort = i;
             ImGui::EndTabItem();
         }
     }
@@ -370,14 +370,14 @@ void InputEditor::DrawHud() {
 }
 
 bool InputEditor::IsOpened() {
-    return Opened;
+    return mOpened;
 }
 
 void InputEditor::Open() {
-    Opened = true;
+    mOpened = true;
 }
 
 void InputEditor::Close() {
-    Opened = false;
+    mOpened = false;
 }
 } // namespace Ship

@@ -25,9 +25,9 @@ class ControlDeck {
     bool ShouldBlockGameInput(std::string inputDeviceGuid) const;
 
   private:
-    std::vector<int32_t> virtualDevices = {};
-    std::vector<std::shared_ptr<Controller>> physicalDevices = {};
-    uint8_t* controllerBits = nullptr;
-    bool shouldBlockGameInput = false;
+    std::vector<int32_t> mVirtualDevices = {};
+    std::vector<std::shared_ptr<Controller>> mPhysicalDevices = {};
+    uint8_t* mControllerBits = nullptr;
+    bool mShouldBlockGameInput = false;
 };
 } // namespace Ship

@@ -7,8 +7,8 @@ Path* PathFactory::ReadPath(BinaryReader* reader) {
 
     switch (version) {
         case Version::Deckard: {
-            PathV0 Path;
-            Path.ParseFileBinary(reader, path);
+            PathV0 pathFac;
+            pathFac.ParseFileBinary(reader, path);
         } break;
         default:
             // VERSION NOT SUPPORTED

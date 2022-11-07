@@ -10,9 +10,7 @@ class Stream {
   public:
     virtual ~Stream() = default;
     virtual uint64_t GetLength() = 0;
-    uint64_t GetBaseAddress() {
-        return baseAddress;
-    }
+    uint64_t GetBaseAddress();
 
     virtual void Seek(int32_t offset, SeekOffsetType seekType) = 0;
 
@@ -27,6 +25,6 @@ class Stream {
     virtual void Close() = 0;
 
   protected:
-    uint64_t baseAddress;
+    uint64_t mBaseAddress;
 };
 } // namespace Ship

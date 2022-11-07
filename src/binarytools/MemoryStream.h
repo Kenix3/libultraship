@@ -28,7 +28,7 @@ class MemoryStream : public Stream {
     void Close() override;
 
   protected:
-    std::vector<char> buffer;
-    std::size_t bufferSize;
+    std::vector<char> mBuffer;
+    std::size_t mBufferSize;
 };
 } // namespace Ship

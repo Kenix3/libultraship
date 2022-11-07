@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "binarytools/BinaryReader.h"
 #include "binarytools/BinaryWriter.h"
-#include "File.h"
+#include "OtrFile.h"
 #include <tinyxml2.h>
 #include <spdlog/spdlog.h>
 
@@ -55,34 +55,35 @@ enum class Version {
     Roy = 1,
     Rachael = 2,
     Zhora = 3,
+    Flynn = 4,
     // ...
 };
 
 struct Patch {
-    uint64_t crc;
-    uint32_t index;
-    uintptr_t origData;
+    uint64_t Crc;
+    uint32_t Index;
+    uintptr_t OrigData;
 };
 
 class Resource {
   public:
-    ResourceMgr* resMgr;
-    uint64_t id; // Unique Resource ID
-    ResourceType resType;
-    bool isDirty = false;
-    void* cachedGameAsset = 0; // Conversion to OoT friendly struct cached...
-    std::shared_ptr<File> file;
-    std::vector<Patch> patches;
+    ResourceMgr* ResourceManager;
+    uint64_t Id; // Unique Resource ID
+    ResourceType ResType;
+    bool IsDirty = false;
+    void* CachedGameAsset = 0; // Conversion to OoT friendly struct cached...
+    std::shared_ptr<OtrFile> File;
+    std::vector<Patch> Patches;
     virtual ~Resource();
 };
 
 class ResourceFile {
   public:
-    Endianness endianness;    // 0x00 - Endianness of the file
-    uint32_t resourceType;    // 0x01 - 4 byte MAGIC
-    Version version;          // 0x05 - Based on Ship release numbers
-    uint64_t id;              // 0x09 - Unique Resource ID
-    uint32_t resourceVersion; // 0x11 - Resource Minor Version Number
+    Endianness ByteOrder;     // 0x00 - Endianness of the file
+    uint32_t ResourceType;    // 0x01 - 4 byte MAGIC
+    Version Ver;              // 0x05 - Based on Ship release numbers
+    uint64_t Id;              // 0x09 - Unique Resource ID
+    uint32_t ResourceVersion; // 0x11 - Resource Minor Version Number
 
     virtual void ParseFileBinary(BinaryReader* reader, Resource* res);
     virtual void ParseFileXML(tinyxml2::XMLElement* reader, Resource* res);
@@ -92,10 +93,10 @@ class ResourceFile {
 
 class ResourcePromise {
   public:
-    std::shared_ptr<Resource> resource;
-    std::shared_ptr<File> file;
-    std::condition_variable resourceLoadNotifier;
-    std::mutex resourceLoadMutex;
-    bool bHasResourceLoaded = false;
+    std::shared_ptr<Resource> Res;
+    std::shared_ptr<OtrFile> File;
+    std::condition_variable ResourceLoadNotifier;
+    std::mutex ResourceLoadMutex;
+    bool HasResourceLoaded = false;
 };
 } // namespace Ship

@@ -18,8 +18,8 @@ class ResourceMgr;
 class Window {
   public:
     static std::shared_ptr<Window> GetInstance();
-    static std::shared_ptr<Window> CreateInstance(const std::string Name, const std::vector<std::string>& OTRFiles = {},
-                                                  const std::unordered_set<uint32_t>& ValidHashes = {});
+    static std::shared_ptr<Window> CreateInstance(const std::string name, const std::vector<std::string>& otrFiles = {},
+                                                  const std::unordered_set<uint32_t>& validHashes = {});
     static std::string GetAppDirectoryPath();
     static std::string GetPathRelativeToAppDirectory(const char* path);
 
@@ -29,21 +29,21 @@ class Window {
     void ReadSaveFile(std::filesystem::path savePath, uintptr_t addr, void* dramAddr, size_t size);
     void CreateDefaults();
     void MainLoop(void (*MainFunction)(void));
-    void Initialize(const std::vector<std::string>& OTRFiles = {},
-                    const std::unordered_set<uint32_t>& ValidHashes = {});
+    void Initialize(const std::vector<std::string>& otrFiles = {},
+                    const std::unordered_set<uint32_t>& validHashes = {});
     void StartFrame();
     void SetTargetFps(int32_t fps);
     void SetMaximumFrameLatency(int32_t latency);
     void GetPixelDepthPrepare(float x, float y);
     uint16_t GetPixelDepth(float x, float y);
     void ToggleFullscreen();
-    void SetFullscreen(bool bIsFullscreen);
+    void SetFullscreen(bool isFullscreen);
     void ShowCursor(bool hide);
     uint32_t GetCurrentWidth();
     uint32_t GetCurrentHeight();
     bool IsFullscreen();
     uint32_t GetMenuBar();
-    void SetMenuBar(uint32_t dwMenuBar);
+    void SetMenuBar(uint32_t menuBar);
     std::string GetName();
     std::shared_ptr<ControlDeck> GetControlDeck();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
@@ -58,39 +58,39 @@ class Window {
     Window() = default;
 
   private:
-    static bool KeyDown(int32_t dwScancode);
-    static bool KeyUp(int32_t dwScancode);
+    static bool KeyDown(int32_t scancode);
+    static bool KeyUp(int32_t scancode);
     static void AllKeysUp(void);
-    static void OnFullscreenChanged(bool bIsNowFullscreen);
-    static std::weak_ptr<Window> Context;
+    static void OnFullscreenChanged(bool isNowFullscreen);
+    static std::weak_ptr<Window> mContext;
 
     void InitializeConfiguration();
     void InitializeControlDeck();
     void InitializeAudioPlayer();
     void InitializeLogging();
-    void InitializeResourceManager(const std::vector<std::string>& OTRFiles = {},
-                                   const std::unordered_set<uint32_t>& ValidHashes = {});
+    void InitializeResourceManager(const std::vector<std::string>& otrFiles = {},
+                                   const std::unordered_set<uint32_t>& validHashes = {});
     void InitializeWindowManager();
 
-    std::shared_ptr<spdlog::logger> Logger;
+    std::shared_ptr<spdlog::logger> mLogger;
     std::shared_ptr<Mercury>
-        Config; // Config needs to be after the Window because we call the Window during it's destructor.
-    std::shared_ptr<ResourceMgr> ResMan;
-    std::shared_ptr<AudioPlayer> APlayer;
-    std::shared_ptr<ControlDeck> ControllerApi;
+        mConfig; // Config needs to be after the Window because we call the Window during it's destructor.
+    std::shared_ptr<ResourceMgr> mResourceManager;
+    std::shared_ptr<AudioPlayer> mAudioPlayer;
+    std::shared_ptr<ControlDeck> mControlDeck;
 
-    std::string gfxBackend;
-    std::string audioBackend;
-    GfxRenderingAPI* RenderingApi;
-    GfxWindowManagerAPI* WmApi;
-    bool bIsFullscreen;
-    uint32_t dwWidth;
-    uint32_t dwHeight;
-    uint32_t dwMenubar;
-    int32_t lastScancode;
-    std::string Name;
-    std::string MainPath;
-    std::string BasePath;
-    std::string PatchesPath;
+    std::string mGfxBackend;
+    std::string mAudioBackend;
+    GfxRenderingAPI* mRenderingApi;
+    GfxWindowManagerAPI* mWindowManagerApi;
+    bool mIsFullscreen;
+    uint32_t mWidth;
+    uint32_t mHeight;
+    uint32_t mMenuBar;
+    int32_t mLastScancode;
+    std::string mName;
+    std::string mMainPath;
+    std::string mBasePath;
+    std::string mPatchesPath;
 };
 } // namespace Ship

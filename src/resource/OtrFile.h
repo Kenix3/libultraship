@@ -8,14 +8,14 @@
 namespace Ship {
 class Archive;
 
-class File {
+class OtrFile {
   public:
-    std::shared_ptr<Archive> parent;
-    std::string path;
-    std::shared_ptr<char[]> buffer;
-    uint32_t dwBufferSize;
-    bool bIsLoaded = false;
-    bool bHasLoadError = false;
+    std::shared_ptr<Archive> Parent;
+    std::string Path;
+    std::shared_ptr<char[]> Buffer;
+    uint32_t BufferSize;
+    bool IsLoaded = false;
+    bool HasLoadError = false;
     std::condition_variable FileLoadNotifier;
     std::mutex FileLoadMutex;
 };

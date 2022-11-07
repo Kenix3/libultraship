@@ -3,53 +3,53 @@
 #include <stdexcept>
 
 Ship::BinaryReader::BinaryReader(Stream* nStream) {
-    stream.reset(nStream);
+    mStream.reset(nStream);
 }
 
 Ship::BinaryReader::BinaryReader(std::shared_ptr<Stream> nStream) {
-    stream = nStream;
+    mStream = nStream;
 }
 
 void Ship::BinaryReader::Close() {
-    stream->Close();
+    mStream->Close();
 }
 
 void Ship::BinaryReader::SetEndianness(Endianness endianness) {
-    this->endianness = endianness;
+    this->mEndianness = endianness;
 }
 
 Ship::Endianness Ship::BinaryReader::GetEndianness() const {
-    return endianness;
+    return mEndianness;
 }
 
 void Ship::BinaryReader::Seek(int32_t offset, SeekOffsetType seekType) {
-    stream->Seek(offset, seekType);
+    mStream->Seek(offset, seekType);
 }
 
 uint32_t Ship::BinaryReader::GetBaseAddress() {
-    return stream->GetBaseAddress();
+    return mStream->GetBaseAddress();
 }
 
 void Ship::BinaryReader::Read(int32_t length) {
-    stream->Read(length);
+    mStream->Read(length);
 }
 
 void Ship::BinaryReader::Read(char* buffer, int32_t length) {
-    stream->Read(buffer, length);
+    mStream->Read(buffer, length);
 }
 
 char Ship::BinaryReader::ReadChar() {
-    return (char)stream->ReadByte();
+    return (char)mStream->ReadByte();
 }
 
 int8_t Ship::BinaryReader::ReadInt8() {
-    return stream->ReadByte();
+    return mStream->ReadByte();
 }
 
 int16_t Ship::BinaryReader::ReadInt16() {
     int16_t result = 0;
-    stream->Read((char*)&result, sizeof(int16_t));
-    if (endianness != Endianness::Native) {
+    mStream->Read((char*)&result, sizeof(int16_t));
+    if (mEndianness != Endianness::Native) {
         result = BSWAP16(result);
     }
 
@@ -59,9 +59,9 @@ int16_t Ship::BinaryReader::ReadInt16() {
 int32_t Ship::BinaryReader::ReadInt32() {
     int32_t result = 0;
 
-    stream->Read((char*)&result, sizeof(int32_t));
+    mStream->Read((char*)&result, sizeof(int32_t));
 
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         result = BSWAP32(result);
     }
 
@@ -69,15 +69,15 @@ int32_t Ship::BinaryReader::ReadInt32() {
 }
 
 uint8_t Ship::BinaryReader::ReadUByte() {
-    return (uint8_t)stream->ReadByte();
+    return (uint8_t)mStream->ReadByte();
 }
 
 uint16_t Ship::BinaryReader::ReadUInt16() {
     uint16_t result = 0;
 
-    stream->Read((char*)&result, sizeof(uint16_t));
+    mStream->Read((char*)&result, sizeof(uint16_t));
 
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         result = BSWAP16(result);
     }
 
@@ -87,9 +87,9 @@ uint16_t Ship::BinaryReader::ReadUInt16() {
 uint32_t Ship::BinaryReader::ReadUInt32() {
     uint32_t result = 0;
 
-    stream->Read((char*)&result, sizeof(uint32_t));
+    mStream->Read((char*)&result, sizeof(uint32_t));
 
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         result = BSWAP32(result);
     }
 
@@ -99,9 +99,9 @@ uint32_t Ship::BinaryReader::ReadUInt32() {
 uint64_t Ship::BinaryReader::ReadUInt64() {
     uint64_t result = 0;
 
-    stream->Read((char*)&result, sizeof(uint64_t));
+    mStream->Read((char*)&result, sizeof(uint64_t));
 
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         result = BSWAP64(result);
     }
 
@@ -111,9 +111,9 @@ uint64_t Ship::BinaryReader::ReadUInt64() {
 float Ship::BinaryReader::ReadFloat() {
     float result = NAN;
 
-    stream->Read((char*)&result, sizeof(float));
+    mStream->Read((char*)&result, sizeof(float));
 
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         float tmp;
         char* dst = (char*)&tmp;
         char* src = (char*)&result;
@@ -134,9 +134,9 @@ float Ship::BinaryReader::ReadFloat() {
 double Ship::BinaryReader::ReadDouble() {
     double result = NAN;
 
-    stream->Read((char*)&result, sizeof(double));
+    mStream->Read((char*)&result, sizeof(double));
 
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         double tmp;
         char* dst = (char*)&tmp;
         char* src = (char*)&result;

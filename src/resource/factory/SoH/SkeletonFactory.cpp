@@ -8,8 +8,8 @@ Skeleton* SkeletonFactory::ReadSkeleton(BinaryReader* reader) {
 
     switch (version) {
         case Version::Deckard: {
-            SkeletonV0 Skel = SkeletonV0();
-            Skel.ParseFileBinary(reader, skel);
+            SkeletonV0 skelFac = SkeletonV0();
+            skelFac.ParseFileBinary(reader, skel);
         } break;
         default:
             // VERSION NOT SUPPORTED

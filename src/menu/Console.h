@@ -15,7 +15,7 @@ namespace Ship {
 #define NULLSTR "None"
 
 class Console;
-typedef std::function<bool(std::shared_ptr<Console> Console, std::vector<std::string> args)> CommandHandler;
+typedef std::function<bool(std::shared_ptr<Console> console, std::vector<std::string> args)> CommandHandler;
 
 enum class ArgumentType { TEXT, NUMBER, PLAYER_POS, PLAYER_ROT };
 
@@ -40,35 +40,35 @@ struct ConsoleLine {
 class Console : public std::enable_shared_from_this<Console> {
   private:
     static int CallbackStub(ImGuiInputTextCallbackData* data);
-    static bool ClearCommand(std::shared_ptr<Console> Console, const std::vector<std::string>& args);
-    static bool HelpCommand(std::shared_ptr<Console> Console, const std::vector<std::string>& args);
-    static bool BindCommand(std::shared_ptr<Console> Console, const std::vector<std::string>& args);
-    static bool BindToggleCommand(std::shared_ptr<Console> Console, const std::vector<std::string>& args);
+    static bool ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
+    static bool HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
+    static bool BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
+    static bool BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
 
-    bool opened = false;
-    int selectedId = -1;
-    int historyIndex = -1;
-    std::vector<int> selectedEntries;
-    std::string filter;
-    std::string currentChannel = "Console";
-    bool openAutocomplete = false;
-    char* inputBuffer = nullptr;
-    char* filterBuffer = nullptr;
-    std::string cmdHint = NULLSTR;
-    spdlog::level::level_enum levelFilter = spdlog::level::trace;
+    bool mOpened = false;
+    int mSelectedId = -1;
+    int mHistoryIndex = -1;
+    std::vector<int> mSelectedEntries;
+    std::string mFilter;
+    std::string mCurrentChannel = "Console";
+    bool mOpenAutocomplete = false;
+    char* mInputBuffer = nullptr;
+    char* mFilterBuffer = nullptr;
+    std::string mCmdHint = NULLSTR;
+    spdlog::level::level_enum mLevelFilter = spdlog::level::trace;
 
-    std::vector<std::string> History;
-    std::vector<std::string> Autocomplete;
-    std::map<ImGuiKey, std::string> Bindings;
-    std::map<ImGuiKey, std::string> BindingToggle;
-    std::map<std::string, CommandEntry> Commands;
-    std::map<std::string, std::vector<ConsoleLine>> Log;
-    const std::vector<std::string> LogChannels = { "Console", "Logs" };
-    const std::vector<spdlog::level::level_enum> PriorityFilters = { spdlog::level::off,  spdlog::level::critical,
-                                                                     spdlog::level::err,  spdlog::level::warn,
-                                                                     spdlog::level::info, spdlog::level::debug,
-                                                                     spdlog::level::trace };
-    const std::vector<ImVec4> PriorityColours = {
+    std::vector<std::string> mHistory;
+    std::vector<std::string> mAutoComplete;
+    std::map<ImGuiKey, std::string> mBindings;
+    std::map<ImGuiKey, std::string> mBindingToggle;
+    std::map<std::string, CommandEntry> mCommands;
+    std::map<std::string, std::vector<ConsoleLine>> mLog;
+    const std::vector<std::string> mLogChannels = { "Console", "Logs" };
+    const std::vector<spdlog::level::level_enum> mPriorityFilters = { spdlog::level::off,  spdlog::level::critical,
+                                                                      spdlog::level::err,  spdlog::level::warn,
+                                                                      spdlog::level::info, spdlog::level::debug,
+                                                                      spdlog::level::trace };
+    const std::vector<ImVec4> mPriorityColours = {
         ImVec4(0.8f, 0.8f, 0.8f, 1.0f),     // TRACE
         ImVec4(0.9f, 0.9f, 0.9f, 1.0f),     // DEBUG
         ImVec4(1.0f, 1.0f, 1.0f, 1.0f),     // INFO
