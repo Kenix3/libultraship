@@ -7,8 +7,8 @@
 
 namespace Ship {
 void ResourceFile::ParseFileBinary(BinaryReader* reader, Resource* res) {
-    id = reader->ReadUInt64();
-    res->id = id;
+    Id = reader->ReadUInt64();
+    res->Id = Id;
     reader->ReadUInt32(); // Resource minor version number
     reader->ReadUInt64(); // ROM CRC
     reader->ReadUInt32(); // ROM Enum
@@ -17,7 +17,7 @@ void ResourceFile::ParseFileBinary(BinaryReader* reader, Resource* res) {
     reader->Seek(64, SeekOffsetType::Start);
 }
 void ResourceFile::ParseFileXML(tinyxml2::XMLElement* reader, Resource* res) {
-    id = reader->Int64Attribute("id", -1);
+    Id = reader->Int64Attribute("id", -1);
 }
 
 void ResourceFile::WriteFileBinary(BinaryWriter* writer, Resource* res) {
@@ -27,27 +27,27 @@ void ResourceFile::WriteFileXML(tinyxml2::XMLElement* writer, Resource* res) {
 }
 
 Resource::~Resource() {
-    free(cachedGameAsset);
-    cachedGameAsset = nullptr;
+    free(CachedGameAsset);
+    CachedGameAsset = nullptr;
 
-    for (size_t i = 0; i < patches.size(); i++) {
-        const std::string* hashStr = resMgr->HashToString(patches[i].crc);
+    for (size_t i = 0; i < Patches.size(); i++) {
+        const std::string* hashStr = ResourceManager->HashToString(Patches[i].Crc);
         if (hashStr == nullptr) {
             continue;
         }
 
-        auto resShared = resMgr->GetCachedFile(hashStr->c_str());
+        auto resShared = ResourceManager->GetCachedFile(hashStr->c_str());
         if (resShared != nullptr) {
             auto res = (Ship::DisplayList*)resShared.get();
 
-            Gfx* gfx = &((Gfx*)res->instructions.data())[patches[i].index];
-            gfx->words.w1 = patches[i].origData;
+            Gfx* gfx = &((Gfx*)res->instructions.data())[Patches[i].Index];
+            gfx->words.w1 = Patches[i].OrigData;
         }
     }
 
-    patches.clear();
+    Patches.clear();
 
-    if (file != nullptr) {
+    if (File != nullptr) {
         SPDLOG_TRACE("Deconstructor called on file %s\n", file->path.c_str());
     }
 }

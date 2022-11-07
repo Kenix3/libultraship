@@ -12,12 +12,12 @@ using namespace Microsoft::WRL;
 namespace Ship {
 class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
   public:
-    WasapiAudioPlayer() : refcount(1), bufferFrameCount(0), initialized(false), started(false){};
+    WasapiAudioPlayer();
 
     bool Init(void);
     int Buffered(void);
     int GetDesiredBuffered(void);
-    void Play(const uint8_t* Buffer, uint32_t BufferLen);
+    void Play(const uint8_t* buf, uint32_t len);
 
   protected:
     virtual HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState);
@@ -32,14 +32,14 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     bool SetupStream(void);
 
   private:
-    ComPtr<IMMDeviceEnumerator> DeviceEnumerator;
-    ComPtr<IMMDevice> device;
-    ComPtr<IAudioClient> client;
-    ComPtr<IAudioRenderClient> rclient;
-    LONG refcount;
-    UINT32 bufferFrameCount;
-    bool initialized;
-    bool started;
+    ComPtr<IMMDeviceEnumerator> mDeviceEnumerator;
+    ComPtr<IMMDevice> mDevice;
+    ComPtr<IAudioClient> mClient;
+    ComPtr<IAudioRenderClient> mRenderClient;
+    LONG mRefCount;
+    UINT32 mBufferFrameCount;
+    bool mInitialized;
+    bool mStarted;
 };
 } // namespace Ship
 #endif

@@ -1,9 +1,9 @@
 #include "../../Resource.h"
-#include "../../File.h"
+#include "../../OtrFile.h"
 
 namespace Ship {
 class ResourceLoader {
   public:
-    static Resource* LoadResource(std::shared_ptr<File> FileToLoad);
+    static Resource* LoadResource(std::shared_ptr<OtrFile> fileToLoad);
 };
 } // namespace Ship

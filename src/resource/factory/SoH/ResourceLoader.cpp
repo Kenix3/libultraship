@@ -17,12 +17,10 @@
 #include "MtxFactory.h"
 #include "AudioFactory.h"
 #include "binarytools/MemoryStream.h"
-namespace Ship
-{
-    Resource* ResourceLoader::LoadResource(std::shared_ptr<File> FileToLoad)
-    {
-        auto stream = std::make_shared<MemoryStream>(FileToLoad->buffer.get(), FileToLoad->dwBufferSize);
-        auto reader = std::make_shared<BinaryReader>(stream);
+namespace Ship {
+Resource* ResourceLoader::LoadResource(std::shared_ptr<OtrFile> fileToLoad) {
+    auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.get(), fileToLoad->BufferSize);
+    auto reader = std::make_shared<BinaryReader>(stream);
 
     Endianness endianness = (Endianness)reader->ReadInt8();
 
@@ -102,11 +100,11 @@ namespace Ship
     }
 
     if (result != nullptr) {
-        result->file = FileToLoad;
-        result->resType = resourceType;
+        result->File = fileToLoad;
+        result->ResType = resourceType;
     } else {
-        if (FileToLoad != nullptr) {
-            SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceType, FileToLoad->path);
+        if (fileToLoad != nullptr) {
+            SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceType, fileToLoad->Path);
         } else {
             SPDLOG_ERROR("Failed to load resource because the file did not load.");
         }

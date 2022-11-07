@@ -11,17 +11,17 @@
 
 namespace Ship {
 
-KeyboardController::KeyboardController() : Controller(), lastScancode(-1) {
-    GUID = "Keyboard";
+KeyboardController::KeyboardController() : Controller(), mLastScancode(-1) {
+    mGuid = "Keyboard";
 }
 
-bool KeyboardController::PressButton(int32_t dwScancode) {
-    lastKey = dwScancode;
+bool KeyboardController::PressButton(int32_t scancode) {
+    mLastKey = scancode;
 
     for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
 
-        if (getProfile(virtualSlot)->Mappings.contains(dwScancode)) {
-            getPressedButtons(virtualSlot) |= getProfile(virtualSlot)->Mappings[dwScancode];
+        if (getProfile(virtualSlot)->Mappings.contains(scancode)) {
+            getPressedButtons(virtualSlot) |= getProfile(virtualSlot)->Mappings[scancode];
             return true;
         }
     }
@@ -29,10 +29,10 @@ bool KeyboardController::PressButton(int32_t dwScancode) {
     return false;
 }
 
-bool KeyboardController::ReleaseButton(int32_t dwScancode) {
+bool KeyboardController::ReleaseButton(int32_t scancode) {
     for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-        if (getProfile(virtualSlot)->Mappings.contains(dwScancode)) {
-            getPressedButtons(virtualSlot) &= ~getProfile(virtualSlot)->Mappings[dwScancode];
+        if (getProfile(virtualSlot)->Mappings.contains(scancode)) {
+            getPressedButtons(virtualSlot) &= ~getProfile(virtualSlot)->Mappings[scancode];
             return true;
         }
     }
@@ -54,7 +54,7 @@ void KeyboardController::ReadFromSource(int32_t virtualSlot) {
 }
 
 int32_t KeyboardController::ReadRawPress() {
-    return lastKey;
+    return mLastKey;
 }
 
 void KeyboardController::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
@@ -114,14 +114,14 @@ bool KeyboardController::CanGyro() const {
 }
 
 void KeyboardController::ClearRawPress() {
-    lastKey = -1;
+    mLastKey = -1;
 }
 
 void KeyboardController::SetLastScancode(int32_t key) {
-    lastScancode = key;
+    mLastScancode = key;
 }
 
 int32_t KeyboardController::GetLastScancode() {
-    return lastScancode;
+    return mLastScancode;
 }
 } // namespace Ship

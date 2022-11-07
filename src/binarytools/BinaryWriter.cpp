@@ -1,67 +1,67 @@
 #include "BinaryWriter.h"
 
 Ship::BinaryWriter::BinaryWriter(Stream* nStream) {
-    stream.reset(nStream);
+    mStream.reset(nStream);
 }
 
 Ship::BinaryWriter::BinaryWriter(std::shared_ptr<Stream> nStream) {
-    stream = nStream;
+    mStream = nStream;
 }
 
 void Ship::BinaryWriter::SetEndianness(Endianness endianness) {
-    this->endianness = endianness;
+    this->mEndianness = endianness;
 }
 
 void Ship::BinaryWriter::Close() {
-    stream->Close();
+    mStream->Close();
 }
 
 std::shared_ptr<Ship::Stream> Ship::BinaryWriter::GetStream() {
-    return stream;
+    return mStream;
 }
 
 uint64_t Ship::BinaryWriter::GetBaseAddress() {
-    return stream->GetBaseAddress();
+    return mStream->GetBaseAddress();
 }
 
 uint64_t Ship::BinaryWriter::GetLength() {
-    return stream->GetLength();
+    return mStream->GetLength();
 }
 
 void Ship::BinaryWriter::Seek(int32_t offset, SeekOffsetType seekType) {
-    stream->Seek(offset, seekType);
+    mStream->Seek(offset, seekType);
 }
 
 void Ship::BinaryWriter::Write(int8_t value) {
-    stream->Write((char*)&value, sizeof(int8_t));
+    mStream->Write((char*)&value, sizeof(int8_t));
 }
 
 void Ship::BinaryWriter::Write(uint8_t value) {
-    stream->Write((char*)&value, sizeof(uint8_t));
+    mStream->Write((char*)&value, sizeof(uint8_t));
 }
 
 void Ship::BinaryWriter::Write(int16_t value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         value = BSWAP16(value);
     }
 
-    stream->Write((char*)&value, sizeof(int16_t));
+    mStream->Write((char*)&value, sizeof(int16_t));
 }
 
 void Ship::BinaryWriter::Write(uint16_t value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         value = BSWAP16(value);
     }
 
-    stream->Write((char*)&value, sizeof(uint16_t));
+    mStream->Write((char*)&value, sizeof(uint16_t));
 }
 
 void Ship::BinaryWriter::Write(int32_t value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         value = BSWAP32(value);
     }
 
-    stream->Write((char*)&value, sizeof(int32_t));
+    mStream->Write((char*)&value, sizeof(int32_t));
 }
 
 void Ship::BinaryWriter::Write(int32_t valueA, int32_t valueB) {
@@ -70,31 +70,31 @@ void Ship::BinaryWriter::Write(int32_t valueA, int32_t valueB) {
 }
 
 void Ship::BinaryWriter::Write(uint32_t value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         value = BSWAP32(value);
     }
 
-    stream->Write((char*)&value, sizeof(uint32_t));
+    mStream->Write((char*)&value, sizeof(uint32_t));
 }
 
 void Ship::BinaryWriter::Write(int64_t value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         value = BSWAP64(value);
     }
 
-    stream->Write((char*)&value, sizeof(int64_t));
+    mStream->Write((char*)&value, sizeof(int64_t));
 }
 
 void Ship::BinaryWriter::Write(uint64_t value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         value = BSWAP64(value);
     }
 
-    stream->Write((char*)&value, sizeof(uint64_t));
+    mStream->Write((char*)&value, sizeof(uint64_t));
 }
 
 void Ship::BinaryWriter::Write(float value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         float tmp;
         char* dst = (char*)&tmp;
         char* src = (char*)&value;
@@ -105,11 +105,11 @@ void Ship::BinaryWriter::Write(float value) {
         value = tmp;
     }
 
-    stream->Write((char*)&value, sizeof(float));
+    mStream->Write((char*)&value, sizeof(float));
 }
 
 void Ship::BinaryWriter::Write(double value) {
-    if (endianness != Endianness::Native) {
+    if (mEndianness != Endianness::Native) {
         double tmp;
         char* dst = (char*)&tmp;
         char* src = (char*)&value;
@@ -124,7 +124,7 @@ void Ship::BinaryWriter::Write(double value) {
         value = tmp;
     }
 
-    stream->Write((char*)&value, sizeof(double));
+    mStream->Write((char*)&value, sizeof(double));
 }
 
 void Ship::BinaryWriter::Write(const std::string& str) {
@@ -132,10 +132,10 @@ void Ship::BinaryWriter::Write(const std::string& str) {
     Write(strLen);
 
     for (char c : str) {
-        stream->WriteByte(c);
+        mStream->WriteByte(c);
     }
 }
 
 void Ship::BinaryWriter::Write(char* srcBuffer, size_t length) {
-    stream->Write(srcBuffer, length);
+    mStream->Write(srcBuffer, length);
 }

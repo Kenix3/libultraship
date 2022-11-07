@@ -20,7 +20,7 @@ jobs:
           key: ${{ runner.os }}-ccache
       - name: Run clang-format
         run: |
-          clang-format-12 -i -style=file src/**/*.cpp src/**/*.h include/*.h
+          find src include -name "*.cpp" -o -name "*.h" | sed 's| |\\ |g' | xargs clang-format-12 -i
           git diff --exit-code
       - name: Install latest SDL
         run: |

@@ -14,7 +14,7 @@ float clamp(float d, float min, float max) {
 }
 } // namespace Math
 
-std::vector<std::string> SplitText(const std::string text, char separator = ' ', bool keep_quotes = false) {
+std::vector<std::string> splitText(const std::string text, char separator = ' ', bool keepQuotes = false) {
     std::vector<std::string> args;
     char* input = strdup(text.c_str());
     const size_t length = strlen(input);
@@ -29,7 +29,7 @@ std::vector<std::string> SplitText(const std::string text, char separator = ' ',
             size_t strlen = i - from;
 
             if (strlen > 0) {
-                if (!keep_quotes && input[from] == '"' && input[i - 1] == '"') {
+                if (!keepQuotes && input[from] == '"' && input[i - 1] == '"') {
                     from++;
                     strlen -= 2;
                 }
@@ -47,7 +47,7 @@ std::vector<std::string> SplitText(const std::string text, char separator = ' ',
     if (from < length) {
         size_t strlen = length - from;
 
-        if (!keep_quotes && input[from] == L'"' && input[length - 1] == L'"') {
+        if (!keepQuotes && input[from] == L'"' && input[length - 1] == L'"') {
             from++;
             strlen -= 2;
         }

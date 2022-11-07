@@ -6,8 +6,8 @@ Matrix* MtxFactory::ReadMtx(BinaryReader* reader) {
     uint32_t version = reader->ReadUInt32();
     switch (version) {
         case 0: {
-            MatrixV0 Mtx = MatrixV0();
-            Mtx.ParseFileBinary(reader, mtx);
+            MatrixV0 mtxFac = MatrixV0();
+            mtxFac.ParseFileBinary(reader, mtx);
         } break;
         default:
             // VERSION NOT SUPPORTED

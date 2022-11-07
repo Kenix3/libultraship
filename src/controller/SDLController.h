@@ -24,10 +24,10 @@ class SDLController : public Controller {
     void CreateDefaultBinding(int32_t virtualSlot) override;
 
   private:
-    std::string ControllerName = "Unknown";
-    SDL_GameController* Cont;
-    int32_t physicalSlot;
-    bool supportsGyro;
+    std::string mControllerName = "Unknown";
+    SDL_GameController* mController;
+    int32_t mPhysicalSlot;
+    bool mSupportsGyro;
     void NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int16_t axisThreshold,
                             int32_t virtualSlot);
     bool Close();

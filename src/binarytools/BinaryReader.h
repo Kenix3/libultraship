@@ -47,7 +47,7 @@ class BinaryReader {
     std::string ReadString();
 
   protected:
-    std::shared_ptr<Stream> stream;
-    Endianness endianness = Endianness::Native;
+    std::shared_ptr<Stream> mStream;
+    Endianness mEndianness = Endianness::Native;
 };
 } // namespace Ship

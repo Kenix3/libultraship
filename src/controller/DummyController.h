@@ -7,7 +7,7 @@
 namespace Ship {
 class DummyController final : public Controller {
   public:
-    DummyController(const std::string& CUID, const std::string& KeyName, bool Connected);
+    DummyController(const std::string& guid, const std::string& keyName, bool connected);
     std::map<std::vector<std::string>, int32_t> ReadButtonPress();
     void ReadFromSource(int32_t virtualSlot) override;
     const std::string GetControllerName() override;
@@ -23,8 +23,8 @@ class DummyController final : public Controller {
     void CreateDefaultBinding(int32_t virtualSlot) override;
 
   protected:
-    std::string ButtonName;
-    bool isConnected = false;
+    std::string mButtonName;
+    bool mIsConnected = false;
     std::string GetControllerType();
     std::string GetConfSection();
     std::string GetBindingConfSection();

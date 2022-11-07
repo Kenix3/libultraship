@@ -6,9 +6,9 @@
 namespace Ship {
 
 class InputEditor {
-    int32_t CurrentPort = 0;
-    int32_t BtnReading = -1;
-    bool Opened = false;
+    int32_t mCurrentPort = 0;
+    int32_t mBtnReading = -1;
+    bool mOpened = false;
 
   public:
     void Init();

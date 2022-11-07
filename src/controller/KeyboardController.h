@@ -11,8 +11,8 @@ class KeyboardController : public Controller {
     void WriteToSource(int32_t virtualSlot, ControllerCallback* controller) override;
     const std::string GetControllerName() override;
     const std::string GetButtonName(int32_t virtualSlot, int32_t n64Button) override;
-    bool PressButton(int32_t dwScancode);
-    bool ReleaseButton(int32_t dwScancode);
+    bool PressButton(int32_t scancode);
+    bool ReleaseButton(int32_t scancode);
     bool Connected() const override;
     bool CanRumble() const override;
     bool CanGyro() const override;
@@ -24,7 +24,7 @@ class KeyboardController : public Controller {
     void CreateDefaultBinding(int32_t virtualSlot) override;
 
   protected:
-    int32_t lastScancode;
-    int32_t lastKey = -1;
+    int32_t mLastScancode;
+    int32_t mLastKey = -1;
 };
 } // namespace Ship

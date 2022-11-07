@@ -19,8 +19,8 @@ extern "C" int32_t CVar_GetS32(const char* name, int32_t defaultValue) {
     CVar* cvar = CVar_Get(name);
 
     if (cvar) {
-        if (cvar->type == CVarType::S32) {
-            return cvar->value.valueS32;
+        if (cvar->Type == CVarType::S32) {
+            return cvar->value.ValueS32;
         }
     }
 
@@ -31,8 +31,8 @@ extern "C" float CVar_GetFloat(const char* name, float defaultValue) {
     CVar* cvar = CVar_Get(name);
 
     if (cvar) {
-        if (cvar->type == CVarType::Float) {
-            return cvar->value.valueFloat;
+        if (cvar->Type == CVarType::Float) {
+            return cvar->value.ValueFloat;
         }
     }
 
@@ -43,8 +43,8 @@ extern "C" const char* CVar_GetString(const char* name, const char* defaultValue
     CVar* cvar = CVar_Get(name);
 
     if (cvar) {
-        if (cvar->type == CVarType::String) {
-            return cvar->value.valueStr;
+        if (cvar->Type == CVarType::String) {
+            return cvar->value.ValueStr;
         }
     }
 
@@ -72,8 +72,8 @@ extern "C" Color_RGBA8 CVar_GetRGBA(const char* name, Color_RGBA8 defaultValue) 
     CVar* cvar = CVar_Get(name);
 
     if (cvar != nullptr) {
-        if (cvar->type == CVarType::RGBA) {
-            return cvar->value.valueRGBA;
+        if (cvar->Type == CVarType::RGBA) {
+            return cvar->value.ValueRGBA;
         }
     }
 
@@ -86,8 +86,8 @@ extern "C" void CVar_SetRGBA(const char* name, Color_RGBA8 value) {
         cvar = std::make_unique<CVar>();
     }
 
-    cvar->type = CVarType::RGBA;
-    cvar->value.valueRGBA = value;
+    cvar->Type = CVarType::RGBA;
+    cvar->value.ValueRGBA = value;
 }
 
 extern "C" void CVar_SetS32(const char* name, int32_t value) {
@@ -95,8 +95,8 @@ extern "C" void CVar_SetS32(const char* name, int32_t value) {
     if (!cvar) {
         cvar = std::make_unique<CVar>();
     }
-    cvar->type = CVarType::S32;
-    cvar->value.valueS32 = value;
+    cvar->Type = CVarType::S32;
+    cvar->value.ValueS32 = value;
 }
 
 extern "C" void CVar_SetFloat(const char* name, float value) {
@@ -104,8 +104,8 @@ extern "C" void CVar_SetFloat(const char* name, float value) {
     if (!cvar) {
         cvar = std::make_unique<CVar>();
     }
-    cvar->type = CVarType::Float;
-    cvar->value.valueFloat = value;
+    cvar->Type = CVarType::Float;
+    cvar->value.ValueFloat = value;
 }
 
 extern "C" void CVar_SetString(const char* name, const char* value) {
@@ -113,11 +113,11 @@ extern "C" void CVar_SetString(const char* name, const char* value) {
     if (!cvar) {
         cvar = std::make_unique<CVar>();
     }
-    cvar->type = CVarType::String;
+    cvar->Type = CVarType::String;
 #ifdef _MSC_VER
-    cvar->value.valueStr = _strdup(value);
+    cvar->value.ValueStr = _strdup(value);
 #else
-    cvar->value.valueStr = strdup(value);
+    cvar->value.ValueStr = strdup(value);
 #endif
 }
 
@@ -248,15 +248,15 @@ extern "C" void CVar_Save() {
     for (const auto& cvar : cvars) {
         const std::string key = StringHelper::Sprintf("CVars.%s", cvar.first.c_str());
 
-        if (cvar.second->type == CVarType::String && cvar.second->value.valueStr != nullptr) {
-            pConf->setString(key, std::string(cvar.second->value.valueStr));
-        } else if (cvar.second->type == CVarType::S32) {
-            pConf->setInt(key, cvar.second->value.valueS32);
-        } else if (cvar.second->type == CVarType::Float) {
-            pConf->setFloat(key, cvar.second->value.valueFloat);
-        } else if (cvar.second->type == CVarType::RGBA) {
+        if (cvar.second->Type == CVarType::String && cvar.second->value.ValueStr != nullptr) {
+            pConf->setString(key, std::string(cvar.second->value.ValueStr));
+        } else if (cvar.second->Type == CVarType::S32) {
+            pConf->setInt(key, cvar.second->value.ValueS32);
+        } else if (cvar.second->Type == CVarType::Float) {
+            pConf->setFloat(key, cvar.second->value.ValueFloat);
+        } else if (cvar.second->Type == CVarType::RGBA) {
             auto keyStr = key.c_str();
-            Color_RGBA8 clr = cvar.second->value.valueRGBA;
+            Color_RGBA8 clr = cvar.second->value.ValueRGBA;
             pConf->setUInt(StringHelper::Sprintf("%s.R", keyStr), clr.r);
             pConf->setUInt(StringHelper::Sprintf("%s.G", keyStr), clr.g);
             pConf->setUInt(StringHelper::Sprintf("%s.B", keyStr), clr.b);

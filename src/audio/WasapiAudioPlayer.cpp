@@ -16,6 +16,11 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioRenderClient = __uuidof(IAudioRenderClient);
 
 namespace Ship {
+WasapiAudioPlayer::WasapiAudioPlayer()
+    : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false){
+
+      };
+
 void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
     if (FAILED(res)) {
         throw res;
@@ -24,8 +29,8 @@ void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
 
 bool WasapiAudioPlayer::SetupStream(void) {
     try {
-        ThrowIfFailed(DeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device));
-        ThrowIfFailed(device->Activate(IID_IAudioClient, CLSCTX_ALL, nullptr, IID_PPV_ARGS_Helper(&client)));
+        ThrowIfFailed(mDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &mDevice));
+        ThrowIfFailed(mDevice->Activate(IID_IAudioClient, CLSCTX_ALL, nullptr, IID_PPV_ARGS_Helper(&mClient)));
 
         WAVEFORMATEX desired;
         desired.wFormatTag = WAVE_FORMAT_PCM;
@@ -36,15 +41,15 @@ bool WasapiAudioPlayer::SetupStream(void) {
         desired.wBitsPerSample = 16;
         desired.cbSize = 0;
 
-        ThrowIfFailed(client->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                         AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
-                                         2000000, 0, &desired, nullptr));
+        ThrowIfFailed(mClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+                                          AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
+                                          2000000, 0, &desired, nullptr));
 
-        ThrowIfFailed(client->GetBufferSize(&bufferFrameCount));
-        ThrowIfFailed(client->GetService(IID_PPV_ARGS(&rclient)));
+        ThrowIfFailed(mClient->GetBufferSize(&mBufferFrameCount));
+        ThrowIfFailed(mClient->GetService(IID_PPV_ARGS(&mRenderClient)));
 
-        started = false;
-        initialized = true;
+        mStarted = false;
+        mInitialized = true;
     } catch (HRESULT res) { return false; }
 
     return true;
@@ -52,23 +57,24 @@ bool WasapiAudioPlayer::SetupStream(void) {
 
 bool WasapiAudioPlayer::Init(void) {
     try {
-        ThrowIfFailed(CoCreateInstance(CLSID_MMDeviceEnumerator, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&DeviceEnumerator)));
+        ThrowIfFailed(
+            CoCreateInstance(CLSID_MMDeviceEnumerator, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&mDeviceEnumerator)));
     } catch (HRESULT res) { return false; }
 
-    ThrowIfFailed(DeviceEnumerator->RegisterEndpointNotificationCallback(this));
+    ThrowIfFailed(mDeviceEnumerator->RegisterEndpointNotificationCallback(this));
 
     return true;
 }
 
 int WasapiAudioPlayer::Buffered(void) {
-    if (!initialized) {
+    if (!mInitialized) {
         if (!SetupStream()) {
             return 0;
         }
     }
     try {
         UINT32 padding;
-        ThrowIfFailed(client->GetCurrentPadding(&padding));
+        ThrowIfFailed(mClient->GetCurrentPadding(&padding));
         return padding;
     } catch (HRESULT res) { return 0; }
 }
@@ -77,19 +83,19 @@ int WasapiAudioPlayer::GetDesiredBuffered(void) {
     return 2480;
 }
 
-void WasapiAudioPlayer::Play(const uint8_t* Buffer, uint32_t BufferLen) {
-    if (!initialized) {
+void WasapiAudioPlayer::Play(const uint8_t* buf, uint32_t len) {
+    if (!mInitialized) {
         if (!SetupStream()) {
             return;
         }
     }
     try {
-        UINT32 frames = BufferLen / 4;
+        UINT32 frames = len / 4;
 
         UINT32 padding;
-        ThrowIfFailed(client->GetCurrentPadding(&padding));
+        ThrowIfFailed(mClient->GetCurrentPadding(&padding));
 
-        UINT32 available = bufferFrameCount - padding;
+        UINT32 available = mBufferFrameCount - padding;
         if (available < frames) {
             frames = available;
         }
@@ -98,13 +104,13 @@ void WasapiAudioPlayer::Play(const uint8_t* Buffer, uint32_t BufferLen) {
         }
 
         BYTE* data;
-        ThrowIfFailed(rclient->GetBuffer(frames, &data));
-        memcpy(data, Buffer, frames * 4);
-        ThrowIfFailed(rclient->ReleaseBuffer(frames, 0));
+        ThrowIfFailed(mRenderClient->GetBuffer(frames, &data));
+        memcpy(data, buf, frames * 4);
+        ThrowIfFailed(mRenderClient->ReleaseBuffer(frames, 0));
 
-        if (!started && padding + frames > 1500) {
-            started = true;
-            ThrowIfFailed(client->Start());
+        if (!mStarted && padding + frames > 1500) {
+            mStarted = true;
+            ThrowIfFailed(mClient->Start());
         }
     } catch (HRESULT res) {}
 }
@@ -126,7 +132,7 @@ HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnDefaultDeviceChanged(EDataFlow fl
     if (flow == eRender && role == eConsole) {
         // This callback runs on a separate thread,
         // but it's not important how fast this write takes effect.
-        initialized = false;
+        mInitialized = false;
     }
     return S_OK;
 }
@@ -136,11 +142,11 @@ HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnPropertyValueChanged(LPCWSTR pwst
 }
 
 ULONG STDMETHODCALLTYPE WasapiAudioPlayer::AddRef() {
-    return InterlockedIncrement(&refcount);
+    return InterlockedIncrement(&mRefCount);
 }
 
 ULONG STDMETHODCALLTYPE WasapiAudioPlayer::Release() {
-    ULONG rc = InterlockedDecrement(&refcount);
+    ULONG rc = InterlockedDecrement(&mRefCount);
     if (rc == 0) {
         delete this;
     }

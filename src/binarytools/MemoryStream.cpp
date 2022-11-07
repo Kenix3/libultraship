@@ -6,74 +6,74 @@
 #endif
 
 Ship::MemoryStream::MemoryStream() {
-    buffer = std::vector<char>();
-    // buffer.reserve(1024 * 16);
-    bufferSize = 0;
-    baseAddress = 0;
+    mBuffer = std::vector<char>();
+    // mBuffer.reserve(1024 * 16);
+    mBufferSize = 0;
+    mBaseAddress = 0;
 }
 
 Ship::MemoryStream::MemoryStream(char* nBuffer, size_t nBufferSize) : MemoryStream() {
-    buffer = std::vector<char>(nBuffer, nBuffer + nBufferSize);
-    bufferSize = nBufferSize;
-    baseAddress = 0;
+    mBuffer = std::vector<char>(nBuffer, nBuffer + nBufferSize);
+    mBufferSize = nBufferSize;
+    mBaseAddress = 0;
 }
 
 Ship::MemoryStream::~MemoryStream() {
 }
 
 uint64_t Ship::MemoryStream::GetLength() {
-    return buffer.size();
+    return mBuffer.size();
 }
 
 void Ship::MemoryStream::Seek(int32_t offset, SeekOffsetType seekType) {
     if (seekType == SeekOffsetType::Start) {
-        baseAddress = offset;
+        mBaseAddress = offset;
     } else if (seekType == SeekOffsetType::Current) {
-        baseAddress += offset;
+        mBaseAddress += offset;
     } else if (seekType == SeekOffsetType::End) {
-        baseAddress = bufferSize - 1 - offset;
+        mBaseAddress = mBufferSize - 1 - offset;
     }
 }
 
 std::unique_ptr<char[]> Ship::MemoryStream::Read(size_t length) {
     std::unique_ptr<char[]> result = std::make_unique<char[]>(length);
 
-    memcpy_s(result.get(), length, &buffer[baseAddress], length);
-    baseAddress += length;
+    memcpy_s(result.get(), length, &mBuffer[mBaseAddress], length);
+    mBaseAddress += length;
 
     return result;
 }
 
 void Ship::MemoryStream::Read(const char* dest, size_t length) {
-    memcpy_s((void*)dest, length, &buffer[baseAddress], length);
-    baseAddress += length;
+    memcpy_s((void*)dest, length, &mBuffer[mBaseAddress], length);
+    mBaseAddress += length;
 }
 
 int8_t Ship::MemoryStream::ReadByte() {
-    return buffer[baseAddress++];
+    return mBuffer[mBaseAddress++];
 }
 
 void Ship::MemoryStream::Write(char* srcBuffer, size_t length) {
-    if (baseAddress + length >= buffer.size()) {
-        buffer.resize(baseAddress + length);
-        bufferSize += length;
+    if (mBaseAddress + length >= mBuffer.size()) {
+        mBuffer.resize(mBaseAddress + length);
+        mBufferSize += length;
     }
 
-    memcpy_s(&buffer[baseAddress], length, srcBuffer, length);
-    baseAddress += length;
+    memcpy_s(&mBuffer[mBaseAddress], length, srcBuffer, length);
+    mBaseAddress += length;
 }
 
 void Ship::MemoryStream::WriteByte(int8_t value) {
-    if (baseAddress >= buffer.size()) {
-        buffer.resize(baseAddress + 1);
-        bufferSize = baseAddress;
+    if (mBaseAddress >= mBuffer.size()) {
+        mBuffer.resize(mBaseAddress + 1);
+        mBufferSize = mBaseAddress;
     }
 
-    buffer[baseAddress++] = value;
+    mBuffer[mBaseAddress++] = value;
 }
 
 std::vector<char> Ship::MemoryStream::ToVector() {
-    return buffer;
+    return mBuffer;
 }
 
 void Ship::MemoryStream::Flush() {

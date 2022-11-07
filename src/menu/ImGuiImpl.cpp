@@ -328,20 +328,20 @@ void LoadTexture(const std::string& name, const std::string& path) {
     const auto res = Window::GetInstance()->GetResourceManager()->LoadFile(path);
 
     const auto asset = new GameAsset{ api->new_texture() };
-    uint8_t* img_data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->buffer.get()), res->dwBufferSize,
-                                              &asset->width, &asset->height, nullptr, 4);
+    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.get()), res->BufferSize,
+                                             &asset->width, &asset->height, nullptr, 4);
 
-    if (img_data == nullptr) {
+    if (imgData == nullptr) {
         std::cout << "Found error: " << stbi_failure_reason() << std::endl;
         return;
     }
 
     api->select_texture(0, asset->textureId);
     api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(img_data, asset->width, asset->height);
+    api->upload_texture(imgData, asset->width, asset->height);
 
     DefaultAssets[name] = asset;
-    stbi_image_free(img_data);
+    stbi_image_free(imgData);
 }
 
 // MARK: - Public API

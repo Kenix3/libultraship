@@ -8,7 +8,7 @@
 #include "core/Window.h"
 #include "Resource.h"
 #include "Archive.h"
-#include "File.h"
+#include "OtrFile.h"
 
 namespace Ship {
 class Window;
@@ -18,10 +18,10 @@ class Window;
 // fits into RAM of any semi-modern PC.
 class ResourceMgr {
   public:
-    ResourceMgr(std::shared_ptr<Window> Context, const std::string& MainPath, const std::string& PatchesPath,
-                const std::unordered_set<uint32_t>& ValidHashes);
-    ResourceMgr(std::shared_ptr<Window> Context, const std::vector<std::string>& OTRFiles,
-                const std::unordered_set<uint32_t>& ValidHashes);
+    ResourceMgr(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
+                const std::unordered_set<uint32_t>& validHashes);
+    ResourceMgr(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
+                const std::unordered_set<uint32_t>& validHashes);
     ~ResourceMgr();
 
     bool IsRunning();
@@ -29,20 +29,20 @@ class ResourceMgr {
 
     std::shared_ptr<Archive> GetArchive();
     std::shared_ptr<Window> GetContext();
-    const std::string* HashToString(uint64_t Hash) const;
+    const std::string* HashToString(uint64_t hash) const;
     void InvalidateResourceCache();
     uint32_t GetGameVersion();
     void SetGameVersion(uint32_t newGameVersion);
-    std::shared_ptr<File> LoadFileAsync(const std::string& FilePath);
-    std::shared_ptr<File> LoadFile(const std::string& FilePath);
-    std::shared_ptr<Resource> GetCachedFile(const char* FilePath) const;
-    std::shared_ptr<Resource> LoadResource(const char* FilePath);
-    std::shared_ptr<Resource> LoadResource(const std::string& FilePath);
-    std::variant<std::shared_ptr<Resource>, std::shared_ptr<ResourcePromise>> LoadResourceAsync(const char* FilePath);
-    std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(const std::string& SearchMask);
-    std::shared_ptr<std::vector<std::shared_ptr<ResourcePromise>>> CacheDirectoryAsync(const std::string& SearchMask);
-    std::shared_ptr<std::vector<std::shared_ptr<Resource>>> DirtyDirectory(const std::string& SearchMask);
-    std::shared_ptr<std::vector<std::string>> ListFiles(std::string SearchMask);
+    std::shared_ptr<OtrFile> LoadFileAsync(const std::string& filePath);
+    std::shared_ptr<OtrFile> LoadFile(const std::string& filePath);
+    std::shared_ptr<Resource> GetCachedFile(const char* filePath) const;
+    std::shared_ptr<Resource> LoadResource(const char* filePath);
+    std::shared_ptr<Resource> LoadResource(const std::string& filePath);
+    std::variant<std::shared_ptr<Resource>, std::shared_ptr<ResourcePromise>> LoadResourceAsync(const char* filePath);
+    std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(const std::string& searchMask);
+    std::shared_ptr<std::vector<std::shared_ptr<ResourcePromise>>> CacheDirectoryAsync(const std::string& searchMask);
+    std::shared_ptr<std::vector<std::shared_ptr<Resource>>> DirtyDirectory(const std::string& searchMask);
+    std::shared_ptr<std::vector<std::string>> ListFiles(std::string searchMask);
 
   protected:
     void Start();
@@ -51,20 +51,20 @@ class ResourceMgr {
     void LoadResourceThread();
 
   private:
-    std::shared_ptr<Window> Context;
-    volatile bool bIsRunning;
-    std::unordered_map<std::string, std::shared_ptr<File>> FileCache;
-    std::unordered_map<std::string, std::shared_ptr<Resource>> ResourceCache;
-    std::queue<std::shared_ptr<File>> FileLoadQueue;
-    std::queue<std::shared_ptr<ResourcePromise>> ResourceLoadQueue;
-    std::shared_ptr<Archive> OTR;
-    std::shared_ptr<std::thread> FileLoadThread;
-    std::shared_ptr<std::thread> ResourceLoadThread;
-    std::mutex FileLoadMutex;
-    std::mutex ResourceLoadMutex;
-    std::condition_variable FileLoadNotifier;
-    std::condition_variable ResourceLoadNotifier;
-    uint32_t gameVersion;
-    std::vector<uint32_t> gameVersions;
+    std::shared_ptr<Window> mContext;
+    volatile bool mIsRunning;
+    std::unordered_map<std::string, std::shared_ptr<OtrFile>> mFileCache;
+    std::unordered_map<std::string, std::shared_ptr<Resource>> mResourceCache;
+    std::queue<std::shared_ptr<OtrFile>> mFileLoadQueue;
+    std::queue<std::shared_ptr<ResourcePromise>> mResourceLoadQueue;
+    std::shared_ptr<Archive> mArchive;
+    std::shared_ptr<std::thread> mFileLoadThread;
+    std::shared_ptr<std::thread> mResourceLoadThread;
+    std::mutex mFileLoadMutex;
+    std::mutex mResourceLoadMutex;
+    std::condition_variable mFileLoadNotifier;
+    std::condition_variable mResourceLoadNotifier;
+    uint32_t mGameVersion;
+    std::vector<uint32_t> mGameVersions;
 };
 } // namespace Ship

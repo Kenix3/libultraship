@@ -8,8 +8,8 @@ Material* MaterialFactory::ReadMaterial(BinaryReader* reader) {
 
     switch (version) {
         case Version::Deckard: {
-            MaterialV0 Material = MaterialV0();
-            Material.ParseFileBinary(reader, mat);
+            MaterialV0 matFac = MaterialV0();
+            matFac.ParseFileBinary(reader, mat);
         } break;
         default:
             // VERSION NOT SUPPORTED

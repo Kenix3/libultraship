@@ -8,8 +8,8 @@ SkeletonLimb* SkeletonLimbFactory::ReadSkeletonLimb(BinaryReader* reader) {
 
     switch (version) {
         case Version::Deckard: {
-            SkeletonLimbV0 Limb = SkeletonLimbV0();
-            Limb.ParseFileBinary(reader, limb);
+            SkeletonLimbV0 limbFac = SkeletonLimbV0();
+            limbFac.ParseFileBinary(reader, limb);
         } break;
         default:
             // VERSION NOT SUPPORTED

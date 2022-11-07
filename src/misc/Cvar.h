@@ -8,14 +8,14 @@
 typedef enum class CVarType { S32, Float, String, RGBA } CVarType;
 
 typedef struct CVar {
-    const char* name;
-    CVarType type;
+    const char* Name;
+    CVarType Type;
 
     union {
-        int32_t valueS32;
-        float valueFloat;
-        const char* valueStr;
-        Color_RGBA8 valueRGBA;
+        int32_t ValueS32;
+        float ValueFloat;
+        const char* ValueStr;
+        Color_RGBA8 ValueRGBA;
     } value;
 } CVar;
 

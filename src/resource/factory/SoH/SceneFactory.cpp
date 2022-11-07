@@ -8,8 +8,8 @@ Scene* SceneFactory::ReadScene(BinaryReader* reader) {
 
     switch (version) {
         case Version::Deckard: {
-            SceneV0 Scene = SceneV0();
-            Scene.ParseFileBinary(reader, scene);
+            SceneV0 sceneFac = SceneV0();
+            sceneFac.ParseFileBinary(reader, scene);
         } break;
         default:
             // VERSION NOT SUPPORTED
