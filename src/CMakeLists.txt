@@ -82,6 +82,10 @@ target_sources(libultraship PRIVATE ${Source_Files__Controller} ${Source_Files__
 set(Source_Files__Core
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/libultraship.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/libultraship.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/resourcebridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/resourcebridge.cpp
 )
 
 source_group("Core" FILES ${Source_Files__Core})
