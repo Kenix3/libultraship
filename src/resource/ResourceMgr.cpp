@@ -180,6 +180,14 @@ void ResourceMgr::SetGameVersion(uint32_t newGameVersion) {
     mGameVersion = newGameVersion;
 }
 
+std::vector<uint32_t> ResourceMgr::GetGameVersions() {
+    return mArchive->GetGameVersions();
+}
+
+void ResourceMgr::PushGameVersion(uint32_t newGameVersion) {
+    mArchive->PushGameVersion(newGameVersion);
+}
+
 std::shared_ptr<OtrFile> ResourceMgr::LoadFileAsync(const std::string& filePath) {
     const std::lock_guard<std::mutex> lock(mFileLoadMutex);
     // File NOT already loaded...?

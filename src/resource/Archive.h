@@ -39,6 +39,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
     bool HasFile(const std::string& searchMask) const;
     const std::string* HashToString(uint64_t hash) const;
     std::vector<uint32_t> GetGameVersions();
+    void PushGameVersion(uint32_t newGameVersion);
 
   protected:
     bool Load(bool enableWriting, bool generateCrcMap);
@@ -60,7 +61,6 @@ class Archive : public std::enable_shared_from_this<Archive> {
     bool LoadPatchMPQ(const std::string& path, bool validateVersion = false);
     void GenerateCrcMap();
     bool ProcessOtrVersion(HANDLE mpqHandle = nullptr);
-    void PushGameVersion(uint32_t newGameVersion);
     std::shared_ptr<OtrFile> LoadFileFromHandle(const std::string& filePath, bool includeParent = true,
                                                 std::shared_ptr<OtrFile> fileToLoad = nullptr,
                                                 HANDLE mpqHandle = nullptr);
