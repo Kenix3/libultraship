@@ -107,7 +107,7 @@ set_property(TARGET Mercury PROPERTY CXX_STANDARD 20)
 target_sources(Mercury PRIVATE ${MERCURY_DIR}/Mercury.cpp)
 target_include_directories(Mercury PUBLIC ${MERCURY_DIR} ${ZAPDUTILS_DIR})
 
-target_link_libraries(Mercury PUBLIC ZAPDUTILS nlohmann_json::nlohmann_json)
+target_link_libraries(Mercury PUBLIC ZAPDUtils nlohmann_json::nlohmann_json)
 
 #=================== STB ===================
 
