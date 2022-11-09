@@ -190,6 +190,8 @@ set(Source_Files__Resource
 source_group("Resource" FILES ${Source_Files__Resource})
 
 set(Source_Files__Resource__Factory
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AudioFactory.cpp
@@ -242,6 +244,8 @@ set(Source_Files__Resource__Types
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Cutscene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Material.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Material.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.cpp
