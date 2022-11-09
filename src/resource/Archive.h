@@ -11,7 +11,7 @@
 #include <vector>
 #include <unordered_set>
 #include "Resource.h"
-#include "StormLib.h"
+#include <StormLib.h>
 
 namespace Ship {
 class OtrFile;

@@ -334,7 +334,8 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ImGui spdlog ZAPDUtils Mercury tinyxml2 StrHash64
+    PRIVATE ZAPDUtils tinyxml2 StrHash64
+    PUBLIC spdlog ImGui Mercury
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
