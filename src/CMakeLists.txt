@@ -356,7 +356,7 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
     find_package(PulseAudio)
-    target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARIES})
+    target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARY})
 endif()
 
 #=================== Compile Options & Defs ===================
