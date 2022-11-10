@@ -51,8 +51,8 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
 
     target_sources(ImGui
         PRIVATE
-        ${IMGUI_DIR}/backends/imgui_impl_wiiu.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_gx2.cpp
+        ${IMGUI_DIR}/backends/wiiu/imgui_impl_wiiu.cpp
+        ${IMGUI_DIR}/backends/wiiu/imgui_impl_gx2.cpp
     )
 endif()
 
@@ -129,5 +129,5 @@ target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
 
 #=================== spdlog ===================
 
-set(SPDLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
-add_subdirectory(${SPDLOG_DIR})
+# set(SPDLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
+# add_subdirectory(${SPDLOG_DIR})

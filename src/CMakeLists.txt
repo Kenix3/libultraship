@@ -329,7 +329,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
             ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/U64/PR
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
@@ -342,7 +342,7 @@ endif()
 
 target_link_libraries(libultraship
     PRIVATE ZAPDUtils tinyxml2 StrHash64
-    PUBLIC spdlog ImGui Mercury stb
+    PUBLIC ImGui Mercury stb
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
@@ -365,13 +365,17 @@ endif()
 #=================== Compile Options & Defs ===================
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_compile_definitions(libultraship PRIVATE ENABLE_OPENGL)
+    target_compile_definitions(libultraship PRIVATE
+        ENABLE_OPENGL
+        SPDLOG_NO_THREAD_ID
+        SPDLOG_NO_TLS
+    )
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(libultraship PRIVATE
         ENABLE_DX11
-        "UNICODE;"
-        "_UNICODE"
+        UNICODE
+        _UNICODE
     )
 endif()
