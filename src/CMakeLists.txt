@@ -365,8 +365,9 @@ endif()
 #=================== Compile Options & Defs ===================
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    target_compile_definitions(libultraship PRIVATE ENABLE_OPENGL)
+else ()
     target_compile_definitions(libultraship PRIVATE
-        ENABLE_OPENGL
         SPDLOG_NO_THREAD_ID
         SPDLOG_NO_TLS
         STBI_NO_THREAD_LOCALS
