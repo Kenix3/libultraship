@@ -1,6 +1,6 @@
 #ifdef __WIIU__
 #include "WiiUGamepad.h"
-#include "ImGuiImpl.h"
+#include "menu/ImGuiImpl.h"
 
 #include "WiiUImpl.h"
 
