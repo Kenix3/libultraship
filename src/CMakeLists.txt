@@ -369,6 +369,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         ENABLE_OPENGL
         SPDLOG_NO_THREAD_ID
         SPDLOG_NO_TLS
+        STBI_NO_THREAD_LOCALS
     )
 endif()
 
