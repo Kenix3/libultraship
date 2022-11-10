@@ -342,7 +342,7 @@ endif()
 
 target_link_libraries(libultraship
     PRIVATE ZAPDUtils tinyxml2 StrHash64
-    PUBLIC ImGui Mercury stb
+    PUBLIC ImGui Mercury stb storm
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")

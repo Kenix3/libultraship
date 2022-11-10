@@ -57,7 +57,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
 endif()
 
 target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(ImGui PUBLIC storm)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
