@@ -295,6 +295,8 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND Source_Files__Graphic
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_dxgi.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_dxgi.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d11.h
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d11.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d12.h
@@ -326,6 +328,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
+            ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/U64/PR
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR}
 )
 
