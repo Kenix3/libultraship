@@ -8,7 +8,7 @@ namespace Ship {
 WiiUGamepad::WiiUGamepad() : Controller(), connected(true), rumblePatternStrength(1.0f) {
     memset(rumblePattern, 0xff, sizeof(rumblePattern));
 
-    GUID = "WiiUGamepad";
+    mGuid = "WiiUGamepad";
 }
 
 bool WiiUGamepad::Open() {
