@@ -2,6 +2,10 @@ add_library(libultraship STATIC)
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
+endif()
+
 #=================== Audio ===================
 
 set(Source_Files__Audio
@@ -375,7 +379,131 @@ else ()
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_compile_definitions(libultraship PRIVATE
-        ENABLE_DX11
-    )
+	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+		target_compile_definitions(${PROJECT_NAME} PRIVATE
+			"$<$<CONFIG:Debug>:"
+				"_DEBUG"
+			">"
+			"$<$<CONFIG:Release>:"
+				"NDEBUG"
+			">"
+			"SPDLOG_ACTIVE_LEVEL=0;"
+			"WIN32;"
+			"_CONSOLE;"
+			"_CRT_SECURE_NO_WARNINGS;"
+			"ENABLE_DX11;"
+			"ENABLE_OPENGL;"
+		)
+	elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
+		target_compile_definitions(${PROJECT_NAME} PRIVATE
+			"$<$<CONFIG:Debug>:"
+				"_DEBUG"
+			">"
+			"$<$<CONFIG:Release>:"
+				"NDEBUG"
+			">"
+			"SPDLOG_ACTIVE_LEVEL=0;"
+			"WIN32;"
+			"_CONSOLE;"
+			"_CRT_SECURE_NO_WARNINGS;"
+			"ENABLE_OPENGL;"
+			"ENABLE_DX11;"
+		)
+	endif()
+
+elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+	target_compile_definitions(${PROJECT_NAME} PRIVATE
+            "$<$<CONFIG:Debug>:"
+                "_DEBUG"
+            ">"
+            "$<$<CONFIG:Release>:"
+                "NDEBUG"
+            ">"
+            "SPDLOG_ACTIVE_LEVEL=3;"
+            "SPDLOG_NO_THREAD_ID;"
+            "SPDLOG_NO_TLS;"
+            "STBI_NO_THREAD_LOCALS;"
+	)
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang|AppleClang")
+	target_compile_definitions(${PROJECT_NAME} PRIVATE
+		"$<$<CONFIG:Debug>:"
+				"_DEBUG"
+			">"
+			"$<$<CONFIG:Release>:"
+				"NDEBUG"
+			">"
+			"ENABLE_OPENGL;"
+            "SPDLOG_ACTIVE_LEVEL=0;"
+	)
+endif()
+
+if(MSVC)
+    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            $<$<CONFIG:Debug>:
+                /Od;
+                /Oi-
+            >
+            $<$<CONFIG:Release>:
+                /std:c++latest;
+                /Oi;
+                /Gy
+            >
+            /permissive-;
+            /MP;
+            /sdl;
+            /W3;
+            ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
+            ${DEFAULT_CXX_EXCEPTION_HANDLING}
+        )
+    elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            $<$<CONFIG:Debug>:
+                /Od;
+                /Oi-;
+                /W2
+            >
+            $<$<CONFIG:Release>:
+                /Oi;
+                /Gy;
+                /W3
+            >
+            /permissive-;
+            /MP;
+            /sdl;
+            ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
+            ${DEFAULT_CXX_EXCEPTION_HANDLING}
+        )
+    endif()
+    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+        target_link_options(${PROJECT_NAME} PRIVATE
+            $<$<CONFIG:Release>:
+                /OPT:REF;
+                /OPT:ICF
+            >
+            /SUBSYSTEM:CONSOLE
+        )
+    elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
+        target_link_options(${PROJECT_NAME} PRIVATE
+            $<$<CONFIG:Release>:
+                /OPT:REF;
+                /OPT:ICF
+            >
+            /SUBSYSTEM:CONSOLE
+        )
+    endif()
+endif()
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_compile_options(${PROJECT_NAME} PRIVATE
+		-Wall
+		-Wextra
+		-Wno-error
+		-Wno-unused-variable
+		-Wno-unused-parameter
+		-Wno-unused-function
+		-Wno-parentheses
+		-Wno-narrowing
+		-Wno-missing-field-initializers
+	)
 endif()

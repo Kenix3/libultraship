@@ -105,7 +105,7 @@ void ResourceMgr::LoadFileThread() {
             mFileCache[toLoad->Path] = toLoad->IsLoaded && !toLoad->HasLoadError ? toLoad : nullptr;
         }
 
-        SPDLOG_TRACE("Loaded File {} on ResourceMgr thread", ToLoad->path);
+        SPDLOG_TRACE("Loaded File {} on ResourceMgr thread", toLoad->Path);
 
         toLoad->FileLoadNotifier.notify_all();
     }
@@ -151,7 +151,7 @@ void ResourceMgr::LoadResourceThread() {
                     toLoad->Res = resource;
                     mResourceCache[resource->File->Path] = resource;
 
-                    SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", ToLoad->file->path);
+                    SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", toLoad->File->Path);
 
                     resource->File = nullptr;
                 } else {
@@ -193,7 +193,7 @@ std::shared_ptr<OtrFile> ResourceMgr::LoadFileAsync(const std::string& filePath)
     // File NOT already loaded...?
     auto fileCacheFind = mFileCache.find(filePath);
     if (fileCacheFind == mFileCache.end()) {
-        SPDLOG_TRACE("Cache miss on File load: {}", FilePath.c_str());
+        SPDLOG_TRACE("Cache miss on File load: {}", filePath.c_str());
         std::shared_ptr<OtrFile> toLoad = std::make_shared<OtrFile>();
         toLoad->Path = filePath;
 
@@ -257,7 +257,7 @@ ResourceMgr::LoadResourceAsync(const char* filePath) {
     auto resCacheFind = mResourceCache.find(filePath);
     if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty /* || !FileData->IsLoaded*/) {
         if (resCacheFind == mResourceCache.end()) {
-            SPDLOG_TRACE("Cache miss on Resource load: {}", FilePath);
+            SPDLOG_TRACE("Cache miss on Resource load: {}", filePath);
         }
 
         std::shared_ptr<ResourcePromise> promise = std::make_shared<ResourcePromise>();
