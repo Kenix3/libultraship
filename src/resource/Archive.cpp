@@ -363,19 +363,12 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
     bool baseLoaded = false;
     int i = 0;
     while (!baseLoaded && i < mOtrFiles.size()) {
-#ifdef _WIN32
-        std::wstring widefullPath = std::filesystem::absolute(mOtrFiles[i]).wstring();
-#endif
 #if defined(__SWITCH__)
         std::string fullPath = mOtrFiles[i];
 #else
         std::string fullPath = std::filesystem::absolute(mOtrFiles[i]).string();
 #endif
-#ifdef _WIN32
-        if (SFileOpenArchive(widefullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
-#else
         if (SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
-#endif
             SPDLOG_INFO("Opened mpq file {}.", fullPath.c_str());
             mMainMpq = mpqHandle;
             if (!ProcessOtrVersion()) {
@@ -399,9 +392,6 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         return false;
     }
     for (int j = i; j < mOtrFiles.size(); j++) {
-#ifdef _WIN32
-        std::wstring widefullPath = std::filesystem::absolute(mOtrFiles[j]).wstring();
-#endif
 #if defined(__SWITCH__)
         std::string fullPath = mOtrFiles[j];
 #else
@@ -428,14 +418,7 @@ bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
     if (mMpqHandles.contains(fullPath)) {
         return true;
     }
-
-    std::wstring wideFullPath = std::filesystem::absolute(path).wstring();
-
-#ifdef _WIN32
-    if (!SFileOpenArchive(wideFullPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
-#else
     if (!SFileOpenArchive(fullPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
-#endif
         SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path.c_str(),
                      mMainPath.c_str());
         return false;
@@ -448,11 +431,7 @@ bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
             }
         }
     }
-#ifdef _WIN32
-    if (!SFileOpenPatchArchive(mMainMpq, wideFullPath.c_str(), "", 0)) {
-#else
     if (!SFileOpenPatchArchive(mMainMpq, fullPath.c_str(), "", 0)) {
-#endif
         SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path.c_str(),
                      mMainPath.c_str());
         return false;
