@@ -17,7 +17,9 @@ target_include_directories(DrLibs INTERFACE ${DRLIBS_DIR})
 
 set(STORMLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StormLib)
 add_subdirectory(${STORMLIB_DIR})
-target_compile_definitions(storm PRIVATE -D_POSIX_C_SOURCE=200809L)
+if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+    target_compile_definitions(storm PRIVATE -D_POSIX_C_SOURCE=200809L)
+endif()
 
 #=================== ImGui ===================
 
