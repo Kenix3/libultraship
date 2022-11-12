@@ -118,7 +118,6 @@ source_group("Log\\SPDLog" FILES ${Source_Files__Log__SPDLog})
 
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
-
 #=================== Menu ===================
 
 set(Source_Files__Menu
@@ -279,7 +278,6 @@ source_group("Resource\\Types" FILES ${Source_Files__Resource__Types})
 target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Factory} ${Source_Files__Resource__Types})
 
 #=================== Graphic ===================
-# TODO: Make this a lib but currently it uses files from src
 
 set(Source_Files__Graphic
     ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_cc.h
@@ -327,13 +325,23 @@ endif()
 source_group("Graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
+#=================== STB ===================
+
+set(Source_Files__Lib__stb
+    "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image_write.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_impl.c"
+)
+source_group("Extern\\stb" FILES ${Source_Files__Lib__stb})
+target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
+
 
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
             ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/U64/PR
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
@@ -346,7 +354,7 @@ endif()
 
 target_link_libraries(libultraship
     PRIVATE ZAPDUtils tinyxml2 StrHash64
-    PUBLIC ImGui Mercury stb storm
+    PUBLIC ImGui Mercury storm
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
@@ -386,7 +394,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     )
 else ()
     target_compile_definitions(libultraship PRIVATE
-        $<$<CONFIG:Debug:_DEBUG>
+        $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         SPDLOG_NO_THREAD_ID
         SPDLOG_NO_TLS
