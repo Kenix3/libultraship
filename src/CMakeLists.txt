@@ -368,134 +368,61 @@ endif()
 
 #=================== Compile Options & Defs ===================
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_compile_definitions(libultraship PRIVATE ENABLE_OPENGL)
-else ()
-    target_compile_definitions(libultraship PRIVATE
-        SPDLOG_NO_THREAD_ID
-        SPDLOG_NO_TLS
-        STBI_NO_THREAD_LOCALS
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        WIN32
+        _CONSOLE
+        _CRT_SECURE_NO_WARNINGS
+        ENABLE_DX11
     )
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-		target_compile_definitions(${PROJECT_NAME} PRIVATE
-			"$<$<CONFIG:Debug>:"
-				"_DEBUG"
-			">"
-			"$<$<CONFIG:Release>:"
-				"NDEBUG"
-			">"
-			"SPDLOG_ACTIVE_LEVEL=0;"
-			"WIN32;"
-			"_CONSOLE;"
-			"_CRT_SECURE_NO_WARNINGS;"
-			"ENABLE_DX11;"
-			"ENABLE_OPENGL;"
-		)
-	elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
-		target_compile_definitions(${PROJECT_NAME} PRIVATE
-			"$<$<CONFIG:Debug>:"
-				"_DEBUG"
-			">"
-			"$<$<CONFIG:Release>:"
-				"NDEBUG"
-			">"
-			"SPDLOG_ACTIVE_LEVEL=0;"
-			"WIN32;"
-			"_CONSOLE;"
-			"_CRT_SECURE_NO_WARNINGS;"
-			"ENABLE_OPENGL;"
-			"ENABLE_DX11;"
-		)
-	endif()
-
-elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-	target_compile_definitions(${PROJECT_NAME} PRIVATE
-            "$<$<CONFIG:Debug>:"
-                "_DEBUG"
-            ">"
-            "$<$<CONFIG:Release>:"
-                "NDEBUG"
-            ">"
-            "SPDLOG_ACTIVE_LEVEL=3;"
-            "SPDLOG_NO_THREAD_ID;"
-            "SPDLOG_NO_TLS;"
-            "STBI_NO_THREAD_LOCALS;"
-	)
-elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang|AppleClang")
-	target_compile_definitions(${PROJECT_NAME} PRIVATE
-		"$<$<CONFIG:Debug>:"
-				"_DEBUG"
-			">"
-			"$<$<CONFIG:Release>:"
-				"NDEBUG"
-			">"
-			"ENABLE_OPENGL;"
-            "SPDLOG_ACTIVE_LEVEL=0;"
-	)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    target_compile_definitions(libultraship PRIVATE
+        ENABLE_OPENGL
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        SPDLOG_ACTIVE_LEVEL=0
+    )
+else ()
+    target_compile_definitions(libultraship PRIVATE
+        $<$<CONFIG:Debug:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        SPDLOG_NO_THREAD_ID
+        SPDLOG_NO_TLS
+        STBI_NO_THREAD_LOCALS
+        SPDLOG_ACTIVE_LEVEL=3
+    )
 endif()
 
 if(MSVC)
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Debug>:
-                /Od;
-                /Oi-
-            >
-            $<$<CONFIG:Release>:
-                /std:c++latest;
-                /Oi;
-                /Gy
-            >
-            /permissive-;
-            /MP;
-            /sdl;
-            /W3;
-            ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
-            ${DEFAULT_CXX_EXCEPTION_HANDLING}
-        )
-    elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Debug>:
-                /Od;
-                /Oi-;
-                /W2
-            >
-            $<$<CONFIG:Release>:
-                /Oi;
-                /Gy;
-                /W3
-            >
-            /permissive-;
-            /MP;
-            /sdl;
-            ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
-            ${DEFAULT_CXX_EXCEPTION_HANDLING}
-        )
-    endif()
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        target_link_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Release>:
-                /OPT:REF;
-                /OPT:ICF
-            >
-            /SUBSYSTEM:CONSOLE
-        )
-    elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
-        target_link_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Release>:
-                /OPT:REF;
-                /OPT:ICF
-            >
-            /SUBSYSTEM:CONSOLE
-        )
-    endif()
+    target_compile_options(libultraship PRIVATE
+        $<$<CONFIG:Debug>:
+            /Od;
+            /Oi-
+        >
+        $<$<CONFIG:Release>:
+            /Oi;
+            /Gy
+        >
+        /permissive-;
+        /MP;
+        /sdl;
+        /W3;
+        ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
+        ${DEFAULT_CXX_EXCEPTION_HANDLING};
+    )
+    target_link_options(libultraship PRIVATE
+        $<$<CONFIG:Release>:
+            /OPT:REF;
+            /OPT:ICF
+        >
+        /SUBSYSTEM:CONSOLE
+    )
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(${PROJECT_NAME} PRIVATE
+	target_compile_options(libultraship PRIVATE
 		-Wall
 		-Wextra
 		-Wno-error
