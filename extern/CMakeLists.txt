@@ -17,6 +17,7 @@ target_include_directories(DrLibs INTERFACE ${DRLIBS_DIR})
 
 set(STORMLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StormLib)
 add_subdirectory(${STORMLIB_DIR})
+target_compile_definitions(storm PRIVATE -D_POSIX_C_SOURCE=200809L)
 
 #=================== ImGui ===================
 
@@ -32,6 +33,10 @@ target_sources(ImGui
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/imgui.cpp
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+    target_include_directories(ImGui PRIVATE ${DEVKITPRO}/portlibs/switch/include/)
+endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_sources(ImGui

@@ -3,7 +3,7 @@
 #include <switch.h>
 #include <SDL2/SDL.h>
 #include "SwitchPerformanceProfiles.h"
-#include "Cvar.h"
+#include "misc/Cvar.h"
 #include "misc/Hooks.h"
 
 extern "C" s32 CVar_GetS32(const char* name, s32 defaultValue);

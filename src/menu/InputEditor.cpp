@@ -126,7 +126,7 @@ void InputEditor::DrawControllerSchema() {
     DrawButton("START", BTN_START, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    SohImGui::EndGroupPanel(IsKeyboard ? 7.0f : 56.0f);
+    SohImGui::EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
 #else
     SohImGui::EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
 #endif
@@ -138,7 +138,7 @@ void InputEditor::DrawControllerSchema() {
     DrawButton("Right", BTN_DRIGHT, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    SohImGui::EndGroupPanel(IsKeyboard ? 53.0f : 122.0f);
+    SohImGui::EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
 #else
     SohImGui::EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
 #endif
@@ -180,7 +180,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::Dummy(ImVec2(0, 6));
     }
 #ifdef __SWITCH__
-    SohImGui::EndGroupPanel(IsKeyboard ? 52.0f : 52.0f);
+    SohImGui::EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
 #else
     SohImGui::EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
 #endif

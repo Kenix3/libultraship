@@ -11,7 +11,7 @@
 #include "binarytools/MemoryStream.h"
 
 #ifdef __SWITCH__
-#include "SwitchImpl.h"
+#include "port/switch/SwitchImpl.h"
 #endif
 
 namespace Ship {
@@ -411,7 +411,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
 bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
     HANDLE patchHandle = NULL;
 #if defined(__SWITCH__)
-    std::string fullPath = Path;
+    std::string fullPath = path;
 #else
     std::string fullPath = std::filesystem::absolute(path).string();
 #endif
