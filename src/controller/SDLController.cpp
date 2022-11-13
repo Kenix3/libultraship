@@ -286,8 +286,8 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                 }
 
                 if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", leftStickDeadzone,
-                                 axisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}",
+                                leftStickDeadzone, axisDeadzone);
                 }
 
                 leftStickDeadzone = axisDeadzone;
@@ -343,8 +343,8 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                 }
 
                 if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", rightStickDeadzone,
-                                 axisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}",
+                                 rightStickDeadzone, axisDeadzone);
                 }
 
                 rightStickDeadzone = axisDeadzone;
