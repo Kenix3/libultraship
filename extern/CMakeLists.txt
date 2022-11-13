@@ -115,15 +115,6 @@ target_include_directories(Mercury PUBLIC ${MERCURY_DIR} ${ZAPDUTILS_DIR})
 
 target_link_libraries(Mercury PUBLIC ZAPDUtils nlohmann_json::nlohmann_json)
 
-#=================== STB ===================
-
-# set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb)
-# add_library(stb STATIC)
-
-# target_sources(stb PRIVATE ${STB_DIR}/stb_impl.c)
-
-# target_include_directories(stb PUBLIC ${STB_DIR})
-
 #=================== StrHash64 ===================
 
 set(STRHASH64_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StrHash64)
@@ -132,8 +123,3 @@ add_library(StrHash64 STATIC)
 target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
 
 target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
-
-#=================== spdlog ===================
-
-# set(SPDLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
-# add_subdirectory(${SPDLOG_DIR})
