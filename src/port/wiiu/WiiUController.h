@@ -4,7 +4,7 @@
 
 // since clang-tidy doesn't build Wii U, this file is not found
 // this error is benign, so we're supressing it
-//NOLINTNEXTLINE
+// NOLINTNEXTLINE
 #include <padscore/wpad.h>
 
 namespace Ship {
