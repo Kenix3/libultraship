@@ -35,9 +35,9 @@
 #ifdef __APPLE__
 #include "misc/OSXFolderManager.h"
 #elif defined(__SWITCH__)
-#include "SwitchImpl.h"
+#include "port/switch/SwitchImpl.h"
 #elif defined(__WIIU__)
-#include "WiiUImpl.h"
+#include "port/wiiu/WiiUImpl.h"
 #endif
 
 #define LOAD_TEX(texPath) \

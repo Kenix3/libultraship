@@ -42,7 +42,7 @@
 #endif
 
 #ifdef __SWITCH__
-#include "SwitchImpl.h"
+#include "port/switch/SwitchImpl.h"
 #endif
 
 #ifdef ENABLE_OPENGL

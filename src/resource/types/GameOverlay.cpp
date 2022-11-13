@@ -1,8 +1,8 @@
 #include "resource/types/GameOverlay.h"
 
 #include "misc/Cvar.h"
-#include "File.h"
-#include "Archive.h"
+#include "resource/OtrFile.h"
+#include "resource/Archive.h"
 #include "resource/ResourceMgr.h"
 #include "menu/ImGuiImpl.h"
 #include <ImGui/imgui_internal.h>
@@ -42,12 +42,12 @@ bool GameOverlay::OverlayCommand(std::shared_ptr<Console> Console, const std::ve
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
     std::shared_ptr<Archive> base = Window::GetInstance()->GetResourceManager()->GetArchive();
-    std::shared_ptr<File> font = std::make_shared<File>();
+    std::shared_ptr<OtrFile> font = std::make_shared<OtrFile>();
     base->LoadFile(path, false, font);
-    if (font->bIsLoaded) {
-        char* font_data = new char[font->dwBufferSize];
-        memcpy(font_data, font->buffer.get(), font->dwBufferSize);
-        Fonts[name] = io.Fonts->AddFontFromMemoryTTF(font_data, font->dwBufferSize, fontSize);
+    if (font->IsLoaded) {
+        char* fontData = new char[font->BufferSize];
+        memcpy(fontData, font->Buffer.get(), font->BufferSize);
+        Fonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->BufferSize, fontSize);
     }
 }
 
@@ -194,18 +194,18 @@ void GameOverlay::Draw() {
             const CVar* var = CVar_Get(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-            switch (var->type) {
+            switch (var->Type) {
                 case CVarType::Float:
-                    this->TextDraw(30, textY, true, color, "%s %.2f", text, var->value.valueFloat);
+                    this->TextDraw(30, textY, true, color, "%s %.2f", text, var->value.ValueFloat);
                     break;
                 case CVarType::S32:
-                    this->TextDraw(30, textY, true, color, "%s %d", text, var->value.valueS32);
+                    this->TextDraw(30, textY, true, color, "%s %d", text, var->value.ValueS32);
                     break;
                 case CVarType::String:
-                    this->TextDraw(30, textY, true, color, "%s %s", text, var->value.valueStr);
+                    this->TextDraw(30, textY, true, color, "%s %s", text, var->value.ValueStr);
                     break;
                 case CVarType::RGBA:
-                    this->TextDraw(30, textY, true, color, "#%08X", text, var->value.valueRGBA);
+                    this->TextDraw(30, textY, true, color, "#%08X", text, var->value.ValueRGBA);
                     break;
             }
 

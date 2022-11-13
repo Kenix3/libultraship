@@ -17,6 +17,9 @@ target_include_directories(DrLibs INTERFACE ${DRLIBS_DIR})
 
 set(STORMLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StormLib)
 add_subdirectory(${STORMLIB_DIR})
+if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+    target_compile_definitions(storm PRIVATE -D_POSIX_C_SOURCE=200809L)
+endif()
 
 #=================== ImGui ===================
 
@@ -32,6 +35,10 @@ target_sources(ImGui
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/imgui.cpp
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+    target_include_directories(ImGui PRIVATE ${DEVKITPRO}/portlibs/switch/include/)
+endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_sources(ImGui
@@ -51,13 +58,12 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
 
     target_sources(ImGui
         PRIVATE
-        ${IMGUI_DIR}/backends/imgui_impl_wiiu.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_gx2.cpp
+        ${IMGUI_DIR}/backends/wiiu/imgui_impl_wiiu.cpp
+        ${IMGUI_DIR}/backends/wiiu/imgui_impl_gx2.cpp
     )
 endif()
 
 target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(ImGui PUBLIC storm)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
@@ -109,15 +115,6 @@ target_include_directories(Mercury PUBLIC ${MERCURY_DIR} ${ZAPDUTILS_DIR})
 
 target_link_libraries(Mercury PUBLIC ZAPDUtils nlohmann_json::nlohmann_json)
 
-#=================== STB ===================
-
-set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb)
-add_library(stb STATIC)
-
-target_sources(stb PRIVATE ${STB_DIR}/stb_impl.c)
-
-target_include_directories(stb PUBLIC ${STB_DIR})
-
 #=================== StrHash64 ===================
 
 set(STRHASH64_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StrHash64)
@@ -126,8 +123,3 @@ add_library(StrHash64 STATIC)
 target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
 
 target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
-
-#=================== spdlog ===================
-
-set(SPDLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
-add_subdirectory(${SPDLOG_DIR})
