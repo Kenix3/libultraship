@@ -45,9 +45,9 @@ void GameOverlay::LoadFont(const std::string& name, const std::string& path, flo
     std::shared_ptr<OtrFile> font = std::make_shared<OtrFile>();
     base->LoadFile(path, false, font);
     if (font->IsLoaded) {
-        char* font_data = new char[font->BufferSize];
-        memcpy(font_data, font->Buffer.get(), font->BufferSize);
-        Fonts[name] = io.Fonts->AddFontFromMemoryTTF(font_data, font->BufferSize, fontSize);
+        char* fontData = new char[font->BufferSize];
+        memcpy(fontData, font->Buffer.get(), font->BufferSize);
+        Fonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->BufferSize, fontSize);
     }
 }
 
