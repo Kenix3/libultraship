@@ -352,7 +352,7 @@ void Init(WindowImpl window_impl) {
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
     io = &ImGui::GetIO();
-    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
     io->Fonts->AddFontDefault();
     statsWindowOpen = CVar_GetS32("gStatsEnabled", 0);
     CVar_RegisterS32("gRandomizeRupeeNames", 1);
