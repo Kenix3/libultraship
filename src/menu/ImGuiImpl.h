@@ -66,6 +66,8 @@ typedef struct {
     WindowDrawFunc drawFunc;
 } CustomWindow;
 
+bool supportsViewports();
+
 void Init(WindowImpl window_impl);
 void Update(EventImpl event);
 
