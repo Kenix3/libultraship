@@ -207,8 +207,9 @@ void CVar_LoadLegacy() {
 
 void CVar_LoadFromPath(std::string path,
                        nlohmann::detail::iteration_proxy<nlohmann::detail::iter_impl<nlohmann::json>> items) {
-    if (!path.empty())
+    if (!path.empty()) {
         path += ".";
+    }
 
     for (const auto& item : items) {
         std::string itemPath = path + item.key();
