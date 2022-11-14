@@ -145,6 +145,12 @@ extern "C" void CVar_RegisterString(const char* name, const char* defaultValue) 
     }
 }
 
+extern "C" void CVar_Clear(const char* name) {
+    std::shared_ptr<Mercury> pConf = Ship::Window::GetInstance()->GetConfig();
+    cvars.erase(name);
+    pConf->erase(StringHelper::Sprintf("CVars.%s", name));
+}
+
 template <typename Numeric> bool is_number(const std::string& s) {
     Numeric n;
     return ((std::istringstream(s) >> n >> std::ws).eof());
