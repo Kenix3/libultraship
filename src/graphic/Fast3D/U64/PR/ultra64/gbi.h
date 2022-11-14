@@ -2627,13 +2627,16 @@ typedef union {
         _g->words.w1 = 0;                         \
     }
 
-#define gsSPGrayscale(pkt, state)                      \
+#define gSPGrayscale(pkt, state)                       \
     {                                                  \
         Gfx* _g = (Gfx*)(pkt);                         \
                                                        \
         _g->words.w0 = _SHIFTL(G_SETGRAYSCALE, 24, 8); \
         _g->words.w1 = state;                          \
     }
+
+#define gsSPGrayscale(state) \
+    { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
 #ifdef F3DEX_GBI_2
 /*
@@ -2897,7 +2900,8 @@ typedef union {
 #define sDPRGBColor(cmd, r, g, b, a) \
     gsDPSetColor(cmd, (_SHIFTL(r, 24, 8) | _SHIFTL(g, 16, 8) | _SHIFTL(b, 8, 8) | _SHIFTL(a, 0, 8)))
 
-#define gsDPSetGrayscaleColor(pkt, r, g, b, lerp) DPRGBColor(pkt, G_SETINTENSITY, r, g, b, lerp)
+#define gDPSetGrayscaleColor(pkt, r, g, b, lerp) DPRGBColor(pkt, G_SETINTENSITY, r, g, b, lerp)
+#define gsDPSetGrayscaleColor(r, g, b, a) sDPRGBColor(G_SETINTENSITY, r, g, b, a)
 #define gDPSetEnvColor(pkt, r, g, b, a) DPRGBColor(pkt, G_SETENVCOLOR, r, g, b, a)
 #define gsDPSetEnvColor(r, g, b, a) sDPRGBColor(G_SETENVCOLOR, r, g, b, a)
 #define gDPSetBlendColor(pkt, r, g, b, a) DPRGBColor(pkt, G_SETBLENDCOLOR, r, g, b, a)
