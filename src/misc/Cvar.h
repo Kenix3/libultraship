@@ -41,6 +41,8 @@ void CVar_RegisterFloat(const char* name, float defaultValue);
 void CVar_RegisterString(const char* name, const char* defaultValue);
 void CVar_RegisterRGBA(const char* name, Color_RGBA8 defaultValue);
 
+void CVar_Clear(const char* name);
+
 void CVar_Load();
 void CVar_Save();
 
