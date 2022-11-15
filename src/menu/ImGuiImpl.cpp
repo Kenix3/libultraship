@@ -312,7 +312,7 @@ void ImGuiRenderDrawData(ImDrawData* data) {
     }
 }
 
-bool UseViewports() {
+bool supportsViewports() {
     switch (impl.backend) {
         case Backend::DX11:
             return true;
@@ -321,6 +321,10 @@ bool UseViewports() {
         default:
             return false;
     }
+}
+
+bool useViewports() {
+    return supportsViewports() && CVar_GetS32("gEnableMultiViewports", 1);
 }
 
 void LoadTexture(const std::string& name, const std::string& path) {
@@ -358,6 +362,7 @@ void Init(WindowImpl window_impl) {
     CVar_RegisterS32("gRandomizeRupeeNames", 1);
     CVar_RegisterS32("gRandoRelevantNavi", 1);
     CVar_RegisterS32("gRandoMatchKeyColors", 1);
+    CVar_RegisterS32("gEnableMultiViewports", 1);
 #ifdef __SWITCH__
     Ship::Switch::SetupFont(io->Fonts);
 #endif
@@ -387,7 +392,7 @@ void Init(WindowImpl window_impl) {
     io->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     io->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
-    if (UseViewports()) {
+    if (useViewports()) {
         io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
@@ -728,7 +733,7 @@ void DrawFramebufferAndGameInput(void) {
 void Render() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
-    if (UseViewports()) {
+    if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         if (impl.backend == Backend::SDL) {
             SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
             SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
@@ -746,7 +751,7 @@ void Render() {
 
 void CancelFrame() {
     ImGui::EndFrame();
-    if (UseViewports()) {
+    if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
     }
 }
