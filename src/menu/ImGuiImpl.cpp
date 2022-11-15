@@ -412,8 +412,10 @@ void Init(WindowImpl window_impl) {
 #endif
 
     Ship::RegisterHook<Ship::GfxInit>([] {
+        bool menuBarOpen = CVar_GetS32("gOpenMenuBar", 0);
+        Window::GetInstance()->SetMenuBar(menuBarOpen);
         if (Window::GetInstance()->IsFullscreen()) {
-            ShowCursor(CVar_GetS32("gOpenMenuBar", 0), Dialogues::dLoadSettings);
+            setCursorVisibility(menuBarOpen);
         }
 
         LoadTexture("Game_Icon", "assets/ship_of_harkinian/icons/gSohIcon.png");
@@ -494,11 +496,13 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVar_GetS32("gControlNav", 0))) {
-        bool menu_bar = CVar_GetS32("gOpenMenuBar", 0);
-        CVar_SetS32("gOpenMenuBar", !menu_bar);
+        bool menuBar = !CVar_GetS32("gOpenMenuBar", 0);
+        CVar_SetS32("gOpenMenuBar", menuBar);
         needs_save = true;
-        Window::GetInstance()->SetMenuBar(menu_bar);
-        ShowCursor(menu_bar, Dialogues::dMenubar);
+        Window::GetInstance()->SetMenuBar(menuBar);
+        if (Window::GetInstance()->IsFullscreen()) {
+            setCursorVisibility(menuBar);
+        }
         Window::GetInstance()->GetControlDeck()->SaveControllerSettings();
         if (CVar_GetS32("gControlNav", 0) && CVar_GetS32("gOpenMenuBar", 0)) {
             io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -930,24 +934,8 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
     DefaultAssets[name] = asset;
 }
 
-void ShowCursor(bool hide, Dialogues d) {
-    if (d == Dialogues::dLoadSettings) {
-        Window::GetInstance()->ShowCursor(hide);
-        return;
-    }
-
-    if (d == Dialogues::dConsole && CVar_GetS32("gOpenMenuBar", 0)) {
-        return;
-    }
-    if (!Window::GetInstance()->IsFullscreen()) {
-        oldCursorState = false;
-        return;
-    }
-
-    if (oldCursorState != hide) {
-        oldCursorState = hide;
-        Window::GetInstance()->ShowCursor(hide);
-    }
+void setCursorVisibility(bool visible) {
+    Window::GetInstance()->SetCursorVisibility(visible);
 }
 
 void BeginGroupPanel(const char* name, const ImVec2& size) {
