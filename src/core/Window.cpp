@@ -305,11 +305,8 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
         mHeight = GetConfig()->getInt("Window.Height", 480);
     }
 
-    mGfxBackend = GetConfig()->getString("Window.GfxBackend");
-    InitializeWindowManager();
-
-    mAudioBackend = GetConfig()->getString("Window.AudioBackend");
-    InitializeAudioPlayer();
+    InitializeWindowManager(GetConfig()->getString("Window.GfxBackend"));
+    InitializeAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
 
     gfx_init(mWindowManagerApi, mRenderingApi, GetName().c_str(), mIsFullscreen, mWidth, mHeight);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
@@ -444,7 +441,27 @@ uint32_t Window::GetCurrentHeight() {
     return mHeight;
 }
 
-void Window::InitializeAudioPlayer() {
+void Window::InitializeAudioPlayer(std::string& audioBackend) {
+    // Param can override
+    mAudioBackend = audioBackend;
+#ifdef _WIN32
+    if (audioBackend == "wasapi") {
+        mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
+        return;
+    }
+#endif
+#if defined(__linux)
+    if (audioBackend == "pulse") {
+        mAudioPlayer = std::make_shared<PulseAudioPlayer>();
+        return;
+    }
+#endif
+    if (audioBackend == "sdl") {
+        mAudioPlayer = std::make_shared<SDLAudioPlayer>();
+        return;
+    }
+
+    // Defaults if not on list above
 #ifdef _WIN32
     mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
 #elif defined(__linux)
@@ -453,24 +470,34 @@ void Window::InitializeAudioPlayer() {
     mAudioPlayer = std::make_shared<SDLAudioPlayer>();
 #endif
 
-    // Config can override
-#ifdef _WIN32
-    if (mAudioBackend == "wasapi") {
-        mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
-    }
-#endif
-#if defined(__linux)
-    if (mAudioBackend == "pulse") {
-        mAudioPlayer = std::make_shared<PulseAudioPlayer>();
-    }
-#endif
-    if (mAudioBackend == "sdl") {
-        mAudioPlayer = std::make_shared<SDLAudioPlayer>();
-    }
 }
 
-void Window::InitializeWindowManager() {
-    // First set default
+void Window::InitializeWindowManager(std::string& gfxBackend) {
+    // Param can override
+    mGfxBackend = gfxBackend;
+#ifdef ENABLE_DX11
+    if (gfxBackend == "dx11") {
+        mRenderingApi = &gfx_direct3d11_api;
+        mWindowManagerApi = &gfx_dxgi_api;
+        return;
+    }
+#endif
+#ifdef ENABLE_OPENGL
+    if (gfxBackend == "sdl") {
+        mRenderingApi = &gfx_opengl_api;
+        mWindowManagerApi = &gfx_sdl;
+        return;
+    }
+#if defined(__linux__) && defined(X11_SUPPORTED)
+    if (gfxBackend == "glx") {
+        mRenderingApi = &gfx_opengl_api;
+        mWindowManagerApi = &gfx_glx;
+        return;
+    }
+#endif
+#endif
+
+    // Defaults if not on list above
 #ifdef ENABLE_OPENGL
     mRenderingApi = &gfx_opengl_api;
 #if defined(__linux__) && defined(X11_SUPPORTED)
@@ -492,26 +519,6 @@ void Window::InitializeWindowManager() {
 #ifdef __WIIU__
     mRenderingApi = &gfx_gx2_api;
     mWindowManagerApi = &gfx_wiiu;
-#endif
-
-    // Config can override
-#ifdef ENABLE_DX11
-    if (mGfxBackend == "dx11") {
-        mRenderingApi = &gfx_direct3d11_api;
-        mWindowManagerApi = &gfx_dxgi_api;
-    }
-#endif
-#ifdef ENABLE_OPENGL
-    if (mGfxBackend == "sdl") {
-        mRenderingApi = &gfx_opengl_api;
-        mWindowManagerApi = &gfx_sdl;
-    }
-#if defined(__linux__) && defined(X11_SUPPORTED)
-    if (mGfxBackend == "glx") {
-        mRenderingApi = &gfx_opengl_api;
-        mWindowManagerApi = &gfx_glx;
-    }
-#endif
 #endif
 }
 

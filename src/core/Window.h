@@ -53,6 +53,8 @@ class Window {
     const char* GetKeyName(int32_t scancode);
     int32_t GetLastScancode();
     void SetLastScancode(int32_t scanCode);
+    void InitializeAudioPlayer(std::string& audioBackend);
+    void InitializeWindowManager(std::string& gfxBackend);
 
   protected:
     Window() = default;
@@ -66,11 +68,9 @@ class Window {
 
     void InitializeConfiguration();
     void InitializeControlDeck();
-    void InitializeAudioPlayer();
     void InitializeLogging();
     void InitializeResourceManager(const std::vector<std::string>& otrFiles = {},
                                    const std::unordered_set<uint32_t>& validHashes = {});
-    void InitializeWindowManager();
 
     std::shared_ptr<spdlog::logger> mLogger;
     std::shared_ptr<Mercury>
