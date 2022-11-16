@@ -441,7 +441,7 @@ uint32_t Window::GetCurrentHeight() {
     return mHeight;
 }
 
-void Window::InitializeAudioPlayer(std::string& audioBackend) {
+void Window::InitializeAudioPlayer(std::string_view audioBackend) {
     // Param can override
     mAudioBackend = audioBackend;
 #ifdef _WIN32
@@ -472,7 +472,7 @@ void Window::InitializeAudioPlayer(std::string& audioBackend) {
 
 }
 
-void Window::InitializeWindowManager(std::string& gfxBackend) {
+void Window::InitializeWindowManager(std::string_view gfxBackend) {
     // Param can override
     mGfxBackend = gfxBackend;
 #ifdef ENABLE_DX11
