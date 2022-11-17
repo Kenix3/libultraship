@@ -151,6 +151,8 @@ set(Source_Files__Menu
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/ImGuiImpl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.h
 )
 
 source_group("Menu" FILES ${Source_Files__Menu})
@@ -269,8 +271,6 @@ set(Source_Files__Resource__Types
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Cutscene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Model.cpp
