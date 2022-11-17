@@ -42,7 +42,7 @@ static void PasWriteComplete(void* userData) {
 PulseAudioPlayer::PulseAudioPlayer() {
 }
 
-bool PulseAudioPlayer::doInit() {
+bool PulseAudioPlayer::DoInit() {
     bool done = false;
     const pa_buffer_attr* appliedAttr = nullptr;
 

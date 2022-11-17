@@ -19,7 +19,7 @@ class AudioPlayer {
     }
 
   protected:
-    virtual bool doInit(void) = 0;
+    virtual bool DoInit(void) = 0;
 
   private:
     bool mInitialized;

@@ -52,7 +52,7 @@ bool WasapiAudioPlayer::SetupStream(void) {
     return true;
 }
 
-bool WasapiAudioPlayer::doInit(void) {
+bool WasapiAudioPlayer::DoInit(void) {
     try {
         ThrowIfFailed(
             CoCreateInstance(CLSID_MMDeviceEnumerator, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&mDeviceEnumerator)));

@@ -4,7 +4,7 @@ namespace Ship {
 AudioPlayer::AudioPlayer() : mInitialized(false){};
 
 bool AudioPlayer::Init(void) {
-    mInitialized = doInit();
+    mInitialized = DoInit();
     return IsInitialized();
 }
 

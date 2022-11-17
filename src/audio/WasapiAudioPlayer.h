@@ -29,7 +29,7 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID** ppvInterface);
     void ThrowIfFailed(HRESULT res);
     bool SetupStream(void);
-    bool doInit(void);
+    bool DoInit(void);
 
   private:
     ComPtr<IMMDeviceEnumerator> mDeviceEnumerator;

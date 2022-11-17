@@ -12,7 +12,7 @@ class SDLAudioPlayer : public AudioPlayer {
     void Play(const uint8_t* buf, size_t len);
 
   protected:
-    bool doInit(void);
+    bool DoInit(void);
 
   private:
     SDL_AudioDeviceID mDevice;

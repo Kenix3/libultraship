@@ -14,7 +14,7 @@ class PulseAudioPlayer : public AudioPlayer {
     void Play(const uint8_t* buff, size_t len) override;
 
   protected:
-    bool doInit() override;
+    bool DoInit() override;
 
   private:
     pa_context* mContext = nullptr;
