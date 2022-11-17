@@ -139,6 +139,8 @@ fail:
         pa_mainloop_free(mMainLoop);
         mMainLoop = NULL;
     }
+
+    SPDLOG_ERROR("Failed to initialize PulseAudio stream!");
     return false;
 }
 
@@ -165,6 +167,10 @@ int PulseAudioPlayer::GetDesiredBuffered() {
 }
 
 void PulseAudioPlayer::Play(const uint8_t* buff, size_t len) {
+    if (mStream == NULL || mContext == NULL || mMainLoop == NULL) {
+        return;
+    }
+
     size_t ws = mAttr.maxlength - Buffered() * 4;
     if (ws < len) {
         len = ws;
