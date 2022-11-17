@@ -372,14 +372,16 @@ int32_t ResourceMgr::OtrSignatureCheck(char* imgData) {
     uintptr_t i = (uintptr_t)(imgData);
 
     // if (i == 0xD9000000 || i == 0xE7000000 || (i & 1) == 1)
-    if ((i & 1) == 1)
+    if ((i & 1) == 1) {
         return 0;
+    }
 
     // if ((i & 0xFF000000) != 0xAB000000 && (i & 0xFF000000) != 0xCD000000 && i != 0) {
     if (i != 0) {
         if (imgData[0] == '_' && imgData[1] == '_' && imgData[2] == 'O' && imgData[3] == 'T' && imgData[4] == 'R' &&
-            imgData[5] == '_' && imgData[6] == '_')
+            imgData[5] == '_' && imgData[6] == '_') {
             return 1;
+        }
     }
 
     return 0;
