@@ -497,25 +497,4 @@ void Window::SetLastScancode(int32_t scanCode) {
     mLastScancode = scanCode;
 }
 
-bool Window::StartAudioPlayer() {
-    if (mAudioPlayer == nullptr) {
-        return false;
-    }
-    if (mAudioPlayer->Init()) {
-        return true;
-    }
-
-    // loop over available audio apis if current fails
-    auto audioBackends = SohImGui::GetAvailableAudioBackends();
-    for (uint8_t i = 0; i < audioBackends.size(); i++) {
-        SohImGui::SetCurrentAudioBackend(i, audioBackends[i]);
-        InitializeAudioPlayer(audioBackends[i].first);
-        if (mAudioPlayer->Init()) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 } // namespace Ship
