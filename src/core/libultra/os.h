@@ -1,16 +1,16 @@
 #pragma once
 
-#ifndef LIBULTRASHIP_H
-#define LIBULTRASHIP_H
+#ifndef OS_H
+#define OS_H
 
 #include "stdint.h"
-#include "UltraController.h"
+#include "libultra/controller.h"
+#include "libultra/message.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct OSMesgQueue;
 int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status);
 int32_t osContStartReadData(OSMesgQueue* mesg);
 void osContGetReadData(OSContPad* pad);

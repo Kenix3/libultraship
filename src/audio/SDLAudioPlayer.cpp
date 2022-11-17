@@ -2,7 +2,10 @@
 #include <spdlog/spdlog.h>
 
 namespace Ship {
-bool SDLAudioPlayer::Init(void) {
+SDLAudioPlayer::SDLAudioPlayer() {
+}
+
+bool SDLAudioPlayer::doInit(void) {
     if (SDL_Init(SDL_INIT_AUDIO) != 0) {
         SPDLOG_ERROR("SDL init error: %s\n", SDL_GetError());
         return false;
@@ -32,7 +35,7 @@ int SDLAudioPlayer::GetDesiredBuffered(void) {
     return 2480;
 }
 
-void SDLAudioPlayer::Play(const uint8_t* buf, uint32_t len) {
+void SDLAudioPlayer::Play(const uint8_t* buf, size_t len) {
     if (Buffered() < 6000) {
         // Don't fill the audio buffer too much in case this happens
         SDL_QueueAudio(mDevice, buf, len);

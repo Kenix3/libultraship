@@ -43,6 +43,8 @@ class ResourceMgr {
     std::shared_ptr<std::vector<std::shared_ptr<ResourcePromise>>> CacheDirectoryAsync(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_ptr<Resource>>> DirtyDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::string>> ListFiles(std::string searchMask);
+    int32_t OtrSignatureCheck(char* imgData);
+    size_t UnloadResource(const std::string& filePath);
 
   protected:
     void Start();
@@ -65,6 +67,5 @@ class ResourceMgr {
     std::condition_variable mFileLoadNotifier;
     std::condition_variable mResourceLoadNotifier;
     uint32_t mGameVersion;
-    std::vector<uint32_t> mGameVersions;
 };
 } // namespace Ship

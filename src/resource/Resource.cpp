@@ -3,7 +3,7 @@
 #include "resource/ResourceMgr.h"
 #include <spdlog/spdlog.h>
 #include <tinyxml2.h>
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
+#include "libultra/gbi.h"
 
 namespace Ship {
 void ResourceFile::ParseFileBinary(BinaryReader* reader, Resource* res) {
@@ -26,12 +26,22 @@ void ResourceFile::WriteFileBinary(BinaryWriter* writer, Resource* res) {
 void ResourceFile::WriteFileXML(tinyxml2::XMLElement* writer, Resource* res) {
 }
 
+void Resource::RegisterResourceAddressPatch(uint64_t crc, uint32_t instructionIndex, intptr_t originalData) {
+    ResourceAddressPatch patch;
+    patch.ResourceCrc = crc;
+    patch.InstructionIndex = instructionIndex;
+    patch.OriginalData = originalData;
+
+    Patches.push_back(patch);
+}
+
+
 Resource::~Resource() {
     free(CachedGameAsset);
     CachedGameAsset = nullptr;
 
     for (size_t i = 0; i < Patches.size(); i++) {
-        const std::string* hashStr = ResourceManager->HashToString(Patches[i].Crc);
+        const std::string* hashStr = ResourceManager->HashToString(Patches[i].ResourceCrc);
         if (hashStr == nullptr) {
             continue;
         }
@@ -40,8 +50,8 @@ Resource::~Resource() {
         if (resShared != nullptr) {
             auto res = (Ship::DisplayList*)resShared.get();
 
-            Gfx* gfx = &((Gfx*)res->instructions.data())[Patches[i].Index];
-            gfx->words.w1 = Patches[i].OrigData;
+            Gfx* gfx = &((Gfx*)res->instructions.data())[Patches[i].InstructionIndex];
+            gfx->words.w1 = Patches[i].OriginalData;
         }
     }
 

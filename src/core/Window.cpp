@@ -246,6 +246,10 @@ uint32_t Window::GetCurrentHeight() {
     return mHeight;
 }
 
+float Window::GetCurrentAspectRatio() {
+    return (float)GetCurrentWidth() / (float)GetCurrentHeight();
+}
+
 void Window::InitializeAudioPlayer() {
 #ifdef _WIN32
     mAudioPlayer = std::make_shared<WasapiAudioPlayer>();

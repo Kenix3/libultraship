@@ -5,10 +5,14 @@
 namespace Ship {
 class SDLAudioPlayer : public AudioPlayer {
   public:
-    bool Init(void);
+    SDLAudioPlayer();
+
     int Buffered(void);
     int GetDesiredBuffered(void);
-    void Play(const uint8_t* buf, uint32_t len);
+    void Play(const uint8_t* buf, size_t len);
+
+  protected:
+    bool doInit(void);
 
   private:
     SDL_AudioDeviceID mDevice;

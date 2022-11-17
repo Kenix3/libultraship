@@ -1,5 +1,5 @@
 #include "PlayerAnimation.h"
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
+#include "libultra/gbi.h"
 
 namespace Ship {
 void PlayerAnimationV0::ParseFileBinary(BinaryReader* reader, Resource* res) {

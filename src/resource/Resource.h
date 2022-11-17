@@ -59,10 +59,10 @@ enum class Version {
     // ...
 };
 
-struct Patch {
-    uint64_t Crc;
-    uint32_t Index;
-    uintptr_t OrigData;
+struct ResourceAddressPatch {
+    uint64_t ResourceCrc;
+    uint32_t InstructionIndex;
+    uintptr_t OriginalData;
 };
 
 class Resource {
@@ -73,8 +73,9 @@ class Resource {
     bool IsDirty = false;
     void* CachedGameAsset = 0; // Conversion to OoT friendly struct cached...
     std::shared_ptr<OtrFile> File;
-    std::vector<Patch> Patches;
+    std::vector<ResourceAddressPatch> Patches;
     virtual ~Resource();
+    void RegisterResourceAddressPatch(uint64_t crc, uint32_t instructionIndex, intptr_t originalData);
 };
 
 class ResourceFile {

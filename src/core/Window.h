@@ -41,6 +41,7 @@ class Window {
     void ShowCursor(bool hide);
     uint32_t GetCurrentWidth();
     uint32_t GetCurrentHeight();
+    float GetCurrentAspectRatio();
     bool IsFullscreen();
     uint32_t GetMenuBar();
     void SetMenuBar(uint32_t menuBar);
@@ -73,8 +74,7 @@ class Window {
     void InitializeWindowManager();
 
     std::shared_ptr<spdlog::logger> mLogger;
-    std::shared_ptr<Mercury>
-        mConfig; // Config needs to be after the Window because we call the Window during it's destructor.
+    std::shared_ptr<Mercury> mConfig;
     std::shared_ptr<ResourceMgr> mResourceManager;
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     std::shared_ptr<ControlDeck> mControlDeck;
