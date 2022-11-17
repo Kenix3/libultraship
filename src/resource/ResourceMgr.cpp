@@ -255,7 +255,7 @@ ResourceMgr::LoadResourceAsync(const char* filePath) {
 
     const std::lock_guard<std::mutex> resLock(mResourceLoadMutex);
     auto resCacheFind = mResourceCache.find(filePath);
-    if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty /* || !FileData->IsLoaded*/) {
+    if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty) {
         if (resCacheFind == mResourceCache.end()) {
             SPDLOG_TRACE("Cache miss on Resource load: {}", filePath);
         }
@@ -366,6 +366,29 @@ std::shared_ptr<Window> ResourceMgr::GetContext() {
 
 std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath) {
     return LoadResource(filePath.c_str());
+}
+
+int32_t ResourceMgr::OtrSignatureCheck(char* imgData) {
+    uintptr_t i = (uintptr_t)(imgData);
+
+    // if (i == 0xD9000000 || i == 0xE7000000 || (i & 1) == 1)
+    if ((i & 1) == 1) {
+        return 0;
+    }
+
+    // if ((i & 0xFF000000) != 0xAB000000 && (i & 0xFF000000) != 0xCD000000 && i != 0) {
+    if (i != 0) {
+        if (imgData[0] == '_' && imgData[1] == '_' && imgData[2] == 'O' && imgData[3] == 'T' && imgData[4] == 'R' &&
+            imgData[5] == '_' && imgData[6] == '_') {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+size_t ResourceMgr::UnloadResource(const std::string& filePath) {
+    return mResourceCache.erase(filePath);
 }
 
 } // namespace Ship

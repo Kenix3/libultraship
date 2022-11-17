@@ -16,7 +16,7 @@
 #include "resource/ResourceMgr.h"
 #include "core/Window.h"
 #include "misc/Cvar.h"
-#include "resource/types/GameOverlay.h"
+#include "menu/GameOverlay.h"
 #include "resource/types/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include <stb/stb_image.h>

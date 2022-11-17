@@ -16,10 +16,7 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioRenderClient = __uuidof(IAudioRenderClient);
 
 namespace Ship {
-WasapiAudioPlayer::WasapiAudioPlayer()
-    : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false){
-
-      };
+WasapiAudioPlayer::WasapiAudioPlayer() : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false){};
 
 void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
     if (FAILED(res)) {
@@ -55,7 +52,7 @@ bool WasapiAudioPlayer::SetupStream(void) {
     return true;
 }
 
-bool WasapiAudioPlayer::Init(void) {
+bool WasapiAudioPlayer::DoInit(void) {
     try {
         ThrowIfFailed(
             CoCreateInstance(CLSID_MMDeviceEnumerator, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&mDeviceEnumerator)));
@@ -83,7 +80,7 @@ int WasapiAudioPlayer::GetDesiredBuffered(void) {
     return 2480;
 }
 
-void WasapiAudioPlayer::Play(const uint8_t* buf, uint32_t len) {
+void WasapiAudioPlayer::Play(const uint8_t* buf, size_t len) {
     if (!mInitialized) {
         if (!SetupStream()) {
             return;

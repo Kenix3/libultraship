@@ -1,5 +1,5 @@
 #include "resource/types/DisplayList.h"
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
+#include "libultra/gbi.h"
 
 namespace Ship {
 void DisplayListV0::ParseFileBinary(BinaryReader* reader, Resource* res) {

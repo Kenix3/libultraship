@@ -25,13 +25,15 @@ class GameOverlay {
     void Init();
     void Draw();
     void DrawSettings();
-    static float GetScreenWidth();
-    static float GetScreenHeight();
     static float GetStringWidth(const char* text);
     static ImVec2 CalculateTextSize(const char* text, const char* text_end = NULL,
                                     bool hide_text_after_double_hash = false, float wrap_width = -1.0f);
     void TextDraw(float x, float y, bool shadow, ImVec4 color, const char* text, ...);
     void TextDrawNotification(float duration, bool shadow, const char* fmt, ...);
+
+  protected:
+    static float GetScreenWidth();
+    static float GetScreenHeight();
 
   private:
     std::unordered_map<std::string, ImFont*> Fonts;
