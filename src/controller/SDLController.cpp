@@ -238,12 +238,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
             // Left stick
             if (posButton == BTN_STICKLEFT || posButton == BTN_STICKRIGHT) {
                 if (leftStickAxisX != SDL_CONTROLLER_AXIS_INVALID && leftStickAxisX != axis) {
-                    SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", LStickAxisX, Axis);
+                    SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", leftStickAxisX, axis);
                 }
 
                 if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", LStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", leftStickDeadzone,
+                                 axisDeadzone);
                 }
 
                 leftStickDeadzone = axisDeadzone;
@@ -252,12 +252,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
             if (posButton == BTN_STICKUP || posButton == BTN_STICKDOWN) {
                 if (leftStickAxisY != SDL_CONTROLLER_AXIS_INVALID && leftStickAxisY != axis) {
-                    SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", LStickAxisY, Axis);
+                    SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", leftStickAxisY, axis);
                 }
 
                 if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", LStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", leftStickDeadzone,
+                                 axisDeadzone);
                 }
 
                 leftStickDeadzone = axisDeadzone;
@@ -266,12 +266,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
             if (negButton == BTN_STICKLEFT || negButton == BTN_STICKRIGHT) {
                 if (leftStickAxisX != SDL_CONTROLLER_AXIS_INVALID && leftStickAxisX != axis) {
-                    SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", LStickAxisX, Axis);
+                    SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", leftStickAxisX, axis);
                 }
 
                 if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", LStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", leftStickDeadzone,
+                                 axisDeadzone);
                 }
 
                 leftStickDeadzone = axisDeadzone;
@@ -280,12 +280,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
             if (negButton == BTN_STICKUP || negButton == BTN_STICKDOWN) {
                 if (leftStickAxisY != SDL_CONTROLLER_AXIS_INVALID && leftStickAxisY != axis) {
-                    SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", LStickAxisY, Axis);
+                    SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", leftStickAxisY, axis);
                 }
 
                 if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", LStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}",
+                                 leftStickDeadzone, axisDeadzone);
                 }
 
                 leftStickDeadzone = axisDeadzone;
@@ -295,12 +295,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
             // Right Stick
             if (posButton == BTN_VSTICKLEFT || posButton == BTN_VSTICKRIGHT) {
                 if (rightStickAxisX != SDL_CONTROLLER_AXIS_INVALID && rightStickAxisX != axis) {
-                    SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", RStickAxisX, Axis);
+                    SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", rightStickAxisX, axis);
                 }
 
                 if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", RStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", rightStickDeadzone,
+                                 axisDeadzone);
                 }
 
                 rightStickDeadzone = axisDeadzone;
@@ -309,12 +309,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
             if (posButton == BTN_VSTICKUP || posButton == BTN_VSTICKDOWN) {
                 if (rightStickAxisY != SDL_CONTROLLER_AXIS_INVALID && rightStickAxisY != axis) {
-                    SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", RStickAxisY, Axis);
+                    SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", rightStickAxisY, axis);
                 }
 
                 if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", RStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", rightStickDeadzone,
+                                 axisDeadzone);
                 }
 
                 rightStickDeadzone = axisDeadzone;
@@ -323,12 +323,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
             if (negButton == BTN_VSTICKLEFT || negButton == BTN_VSTICKRIGHT) {
                 if (rightStickAxisX != SDL_CONTROLLER_AXIS_INVALID && rightStickAxisX != axis) {
-                    SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", RStickAxisX, Axis);
+                    SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", rightStickAxisX, axis);
                 }
 
                 if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", RStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", rightStickDeadzone,
+                                 axisDeadzone);
                 }
 
                 rightStickDeadzone = axisDeadzone;
@@ -337,12 +337,12 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
             if (negButton == BTN_VSTICKUP || negButton == BTN_VSTICKDOWN) {
                 if (rightStickAxisY != SDL_CONTROLLER_AXIS_INVALID && rightStickAxisY != axis) {
-                    SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", RStickAxisY, Axis);
+                    SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", rightStickAxisY, axis);
                 }
 
                 if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}", RStickDeadzone,
-                                 AxisDeadzone);
+                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}",
+                                 rightStickDeadzone, axisDeadzone);
                 }
 
                 rightStickDeadzone = axisDeadzone;

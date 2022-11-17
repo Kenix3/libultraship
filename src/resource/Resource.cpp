@@ -57,7 +57,7 @@ Resource::~Resource() {
     Patches.clear();
 
     if (File != nullptr) {
-        SPDLOG_TRACE("Deconstructor called on file %s\n", file->path.c_str());
+        SPDLOG_TRACE("Deconstructor called on file %s\n", File->Path.c_str());
     }
 }
 } // namespace Ship

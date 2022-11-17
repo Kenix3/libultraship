@@ -11,7 +11,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev ninja-build clang-tidy clang-format-12
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
       - name: ccache
@@ -40,17 +40,12 @@ jobs:
       - name: Analyze
         run: |
           git diff -U0 HEAD^ -- 'src' 'include' ':!include/color.h' ':!include/libultra/*' ':!src/graphic/Fast3D/*' | clang-tidy-diff -p1 -path build -export-fixes clang-tidy-result/fixes.yml
-      - name: Run clang-tidy-pr-comments action
-        uses: platisd/clang-tidy-pr-comments@master
+      - name: Save PR metadata
+        run: |
+          echo ${{ github.event.number }} > clang-tidy-result/pr-id.txt
+          echo ${{ github.event.pull_request.head.repo.full_name }} > clang-tidy-result/pr-head-repo.txt
+          echo ${{ github.event.pull_request.head.ref }} > clang-tidy-result/pr-head-ref.txt
+      - uses: actions/upload-artifact@v2
         with:
-          # The GitHub token (or a personal access token)
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # The path to the clang-tidy fixes generated previously
-          clang_tidy_fixes: clang-tidy-result/fixes.yml
-          # Optionally set to true if you want the Action to request
-          # changes in case warnings are found
-          request_changes: true
-          # Optionally set the number of comments per review
-          # to avoid GitHub API timeouts for heavily loaded
-          # pull requests
-          suggestions_per_comment: 10
+          name: clang-tidy-result
+          path: clang-tidy-result/

@@ -1,6 +1,6 @@
 #ifdef __WIIU__
 #include "WiiUGamepad.h"
-#include "ImGuiImpl.h"
+#include "menu/ImGuiImpl.h"
 
 #include "WiiUImpl.h"
 
@@ -8,7 +8,7 @@ namespace Ship {
 WiiUGamepad::WiiUGamepad() : Controller(), connected(true), rumblePatternStrength(1.0f) {
     memset(rumblePattern, 0xff, sizeof(rumblePattern));
 
-    GUID = "WiiUGamepad";
+    mGuid = "WiiUGamepad";
 }
 
 bool WiiUGamepad::Open() {

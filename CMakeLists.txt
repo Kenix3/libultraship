@@ -5,6 +5,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     enable_language(OBJCXX)
 endif()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 include(cmake/Utils.cmake)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND USE_AUTO_VCPKG)

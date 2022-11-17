@@ -26,9 +26,9 @@
 #ifdef __APPLE__
 #include "misc/OSXFolderManager.h"
 #elif defined(__SWITCH__)
-#include "SwitchImpl.h"
+#include "port/switch/SwitchImpl.h"
 #elif defined(__WIIU__)
-#include "WiiUImpl.h"
+#include "port/wiiu/WiiUImpl.h"
 #endif
 
 namespace Ship {
@@ -71,7 +71,7 @@ void Window::CreateDefaults() {
     if (GetConfig()->isNewInstance) {
         GetConfig()->setInt("Window.Width", 640);
         GetConfig()->setInt("Window.Height", 480);
-        GetConfig()->setBool("Window.Options", false);
+
         GetConfig()->setString("Window.GfxBackend", "");
         GetConfig()->setString("Window.AudioBackend", "");
 
@@ -105,8 +105,6 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
         mWidth = GetConfig()->getInt("Window.Width", 640);
         mHeight = GetConfig()->getInt("Window.Height", 480);
     }
-
-    mMenuBar = GetConfig()->getBool("Window.Options", false);
 
     mGfxBackend = GetConfig()->getString("Window.GfxBackend");
     InitializeWindowManager();
@@ -171,12 +169,8 @@ void Window::SetFullscreen(bool isFullscreen) {
     mWindowManagerApi->set_fullscreen(isFullscreen);
 }
 
-void Window::ShowCursor(bool hide) {
-    if (!this->mIsFullscreen || this->mMenuBar) {
-        mWindowManagerApi->show_cursor(true);
-    } else {
-        mWindowManagerApi->show_cursor(hide);
-    }
+void Window::SetCursorVisibility(bool visible) {
+    mWindowManagerApi->set_cursor_visibility(visible);
 }
 
 void Window::MainLoop(void (*MainFunction)(void)) {
@@ -233,7 +227,12 @@ void Window::OnFullscreenChanged(bool isNowFullscreen) {
 
     Window::GetInstance()->mIsFullscreen = isNowFullscreen;
     pConf->setBool("Window.Fullscreen.Enabled", isNowFullscreen);
-    Window::GetInstance()->ShowCursor(!isNowFullscreen);
+    if (isNowFullscreen) {
+        bool menuBarOpen = Window::GetInstance()->GetMenuBar();
+        Window::GetInstance()->SetCursorVisibility(menuBarOpen);
+    } else if (!isNowFullscreen) {
+        Window::GetInstance()->SetCursorVisibility(true);
+    }
 }
 
 uint32_t Window::GetCurrentWidth() {

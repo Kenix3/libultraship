@@ -5,6 +5,8 @@ set(PROJECT_NAME ZAPDUtils)
 ################################################################################
 set(Source_Files__Utils
     "Utils/StringHelper.cpp"
+	"Utils/MemoryStream.cpp"
+	"Utils/BinaryWriter.cpp"
 )
 source_group("Source Files\\Utils" FILES ${Source_Files__Utils})
 

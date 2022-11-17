@@ -66,6 +66,8 @@ typedef struct {
     WindowDrawFunc drawFunc;
 } CustomWindow;
 
+bool supportsViewports();
+
 void Init(WindowImpl window_impl);
 void Update(EventImpl event);
 
@@ -111,7 +113,7 @@ ImTextureID GetTextureByID(int id);
 ImTextureID GetTextureByName(const std::string& name);
 void LoadResource(const std::string& name, const std::string& path, const ImVec4& tint = ImVec4(1, 1, 1, 1));
 
-void ShowCursor(bool hide, Dialogues w);
+void setCursorVisibility(bool visible);
 void BeginGroupPanel(const char* name, const ImVec2& size = ImVec2(0.0f, 0.0f));
 void EndGroupPanel(float minHeight = 0.0f);
 } // namespace SohImGui

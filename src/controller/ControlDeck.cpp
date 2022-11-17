@@ -11,8 +11,8 @@
 #include "controller/KeyboardController.h"
 #include "controller/SDLController.h"
 #else
-#include "WiiUGamepad.h"
-#include "WiiUController.h"
+#include "port/wiiu/WiiUGamepad.h"
+#include "port/wiiu/WiiUController.h"
 #endif
 
 namespace Ship {

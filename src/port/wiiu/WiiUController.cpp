@@ -1,7 +1,7 @@
 #ifdef __WIIU__
 #include "WiiUController.h"
 #include "core/Window.h"
-#include "ImGuiImpl.h"
+#include "menu/ImGuiImpl.h"
 
 #include "WiiUImpl.h"
 
@@ -25,7 +25,7 @@ bool WiiUController::Open() {
     extensionType = (WPADExtensionType)status->extensionType;
 
     // Create a GUID and name based on extension and channel
-    GUID = std::string("WiiU") + GetControllerExtensionName() + std::to_string((int)chan);
+    mGuid = std::string("WiiU") + GetControllerExtensionName() + std::to_string((int)chan);
     controllerName =
         std::string("Wii U ") + GetControllerExtensionName() + std::string(" ") + std::to_string((int)chan);
 

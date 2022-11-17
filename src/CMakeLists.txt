@@ -2,6 +2,10 @@ add_library(libultraship STATIC)
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
+endif()
+
 #=================== Audio ===================
 
 set(Source_Files__Audio
@@ -138,7 +142,6 @@ source_group("Log\\SPDLog" FILES ${Source_Files__Log__SPDLog})
 
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
-
 #=================== Menu ===================
 
 set(Source_Files__Menu
@@ -214,6 +217,8 @@ set(Source_Files__Resource
 source_group("Resource" FILES ${Source_Files__Resource})
 
 set(Source_Files__Resource__Factory
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AudioFactory.cpp
@@ -264,6 +269,8 @@ set(Source_Files__Resource__Types
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Cutscene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Model.cpp
@@ -291,7 +298,6 @@ source_group("Resource\\Types" FILES ${Source_Files__Resource__Types})
 target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Factory} ${Source_Files__Resource__Types})
 
 #=================== Graphic ===================
-# TODO: Make this a lib but currently it uses files from src
 
 set(Source_Files__Graphic
     ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_cc.h
@@ -311,6 +317,8 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND Source_Files__Graphic
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_dxgi.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_dxgi.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d11.h
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d11.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d12.h
@@ -337,12 +345,23 @@ endif()
 source_group("Graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
+#=================== STB ===================
+
+set(Source_Files__Lib__stb
+    "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image_write.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_impl.c"
+)
+source_group("Extern\\stb" FILES ${Source_Files__Lib__stb})
+target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
+
 
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/U64/PR
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
@@ -354,7 +373,8 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ImGui spdlog ZAPDUtils Mercury tinyxml2 StrHash64
+    PRIVATE ZAPDUtils tinyxml2 StrHash64
+    PUBLIC ImGui Mercury storm
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
@@ -371,19 +391,74 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
     find_package(PulseAudio)
-    target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARIES})
+    target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARY})
 endif()
 
 #=================== Compile Options & Defs ===================
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_compile_definitions(libultraship PRIVATE ENABLE_OPENGL)
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        WIN32
+        _CONSOLE
+        _CRT_SECURE_NO_WARNINGS
+        ENABLE_DX11
+    )
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_compile_definitions(libultraship PRIVATE
-        ENABLE_DX11
-        "UNICODE;"
-        "_UNICODE"
+        ENABLE_OPENGL
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        SPDLOG_ACTIVE_LEVEL=0
     )
+else ()
+    target_compile_definitions(libultraship PRIVATE
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        SPDLOG_NO_THREAD_ID
+        SPDLOG_NO_TLS
+        STBI_NO_THREAD_LOCALS
+        SPDLOG_ACTIVE_LEVEL=3
+    )
+endif()
+
+if(MSVC)
+    target_compile_options(libultraship PRIVATE
+        $<$<CONFIG:Debug>:
+            /Od;
+            /Oi-
+        >
+        $<$<CONFIG:Release>:
+            /Oi;
+            /Gy
+        >
+        /permissive-;
+        /MP;
+        /sdl;
+        /W3;
+        ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
+        ${DEFAULT_CXX_EXCEPTION_HANDLING};
+    )
+    target_link_options(libultraship PRIVATE
+        $<$<CONFIG:Release>:
+            /OPT:REF;
+            /OPT:ICF
+        >
+        /SUBSYSTEM:CONSOLE
+    )
+endif()
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_compile_options(libultraship PRIVATE
+		-Wall
+		-Wextra
+		-Wno-error
+		-Wno-unused-variable
+		-Wno-unused-parameter
+		-Wno-unused-function
+		-Wno-parentheses
+		-Wno-narrowing
+		-Wno-missing-field-initializers
+	)
 endif()
