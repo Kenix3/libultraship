@@ -3,16 +3,10 @@
 #include <fstream>
 #include <iostream>
 #include "core/Window.h"
-#include "resource/ResourceMgr.h"
 #include "controller/KeyboardController.h"
-#include "UltraController.h"
-#include "resource/types/DisplayList.h"
 #include "menu/Console.h"
-#include "resource/types/Array.h"
-#include "resource/types/Texture.h"
-#include "resource/types/Blob.h"
-#include "resource/types/Matrix.h"
 #include "misc/Hooks.h"
+#include "resource/ResourceMgr.h"
 #include <string>
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
@@ -25,13 +19,10 @@
 #include "graphic/Fast3D/gfx_gx2.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
-#include <SDL2/SDL.h>
-#include "menu/ImGuiImpl.h"
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "log/spd/sohconsole_sink.h"
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
 #ifdef __APPLE__
 #include "misc/OSXFolderManager.h"
 #elif defined(__SWITCH__)
@@ -39,196 +30,6 @@
 #elif defined(__WIIU__)
 #include "port/wiiu/WiiUImpl.h"
 #endif
-
-#define LOAD_TEX(texPath) \
-    static_cast<Ship::Texture*>(Ship::Window::GetInstance()->GetResourceManager()->LoadResource(texPath).get());
-
-extern "C" {
-struct OSMesgQueue;
-
-uint8_t __osMaxControllers = MAXCONTROLLERS;
-
-int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status) {
-    *controllerBits = 0;
-
-#ifndef __WIIU__
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
-        SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-#ifndef __SWITCH__
-    const char* controllerDb = "gamecontrollerdb.txt";
-    int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb);
-    if (mappingsAdded >= 0) {
-        SPDLOG_INFO("Added SDL game controllers from \"{}\" ({})", controllerDb, mappingsAdded);
-    } else {
-        SPDLOG_ERROR("Failed add SDL game controller mappings from \"{}\" ({})", controllerDb, SDL_GetError());
-    }
-#endif
-#endif
-
-    Ship::Window::GetInstance()->GetControlDeck()->Init(controllerBits);
-
-    return 0;
-}
-
-int32_t osContStartReadData(OSMesgQueue* mesg) {
-    return 0;
-}
-
-void osContGetReadData(OSContPad* pad) {
-    pad->button = 0;
-    pad->stick_x = 0;
-    pad->stick_y = 0;
-    pad->right_stick_x = 0;
-    pad->right_stick_y = 0;
-    pad->err_no = 0;
-    pad->gyro_x = 0;
-    pad->gyro_y = 0;
-
-    if (SohImGui::GetInputEditor()->IsOpened()) {
-        return;
-    }
-
-    Ship::Window::GetInstance()->GetControlDeck()->WriteToPad(pad);
-    Ship::ExecuteHooks<Ship::ControllerRead>(pad);
-}
-
-const char* ResourceMgr_GetNameByCRC(uint64_t crc) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
-    return hashStr != nullptr ? hashStr->c_str() : nullptr;
-}
-
-Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
-
-    if (hashStr != nullptr) {
-        auto res = std::static_pointer_cast<Ship::Array>(
-            Ship::Window::GetInstance()->GetResourceManager()->LoadResource(hashStr->c_str()));
-        return (Vtx*)res->vertices.data();
-    }
-
-    return nullptr;
-}
-
-int32_t* ResourceMgr_LoadMtxByCRC(uint64_t crc) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
-
-    if (hashStr != nullptr) {
-        auto res = std::static_pointer_cast<Ship::Matrix>(
-            Ship::Window::GetInstance()->GetResourceManager()->LoadResource(hashStr->c_str()));
-        return (int32_t*)res->mtx.data();
-    }
-
-    return nullptr;
-}
-
-Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
-
-    if (hashStr != nullptr) {
-        auto res = std::static_pointer_cast<Ship::DisplayList>(
-            Ship::Window::GetInstance()->GetResourceManager()->LoadResource(hashStr->c_str()));
-        return (Gfx*)&res->instructions[0];
-    } else {
-        return nullptr;
-    }
-}
-
-char* ResourceMgr_LoadTexByCRC(uint64_t crc) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
-
-    if (hashStr != nullptr) {
-        const auto res = LOAD_TEX(hashStr->c_str());
-        Ship::ExecuteHooks<Ship::LoadTexture>(hashStr->c_str(), &res->imageData);
-
-        return reinterpret_cast<char*>(res->imageData);
-    } else {
-        return nullptr;
-    }
-}
-
-void ResourceMgr_RegisterResourcePatch(uint64_t hash, uint32_t instrIndex, uintptr_t origData) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(hash);
-
-    if (hashStr != nullptr) {
-        auto res =
-            (Ship::Texture*)Ship::Window::GetInstance()->GetResourceManager()->LoadResource(hashStr->c_str()).get();
-
-        Ship::Patch patch;
-        patch.Crc = hash;
-        patch.Index = instrIndex;
-        patch.OrigData = origData;
-
-        res->Patches.push_back(patch);
-    }
-}
-
-char* ResourceMgr_LoadTexByName(char* texPath) {
-    const auto res = LOAD_TEX(texPath);
-    Ship::ExecuteHooks<Ship::LoadTexture>(texPath, &res->imageData);
-    return (char*)res->imageData;
-}
-
-uint16_t ResourceMgr_LoadTexWidthByName(char* texPath) {
-    const auto res = LOAD_TEX(texPath);
-    if (res != nullptr) {
-        return res->width;
-    }
-
-    SPDLOG_ERROR("Given texture path is a non-existent resource");
-    return -1;
-}
-
-uint16_t ResourceMgr_LoadTexHeightByName(char* texPath) {
-    const auto res = LOAD_TEX(texPath);
-    if (res != nullptr) {
-        return res->height;
-    }
-
-    SPDLOG_ERROR("Given texture path is a non-existent resource");
-    return -1;
-}
-
-uint32_t ResourceMgr_LoadTexSizeByName(char* texPath) {
-    const auto res = LOAD_TEX(texPath);
-    if (res != nullptr) {
-        return res->imageDataSize;
-    }
-
-    SPDLOG_ERROR("Given texture path is a non-existent resource");
-    return -1;
-}
-
-void ResourceMgr_WriteTexS16ByName(char* texPath, size_t index, s16 value) {
-    const auto res = LOAD_TEX(texPath);
-
-    if (res != nullptr) {
-        if ((index * 2) < res->imageDataSize) {
-            ((s16*)res->imageData)[index] = value;
-        } else {
-            // Dangit Morita
-            int bp = 0;
-        }
-    }
-}
-
-char* ResourceMgr_LoadBlobByName(char* blobPath) {
-    auto res = (Ship::Blob*)Ship::Window::GetInstance()->GetResourceManager()->LoadResource(blobPath).get();
-    return (char*)res->data.data();
-}
-
-/* Should these go in their own file?*/
-uint64_t osGetTime(void) {
-    return std::chrono::steady_clock::now().time_since_epoch().count();
-}
-
-uint32_t osGetCount(void) {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
-        .count();
-}
-}
 
 namespace Ship {
 
@@ -439,6 +240,10 @@ uint32_t Window::GetCurrentWidth() {
 uint32_t Window::GetCurrentHeight() {
     mWindowManagerApi->get_dimensions(&mWidth, &mHeight);
     return mHeight;
+}
+
+float Window::GetCurrentAspectRatio() {
+    return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
 
 void Window::InitializeAudioPlayer(std::string_view audioBackend) {

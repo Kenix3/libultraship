@@ -1,4 +1,4 @@
-#include "resource/types/GameOverlay.h"
+#include "GameOverlay.h"
 
 #include "misc/Cvar.h"
 #include "resource/OtrFile.h"

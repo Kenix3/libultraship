@@ -2,6 +2,7 @@
 #define ULTRA64_TYPES_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 typedef signed char s8;
 typedef unsigned char u8;

@@ -13,7 +13,7 @@ class OtrFile {
     std::shared_ptr<Archive> Parent;
     std::string Path;
     std::shared_ptr<char[]> Buffer;
-    uint32_t BufferSize;
+    size_t BufferSize;
     bool IsLoaded = false;
     bool HasLoadError = false;
     std::condition_variable FileLoadNotifier;
