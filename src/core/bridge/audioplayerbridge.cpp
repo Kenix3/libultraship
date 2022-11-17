@@ -1,5 +1,6 @@
 #include "audioplayerbridge.h"
 #include "core/Window.h"
+#include "menu/ImGuiImpl.h"
 
 extern "C" {
 
@@ -8,8 +9,21 @@ bool AudioPlayerInit(void) {
     if (audio == nullptr) {
         return false;
     }
+    if (audio->Init()) {
+        return true;
+    }
 
-    return audio->Init();
+    // loop over available audio apis if current fails
+    auto audioBackends = SohImGui::GetAvailableAudioBackends();
+    for (uint8_t i = 0; i < audioBackends.size(); i++) {
+        SohImGui::SetCurrentAudioBackend(i, audioBackends[i]);
+        Ship::Window::GetInstance()->InitializeAudioPlayer(audioBackends[i].first);
+        if (audio->Init()) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 int32_t AudioPlayerBuffered(void) {
