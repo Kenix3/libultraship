@@ -39,7 +39,7 @@ jobs:
           mkdir clang-tidy-result
       - name: Analyze
         run: |
-          git diff -U0 HEAD^ -- 'src' 'include' ':!include/abi.h' ':!include/color.h' ':!include/UltraController.h' ':!src/graphic/Fast3D/*' | clang-tidy-diff -p1 -path build -export-fixes clang-tidy-result/fixes.yml
+          git diff -U0 HEAD^ -- 'src' 'include' ':!include/color.h' ':!include/libultra/*' ':!src/graphic/Fast3D/*' | clang-tidy-diff -p1 -path build -export-fixes clang-tidy-result/fixes.yml
       - name: Run clang-tidy-pr-comments action
         uses: platisd/clang-tidy-pr-comments@master
         with:
