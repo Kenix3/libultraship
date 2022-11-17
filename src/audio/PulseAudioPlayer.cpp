@@ -53,7 +53,7 @@ bool PulseAudioPlayer::doInit() {
     }
 
     // Create context and connect
-    mContext = pa_context_new(pa_mainloop_get_api(m_MainLoop), "Ocarina of Time");
+    mContext = pa_context_new(pa_mainloop_get_api(mMainLoop), "Ocarina of Time");
     if (mContext == NULL) {
         goto fail;
     }
@@ -119,8 +119,8 @@ bool PulseAudioPlayer::doInit() {
     }
 
     appliedAttr = pa_stream_get_buffer_attr(mStream);
-    SPDLOG_TRACE("maxlength: {}\ntlength: {}\nprebuf: {}\nminreq: {}\nfragsize: {}\n", applied_attr->maxlength,
-                 applied_attr->tlength, applied_attr->prebuf, applied_attr->minreq, applied_attr->fragsize);
+    SPDLOG_TRACE("maxlength: {}\ntlength: {}\nprebuf: {}\nminreq: {}\nfragsize: {}\n", appliedAttr->maxlength,
+                 appliedAttr->tlength, appliedAttr->prebuf, appliedAttr->minreq, appliedAttr->fragsize);
     mAttr = *appliedAttr;
 
     return true;
@@ -133,7 +133,7 @@ fail:
     if (mContext != NULL) {
         pa_context_disconnect(mContext);
         pa_context_unref(mContext);
-        m_Context = NULL;
+        mContext = NULL;
     }
     if (mMainLoop != NULL) {
         pa_mainloop_free(mMainLoop);
@@ -164,7 +164,7 @@ int PulseAudioPlayer::GetDesiredBuffered() {
     return 2480;
 }
 
-void PulseAudioPlayer::Play(const uint8_t* buff, uint32_t len) {
+void PulseAudioPlayer::Play(const uint8_t* buff, size_t len) {
     size_t ws = mAttr.maxlength - Buffered() * 4;
     if (ws < len) {
         len = ws;

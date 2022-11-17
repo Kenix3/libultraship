@@ -11,7 +11,7 @@ class PulseAudioPlayer : public AudioPlayer {
     PulseAudioPlayer();
     int Buffered() override;
     int GetDesiredBuffered() override;
-    void Play(const uint8_t* buff, uint32_t len) override;
+    void Play(const uint8_t* buff, size_t len) override;
 
   protected:
     bool doInit() override;
