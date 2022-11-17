@@ -39,7 +39,7 @@ jobs:
           mkdir clang-tidy-result
       - name: Analyze
         run: |
-          git diff -U0 HEAD^ -- 'src' 'include' ':!include/color.h' ':!include/libultra/*' ':!src/graphic/Fast3D/*' | clang-tidy-diff -p1 -path build -export-fixes clang-tidy-result/fixes.yml
+          git diff -U0 HEAD^ -- 'src' 'include' ':!include/color.h' ':!include/libultra/*' ':!src/core/libultra/*' ':!src/graphic/Fast3D/*' | clang-tidy-diff -p1 -path build -export-fixes clang-tidy-result/fixes.yml
       - name: Save PR metadata
         run: |
           echo ${{ github.event.number }} > clang-tidy-result/pr-id.txt
