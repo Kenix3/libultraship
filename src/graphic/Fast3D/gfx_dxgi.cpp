@@ -18,7 +18,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "ultra64/gbi.h"
+#include "libultra/gbi.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
