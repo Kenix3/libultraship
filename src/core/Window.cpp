@@ -469,7 +469,6 @@ void Window::InitializeAudioPlayer(std::string_view audioBackend) {
 #else
     mAudioPlayer = std::make_shared<SDLAudioPlayer>();
 #endif
-
 }
 
 void Window::InitializeWindowManager(std::string_view gfxBackend) {
