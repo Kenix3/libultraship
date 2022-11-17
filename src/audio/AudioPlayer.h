@@ -18,10 +18,10 @@ class AudioPlayer {
         return 44100;
     }
 
-protected:
+  protected:
     virtual bool doInit(void) = 0;
 
-private:
+  private:
     bool mInitialized;
 };
 } // namespace Ship

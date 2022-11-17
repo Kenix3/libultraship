@@ -1,8 +1,7 @@
 #include "AudioPlayer.h"
 
 namespace Ship {
-AudioPlayer::AudioPlayer() : mInitialized(false) {
-};
+AudioPlayer::AudioPlayer() : mInitialized(false){};
 
 bool AudioPlayer::Init(void) {
     mInitialized = doInit();
@@ -13,4 +12,4 @@ bool AudioPlayer::IsInitialized(void) {
     return mInitialized;
 }
 
-}
+} // namespace Ship

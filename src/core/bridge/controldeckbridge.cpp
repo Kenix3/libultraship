@@ -10,5 +10,4 @@ void BlockGameInput(void) {
 void UnblockGameInput(void) {
     Ship::Window::GetInstance()->GetControlDeck()->UnblockGameInput();
 }
-
 }

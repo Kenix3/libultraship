@@ -18,3 +18,8 @@ cmake --build build
 ```
 & 'C:\Program Files\CMake\bin\cmake' --build .\build\x64
 ```
+
+## Running clang-format
+```
+find src include -name "*.cpp" -o -name "*.h" | sed 's| |\\ |g' | xargs clang-format-12 -i
+```

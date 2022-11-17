@@ -38,5 +38,4 @@ void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
 
     audio->Play(buf, len);
 }
-
 }

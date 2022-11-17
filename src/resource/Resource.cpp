@@ -35,7 +35,6 @@ void Resource::RegisterResourceAddressPatch(uint64_t crc, uint32_t instructionIn
     Patches.push_back(patch);
 }
 
-
 Resource::~Resource() {
     free(CachedGameAsset);
     CachedGameAsset = nullptr;

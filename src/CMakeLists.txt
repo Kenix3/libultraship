@@ -11,6 +11,8 @@ set(Source_Files__Audio
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/mixer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.cpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")

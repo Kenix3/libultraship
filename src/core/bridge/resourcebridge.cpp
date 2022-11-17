@@ -61,8 +61,7 @@ void* GetResourceDataByCrc(uint64_t crc) {
 }
 
 uint16_t GetResourceTexWidthByName(const char* name) {
-    const auto res =
-        static_pointer_cast<Ship::Texture>(LoadResource(name));
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
         return res->width;
@@ -212,5 +211,4 @@ void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite
         }
     }
 }
-
 }
