@@ -363,7 +363,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
     bool baseLoaded = false;
     int i = 0;
     while (!baseLoaded && i < mOtrFiles.size()) {
-#if defined(__SWITCH__)
+#if defined(__SWITCH__) || defined(__WIIU__)
         std::string fullPath = mOtrFiles[i];
 #else
         std::string fullPath = std::filesystem::absolute(mOtrFiles[i]).string();
@@ -392,7 +392,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         return false;
     }
     for (int j = i; j < mOtrFiles.size(); j++) {
-#if defined(__SWITCH__)
+#if defined(__SWITCH__) || defined(__WIIU__)
         std::string fullPath = mOtrFiles[j];
 #else
         std::string fullPath = std::filesystem::absolute(mOtrFiles[j]).string();
@@ -410,7 +410,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
 
 bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
     HANDLE patchHandle = NULL;
-#if defined(__SWITCH__)
+#if defined(__SWITCH__) || defined(__WIIU__)
     std::string fullPath = path;
 #else
     std::string fullPath = std::filesystem::absolute(path).string();
