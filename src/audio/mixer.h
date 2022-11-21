@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "libultra/abi.h"
+#include <libultraship/libultraship.h>
 
 #undef aSegment
 #undef aClearBuffer

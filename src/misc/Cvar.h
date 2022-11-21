@@ -1,7 +1,7 @@
 #ifndef _CVAR_H
 #define _CVAR_H
 
-#include "color.h"
+#include <libultraship/libultraship.h>
 #include <stdint.h>
 
 #ifdef __cplusplus

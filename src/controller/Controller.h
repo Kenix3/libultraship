@@ -5,7 +5,7 @@
 #include <string>
 #include <cstdint>
 #include <queue>
-#include "libultra/controller.h"
+#include <libultraship/libultraship.h>
 #include "attachment/ControllerAttachment.h"
 #include <unordered_map>
 

@@ -4,8 +4,7 @@
 #define OS_H
 
 #include "stdint.h"
-#include "libultra/controller.h"
-#include "libultra/message.h"
+#include <libultraship/libultraship.h>
 
 #ifdef __cplusplus
 extern "C" {

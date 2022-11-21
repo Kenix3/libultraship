@@ -1,5 +1,5 @@
 #include "PlayerAnimation.h"
-#include "libultra/gbi.h"
+#include <libultraship/libultraship.h>
 
 namespace Ship {
 void PlayerAnimationV0::ParseFileBinary(BinaryReader* reader, Resource* res) {

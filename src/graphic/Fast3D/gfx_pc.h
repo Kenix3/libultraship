@@ -8,8 +8,7 @@
 #include <list>
 #include <cstddef>
 
-#include "libultra/gbi.h"
-#include "libultra/types.h"
+#include <libultraship/libultraship.h>
 
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320

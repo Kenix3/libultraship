@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include "libultra/controller.h"
+#include <libultraship/libultraship.h>
 
 #define DEFINE_HOOK(name, type)         \
     struct name {                       \

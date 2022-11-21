@@ -3,7 +3,7 @@
 #include "resource/ResourceMgr.h"
 #include <spdlog/spdlog.h>
 #include <tinyxml2.h>
-#include "libultra/gbi.h"
+#include <libultraship/libultraship.h>
 
 namespace Ship {
 void ResourceFile::ParseFileBinary(BinaryReader* reader, Resource* res) {
