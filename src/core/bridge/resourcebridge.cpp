@@ -126,8 +126,15 @@ size_t GetResourceTexSizeByCrc(uint64_t crc) {
     return -1;
 }
 
-uint32_t GetGameVersion(void) {
-    return Ship::Window::GetInstance()->GetResourceManager()->GetGameVersion();
+void GetGameVersions(uint32_t* versions, size_t* versionsCount) {
+    auto list = Ship::Window::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
+    memcpy(versions, list.data(), list.size());
+    *versionsCount = list.size();
+}
+
+uint32_t HasGameVersion(uint32_t hash) {
+    auto list = Ship::Window::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
+    return std::find(list.begin(), list.end(), hash) != list.end();
 }
 
 void LoadResourceDirectory(const char* name) {
