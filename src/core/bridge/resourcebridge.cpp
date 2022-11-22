@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-#include "resource/types/Texture.h"
+#include "resource/factory/Texture.h"
 
 std::shared_ptr<Ship::Resource> LoadResource(const char* name) {
     return Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
@@ -33,16 +33,11 @@ size_t GetResourceSizeByName(const char* name) {
         return 0;
     }
 
-    return resource->File->BufferSize;
+    return resource->GetPointerSize();
 }
 
 size_t GetResourceSizeByCrc(uint64_t crc) {
-    auto resource = LoadResource(crc);
-
-    if (resource == nullptr) {
-        return 0;
-    }
-    return resource->File->BufferSize;
+    return GetResourceSizeByName(GetResourceNameByCrc(crc));
 }
 
 void* GetResourceDataByName(const char* name) {
@@ -52,8 +47,7 @@ void* GetResourceDataByName(const char* name) {
         return nullptr;
     }
 
-    auto buffer = resource->File->Buffer;
-    return buffer.get();
+    return resource->GetPointer();
 }
 
 void* GetResourceDataByCrc(uint64_t crc) {
@@ -64,7 +58,7 @@ uint16_t GetResourceTexWidthByName(const char* name) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
-        return res->width;
+        return res->Width;
     }
 
     SPDLOG_ERROR("Given texture path is a non-existent resource");
@@ -75,7 +69,7 @@ uint16_t GetResourceTexWidthByCrc(uint64_t crc) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
-        return res->width;
+        return res->Width;
     }
 
     SPDLOG_ERROR("Given texture path is a non-existent resource");
@@ -86,7 +80,7 @@ uint16_t GetResourceTexHeightByName(const char* name) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
-        return res->height;
+        return res->Height;
     }
 
     SPDLOG_ERROR("Given texture path is a non-existent resource");
@@ -97,7 +91,7 @@ uint16_t GetResourceTexHeightByCrc(uint64_t crc) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
-        return res->height;
+        return res->Height;
     }
 
     SPDLOG_ERROR("Given texture path is a non-existent resource");
@@ -108,7 +102,7 @@ size_t GetResourceTexSizeByName(const char* name) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
-        return res->imageDataSize;
+        return res->ImageDataSize;
     }
 
     SPDLOG_ERROR("Given texture path is a non-existent resource");
@@ -119,7 +113,7 @@ size_t GetResourceTexSizeByCrc(uint64_t crc) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
-        return res->imageDataSize;
+        return res->ImageDataSize;
     }
 
     SPDLOG_ERROR("Given texture path is a non-existent resource");
@@ -196,8 +190,8 @@ void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueTo
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
-        if ((index * sizeof(int16_t)) < res->imageDataSize) {
-            ((int16_t*)res->imageData)[index] = valueToWrite;
+        if ((index * sizeof(int16_t)) < res->ImageDataSize) {
+            ((int16_t*)res->ImageData)[index] = valueToWrite;
         }
     }
 }
@@ -206,8 +200,8 @@ void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
-        if ((index * sizeof(int16_t)) < res->imageDataSize) {
-            ((int16_t*)res->imageData)[index] = valueToWrite;
+        if ((index * sizeof(int16_t)) < res->ImageDataSize) {
+            ((int16_t*)res->ImageData)[index] = valueToWrite;
         }
     }
 }

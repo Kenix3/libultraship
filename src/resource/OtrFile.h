@@ -8,8 +8,7 @@
 namespace Ship {
 class Archive;
 
-class OtrFile {
-  public:
+struct OtrFile {
     std::shared_ptr<Archive> Parent;
     std::string Path;
     std::shared_ptr<char[]> Buffer;

@@ -210,92 +210,36 @@ set(Source_Files__Resource
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/OtrFile.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/OtrFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceType.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceVersion.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.cpp
 )
 source_group("Resource" FILES ${Source_Files__Resource})
 
-set(Source_Files__Resource__Factory
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AudioFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AudioFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/BlobFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/BlobFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CollisionHeaderFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CollisionHeaderFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CutsceneFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CutsceneFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/DisplayListFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/DisplayListFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/MtxFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/MtxFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PathFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PathFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PlayerAnimationFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PlayerAnimationFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ResourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ResourceLoader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SceneFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SceneFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonLimbFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonLimbFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextureFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextureFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/VtxFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/VtxFactory.h
-)
-source_group("Resource\\Factory" FILES ${Source_Files__Resource__Factory})
-
 set(Source_Files__Resource__Types
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Animation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Animation.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Array.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Array.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Audio.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Audio.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Blob.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Blob.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/CollisionHeader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/CollisionHeader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Cutscene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Cutscene.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Model.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Model.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Path.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Path.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/PlayerAnimation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/PlayerAnimation.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Scene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Scene.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Skeleton.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Skeleton.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/SkeletonLimb.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/SkeletonLimb.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Text.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Text.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Texture.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Texture.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Vertex.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Vertex.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Array.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Array.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Blob.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Blob.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayList.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Matrix.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Matrix.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Texture.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Texture.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Vertex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Vertex.h
 )
-source_group("Resource\\Types" FILES ${Source_Files__Resource__Types})
+source_group("Resource\\Factory" FILES ${Source_Files__Resource__Types})
 
-
-target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Factory} ${Source_Files__Resource__Types})
+target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types})
 
 #=================== Graphic ===================
 
