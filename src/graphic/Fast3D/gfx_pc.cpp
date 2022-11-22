@@ -2203,8 +2203,7 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_MTX: {
                 uintptr_t mtxAddr = cmd->words.w1;
 
-                if (mtxAddr == SEG_ADDR(0, 0x12DB20) || mtxAddr == SEG_ADDR(0, 0x12DB40) ||
-                    mtxAddr == SEG_ADDR(0, 0xFBC20)) {
+                if (mtxAddr == SEG_ADDR(0, 0x12DB20) || mtxAddr == SEG_ADDR(0, 0x12DB40) || mtxAddr == SEG_ADDR(0, 0xFBC20)) {
                     mtxAddr = clearMtx;
                 }
 
