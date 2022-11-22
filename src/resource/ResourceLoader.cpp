@@ -49,13 +49,12 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
         reader->ReadInt8();
     }
     reader->SetEndianness(endianness);
-    ResourceType resourceType = (ResourceType)reader->ReadUInt32();
-    uint64_t id = reader->ReadUInt64();
-    reader->ReadUInt32(); // Resource minor version number
-    reader->ReadUInt64(); // ROM CRC
-    reader->ReadUInt32(); // ROM Enum
-    // Reserved for future file format versions...
-    reader->Seek(64, SeekOffsetType::Start);
+    ResourceType resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
+    uint64_t id = reader->ReadUInt64();                             // Unique asset ID
+    reader->ReadUInt32();                                           // Resource minor version number
+    reader->ReadUInt64();                                           // ROM CRC
+    reader->ReadUInt32();                                           // ROM Enum
+    reader->Seek(64, SeekOffsetType::Start);                        // Reserved for future file format versions...
     // OTR HEADER END
 
     std::shared_ptr<Resource> result = nullptr;
