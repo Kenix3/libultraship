@@ -172,14 +172,6 @@ void ResourceMgr::LoadResourceThread() {
     SPDLOG_INFO("Resource Manager LoadResourceThread ended");
 }
 
-uint32_t ResourceMgr::GetGameVersion() {
-    return mGameVersion;
-}
-
-void ResourceMgr::SetGameVersion(uint32_t newGameVersion) {
-    mGameVersion = newGameVersion;
-}
-
 std::vector<uint32_t> ResourceMgr::GetGameVersions() {
     return mArchive->GetGameVersions();
 }
