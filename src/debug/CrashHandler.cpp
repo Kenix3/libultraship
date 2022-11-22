@@ -17,54 +17,47 @@ extern "C" void DeinitOTR(void);
 
 static CrashHandlerCallback sCallbackFunc = nullptr;
 
-static const char* GetGameVersionString() {
+static const char* GetGameVersionString(int index) {
     if (Ship::Window::GetInstance()->GetResourceManager()->IsRunning()) {
-        auto versions = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions();
-        std::string versionsString = "";
-        for (auto version : versions) {
-            switch (version) {
-                case OOT_NTSC_10:
-                    versionsString += "NTSC 1.0";
-                case OOT_NTSC_11:
-                    versionsString += "NTSC 1.1";
-                case OOT_NTSC_12:
-                    versionsString += "NTSC 1.2";
-                case OOT_PAL_10:
-                    versionsString += "PAL 1.0";
-                case OOT_PAL_11:
-                    versionsString += "PAL 1.1";
-                case OOT_NTSC_JP_GC_CE:
-                    versionsString += "NTSC JP_GC_CE";
-                case OOT_NTSC_JP_GC:
-                    versionsString += "NTSC_JP_GC";
-                case OOT_NTSC_US_GC:
-                    versionsString += "NTSC_US_GC";
-                case OOT_PAL_GC:
-                    versionsString += "PAL_GC";
-                case OOT_NTSC_JP_MQ:
-                    versionsString += "NTSC_JP_MQ";
-                case OOT_NTSC_US_MQ:
-                    versionsString += "NTSC_US_MQ";
-                case OOT_PAL_MQ:
-                    versionsString += "PAL_MQ";
-                case OOT_PAL_GC_DBG1:
-                    versionsString += "DBG_1";
-                case OOT_PAL_GC_DBG2:
-                    versionsString += "DBG_2";
-                case OOT_PAL_GC_MQ_DBG:
-                    versionsString += "MQ_DBG";
-                case OOT_IQUE_TW:
-                    versionsString += "IQUE_TW";
-                case OOT_IQUE_CN:
-                    versionsString += "IQUE_CN";
-                case UNKNOWN:
-                    versionsString += "UNKNOWN";
-            }
-            if (version == versions[versions.size() - 1]) {
-                versionsString += ", ";
-            }
+        auto version = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions()[index];
+        switch (version) {
+            case OOT_NTSC_10:
+                return "NTSC 1.0";
+            case OOT_NTSC_11:
+                return "NTSC 1.1";
+            case OOT_NTSC_12:
+                return "NTSC 1.2";
+            case OOT_PAL_10:
+                return "PAL 1.0";
+            case OOT_PAL_11:
+                return "PAL 1.1";
+            case OOT_NTSC_JP_GC_CE:
+                return "NTSC JP_GC_CE";
+            case OOT_NTSC_JP_GC:
+                return "NTSC_JP_GC";
+            case OOT_NTSC_US_GC:
+                return "NTSC_US_GC";
+            case OOT_PAL_GC:
+                return "PAL_GC";
+            case OOT_NTSC_JP_MQ:
+                return "NTSC_JP_MQ";
+            case OOT_NTSC_US_MQ:
+                return "NTSC_US_MQ";
+            case OOT_PAL_MQ:
+                return "PAL_MQ";
+            case OOT_PAL_GC_DBG1:
+                return "DBG_1";
+            case OOT_PAL_GC_DBG2:
+                return "DBG_2";
+            case OOT_PAL_GC_MQ_DBG:
+                return "MQ_DBG";
+            case OOT_IQUE_TW:
+                return "IQUE_TW";
+            case OOT_IQUE_CN:
+                return "IQUE_CN";
+            case UNKNOWN:
+                return "UNKNOWN";
         }
-        return versionsString.c_str();
     }
     return "ResourceMGR not ready";
 }
@@ -88,7 +81,9 @@ static void append_line(char* buf, size_t* len, const char* str) {
  * @param buffer
  */
 static void CrashHandler_PrintCommon(char* buffer, size_t* curBufferPos) {
-    WRITE_VAR_LINE(buffer, curBufferPos, "OTR Generated with: ", GetGameVersionString());
+    for (int i = 0; i < Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions().size(); i++) {
+        WRITE_VAR_LINE(buffer, curBufferPos, "OTR Generated with: ", GetGameVersionString(i));
+    }
     if (sCallbackFunc != nullptr) {
         sCallbackFunc(buffer, curBufferPos);
     }
