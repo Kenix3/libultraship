@@ -5,7 +5,6 @@
 #include "ResourceType.h"
 #include "ResourceVersion.h"
 #include "binarytools/BinaryWriter.h"
-#include <spdlog/spdlog.h>
 
 namespace Ship {
 class ResourceMgr;

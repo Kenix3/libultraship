@@ -1,4 +1,5 @@
 #include "Array.h"
+#include "spdlog/spdlog.h"
 
 namespace Ship {
 std::shared_ptr<Resource> ArrayFactory::ReadResource(std::shared_ptr<BinaryReader> reader) {

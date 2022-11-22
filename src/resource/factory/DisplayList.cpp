@@ -1,4 +1,5 @@
 #include "resource/factory/DisplayList.h"
+#include "spdlog/spdlog.h"
 
 namespace Ship {
 std::shared_ptr<Resource> DisplayListFactory::ReadResource(std::shared_ptr<BinaryReader> reader) {

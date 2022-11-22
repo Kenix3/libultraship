@@ -1,4 +1,5 @@
 #include "Vertex.h"
+#include "spdlog/spdlog.h"
 
 namespace Ship {
 std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<BinaryReader> reader) {

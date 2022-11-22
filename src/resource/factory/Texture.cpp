@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "spdlog/spdlog.h"
 
 namespace Ship {
 

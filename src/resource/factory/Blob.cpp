@@ -1,4 +1,5 @@
 #include "Blob.h"
+#include "spdlog/spdlog.h"
 
 namespace Ship {
 std::shared_ptr<Resource> BlobFactory::ReadResource(std::shared_ptr<BinaryReader> reader) {
