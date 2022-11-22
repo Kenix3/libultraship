@@ -126,9 +126,9 @@ size_t GetResourceTexSizeByCrc(uint64_t crc) {
     return -1;
 }
 
-void GetGameVersions(uint32_t* versions, size_t* versionsCount) {
+void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
     auto list = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions();
-    memcpy(versions, list.data(), list.size());
+    memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
 
