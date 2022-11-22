@@ -7,6 +7,7 @@
 #include <variant>
 #include "core/Window.h"
 #include "Resource.h"
+#include "ResourceLoader.h"
 #include "Archive.h"
 #include "OtrFile.h"
 
@@ -29,6 +30,7 @@ class ResourceMgr {
 
     std::shared_ptr<Archive> GetArchive();
     std::shared_ptr<Window> GetContext();
+    std::shared_ptr<ResourceLoader> GetResourceLoader();
     const std::string* HashToString(uint64_t hash) const;
     void InvalidateResourceCache();
     std::vector<uint32_t> GetGameVersions();
@@ -59,6 +61,7 @@ class ResourceMgr {
     std::unordered_map<std::string, std::shared_ptr<Resource>> mResourceCache;
     std::queue<std::shared_ptr<OtrFile>> mFileLoadQueue;
     std::queue<std::shared_ptr<ResourcePromise>> mResourceLoadQueue;
+    std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<Archive> mArchive;
     std::shared_ptr<std::thread> mFileLoadThread;
     std::shared_ptr<std::thread> mResourceLoadThread;

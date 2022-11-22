@@ -17,7 +17,7 @@
 #include "core/Window.h"
 #include "misc/Cvar.h"
 #include "menu/GameOverlay.h"
-#include "resource/types/Texture.h"
+#include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
@@ -895,15 +895,15 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
     const auto res = static_cast<Ship::Texture*>(Window::GetInstance()->GetResourceManager()->LoadResource(path).get());
 
     std::vector<uint8_t> texBuffer;
-    texBuffer.reserve(res->width * res->height * 4);
+    texBuffer.reserve(res->Width * res->Height * 4);
 
-    switch (res->texType) {
+    switch (res->Type) {
         case Ship::TextureType::RGBA32bpp:
-            texBuffer.assign(res->imageData, res->imageData + (res->width * res->height * 4));
+            texBuffer.assign(res->ImageData, res->ImageData + (res->Width * res->Height * 4));
             break;
         case Ship::TextureType::GrayscaleAlpha8bpp:
-            for (int32_t i = 0; i < res->width * res->height; i++) {
-                uint8_t ia = res->imageData[i];
+            for (int32_t i = 0; i < res->Width * res->Height; i++) {
+                uint8_t ia = res->ImageData[i];
                 uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
                 uint8_t alpha = (ia & 0xF) * 255 / 15;
                 texBuffer.push_back(color);
@@ -929,7 +929,7 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
 
     api->select_texture(0, asset->textureId);
     api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(texBuffer.data(), res->width, res->height);
+    api->upload_texture(texBuffer.data(), res->Width, res->Height);
 
     DefaultAssets[name] = asset;
 }

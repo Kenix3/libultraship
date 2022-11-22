@@ -339,4 +339,6 @@ libultraship/DebugObj/*
 build/
 build-cmake/
 libultraship.a
+libultraship.lib
+ZAPDUtils.lib
 .DS_Store

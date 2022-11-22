@@ -1,5 +1,4 @@
 #include "ResourceMgr.h"
-#include "factory/SoH/ResourceLoader.h"
 #include <spdlog/spdlog.h>
 #include "OtrFile.h"
 #include "Archive.h"
@@ -12,6 +11,7 @@ namespace Ship {
 ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
                          const std::unordered_set<uint32_t>& validHashes)
     : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
+    mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
 
     if (mArchive->IsMainMPQValid()) {
@@ -22,6 +22,7 @@ ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mai
 ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
                          const std::unordered_set<uint32_t>& validHashes)
     : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
+    mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
 
     if (mArchive->IsMainMPQValid()) {
@@ -134,28 +135,24 @@ void ResourceMgr::LoadResourceThread() {
         }
 
         if (!toLoad->File->HasLoadError) {
-            auto unmanagedRes = ResourceLoader::LoadResource(toLoad->File);
+            std::shared_ptr<Resource> resource = GetResourceLoader()->LoadResource(toLoad->File);
+            resource->ResourceManager = GetContext()->GetResourceManager();
 
-            if (unmanagedRes != nullptr) {
-                unmanagedRes->ResourceManager = this;
-                auto resource = std::shared_ptr<Resource>(unmanagedRes);
+            if (resource != nullptr) {
+                std::unique_lock<std::mutex> lock(toLoad->ResourceLoadMutex);
 
-                if (resource != nullptr) {
-                    std::unique_lock<std::mutex> lock(toLoad->ResourceLoadMutex);
+                toLoad->HasResourceLoaded = true;
+                toLoad->Res = resource;
+                mResourceCache[resource->File->Path] = resource;
 
-                    toLoad->HasResourceLoaded = true;
-                    toLoad->Res = resource;
-                    mResourceCache[resource->File->Path] = resource;
+                SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", toLoad->File->Path);
 
-                    SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", toLoad->File->Path);
+                resource->File = nullptr;
+            } else {
+                toLoad->HasResourceLoaded = false;
+                toLoad->Res = nullptr;
 
-                    resource->File = nullptr;
-                } else {
-                    toLoad->HasResourceLoaded = false;
-                    toLoad->Res = nullptr;
-
-                    SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", toLoad->File->Path);
-                }
+                SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", toLoad->File->Path);
             }
         } else {
             toLoad->HasResourceLoaded = false;
@@ -346,6 +343,10 @@ const std::string* ResourceMgr::HashToString(uint64_t hash) const {
 
 std::shared_ptr<Archive> ResourceMgr::GetArchive() {
     return mArchive;
+}
+
+std::shared_ptr<ResourceLoader> ResourceMgr::GetResourceLoader() {
+    return mResourceLoader;
 }
 
 std::shared_ptr<Window> ResourceMgr::GetContext() {
