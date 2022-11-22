@@ -83,7 +83,7 @@ class Array : public Resource {
     size_t GetPointerSize();
 
     ArrayResourceType ArrayType;
-    ScalarType ScalarType;
+    ScalarType ArrayScalarType;
     size_t ArrayCount;
     // OTRTODO: Should be a vector of resource pointers...
     std::vector<ScalarData> Scalars;

@@ -45,7 +45,7 @@ void ArrayFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::
             data.v.cn[3] = reader->ReadUByte();
             array->Vertices.push_back(data);
         } else {
-            array->ScalarType = (ScalarType)reader->ReadUInt32();
+            array->ArrayScalarType = (ScalarType)reader->ReadUInt32();
 
             int iter = 1;
 
@@ -56,7 +56,7 @@ void ArrayFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::
             for (int k = 0; k < iter; k++) {
                 ScalarData data;
 
-                switch (array->ScalarType) {
+                switch (array->ArrayScalarType) {
                     case ScalarType::ZSCALAR_S16:
                         data.s16 = reader->ReadInt16();
                         break;
@@ -97,7 +97,7 @@ size_t Array::GetPointerSize() {
             break;
         case ArrayResourceType::Scalar:
         default:
-            switch (ScalarType) {
+            switch (ArrayScalarType) {
                 case ScalarType::ZSCALAR_S16:
                     typeSize = sizeof(int16_t);
                     break;
