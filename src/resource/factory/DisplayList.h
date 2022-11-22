@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../Resource.h"
-#include "../ResourceFactory.h"
+#include "resource/Resource.h"
+#include "resource/ResourceFactory.h"
 #include "libultra/gbi.h"
 #include <vector>
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Resource.h"
-#include "../ResourceFactory.h"
+#include "resource/Resource.h"
+#include "resource/ResourceFactory.h"
 #include "Vertex.h"
 
 namespace Ship {
