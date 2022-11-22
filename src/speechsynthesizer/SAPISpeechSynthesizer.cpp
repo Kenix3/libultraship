@@ -9,6 +9,8 @@
 #include <sapi.h>
 #include <thread>
 
+ISpVoice * mVoice = NULL;
+
 namespace Ship {
 SAPISpeechSynthesizer::SAPISpeechSynthesizer() {
 }
@@ -20,7 +22,7 @@ bool SAPISpeechSynthesizer::DoInit() {
     return true;
 }
 
-void SpeakThreadTask(const char* textt) {
+void SpeakThreadTask(const char* text) {
     const int w = 512;
     int* wp = const_cast<int*>(&w);
     *wp = strlen(text);
@@ -28,7 +30,7 @@ void SpeakThreadTask(const char* textt) {
     wchar_t wtext[w];
     mbstowcs(wtext, text, strlen(text) + 1);
 
-    (ISpVoice*)mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
+    mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 }
 
 void SAPISpeechSynthesizer::Speak(const char* text) {

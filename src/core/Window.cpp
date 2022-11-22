@@ -460,7 +460,7 @@ void Window::InitializeConfiguration() {
 void Window::InitializeSpeechSynthesis() {
 #ifdef __APPLE__
     mSpeechSynthesizer = std::make_shared<DarwinSpeechSynthesizer>();
-#else
+#elif defined(_WIN32)
     mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
 #endif
 }

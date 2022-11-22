@@ -20,9 +20,6 @@ public:
 
 protected:
     bool DoInit(void);
-
-private:
-    void *mVoice;
 };
 }
 
