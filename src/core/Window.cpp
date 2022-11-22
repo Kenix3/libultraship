@@ -96,11 +96,29 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     CreateDefaults();
     InitializeControlDeck();
 
-    mIsFullscreen = GetConfig()->getBool("Window.Fullscreen.Enabled", false);
+    bool steamDeckGameMode = false;
+
+#ifdef __linux__
+    std::ifstream osReleaseFile("/etc/os-release");
+    if (osReleaseFile.is_open()) {
+        std::string line;
+        while (std::getline(osReleaseFile, line)) {
+            if (line.find("VARIANT_ID") != std::string::npos) {
+                if (line.find("steamdeck") != std::string::npos) {
+                    steamDeckGameMode = std::getenv("XDG_CURRENT_DESKTOP") != nullptr &&
+                                        std::string(std::getenv("XDG_CURRENT_DESKTOP")) == "gamescope";
+                }
+                break;
+            }
+        }
+    }
+#endif
+
+    mIsFullscreen = GetConfig()->getBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
 
     if (mIsFullscreen) {
-        mWidth = GetConfig()->getInt("Window.Fullscreen.Width", 1920);
-        mHeight = GetConfig()->getInt("Window.Fullscreen.Height", 1080);
+        mWidth = GetConfig()->getInt("Window.Fullscreen.Width", steamDeckGameMode ? 1280 : 1920);
+        mHeight = GetConfig()->getInt("Window.Fullscreen.Height", steamDeckGameMode ? 800 : 1080);
     } else {
         mWidth = GetConfig()->getInt("Window.Width", 640);
         mHeight = GetConfig()->getInt("Window.Height", 480);
