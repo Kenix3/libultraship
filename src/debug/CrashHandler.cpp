@@ -17,9 +17,9 @@ extern "C" void DeinitOTR(void);
 
 static CrashHandlerCallback sCallbackFunc = nullptr;
 
-static const char* GetGameVersionString() {
+static const char* GetGameVersionString(int index) {
     if (Ship::Window::GetInstance()->GetResourceManager()->IsRunning()) {
-        uint32_t version = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersion();
+        auto version = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions()[index];
         switch (version) {
             case OOT_NTSC_10:
                 return "NTSC 1.0";
@@ -81,7 +81,9 @@ static void append_line(char* buf, size_t* len, const char* str) {
  * @param buffer
  */
 static void CrashHandler_PrintCommon(char* buffer, size_t* curBufferPos) {
-    WRITE_VAR_LINE(buffer, curBufferPos, "OTR Generated with: ", GetGameVersionString());
+    for (int i = 0; i < Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions().size(); i++) {
+        WRITE_VAR_LINE(buffer, curBufferPos, "OTR Generated with: ", GetGameVersionString(i));
+    }
     if (sCallbackFunc != nullptr) {
         sCallbackFunc(buffer, curBufferPos);
     }

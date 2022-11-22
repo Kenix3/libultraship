@@ -31,8 +31,6 @@ class ResourceMgr {
     std::shared_ptr<Window> GetContext();
     const std::string* HashToString(uint64_t hash) const;
     void InvalidateResourceCache();
-    uint32_t GetGameVersion();
-    void SetGameVersion(uint32_t newGameVersion);
     std::vector<uint32_t> GetGameVersions();
     void PushGameVersion(uint32_t newGameVersion);
     std::shared_ptr<OtrFile> LoadFileAsync(const std::string& filePath);
@@ -68,6 +66,5 @@ class ResourceMgr {
     std::mutex mResourceLoadMutex;
     std::condition_variable mFileLoadNotifier;
     std::condition_variable mResourceLoadNotifier;
-    uint32_t mGameVersion;
 };
 } // namespace Ship

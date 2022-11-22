@@ -2203,16 +2203,9 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_MTX: {
                 uintptr_t mtxAddr = cmd->words.w1;
 
-                // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
-                uint32_t gameVersion = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersion();
-                if (gameVersion == OOT_PAL_GC) {
-                    if (mtxAddr == SEG_ADDR(0, 0x0FBC20)) {
-                        mtxAddr = clearMtx;
-                    }
-                } else {
-                    if (mtxAddr == SEG_ADDR(0, 0x12DB20) || mtxAddr == SEG_ADDR(0, 0x12DB40)) {
-                        mtxAddr = clearMtx;
-                    }
+                if (mtxAddr == SEG_ADDR(0, 0x12DB20) || mtxAddr == SEG_ADDR(0, 0x12DB40) ||
+                    mtxAddr == SEG_ADDR(0, 0xFBC20)) {
+                    mtxAddr = clearMtx;
                 }
 
 #ifdef F3DEX_GBI_2
