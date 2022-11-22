@@ -14,8 +14,6 @@ ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mai
     : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
 
-    mGameVersion = UNKNOWN;
-
     if (mArchive->IsMainMPQValid()) {
         Start();
     }
@@ -25,8 +23,6 @@ ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::vector<std:
                          const std::unordered_set<uint32_t>& validHashes)
     : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
-
-    mGameVersion = UNKNOWN;
 
     if (mArchive->IsMainMPQValid()) {
         Start();
