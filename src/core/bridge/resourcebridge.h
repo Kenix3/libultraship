@@ -26,7 +26,7 @@ uint16_t GetResourceTexHeightByName(const char* name);
 uint16_t GetResourceTexHeightByCrc(uint64_t crc);
 size_t GetResourceTexSizeByName(const char* name);
 size_t GetResourceTexSizeByCrc(uint64_t crc);
-void GetGameVersions(uint32_t* versions, uint32_t* versionsCount);
+void GetGameVersions(uint32_t* versions, size_t* versionsCount);
 uint32_t HasGameVersion(uint32_t hash);
 void LoadResourceDirectory(const char* name);
 void DirtyResourceDirectory(const char* name);
