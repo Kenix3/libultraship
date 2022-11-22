@@ -1,5 +1,5 @@
 #include "Resource.h"
-#include "resource/factory/DisplayList.h"
+#include "resource/type/DisplayList.h"
 #include "resource/ResourceMgr.h"
 #include <spdlog/spdlog.h>
 #include <tinyxml2.h>
