@@ -1,7 +1,6 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "resource/ResourceFactory.h"
 #include "libultra/types.h"
 
 namespace Ship {
@@ -16,16 +15,6 @@ enum class TextureType {
     GrayscaleAlpha4bpp = 7,
     GrayscaleAlpha8bpp = 8,
     GrayscaleAlpha16bpp = 9,
-};
-
-class TextureFactory : public ResourceFactory {
-  public:
-    std::shared_ptr<Resource> ReadResource(std::shared_ptr<BinaryReader> reader);
-};
-
-class TextureFactoryV0 : public ResourceVersionFactory {
-  public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) override;
 };
 
 class Texture : public Resource {

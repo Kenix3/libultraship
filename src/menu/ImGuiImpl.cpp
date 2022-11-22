@@ -17,7 +17,7 @@
 #include "core/Window.h"
 #include "misc/Cvar.h"
 #include "menu/GameOverlay.h"
-#include "resource/factory/Texture.h"
+#include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"

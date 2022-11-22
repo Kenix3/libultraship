@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-#include "resource/factory/Texture.h"
+#include "resource/type/Texture.h"
 
 std::shared_ptr<Ship::Resource> LoadResource(const char* name) {
     return Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);

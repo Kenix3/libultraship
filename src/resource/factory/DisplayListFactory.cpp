@@ -1,4 +1,5 @@
-#include "resource/factory/DisplayList.h"
+#include "resource/factory/DisplayListFactory.h"
+#include "resource/type/DisplayList.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {
@@ -53,13 +54,5 @@ void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
             break;
         }
     }
-}
-
-void* DisplayList::GetPointer() {
-    return Instructions.data();
-}
-
-size_t DisplayList::GetPointerSize() {
-    return Instructions.size() * sizeof(Gfx);
 }
 } // namespace Ship

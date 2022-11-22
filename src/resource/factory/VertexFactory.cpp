@@ -1,4 +1,5 @@
-#include "Vertex.h"
+#include "resource/factory/VertexFactory.h"
+#include "resource/type/Vertex.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {
@@ -45,13 +46,4 @@ void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
         vertex->VertexList.push_back(data);
     }
 }
-
-void* Vertex::GetPointer() {
-    return VertexList.data();
-}
-
-size_t Vertex::GetPointerSize() {
-    return VertexList.size() * sizeof(Vtx);
-}
-
 } // namespace Ship

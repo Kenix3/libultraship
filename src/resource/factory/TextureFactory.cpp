@@ -1,4 +1,5 @@
-#include "Texture.h"
+#include "resource/factory/TextureFactory.h"
+#include "resource/type/Texture.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {
@@ -39,20 +40,6 @@ void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
 
     for (uint32_t i = 0; i < dataSize; i++) {
         texture->ImageData[i] = reader->ReadUByte();
-    }
-}
-
-void* Texture::GetPointer() {
-    return ImageData;
-}
-
-size_t Texture::GetPointerSize() {
-    return ImageDataSize;
-}
-
-Texture::~Texture() {
-    if (ImageData != nullptr) {
-        delete ImageData;
     }
 }
 } // namespace Ship

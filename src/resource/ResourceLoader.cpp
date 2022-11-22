@@ -5,12 +5,12 @@
 #include "OtrFile.h"
 #include "binarytools/MemoryStream.h"
 #include "binarytools/BinaryReader.h"
-#include "factory/Texture.h"
-#include "factory/Vertex.h"
-#include "factory/Array.h"
-#include "factory/Blob.h"
-#include "factory/DisplayList.h"
-#include "factory/Matrix.h"
+#include "factory/TextureFactory.h"
+#include "factory/VertexFactory.h"
+#include "factory/ArrayFactory.h"
+#include "factory/BlobFactory.h"
+#include "factory/DisplayListFactory.h"
+#include "factory/MatrixFactory.h"
 
 namespace Ship {
 ResourceLoader::ResourceLoader(std::shared_ptr<Window> context) : mContext(context) {

@@ -1,4 +1,5 @@
-#include "Blob.h"
+#include "resource/factory/BlobFactory.h"
+#include "resource/type/Blob.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {
@@ -34,13 +35,5 @@ void BlobFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::s
     for (uint32_t i = 0; i < dataSize; i++) {
         blob->Data.push_back(reader->ReadUByte());
     }
-}
-
-void* Blob::GetPointer() {
-    return Data.data();
-}
-
-size_t Blob::GetPointerSize() {
-    return Data.size() * sizeof(uint8_t);
 }
 } // namespace Ship

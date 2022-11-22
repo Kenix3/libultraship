@@ -1,4 +1,5 @@
-#include "Matrix.h"
+#include "resource/factory/MatrixFactory.h"
+#include "resource/type/Matrix.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {
@@ -32,13 +33,5 @@ void MatrixFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
             mtx->Matrx.m[i][j] = reader->ReadInt32();
         }
     }
-}
-
-void* Matrix::GetPointer() {
-    return &Matrx;
-}
-
-size_t Matrix::GetPointerSize() {
-    return sizeof(Mtx);
 }
 } // namespace Ship

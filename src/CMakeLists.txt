@@ -224,22 +224,38 @@ set(Source_Files__Resource
 source_group("Resource" FILES ${Source_Files__Resource})
 
 set(Source_Files__Resource__Types
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Array.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Array.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Blob.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Blob.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayList.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayList.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Matrix.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Matrix.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Texture.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Texture.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Vertex.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/Vertex.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Array.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Array.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Blob.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Blob.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/DisplayList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/DisplayList.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Matrix.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Matrix.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Texture.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Texture.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.h
 )
-source_group("Resource\\Factory" FILES ${Source_Files__Resource__Types})
+source_group("Resource\\Type" FILES ${Source_Files__Resource__Types})
 
-target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types})
+set(Source_Files__Resource__Factories
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/ArrayFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/ArrayFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/BlobFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/BlobFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayListFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayListFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/MatrixFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/MatrixFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/TextureFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/TextureFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.h
+)
+source_group("Resource\\Factory" FILES ${Source_Files__Resource__Factories})
+
+target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories})
 
 #=================== Graphic ===================
 
