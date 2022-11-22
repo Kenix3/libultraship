@@ -20,8 +20,8 @@ class Resource {
   public:
     std::shared_ptr<ResourceMgr> ResourceManager;
     Endianness ByteOrder;      // 0x00 - Endianness of the file
-    ResourceType ResourceType; // 0x01 - 4 byte MAGIC
-    ResourceVersion Ver;       // 0x05 - Based on Ship release numbers
+    ResourceType Type;         // 0x01 - 4 byte MAGIC
+    ResourceVersion Version;   // 0x05 - Based on Ship release numbers
     uint64_t Id;               // 0x09 - Unique Resource ID
     uint32_t ResourceVersion;  // 0x11 - Resource Minor Version Number    bool IsDirty = false;
     bool IsDirty = false;
