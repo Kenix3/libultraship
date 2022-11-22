@@ -57,7 +57,6 @@ static const char* GetGameVersionString(int index) {
             case UNKNOWN:
                 return "UNKNOWN";
         }
-        return versionsString.c_str();
     }
     return "ResourceMGR not ready";
 }
