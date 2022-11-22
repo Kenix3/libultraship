@@ -13,7 +13,7 @@ std::shared_ptr<Resource> BlobFactory::ReadResource(std::shared_ptr<BinaryReader
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", version);
+        SPDLOG_ERROR("Failed to load Blob with version {}", version);
         return nullptr;
     }
 

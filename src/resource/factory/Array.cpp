@@ -13,7 +13,7 @@ std::shared_ptr<Resource> ArrayFactory::ReadResource(std::shared_ptr<BinaryReade
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", version);
+        SPDLOG_ERROR("Failed to load Array with version {}", version);
         return nullptr;
     }
 
