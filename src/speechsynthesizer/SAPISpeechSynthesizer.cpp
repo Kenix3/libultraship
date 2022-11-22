@@ -9,7 +9,7 @@
 #include <sapi.h>
 #include <thread>
 
-ISpVoice * mVoice = NULL;
+ISpVoice* mVoice = NULL;
 
 namespace Ship {
 SAPISpeechSynthesizer::SAPISpeechSynthesizer() {
