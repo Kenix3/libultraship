@@ -43,22 +43,21 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.get(), fileToLoad->BufferSize);
     auto reader = std::make_shared<BinaryReader>(stream);
 
+    // OTR HEADER BEGIN
     Endianness endianness = (Endianness)reader->ReadInt8();
-
     for (int i = 0; i < 3; i++) {
         reader->ReadInt8();
     }
-
     reader->SetEndianness(endianness);
-
     ResourceType resourceType = (ResourceType)reader->ReadUInt32();
     uint64_t id = reader->ReadUInt64();
     reader->ReadUInt32(); // Resource minor version number
     reader->ReadUInt64(); // ROM CRC
     reader->ReadUInt32(); // ROM Enum
-
     // Reserved for future file format versions...
     reader->Seek(64, SeekOffsetType::Start);
+    // OTR HEADER END
+
     std::shared_ptr<Resource> result = nullptr;
 
     auto factory = mFactories[resourceType];
