@@ -8,7 +8,7 @@
 #include <string>
 
 namespace Ship {
-typedef enum class ConsoleVariableType { Integer, Float, String, Colour } ConsoleVariableType;
+typedef enum class ConsoleVariableType { Integer, Float, String, Color } ConsoleVariableType;
 typedef union CVarValue {
 
 } CVarValue;
@@ -19,7 +19,7 @@ typedef struct CVar {
     int32_t Integer;
     float Float;
     std::string String;
-    Color_RGBA8 Colour;
+    Color_RGBA8 Color;
 } CVar;
 
 class ConsoleVariable {

@@ -7,6 +7,10 @@
 #include "color.h"
 
 #ifdef __cplusplus
+#include <memory>
+#include <core/ConsoleVariable.h>
+std::shared_ptr<Ship::CVar> CVarGet(const char* name);
+
 extern "C" {
 #endif
 

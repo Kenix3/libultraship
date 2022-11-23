@@ -53,8 +53,8 @@ const char* ConsoleVariable::GetString(const char* name, const char* defaultValu
 Color_RGBA8 ConsoleVariable::GetColor(const char* name, Color_RGBA8 defaultValue) {
     auto variable = Get(name);
 
-    if (variable != nullptr && variable->Type == ConsoleVariableType::Colour) {
-        return variable->Colour;
+    if (variable != nullptr && variable->Type == ConsoleVariableType::Color) {
+        return variable->Color;
     }
 
     return defaultValue;
@@ -96,8 +96,8 @@ void ConsoleVariable::SetColor(const char* name, Color_RGBA8 value) {
         variable = std::make_shared<CVar>();
     }
 
-    variable->Type = ConsoleVariableType::Colour;
-    variable->Colour = value;
+    variable->Type = ConsoleVariableType::Color;
+    variable->Color = value;
 }
 
 void ConsoleVariable::RegisterInteger(const char* name, int32_t defaultValue) {
@@ -142,9 +142,9 @@ void ConsoleVariable::Save() {
             conf->setInt(key, variable.second->Integer);
         } else if (variable.second->Type == ConsoleVariableType::Float) {
             conf->setFloat(key, variable.second->Float);
-        } else if (variable.second->Type == ConsoleVariableType::Colour) {
+        } else if (variable.second->Type == ConsoleVariableType::Color) {
             auto keyStr = key.c_str();
-            Color_RGBA8 clr = variable.second->Colour;
+            Color_RGBA8 clr = variable.second->Color;
             conf->setUInt(StringHelper::Sprintf("%s.R", keyStr), clr.r);
             conf->setUInt(StringHelper::Sprintf("%s.G", keyStr), clr.g);
             conf->setUInt(StringHelper::Sprintf("%s.B", keyStr), clr.b);

@@ -677,7 +677,7 @@ void DrawFramebufferAndGameInput(void) {
     ImGui::End();
 
 #ifdef __WIIU__
-    const float scale = CVar_GetFloat("gInputScale", 1.0f) * 2.0f;
+    const float scale = CVarGetFloat("gInputScale", 1.0f) * 2.0f;
 #else
     const float scale = CVarGetFloat("gInputScale", 1.0f);
 #endif
