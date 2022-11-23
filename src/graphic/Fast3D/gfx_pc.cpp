@@ -17,9 +17,9 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultra/types.h"
-#include "libultra/gbi.h"
-#include "libultra/gs2dex.h"
+#include "libultraship/libultra/types.h"
+#include "libultraship/libultra/gbi.h"
+#include "libultraship/libultra/gs2dex.h"
 #include <string>
 #include <iostream>
 
@@ -37,7 +37,7 @@
 #include "resource/GameVersions.h"
 #include "resource/ResourceMgr.h"
 #include "misc/Utils.h"
-#include "libultraship.h"
+#include "libultraship/libultraship.h"
 
 uintptr_t gfxFramebuffer;
 

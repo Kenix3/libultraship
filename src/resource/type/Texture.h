@@ -1,7 +1,7 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "libultra/types.h"
+#include "libultraship/libultra/types.h"
 
 namespace Ship {
 enum class TextureType {

@@ -4,7 +4,7 @@
 #define _CONSOLEVARIABLEBRIDGE_H
 
 #include "stdint.h"
-#include "color.h"
+#include "libultraship/color.h"
 
 #ifdef __cplusplus
 #include <memory>

@@ -3,7 +3,7 @@
 #include "resource/ResourceMgr.h"
 #include <spdlog/spdlog.h>
 #include <tinyxml2.h>
-#include "libultra/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 namespace Ship {
 void Resource::RegisterResourceAddressPatch(uint64_t crc, uint32_t instructionIndex, intptr_t originalData) {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "libultra/gbi.h"
+#include "libultraship/libultra/gbi.h"
 #include <vector>
 
 namespace Ship {
