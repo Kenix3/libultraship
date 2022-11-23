@@ -2,7 +2,7 @@
 
 #include "core/bridge/consolevariablebridge.h"
 #include "ImGuiImpl.h"
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <Utils/StringHelper.h>
 #include <ImGui/imgui_internal.h>
 #include "misc/Utils.h"
