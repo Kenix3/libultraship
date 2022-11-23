@@ -56,8 +56,18 @@ Color_RGBA8 ConsoleVariable::GetColor(const char* name, Color_RGBA8 defaultValue
     return defaultValue;
 }
 
-void ConsoleVariable::SetInteger(const char* name, int32_t value) {
+Color_RGB8 ConsoleVariable::GetColor24(const char* name, Color_RGB8 defaultValue) {
     auto variable = Get(name);
+
+    if (variable != nullptr && variable->Type == ConsoleVariableType::Color24) {
+        return variable->Color24;
+    }
+
+    return defaultValue;
+}
+
+void ConsoleVariable::SetInteger(const char* name, int32_t value) {
+    auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
     }
@@ -67,7 +77,7 @@ void ConsoleVariable::SetInteger(const char* name, int32_t value) {
 }
 
 void ConsoleVariable::SetFloat(const char* name, float value) {
-    auto variable = Get(name);
+    auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
     }
@@ -77,7 +87,7 @@ void ConsoleVariable::SetFloat(const char* name, float value) {
 }
 
 void ConsoleVariable::SetString(const char* name, const char* value) {
-    auto variable = Get(name);
+    auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
     }
@@ -87,13 +97,23 @@ void ConsoleVariable::SetString(const char* name, const char* value) {
 }
 
 void ConsoleVariable::SetColor(const char* name, Color_RGBA8 value) {
-    auto variable = Get(name);
+    auto& variable = mVariables[name];
     if (!variable) {
         variable = std::make_shared<CVar>();
     }
 
     variable->Type = ConsoleVariableType::Color;
     variable->Color = value;
+}
+
+void ConsoleVariable::SetColor24(const char* name, Color_RGB8 value) {
+    auto& variable = mVariables[name];
+    if (!variable) {
+        variable = std::make_shared<CVar>();
+    }
+
+    variable->Type = ConsoleVariableType::Color24;
+    variable->Color24 = value;
 }
 
 void ConsoleVariable::RegisterInteger(const char* name, int32_t defaultValue) {
@@ -117,6 +137,12 @@ void ConsoleVariable::RegisterString(const char* name, const char* defaultValue)
 void ConsoleVariable::RegisterColor(const char* name, Color_RGBA8 defaultValue) {
     if (Get(name) != nullptr) {
         SetColor(name, defaultValue);
+    }
+}
+
+void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue) {
+    if (Get(name) != nullptr) {
+        SetColor24(name, defaultValue);
     }
 }
 
