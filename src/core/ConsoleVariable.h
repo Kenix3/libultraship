@@ -50,7 +50,7 @@ class ConsoleVariable {
 
   protected:
     void LoadFromPath(std::string path,
-                 nlohmann::detail::iteration_proxy<nlohmann::detail::iter_impl<nlohmann::json>> items);
+                      nlohmann::detail::iteration_proxy<nlohmann::detail::iter_impl<nlohmann::json>> items);
     void LoadLegacy();
 
   private:
