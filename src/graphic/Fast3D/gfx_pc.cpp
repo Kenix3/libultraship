@@ -23,7 +23,7 @@
 #include <string>
 #include <iostream>
 
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 
 #include "gfx_pc.h"
 #include "gfx_cc.h"
@@ -2675,9 +2675,9 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 #ifdef __APPLE__
     gfx_current_dimensions.internal_mul = 1;
 #else
-    gfx_current_dimensions.internal_mul = CVar_GetFloat("gInternalResolution", 1);
+    gfx_current_dimensions.internal_mul = CVarGetFloat("gInternalResolution", 1);
 #endif
-    gfx_msaa_level = CVar_GetS32("gMSAAValue", 1);
+    gfx_msaa_level = CVarGetInteger("gMSAAValue", 1);
 #ifndef __WIIU__ // Wii U overrides dimentions in gfx_wapi->init to match framebuffer size
     gfx_current_dimensions.width = width;
     gfx_current_dimensions.height = height;

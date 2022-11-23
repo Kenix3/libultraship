@@ -4,7 +4,6 @@
 #include "core/Window.h"
 #include "resource/ResourceMgr.h"
 #include "resource/GameVersions.h"
-#include "misc/Cvar.h"
 
 #define WRITE_VAR_LINE(buff, len, varName, varValue) \
     append_str(buff, len, varName);                  \

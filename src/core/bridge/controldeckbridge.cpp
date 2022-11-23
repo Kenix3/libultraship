@@ -1,4 +1,4 @@
-#include "controldeckbridge.h"
+#include "core/bridge/controldeckbridge.h"
 #include "core/Window.h"
 
 extern "C" {

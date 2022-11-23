@@ -1,4 +1,4 @@
-#include "audioplayerbridge.h"
+#include "core/bridge/audioplayerbridge.h"
 #include "core/Window.h"
 #include "menu/ImGuiImpl.h"
 

@@ -4,6 +4,5 @@
 #include "libultra.h"
 #include "bridge.h"
 #include "color.h"
-#include "misc/Cvar.h"
 
 #endif
