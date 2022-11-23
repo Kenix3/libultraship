@@ -8,8 +8,7 @@
 #include "SpeechSynthesizer.h"
 
 namespace Ship {
-SpeechSynthesizer::SpeechSynthesizer() : mInitialized(false) {
-}
+SpeechSynthesizer::SpeechSynthesizer() : mInitialized(false){};
 
 bool SpeechSynthesizer::Init(void) {
     mInitialized = DoInit();
@@ -19,4 +18,5 @@ bool SpeechSynthesizer::Init(void) {
 bool SpeechSynthesizer::IsInitialized(void) {
     return mInitialized;
 }
+
 } // namespace Ship
