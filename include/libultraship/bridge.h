@@ -6,5 +6,6 @@
 #include "core/bridge/controldeckbridge.h"
 #include "core/bridge/windowbridge.h"
 #include "core/bridge/consolevariablebridge.h"
+#include "core/bridge/crashhandlerbridge.h"
 
 #endif
