@@ -34,7 +34,7 @@ class CrashHandler {
   private:
     CrashHandlerCallback mCallback = nullptr;
     char* mOutBuffer = nullptr;
-    const size_t MAX_BUFFER_SIZE = 32768;
+    static constexpr size_t MAX_BUFFER_SIZE = 32768;
     size_t mOutBuffersize = 0;
 
     void AppendStrTrunc(const char* str);
