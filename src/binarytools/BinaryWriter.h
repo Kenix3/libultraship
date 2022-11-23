@@ -10,6 +10,7 @@
 namespace Ship {
 class BinaryWriter {
   public:
+    BinaryWriter();
     BinaryWriter(Stream* nStream);
     BinaryWriter(std::shared_ptr<Stream> nStream);
 

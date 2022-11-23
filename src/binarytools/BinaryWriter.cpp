@@ -1,4 +1,9 @@
 #include "BinaryWriter.h"
+#include "MemoryStream.h"
+
+Ship::BinaryWriter::BinaryWriter() {
+    mStream = std::make_shared<MemoryStream>();
+}
 
 Ship::BinaryWriter::BinaryWriter(Stream* nStream) {
     mStream.reset(nStream);
