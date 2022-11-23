@@ -17,6 +17,7 @@
 #include "controller/ControlDeck.h"
 #include "controller/KeyboardController.h"
 #include "controller/DummyController.h"
+#include "binarytools/BinaryReader.h"
 #if defined(__linux__) || defined(__BSD__)
 #include "audio/PulseAudioPlayer.h"
 #elif defined(_WIN32)
