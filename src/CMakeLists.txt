@@ -308,6 +308,25 @@ endif()
 source_group("Graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
+#=================== Speech Synthesizer ===================
+
+set(Source_Files__SpeechSynthesizer
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.cpp
+)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.hpp)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.mm)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.hpp)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.cpp)
+endif()
+
+source_group("SpeechSynthesizer" FILES ${Source_Files__SpeechSynthesizer})
+
+target_sources(libultraship PRIVATE ${Source_Files__SpeechSynthesizer})
+
 #=================== STB ===================
 
 set(Source_Files__Lib__stb
@@ -347,7 +366,8 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_Library(OSX_FOUNDATION Foundation)
-    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${CMAKE_DL_LIBS})
+    find_Library(OSX_AVFOUNDATION AVFoundation)
+    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${CMAKE_DL_LIBS})
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
