@@ -18,7 +18,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultra/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_direct3d_common.h"

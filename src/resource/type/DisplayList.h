@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "resource/Resource.h"
-#include "libultra/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 namespace Ship {
 class DisplayList : public Resource {

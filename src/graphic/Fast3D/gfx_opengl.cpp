@@ -11,7 +11,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultra/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
