@@ -22,4 +22,13 @@ bool SpeechSynthesizerInit(void) {
 
     return false;
 }
+
+void SpeechSynthesizerSpeak(const char* text) {
+    auto speechSynthesizer = Ship::Window::GetInstance()->GetSpeechSynthesizer();
+    if (speechSynthesizer == nullptr) {
+        return;
+    }
+
+    speechSynthesizer->Speak(text);
+}
 }
