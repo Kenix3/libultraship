@@ -5,6 +5,16 @@
 
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
+#if (__linux) 
+#include <csignal>
+#include <cstdio>
+#include <cxxabi.h> // for __cxa_demangle
+#include <dlfcn.h>  // for dladdr
+#include <execinfo.h>
+#include <unistd.h>
+#include <SDL.h>
+#endif
+
 class CrashHandler {
   public:
     CrashHandler();
@@ -14,7 +24,6 @@ class CrashHandler {
     void AppendLine(const char* str);
     void AppendStr(const char* str);
 #ifdef __linux__
-    struct ucontext_t;
     void PrintRegisters(ucontext_t* ctx);
 #elif _WIN32
     void PrintRegisters(CONTEXT* ctx);

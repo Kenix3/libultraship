@@ -76,14 +76,6 @@ void CrashHandler::PrintCommon() {
 }
 
 #if (__linux__)
-#include <csignal>
-#include <cstdio>
-#include <cxxabi.h> // for __cxa_demangle
-#include <dlfcn.h>  // for dladdr
-#include <execinfo.h>
-#include <unistd.h>
-#include <SDL.h>
-
 void CrashHandler::PrintRegisters(ucontext_t* ctx) {
     char regbuffer[30];
     AppendLine("Registers:");
@@ -176,7 +168,7 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
             break;
     }
 
-    PrintRegisters(ctx);
+    crashHandler->PrintRegisters(ctx);
 
     crashHandler->AppendLine("Traceback:");
     for (size_t i = 1; i < size; i++) {
