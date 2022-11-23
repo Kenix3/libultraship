@@ -1,29 +1,29 @@
 //
-//  DarwinSpeechSynthesizer.hpp
+//  DarwinSpeechSynthesizer.h
 //  libultraship
 //
 //  Created by David Chavez on 22.11.22.
 //
 
-#ifndef DarwinSpeechSynthesizer_hpp
-#define DarwinSpeechSynthesizer_hpp
+#ifndef DarwinSpeechSynthesizer_h
+#define DarwinSpeechSynthesizer_h
 
-#include "SpeechSynthesizer.hpp"
+#include "SpeechSynthesizer.h"
 #include <stdio.h>
 
 namespace Ship {
 class DarwinSpeechSynthesizer : public SpeechSynthesizer {
-public:
+  public:
     DarwinSpeechSynthesizer();
 
     void Speak(const char* text);
 
-protected:
+  protected:
     bool DoInit(void);
 
-private:
+  private:
     void* mSynthesizer;
 };
-}
+} // namespace Ship
 
-#endif /* DarwinSpeechSynthesizer_hpp */
+#endif /* DarwinSpeechSynthesizer_h */

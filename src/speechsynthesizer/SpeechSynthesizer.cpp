@@ -5,7 +5,7 @@
 //  Created by David Chavez on 22.11.22.
 //
 
-#include "SpeechSynthesizer.hpp"
+#include "SpeechSynthesizer.h"
 
 namespace Ship {
 SpeechSynthesizer::SpeechSynthesizer() : mInitialized(false) {

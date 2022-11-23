@@ -1,18 +1,18 @@
 //
-//  SpeechSynthesizer.hpp
+//  SpeechSynthesizer.h
 //  libultraship
 //
 //  Created by David Chavez on 22.11.22.
 //
 
-#ifndef SpeechSynthesizer_hpp
-#define SpeechSynthesizer_hpp
+#ifndef SpeechSynthesizer_h
+#define SpeechSynthesizer_h
 
 #include <stdio.h>
 
 namespace Ship {
 class SpeechSynthesizer {
-public:
+  public:
     SpeechSynthesizer();
 
     bool Init(void);
@@ -20,19 +20,18 @@ public:
 
     bool IsInitialized(void);
 
-protected:
+  protected:
     virtual bool DoInit(void) = 0;
 
-private:
+  private:
     bool mInitialized;
 };
 } // namespace Ship
 
-#endif /* SpeechSynthesizer_hpp */
-
+#endif /* SpeechSynthesizer_h */
 
 #ifdef _WIN32
-#include "SAPISpeechSynthesizer.hpp"
+#include "SAPISpeechSynthesizer.h"
 #elif defined(__APPLE__)
-#include "DarwinSpeechSynthesizer.hpp"
+#include "DarwinSpeechSynthesizer.h"
 #endif

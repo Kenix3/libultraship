@@ -1,12 +1,12 @@
 //
-//  speechsynthesizerbridge.hpp
+//  speechsynthesizerbridge.h
 //  libultraship
 //
 //  Created by David Chavez on 22.11.22.
 //
 
-#ifndef speechsynthesizerbridge_hpp
-#define speechsynthesizerbridge_hpp
+#ifndef speechsynthesizerbridge_h
+#define speechsynthesizerbridge_h
 
 #include <stdio.h>
 
@@ -21,4 +21,4 @@ void SpeechSynthesizerSpeak(const char* text);
 };
 #endif
 
-#endif /* speechsynthesizerbridge_hpp */
+#endif /* speechsynthesizerbridge_h */

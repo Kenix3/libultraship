@@ -1,26 +1,26 @@
 //
-//  SAPISpeechSynthesizer.hpp
+//  SAPISpeechSynthesizer.h
 //  libultraship
 //
 //  Created by David Chavez on 22.11.22.
 //
 
-#ifndef SAPISpeechSynthesizer_hpp
-#define SAPISpeechSynthesizer_hpp
+#ifndef SAPISpeechSynthesizer_h
+#define SAPISpeechSynthesizer_h
 
-#include "SpeechSynthesizer.hpp"
+#include "SpeechSynthesizer.h"
 #include <stdio.h>
 
 namespace Ship {
 class SAPISpeechSynthesizer : public SpeechSynthesizer {
-public:
+  public:
     SAPISpeechSynthesizer();
 
     void Speak(const char* text);
 
-protected:
+  protected:
     bool DoInit(void);
 };
-}
+} // namespace Ship
 
-#endif /* SAPISpeechSynthesizer_hpp */
+#endif /* SAPISpeechSynthesizer_h */

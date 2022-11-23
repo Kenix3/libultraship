@@ -5,7 +5,7 @@
 //  Created by David Chavez on 22.11.22.
 //
 
-#include "speechsynthesizerbridge.hpp"
+#include "speechsynthesizerbridge.h"
 #include "core/Window.h"
 
 extern "C" {

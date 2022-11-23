@@ -5,7 +5,7 @@
 //  Created by David Chavez on 22.11.22.
 //
 
-#include "SAPISpeechSynthesizer.hpp"
+#include "SAPISpeechSynthesizer.h"
 #include <sapi.h>
 #include <thread>
 
