@@ -84,8 +84,8 @@ void CrashHandler::PrintCommon() {
 #include <unistd.h>
 #include <SDL.h>
 
-static void PrintRegisters(ucontext_t* ctx) {
-    char regbuffer[128];
+void CrashHandler::PrintRegisters(ucontext_t* ctx) {
+    char regbuffer[30];
     AppendLine("Registers:");
 #if defined(__x86_64__)
     snprintf(regbuffer, std::size(regbuffer), "RAX: 0x%016llX", ctx->uc_mcontext.gregs[REG_RAX]);
@@ -149,7 +149,7 @@ static void PrintRegisters(ucontext_t* ctx) {
 }
 
 static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
-    std::shared_ptr<CrashHandler> crashHandler = Ship::Window::GetInstance::GetCrashHandler();
+    std::shared_ptr<CrashHandler> crashHandler = Ship::Window::GetInstance()->GetCrashHandler();
     char intToCharBuffer[16];
 
     std::array<void*, 4096> arr;
@@ -159,24 +159,24 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     char** symbols = backtrace_symbols(arr.data(), nMaxFrames);
 
     snprintf(intToCharBuffer, sizeof(intToCharBuffer), "Signal: %i", sig);
-    append_line(buffer, &curBufferPos, intToCharBuffer);
+    crashHandler->AppendLine(intToCharBuffer);
 
     switch (sig) {
         case SIGILL:
-            append_line(buffer, &curBufferPos, "ILLEGAL INSTRUCTION");
+            crashHandler->AppendLine("ILLEGAL INSTRUCTION");
             break;
         case SIGABRT:
-            append_line(buffer, &curBufferPos, "ABORT");
+            crashHandler->AppendLine("ABORT");
             break;
         case SIGFPE:
-            append_line(buffer, &curBufferPos, "ERRONEUS ARITHEMETIC OPERATION");
+            crashHandler->AppendLine("ERRONEUS ARITHEMETIC OPERATION");
             break;
         case SIGSEGV:
-            append_line(buffer, &curBufferPos, "INVALID ACCESS TO STORAGE");
+            crashHandler->AppendLine("INVALID ACCESS TO STORAGE");
             break;
     }
 
-    PrintRegisters(ctx, buffer, &curBufferPos);
+    PrintRegisters(ctx);
 
     crashHandler->AppendLine("Traceback:");
     for (size_t i = 1; i < size; i++) {
@@ -210,7 +210,7 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "SoH has crashed",
                              "SoH Has crashed. Please upload the logs to the support channel in discord.", nullptr);
     free(symbols);
-    crashHandler->CrashHandler_PrintCommon();
+    crashHandler->PrintCommon();
 
     DeinitOTR();
     Ship::Window::GetInstance()->GetLogger()->flush();
