@@ -113,6 +113,8 @@ set(Source_Files__Core__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.cpp
 )
  
 source_group("Core\\Bridge" FILES ${Source_Files__Core__Bridge})
@@ -214,7 +216,6 @@ set(Source_Files__Resource
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/OtrFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceType.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceVersion.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.cpp

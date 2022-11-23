@@ -11,7 +11,6 @@
 namespace Ship {
 #define CMD_SUCCESS true
 #define CMD_FAILED false
-#define MAX_BUFFER_SIZE 255
 #define NULLSTR "None"
 
 class Console;
@@ -77,6 +76,7 @@ class Console : public std::enable_shared_from_this<Console> {
         ImVec4(0.95f, 0.11f, 0.25, 1.0f),   // CRITICAL
         ImVec4(0.0f, 0.0f, 0.0f, 0.0f)      // OFF
     };
+    static constexpr size_t gMaxBufferSize = 255;
 
   protected:
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
