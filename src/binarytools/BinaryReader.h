@@ -47,6 +47,8 @@ class BinaryReader {
     Color3b ReadColor3b();
     std::string ReadString();
 
+    std::vector<char> ToVector();
+
   protected:
     std::shared_ptr<Stream> mStream;
     Endianness mEndianness = Endianness::Native;
