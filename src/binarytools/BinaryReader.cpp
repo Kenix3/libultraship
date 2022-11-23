@@ -191,3 +191,7 @@ std::string Ship::BinaryReader::ReadString() {
     }
     return res;
 }
+
+std::vector<char> Ship::BinaryReader::ToVector() {
+    return mStream->ToVector();
+}
