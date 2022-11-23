@@ -5,7 +5,7 @@
 
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
-#if (__linux) 
+#if (__linux__)
 #include <csignal>
 #include <cstdio>
 #include <cxxabi.h> // for __cxa_demangle
@@ -37,10 +37,8 @@ class CrashHandler {
     const size_t MAX_BUFFER_SIZE = 32768;
     size_t mOutBuffersize = 0;
 
-
     void AppendStrTrunc(const char* str);
     bool CheckStrLen(const char* str);
 };
-
 
 #endif // CRASH_HANDLER_H

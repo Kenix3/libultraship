@@ -16,17 +16,17 @@
 #endif
 
 #define WRITE_VAR_LINE(handler, varName, varValue) \
-    handler->AppendStr(varName);                  \
+    handler->AppendStr(varName);                   \
     handler->AppendLine(varValue);
 #define WRITE_VAR(handler, varName, varValue) \
-    handler->AppendStr(varName);   \
+    handler->AppendStr(varName);              \
     handler->AppendStr(varValue);
 
 #define WRITE_VAR_LINE_M(varName, varValue) \
-    AppendStr(varName);                   \
+    AppendStr(varName);                     \
     AppendLine(varValue);
 #define WRITE_VAR_M(varName, varValue) \
-    AppendStr(varName);              \
+    AppendStr(varName);                \
     AppendStr(varValue);
 
 extern "C" void DeinitOTR(void);
@@ -39,11 +39,10 @@ bool CrashHandler::CheckStrLen(const char* str) {
 }
 
 void CrashHandler::AppendStrTrunc(const char* str) {
-    while (mOutBuffersize < MAX_BUFFER_SIZE -1) {
+    while (mOutBuffersize < MAX_BUFFER_SIZE - 1) {
         mOutBuffer[mOutBuffersize++] = *str++;
     }
     mOutBuffer[mOutBuffersize] = '\0';
-
 }
 
 void CrashHandler::AppendStr(const char* str) {
@@ -448,4 +447,3 @@ CrashHandler::CrashHandler(CrashHandlerCallback callback) {
 void CrashHandler::RegisterCallback(CrashHandlerCallback callback) {
     mCallback = callback;
 }
-
