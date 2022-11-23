@@ -27,7 +27,7 @@
 #endif
 
 #include "menu/ImGuiImpl.h"
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
 
 #include "gfx_window_manager_api.h"
@@ -426,9 +426,9 @@ static void gfx_sdl_handle_events(void) {
                 }
                 break;
             case SDL_DROPFILE:
-                CVar_SetString("gDroppedFile", event.drop.file);
-                CVar_SetS32("gNewFileDropped", 1);
-                CVar_Save();
+                CVarSetString("gDroppedFile", event.drop.file);
+                CVarSetInteger("gNewFileDropped", 1);
+                CVarSave();
                 break;
             case SDL_QUIT:
                 is_running = false;

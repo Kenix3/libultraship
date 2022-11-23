@@ -1,6 +1,6 @@
 #include "GameOverlay.h"
 
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include "resource/OtrFile.h"
 #include "resource/Archive.h"
 #include "resource/ResourceMgr.h"
@@ -14,7 +14,7 @@ bool GameOverlay::OverlayCommand(std::shared_ptr<Console> Console, const std::ve
         return CMD_FAILED;
     }
 
-    if (CVar_Get(args[2].c_str()) != nullptr) {
+    if (CVarGet(args[2].c_str()) != nullptr) {
         const char* key = args[2].c_str();
         GameOverlay* overlay = SohImGui::GetGameOverlay();
         if (args[1] == "add") {
@@ -145,7 +145,7 @@ void GameOverlay::Init() {
     this->LoadFont("Fipps", "assets/ship_of_harkinian/fonts/Fipps-Regular.otf", 32.0f);
     const std::string DefaultFont = this->Fonts.begin()->first;
     if (!this->Fonts.empty()) {
-        const std::string font = CVar_GetString("gOverlayFont", ImStrdup(DefaultFont.c_str()));
+        const std::string font = CVarGetString("gOverlayFont", ImStrdup(DefaultFont.c_str()));
         for (auto& [name, _] : this->Fonts) {
             if (font.starts_with(name)) {
                 this->CurrentFont = name;
@@ -164,7 +164,7 @@ void GameOverlay::DrawSettings() {
         for (auto& [name, font] : this->Fonts) {
             if (ImGui::Selectable(name.c_str(), name == this->CurrentFont)) {
                 this->CurrentFont = name;
-                CVar_SetString("gOverlayFont", ImStrdup(name.c_str()));
+                CVarSetString("gOverlayFont", ImStrdup(name.c_str()));
                 SohImGui::RequestCvarSaveOnNextTick();
             }
         }
@@ -191,21 +191,21 @@ void GameOverlay::Draw() {
 
         if (overlay->type == OverlayType::TEXT) {
             const char* text = ImStrdup(overlay->value);
-            const CVar* var = CVar_Get(text);
+            const auto var = CVarGet(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
             switch (var->Type) {
-                case CVarType::Float:
-                    this->TextDraw(30, textY, true, color, "%s %.2f", text, var->value.ValueFloat);
+                case ConsoleVariableType::Float:
+                    this->TextDraw(30, textY, true, color, "%s %.2f", text, var->Float);
                     break;
-                case CVarType::S32:
-                    this->TextDraw(30, textY, true, color, "%s %d", text, var->value.ValueS32);
+                case ConsoleVariableType::Integer:
+                    this->TextDraw(30, textY, true, color, "%s %d", text, var->Integer);
                     break;
-                case CVarType::String:
-                    this->TextDraw(30, textY, true, color, "%s %s", text, var->value.ValueStr);
+                case ConsoleVariableType::String:
+                    this->TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
                     break;
-                case CVarType::RGBA:
-                    this->TextDraw(30, textY, true, color, "#%08X", text, var->value.ValueRGBA);
+                case ConsoleVariableType::Color:
+                    this->TextDraw(30, textY, true, color, "#%08X", text, var->Color);
                     break;
             }
 

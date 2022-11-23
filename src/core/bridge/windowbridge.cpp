@@ -1,4 +1,4 @@
-#include "windowbridge.h"
+#include "core/bridge/windowbridge.h"
 #include "core/Window.h"
 
 extern "C" {

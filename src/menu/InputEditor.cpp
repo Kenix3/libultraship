@@ -5,7 +5,7 @@
 #include "ImGuiImpl.h"
 #include <Utils/StringHelper.h>
 #include <ImGui/imgui_internal.h>
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 
 namespace Ship {
 
@@ -330,7 +330,7 @@ void InputEditor::DrawControllerSchema() {
 void InputEditor::DrawHud() {
     if (!this->mOpened) {
         mBtnReading = -1;
-        CVar_SetS32("gControllerConfigurationEnabled", 0);
+        CVarSetInteger("gControllerConfigurationEnabled", 0);
         return;
     }
 

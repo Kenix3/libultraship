@@ -1,6 +1,7 @@
 #include "Utils.h"
 #include <cstring>
 #include <algorithm>
+#include <sstream>
 
 #ifdef _MSC_VER
 #define strdup _strdup
@@ -11,6 +12,11 @@ namespace Math {
 float clamp(float d, float min, float max) {
     const float t = d < min ? min : d;
     return t > max ? max : t;
+}
+
+template <typename Numeric> bool IsNumber(const std::string& s) {
+    Numeric n;
+    return ((std::istringstream(s) >> n >> std::ws).eof());
 }
 } // namespace Math
 

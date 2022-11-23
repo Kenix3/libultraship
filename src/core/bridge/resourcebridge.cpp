@@ -1,4 +1,4 @@
-#include "resourcebridge.h"
+#include "core/bridge/resourcebridge.h"
 #include "core/Window.h"
 #include "resource/ResourceMgr.h"
 #include <string>

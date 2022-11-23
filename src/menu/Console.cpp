@@ -1,6 +1,6 @@
 #include "menu/Console.h"
 
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include "ImGuiImpl.h"
 #include <ImGui/imgui.h>
 #include <Utils/StringHelper.h>
@@ -88,16 +88,14 @@ void Console::Update() {
     }
     for (auto [key, var] : mBindingToggle) {
         if (ImGui::IsKeyPressed(key)) {
-            CVar* cvar = CVar_Get(var.c_str());
-            Dispatch("set " + var + " " +
-                     std::to_string(cvar == nullptr ? 0 : !static_cast<bool>(cvar->value.ValueS32)));
+            Dispatch("set " + var + " " + std::to_string(!static_cast<bool>(CVarGetInteger(var.c_str(), 0))));
         }
     }
 }
 
 void Console::Draw() {
     if (!this->mOpened) {
-        CVar_SetS32("gConsoleEnabled", 0);
+        CVarSetInteger("gConsoleEnabled", 0);
         return;
     }
 
@@ -160,7 +158,7 @@ void Console::Draw() {
         this->mLog[this->mCurrentChannel].clear();
     }
 
-    if (CVar_GetS32("gSinkEnabled", 0)) {
+    if (CVarGetInteger("gSinkEnabled", 0)) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(150);
         if (ImGui::BeginCombo("##channel", this->mCurrentChannel.c_str())) {

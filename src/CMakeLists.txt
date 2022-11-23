@@ -89,6 +89,8 @@ target_sources(libultraship PRIVATE ${Source_Files__Controller} ${Source_Files__
 set(Source_Files__Core
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.cpp
 )
 
 source_group("Core" FILES ${Source_Files__Core})
@@ -109,6 +111,8 @@ set(Source_Files__Core__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audioplayerbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.cpp
 )
  
 source_group("Core\\Bridge" FILES ${Source_Files__Core__Bridge})
@@ -161,8 +165,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Menu})
 #=================== Misc ===================
 
 set(Source_Files__Misc
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Cvar.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Cvar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Hooks.h
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Hooks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/LUSMacros.h

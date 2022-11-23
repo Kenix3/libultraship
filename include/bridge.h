@@ -5,5 +5,6 @@
 #include "core/bridge/audioplayerbridge.h"
 #include "core/bridge/controldeckbridge.h"
 #include "core/bridge/windowbridge.h"
+#include "core/bridge/consolevariablebridge.h"
 
 #endif

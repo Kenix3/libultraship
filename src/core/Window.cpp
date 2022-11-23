@@ -90,6 +90,7 @@ void Window::CreateDefaults() {
 }
 
 void Window::Initialize(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes) {
+    InitializeConsoleVariables();
     InitializeLogging();
     InitializeConfiguration();
     InitializeResourceManager(otrFiles, validHashes);
@@ -348,6 +349,10 @@ void Window::InitializeControlDeck() {
     mControlDeck = std::make_shared<ControlDeck>();
 }
 
+void Window::InitializeConsoleVariables() {
+    mConsoleVariables = std::make_shared<ConsoleVariable>();
+}
+
 void Window::InitializeLogging() {
     try {
         // Setup Logging
@@ -513,6 +518,10 @@ int32_t Window::GetLastScancode() {
 
 void Window::SetLastScancode(int32_t scanCode) {
     mLastScancode = scanCode;
+}
+
+std::shared_ptr<ConsoleVariable> Window::GetConsoleVariables() {
+    return mConsoleVariables;
 }
 
 } // namespace Ship

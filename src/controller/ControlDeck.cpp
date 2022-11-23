@@ -4,7 +4,7 @@
 #include "Controller.h"
 #include "DummyController.h"
 #include <Utils/StringHelper.h>
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include <imgui.h>
 
 #ifndef __WIIU__
@@ -282,7 +282,7 @@ void ControlDeck::UnblockGameInput() {
 bool ControlDeck::ShouldBlockGameInput(std::string inputDeviceGuid) const {
     // We block controller input if F1 menu is open and control navigation is on.
     // This is because we don't want controller inputs to affect the game
-    bool shouldBlockControllerInput = CVar_GetS32("gOpenMenuBar", 0) && CVar_GetS32("gControlNav", 0);
+    bool shouldBlockControllerInput = CVarGetInteger("gOpenMenuBar", 0) && CVarGetInteger("gControlNav", 0);
 
     // We block keyboard input if you're currently typing into a textfield.
     // This is because we don't want your keyboard typing to affect the game.
