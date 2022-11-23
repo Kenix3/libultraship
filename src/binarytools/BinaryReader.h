@@ -16,6 +16,7 @@ namespace Ship {
 
 class BinaryReader {
   public:
+    BinaryReader(char* nBuffer, size_t nBufferSize);
     BinaryReader(Stream* nStream);
     BinaryReader(std::shared_ptr<Stream> nStream);
 
