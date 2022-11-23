@@ -36,6 +36,8 @@ class BinaryWriter {
     void Write(const std::string& str);
     void Write(char* srcBuffer, size_t length);
 
+    std::vector<char> ToVector();
+
   protected:
     std::shared_ptr<Stream> mStream;
     Endianness mEndianness = Endianness::Native;

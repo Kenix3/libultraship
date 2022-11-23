@@ -144,3 +144,7 @@ void Ship::BinaryWriter::Write(const std::string& str) {
 void Ship::BinaryWriter::Write(char* srcBuffer, size_t length) {
     mStream->Write(srcBuffer, length);
 }
+
+std::vector<char> Ship::BinaryWriter::ToVector() {
+    return mStream->ToVector();
+}
