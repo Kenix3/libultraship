@@ -240,10 +240,10 @@ void ConsoleVariable::LoadLegacy() {
                 SetString(cfg[0].c_str(), strdup(value.c_str()));
 #endif
             }
-            if (Math::isNumber<float>(cfg[1])) {
+            if (Math::IsNumber<float>(cfg[1])) {
                 SetFloat(cfg[0].c_str(), std::stof(cfg[1]));
             }
-            if (Math::isNumber<int>(cfg[1])) {
+            if (Math::IsNumber<int>(cfg[1])) {
                 SetInteger(cfg[0].c_str(), std::stoi(cfg[1]));
             }
         }

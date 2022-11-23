@@ -14,7 +14,7 @@ float clamp(float d, float min, float max) {
     return t > max ? max : t;
 }
 
-template <typename Numeric> bool isNumber(const std::string& s) {
+template <typename Numeric> bool IsNumber(const std::string& s) {
     Numeric n;
     return ((std::istringstream(s) >> n >> std::ws).eof());
 }

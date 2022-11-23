@@ -7,7 +7,7 @@ namespace Ship {
 
 namespace Math {
 float clamp(float d, float min, float max);
-template <typename Numeric> bool isNumber(const std::string& s);
+template <typename Numeric> bool IsNumber(const std::string& s);
 } // namespace Math
 
 std::vector<std::string> splitText(const std::string& text, char separator, bool keepQuotes);
