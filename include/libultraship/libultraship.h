@@ -7,7 +7,7 @@
 #include "luslog.h"
 
 #ifdef __cplusplus
-#include "resource/Archive.h"
+#include "classes.h"
 #endif
 
 #endif
