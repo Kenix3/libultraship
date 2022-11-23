@@ -32,14 +32,14 @@
 extern "C" void DeinitOTR(void);
 
 bool CrashHandler::CheckStrLen(const char* str) {
-    if (strlen(str) + mOutBuffersize >= MAX_BUFFER_SIZE) {
+    if (strlen(str) + mOutBuffersize >= gMaxBufferSize) {
         return false;
     }
     return true;
 }
 
 void CrashHandler::AppendStrTrunc(const char* str) {
-    while (mOutBuffersize < MAX_BUFFER_SIZE - 1) {
+    while (mOutBuffersize < gMaxBufferSize - 1) {
         mOutBuffer[mOutBuffersize++] = *str++;
     }
     mOutBuffer[mOutBuffersize] = '\0';
@@ -415,7 +415,7 @@ extern "C" static LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
 #endif
 
 CrashHandler::CrashHandler() {
-    mOutBuffer = new char[MAX_BUFFER_SIZE];
+    mOutBuffer = new char[gMaxBufferSize];
 #if defined(__linux__)
     struct sigaction action;
     struct sigaction shutdownAction;
