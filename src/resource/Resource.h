@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "OtrFile.h"
 #include "ResourceType.h"
-#include "ResourceVersion.h"
+#include "libultraship/version.h"
 #include "binarytools/BinaryWriter.h"
 
 namespace Ship {
@@ -20,7 +20,7 @@ class Resource {
     std::shared_ptr<ResourceMgr> ResourceManager;
     Endianness ByteOrder;
     ResourceType Type;
-    ResourceVersion Version;
+    Version ResourceVersion;
     uint64_t Id;
     bool IsDirty = false;
     std::shared_ptr<OtrFile> File;

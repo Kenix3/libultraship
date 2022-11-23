@@ -1,8 +1,10 @@
-#pragma once
-namespace Ship {
-class ResourceMgr;
+#ifndef _LUSVERSION_H_
+#define _LUSVERSION_H_
 
-enum class ResourceVersion {
+#ifdef __cplusplus
+
+namespace Ship {
+enum class Version {
     // 1982: Bladerunner
     Deckard = 0,
     Roy = 1,
@@ -13,5 +15,7 @@ enum class ResourceVersion {
     Bradley = 5
     // ...
 };
-
 } // namespace Ship
+
+#endif
+#endif
