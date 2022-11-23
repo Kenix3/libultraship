@@ -22,7 +22,7 @@ protected:
     bool DoInit(void);
 
 private:
-    void *mSynthesizer;
+    void* mSynthesizer;
 };
 }
 
