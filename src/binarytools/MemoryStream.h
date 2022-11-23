@@ -22,7 +22,7 @@ class MemoryStream : public Stream {
     void Write(char* srcBuffer, size_t length) override;
     void WriteByte(int8_t value) override;
 
-    std::vector<char> ToVector();
+    std::vector<char> ToVector() override;
 
     void Flush() override;
     void Close() override;

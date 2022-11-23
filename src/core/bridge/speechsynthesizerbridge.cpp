@@ -11,7 +11,7 @@
 extern "C" {
 
 bool SpeechSynthesizerInit(void) {
-    auto speechSynthesizer = Ship::Window::GetInstance()->SpeechSynthesizer();
+    auto speechSynthesizer = Ship::Window::GetInstance()->GetSpeechSynthesizer();
     if (speechSynthesizer == nullptr) {
         return false;
     }
@@ -20,6 +20,6 @@ bool SpeechSynthesizerInit(void) {
         return true;
     }
 
-    return false
+    return false;
 }
 }
