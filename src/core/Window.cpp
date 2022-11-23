@@ -96,6 +96,7 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     InitializeResourceManager(otrFiles, validHashes);
     CreateDefaults();
     InitializeControlDeck();
+    InitializeCrashHandler();
 
     bool steamDeckGameMode = false;
 
@@ -353,6 +354,10 @@ void Window::InitializeConsoleVariables() {
     mConsoleVariables = std::make_shared<ConsoleVariable>();
 }
 
+void Window::InitializeCrashHandler() {
+    mCrashHandler = std::make_shared<CrashHandler>();
+}
+
 void Window::InitializeLogging() {
     try {
         // Setup Logging
@@ -498,6 +503,10 @@ std::shared_ptr<AudioPlayer> Window::GetAudioPlayer() {
 
 std::shared_ptr<ResourceMgr> Window::GetResourceManager() {
     return mResourceManager;
+}
+
+std::shared_ptr<CrashHandler> Window::GetCrashHandler() {
+    return mCrashHandler;
 }
 
 std::shared_ptr<Mercury> Window::GetConfig() {

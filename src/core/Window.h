@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 #include "controller/ControlDeck.h"
 #include "core/ConsoleVariable.h"
+#include "debug/CrashHandler.h"
 #include "audio/AudioPlayer.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "Mercury.h"
@@ -50,6 +51,7 @@ class Window {
     std::shared_ptr<ControlDeck> GetControlDeck();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     std::shared_ptr<ResourceMgr> GetResourceManager();
+    std::shared_ptr<CrashHandler> GetCrashHandler();
     std::shared_ptr<Mercury> GetConfig();
     std::shared_ptr<spdlog::logger> GetLogger();
     std::shared_ptr<ConsoleVariable> GetConsoleVariables();
@@ -72,6 +74,7 @@ class Window {
     void InitializeConsoleVariables();
     void InitializeConfiguration();
     void InitializeControlDeck();
+    void InitializeCrashHandler();
     void InitializeLogging();
     void InitializeResourceManager(const std::vector<std::string>& otrFiles = {},
                                    const std::unordered_set<uint32_t>& validHashes = {});
@@ -82,6 +85,7 @@ class Window {
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     std::shared_ptr<ControlDeck> mControlDeck;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;
+    std::shared_ptr<CrashHandler> mCrashHandler;
 
     std::string mGfxBackend;
     std::string mAudioBackend;

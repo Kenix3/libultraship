@@ -5,34 +5,32 @@
 
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
-#ifdef __cplusplus
-extern "C" {
+class CrashHandler {
+  public:
+    CrashHandler();
+    CrashHandler(CrashHandlerCallback callback);
+
+    void RegisterCallback(CrashHandlerCallback callback);
+    void AppendLine(const char* str);
+    void AppendStr(const char* str);
+#ifdef __linux__
+    void PrintRegisters(ucontext_t* ctx);
+#elif _WIN32
+    void PrintRegisters(CONTEXT* ctx);
+    void PrintStack(CONTEXT* ctx);
 #endif
+    void PrintCommon();
 
-void CrashHandler_Init(CrashHandlerCallback callback);
+  private:
+    CrashHandlerCallback mCallback = nullptr;
+    char* mOutBuffer = nullptr;
+    const size_t MAX_BUFFER_SIZE = 32768;
+    size_t mOutBuffersize = 0;
 
-#ifdef __cplusplus
-}
-#endif
 
-#ifdef _WIN32
-#include <windows.h>
-#include <DbgHelp.h>
+    void AppendStrTrunc(const char* str);
+    bool CheckStrLen(const char* str);
+};
 
-#include <inttypes.h>
-#include <excpt.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-LONG seh_filter(struct _EXCEPTION_POINTERS* ex);
-
-#ifdef __cplusplus
-}
-#endif
-
-#pragma comment(lib, "Dbghelp.lib")
-#endif
 
 #endif // CRASH_HANDLER_H
