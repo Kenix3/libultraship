@@ -1,16 +1,12 @@
 #include "ConsoleVariable.h"
 
 #include <functional>
-#include <sstream>
 #include <Utils/File.h>
+#include <misc/Utils.h>
 #include "Mercury.h"
 #include "core/Window.h"
 
 namespace Ship {
-template <typename Numeric> bool is_number(const std::string& s) {
-    Numeric n;
-    return ((std::istringstream(s) >> n >> std::ws).eof());
-}
 
 ConsoleVariable::ConsoleVariable() {
 }
@@ -244,10 +240,10 @@ void ConsoleVariable::LoadLegacy() {
                 SetString(cfg[0].c_str(), strdup(value.c_str()));
 #endif
             }
-            if (is_number<float>(cfg[1])) {
+            if (Math::isNumber<float>(cfg[1])) {
                 SetFloat(cfg[0].c_str(), std::stof(cfg[1]));
             }
-            if (is_number<int>(cfg[1])) {
+            if (Math::isNumber<int>(cfg[1])) {
                 SetInteger(cfg[0].c_str(), std::stoi(cfg[1]));
             }
         }

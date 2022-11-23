@@ -89,7 +89,7 @@ void Console::Update() {
     for (auto [key, var] : mBindingToggle) {
         if (ImGui::IsKeyPressed(key)) {
             Dispatch("set " + var + " " +
-                     std::to_string(cvar == nullptr ? 0 : !static_cast<bool>(CVarGetInteger(var.c_str()))));
+                     std::to_string(!static_cast<bool>(CVarGetInteger(var.c_str(), 0))));
         }
     }
 }
