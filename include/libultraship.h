@@ -4,5 +4,6 @@
 #include "libultra.h"
 #include "bridge.h"
 #include "color.h"
+#include "luslog.h"
 
 #endif
