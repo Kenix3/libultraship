@@ -14,7 +14,7 @@
 #include <StormLib.h>
 
 namespace Ship {
-class OtrFile;
+struct OtrFile;
 
 class Archive : public std::enable_shared_from_this<Archive> {
   public:
