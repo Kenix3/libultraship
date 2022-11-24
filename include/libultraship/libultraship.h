@@ -6,4 +6,8 @@
 #include "color.h"
 #include "luslog.h"
 
+#ifdef __cplusplus
+#include "classes.h"
+#endif
+
 #endif

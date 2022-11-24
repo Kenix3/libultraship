@@ -5,7 +5,7 @@
 #include <string>
 #include <functional>
 
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <spdlog/spdlog.h>
 
 namespace Ship {

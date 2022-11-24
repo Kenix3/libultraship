@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "menu/Console.h"
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <unordered_map>
 
 namespace Ship {
