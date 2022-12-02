@@ -638,14 +638,31 @@ void DrawMainMenuAndCalculateGameSize(void) {
     gfx_current_game_window_viewport.width = (int16_t)size.x;
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
-    if (CVarGetInteger("gN64Mode", 0)) {
-        gfx_current_dimensions.width = 320;
-        gfx_current_dimensions.height = 240;
-        const int sw = size.y * 320 / 240;
-        gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
-        gfx_current_game_window_viewport.width = sw;
-        pos = ImVec2(size.x / 2 - sw / 2, 0);
-        size = ImVec2(sw, size.y);
+    switch (CVarGetInteger("gLowResMode", 0)) {
+        case 1: { // N64 Mode
+            gfx_current_dimensions.width = 320;
+            gfx_current_dimensions.height = 240;
+            const int sw = size.y * 320 / 240;
+            gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
+            gfx_current_game_window_viewport.width = sw;
+            pos = ImVec2(size.x / 2 - sw / 2, 0);
+            size = ImVec2(sw, size.y);
+            break;
+        }
+        case 2: { // 240p Widescreen
+            const int vert_res = 240;
+            gfx_current_dimensions.width = vert_res * size.x / size.y;
+            gfx_current_dimensions.height = vert_res;
+            break;
+        }
+        case 3: { // 480p Widescreen
+            const int vert_res = 480;
+            gfx_current_dimensions.width = vert_res * size.x / size.y;
+            gfx_current_dimensions.height = vert_res;
+            break;
+        }
+        default:
+            break;
     }
 
     overlay->Draw();
@@ -663,7 +680,7 @@ void DrawFramebufferAndGameInput(void) {
     const ImVec2 main_pos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (CVarGetInteger("gN64Mode", 0)) {
+    if (CVarGetInteger("gLowResMode", 0) == 1) {
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(size.x / 2 - sw / 2, 0);
         size = ImVec2(sw, size.y);
