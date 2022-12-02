@@ -661,8 +661,6 @@ void DrawMainMenuAndCalculateGameSize(void) {
             gfx_current_dimensions.height = vert_res;
             break;
         }
-        default:
-            break;
     }
 
     overlay->Draw();
