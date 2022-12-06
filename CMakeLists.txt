@@ -24,6 +24,12 @@ endif()
 add_subdirectory("extern")
 add_subdirectory("src")
 
+set_target_properties(libultraship PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 include (GNUInstallDirs)
 
 install(TARGETS libultraship ImGui tinyxml2 storm StrHash64 Mercury nlohmann_json ZAPDUtils
@@ -51,10 +57,11 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libultraship
 )
 
+# Uncomment when a version is present in the project()
 # write_basic_package_version_file(
 #     ${CMAKE_BINARY_DIR}/cmake/libultraship-config-version.cmake
 #     VERSION ${LIBULTRASHIP_VERSION}
-#     COMPATIBILITY AnyNewerVersion
+#     COMPATIBILITY SameMajorVersion
 # )
 
 install(
