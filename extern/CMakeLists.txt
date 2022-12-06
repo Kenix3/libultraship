@@ -63,7 +63,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     )
 endif()
 
-target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+target_include_directories(ImGui PUBLIC $<BUILD_INTERFACE:${IMGUI_DIR}> $<BUILD_INTERFACE:${IMGUI_DIR}/backends> PRIVATE ${SDL2_INCLUDE_DIRS})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
@@ -90,7 +90,7 @@ set(TINYXML2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2)
 add_library(tinyxml2 STATIC)
 
 target_sources(tinyxml2 PRIVATE ${TINYXML2_DIR}/tinyxml2.cpp)
-target_include_directories(tinyxml2 PUBLIC ${TINYXML2_DIR})
+target_include_directories(tinyxml2 PUBLIC $<BUILD_INTERFACE:${TINYXML2_DIR}>)
 
 #=================== ZAPDUtils ===================
 
@@ -111,7 +111,7 @@ add_library(Mercury STATIC)
 set_property(TARGET Mercury PROPERTY CXX_STANDARD 20)
 
 target_sources(Mercury PRIVATE ${MERCURY_DIR}/Mercury.cpp)
-target_include_directories(Mercury PUBLIC ${MERCURY_DIR} ${ZAPDUTILS_DIR})
+target_include_directories(Mercury PUBLIC $<BUILD_INTERFACE:${MERCURY_DIR}> $<BUILD_INTERFACE:${ZAPDUTILS_DIR}>)
 
 target_link_libraries(Mercury PUBLIC ZAPDUtils nlohmann_json::nlohmann_json)
 
@@ -122,4 +122,4 @@ add_library(StrHash64 STATIC)
 
 target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
 
-target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
+target_include_directories(StrHash64 PUBLIC $<BUILD_INTERFACE:${STRHASH64_DIR}>)

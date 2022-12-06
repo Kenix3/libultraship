@@ -1,4 +1,5 @@
 add_library(libultraship STATIC)
+add_library(libultraship::libultraship ALIAS libultraship)
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
@@ -344,7 +345,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<BUILD_INTERFACE:${INCLUDE_DIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb>
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")

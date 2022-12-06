@@ -334,7 +334,7 @@ endif()
 
 target_link_libraries(${LIBRARY_NAME} ${LINK_LIBS})
 target_compile_definitions(${LIBRARY_NAME} INTERFACE STORMLIB_NO_AUTO_LINK) #CMake will take care of the linking
-target_include_directories(${LIBRARY_NAME} PUBLIC src/)
+target_include_directories(${LIBRARY_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/>)
 set_target_properties(${LIBRARY_NAME} PROPERTIES PUBLIC_HEADER "src/StormLib.h;src/StormPort.h")
 if(BUILD_SHARED_LIBS)
     message(STATUS "Linking against dependent libraries dynamically")
