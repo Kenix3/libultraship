@@ -650,15 +650,15 @@ void DrawMainMenuAndCalculateGameSize(void) {
             break;
         }
         case 2: { // 240p Widescreen
-            const int vert_res = 240;
-            gfx_current_dimensions.width = vert_res * size.x / size.y;
-            gfx_current_dimensions.height = vert_res;
+            const int vertRes = 240;
+            gfx_current_dimensions.width = vertRes * size.x / size.y;
+            gfx_current_dimensions.height = vertRes;
             break;
         }
         case 3: { // 480p Widescreen
-            const int vert_res = 480;
-            gfx_current_dimensions.width = vert_res * size.x / size.y;
-            gfx_current_dimensions.height = vert_res;
+            const int vertRes = 480;
+            gfx_current_dimensions.width = vertRes * size.x / size.y;
+            gfx_current_dimensions.height = vertRes;
             break;
         }
     }
