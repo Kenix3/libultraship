@@ -28,7 +28,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: soh-mac
-        path: build-cmake/src/*.a
+        path: build-cmake/lib/*.a
         if-no-files-found: error
   build-linux:
     runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: soh-linux
-        path: build-cmake/src/*.a
+        path: build-cmake/lib/*.a
         if-no-files-found: error
   build-windows:
     runs-on: windows-latest
@@ -88,5 +88,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: soh-windows
-        path: build-cmake/src/**/*.lib
+        path: build-cmake/lib/**/*.lib
         if-no-files-found: error
