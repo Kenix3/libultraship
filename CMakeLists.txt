@@ -39,7 +39,7 @@ install(TARGETS libultraship ImGui tinyxml2 storm StrHash64 Mercury nlohmann_jso
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/libultraship
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/libultraship
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
@@ -57,12 +57,11 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libultraship
 )
 
-# Uncomment when a version is present in the project()
-# write_basic_package_version_file(
-#     ${CMAKE_BINARY_DIR}/cmake/libultraship-config-version.cmake
-#     VERSION ${LIBULTRASHIP_VERSION}
-#     COMPATIBILITY SameMajorVersion
-# )
+write_basic_package_version_file(
+    ${CMAKE_BINARY_DIR}/cmake/libultraship-config-version.cmake
+    VERSION 0.9.0 # Placeholder, replace with ${LIBULTRASHIP_VERSION} when a proper version is supplied to project()
+    COMPATIBILITY SameMajorVersion
+)
 
 install(
     FILES
