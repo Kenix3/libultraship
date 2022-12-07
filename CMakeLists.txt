@@ -34,19 +34,20 @@ include (GNUInstallDirs)
 
 install(TARGETS libultraship ImGui tinyxml2 storm StrHash64 Mercury nlohmann_json ZAPDUtils
     EXPORT libultraship-targets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Runtime
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime
 )
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/libultraship
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development
 )
 
 install(EXPORT libultraship-targets
     FILE libultraship-targets.cmake
     NAMESPACE libultraship::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libultraship
+    COMPONENT Development
 )
 
 include (CMakePackageConfigHelpers)
@@ -68,6 +69,7 @@ install(
         ${CMAKE_BINARY_DIR}/cmake/libultraship-config.cmake
         ${CMAKE_BINARY_DIR}/cmake/libultraship-config-version.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libultraship
+    COMPONENT Development
 )
 
 export(EXPORT libultraship-targets
