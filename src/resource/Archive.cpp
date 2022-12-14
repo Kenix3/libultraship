@@ -305,17 +305,17 @@ void Archive::GenerateCrcMap() {
     auto listFile = LoadFile("(listfile)", false);
 
     // Use std::string_view to avoid unnecessary string copies
-    std::vector<std::string_view> lines = StringHelper::Split(std::string_view(listFile->Buffer.get(), listFile->BufferSize), "\n");
+    std::vector<std::string_view> lines =
+        StringHelper::Split(std::string_view(listFile->Buffer.get(), listFile->BufferSize), "\n");
 
-    for (size_t i = 0; i < lines.size(); i++)
-    {
+    for (size_t i = 0; i < lines.size(); i++) {
         // Use std::string_view to avoid unnecessary string copies
         std::string_view line = lines[i].substr(0, lines[i].length() - 1); // Trim \r
-        std::string line_str = std::string(line);
+        std::string lineStr = std::string(line);
 
         // Not NULL terminated str
         uint64_t hash = ~crc64(line.data(), line.length());
-        mHashes.emplace(hash, std::move(line_str));
+        mHashes.emplace(hash, std::move(lineStr));
     }
 }
 
