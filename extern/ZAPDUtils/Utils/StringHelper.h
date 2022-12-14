@@ -13,9 +13,7 @@ public:
     static std::vector<std::string> Split(std::string s, const std::string& delimiter);
     static std::vector<std::string_view> Split(std::string_view s, const std::string& delimiter);
     static std::string Strip(std::string s, const std::string& delimiter);
-    static std::string_view Strip(std::string_view s, const std::string& delimiter);
     static std::string Replace(std::string str, const std::string& from, const std::string& to);
-    static std::string Replace(std::string_view str, const std::string& from, const std::string& to);
     static void ReplaceOriginal(std::string& str, const std::string& from, const std::string& to);
     static bool StartsWith(const std::string& s, const std::string& input);
     static bool Contains(const std::string& s, const std::string& input);
