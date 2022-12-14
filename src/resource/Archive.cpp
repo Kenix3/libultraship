@@ -314,8 +314,8 @@ void Archive::GenerateCrcMap() {
         std::string line_str = std::string(line);
 
         // Not NULL terminated str
-        uint64_t hash2 = ~crc64(line.data(), line.length());
-        mHashes.emplace(hash2, std::move(line_str));
+        uint64_t hash = ~crc64(line.data(), line.length());
+        mHashes.emplace(hash, std::move(line_str));
     }
 }
 
