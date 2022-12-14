@@ -304,17 +304,18 @@ bool Archive::LoadPatchMPQs() {
 void Archive::GenerateCrcMap() {
     auto listFile = LoadFile("(listfile)", false);
 
-    std::vector<std::string> lines =
-        StringHelper::Split(std::string(listFile->Buffer.get(), listFile->BufferSize), "\n");
+    // Use std::string_view to avoid unnecessary string copies
+    std::vector<std::string_view> lines = StringHelper::Split(std::string_view(listFile->Buffer.get(), listFile->BufferSize), "\n");
 
-    for (size_t i = 0; i < lines.size(); i++) {
-        std::string line = StringHelper::Replace(StringHelper::Strip(lines[i], "\r"), "/", "\\");
-        std::string line2 = StringHelper::Replace(line, "\\", "/");
+    for (size_t i = 0; i < lines.size(); i++)
+    {
+        // Use std::string_view to avoid unnecessary string copies
+        std::string_view line = lines[i].substr(0, lines[i].length() - 1); // Trim \r
+        std::string line_str = std::string(line);
 
-        uint64_t hash = CRC64(StringHelper::Replace(line, "/", "\\").c_str());
-        uint64_t hash2 = CRC64(StringHelper::Replace(line, "\\", "/").c_str());
-        mHashes[hash] = line;
-        mHashes[hash2] = line2;
+        // Not NULL terminated str
+        uint64_t hash2 = ~crc64(line.data(), line.length());
+        mHashes.emplace(hash2, std::move(line_str));
     }
 }
 

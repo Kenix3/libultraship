@@ -23,6 +23,23 @@ std::vector<std::string> StringHelper::Split(std::string s, const std::string& d
     return res;
 }
 
+std::vector<std::string_view> StringHelper::Split(std::string_view s, const std::string& delimiter)
+{
+    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    std::string_view token;
+    std::vector<std::string_view> res;
+
+    while ((pos_end = s.find(delimiter, pos_start)) != std::string_view::npos)
+    {
+        token = s.substr(pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+        res.push_back(token);
+    }
+
+    res.push_back(s.substr(pos_start));
+    return res;
+}
+
 std::string StringHelper::Strip(std::string s, const std::string& delimiter)
 {
 	size_t pos = 0;
@@ -37,6 +54,20 @@ std::string StringHelper::Strip(std::string s, const std::string& delimiter)
 	return s;
 }
 
+std::string_view StringHelper::Strip(std::string_view s, const std::string& delimiter)
+{
+    size_t pos = 0;
+    std::string_view token;
+
+    while ((pos = s.find(delimiter)) != std::string_view::npos)
+    {
+        token = s.substr(0, pos);
+        s.remove_prefix(pos + delimiter.length());
+    }
+
+    return s;
+}
+
 std::string StringHelper::Replace(std::string str, const std::string& from,
                                             const std::string& to)
 {
@@ -49,6 +80,26 @@ std::string StringHelper::Replace(std::string str, const std::string& from,
 	}
 
 	return str;
+}
+
+std::string StringHelper::Replace(std::string_view str, const std::string& from,
+                                            const std::string& to)
+{
+    size_t start_pos = str.find(from);
+
+    while (start_pos != std::string_view::npos)
+    {
+        // Convert the input std::string_view to a std::string for modification
+        std::string strCopy(str);
+        strCopy.replace(start_pos, from.length(), to);
+        start_pos = strCopy.find(from);
+
+        // Return the modified string
+        return strCopy;
+    }
+
+    // Return the input string_view as-is if no replacements were made
+    return std::string(str);
 }
 
 void StringHelper::ReplaceOriginal(std::string& str, const std::string& from, const std::string& to)
