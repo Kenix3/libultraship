@@ -36,7 +36,7 @@
 #include <WTypesbase.h>
 #endif
 
-#define GFX_API_NAME "SDL2 - OpenGL"
+#define GFX_BACKEND_NAME "SDL"
 
 static SDL_Window* wnd;
 static SDL_GLContext ctx;
@@ -244,7 +244,8 @@ static int target_fps = 60;
 #define FRAME_INTERVAL_US_NUMERATOR 1000000
 #define FRAME_INTERVAL_US_DENOMINATOR (target_fps)
 
-static void gfx_sdl_init(const char* game_name, bool start_in_fullscreen, uint32_t width, uint32_t height) {
+static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
+                         uint32_t height) {
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
@@ -268,7 +269,7 @@ static void gfx_sdl_init(const char* game_name, bool start_in_fullscreen, uint32
 #endif
 
     char title[512];
-    int len = sprintf(title, "%s (%s)", game_name, GFX_API_NAME);
+    int len = sprintf(title, "%s (%s - %s)", game_name, GFX_BACKEND_NAME, gfx_api_name);
 
 #ifdef __SWITCH__
     // For Switch we need to set the window width before creating the window

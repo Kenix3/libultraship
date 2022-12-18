@@ -33,7 +33,7 @@
 #include "gfx_dxgi.h"
 
 #define WINCLASS_NAME L"N64GAME"
-#define GFX_API_NAME "DirectX"
+#define GFX_BACKEND_NAME "DXGI"
 
 #define FRAME_INTERVAL_NS_NUMERATOR 1000000000
 #define FRAME_INTERVAL_NS_DENOMINATOR (dxgi.target_fps)
@@ -287,7 +287,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     return 0;
 }
 
-void gfx_dxgi_init(const char* game_name, bool start_in_fullscreen, uint32_t width, uint32_t height) {
+void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
+                   uint32_t height) {
     LARGE_INTEGER qpc_init, qpc_freq;
     QueryPerformanceCounter(&qpc_init);
     QueryPerformanceFrequency(&qpc_freq);
@@ -302,7 +303,7 @@ void gfx_dxgi_init(const char* game_name, bool start_in_fullscreen, uint32_t wid
 
     char title[512];
     wchar_t w_title[512];
-    int len = sprintf(title, "%s (%s)", game_name, GFX_API_NAME);
+    int len = sprintf(title, "%s (%s - %s)", game_name, GFX_BACKEND_NAME, gfx_api_name);
     mbstowcs(w_title, title, len + 1);
     dxgi.game_name = game_name;
 

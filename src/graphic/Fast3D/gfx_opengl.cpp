@@ -87,6 +87,10 @@ static FilteringMode current_filter_mode = FILTER_THREE_POINT;
 GLuint pixel_depth_rb, pixel_depth_fb;
 size_t pixel_depth_rb_size;
 
+static const char* gfx_opengl_get_name() {
+    return "OpenGL";
+}
+
 static struct GfxClipParameters gfx_opengl_get_clip_parameters(void) {
     return { false, framebuffers[current_framebuffer].invert_y };
 }
@@ -986,7 +990,8 @@ FilteringMode gfx_opengl_get_texture_filter(void) {
     return current_filter_mode;
 }
 
-struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_clip_parameters,
+struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
+                                          gfx_opengl_get_clip_parameters,
                                           gfx_opengl_unload_shader,
                                           gfx_opengl_load_shader,
                                           gfx_opengl_create_and_load_new_shader,
