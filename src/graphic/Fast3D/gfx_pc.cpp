@@ -2669,7 +2669,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
               bool start_in_fullscreen, uint32_t width, uint32_t height) {
     gfx_wapi = wapi;
     gfx_rapi = rapi;
-    gfx_wapi->init(game_name, start_in_fullscreen, width, height);
+    gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height);
     gfx_rapi->init();
     gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
 #ifdef __APPLE__
