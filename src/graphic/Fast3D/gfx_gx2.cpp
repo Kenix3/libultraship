@@ -53,10 +53,7 @@ struct ShaderProgram {
 
 struct Texture {
     GX2Texture texture;
-    bool texture_uploaded;
-
     GX2Sampler sampler;
-    bool sampler_set;
 
     // For ImGui rendering
     ImGui_ImplGX2_Texture imtex;
@@ -68,11 +65,7 @@ struct Framebuffer {
     GX2DepthBuffer depth_buffer;
     bool depthBufferMem1;
 
-    GX2Texture texture;
-    GX2Sampler sampler;
-
-    // For ImGui rendering
-    ImGui_ImplGX2_Texture imtex;
+    Texture texture;
 };
 
 static struct Framebuffer main_framebuffer;
@@ -82,8 +75,10 @@ static struct Framebuffer* current_framebuffer;
 static std::map<std::pair<uint64_t, uint32_t>, struct ShaderProgram> shader_program_pool;
 static struct ShaderProgram* current_shader_program;
 
-static struct Texture* current_texture;
 static int current_tile;
+static struct Texture* current_textures[2];
+static bool texture_updated[2];
+static bool sampler_updated[2];
 
 // 96 Mb (should be more than enough to draw everything without waiting for the GPU)
 #define DRAW_BUFFER_SIZE 0x6000000
@@ -182,6 +177,11 @@ static void gfx_gx2_load_shader(struct ShaderProgram* new_prg) {
     GX2SetPixelShader(&new_prg->group.pixelShader);
 
     gfx_gx2_set_uniforms(new_prg);
+
+    for (int i = 0; i < 2; ++i) {
+        texture_updated[i] = true;
+        sampler_updated[i] = true;
+    }
 }
 
 static struct ShaderProgram* gfx_gx2_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
@@ -201,13 +201,13 @@ static struct ShaderProgram* gfx_gx2_create_and_load_new_shader(uint64_t shader_
     prg->used_textures[0] = cc_features.used_textures[0];
     prg->used_textures[1] = cc_features.used_textures[1];
 
-    gfx_gx2_load_shader(prg);
-
     prg->window_params_offset = GX2GetPixelUniformVarOffset(&prg->group.pixelShader, "window_params");
     prg->samplers_location[0] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTex0");
     prg->samplers_location[1] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTex1");
 
     prg->used_noise = cc_features.opt_alpha && cc_features.opt_noise;
+
+    gfx_gx2_load_shader(prg);
 
     printf("Generated and loaded shader\n");
 
@@ -247,25 +247,21 @@ static void gfx_gx2_delete_texture(uint32_t texture_id) {
 
 static void gfx_gx2_select_texture(int tile, uint32_t texture_id) {
     struct Texture* tex = (struct Texture*)texture_id;
-    current_texture = tex;
+
     current_tile = tile;
 
-    if (current_shader_program) {
-        uint32_t sampler_location = current_shader_program->samplers_location[tile];
-
-        if (tex->texture_uploaded) {
-            GX2SetPixelTexture(&tex->texture, sampler_location);
-        }
-
-        if (tex->sampler_set) {
-            GX2SetPixelSampler(&tex->sampler, sampler_location);
-        }
-    }
+    current_textures[tile] = tex;
+    texture_updated[tile] = true;
+    sampler_updated[tile] = true;
 }
 
 static void gfx_gx2_upload_texture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
-    struct Texture* tex = current_texture;
+    struct Texture* tex = current_textures[current_tile];
     assert(tex);
+
+    // TODO there are some cases where the CPU starts modifying textures, while the GPU is still using them
+    // but always waiting for the GPU to be synched with the CPU absolutely kills performance
+    // GX2DrawDone();
 
     if ((tex->texture.surface.width != width) || (tex->texture.surface.height != height) ||
         !tex->texture.surface.image) {
@@ -306,11 +302,7 @@ static void gfx_gx2_upload_texture(const uint8_t* rgba32_buf, uint32_t width, ui
 
     GX2Invalidate(GX2_INVALIDATE_MODE_CPU_TEXTURE, tex->texture.surface.image, tex->texture.surface.imageSize);
 
-    if (current_shader_program) {
-        GX2SetPixelTexture(&tex->texture, current_shader_program->samplers_location[current_tile]);
-    }
-
-    tex->texture_uploaded = true;
+    texture_updated[current_tile] = true;
 }
 
 static GX2TexClampMode gfx_cm_to_gx2(uint32_t val) {
@@ -329,10 +321,8 @@ static GX2TexClampMode gfx_cm_to_gx2(uint32_t val) {
 }
 
 static void gfx_gx2_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
-    struct Texture* tex = current_texture;
+    struct Texture* tex = current_textures[tile];
     assert(tex);
-
-    current_tile = tile;
 
     GX2InitSampler(&tex->sampler, GX2_TEX_CLAMP_MODE_CLAMP,
                    (linear_filter && current_filter_mode == FILTER_LINEAR) ? GX2_TEX_XY_FILTER_MODE_LINEAR
@@ -340,11 +330,7 @@ static void gfx_gx2_set_sampler_parameters(int tile, bool linear_filter, uint32_
 
     GX2InitSamplerClamping(&tex->sampler, gfx_cm_to_gx2(cms), gfx_cm_to_gx2(cmt), GX2_TEX_CLAMP_MODE_WRAP);
 
-    if (current_shader_program) {
-        GX2SetPixelSampler(&tex->sampler, current_shader_program->samplers_location[tile]);
-    }
-
-    tex->sampler_set = true;
+    sampler_updated[tile] = true;
 }
 
 static void gfx_gx2_set_depth_test_and_mask(bool depth_test, bool z_upd) {
@@ -409,6 +395,23 @@ static void gfx_gx2_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t b
         draw_ptr = draw_buffer;
     }
 
+    // update textures
+    for (int i = 0; i < 2; ++i) {
+        if (current_shader_program->used_textures[i]) {
+            uint32_t sampler_location = current_shader_program->samplers_location[i];
+
+            if (texture_updated[i]) {
+                GX2SetPixelTexture(&current_textures[i]->texture, sampler_location);
+                texture_updated[i] = false;
+            }
+
+            if (sampler_updated[i]) {
+                GX2SetPixelSampler(&current_textures[i]->sampler, sampler_location);
+                sampler_updated[i] = false;
+            }
+        }
+    }
+
     float* new_vbo = (float*)draw_ptr;
     draw_ptr += ALIGN(vbo_len, GX2_VERTEX_BUFFER_ALIGNMENT);
 
@@ -437,8 +440,8 @@ static void gfx_gx2_init(void) {
                                                                       main_framebuffer.depth_buffer.surface.alignment);
     assert(main_framebuffer.depth_buffer.surface.image);
 
-    main_framebuffer.imtex.Texture = &main_framebuffer.texture;
-    main_framebuffer.imtex.Sampler = &main_framebuffer.sampler;
+    main_framebuffer.texture.imtex.Texture = &main_framebuffer.texture.texture;
+    main_framebuffer.texture.imtex.Sampler = &main_framebuffer.texture.sampler;
 
     // create a linear aligned copy of the depth buffer to read pixels to
     memcpy(&depthReadBuffer, &main_framebuffer.depth_buffer, sizeof(GX2DepthBuffer));
@@ -542,10 +545,10 @@ static int gfx_gx2_create_framebuffer(void) {
     struct Framebuffer* buffer = (struct Framebuffer*)calloc(1, sizeof(struct Framebuffer));
     assert(buffer);
 
-    GX2InitSampler(&buffer->sampler, GX2_TEX_CLAMP_MODE_WRAP, GX2_TEX_XY_FILTER_MODE_LINEAR);
+    GX2InitSampler(&buffer->texture.sampler, GX2_TEX_CLAMP_MODE_WRAP, GX2_TEX_XY_FILTER_MODE_LINEAR);
 
-    buffer->imtex.Texture = &buffer->texture;
-    buffer->imtex.Sampler = &buffer->sampler;
+    buffer->texture.imtex.Texture = &buffer->texture.texture;
+    buffer->texture.imtex.Sampler = &buffer->texture.sampler;
 
     // some more 32-bit shenanigans :D
     return (int)buffer;
@@ -561,20 +564,21 @@ static void gfx_gx2_update_framebuffer_parameters(int fb, uint32_t width, uint32
         return;
     }
 
-    if (buffer->texture.surface.width == width && buffer->texture.surface.height == height) {
+    struct Texture* tex = &buffer->texture;
+    if (tex->texture.surface.width == width && tex->texture.surface.height == height) {
         return;
     }
 
     // make sure the GPU no longer writes to the buffer
     GX2DrawDone();
 
-    if (buffer->texture.surface.image) {
+    if (tex->texture.surface.image) {
         if (buffer->colorBufferMem1) {
-            gfx_wiiu_free_mem1(buffer->texture.surface.image);
+            gfx_wiiu_free_mem1(tex->texture.surface.image);
         } else {
-            free(buffer->texture.surface.image);
+            free(tex->texture.surface.image);
         }
-        buffer->texture.surface.image = nullptr;
+        tex->texture.surface.image = nullptr;
     }
 
     if (buffer->depth_buffer.surface.image) {
@@ -606,40 +610,39 @@ static void gfx_gx2_update_framebuffer_parameters(int fb, uint32_t width, uint32
     GX2CalcSurfaceSizeAndAlignment(&buffer->color_buffer.surface);
     GX2InitColorBufferRegs(&buffer->color_buffer);
 
-    memset(&buffer->texture, 0, sizeof(GX2Texture));
-    buffer->texture.surface.use = GX2_SURFACE_USE_TEXTURE;
-    buffer->texture.surface.dim = GX2_SURFACE_DIM_TEXTURE_2D;
-    buffer->texture.surface.width = width;
-    buffer->texture.surface.height = height;
-    buffer->texture.surface.depth = 1;
-    buffer->texture.surface.mipLevels = 1;
-    buffer->texture.surface.format = GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8;
-    buffer->texture.surface.aa = GX2_AA_MODE1X;
-    buffer->texture.surface.tileMode = GX2_TILE_MODE_DEFAULT;
-    buffer->texture.viewFirstMip = 0;
-    buffer->texture.viewNumMips = 1;
-    buffer->texture.viewFirstSlice = 0;
-    buffer->texture.viewNumSlices = 1;
-    buffer->texture.compMap = GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_G, GX2_SQ_SEL_B, GX2_SQ_SEL_A);
+    memset(&tex->texture, 0, sizeof(GX2Texture));
+    tex->texture.surface.use = GX2_SURFACE_USE_TEXTURE;
+    tex->texture.surface.dim = GX2_SURFACE_DIM_TEXTURE_2D;
+    tex->texture.surface.width = width;
+    tex->texture.surface.height = height;
+    tex->texture.surface.depth = 1;
+    tex->texture.surface.mipLevels = 1;
+    tex->texture.surface.format = GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8;
+    tex->texture.surface.aa = GX2_AA_MODE1X;
+    tex->texture.surface.tileMode = GX2_TILE_MODE_DEFAULT;
+    tex->texture.viewFirstMip = 0;
+    tex->texture.viewNumMips = 1;
+    tex->texture.viewFirstSlice = 0;
+    tex->texture.viewNumSlices = 1;
+    tex->texture.compMap = GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_G, GX2_SQ_SEL_B, GX2_SQ_SEL_A);
 
-    GX2CalcSurfaceSizeAndAlignment(&buffer->texture.surface);
-    GX2InitTextureRegs(&buffer->texture);
+    GX2CalcSurfaceSizeAndAlignment(&tex->texture.surface);
+    GX2InitTextureRegs(&tex->texture);
 
     // the texture and color buffer share a buffer
-    assert(buffer->color_buffer.surface.imageSize == buffer->texture.surface.imageSize);
+    assert(buffer->color_buffer.surface.imageSize == tex->texture.surface.imageSize);
 
-    buffer->texture.surface.image =
-        gfx_wiiu_alloc_mem1(buffer->texture.surface.imageSize, buffer->texture.surface.alignment);
+    tex->texture.surface.image = gfx_wiiu_alloc_mem1(tex->texture.surface.imageSize, tex->texture.surface.alignment);
     // fall back to mem2
-    if (!buffer->texture.surface.image) {
-        buffer->texture.surface.image = memalign(buffer->texture.surface.alignment, buffer->texture.surface.imageSize);
+    if (!tex->texture.surface.image) {
+        tex->texture.surface.image = memalign(tex->texture.surface.alignment, tex->texture.surface.imageSize);
         buffer->colorBufferMem1 = false;
     } else {
         buffer->colorBufferMem1 = true;
     }
-    assert(buffer->texture.surface.image);
+    assert(tex->texture.surface.image);
 
-    buffer->color_buffer.surface.image = buffer->texture.surface.image;
+    buffer->color_buffer.surface.image = tex->texture.surface.image;
 }
 
 void gfx_gx2_start_draw_to_framebuffer(int fb, float noise_scale) {
@@ -700,17 +703,16 @@ void* gfx_gx2_get_framebuffer_texture_id(int fb_id) {
         buffer = &main_framebuffer;
     }
 
-    return &buffer->imtex;
+    return &buffer->texture.imtex;
 }
 
 void gfx_gx2_select_texture_fb(int fb) {
     struct Framebuffer* buffer = (struct Framebuffer*)fb;
     assert(buffer);
 
-    assert(current_shader_program);
-    uint32_t location = current_shader_program->samplers_location[0];
-    GX2SetPixelTexture(&buffer->texture, location);
-    GX2SetPixelSampler(&buffer->sampler, location);
+    current_textures[0] = &buffer->texture;
+    texture_updated[0] = true;
+    sampler_updated[0] = true;
 }
 
 static std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
