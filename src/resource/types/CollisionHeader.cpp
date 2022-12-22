@@ -34,7 +34,10 @@ void Ship::CollisionHeaderV0::ParseFileBinary(BinaryReader* reader, Resource* re
     col->polygonTypes.reserve(polyTypesCnt);
 
     for (uint32_t i = 0; i < polyTypesCnt; i++) {
-        col->polygonTypes.push_back(reader->ReadUInt64());
+        uint32_t col1 = reader->ReadUInt32();
+        uint32_t col2 = reader->ReadUInt32();
+
+        col->polygonTypes.push_back({ col1, col2 });
     }
 
     col->camData = new CameraDataList();

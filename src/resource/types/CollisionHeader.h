@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <array>
 #include "../Resource.h"
 #include "Vec2f.h"
 #include "Vec3f.h"
@@ -55,7 +56,7 @@ class CollisionHeaderV0 : public ResourceFile {
 
     std::vector<Vec3f> vertices;
     std::vector<PolygonEntry> polygons;
-    std::vector<uint64_t> polygonTypes;
+    std::vector<std::array<uint32_t, 2>> polygonTypes;
     std::vector<WaterBoxHeader> waterBoxes;
     CameraDataList* camData = nullptr;
 
@@ -69,7 +70,7 @@ class CollisionHeader : public Resource {
 
     std::vector<Vec3f> vertices;
     std::vector<PolygonEntry> polygons;
-    std::vector<uint64_t> polygonTypes;
+    std::vector<std::array<uint32_t, 2>> polygonTypes;
     std::vector<WaterBoxHeader> waterBoxes;
     CameraDataList* camData = nullptr;
 };
