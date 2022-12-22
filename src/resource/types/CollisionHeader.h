@@ -56,7 +56,7 @@ class CollisionHeaderV0 : public ResourceFile {
 
     std::vector<Vec3f> vertices;
     std::vector<PolygonEntry> polygons;
-    std::vector<std::array<uint32_t, 2>> polygonTypes;
+    std::vector<std::array<uint32_t, 2>> PolygonTypes;
     std::vector<WaterBoxHeader> waterBoxes;
     CameraDataList* camData = nullptr;
 
@@ -70,7 +70,7 @@ class CollisionHeader : public Resource {
 
     std::vector<Vec3f> vertices;
     std::vector<PolygonEntry> polygons;
-    std::vector<std::array<uint32_t, 2>> polygonTypes;
+    std::vector<std::array<uint32_t, 2>> PolygonTypes;
     std::vector<WaterBoxHeader> waterBoxes;
     CameraDataList* camData = nullptr;
 };
