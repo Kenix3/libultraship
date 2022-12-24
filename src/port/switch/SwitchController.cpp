@@ -9,13 +9,12 @@
 namespace Ship {
 
 SwitchController::SwitchController(int32_t physicalSlot) : Controller(), mPhysicalSlot(physicalSlot) {
+    mController = new NXControllerState();
     mConnected = false;
-    mControllerName = "Switch Controller #" + std::to_string(mPhysicalSlot) + " (Disconnected)";
 }
 
 bool SwitchController::Open() {
     mConnected = true;
-    mController = new NXControllerState();
     padInitializeDefault(&mController->State);
 
     // Initialize vibration devices
@@ -34,7 +33,6 @@ bool SwitchController::Open() {
     }
 
     mGuid = StringHelper::Sprintf("NXInternal:%d", mPhysicalSlot);
-    mControllerName = "Switch Controller #" + std::to_string(mPhysicalSlot) + " (" + GetControllerExtensionName() + ")";
     return true;
 }
 
@@ -285,7 +283,7 @@ const std::string SwitchController::GetButtonName(int32_t virtualSlot, int n64Bu
 }
 
 const std::string SwitchController::GetControllerName() {
-    return mControllerName;
+    return "Switch Controller #" + std::to_string(mPhysicalSlot) + " (" + GetControllerExtensionName() + ")";
 }
 
 void SwitchController::CreateDefaultBinding(int32_t virtualSlot) {
@@ -363,7 +361,11 @@ std::string SwitchController::GetControllerExtensionName() {
         return "Right Joy-Con";
     }
 
-    return "Dual Joy-Con";
+    if (tagStyle & HidNpadStyleTag_NpadJoyDual) {
+        return "Dual Joy-Con";
+    }
+
+    return "Disconnected";
 }
 } // namespace Ship
 #endif

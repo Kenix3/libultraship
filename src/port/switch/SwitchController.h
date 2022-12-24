@@ -46,7 +46,6 @@ class SwitchController : public Controller {
     NXControllerState* mController;
     std::string GetControllerExtensionName();
     void UpdateSixAxisSensor(HidSixAxisSensorState& state);
-    std::string mControllerName;
     int32_t mPhysicalSlot;
 
     bool mConnected;
