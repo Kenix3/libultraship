@@ -87,6 +87,12 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
     if (ImGui::Button("Refresh")) {
         controlDeck->ScanPhysicalDevices();
     }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Defaults")){
+        GetControllerPerSlot(currentPort)->CreateDefaultBinding(mCurrentPort);
+    }
 }
 
 void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
