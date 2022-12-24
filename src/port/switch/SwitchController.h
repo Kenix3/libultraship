@@ -1,4 +1,6 @@
+#ifdef __SWITCH__
 #pragma once
+
 #include "controller/Controller.h"
 #include <string>
 #include <switch.h>
@@ -6,9 +8,9 @@
 namespace Ship {
 
 struct NXControllerState {
-    PadState state;
-    HidVibrationDeviceHandle handles[2][2];
-    HidSixAxisSensorHandle sensors[4];
+    PadState State;
+    HidVibrationDeviceHandle Handles[2][2];
+    HidSixAxisSensorHandle Sensors[4];
 };
 
 class SwitchController : public Controller {
@@ -20,7 +22,7 @@ class SwitchController : public Controller {
     void ReadFromSource(int32_t virtualSlot) override;
     void WriteToSource(int32_t virtualSlot, ControllerCallback* controller) override;
     bool Connected() const override {
-        return connected;
+        return mConnected;
     };
     bool CanGyro() const override {
         return true;
@@ -37,7 +39,7 @@ class SwitchController : public Controller {
     const std::string GetControllerName() override;
 
   protected:
-    void NormalizeStickAxis(int32_t virtualSlot, float x, float y, int16_t threshold, bool isRightStick);
+    void NormalizeStickAxis(int32_t virtualSlot, float x, float y, int16_t axisThreshold, bool isRightStick);
     void CreateDefaultBinding(int32_t virtualSlot) override;
 
   private:
@@ -47,6 +49,7 @@ class SwitchController : public Controller {
     std::string mControllerName;
     int32_t mPhysicalSlot;
 
-    bool connected;
+    bool mConnected;
 };
 } // namespace Ship
+#endif
