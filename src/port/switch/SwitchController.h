@@ -6,9 +6,9 @@
 namespace Ship {
 
 struct NXControllerState {
-  PadState state;
-  HidVibrationDeviceHandle handles[2][2];
-  HidSixAxisSensorHandle sensors[4];
+    PadState state;
+    HidVibrationDeviceHandle handles[2][2];
+    HidSixAxisSensorHandle sensors[4];
 };
 
 class SwitchController : public Controller {
@@ -20,16 +20,17 @@ class SwitchController : public Controller {
     void ReadFromSource(int32_t virtualSlot) override;
     void WriteToSource(int32_t virtualSlot, ControllerCallback* controller) override;
     bool Connected() const override {
-      return connected;
+        return connected;
     };
     bool CanGyro() const override {
-      return true;
+        return true;
     }
     bool CanRumble() const override {
-      return true;
+        return true;
     };
 
-    void ClearRawPress() override {}
+    void ClearRawPress() override {
+    }
     int32_t ReadRawPress() override;
 
     const std::string GetButtonName(int32_t virtualSlot, int n64Button) override;

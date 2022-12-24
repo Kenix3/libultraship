@@ -7,7 +7,7 @@
 
 extern "C" uint8_t __osMaxControllers;
 
-namespace Ship{
+namespace Ship {
 
 SwitchController::SwitchController(int32_t physicalSlot) : Controller(), mPhysicalSlot(physicalSlot) {
     connected = false;
@@ -27,8 +27,8 @@ bool SwitchController::Open() {
     // Initialize six axis sensors
 
     hidGetSixAxisSensorHandles(&mController->sensors[0], 1, HidNpadIdType_Handheld, HidNpadStyleTag_NpadHandheld);
-    hidGetSixAxisSensorHandles(&mController->sensors[1], 1, HidNpadIdType_No1,      HidNpadStyleTag_NpadFullKey);
-    hidGetSixAxisSensorHandles(&mController->sensors[2], 2, HidNpadIdType_No1,      HidNpadStyleTag_NpadJoyDual);
+    hidGetSixAxisSensorHandles(&mController->sensors[1], 1, HidNpadIdType_No1, HidNpadStyleTag_NpadFullKey);
+    hidGetSixAxisSensorHandles(&mController->sensors[2], 2, HidNpadIdType_No1, HidNpadStyleTag_NpadJoyDual);
 
     for (int i = 0; i < 4; i++) {
         hidStartSixAxisSensor(mController->sensors[i]);
@@ -53,7 +53,8 @@ void SwitchController::Close() {
     }
 }
 
-void SwitchController::NormalizeStickAxis(int32_t virtualSlot, float x, float y, int16_t axisThreshold, bool isRightStick) {
+void SwitchController::NormalizeStickAxis(int32_t virtualSlot, float x, float y, int16_t axisThreshold,
+                                          bool isRightStick) {
     auto profile = getProfile(virtualSlot);
 
     auto ax = x * 85.0f / 32767.0f;
@@ -113,7 +114,8 @@ void SwitchController::ReadFromSource(int32_t virtualSlot) {
     int16_t camY = 0;
     for (uint32_t id = 0; id < 35; id++) {
         uint32_t btn = BIT(id);
-        if (!profile->Mappings.contains(btn)) continue;
+        if (!profile->Mappings.contains(btn))
+            continue;
 
         const auto pBtn = profile->Mappings[btn];
 
@@ -154,8 +156,8 @@ void SwitchController::ReadFromSource(int32_t virtualSlot) {
         NormalizeStickAxis(virtualSlot, camX, camY, profile->AxisDeadzones[2], true);
     }
 
-    if(profile->UseGyro){
-        HidSixAxisSensorState sixaxis = {0};
+    if (profile->UseGyro) {
+        HidSixAxisSensorState sixaxis = { 0 };
         UpdateSixAxisSensor(sixaxis);
 
         float gyroX = sixaxis.angular_velocity.x * -8.0f;
@@ -389,4 +391,4 @@ std::string SwitchController::GetControllerExtensionName() {
 
     return "Dual Joy-Con";
 }
-}
+} // namespace Ship

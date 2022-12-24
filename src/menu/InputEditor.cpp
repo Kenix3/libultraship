@@ -90,7 +90,7 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
 
     ImGui::SameLine();
 
-    if (ImGui::Button("Defaults")){
+    if (ImGui::Button("Defaults")) {
         GetControllerPerSlot(currentPort)->CreateDefaultBinding(mCurrentPort);
     }
 }
