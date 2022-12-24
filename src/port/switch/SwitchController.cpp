@@ -1,3 +1,4 @@
+#ifdef __SWITCH__
 #include "SwitchController.h"
 #include "core/Window.h"
 #include "menu/ImGuiImpl.h"
@@ -365,3 +366,4 @@ std::string SwitchController::GetControllerExtensionName() {
     return "Dual Joy-Con";
 }
 } // namespace Ship
+#endif
