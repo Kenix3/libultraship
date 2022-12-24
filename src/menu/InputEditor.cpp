@@ -75,7 +75,8 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
             if (deviceName != "Keyboard" && deviceName != "Auto") {
                 deviceName += "##" + std::to_string(i);
             }
-            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort), ImGuiSelectableFlags_SpanAvailWidth)) {
+            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort),
+                                  ImGuiSelectableFlags_SpanAvailWidth)) {
                 controlDeck->SetPhysicalDevice(currentPort, i);
             }
         }
@@ -181,7 +182,8 @@ void InputEditor::DrawControllerSchema() {
         // SDL_CONTROLLER_AXIS_LEFTY: 1
         ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[0], 1.0f, 0.0f, "%.0f"
 #ifdef __SWITCH__
-            , ImGuiInputTextFlags_NoPlusMinusButtons
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
 #endif
         );
         profile->AxisDeadzones[1] = profile->AxisDeadzones[0];
@@ -230,7 +232,8 @@ void InputEditor::DrawControllerSchema() {
         // SDL_CONTROLLER_AXIS_RIGHTY: 3
         ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[2], 1.0f, 0.0f, "%.0f"
 #ifdef __SWITCH__
-            , ImGuiInputTextFlags_NoPlusMinusButtons
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
 #endif
         );
         profile->AxisDeadzones[3] = profile->AxisDeadzones[2];
@@ -286,7 +289,8 @@ void InputEditor::DrawControllerSchema() {
 #endif
         ImGui::InputFloat("##GDriftX", &profile->GyroData[DRIFT_X], 1.0f, 0.0f, "%.1f"
 #ifdef __SWITCH__
-            , ImGuiInputTextFlags_NoPlusMinusButtons
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
 #endif
         );
         ImGui::PopItemWidth();
@@ -298,7 +302,8 @@ void InputEditor::DrawControllerSchema() {
 #endif
         ImGui::InputFloat("##GDriftY", &profile->GyroData[DRIFT_Y], 1.0f, 0.0f, "%.1f"
 #ifdef __SWITCH__
-            , ImGuiInputTextFlags_NoPlusMinusButtons
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
 #endif
         );
         ImGui::PopItemWidth();
