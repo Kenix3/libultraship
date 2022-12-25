@@ -69,14 +69,18 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
     auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
     std::string controllerName = controlDeck->GetPhysicalDeviceFromVirtualSlot(currentPort)->GetControllerName();
 
+#ifdef __SWITCH__
+    ImGui::PushItemWidth(320.0f);
+#endif
+
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
         for (uint8_t i = 0; i < controlDeck->GetNumPhysicalDevices(); i++) {
             std::string deviceName = controlDeck->GetPhysicalDevice(i)->GetControllerName();
             if (deviceName != "Keyboard" && deviceName != "Auto") {
                 deviceName += "##" + std::to_string(i);
             }
-            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort),
-                                  ImGuiSelectableFlags_SpanAvailWidth)) {
+
+            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort))) {
                 controlDeck->SetPhysicalDevice(currentPort, i);
             }
         }
