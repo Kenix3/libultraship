@@ -16,9 +16,8 @@ SwitchController::SwitchController(int32_t physicalSlot) : Controller(), mPhysic
 }
 
 bool SwitchController::Open() {
-    mConnected = true;
     padInitializeWithMask(&mController->State, CONTROLLER_MASK << mPhysicalSlot);
-
+    padUpdate(&mController->State);
     // Initialize vibration devices
 
     hidInitializeVibrationDevices(mController->Handles[1], 2, HidNpadIdType_No1, HidNpadStyleTag_NpadJoyDual);
@@ -35,6 +34,7 @@ bool SwitchController::Open() {
     }
 
     mGuid = StringHelper::Sprintf("NXInternal:%d", mPhysicalSlot);
+    mConnected = padIsConnected(&mController->State);
     return true;
 }
 
