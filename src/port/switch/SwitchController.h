@@ -22,7 +22,7 @@ class SwitchController : public Controller {
     void ReadFromSource(int32_t virtualSlot) override;
     void WriteToSource(int32_t virtualSlot, ControllerCallback* controller) override;
     bool Connected() const override {
-      return mConnected;
+        return mConnected;
     };
     bool CanGyro() const override {
         return true;

@@ -75,7 +75,7 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
 
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
         for (uint8_t i = 0; i < controlDeck->GetNumPhysicalDevices(); i++) {
-            if(!controlDeck->GetPhysicalDevice(i)->Connected()) {
+            if (!controlDeck->GetPhysicalDevice(i)->Connected()) {
                 continue;
             }
             std::string deviceName = controlDeck->GetPhysicalDevice(i)->GetControllerName();
