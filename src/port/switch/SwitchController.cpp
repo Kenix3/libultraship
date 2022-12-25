@@ -6,6 +6,8 @@
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 
+#define CONTROLLER_MASK 1UL
+
 namespace Ship {
 
 SwitchController::SwitchController(int32_t physicalSlot) : Controller(), mPhysicalSlot(physicalSlot) {
@@ -15,7 +17,7 @@ SwitchController::SwitchController(int32_t physicalSlot) : Controller(), mPhysic
 
 bool SwitchController::Open() {
     mConnected = true;
-    padInitializeDefault(&mController->State);
+    padInitializeWithMask(&mController->State, CONTROLLER_MASK << mPhysicalSlot);
 
     // Initialize vibration devices
 
@@ -283,7 +285,7 @@ const std::string SwitchController::GetButtonName(int32_t virtualSlot, int n64Bu
 }
 
 const std::string SwitchController::GetControllerName() {
-    return "Switch Controller #" + std::to_string(mPhysicalSlot) + " (" + GetControllerExtensionName() + ")";
+    return "Switch Controller #" + std::to_string(mPhysicalSlot + 1) + " (" + GetControllerExtensionName() + ")";
 }
 
 void SwitchController::CreateDefaultBinding(int32_t virtualSlot) {
@@ -343,6 +345,7 @@ void SwitchController::UpdateSixAxisSensor(HidSixAxisSensorState& state) {
 }
 
 std::string SwitchController::GetControllerExtensionName() {
+    padUpdate(&mController->State);
     u32 tagStyle = padGetStyleSet(&mController->State);
 
     if (tagStyle & HidNpadStyleTag_NpadFullKey) {
