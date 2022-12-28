@@ -16,7 +16,14 @@ SwitchController::SwitchController(int32_t physicalSlot) : Controller(), mPhysic
 }
 
 bool SwitchController::Open() {
-    padInitializeWithMask(&mController->State, CONTROLLER_MASK << mPhysicalSlot);
+    u64 mPadMask = CONTROLLER_MASK << mPhysicalSlot;
+
+    // Add handheld controller if it's the first controller
+    if (mPhysicalSlot == 0) {
+        mPadMask |= CONTROLLER_MASK << HidNpadIdType_Handheld;
+    }
+
+    padInitializeWithMask(&mController->State, mPadMask);
     padUpdate(&mController->State);
     // Initialize vibration devices
 
@@ -161,7 +168,7 @@ void SwitchController::ReadFromSource(int32_t virtualSlot) {
         UpdateSixAxisSensor(sixaxis);
 
         float gyroX = sixaxis.angular_velocity.x * -8.0f;
-        float gyroY = sixaxis.angular_velocity.y * -8.0f;
+        float gyroY = sixaxis.angular_velocity.y * 8.0f;
 
         float gyroDriftX = profile->GyroData[DRIFT_X] / 100.0f;
         float gyroDriftY = profile->GyroData[DRIFT_Y] / 100.0f;
