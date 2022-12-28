@@ -24,3 +24,55 @@ endif()
 add_subdirectory("extern")
 add_subdirectory("src")
 
+set_target_properties(libultraship PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+include (GNUInstallDirs)
+
+install(TARGETS libultraship ImGui tinyxml2 storm StrHash64 Mercury nlohmann_json ZAPDUtils
+    EXPORT libultraship-targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Runtime
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/libultraship
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development
+)
+
+install(EXPORT libultraship-targets
+    FILE libultraship-targets.cmake
+    NAMESPACE libultraship::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libultraship
+    COMPONENT Development
+)
+
+include (CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/libultraship-config.cmake.in
+    ${CMAKE_BINARY_DIR}/cmake/libultraship-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libultraship
+)
+
+write_basic_package_version_file(
+    ${CMAKE_BINARY_DIR}/cmake/libultraship-config-version.cmake
+    VERSION 0.9.0 # Placeholder, replace with ${LIBULTRASHIP_VERSION} when a proper version is supplied to project()
+    COMPATIBILITY SameMajorVersion
+)
+
+install(
+    FILES
+        ${CMAKE_BINARY_DIR}/cmake/libultraship-config.cmake
+        ${CMAKE_BINARY_DIR}/cmake/libultraship-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libultraship
+    COMPONENT Development
+)
+
+export(EXPORT libultraship-targets
+    FILE ${CMAKE_BINARY_DIR}/cmake/libultraship-targets.cmake
+    NAMESPACE libultraship::
+)

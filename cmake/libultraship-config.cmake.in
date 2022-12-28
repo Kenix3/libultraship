@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+
+if(NOT TARGET libultraship::libultraship)
+    include(${CMAKE_CURRENT_LIST_DIR}/libultraship-targets.cmake)
+endif()
