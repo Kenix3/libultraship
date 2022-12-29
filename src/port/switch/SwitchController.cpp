@@ -40,7 +40,7 @@ bool SwitchController::Open() {
         hidStartSixAxisSensor(mController->Sensors[i]);
     }
 
-    mGuid = StringHelper::Sprintf("NXInternal:%d", mPhysicalSlot);
+    mGuid = std::string(Switch::GetControllerUUID(mPhysicalSlot));
     mConnected = padIsConnected(&mController->State);
     return true;
 }
@@ -168,7 +168,7 @@ void SwitchController::ReadFromSource(int32_t virtualSlot) {
         UpdateSixAxisSensor(sixaxis);
 
         float gyroX = sixaxis.angular_velocity.x * -8.0f;
-        float gyroY = sixaxis.angular_velocity.y * 8.0f;
+        float gyroY = sixaxis.angular_velocity.z * 8.0f;
 
         float gyroDriftX = profile->GyroData[DRIFT_X] / 100.0f;
         float gyroDriftY = profile->GyroData[DRIFT_Y] / 100.0f;
@@ -215,7 +215,7 @@ void SwitchController::WriteToSource(int32_t virtualSlot, ControllerCallback* co
 int32_t SwitchController::ReadRawPress() {
     PadState* state = &mController->State;
     padUpdate(state);
-    u64 kDown = padGetButtonsDown(state);
+    u64 kDown = padGetButtons(state);
     for (uint32_t i = 0; i < 35; i++) {
         if (kDown & BIT(i)) {
             return BIT(i);

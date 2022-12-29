@@ -21,5 +21,6 @@ class Switch {
     static void ApplyOverclock();
     static void ThrowMissingOTR(std::string OTRPath);
     static void PrintErrorMessageToScreen(const char* str, ...);
+    static char* GetControllerUUID(int controller);
 };
 }; // namespace Ship

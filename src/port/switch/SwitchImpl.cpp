@@ -5,6 +5,7 @@
 #include "SwitchPerformanceProfiles.h"
 #include "misc/Cvar.h"
 #include "misc/Hooks.h"
+#include "Utils/StringHelper.h"
 
 extern "C" s32 CVar_GetS32(const char* name, s32 defaultValue);
 extern "C" void CVar_SetS32(const char* name, s32 value);
@@ -15,7 +16,7 @@ extern "C" void CVar_SetS32(const char* name, s32 value);
 static AppletHookCookie applet_hook_cookie;
 static bool isRunning = true;
 static bool hasFocus = true;
-
+HidsysUniquePadId uniquePadIds[8];
 void DetectAppletMode();
 
 static void on_applet_hook(AppletHookType hook, void* param);
@@ -37,7 +38,10 @@ void Ship::Switch::Init(SwitchPhase phase) {
             if (!hosversionBefore(8, 0, 0)) {
                 clkrstInitialize();
             }
+            hidsysInitialize();
             padConfigureInput(8, HidNpadStyleSet_NpadStandard);
+            s32 total = 0; // unused
+            hidsysGetUniquePadIds(uniquePadIds, 8, &total);
             break;
     }
 }
@@ -124,6 +128,15 @@ void Ship::Switch::PrintErrorMessageToScreen(const char* str, ...) {
     }
 
     consoleExit(NULL);
+}
+
+char* Ship::Switch::GetControllerUUID(int controller) {
+    HidsysUniquePadSerialNumber serial;
+    hidsysGetUniquePadSerialNumber(uniquePadIds[controller], &serial);
+    char* cuid = serial.serial_number;
+    return SDL_strdup(strlen(cuid) >= 14 && cuid[0] == 'X' && cuid[1] == 'C'
+                          ? cuid
+                          : StringHelper::Sprintf("CID%d0000000000", controller).c_str());
 }
 
 static void on_applet_hook(AppletHookType hook, void* param) {
