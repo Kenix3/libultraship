@@ -42,6 +42,9 @@ bool SwitchController::Open() {
 
     mGuid = std::string(Switch::GetControllerUUID(mPhysicalSlot));
     mConnected = padIsConnected(&mController->State);
+#ifdef NX_INPUT_DEBUG
+    printf("\033[2J");
+#endif
     return true;
 }
 
@@ -167,7 +170,23 @@ void SwitchController::ReadFromSource(int32_t virtualSlot) {
         HidSixAxisSensorState sixaxis = { 0 };
         UpdateSixAxisSensor(sixaxis);
 
-        float gyroX = sixaxis.angular_velocity.x * -8.0f;
+#ifdef NX_INPUT_DEBUG
+        printf("\x1b[0;0H");
+        printf("Acceleration:     x=% .4f, y=% .4f, z=% .4f\n", sixaxis.acceleration.x, sixaxis.acceleration.y,
+               sixaxis.acceleration.z);
+        printf("Angular velocity: x=% .4f, y=% .4f, z=% .4f\n", sixaxis.angular_velocity.x, sixaxis.angular_velocity.y,
+               sixaxis.angular_velocity.z);
+        printf("Angle:            x=% .4f, y=% .4f, z=% .4f\n", sixaxis.angle.x, sixaxis.angle.y, sixaxis.angle.z);
+        printf("Direction matrix:\n"
+               "                  [ % .4f,   % .4f,   % .4f ]\n"
+               "                  [ % .4f,   % .4f,   % .4f ]\n"
+               "                  [ % .4f,   % .4f,   % .4f ]\n",
+               sixaxis.direction.direction[0][0], sixaxis.direction.direction[1][0], sixaxis.direction.direction[2][0],
+               sixaxis.direction.direction[0][1], sixaxis.direction.direction[1][1], sixaxis.direction.direction[2][1],
+               sixaxis.direction.direction[0][2], sixaxis.direction.direction[1][2], sixaxis.direction.direction[2][2]);
+#endif
+
+        float gyroX = sixaxis.angular_velocity.x * 8.0f;
         float gyroY = sixaxis.angular_velocity.z * 8.0f;
 
         float gyroDriftX = profile->GyroData[DRIFT_X] / 100.0f;
@@ -337,6 +356,11 @@ void SwitchController::CreateDefaultBinding(int32_t virtualSlot) {
 
 void SwitchController::UpdateSixAxisSensor(HidSixAxisSensorState& state) {
     u64 styleSet = padGetStyleSet(&mController->State);
+    if (styleSet & HidNpadStyleTag_NpadHandheld) {
+        hidGetSixAxisSensorStates(mController->Sensors[0], &state, 1);
+        return;
+    }
+
     if (styleSet & HidNpadStyleTag_NpadHandheld) {
         hidGetSixAxisSensorStates(mController->Sensors[0], &state, 1);
     } else if (styleSet & HidNpadStyleTag_NpadFullKey) {
