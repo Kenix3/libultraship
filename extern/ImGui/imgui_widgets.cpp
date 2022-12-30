@@ -3456,17 +3456,19 @@ bool ImGui::InputScalar(const char* label, ImGuiDataType data_type, void* p_data
         ImGuiButtonFlags button_flags = ImGuiButtonFlags_Repeat | ImGuiButtonFlags_DontClosePopups;
         if (flags & ImGuiInputTextFlags_ReadOnly)
             BeginDisabled();
-        SameLine(0, style.ItemInnerSpacing.x);
-        if (ButtonEx("-", ImVec2(button_size, button_size), button_flags))
-        {
-            DataTypeApplyOp(data_type, '-', p_data, p_data, g.IO.KeyCtrl && p_step_fast ? p_step_fast : p_step);
-            value_changed = true;
-        }
-        SameLine(0, style.ItemInnerSpacing.x);
-        if (ButtonEx("+", ImVec2(button_size, button_size), button_flags))
-        {
-            DataTypeApplyOp(data_type, '+', p_data, p_data, g.IO.KeyCtrl && p_step_fast ? p_step_fast : p_step);
-            value_changed = true;
+        if(!(flags & ImGuiInputTextFlags_NoPlusMinusButtons)) {
+            SameLine(0, style.ItemInnerSpacing.x);
+            if (ButtonEx("-", ImVec2(button_size, button_size), button_flags))
+            {
+                DataTypeApplyOp(data_type, '-', p_data, p_data, g.IO.KeyCtrl && p_step_fast ? p_step_fast : p_step);
+                value_changed = true;
+            }
+            SameLine(0, style.ItemInnerSpacing.x);
+            if (ButtonEx("+", ImVec2(button_size, button_size), button_flags))
+            {
+                DataTypeApplyOp(data_type, '+', p_data, p_data, g.IO.KeyCtrl && p_step_fast ? p_step_fast : p_step);
+                value_changed = true;
+            }
         }
         if (flags & ImGuiInputTextFlags_ReadOnly)
             EndDisabled();

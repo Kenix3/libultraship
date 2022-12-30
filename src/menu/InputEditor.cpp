@@ -69,12 +69,20 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
     auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
     std::string controllerName = controlDeck->GetPhysicalDeviceFromVirtualSlot(currentPort)->GetControllerName();
 
+#ifdef __SWITCH__
+    ImGui::PushItemWidth(320.0f);
+#endif
+
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
         for (uint8_t i = 0; i < controlDeck->GetNumPhysicalDevices(); i++) {
+            if (!controlDeck->GetPhysicalDevice(i)->Connected()) {
+                continue;
+            }
             std::string deviceName = controlDeck->GetPhysicalDevice(i)->GetControllerName();
             if (deviceName != "Keyboard" && deviceName != "Auto") {
                 deviceName += "##" + std::to_string(i);
             }
+
             if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort))) {
                 controlDeck->SetPhysicalDevice(currentPort, i);
             }
@@ -86,6 +94,12 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
 
     if (ImGui::Button("Refresh")) {
         controlDeck->ScanPhysicalDevices();
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Defaults")) {
+        GetControllerPerSlot(currentPort)->CreateDefaultBinding(mCurrentPort);
     }
 }
 
@@ -114,10 +128,11 @@ void InputEditor::DrawControllerSchema() {
     auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetPhysicalDeviceFromVirtualSlot(mCurrentPort);
     auto profile = backend->getProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
+    uint32_t panelWidth = 150;
 
     DrawControllerSelect(mCurrentPort);
 
-    SohImGui::BeginGroupPanel("Buttons", ImVec2(150, 20));
+    SohImGui::BeginGroupPanel("Buttons", ImVec2(panelWidth, 20));
     DrawButton("A", BTN_A, mCurrentPort, &mBtnReading);
     DrawButton("B", BTN_B, mCurrentPort, &mBtnReading);
     DrawButton("L", BTN_L, mCurrentPort, &mBtnReading);
@@ -131,7 +146,7 @@ void InputEditor::DrawControllerSchema() {
     SohImGui::EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
 #endif
     ImGui::SameLine();
-    SohImGui::BeginGroupPanel("Digital Pad", ImVec2(150, 20));
+    SohImGui::BeginGroupPanel("Digital Pad", ImVec2(panelWidth, 20));
     DrawButton("Up", BTN_DUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_DDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_DLEFT, mCurrentPort, &mBtnReading);
@@ -143,7 +158,7 @@ void InputEditor::DrawControllerSchema() {
     SohImGui::EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
 #endif
     ImGui::SameLine();
-    SohImGui::BeginGroupPanel("Analog Stick", ImVec2(150, 20));
+    SohImGui::BeginGroupPanel("Analog Stick", ImVec2(panelWidth, 20));
     DrawButton("Up", BTN_STICKUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_STICKDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_STICKLEFT, mCurrentPort, &mBtnReading);
@@ -163,7 +178,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::BeginChild("##MSInput", ImVec2(90, 50), false);
 #endif
         ImGui::Text("Deadzone");
-#ifdef __WIIU__
+#if __WIIU__ || __SWITCH__
         ImGui::PushItemWidth(80 * 2);
 #else
         ImGui::PushItemWidth(80);
@@ -172,7 +187,12 @@ void InputEditor::DrawControllerSchema() {
         // set the deadzone for both left stick axes here
         // SDL_CONTROLLER_AXIS_LEFTX: 0
         // SDL_CONTROLLER_AXIS_LEFTY: 1
-        ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[0], 1.0f, 0.0f, "%.0f");
+        ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[0], 1.0f, 0.0f, "%.0f"
+#ifdef __SWITCH__
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
+#endif
+        );
         profile->AxisDeadzones[1] = profile->AxisDeadzones[0];
         ImGui::PopItemWidth();
         ImGui::EndChild();
@@ -208,7 +228,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::BeginChild("##CSInput", ImVec2(90, 85), false);
 #endif
         ImGui::Text("Deadzone");
-#ifdef __WIIU__
+#if __WIIU__ || __SWITCH__
         ImGui::PushItemWidth(80 * 2);
 #else
         ImGui::PushItemWidth(80);
@@ -217,7 +237,12 @@ void InputEditor::DrawControllerSchema() {
         // set the deadzone for both right stick axes here
         // SDL_CONTROLLER_AXIS_RIGHTX: 2
         // SDL_CONTROLLER_AXIS_RIGHTY: 3
-        ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[2], 1.0f, 0.0f, "%.0f");
+        ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[2], 1.0f, 0.0f, "%.0f"
+#ifdef __SWITCH__
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
+#endif
+        );
         profile->AxisDeadzones[3] = profile->AxisDeadzones[2];
         ImGui::PopItemWidth();
         ImGui::EndChild();
@@ -264,20 +289,30 @@ void InputEditor::DrawControllerSchema() {
         ImGui::BeginChild("##GyInput", ImVec2(90, 85), false);
 #endif
         ImGui::Text("Drift X");
-#ifdef __WIIU__
+#if __WIIU__ || __SWITCH__
         ImGui::PushItemWidth(80 * 2);
 #else
         ImGui::PushItemWidth(80);
 #endif
-        ImGui::InputFloat("##GDriftX", &profile->GyroData[DRIFT_X], 1.0f, 0.0f, "%.1f");
+        ImGui::InputFloat("##GDriftX", &profile->GyroData[DRIFT_X], 1.0f, 0.0f, "%.1f"
+#ifdef __SWITCH__
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
+#endif
+        );
         ImGui::PopItemWidth();
         ImGui::Text("Drift Y");
-#ifdef __WIIU__
+#if __WIIU__ || __SWITCH__
         ImGui::PushItemWidth(80 * 2);
 #else
         ImGui::PushItemWidth(80);
 #endif
-        ImGui::InputFloat("##GDriftY", &profile->GyroData[DRIFT_Y], 1.0f, 0.0f, "%.1f");
+        ImGui::InputFloat("##GDriftY", &profile->GyroData[DRIFT_Y], 1.0f, 0.0f, "%.1f"
+#ifdef __SWITCH__
+                          ,
+                          ImGuiInputTextFlags_NoPlusMinusButtons
+#endif
+        );
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__

@@ -7,12 +7,14 @@
 #include "misc/Cvar.h"
 #include <imgui.h>
 
-#ifndef __WIIU__
-#include "controller/KeyboardController.h"
-#include "controller/SDLController.h"
-#else
+#ifdef __WIIU__
 #include "port/wiiu/WiiUGamepad.h"
 #include "port/wiiu/WiiUController.h"
+#elif __SWITCH__
+#include "port/switch/SwitchController.h"
+#else
+#include "controller/KeyboardController.h"
+#include "controller/SDLController.h"
 #endif
 
 namespace Ship {
@@ -27,18 +29,7 @@ void ControlDeck::ScanPhysicalDevices() {
     mVirtualDevices.clear();
     mPhysicalDevices.clear();
 
-#ifndef __WIIU__
-    for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            auto sdl = std::make_shared<SDLController>(i);
-            sdl->Open();
-            mPhysicalDevices.push_back(sdl);
-        }
-    }
-
-    mPhysicalDevices.push_back(std::make_shared<DummyController>("Auto", "Auto", true));
-    mPhysicalDevices.push_back(std::make_shared<KeyboardController>());
-#else
+#ifdef __WIIU__
     mPhysicalDevices.push_back(std::make_shared<DummyController>("Auto", "Auto", true));
 
     auto gamepad = std::make_shared<Ship::WiiUGamepad>();
@@ -50,11 +41,30 @@ void ControlDeck::ScanPhysicalDevices() {
         controller->Open();
         mPhysicalDevices.push_back(controller);
     }
+#elif __SWITCH__
+    mPhysicalDevices.push_back(std::make_shared<DummyController>("Auto", "Auto", true));
+
+    for (int32_t i = 0; i < 8; i++) {
+        auto controller = std::make_shared<Ship::SwitchController>(i);
+        controller->Open();
+        mPhysicalDevices.push_back(controller);
+    }
+#else
+    for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            auto sdl = std::make_shared<SDLController>(i);
+            sdl->Open();
+            mPhysicalDevices.push_back(sdl);
+        }
+    }
+
+    mPhysicalDevices.push_back(std::make_shared<DummyController>("Auto", "Auto", true));
+    mPhysicalDevices.push_back(std::make_shared<KeyboardController>());
 #endif
 
     mPhysicalDevices.push_back(std::make_shared<DummyController>("Disconnected", "None", false));
 
-    for (const auto device : mPhysicalDevices) {
+    for (const auto& device : mPhysicalDevices) {
         for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
             device->CreateDefaultBinding(i);
         }
@@ -124,7 +134,7 @@ void ControlDeck::LoadControllerSettings() {
         config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
     }
 
-    for (const auto device : mPhysicalDevices) {
+    for (const auto& device : mPhysicalDevices) {
 
         std::string guid = device->GetGuid();
 
