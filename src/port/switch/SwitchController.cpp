@@ -213,22 +213,21 @@ void SwitchController::ReadFromSource(int32_t virtualSlot) {
 }
 
 void SwitchController::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
-    if (getProfile(virtualSlot)->UseRumble) {
-        PadState* state = &mController->State;
-        float rumbleStrength = getProfile(virtualSlot)->RumbleStrength;
-        HidVibrationValue vibrationValues[2];
+    bool useRumble = getProfile(virtualSlot)->UseRumble;
+    float rumbleStrength = getProfile(virtualSlot)->RumbleStrength;
+    PadState* state = &mController->State;
+    HidVibrationValue vibrationValues[2];
 
-        for (int i = 0; i < 2; i++) {
-            float amp = controller->rumble > 0 ? rumbleStrength : 0.0f;
-            vibrationValues[i].amp_low = amp;
-            vibrationValues[i].amp_high = amp;
-            vibrationValues[i].freq_low = 160.0f;
-            vibrationValues[i].freq_high = 320.0f;
-        }
-
-        hidSendVibrationValues(mController->Handles[padIsHandheld(state) ? 0 : 1], vibrationValues, 2);
-        padUpdate(state);
+    for (int i = 0; i < 2; i++) {
+        float amp = controller->rumble > 0 && useRumble ? rumbleStrength : 0.0f;
+        vibrationValues[i].amp_low = amp;
+        vibrationValues[i].amp_high = amp;
+        vibrationValues[i].freq_low = 160.0f;
+        vibrationValues[i].freq_high = 320.0f;
     }
+
+    hidSendVibrationValues(mController->Handles[padIsHandheld(state) ? 0 : 1], vibrationValues, 2);
+    padUpdate(state);
 }
 
 int32_t SwitchController::ReadRawPress() {
