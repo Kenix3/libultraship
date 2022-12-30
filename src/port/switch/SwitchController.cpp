@@ -219,7 +219,7 @@ void SwitchController::WriteToSource(int32_t virtualSlot, ControllerCallback* co
         HidVibrationValue vibrationValues[2];
 
         for (int i = 0; i < 2; i++) {
-            float amp = controller->rumble > 0 ? 0xFFFF * rumbleStrength : 0.0f;
+            float amp = controller->rumble > 0 ? rumbleStrength : 0.0f;
             vibrationValues[i].amp_low = amp;
             vibrationValues[i].amp_high = amp;
             vibrationValues[i].freq_low = 160.0f;
