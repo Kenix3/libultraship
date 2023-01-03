@@ -205,11 +205,15 @@ std::shared_ptr<OtrFile> ResourceMgr::LoadFile(const std::string& filePath) {
 std::shared_ptr<Ship::Resource> ResourceMgr::GetCachedFile(const char* filePath) const {
     auto resCacheFind = mResourceCache.find(filePath);
 
-    if (resCacheFind != mResourceCache.end() && resCacheFind->second.use_count() > 0) {
-        return resCacheFind->second;
-    } else {
+    if (resCacheFind == mResourceCache.end()) {
         return nullptr;
     }
+
+    if (resCacheFind->second.use_count() <= 0) {
+        return nullptr;
+    }
+
+    return resCacheFind->second;
 }
 
 std::shared_ptr<Resource> ResourceMgr::LoadResource(const char* filePath) {
