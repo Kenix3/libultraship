@@ -62,7 +62,7 @@ class FolderManager {
                                                          const char* itemPath, bool create = false);
 
   private:
-    void *m_autoreleasePool;
+    void* m_autoreleasePool;
 };
 }; // namespace Ship
 

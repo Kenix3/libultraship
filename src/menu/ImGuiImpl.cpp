@@ -107,8 +107,6 @@ const char* filters[3] = {
     "Linear", "None"
 };
 
-
-
 std::vector<std::pair<const char*, const char*>> renderingBackends = {
 #ifdef _WIN32
     { "dx11", "DirectX" },
@@ -159,7 +157,7 @@ void PopulateBackendIds(std::shared_ptr<Mercury> cfg) {
 
     int matchType = 2; // 0 = backend, 1 = gfxApi, 2 = both
 
-     if (renderingBackend.empty() && gfxApi.empty()) {
+    if (renderingBackend.empty() && gfxApi.empty()) {
         lastRenderingBackendID = 0;
     } else if (gfxApi.empty()) { // only backend is set
         matchType = 0;
