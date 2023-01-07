@@ -304,21 +304,21 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     SohImGui::WindowImpl window_impl;
 
     if (use_opengl) {
-    #ifndef __SWITCH__
+#ifndef __SWITCH__
         SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
 
         if (start_in_fullscreen) {
             set_fullscreen(true, false);
         }
-    #endif
+#endif
 
         ctx = SDL_GL_CreateContext(wnd);
 
-    #ifdef __SWITCH__
+#ifdef __SWITCH__
         if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
             printf("Failed to initialize glad\n");
         }
-    #endif
+#endif
 
         SDL_GL_MakeCurrent(wnd, ctx);
         SDL_GL_SetSwapInterval(1);

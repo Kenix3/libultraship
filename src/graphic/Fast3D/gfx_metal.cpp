@@ -56,7 +56,7 @@ int cantor(uint64_t a, uint64_t b) {
 }
 
 struct hash_pair_shader_ids {
-    size_t operator()(const std::pair<uint64_t, uint32_t> &p ) const {
+    size_t operator()(const std::pair<uint64_t, uint32_t>& p) const {
         auto value1 = p.first;
         auto value2 = p.second;
         return cantor(value1, value2);
@@ -129,7 +129,8 @@ static struct {
     MTL::CommandQueue* command_queue;
 
     std::queue<MTL::Buffer*> buffer_pool;
-    std::unordered_map<std::pair<uint64_t, uint32_t>, struct ShaderProgramMetal, hash_pair_shader_ids> shader_program_pool;
+    std::unordered_map<std::pair<uint64_t, uint32_t>, struct ShaderProgramMetal, hash_pair_shader_ids>
+        shader_program_pool;
 
     std::vector<struct TextureDataMetal> textures;
     std::vector<FramebufferMetal> framebuffers;
@@ -184,7 +185,8 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 static MTL::Buffer* next_available_buffer() {
     if (mctx.buffer_pool.size() == 0) {
         // Create a new buffer that can hold all draw triangle buffers. Size buf_vbo size in gfx_pc * 50.
-        MTL::Buffer* new_buffer = mctx.device->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
+        MTL::Buffer* new_buffer =
+            mctx.device->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
         mctx.buffer_pool.push(new_buffer);
         SPDLOG_DEBUG("Metal: new buffer for pool created");
 
@@ -198,10 +200,10 @@ static void pop_buffer_and_wait_to_requeue(MTL::CommandBuffer* command_buffer) {
     MTL::Buffer* buffer = mctx.buffer_pool.front();
     mctx.buffer_pool.pop();
 
-    command_buffer->addCompletedHandler(^void( MTL::CommandBuffer* cmd_buf ) {
-        if (mctx.buffer_pool.size() <= kMaxBufferPoolSize) {
-            mctx.buffer_pool.push(buffer);
-        }
+    command_buffer->addCompletedHandler(^void(MTL::CommandBuffer* cmd_buf) {
+      if (mctx.buffer_pool.size() <= kMaxBufferPoolSize) {
+          mctx.buffer_pool.push(buffer);
+      }
     });
 }
 
@@ -244,7 +246,8 @@ void Metal_RenderDrawData(ImDrawData* draw_data) {
     MTL::Texture* screen_texture = mctx.textures[framebuffer.texture_id].texture;
     int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
     int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
-    if (screen_texture->width() != fb_width || screen_texture->height() != fb_height) return;
+    if (screen_texture->width() != fb_width || screen_texture->height() != fb_height)
+        return;
 
     ImGui_ImplMetal_RenderDrawData(draw_data, framebuffer.command_buffer, framebuffer.command_encoder);
 }
@@ -293,10 +296,12 @@ static void gfx_metal_init(void) {
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
     NS::Error* error = nullptr;
-    MTL::Library* library = mctx.device->newLibrary(NS::String::string(depth_shader, NS::UTF8StringEncoding), nullptr, &error);
+    MTL::Library* library =
+        mctx.device->newLibrary(NS::String::string(depth_shader, NS::UTF8StringEncoding), nullptr, &error);
 
     if (error != nullptr)
-        SPDLOG_ERROR("Failed to compile shader library: {}", error->localizedDescription()->cString(NS::UTF8StringEncoding));
+        SPDLOG_ERROR("Failed to compile shader library: {}",
+                     error->localizedDescription()->cString(NS::UTF8StringEncoding));
 
     mctx.depth_compute_function = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
 
@@ -307,10 +312,11 @@ static struct GfxClipParameters gfx_metal_get_clip_parameters() {
     return { true, false };
 }
 
-static void gfx_metal_unload_shader(struct ShaderProgram *old_prg) {}
+static void gfx_metal_unload_shader(struct ShaderProgram* old_prg) {
+}
 
-static void gfx_metal_load_shader(struct ShaderProgram *new_prg) {
-    mctx.shader_program = (struct ShaderProgramMetal *)new_prg;
+static void gfx_metal_load_shader(struct ShaderProgram* new_prg) {
+    mctx.shader_program = (struct ShaderProgramMetal*)new_prg;
 }
 
 static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
@@ -323,17 +329,21 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     memset(buf, 0, sizeof(buf));
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
-    MTL::VertexDescriptor* vertex_descriptor = gfx_metal_build_shader(buf, num_floats, cc_features, mctx.current_filter_mode == FILTER_THREE_POINT);
+    MTL::VertexDescriptor* vertex_descriptor =
+        gfx_metal_build_shader(buf, num_floats, cc_features, mctx.current_filter_mode == FILTER_THREE_POINT);
 
     NS::Error* error = nullptr;
     MTL::Library* library = mctx.device->newLibrary(NS::String::string(buf, NS::UTF8StringEncoding), nullptr, &error);
 
     if (error != nullptr)
-        SPDLOG_ERROR("Failed to compile shader library, error {}", error->localizedDescription()->cString(NS::UTF8StringEncoding));
+        SPDLOG_ERROR("Failed to compile shader library, error {}",
+                     error->localizedDescription()->cString(NS::UTF8StringEncoding));
 
     MTL::RenderPipelineDescriptor* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
-    pipeline_descriptor->setVertexFunction(library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding)));
-    pipeline_descriptor->setFragmentFunction(library->newFunction(NS::String::string("fragmentShader", NS::UTF8StringEncoding)));
+    pipeline_descriptor->setVertexFunction(
+        library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding)));
+    pipeline_descriptor->setFragmentFunction(
+        library->newFunction(NS::String::string("fragmentShader", NS::UTF8StringEncoding)));
     pipeline_descriptor->setVertexDescriptor(vertex_descriptor);
 
     pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
@@ -341,7 +351,8 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     if (cc_features.opt_alpha) {
         pipeline_descriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
         pipeline_descriptor->colorAttachments()->object(0)->setSourceRGBBlendFactor(MTL::BlendFactorSourceAlpha);
-        pipeline_descriptor->colorAttachments()->object(0)->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+        pipeline_descriptor->colorAttachments()->object(0)->setDestinationRGBBlendFactor(
+            MTL::BlendFactorOneMinusSourceAlpha);
         pipeline_descriptor->colorAttachments()->object(0)->setRgbBlendOperation(MTL::BlendOperationAdd);
         pipeline_descriptor->colorAttachments()->object(0)->setSourceAlphaBlendFactor(MTL::BlendFactorZero);
         pipeline_descriptor->colorAttachments()->object(0)->setDestinationAlphaBlendFactor(MTL::BlendFactorOne);
@@ -372,28 +383,29 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
                 // If the Metal API validation is enabled, we can find out more information about what
                 // went wrong.  (Metal API validation is enabled by default when a debug build is run
                 // from Xcode)
-                SPDLOG_ERROR("Failed to create pipeline state, error {}", error->localizedDescription()->cString(NS::UTF8StringEncoding));
+                SPDLOG_ERROR("Failed to create pipeline state, error {}",
+                             error->localizedDescription()->cString(NS::UTF8StringEncoding));
             }
 
             prg->pipeline_state_variants[msaa_level] = pipeline_state;
         }
     }
 
-    gfx_metal_load_shader((struct ShaderProgram *)prg);
+    gfx_metal_load_shader((struct ShaderProgram*)prg);
 
     pipeline_descriptor->release();
     autorelease_pool->release();
 
-    return (struct ShaderProgram *)prg;
+    return (struct ShaderProgram*)prg;
 }
 
 static struct ShaderProgram* gfx_metal_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
     auto it = mctx.shader_program_pool.find(std::make_pair(shader_id0, shader_id1));
-    return it == mctx.shader_program_pool.end() ? nullptr : (struct ShaderProgram *)&it->second;
+    return it == mctx.shader_program_pool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }
 
-static void gfx_metal_shader_get_info(struct ShaderProgram *prg, uint8_t *num_inputs, bool used_textures[2]) {
-    struct ShaderProgramMetal *p = (struct ShaderProgramMetal *)prg;
+static void gfx_metal_shader_get_info(struct ShaderProgram* prg, uint8_t* num_inputs, bool used_textures[2]) {
+    struct ShaderProgramMetal* p = (struct ShaderProgramMetal*)prg;
 
     *num_inputs = p->num_inputs;
     used_textures[0] = p->used_textures[0];
@@ -405,19 +417,21 @@ static uint32_t gfx_metal_new_texture(void) {
     return (uint32_t)(mctx.textures.size() - 1);
 }
 
-static void gfx_metal_delete_texture(uint32_t texID) {}
+static void gfx_metal_delete_texture(uint32_t texID) {
+}
 
 static void gfx_metal_select_texture(int tile, uint32_t texture_id) {
     mctx.current_tile = tile;
     mctx.current_texture_ids[tile] = texture_id;
 }
 
-static void gfx_metal_upload_texture(const uint8_t *rgba32_buf, uint32_t width, uint32_t height) {
+static void gfx_metal_upload_texture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
     TextureDataMetal* texture_data = &mctx.textures[mctx.current_texture_ids[mctx.current_tile]];
 
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
-    MTL::TextureDescriptor* texture_descriptor = MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatRGBA8Unorm, width, height, true);
+    MTL::TextureDescriptor* texture_descriptor =
+        MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatRGBA8Unorm, width, height, true);
     texture_descriptor->setArrayLength(1);
     texture_descriptor->setMipmapLevelCount(1);
     texture_descriptor->setSampleCount(1);
@@ -426,7 +440,8 @@ static void gfx_metal_upload_texture(const uint8_t *rgba32_buf, uint32_t width, 
     MTL::Region region = MTL::Region::Make2D(0, 0, width, height);
 
     MTL::Texture* texture = texture_data->texture;
-    if (texture_data->texture == nullptr || texture_data->texture->width() != width || texture_data->texture->height() != height) {
+    if (texture_data->texture == nullptr || texture_data->texture->width() != width ||
+        texture_data->texture->height() != height) {
         if (texture_data->texture != nullptr)
             texture_data->texture->release();
 
@@ -442,7 +457,7 @@ static void gfx_metal_upload_texture(const uint8_t *rgba32_buf, uint32_t width, 
 }
 
 static void gfx_metal_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
-    TextureDataMetal *texture_data = &mctx.textures[mctx.current_texture_ids[tile]];
+    TextureDataMetal* texture_data = &mctx.textures[mctx.current_texture_ids[tile]];
     texture_data->linear_filtering = linear_filter;
 
     // This function is called twice per texture, the first one only to set default values.
@@ -451,7 +466,9 @@ static void gfx_metal_set_sampler_parameters(int tile, bool linear_filter, uint3
     texture_data->sampler->release();
 
     MTL::SamplerDescriptor* sampler_descriptor = MTL::SamplerDescriptor::alloc()->init();
-    MTL::SamplerMinMagFilter filter = linear_filter && mctx.current_filter_mode == FILTER_LINEAR ? MTL::SamplerMinMagFilterLinear : MTL::SamplerMinMagFilterNearest;
+    MTL::SamplerMinMagFilter filter = linear_filter && mctx.current_filter_mode == FILTER_LINEAR
+                                          ? MTL::SamplerMinMagFilterLinear
+                                          : MTL::SamplerMinMagFilterNearest;
     sampler_descriptor->setMinFilter(filter);
     sampler_descriptor->setMagFilter(filter);
     sampler_descriptor->setSAddressMode(gfx_cm_to_metal(cms));
@@ -492,7 +509,7 @@ static void gfx_metal_set_scissor(int x, int y, int width, int height) {
     // clamp to viewport size as metal does not support larger values than viewport size
     rect.x = std::max(0, std::min<int>(x, tex.width));
     rect.y = std::max(0, std::min<int>(mctx.render_target_height - y - height, tex.height));
-    rect.width = std::max(0, std::min<int>(x + width,  tex.width));
+    rect.width = std::max(0, std::min<int>(x + width, tex.width));
     rect.height = std::max(0, std::min<int>(height, tex.height));
 
     fb.command_encoder->setScissorRect(rect);
@@ -507,13 +524,15 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
 
     auto& current_framebuffer = mctx.framebuffers[mctx.current_framebuffer];
 
-    if (current_framebuffer.last_depth_test != mctx.depth_test || current_framebuffer.last_depth_mask != mctx.depth_mask) {
+    if (current_framebuffer.last_depth_test != mctx.depth_test ||
+        current_framebuffer.last_depth_mask != mctx.depth_mask) {
         current_framebuffer.last_depth_test = mctx.depth_test;
         current_framebuffer.last_depth_mask = mctx.depth_mask;
 
         MTL::DepthStencilDescriptor* depth_descriptor = MTL::DepthStencilDescriptor::alloc()->init();
         depth_descriptor->setDepthWriteEnabled(mctx.depth_mask);
-        depth_descriptor->setDepthCompareFunction(mctx.depth_test ? MTL::CompareFunctionLessEqual : MTL::CompareFunctionAlways);
+        depth_descriptor->setDepthCompareFunction(mctx.depth_test ? MTL::CompareFunctionLessEqual
+                                                                  : MTL::CompareFunctionAlways);
 
         MTL::DepthStencilState* depth_stencil_state = mctx.device->newDepthStencilState(depth_descriptor);
         current_framebuffer.command_encoder->setDepthStencilState(depth_stencil_state);
@@ -531,8 +550,7 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
     }
 
     MTL::Buffer* vertex_buffer = next_available_buffer();
-    memcpy((char *)vertex_buffer->contents() + mctx.current_vertex_buffer_offset, buf_vbo, sizeof(float) * buf_vbo_len);
-
+    memcpy((char*)vertex_buffer->contents() + mctx.current_vertex_buffer_offset, buf_vbo, sizeof(float) * buf_vbo_len);
 
     if (!current_framebuffer.has_bounded_vertex_buffer) {
         current_framebuffer.command_encoder->setVertexBuffer(vertex_buffer, 0, 0);
@@ -550,21 +568,23 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         if (mctx.shader_program->used_textures[i]) {
             if (current_framebuffer.last_bound_textures[i] != mctx.textures[mctx.current_texture_ids[i]].texture) {
                 current_framebuffer.last_bound_textures[i] = mctx.textures[mctx.current_texture_ids[i]].texture;
-                current_framebuffer.command_encoder->setFragmentTexture(mctx.textures[mctx.current_texture_ids[i]].texture, i);
+                current_framebuffer.command_encoder->setFragmentTexture(
+                    mctx.textures[mctx.current_texture_ids[i]].texture, i);
 
                 if (current_framebuffer.last_bound_samplers[i] != mctx.textures[mctx.current_texture_ids[i]].sampler) {
                     current_framebuffer.last_bound_samplers[i] = mctx.textures[mctx.current_texture_ids[i]].sampler;
-                    current_framebuffer.command_encoder->setFragmentSamplerState(mctx.textures[mctx.current_texture_ids[i]].sampler, i);
+                    current_framebuffer.command_encoder->setFragmentSamplerState(
+                        mctx.textures[mctx.current_texture_ids[i]].sampler, i);
                 }
             }
         }
     }
 
-
     if (current_framebuffer.last_shader_program != mctx.shader_program) {
         current_framebuffer.last_shader_program = mctx.shader_program;
 
-        MTL::RenderPipelineState* pipeline_state = mctx.shader_program->pipeline_state_variants[current_framebuffer.msaa_level];
+        MTL::RenderPipelineState* pipeline_state =
+            mctx.shader_program->pipeline_state_variants[current_framebuffer.msaa_level];
         current_framebuffer.command_encoder->setRenderPipelineState(pipeline_state);
     }
 
@@ -574,7 +594,8 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
     autorelease_pool->release();
 }
 
-static void gfx_metal_on_resize(void) {}
+static void gfx_metal_on_resize(void) {
+}
 
 static void gfx_metal_start_frame(void) {
     mctx.frame_uniforms.frameCount++;
@@ -584,10 +605,12 @@ static void gfx_metal_start_frame(void) {
     }
 
     if (!mctx.frame_uniform_buffer) {
-        mctx.frame_uniform_buffer = mctx.device->newBuffer(sizeof(FrameUniforms), MTL::ResourceCPUCacheModeDefaultCache);
+        mctx.frame_uniform_buffer =
+            mctx.device->newBuffer(sizeof(FrameUniforms), MTL::ResourceCPUCacheModeDefaultCache);
     }
     if (!mctx.coord_uniform_buffer) {
-        mctx.coord_uniform_buffer = mctx.device->newBuffer(sizeof(CoordUniforms), MTL::ResourceCPUCacheModeDefaultCache);
+        mctx.coord_uniform_buffer =
+            mctx.device->newBuffer(sizeof(CoordUniforms), MTL::ResourceCPUCacheModeDefaultCache);
     }
 
     mctx.current_vertex_buffer_offset = 0;
@@ -640,7 +663,8 @@ void gfx_metal_end_frame(void) {
     mctx.frame_autorelease_pool->release();
 }
 
-static void gfx_metal_finish_render(void) {}
+static void gfx_metal_finish_render(void) {
+}
 
 int gfx_metal_create_framebuffer(void) {
     uint32_t texture_id = gfx_metal_new_texture();
@@ -679,7 +703,8 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
     MTL::RenderPassDescriptor* render_pass_descriptor = MTL::RenderPassDescriptor::renderPassDescriptor();
     MTL::ClearColor clear_color = MTL::ClearColor::Make(0, 0, 0, 1);
     render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.texture);
-    render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(msaa_enabled ? MTL::LoadActionLoad : MTL::LoadActionClear);
+    render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(msaa_enabled ? MTL::LoadActionLoad
+                                                                                      : MTL::LoadActionClear);
     render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
     render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
 
@@ -691,9 +716,11 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
         if (fb.depth_texture != nullptr)
             fb.depth_texture->release();
 
-        // If possible, we eventually we want to disable this when msaa is enabled since we don't need this depth texture
-        // However, problem is if the user switches to msaa during game, we need a way to then generate it before drawing.
-        MTL::TextureDescriptor* depth_tex_desc = MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatDepth32Float, width, height, true);
+        // If possible, we eventually we want to disable this when msaa is enabled since we don't need this depth
+        // texture However, problem is if the user switches to msaa during game, we need a way to then generate it
+        // before drawing.
+        MTL::TextureDescriptor* depth_tex_desc =
+            MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatDepth32Float, width, height, true);
 
         depth_tex_desc->setTextureType(MTL::TextureType2D);
         depth_tex_desc->setStorageMode(MTL::StorageModePrivate);
@@ -721,7 +748,9 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
     autorelease_pool->release();
 }
 
-static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level, bool opengl_invert_y, bool render_target, bool has_depth_buffer, bool can_extract_depth) {
+static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
+                                                    bool opengl_invert_y, bool render_target, bool has_depth_buffer,
+                                                    bool can_extract_depth) {
     // Screen framebuffer is handled separately on a frame by frame basis
     // see `gfx_metal_setup_screen_framebuffer`.
     if (fb_id == 0) {
@@ -731,7 +760,6 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
 
         return;
     }
-
 
     FramebufferMetal& fb = mctx.framebuffers[fb_id];
     TextureDataMetal& tex = mctx.textures[fb.texture_id];
@@ -783,11 +811,13 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.msaaTexture);
                 render_pass_descriptor->colorAttachments()->object(0)->setResolveTexture(tex.texture);
                 render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
-                render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionMultisampleResolve);
+                render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(
+                    MTL::StoreActionMultisampleResolve);
                 render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
             } else {
                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.texture);
-                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(fb_id == 0 && game_msaa_enabled ? MTL::LoadActionLoad : MTL::LoadActionClear);
+                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(
+                    fb_id == 0 && game_msaa_enabled ? MTL::LoadActionLoad : MTL::LoadActionClear);
                 render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
                 render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
             }
@@ -804,7 +834,8 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
     }
 
     if (has_depth_buffer && (diff || !fb.has_depth_buffer || (fb.depth_texture != nullptr) != can_extract_depth)) {
-        MTL::TextureDescriptor *depth_tex_desc = MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatDepth32Float, width, height, true);
+        MTL::TextureDescriptor* depth_tex_desc =
+            MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatDepth32Float, width, height, true);
         depth_tex_desc->setTextureType(MTL::TextureType2D);
         depth_tex_desc->setStorageMode(MTL::StorageModePrivate);
         depth_tex_desc->setSampleCount(1);
@@ -875,14 +906,16 @@ void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale) {
     memcpy(mctx.frame_uniform_buffer->contents(), &mctx.frame_uniforms, sizeof(FrameUniforms));
 }
 
-void gfx_metal_clear_framebuffer(void) {}
+void gfx_metal_clear_framebuffer(void) {
+}
 
 void gfx_metal_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
     int source_texture_id = mctx.framebuffers[fb_id_source].texture_id;
     MTL::Texture* source_texture = mctx.textures[source_texture_id].texture;
 
     int target_texture_id = mctx.framebuffers[fb_id_target].texture_id;
-    MTL::Texture* target_texture = target_texture_id == 0 ? mctx.current_drawable->texture() : mctx.textures[target_texture_id].texture;
+    MTL::Texture* target_texture =
+        target_texture_id == 0 ? mctx.current_drawable->texture() : mctx.textures[target_texture_id].texture;
 
     // Workaround for detecting when transitioning to/from full screen mode.
     if (source_texture->width() != target_texture->width() || source_texture->height() != target_texture->height()) {
@@ -900,14 +933,16 @@ void gfx_metal_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
     blit_encoder->endEncoding();
 }
 
-std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> gfx_metal_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
+std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
+gfx_metal_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
     auto framebuffer = mctx.framebuffers[fb_id];
 
     if (coordinates.size() > mctx.coord_buffer_size) {
         if (mctx.depth_value_output_buffer != nullptr)
             mctx.depth_value_output_buffer->release();
 
-        mctx.depth_value_output_buffer = mctx.device->newBuffer(sizeof(float) * coordinates.size(), MTL::ResourceOptionCPUCacheModeDefault);
+        mctx.depth_value_output_buffer =
+            mctx.device->newBuffer(sizeof(float) * coordinates.size(), MTL::ResourceOptionCPUCacheModeDefault);
         mctx.depth_value_output_buffer->setLabel(NS::String::string("Depth output buffer", NS::UTF8StringEncoding));
 
         mctx.coord_buffer_size = coordinates.size();
@@ -934,7 +969,8 @@ std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> gfx_metal_ge
     command_buffer->setLabel(NS::String::string("Depth Shader Command Buffer", NS::UTF8StringEncoding));
 
     NS::Error* error = nullptr;
-    MTL::ComputePipelineState* compute_pipeline_state = mctx.device->newComputePipelineState(mctx.depth_compute_function, &error);
+    MTL::ComputePipelineState* compute_pipeline_state =
+        mctx.device->newComputePipelineState(mctx.depth_compute_function, &error);
 
     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
     compute_encoder->setComputePipelineState(compute_pipeline_state);
@@ -967,7 +1003,7 @@ std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> gfx_metal_ge
     return res;
 }
 
-void *gfx_metal_get_framebuffer_texture_id(int fb_id) {
+void* gfx_metal_get_framebuffer_texture_id(int fb_id) {
     return (void*)mctx.textures[mctx.framebuffers[fb_id].texture_id].texture;
 }
 
@@ -989,39 +1025,37 @@ ImTextureID gfx_metal_get_texture_by_id(int fb_id) {
     return (void*)mctx.textures[fb_id].texture;
 }
 
-struct GfxRenderingAPI gfx_metal_api = {
-    gfx_metal_get_name,
-    gfx_metal_get_clip_parameters,
-    gfx_metal_unload_shader,
-    gfx_metal_load_shader,
-    gfx_metal_create_and_load_new_shader,
-    gfx_metal_lookup_shader,
-    gfx_metal_shader_get_info,
-    gfx_metal_new_texture,
-    gfx_metal_select_texture,
-    gfx_metal_upload_texture,
-    gfx_metal_set_sampler_parameters,
-    gfx_metal_set_depth_test_and_mask,
-    gfx_metal_set_zmode_decal,
-    gfx_metal_set_viewport,
-    gfx_metal_set_scissor,
-    gfx_metal_set_use_alpha,
-    gfx_metal_draw_triangles,
-    gfx_metal_init,
-    gfx_metal_on_resize,
-    gfx_metal_start_frame,
-    gfx_metal_end_frame,
-    gfx_metal_finish_render,
-    gfx_metal_create_framebuffer,
-    gfx_metal_update_framebuffer_parameters,
-    gfx_metal_start_draw_to_framebuffer,
-    gfx_metal_clear_framebuffer,
-    gfx_metal_resolve_msaa_color_buffer,
-    gfx_metal_get_pixel_depth,
-    gfx_metal_get_framebuffer_texture_id,
-    gfx_metal_select_texture_fb,
-    gfx_metal_delete_texture,
-    gfx_metal_set_texture_filter,
-    gfx_metal_get_texture_filter
-};
+struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
+                                         gfx_metal_get_clip_parameters,
+                                         gfx_metal_unload_shader,
+                                         gfx_metal_load_shader,
+                                         gfx_metal_create_and_load_new_shader,
+                                         gfx_metal_lookup_shader,
+                                         gfx_metal_shader_get_info,
+                                         gfx_metal_new_texture,
+                                         gfx_metal_select_texture,
+                                         gfx_metal_upload_texture,
+                                         gfx_metal_set_sampler_parameters,
+                                         gfx_metal_set_depth_test_and_mask,
+                                         gfx_metal_set_zmode_decal,
+                                         gfx_metal_set_viewport,
+                                         gfx_metal_set_scissor,
+                                         gfx_metal_set_use_alpha,
+                                         gfx_metal_draw_triangles,
+                                         gfx_metal_init,
+                                         gfx_metal_on_resize,
+                                         gfx_metal_start_frame,
+                                         gfx_metal_end_frame,
+                                         gfx_metal_finish_render,
+                                         gfx_metal_create_framebuffer,
+                                         gfx_metal_update_framebuffer_parameters,
+                                         gfx_metal_start_draw_to_framebuffer,
+                                         gfx_metal_clear_framebuffer,
+                                         gfx_metal_resolve_msaa_color_buffer,
+                                         gfx_metal_get_pixel_depth,
+                                         gfx_metal_get_framebuffer_texture_id,
+                                         gfx_metal_select_texture_fb,
+                                         gfx_metal_delete_texture,
+                                         gfx_metal_set_texture_filter,
+                                         gfx_metal_get_texture_filter };
 #endif
