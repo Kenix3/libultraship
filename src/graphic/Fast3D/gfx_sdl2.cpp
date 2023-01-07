@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#if defined(ENABLE_OPENGL)
+#if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
@@ -15,6 +15,7 @@
 #include "SDL_opengl.h"
 #elif __APPLE__
 #include <SDL.h>
+#include "gfx_metal.h"
 #elif __SWITCH__
 #include <SDL2/SDL.h>
 #include <switch.h>
@@ -40,6 +41,7 @@
 
 static SDL_Window* wnd;
 static SDL_GLContext ctx;
+static SDL_Renderer* renderer;
 static int inverted_scancode_table[512];
 static int vsync_enabled = 0;
 static int window_width = DESIRED_SCREEN_WIDTH;
@@ -250,8 +252,18 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#if defined(__APPLE__)
+    bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
+#else
+    bool use_opengl = true;
+#endif
+
+    if (use_opengl) {
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    } else {
+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
+    }
 
 #if defined(__APPLE__)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
@@ -278,31 +290,50 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     height = window_height;
 #endif
 
-    wnd = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height,
-                           SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 
-#ifndef __SWITCH__
-    SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
-
-    if (start_in_fullscreen) {
-        set_fullscreen(true, false);
+    if (use_opengl) {
+        flags = flags | SDL_WINDOW_OPENGL;
+    } else {
+        flags = flags | SDL_WINDOW_METAL;
     }
-#endif
 
-    ctx = SDL_GL_CreateContext(wnd);
-
-#ifdef __SWITCH__
-    if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
-        printf("Failed to initialize glad\n");
-    }
-#endif
-
-    SDL_GL_MakeCurrent(wnd, ctx);
-    SDL_GL_SetSwapInterval(1);
-
+    wnd = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
     SohImGui::WindowImpl window_impl;
+
+    if (use_opengl) {
+    #ifndef __SWITCH__
+        SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+
+        if (start_in_fullscreen) {
+            set_fullscreen(true, false);
+        }
+    #endif
+
+        ctx = SDL_GL_CreateContext(wnd);
+
+    #ifdef __SWITCH__
+        if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
+            printf("Failed to initialize glad\n");
+        }
+    #endif
+
+        SDL_GL_MakeCurrent(wnd, ctx);
+        SDL_GL_SetSwapInterval(1);
+
+        window_impl.opengl = { wnd, ctx };
+    } else {
+        renderer = SDL_CreateRenderer(wnd, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        if (renderer == NULL) {
+            SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
+            return;
+        }
+
+        SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
+        window_impl.metal = { wnd, renderer };
+    }
+
     window_impl.backend = SohImGui::Backend::SDL;
-    window_impl.sdl = { wnd, ctx };
     SohImGui::Init(window_impl);
 
     for (size_t i = 0; i < sizeof(windows_scancode_table) / sizeof(SDL_Scancode); i++) {
@@ -357,6 +388,7 @@ static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
 #endif
     Ship::ExecuteHooks<Ship::ExitGame>();
 
+    SDL_DestroyRenderer(renderer);
     SDL_Quit();
 }
 
