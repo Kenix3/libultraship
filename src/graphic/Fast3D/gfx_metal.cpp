@@ -35,13 +35,12 @@
 
 #include "gfx_cc.h"
 #include "gfx_pc.h"
-#include "gfx_rendering_api.h"
 #include "gfx_metal_bridge.h"
 #include "gfx_metal_shader.h"
 
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
-#include "graphic/Fast3D/U64/PR/ultra64/abi.h"
-#include "misc/Cvar.h"
+#include "libultraship/libultra/gbi.h"
+#include "libultraship/libultra/abi.h"
+#include "core/bridge/consolevariablebridge.h"
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
@@ -688,7 +687,7 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
     mctx.current_drawable = nullptr;
     mctx.current_drawable = get_layer_next_drawable(mctx.layer);
 
-    bool msaa_enabled = CVar_GetS32("gMSAAValue", 1) > 1;
+    bool msaa_enabled = CVarGetInteger("gMSAAValue", 1) > 1;
 
     FramebufferMetal& fb = mctx.framebuffers[0];
     TextureDataMetal& tex = mctx.textures[fb.texture_id];
@@ -804,7 +803,7 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
             MTL::RenderPassDescriptor* render_pass_descriptor = MTL::RenderPassDescriptor::renderPassDescriptor();
 
             bool fb_msaa_enabled = (msaa_level > 1);
-            bool game_msaa_enabled = CVar_GetS32("gMSAAValue", 1) > 1;
+            bool game_msaa_enabled = CVarGetInteger("gMSAAValue", 1) > 1;
             MTL::ClearColor clear_color = MTL::ClearColor::Make(0.0, 0.0, 0.0, 1.0);
 
             if (fb_msaa_enabled) {
