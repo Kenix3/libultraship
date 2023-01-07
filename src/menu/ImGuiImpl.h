@@ -3,6 +3,7 @@
 #ifdef __cplusplus
 #include "menu/GameOverlay.h"
 #include <imgui.h>
+#include <SDL2/SDL.h>
 #include "menu/Console.h"
 #include "InputEditor.h"
 
@@ -36,7 +37,11 @@ typedef struct {
         struct {
             void* window;
             void* context;
-        } sdl;
+        } opengl;
+        struct {
+            void* window;
+            SDL_Renderer* renderer;
+        } metal;
         struct {
             uint32_t width;
             uint32_t height;
