@@ -7,9 +7,7 @@
 
 #ifdef __APPLE__
 
-#include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
-#include <QuartzCore/QuartzCore.hpp>
 
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
