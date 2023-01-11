@@ -14,9 +14,11 @@ float clamp(float d, float min, float max) {
     return t > max ? max : t;
 }
 
-template <typename Numeric> bool IsNumber(const std::string& s) {
-    Numeric n;
-    return ((std::istringstream(s) >> n >> std::ws).eof());
+bool isNumber(const std::string& s) {
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it))
+        ++it;
+    return !s.empty() && it == s.end();
 }
 } // namespace Math
 
