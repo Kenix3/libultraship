@@ -1,13 +1,17 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 namespace Ship {
 
 namespace Math {
 float clamp(float d, float min, float max);
-bool isNumber(const std::string& s);
+template <typename Numeric> bool IsNumber(const std::string& s) {
+    Numeric n;
+    return ((std::istringstream(s) >> n >> std::ws).eof());
+};
 } // namespace Math
 
 std::vector<std::string> splitText(const std::string& text, char separator, bool keepQuotes);
