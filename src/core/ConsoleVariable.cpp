@@ -40,7 +40,7 @@ const char* ConsoleVariable::GetString(const char* name, const char* defaultValu
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::String) {
-        return variable->String.c_str();
+        return variable->String;
     }
 
     return defaultValue;
@@ -158,7 +158,7 @@ void ConsoleVariable::Save() {
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
 
-        if (variable.second->Type == ConsoleVariableType::String && variable.second->String.length() > 0) {
+        if (variable.second->Type == ConsoleVariableType::String && variable.second != nullptr) {
             conf->setString(key, std::string(variable.second->String));
         } else if (variable.second->Type == ConsoleVariableType::Integer) {
             conf->setInt(key, variable.second->Integer);
