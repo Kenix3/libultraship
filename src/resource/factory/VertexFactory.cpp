@@ -3,11 +3,10 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<BinaryReader> reader) {
+std::shared_ptr<Resource> VertexFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Vertex>();
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    uint32_t version = reader->ReadUInt32();
     switch (version) {
         case 0:
             factory = std::make_shared<VertexFactoryV0>();

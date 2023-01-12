@@ -20,7 +20,7 @@ class Resource {
     std::shared_ptr<ResourceMgr> ResourceManager;
     Endianness ByteOrder;
     ResourceType Type;
-    Version ResourceVersion;
+    uint32_t ResourceVersion;
     uint64_t Id;
     bool IsDirty = false;
     std::shared_ptr<OtrFile> File;

@@ -6,7 +6,7 @@
 namespace Ship {
 class DisplayListFactory : public ResourceFactory {
   public:
-    std::shared_ptr<Resource> ReadResource(std::shared_ptr<BinaryReader> reader);
+    std::shared_ptr<Resource> ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader);
 };
 
 class DisplayListFactoryV0 : public ResourceVersionFactory {
