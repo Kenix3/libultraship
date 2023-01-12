@@ -50,6 +50,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     }
     reader->SetEndianness(endianness);
     ResourceType resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
+    reader->ReadUInt64();                                           // Game version
     uint64_t id = reader->ReadUInt64();                             // Unique asset ID
     reader->ReadUInt32();                                           // Resource minor version number
     reader->ReadUInt64();                                           // ROM CRC
