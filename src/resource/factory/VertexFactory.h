@@ -7,7 +7,7 @@ namespace Ship {
 
 class VertexFactory : public ResourceFactory {
   public:
-    std::shared_ptr<Resource> ReadResource(std::shared_ptr<BinaryReader> reader);
+    std::shared_ptr<Resource> ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader);
 };
 
 class VertexFactoryV0 : public ResourceVersionFactory {

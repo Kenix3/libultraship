@@ -3,11 +3,10 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<Resource> MatrixFactory::ReadResource(std::shared_ptr<BinaryReader> reader) {
+std::shared_ptr<Resource> MatrixFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Matrix>();
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    uint32_t version = reader->ReadUInt32();
     switch (version) {
         case 0:
             factory = std::shared_ptr<MatrixFactoryV0>();
