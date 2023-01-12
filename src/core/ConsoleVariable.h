@@ -18,7 +18,7 @@ typedef struct CVar {
     ConsoleVariableType Type;
     int32_t Integer;
     float Float;
-    std::string String;
+    const char* String;
     Color_RGBA8 Color;
     Color_RGB8 Color24;
 } CVar;

@@ -202,7 +202,7 @@ void GameOverlay::Draw() {
                     this->TextDraw(30, textY, true, color, "%s %d", text, var->Integer);
                     break;
                 case ConsoleVariableType::String:
-                    this->TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
+                    this->TextDraw(30, textY, true, color, "%s %s", text, var->String);
                     break;
                 case ConsoleVariableType::Color:
                     this->TextDraw(30, textY, true, color, "#%08X", text, var->Color);
