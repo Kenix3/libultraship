@@ -136,7 +136,6 @@ void ResourceMgr::LoadResourceThread() {
 
         if (!toLoad->File->HasLoadError) {
             std::shared_ptr<Resource> resource = GetResourceLoader()->LoadResource(toLoad->File);
-            resource->ResourceManager = GetContext()->GetResourceManager();
 
             if (resource != nullptr) {
                 std::unique_lock<std::mutex> lock(toLoad->ResourceLoadMutex);
@@ -233,6 +232,57 @@ std::shared_ptr<Resource> ResourceMgr::LoadResource(const char* filePath) {
     }
 
     return promise->Res;
+}
+
+std::shared_ptr<Resource> ResourceMgr::LoadResourceNow(const char* filePath) {
+    return LoadResourceNow(std::string(filePath));
+}
+
+std::shared_ptr<Resource> ResourceMgr::LoadResourceNow(const std::string& filePath) {
+    std::shared_ptr<OtrFile> file = nullptr;
+    std::shared_ptr<Resource> resource = nullptr;
+    std::string path = filePath;
+
+    if (path[0] == '_' && path[1] == '_' && path[2] == 'O' && path[3] == 'T' && path[4] == 'R' && path[5] == '_' &&
+        path[6] == '_') {
+        path = path.substr(7);
+    }
+
+    {
+        // const std::lock_guard<std::mutex> lock(mFileLoadMutex);
+        // Find the file.
+        auto fileCacheFind = mFileCache.find(path);
+        if (fileCacheFind == mFileCache.end()) {
+            SPDLOG_TRACE("Cache miss on File load now: {}", path.c_str());
+            std::shared_ptr<OtrFile> toLoad = std::make_shared<OtrFile>();
+            toLoad->Path = path;
+            mArchive->LoadFile(toLoad->Path, true, toLoad);
+            file = mFileCache[toLoad->Path] = toLoad->IsLoaded && !toLoad->HasLoadError ? toLoad : nullptr;
+        } else {
+            file = fileCacheFind->second;
+        }
+    }
+
+    {
+        // const std::lock_guard<std::mutex> resLock(mResourceLoadMutex);
+
+        auto resCacheFind = mResourceCache.find(path);
+        if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty) {
+            if (resCacheFind == mResourceCache.end()) {
+                SPDLOG_TRACE("Cache miss on Resource load: {}", path);
+            }
+
+            auto loaded = GetResourceLoader()->LoadResource(file);
+
+            if (loaded != nullptr) {
+                resource = mResourceCache[loaded->File->Path] = loaded;
+            }
+        } else {
+            resource = resCacheFind->second;
+        }
+    }
+
+    return resource;
 }
 
 std::variant<std::shared_ptr<Resource>, std::shared_ptr<ResourcePromise>>

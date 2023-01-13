@@ -7,12 +7,13 @@
 
 #include "resource/type/Texture.h"
 
-std::shared_ptr<Ship::Resource> LoadResource(const char* name) {
-    return Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
+std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
+    return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceNow(name)
+               : Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
 }
 
-std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc) {
-    return LoadResource(GetResourceNameByCrc(crc));
+std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
+    return LoadResource(GetResourceNameByCrc(crc), now);
 }
 
 extern "C" {
@@ -26,8 +27,8 @@ const char* GetResourceNameByCrc(uint64_t crc) {
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 
-size_t GetResourceSizeByName(const char* name) {
-    auto resource = LoadResource(name);
+size_t GetResourceSizeByName(const char* name, bool now) {
+    auto resource = LoadResource(name, now);
 
     if (resource == nullptr) {
         return 0;
@@ -36,12 +37,12 @@ size_t GetResourceSizeByName(const char* name) {
     return resource->GetPointerSize();
 }
 
-size_t GetResourceSizeByCrc(uint64_t crc) {
-    return GetResourceSizeByName(GetResourceNameByCrc(crc));
+size_t GetResourceSizeByCrc(uint64_t crc, bool now) {
+    return GetResourceSizeByName(GetResourceNameByCrc(crc), now);
 }
 
-void* GetResourceDataByName(const char* name) {
-    auto resource = LoadResource(name);
+void* GetResourceDataByName(const char* name, bool now) {
+    auto resource = LoadResource(name, now);
 
     if (resource == nullptr) {
         return nullptr;
@@ -50,12 +51,12 @@ void* GetResourceDataByName(const char* name) {
     return resource->GetPointer();
 }
 
-void* GetResourceDataByCrc(uint64_t crc) {
-    return GetResourceDataByName(GetResourceNameByCrc(crc));
+void* GetResourceDataByCrc(uint64_t crc, bool now) {
+    return GetResourceDataByName(GetResourceNameByCrc(crc), now);
 }
 
-uint16_t GetResourceTexWidthByName(const char* name) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
+uint16_t GetResourceTexWidthByName(const char* name, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
 
     if (res != nullptr) {
         return res->Width;
@@ -65,8 +66,8 @@ uint16_t GetResourceTexWidthByName(const char* name) {
     return -1;
 }
 
-uint16_t GetResourceTexWidthByCrc(uint64_t crc) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
+uint16_t GetResourceTexWidthByCrc(uint64_t crc, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
 
     if (res != nullptr) {
         return res->Width;
@@ -76,8 +77,8 @@ uint16_t GetResourceTexWidthByCrc(uint64_t crc) {
     return -1;
 }
 
-uint16_t GetResourceTexHeightByName(const char* name) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
+uint16_t GetResourceTexHeightByName(const char* name, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
 
     if (res != nullptr) {
         return res->Height;
@@ -87,8 +88,8 @@ uint16_t GetResourceTexHeightByName(const char* name) {
     return -1;
 }
 
-uint16_t GetResourceTexHeightByCrc(uint64_t crc) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
+uint16_t GetResourceTexHeightByCrc(uint64_t crc, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
 
     if (res != nullptr) {
         return res->Height;
@@ -98,8 +99,8 @@ uint16_t GetResourceTexHeightByCrc(uint64_t crc) {
     return -1;
 }
 
-size_t GetResourceTexSizeByName(const char* name) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
+size_t GetResourceTexSizeByName(const char* name, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
 
     if (res != nullptr) {
         return res->ImageDataSize;
@@ -109,8 +110,8 @@ size_t GetResourceTexSizeByName(const char* name) {
     return -1;
 }
 
-size_t GetResourceTexSizeByCrc(uint64_t crc) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
+size_t GetResourceTexSizeByCrc(uint64_t crc, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
 
     if (res != nullptr) {
         return res->ImageDataSize;
@@ -140,7 +141,7 @@ void DirtyResourceDirectory(const char* name) {
 }
 
 void DirtyResourceByName(const char* name) {
-    auto resource = LoadResource(name);
+    auto resource = LoadResource(name, false);
 
     if (resource != nullptr) {
         resource->IsDirty = true;
@@ -148,7 +149,7 @@ void DirtyResourceByName(const char* name) {
 }
 
 void DirtyResourceByCrc(uint64_t crc) {
-    auto resource = LoadResource(crc);
+    auto resource = LoadResource(crc, false);
 
     if (resource != nullptr) {
         resource->IsDirty = true;
@@ -166,8 +167,8 @@ void ClearResourceCache(void) {
     Ship::Window::GetInstance()->GetResourceManager()->InvalidateResourceCache();
 }
 
-void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData) {
-    const auto res = LoadResource(name);
+void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now) {
+    auto res = LoadResource(name, now);
 
     if (res != nullptr) {
         const auto hash = GetResourceCrcByName(name);
@@ -180,8 +181,8 @@ void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origD
     }
 }
 
-void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData) {
-    const auto res = LoadResource(crc);
+void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData, bool now) {
+    auto res = LoadResource(crc, now);
 
     if (res != nullptr) {
         Ship::ResourceAddressPatch patch;
@@ -193,8 +194,8 @@ void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData) 
     }
 }
 
-void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueToWrite) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
+void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueToWrite, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
 
     if (res != nullptr) {
         if ((index * sizeof(int16_t)) < res->ImageDataSize) {
@@ -203,8 +204,8 @@ void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueTo
     }
 }
 
-void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
+void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite, bool now) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
 
     if (res != nullptr) {
         if ((index * sizeof(int16_t)) < res->ImageDataSize) {

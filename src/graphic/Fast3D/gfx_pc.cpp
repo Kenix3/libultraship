@@ -2220,7 +2220,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
-                int32_t* mtx = (int32_t*)GetResourceDataByCrc(hash);
+                int32_t* mtx = (int32_t*)GetResourceDataByCrc(hash, false);
 
 #ifdef F3DEX_GBI_2
                 if (mtx != NULL) {
@@ -2285,7 +2285,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (Vtx*)offset);
                     cmd++;
                 } else {
-                    Vtx* vtx = (Vtx*)GetResourceDataByCrc(hash);
+                    Vtx* vtx = (Vtx*)GetResourceDataByCrc(hash, false);
 
                     if (vtx != NULL) {
                         vtx = (Vtx*)((char*)vtx + offset);
@@ -2293,7 +2293,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd--;
 
                         if (ourHash != (uint64_t)-1) {
-                            auto res = LoadResource(ourHash);
+                            auto res = LoadResource(ourHash, false);
                             if (res != nullptr) {
                                 res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, offset);
                             }
@@ -2337,7 +2337,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_DL_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash);
+                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash, false);
 
                     if (gfx != 0) {
                         gfx_run_dl(gfx);
@@ -2367,7 +2367,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_BRANCH_Z_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash);
+                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash, false);
 
                     if (gfx != 0) {
                         cmd = gfx;
@@ -2438,7 +2438,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 if ((i & 1) != 1) {
                     if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData) == 1) {
-                        i = (uintptr_t)GetResourceDataByName(imgData);
+                        i = (uintptr_t)GetResourceDataByName(imgData, false);
                     }
                 }
 
@@ -2456,7 +2456,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 if (addr != 0) {
                     tex = (char*)addr;
                 } else {
-                    tex = (char*)GetResourceDataByCrc(hash);
+                    tex = (char*)GetResourceDataByCrc(hash, false);
 
                     if (tex != nullptr) {
                         cmd--;
@@ -2464,7 +2464,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd->words.w1 = (uintptr_t)tex;
 
                         if (ourHash != (uint64_t)-1) {
-                            auto res = LoadResource(ourHash);
+                            auto res = LoadResource(ourHash, false);
                             if (res != nullptr) {
                                 res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, oldData);
                             }

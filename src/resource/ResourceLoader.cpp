@@ -69,6 +69,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
         result->File = fileToLoad;
         result->Id = id;
         result->Type = resourceType;
+        result->ResourceManager = GetContext()->GetResourceManager();
     } else {
         if (fileToLoad != nullptr) {
             SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceType, fileToLoad->Path);

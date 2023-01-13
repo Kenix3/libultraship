@@ -18,6 +18,8 @@ class Window;
 // modifications have gigabytes of assets. It works with the original game's assets because the entire ROM is 64MB and
 // fits into RAM of any semi-modern PC.
 class ResourceMgr {
+    friend class Resource;
+
   public:
     ResourceMgr(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
                 const std::unordered_set<uint32_t>& validHashes);
@@ -40,6 +42,8 @@ class ResourceMgr {
     std::shared_ptr<Resource> GetCachedFile(const char* filePath) const;
     std::shared_ptr<Resource> LoadResource(const char* filePath);
     std::shared_ptr<Resource> LoadResource(const std::string& filePath);
+    std::shared_ptr<Resource> LoadResourceNow(const char* filePath);
+    std::shared_ptr<Resource> LoadResourceNow(const std::string& filePath);
     std::variant<std::shared_ptr<Resource>, std::shared_ptr<ResourcePromise>> LoadResourceAsync(const char* filePath);
     std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_ptr<ResourcePromise>>> CacheDirectoryAsync(const std::string& searchMask);
