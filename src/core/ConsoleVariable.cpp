@@ -93,7 +93,7 @@ void ConsoleVariable::SetString(const char* name, const char* value) {
     }
 
     variable->Type = ConsoleVariableType::String;
-    variable->String = value;
+    variable->String = std::string(value);
 }
 
 void ConsoleVariable::SetColor(const char* name, Color_RGBA8 value) {
@@ -151,6 +151,36 @@ void ConsoleVariable::ClearVariable(const char* name) {
     mVariables.erase(name);
     conf->erase(StringHelper::Sprintf("CVars.%s", name));
 }
+
+/*
+
+extern "C" void CVar_Save() {
+    std::shared_ptr<Mercury> pConf = Ship::Window::GetInstance()->GetConfig();
+
+    for (const auto& cvar : mVariables) {
+        const std::string key = StringHelper::Sprintf("mVariables.%s", cvar.first.c_str());
+
+        if (cvar.second->Type == CVarType::String && cvar.second->value.ValueStr != nullptr) {
+            pConf->setString(key, std::string(cvar.second->value.ValueStr));
+        } else if (cvar.second->Type == CVarType::S32) {
+            pConf->setInt(key, cvar.second->value.ValueS32);
+        } else if (cvar.second->Type == CVarType::Float) {
+            pConf->setFloat(key, cvar.second->value.ValueFloat);
+        } else if (cvar.second->Type == CVarType::RGBA) {
+            auto keyStr = key.c_str();
+            Color_RGBA8 clr = cvar.second->value.ValueRGBA;
+            pConf->setUInt(StringHelper::Sprintf("%s.R", keyStr), clr.r);
+            pConf->setUInt(StringHelper::Sprintf("%s.G", keyStr), clr.g);
+            pConf->setUInt(StringHelper::Sprintf("%s.B", keyStr), clr.b);
+            pConf->setUInt(StringHelper::Sprintf("%s.A", keyStr), clr.a);
+            pConf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBAObjectType);
+        }
+    }
+
+    pConf->save();
+}
+
+*/
 
 void ConsoleVariable::Save() {
     std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
