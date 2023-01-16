@@ -93,7 +93,7 @@ void ConsoleVariable::SetString(const char* name, const char* value) {
     }
 
     variable->Type = ConsoleVariableType::String;
-    variable->String = value;
+    variable->String = std::string(value);
 }
 
 void ConsoleVariable::SetColor(const char* name, Color_RGBA8 value) {
@@ -158,7 +158,8 @@ void ConsoleVariable::Save() {
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
 
-        if (variable.second->Type == ConsoleVariableType::String && variable.second->String.length() > 0) {
+        if (variable.second->Type == ConsoleVariableType::String && variable.second != nullptr &&
+            variable.second->String.length() > 0) {
             conf->setString(key, std::string(variable.second->String));
         } else if (variable.second->Type == ConsoleVariableType::Integer) {
             conf->setInt(key, variable.second->Integer);

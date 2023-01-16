@@ -8,7 +8,7 @@
 namespace Ship {
 class ResourceFactory {
   public:
-    virtual std::shared_ptr<Resource> ReadResource(std::shared_ptr<BinaryReader> reader) = 0;
+    virtual std::shared_ptr<Resource> ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) = 0;
 };
 
 class ResourceVersionFactory {

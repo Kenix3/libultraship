@@ -1,7 +1,6 @@
 #include "Utils.h"
 #include <cstring>
 #include <algorithm>
-#include <sstream>
 
 #ifdef _MSC_VER
 #define strdup _strdup
@@ -14,10 +13,6 @@ float clamp(float d, float min, float max) {
     return t > max ? max : t;
 }
 
-template <typename Numeric> bool IsNumber(const std::string& s) {
-    Numeric n;
-    return ((std::istringstream(s) >> n >> std::ws).eof());
-}
 } // namespace Math
 
 std::vector<std::string> splitText(const std::string text, char separator = ' ', bool keepQuotes = false) {
