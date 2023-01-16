@@ -16,7 +16,7 @@ std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
     auto name = GetResourceNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
-        // OTRTODO: LOG THIS
+        SPDLOG_TRACE("LoadResource: Unknown crc {}\n", crc);
         return nullptr;
     }
 
@@ -62,7 +62,7 @@ void* GetResourceDataByCrc(uint64_t crc, bool now) {
     auto name = GetResourceNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
-        // OTRTODO: LOG THIS
+        SPDLOG_TRACE("GetResourceDataByCrc: Unknown crc {}\n", crc);
         return nullptr;
     }
 
