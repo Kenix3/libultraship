@@ -13,7 +13,14 @@ std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
 }
 
 std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
-    return LoadResource(GetResourceNameByCrc(crc), now);
+    auto name = GetResourceNameByCrc(crc);
+
+    if (name == nullptr || strlen(name) == 0) {
+        // OTRTODO: LOG THIS
+        return nullptr;
+    }
+
+    return LoadResource(name, now);
 }
 
 extern "C" {
@@ -52,7 +59,14 @@ void* GetResourceDataByName(const char* name, bool now) {
 }
 
 void* GetResourceDataByCrc(uint64_t crc, bool now) {
-    return GetResourceDataByName(GetResourceNameByCrc(crc), now);
+    auto name = GetResourceNameByCrc(crc);
+
+    if (name == nullptr || strlen(name) == 0) {
+        // OTRTODO: LOG THIS
+        return nullptr;
+    }
+
+    return GetResourceDataByName(name, now);
 }
 
 uint16_t GetResourceTexWidthByName(const char* name, bool now) {
