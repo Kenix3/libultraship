@@ -16,7 +16,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
