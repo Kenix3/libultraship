@@ -30,7 +30,7 @@ float ConsoleVariable::GetFloat(const char* name, float defaultValue) {
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Float) {
-        return variable->Integer;
+        return variable->Float;
     }
 
     return defaultValue;
