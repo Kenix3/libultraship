@@ -1,4 +1,4 @@
-add_library(libultraship STATIC)
+add_library($<$<PLATFORM_ID:Windows>:lib>ultraship STATIC)
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
