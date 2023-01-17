@@ -616,7 +616,8 @@ static void apply_tlut(int tile, const uint8_t* addr, uint16_t width, uint16_t h
     } else if (type == Ship::TextureType::Palette8bpp) {
         for (int i = 0; i < width * height; i++) {
             uint8_t idx = addr[i];
-            uint16_t col16 = (rdp.palettes[idx / 128][(idx % 128) * 2] << 8) | rdp.palettes[idx / 128][(idx % 128) * 2 + 1]; // Big endian load
+            uint16_t col16 = (rdp.palettes[idx / 128][(idx % 128) * 2] << 8) |
+                             rdp.palettes[idx / 128][(idx % 128) * 2 + 1]; // Big endian load
             uint8_t a = col16 & 1;
             uint8_t r = col16 >> 11;
             uint8_t g = (col16 >> 6) & 0x1f;
@@ -1756,7 +1757,8 @@ static void gfx_dp_set_scissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32
     rdp.viewport_or_scissor_changed = true;
 }
 
-static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const char* texPath, uint32_t texFlags, RawTexMetadata rawTexMetdata, const void* addr) {
+static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const char* texPath,
+                                     uint32_t texFlags, RawTexMetadata rawTexMetdata, const void* addr) {
     rdp.texture_to_load.addr = (const uint8_t*)addr;
     rdp.texture_to_load.siz = size;
     rdp.texture_to_load.width = width;
@@ -1889,7 +1891,7 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes = full_image_line_size_bytes;
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes = line_size_bytes;
 
-//    assert(size_bytes <= 4096 && "bug: too big texture");
+    //    assert(size_bytes <= 4096 && "bug: too big texture");
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].tex_flags = rdp.texture_to_load.tex_flags;
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata = rdp.texture_to_load.raw_tex_metadata;
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr + start_offset;
@@ -2525,7 +2527,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData) == 1) {
                         Ship::Texture* tex = GetResourceTexByName(imgData).get();
 
-                        i = (uintptr_t)reinterpret_cast<char*>(tex->ImageData);
+                        i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
                         rawTexMetdata.width = tex->Width;
                         rawTexMetdata.height = tex->Height;
