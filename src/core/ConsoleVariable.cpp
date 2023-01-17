@@ -178,7 +178,8 @@ void ConsoleVariable::Save() {
             conf->setInt(key, variable.second->Integer);
         } else if (variable.second->Type == ConsoleVariableType::Float) {
             conf->setFloat(key, variable.second->Float);
-        } else if (variable.second->Type == ConsoleVariableType::Color || variable.second->Type == ConsoleVariableType::Color24) {
+        } else if (variable.second->Type == ConsoleVariableType::Color ||
+                   variable.second->Type == ConsoleVariableType::Color24) {
             auto keyStr = key.c_str();
             Color_RGBA8 clr = variable.second->Color;
             conf->setUInt(StringHelper::Sprintf("%s.R", keyStr), clr.r);
