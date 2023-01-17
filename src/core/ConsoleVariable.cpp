@@ -117,31 +117,31 @@ void ConsoleVariable::SetColor24(const char* name, Color_RGB8 value) {
 }
 
 void ConsoleVariable::RegisterInteger(const char* name, int32_t defaultValue) {
-    if (Get(name) != nullptr) {
+    if (Get(name) == nullptr) {
         SetInteger(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterFloat(const char* name, float defaultValue) {
-    if (Get(name) != nullptr) {
+    if (Get(name) == nullptr) {
         SetFloat(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterString(const char* name, const char* defaultValue) {
-    if (Get(name) != nullptr) {
+    if (Get(name) == nullptr) {
         SetString(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterColor(const char* name, Color_RGBA8 defaultValue) {
-    if (Get(name) != nullptr) {
+    if (Get(name) == nullptr) {
         SetColor(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue) {
-    if (Get(name) != nullptr) {
+    if (Get(name) == nullptr) {
         SetColor24(name, defaultValue);
     }
 }
