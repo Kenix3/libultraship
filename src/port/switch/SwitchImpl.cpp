@@ -3,7 +3,7 @@
 #include <switch.h>
 #include <SDL2/SDL.h>
 #include "SwitchPerformanceProfiles.h"
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
 
 #define DOCKED_MODE 1
