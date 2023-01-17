@@ -62,6 +62,7 @@ class Window {
     void SetLastScancode(int32_t scanCode);
     void InitializeAudioPlayer(std::string_view audioBackend);
     void InitializeWindowManager(std::string_view gfxBackend);
+    bool DoesOtrFileExist();
 
   protected:
     Window() = default;
@@ -104,5 +105,6 @@ class Window {
     std::string mMainPath;
     std::string mBasePath;
     std::string mPatchesPath;
+    bool mOtrFileExists;
 };
 } // namespace Ship
