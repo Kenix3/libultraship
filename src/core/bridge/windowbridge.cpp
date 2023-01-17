@@ -25,6 +25,5 @@ uint16_t GetPixelDepth(float x, float y) {
 
 uint32_t DoesOtrFileExist() {
     return Ship::Window::GetInstance()->DoesOtrFileExist();
-}  
-
+}
 }
