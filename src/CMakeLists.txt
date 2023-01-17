@@ -1,11 +1,5 @@
-if(CMAKE_SYSTEM_NAME MATCHES "Windows")
-    set(PROJECT libultraship)
-else()
-    set(PROJECT ultraship)
-endif()
-
-add_library("${PROJECT}" STATIC)
-set_property(TARGET "${PROJECT}" PROPERTY CXX_STANDARD 20)
+add_library(libultraship STATIC)
+set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -35,7 +29,7 @@ endif()
 
 source_group("Audio" FILES ${Source_Files__Audio})
 
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Audio})
+target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
 #=================== BinaryTools ==================
 
@@ -53,7 +47,7 @@ set(Source_Files__BinaryTools
 
 source_group("BinaryTools" FILES ${Source_Files__BinaryTools})
 
-target_sources("${PROJECT}" PRIVATE ${Source_Files__BinaryTools})
+target_sources(libultraship PRIVATE ${Source_Files__BinaryTools})
 
 #=================== Controller ===================
 
@@ -88,7 +82,7 @@ set(Source_Files__Controller__Attachments
 
 source_group("Controller\\Attachments" FILES ${Source_Files__Controller__Attachments})
 
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Controller} ${Source_Files__Controller__Attachments})
+target_sources(libultraship PRIVATE ${Source_Files__Controller} ${Source_Files__Controller__Attachments})
 
 #=================== Core ===================
 
@@ -127,7 +121,7 @@ set(Source_Files__Core__Bridge
  
 source_group("Core\\Bridge" FILES ${Source_Files__Core__Bridge})
 
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Core} ${Source_Files__Core__Libultra} ${Source_Files__Core__Bridge})
+target_sources(libultraship PRIVATE ${Source_Files__Core} ${Source_Files__Core__Libultra} ${Source_Files__Core__Bridge})
 
 #=================== Debug ===================
 
@@ -137,7 +131,7 @@ set(Source_Files__Debug
 )
 
 source_group("Debug" FILES ${Source_Files__Debug})
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Debug})
+target_sources(libultraship PRIVATE ${Source_Files__Debug})
 
 #=================== Log ===================
 
@@ -154,7 +148,7 @@ set(Source_Files__Log__SPDLog
 
 source_group("Log\\SPDLog" FILES ${Source_Files__Log__SPDLog})
 
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
+target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
 #=================== Menu ===================
 
@@ -170,7 +164,7 @@ set(Source_Files__Menu
 )
 
 source_group("Menu" FILES ${Source_Files__Menu})
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Menu})
+target_sources(libultraship PRIVATE ${Source_Files__Menu})
 
 #=================== Misc ===================
 
@@ -192,7 +186,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 source_group("Misc" FILES ${Source_Files__Misc})
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Misc})
+target_sources(libultraship PRIVATE ${Source_Files__Misc})
 
 #=================== Port ===================
 
@@ -214,7 +208,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
 endif()
 
 source_group("Port" FILES ${Source_Files__Port})
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Port})
+target_sources(libultraship PRIVATE ${Source_Files__Port})
 
 #=================== Resource ===================
 
@@ -266,7 +260,7 @@ set(Source_Files__Resource__Factories
 )
 source_group("Resource\\Factory" FILES ${Source_Files__Resource__Factories})
 
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories})
+target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories})
 
 #=================== Graphic ===================
 
@@ -314,7 +308,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
 endif()
 
 source_group("Graphic" FILES ${Source_Files__Graphic})
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Graphic})
+target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
 #=================== Speech Synthesizer ===================
 
@@ -333,7 +327,7 @@ endif()
 
 source_group("SpeechSynthesizer" FILES ${Source_Files__SpeechSynthesizer})
 
-target_sources("${PROJECT}" PRIVATE ${Source_Files__SpeechSynthesizer})
+target_sources(libultraship PRIVATE ${Source_Files__SpeechSynthesizer})
 
 #=================== STB ===================
 
@@ -343,12 +337,12 @@ set(Source_Files__Lib__stb
     "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_impl.c"
 )
 source_group("Extern\\stb" FILES ${Source_Files__Lib__stb})
-target_sources("${PROJECT}" PRIVATE ${Source_Files__Lib__stb})
+target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
 
 
 #=================== Packages & Includes ===================
 
-target_include_directories("${PROJECT}"
+target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
@@ -361,7 +355,7 @@ endif()
 
 #=================== Linking ===================
 
-target_link_libraries("${PROJECT}"
+target_link_libraries(libultraship
     PRIVATE ZAPDUtils StrHash64
     PUBLIC ImGui Mercury storm tinyxml2
 )
@@ -369,19 +363,19 @@ target_link_libraries("${PROJECT}"
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
-    target_link_libraries("${PROJECT}" PRIVATE Threads::Threads)
+    target_link_libraries(libultraship PRIVATE Threads::Threads)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_Library(OSX_FOUNDATION Foundation)
     find_Library(OSX_AVFOUNDATION AVFoundation)
-    target_link_libraries("${PROJECT}" PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${CMAKE_DL_LIBS})
+    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${CMAKE_DL_LIBS})
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
     find_package(PulseAudio)
-    target_link_libraries("${PROJECT}" PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARY})
+    target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARY})
 endif()
 
 #=================== Compile Options & Defs ===================
@@ -396,14 +390,14 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_compile_definitions("${PROJECT}" PRIVATE
+    target_compile_definitions(libultraship PRIVATE
         ENABLE_OPENGL
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         SPDLOG_ACTIVE_LEVEL=0
     )
 else ()
-    target_compile_definitions("${PROJECT}" PRIVATE
+    target_compile_definitions(libultraship PRIVATE
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         SPDLOG_NO_THREAD_ID
@@ -414,7 +408,7 @@ else ()
 endif()
 
 if(MSVC)
-    target_compile_options("${PROJECT}" PRIVATE
+    target_compile_options(libultraship PRIVATE
         $<$<CONFIG:Debug>:
             /Od;
             /Oi-
@@ -430,7 +424,7 @@ if(MSVC)
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
         ${DEFAULT_CXX_EXCEPTION_HANDLING};
     )
-    target_link_options("${PROJECT}" PRIVATE
+    target_link_options(libultraship PRIVATE
         $<$<CONFIG:Release>:
             /OPT:REF;
             /OPT:ICF
@@ -440,7 +434,7 @@ if(MSVC)
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options("${PROJECT}" PRIVATE
+	target_compile_options(libultraship PRIVATE
 		-Wall
 		-Wextra
 		-Wno-error
