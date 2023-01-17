@@ -12,7 +12,7 @@ enum class ResourceType {
     Blob = 0x4F424C42,        // OBLB
     Texture = 0x4F544558,     // OTEX
 
-    // ship of Harkinian
+    // Ship of Harkinian
     SOH_Animation = 0x4F414E4D,       // OANM
     SOH_PlayerAnimation = 0x4F50414D, // OPAM
     SOH_Room = 0x4F524F4D,            // OROM
@@ -26,5 +26,6 @@ enum class ResourceType {
     SOH_AudioSample = 0x4F534D50,     // OSMP
     SOH_AudioSoundFont = 0x4F534654,  // OSFT
     SOH_AudioSequence = 0x4F534551,   // OSEQ
+    SOH_Background = 0x4F424749,      // OBGI
 };
 } // namespace Ship
