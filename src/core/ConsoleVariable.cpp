@@ -51,6 +51,13 @@ Color_RGBA8 ConsoleVariable::GetColor(const char* name, Color_RGBA8 defaultValue
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Color) {
         return variable->Color;
+    } else if (variable != nullptr && variable->Type == ConsoleVariableType::Color24) {
+        Color_RGBA8 temp;
+        temp.r = variable->Color24.r;
+        temp.g = variable->Color24.g;
+        temp.b = variable->Color24.b;
+        temp.a = 255;
+        return temp;
     }
 
     return defaultValue;
@@ -61,6 +68,12 @@ Color_RGB8 ConsoleVariable::GetColor24(const char* name, Color_RGB8 defaultValue
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Color24) {
         return variable->Color24;
+    } else if (variable != nullptr && variable->Type == ConsoleVariableType::Color) {
+        Color_RGB8 temp;
+        temp.r = variable->Color.r;
+        temp.g = variable->Color.g;
+        temp.b = variable->Color.b;
+        return temp;
     }
 
     return defaultValue;
@@ -165,14 +178,19 @@ void ConsoleVariable::Save() {
             conf->setInt(key, variable.second->Integer);
         } else if (variable.second->Type == ConsoleVariableType::Float) {
             conf->setFloat(key, variable.second->Float);
-        } else if (variable.second->Type == ConsoleVariableType::Color) {
+        } else if (variable.second->Type == ConsoleVariableType::Color ||
+                   variable.second->Type == ConsoleVariableType::Color24) {
             auto keyStr = key.c_str();
             Color_RGBA8 clr = variable.second->Color;
             conf->setUInt(StringHelper::Sprintf("%s.R", keyStr), clr.r);
             conf->setUInt(StringHelper::Sprintf("%s.G", keyStr), clr.g);
             conf->setUInt(StringHelper::Sprintf("%s.B", keyStr), clr.b);
-            conf->setUInt(StringHelper::Sprintf("%s.A", keyStr), clr.a);
-            conf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBAObjectType);
+            if (variable.second->Type == ConsoleVariableType::Color) {
+                conf->setUInt(StringHelper::Sprintf("%s.A", keyStr), clr.a);
+                conf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBAObjectType);
+            } else {
+                conf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBObjectType);
+            }
         }
     }
 
@@ -208,6 +226,12 @@ void ConsoleVariable::LoadFromPath(
                     clr.b = value["B"].get<uint8_t>();
                     clr.a = value["A"].get<uint8_t>();
                     SetColor(itemPath.c_str(), clr);
+                } else if (value.contains("Type") && value["Type"].get<std::string>() == mercuryRGBObjectType) {
+                    Color_RGB8 clr;
+                    clr.r = value["R"].get<uint8_t>();
+                    clr.g = value["G"].get<uint8_t>();
+                    clr.b = value["B"].get<uint8_t>();
+                    SetColor24(itemPath.c_str(), clr);
                 } else {
                     LoadFromPath(itemPath, value.items());
                 }
