@@ -7,10 +7,13 @@
 
 #ifdef __cplusplus
 #include "resource/Archive.h"
+#include "resource/type/Texture.h"
 #include "resource/Resource.h"
 
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now);
 std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now);
+std::shared_ptr<Ship::Texture> GetResourceTexByName(const char* name);
+std::shared_ptr<Ship::Texture> GetResourceTexByCrc(uint64_t crc);
 
 extern "C" {
 #endif
