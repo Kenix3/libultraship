@@ -10,6 +10,7 @@
 namespace Ship {
 class BinaryWriter {
   public:
+    BinaryWriter();
     BinaryWriter(Stream* nStream);
     BinaryWriter(std::shared_ptr<Stream> nStream);
 
@@ -34,6 +35,8 @@ class BinaryWriter {
     void Write(double value);
     void Write(const std::string& str);
     void Write(char* srcBuffer, size_t length);
+
+    std::vector<char> ToVector();
 
   protected:
     std::shared_ptr<Stream> mStream;

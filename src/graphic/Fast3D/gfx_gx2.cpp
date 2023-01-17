@@ -16,7 +16,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
@@ -129,6 +129,10 @@ static inline int32_t GX2GetPixelSamplerVarLocation(const GX2PixelShader* shader
 static inline int32_t GX2GetPixelUniformVarOffset(const GX2PixelShader* shader, const char* name) {
     GX2UniformVar* uniform = GX2GetPixelUniformVar(shader, name);
     return uniform ? uniform->offset : -1;
+}
+
+static const char* gfx_gx2_get_name() {
+    return "GX2";
 }
 
 static void gfx_gx2_init_framebuffer(struct Framebuffer* buffer, uint32_t width, uint32_t height) {
@@ -790,7 +794,8 @@ ImGui_ImplGX2_Texture* gfx_gx2_texture_for_imgui(uint32_t texture_id) {
     return &tex->imtex;
 }
 
-struct GfxRenderingAPI gfx_gx2_api = { gfx_gx2_get_clip_parameters,
+struct GfxRenderingAPI gfx_gx2_api = { gfx_gx2_get_name,
+                                       gfx_gx2_get_clip_parameters,
                                        gfx_gx2_unload_shader,
                                        gfx_gx2_load_shader,
                                        gfx_gx2_create_and_load_new_shader,

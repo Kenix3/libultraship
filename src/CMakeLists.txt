@@ -10,10 +10,13 @@ endif()
 
 set(Source_Files__Audio
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/AudioPlayer.h
+	${CMAKE_CURRENT_SOURCE_DIR}/audio/AudioPlayer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/mixer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/mixer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.cpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -86,10 +89,39 @@ target_sources(libultraship PRIVATE ${Source_Files__Controller} ${Source_Files__
 set(Source_Files__Core
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.cpp
 )
 
 source_group("Core" FILES ${Source_Files__Core})
-target_sources(libultraship PRIVATE ${Source_Files__Core})
+
+set(Source_Files__Core__Libultra
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/libultra/os.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/libultra/os.cpp
+)
+ 
+source_group("Core\\libultra" FILES ${Source_Files__Core__Libultra})
+
+set(Source_Files__Core__Bridge
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/resourcebridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/resourcebridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/windowbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/windowbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audioplayerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audioplayerbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/speechsynthesizerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/speechsynthesizerbridge.cpp
+)
+ 
+source_group("Core\\Bridge" FILES ${Source_Files__Core__Bridge})
+
+target_sources(libultraship PRIVATE ${Source_Files__Core} ${Source_Files__Core__Libultra} ${Source_Files__Core__Bridge})
 
 #=================== Debug ===================
 
@@ -127,6 +159,8 @@ set(Source_Files__Menu
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/ImGuiImpl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.h
 )
 
 source_group("Menu" FILES ${Source_Files__Menu})
@@ -135,8 +169,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Menu})
 #=================== Misc ===================
 
 set(Source_Files__Misc
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Cvar.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Cvar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Hooks.h
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Hooks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/LUSMacros.h
@@ -186,98 +218,51 @@ set(Source_Files__Resource
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/OtrFile.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/OtrFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceType.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.cpp
 )
 source_group("Resource" FILES ${Source_Files__Resource})
 
-set(Source_Files__Resource__Factory
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AnimationFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ArrayFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AudioFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/AudioFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/BlobFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/BlobFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CollisionHeaderFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CollisionHeaderFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CutsceneFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/CutsceneFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/DisplayListFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/DisplayListFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/MaterialFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/MaterialFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/MtxFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/MtxFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PathFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PathFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PlayerAnimationFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/PlayerAnimationFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ResourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/ResourceLoader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SceneFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SceneFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonLimbFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/SkeletonLimbFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextureFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/TextureFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/VtxFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/SoH/VtxFactory.h
-)
-source_group("Resource\\Factory" FILES ${Source_Files__Resource__Factory})
-
 set(Source_Files__Resource__Types
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Animation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Animation.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Array.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Array.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Audio.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Audio.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Blob.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Blob.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/CollisionHeader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/CollisionHeader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Cutscene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Cutscene.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/DisplayList.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/GameOverlay.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Material.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Material.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Matrix.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Model.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Model.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Path.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Path.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/PlayerAnimation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/PlayerAnimation.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Scene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Scene.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Skeleton.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Skeleton.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/SkeletonLimb.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/SkeletonLimb.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Text.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Text.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Texture.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Texture.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Vertex.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/types/Vertex.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Array.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Array.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Blob.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Blob.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/DisplayList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/DisplayList.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Matrix.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Matrix.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Texture.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Texture.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.h
 )
-source_group("Resource\\Types" FILES ${Source_Files__Resource__Types})
+source_group("Resource\\Type" FILES ${Source_Files__Resource__Types})
 
+set(Source_Files__Resource__Factories
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/ArrayFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/ArrayFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/BlobFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/BlobFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayListFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayListFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/MatrixFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/MatrixFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/TextureFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/TextureFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.h
+)
+source_group("Resource\\Factory" FILES ${Source_Files__Resource__Factories})
 
-target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Factory} ${Source_Files__Resource__Types})
+target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories})
 
 #=================== Graphic ===================
 
@@ -327,6 +312,25 @@ endif()
 source_group("Graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
+#=================== Speech Synthesizer ===================
+
+set(Source_Files__SpeechSynthesizer
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.cpp
+)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.h)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.mm)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.h)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.cpp)
+endif()
+
+source_group("SpeechSynthesizer" FILES ${Source_Files__SpeechSynthesizer})
+
+target_sources(libultraship PRIVATE ${Source_Files__SpeechSynthesizer})
+
 #=================== STB ===================
 
 set(Source_Files__Lib__stb
@@ -342,7 +346,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
-            ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/U64/PR
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 
@@ -355,8 +358,8 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ZAPDUtils tinyxml2 StrHash64
-    PUBLIC ImGui Mercury storm
+    PRIVATE ZAPDUtils StrHash64
+    PUBLIC ImGui Mercury storm tinyxml2
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
@@ -367,7 +370,8 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_Library(OSX_FOUNDATION Foundation)
-    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${CMAKE_DL_LIBS})
+    find_Library(OSX_AVFOUNDATION AVFoundation)
+    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${CMAKE_DL_LIBS})
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

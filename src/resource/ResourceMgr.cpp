@@ -1,5 +1,4 @@
 #include "ResourceMgr.h"
-#include "factory/SoH/ResourceLoader.h"
 #include <spdlog/spdlog.h>
 #include "OtrFile.h"
 #include "Archive.h"
@@ -12,9 +11,8 @@ namespace Ship {
 ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
                          const std::unordered_set<uint32_t>& validHashes)
     : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
+    mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
-
-    mGameVersion = UNKNOWN;
 
     if (mArchive->IsMainMPQValid()) {
         Start();
@@ -24,9 +22,8 @@ ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mai
 ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
                          const std::unordered_set<uint32_t>& validHashes)
     : mContext(context), mIsRunning(false), mFileLoadThread(nullptr) {
+    mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
-
-    mGameVersion = UNKNOWN;
 
     if (mArchive->IsMainMPQValid()) {
         Start();
@@ -138,28 +135,23 @@ void ResourceMgr::LoadResourceThread() {
         }
 
         if (!toLoad->File->HasLoadError) {
-            auto unmanagedRes = ResourceLoader::LoadResource(toLoad->File);
+            std::shared_ptr<Resource> resource = GetResourceLoader()->LoadResource(toLoad->File);
 
-            if (unmanagedRes != nullptr) {
-                unmanagedRes->ResourceManager = this;
-                auto resource = std::shared_ptr<Resource>(unmanagedRes);
+            if (resource != nullptr) {
+                std::unique_lock<std::mutex> lock(toLoad->ResourceLoadMutex);
 
-                if (resource != nullptr) {
-                    std::unique_lock<std::mutex> lock(toLoad->ResourceLoadMutex);
+                toLoad->HasResourceLoaded = true;
+                toLoad->Res = resource;
+                mResourceCache[resource->File->Path] = resource;
 
-                    toLoad->HasResourceLoaded = true;
-                    toLoad->Res = resource;
-                    mResourceCache[resource->File->Path] = resource;
+                SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", toLoad->File->Path);
 
-                    SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", toLoad->File->Path);
+                resource->File = nullptr;
+            } else {
+                toLoad->HasResourceLoaded = false;
+                toLoad->Res = nullptr;
 
-                    resource->File = nullptr;
-                } else {
-                    toLoad->HasResourceLoaded = false;
-                    toLoad->Res = nullptr;
-
-                    SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", toLoad->File->Path);
-                }
+                SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", toLoad->File->Path);
             }
         } else {
             toLoad->HasResourceLoaded = false;
@@ -170,14 +162,6 @@ void ResourceMgr::LoadResourceThread() {
     }
 
     SPDLOG_INFO("Resource Manager LoadResourceThread ended");
-}
-
-uint32_t ResourceMgr::GetGameVersion() {
-    return mGameVersion;
-}
-
-void ResourceMgr::SetGameVersion(uint32_t newGameVersion) {
-    mGameVersion = newGameVersion;
 }
 
 std::vector<uint32_t> ResourceMgr::GetGameVersions() {
@@ -220,11 +204,15 @@ std::shared_ptr<OtrFile> ResourceMgr::LoadFile(const std::string& filePath) {
 std::shared_ptr<Ship::Resource> ResourceMgr::GetCachedFile(const char* filePath) const {
     auto resCacheFind = mResourceCache.find(filePath);
 
-    if (resCacheFind != mResourceCache.end() && resCacheFind->second.use_count() > 0) {
-        return resCacheFind->second;
-    } else {
+    if (resCacheFind == mResourceCache.end()) {
         return nullptr;
     }
+
+    if (resCacheFind->second.use_count() <= 0) {
+        return nullptr;
+    }
+
+    return resCacheFind->second;
 }
 
 std::shared_ptr<Resource> ResourceMgr::LoadResource(const char* filePath) {
@@ -246,6 +234,57 @@ std::shared_ptr<Resource> ResourceMgr::LoadResource(const char* filePath) {
     return promise->Res;
 }
 
+std::shared_ptr<Resource> ResourceMgr::LoadResourceNow(const char* filePath) {
+    return LoadResourceNow(std::string(filePath));
+}
+
+std::shared_ptr<Resource> ResourceMgr::LoadResourceNow(const std::string& filePath) {
+    std::shared_ptr<OtrFile> file = nullptr;
+    std::shared_ptr<Resource> resource = nullptr;
+    std::string path = filePath;
+
+    if (path[0] == '_' && path[1] == '_' && path[2] == 'O' && path[3] == 'T' && path[4] == 'R' && path[5] == '_' &&
+        path[6] == '_') {
+        path = path.substr(7);
+    }
+
+    {
+        // const std::lock_guard<std::mutex> lock(mFileLoadMutex);
+        // Find the file.
+        auto fileCacheFind = mFileCache.find(path);
+        if (fileCacheFind == mFileCache.end()) {
+            SPDLOG_TRACE("Cache miss on File load now: {}", path.c_str());
+            std::shared_ptr<OtrFile> toLoad = std::make_shared<OtrFile>();
+            toLoad->Path = path;
+            mArchive->LoadFile(toLoad->Path, true, toLoad);
+            file = mFileCache[toLoad->Path] = toLoad->IsLoaded && !toLoad->HasLoadError ? toLoad : nullptr;
+        } else {
+            file = fileCacheFind->second;
+        }
+    }
+
+    {
+        // const std::lock_guard<std::mutex> resLock(mResourceLoadMutex);
+
+        auto resCacheFind = mResourceCache.find(path);
+        if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty) {
+            if (resCacheFind == mResourceCache.end()) {
+                SPDLOG_TRACE("Cache miss on Resource load: {}", path);
+            }
+
+            auto loaded = GetResourceLoader()->LoadResource(file);
+
+            if (loaded != nullptr) {
+                resource = mResourceCache[loaded->File->Path] = loaded;
+            }
+        } else {
+            resource = resCacheFind->second;
+        }
+    }
+
+    return resource;
+}
+
 std::variant<std::shared_ptr<Resource>, std::shared_ptr<ResourcePromise>>
 ResourceMgr::LoadResourceAsync(const char* filePath) {
     if (filePath[0] == '_' && filePath[1] == '_' && filePath[2] == 'O' && filePath[3] == 'T' && filePath[4] == 'R' &&
@@ -255,7 +294,7 @@ ResourceMgr::LoadResourceAsync(const char* filePath) {
 
     const std::lock_guard<std::mutex> resLock(mResourceLoadMutex);
     auto resCacheFind = mResourceCache.find(filePath);
-    if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty /* || !FileData->IsLoaded*/) {
+    if (resCacheFind == mResourceCache.end() || resCacheFind->second->IsDirty) {
         if (resCacheFind == mResourceCache.end()) {
             SPDLOG_TRACE("Cache miss on Resource load: {}", filePath);
         }
@@ -360,12 +399,39 @@ std::shared_ptr<Archive> ResourceMgr::GetArchive() {
     return mArchive;
 }
 
+std::shared_ptr<ResourceLoader> ResourceMgr::GetResourceLoader() {
+    return mResourceLoader;
+}
+
 std::shared_ptr<Window> ResourceMgr::GetContext() {
     return mContext;
 }
 
 std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath) {
     return LoadResource(filePath.c_str());
+}
+
+int32_t ResourceMgr::OtrSignatureCheck(char* imgData) {
+    uintptr_t i = (uintptr_t)(imgData);
+
+    // if (i == 0xD9000000 || i == 0xE7000000 || (i & 1) == 1)
+    if ((i & 1) == 1) {
+        return 0;
+    }
+
+    // if ((i & 0xFF000000) != 0xAB000000 && (i & 0xFF000000) != 0xCD000000 && i != 0) {
+    if (i != 0) {
+        if (imgData[0] == '_' && imgData[1] == '_' && imgData[2] == 'O' && imgData[3] == 'T' && imgData[4] == 'R' &&
+            imgData[5] == '_' && imgData[6] == '_') {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+size_t ResourceMgr::UnloadResource(const std::string& filePath) {
+    return mResourceCache.erase(filePath);
 }
 
 } // namespace Ship

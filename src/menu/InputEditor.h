@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stdint.h"
-#include <ImGui/imgui.h>
+#include <imgui.h>
 
 namespace Ship {
 

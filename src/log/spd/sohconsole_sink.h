@@ -9,11 +9,11 @@
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/details/synchronous_factory.h>
 #include "menu/ImGuiImpl.h"
-#include "misc/Cvar.h"
 #include <chrono>
 #include <mutex>
 #include <string>
 #include <thread>
+#include "core/bridge/consolevariablebridge.h"
 
 namespace spdlog {
 namespace sinks {
@@ -37,7 +37,7 @@ template <typename Mutex> class sohconsole_sink final : public base_sink<Mutex> 
         }
         formatted.push_back('\0');
         const char* msg_output = formatted.data();
-        if (CVar_GetS32("gSinkEnabled", 0) && SohImGui::GetConsole()->IsOpened()) {
+        if (CVarGetInteger("gSinkEnabled", 0) && SohImGui::GetConsole()->IsOpened()) {
             SohImGui::GetConsole()->Append("Logs", msg.level, "%s", msg_output);
         }
     }

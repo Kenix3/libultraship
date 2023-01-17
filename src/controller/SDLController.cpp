@@ -10,8 +10,6 @@
 #define strdup _strdup
 #endif
 
-extern "C" uint8_t __osMaxControllers;
-
 namespace Ship {
 
 SDLController::SDLController(int32_t physicalSlot) : Controller(), mController(nullptr), mPhysicalSlot(physicalSlot) {

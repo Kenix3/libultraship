@@ -1,8 +1,8 @@
 #include "menu/Console.h"
 
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include "ImGuiImpl.h"
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <Utils/StringHelper.h>
 #include <ImGui/imgui_internal.h>
 #include "misc/Utils.h"
@@ -70,9 +70,9 @@ bool Console::BindToggleCommand(std::shared_ptr<Console> console, const std::vec
 }
 
 void Console::Init() {
-    this->mInputBuffer = new char[MAX_BUFFER_SIZE];
+    this->mInputBuffer = new char[gMaxBufferSize];
     strcpy(this->mInputBuffer, "");
-    this->mFilterBuffer = new char[MAX_BUFFER_SIZE];
+    this->mFilterBuffer = new char[gMaxBufferSize];
     strcpy(this->mFilterBuffer, "");
     AddCommand("help", { HelpCommand, "Shows all the commands" });
     AddCommand("clear", { ClearCommand, "Clear the console history" });
@@ -88,16 +88,14 @@ void Console::Update() {
     }
     for (auto [key, var] : mBindingToggle) {
         if (ImGui::IsKeyPressed(key)) {
-            CVar* cvar = CVar_Get(var.c_str());
-            Dispatch("set " + var + " " +
-                     std::to_string(cvar == nullptr ? 0 : !static_cast<bool>(cvar->value.ValueS32)));
+            Dispatch("set " + var + " " + std::to_string(!static_cast<bool>(CVarGetInteger(var.c_str(), 0))));
         }
     }
 }
 
 void Console::Draw() {
     if (!this->mOpened) {
-        CVar_SetS32("gConsoleEnabled", 0);
+        CVarSetInteger("gConsoleEnabled", 0);
         return;
     }
 
@@ -127,7 +125,7 @@ void Console::Draw() {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 if (ImGui::Selectable(preview.c_str())) {
-                    memset(this->mInputBuffer, 0, MAX_BUFFER_SIZE);
+                    memset(this->mInputBuffer, 0, gMaxBufferSize);
                     memcpy(this->mInputBuffer, autoComplete.c_str(), sizeof(char) * autoComplete.size());
                     this->mOpenAutocomplete = false;
                     inputFocus = true;
@@ -160,7 +158,7 @@ void Console::Draw() {
         this->mLog[this->mCurrentChannel].clear();
     }
 
-    if (CVar_GetS32("gSinkEnabled", 0)) {
+    if (CVarGetInteger("gSinkEnabled", 0)) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(150);
         if (ImGui::BeginCombo("##channel", this->mCurrentChannel.c_str())) {
@@ -199,7 +197,7 @@ void Console::Draw() {
     }
     ImGui::SameLine();
     ImGui::PushItemWidth(-1);
-    if (ImGui::InputTextWithHint("##input", "Filter", this->mFilterBuffer, MAX_BUFFER_SIZE)) {
+    if (ImGui::InputTextWithHint("##input", "Filter", this->mFilterBuffer, gMaxBufferSize)) {
         this->mFilter = std::string(this->mFilterBuffer);
     }
     ImGui::PopItemWidth();
@@ -270,13 +268,13 @@ void Console::Draw() {
 #else
         ImGui::PushItemWidth(-53.0f);
 #endif
-        if (ImGui::InputTextWithHint("##CMDInput", ">", this->mInputBuffer, MAX_BUFFER_SIZE, flags,
+        if (ImGui::InputTextWithHint("##CMDInput", ">", this->mInputBuffer, gMaxBufferSize, flags,
                                      &Console::CallbackStub, this)) {
             inputFocus = true;
             if (this->mInputBuffer[0] != '\0' && this->mInputBuffer[0] != ' ') {
                 this->Dispatch(std::string(this->mInputBuffer));
             }
-            memset(this->mInputBuffer, 0, MAX_BUFFER_SIZE);
+            memset(this->mInputBuffer, 0, gMaxBufferSize);
         }
 
         if (this->mCmdHint != NULLSTR) {
@@ -299,7 +297,7 @@ void Console::Draw() {
 #endif
         if (ImGui::Button("Submit") && !inputFocus && this->mInputBuffer[0] != '\0' && this->mInputBuffer[0] != ' ') {
             this->Dispatch(std::string(this->mInputBuffer));
-            memset(this->mInputBuffer, 0, MAX_BUFFER_SIZE);
+            memset(this->mInputBuffer, 0, gMaxBufferSize);
         }
 
         ImGui::SetItemDefaultFocus();

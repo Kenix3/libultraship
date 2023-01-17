@@ -15,9 +15,9 @@
 #include <ImGui/imgui_internal.h>
 #include "resource/ResourceMgr.h"
 #include "core/Window.h"
-#include "misc/Cvar.h"
-#include "resource/types/GameOverlay.h"
-#include "resource/types/Texture.h"
+#include "core/bridge/consolevariablebridge.h"
+#include "menu/GameOverlay.h"
+#include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
@@ -132,14 +132,14 @@ void InitSettings() {
     clientSetupHooks();
     Ship::RegisterHook<Ship::GfxInit>([] {
         gfx_get_current_rendering_api()->set_texture_filter(
-            (FilteringMode)CVar_GetS32("gTextureFilter", FILTER_THREE_POINT));
-        if (CVar_GetS32("gConsoleEnabled", 0)) {
+            (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
+        if (CVarGetInteger("gConsoleEnabled", 0)) {
             console->Open();
         } else {
             console->Close();
         }
 
-        if (CVar_GetS32("gControllerConfigurationEnabled", 0)) {
+        if (CVarGetInteger("gControllerConfigurationEnabled", 0)) {
             controller->Open();
         } else {
             controller->Close();
@@ -324,7 +324,7 @@ bool supportsViewports() {
 }
 
 bool useViewports() {
-    return supportsViewports() && CVar_GetS32("gEnableMultiViewports", 1);
+    return supportsViewports() && CVarGetInteger("gEnableMultiViewports", 1);
 }
 
 void LoadTexture(const std::string& name, const std::string& path) {
@@ -351,18 +351,18 @@ void LoadTexture(const std::string& name, const std::string& path) {
 // MARK: - Public API
 
 void Init(WindowImpl window_impl) {
-    CVar_Load();
+    CVarLoad();
     impl = window_impl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
     io = &ImGui::GetIO();
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
     io->Fonts->AddFontDefault();
-    statsWindowOpen = CVar_GetS32("gStatsEnabled", 0);
-    CVar_RegisterS32("gRandomizeRupeeNames", 1);
-    CVar_RegisterS32("gRandoRelevantNavi", 1);
-    CVar_RegisterS32("gRandoMatchKeyColors", 1);
-    CVar_RegisterS32("gEnableMultiViewports", 1);
+    statsWindowOpen = CVarGetInteger("gStatsEnabled", 0);
+    CVarRegisterInteger("gRandomizeRupeeNames", 1);
+    CVarRegisterInteger("gRandoRelevantNavi", 1);
+    CVarRegisterInteger("gRandoMatchKeyColors", 1);
+    CVarRegisterInteger("gEnableMultiViewports", 1);
 #ifdef __SWITCH__
     Ship::Switch::SetupFont(io->Fonts);
 #endif
@@ -379,7 +379,7 @@ void Init(WindowImpl window_impl) {
 
     PopulateBackendIds(Window::GetInstance()->GetConfig());
 
-    if (CVar_GetS32("gOpenMenuBar", 0) != 1) {
+    if (CVarGetInteger("gOpenMenuBar", 0) != 1) {
 #if defined(__SWITCH__) || defined(__WIIU__)
         SohImGui::overlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
 #else
@@ -396,7 +396,7 @@ void Init(WindowImpl window_impl) {
         io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVar_GetS32("gControlNav", 0) && CVar_GetS32("gOpenMenuBar", 0)) {
+    if (CVarGetInteger("gControlNav", 0) && CVarGetInteger("gOpenMenuBar", 0)) {
         io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         io->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -412,7 +412,7 @@ void Init(WindowImpl window_impl) {
 #endif
 
     Ship::RegisterHook<Ship::GfxInit>([] {
-        bool menuBarOpen = CVar_GetS32("gOpenMenuBar", 0);
+        bool menuBarOpen = CVarGetInteger("gOpenMenuBar", 0);
         Window::GetInstance()->SetMenuBar(menuBarOpen);
         if (Window::GetInstance()->IsFullscreen()) {
             setCursorVisibility(menuBarOpen);
@@ -435,10 +435,10 @@ void Init(WindowImpl window_impl) {
 
     InitSettings();
 
-    CVar_SetS32("gRandoGenerating", 0);
-    CVar_SetS32("gNewSeedGenerated", 0);
-    CVar_SetS32("gNewFileDropped", 0);
-    CVar_SetString("gDroppedFile", "None");
+    CVarSetInteger("gRandoGenerating", 0);
+    CVarSetInteger("gNewSeedGenerated", 0);
+    CVarSetInteger("gNewFileDropped", 0);
+    CVarSetString("gDroppedFile", "None");
 
 #ifdef __SWITCH__
     Switch::ApplyOverclock();
@@ -447,7 +447,7 @@ void Init(WindowImpl window_impl) {
 
 void Update(EventImpl event) {
     if (needs_save) {
-        CVar_Save();
+        CVarSave();
         needs_save = false;
     }
     ImGuiProcessEvent(event);
@@ -466,7 +466,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
                                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
                                     ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
-    if (CVar_GetS32("gOpenMenuBar", 0)) {
+    if (CVarGetInteger("gOpenMenuBar", 0)) {
         window_flags |= ImGuiWindowFlags_MenuBar;
     }
 
@@ -495,16 +495,16 @@ void DrawMainMenuAndCalculateGameSize(void) {
 
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
-    if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVar_GetS32("gControlNav", 0))) {
-        bool menuBar = !CVar_GetS32("gOpenMenuBar", 0);
-        CVar_SetS32("gOpenMenuBar", menuBar);
+    if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
+        bool menuBar = !CVarGetInteger("gOpenMenuBar", 0);
+        CVarSetInteger("gOpenMenuBar", menuBar);
         needs_save = true;
         Window::GetInstance()->SetMenuBar(menuBar);
         if (Window::GetInstance()->IsFullscreen()) {
             setCursorVisibility(menuBar);
         }
         Window::GetInstance()->GetControlDeck()->SaveControllerSettings();
-        if (CVar_GetS32("gControlNav", 0) && CVar_GetS32("gOpenMenuBar", 0)) {
+        if (CVarGetInteger("gControlNav", 0) && CVarGetInteger("gOpenMenuBar", 0)) {
             io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             io->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -580,9 +580,9 @@ void DrawMainMenuAndCalculateGameSize(void) {
         ImGui::PopStyleColor();
     }
 
-    if (CVar_GetS32("gStatsEnabled", 0)) {
+    if (CVarGetInteger("gStatsEnabled", 0)) {
         if (!statsWindowOpen) {
-            CVar_SetS32("gStatsEnabled", 0);
+            CVarSetInteger("gStatsEnabled", 0);
         }
         const float framerate = ImGui::GetIO().Framerate;
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
@@ -638,14 +638,29 @@ void DrawMainMenuAndCalculateGameSize(void) {
     gfx_current_game_window_viewport.width = (int16_t)size.x;
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
-    if (CVar_GetS32("gN64Mode", 0)) {
-        gfx_current_dimensions.width = 320;
-        gfx_current_dimensions.height = 240;
-        const int sw = size.y * 320 / 240;
-        gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
-        gfx_current_game_window_viewport.width = sw;
-        pos = ImVec2(size.x / 2 - sw / 2, 0);
-        size = ImVec2(sw, size.y);
+    switch (CVarGetInteger("gLowResMode", 0)) {
+        case 1: { // N64 Mode
+            gfx_current_dimensions.width = 320;
+            gfx_current_dimensions.height = 240;
+            const int sw = size.y * 320 / 240;
+            gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
+            gfx_current_game_window_viewport.width = sw;
+            pos = ImVec2(size.x / 2 - sw / 2, 0);
+            size = ImVec2(sw, size.y);
+            break;
+        }
+        case 2: { // 240p Widescreen
+            const int vertRes = 240;
+            gfx_current_dimensions.width = vertRes * size.x / size.y;
+            gfx_current_dimensions.height = vertRes;
+            break;
+        }
+        case 3: { // 480p Widescreen
+            const int vertRes = 480;
+            gfx_current_dimensions.width = vertRes * size.x / size.y;
+            gfx_current_dimensions.height = vertRes;
+            break;
+        }
     }
 
     overlay->Draw();
@@ -663,7 +678,7 @@ void DrawFramebufferAndGameInput(void) {
     const ImVec2 main_pos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (CVar_GetS32("gN64Mode", 0)) {
+    if (CVarGetInteger("gLowResMode", 0) == 1) {
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(size.x / 2 - sw / 2, 0);
         size = ImVec2(sw, size.y);
@@ -677,14 +692,14 @@ void DrawFramebufferAndGameInput(void) {
     ImGui::End();
 
 #ifdef __WIIU__
-    const float scale = CVar_GetFloat("gInputScale", 1.0f) * 2.0f;
+    const float scale = CVarGetFloat("gInputScale", 1.0f) * 2.0f;
 #else
-    const float scale = CVar_GetFloat("gInputScale", 1.0f);
+    const float scale = CVarGetFloat("gInputScale", 1.0f);
 #endif
 
     ImVec2 BtnPos = ImVec2(160 * scale, 85 * scale);
 
-    if (CVar_GetS32("gInputEnabled", 0)) {
+    if (CVarGetInteger("gInputEnabled", 0)) {
         ImGui::SetNextWindowSize(BtnPos);
         ImGui::SetNextWindowPos(ImVec2(main_pos.x + size.x - BtnPos.x - 20, main_pos.y + size.y - BtnPos.y - 20));
 
@@ -895,15 +910,15 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
     const auto res = static_cast<Ship::Texture*>(Window::GetInstance()->GetResourceManager()->LoadResource(path).get());
 
     std::vector<uint8_t> texBuffer;
-    texBuffer.reserve(res->width * res->height * 4);
+    texBuffer.reserve(res->Width * res->Height * 4);
 
-    switch (res->texType) {
+    switch (res->Type) {
         case Ship::TextureType::RGBA32bpp:
-            texBuffer.assign(res->imageData, res->imageData + (res->width * res->height * 4));
+            texBuffer.assign(res->ImageData, res->ImageData + (res->Width * res->Height * 4));
             break;
         case Ship::TextureType::GrayscaleAlpha8bpp:
-            for (int32_t i = 0; i < res->width * res->height; i++) {
-                uint8_t ia = res->imageData[i];
+            for (int32_t i = 0; i < res->Width * res->Height; i++) {
+                uint8_t ia = res->ImageData[i];
                 uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
                 uint8_t alpha = (ia & 0xF) * 255 / 15;
                 texBuffer.push_back(color);
@@ -929,7 +944,7 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
 
     api->select_texture(0, asset->textureId);
     api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(texBuffer.data(), res->width, res->height);
+    api->upload_texture(texBuffer.data(), res->Width, res->Height);
 
     DefaultAssets[name] = asset;
 }

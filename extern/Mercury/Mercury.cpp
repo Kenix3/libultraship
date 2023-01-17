@@ -14,7 +14,7 @@ using json = nlohmann::json;
 std::unordered_map<std::string, std::any> ramMap;
 
 Mercury::Mercury(std::string path) : path_(std::move(path)) {
-	this->reload();
+    this->reload();
 }
 
 std::string Mercury::formatNestedKey(const std::string& key) {
