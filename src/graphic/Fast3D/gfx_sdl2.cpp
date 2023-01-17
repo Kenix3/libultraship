@@ -228,7 +228,7 @@ static void set_fullscreen(bool on, bool call_callback) {
     SDL_SetWindowSize(wnd, window_width, window_height);
     SDL_SetWindowFullscreen(
         wnd,
-        on ? (CVar_GetS32("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0);
+        on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0);
     SDL_SetCursor(SDL_DISABLE);
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
