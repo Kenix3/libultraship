@@ -43,7 +43,8 @@ bool Console::BindCommand(std::shared_ptr<Console> console, const std::vector<st
                 std::ostringstream imploded;
                 std::copy(args.begin() + 2, args.end(), std::ostream_iterator<std::string>(imploded, delim));
                 console->mBindings[(ImGuiKey)k] = imploded.str();
-                console->SendInfoMessage("Binding '%s' to %s", args[1].c_str(), console->mBindings[(ImGuiKey)k].c_str());
+                console->SendInfoMessage("Binding '%s' to %s", args[1].c_str(),
+                                         console->mBindings[(ImGuiKey)k].c_str());
                 break;
             }
         }
