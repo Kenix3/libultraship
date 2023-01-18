@@ -12,8 +12,6 @@ endif()
 set(Source_Files__Audio
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/AudioPlayer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/audio/AudioPlayer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/mixer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/mixer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.h
