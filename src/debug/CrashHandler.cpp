@@ -398,7 +398,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     DeinitOTR();
 }
 
-extern "C" static LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
+extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
     char exceptionString[20];
     std::shared_ptr<CrashHandler> crashHandler = Ship::Window::GetInstance()->GetCrashHandler();
 
@@ -406,7 +406,7 @@ extern "C" static LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
 
     WRITE_VAR_LINE(crashHandler, "Exception: ", exceptionString);
     crashHandler->PrintStack(ex->ContextRecord);
-    MessageBoxA(nullptr, "SoH Has crashed. Please upload the logs to the support channel in discord.", "Crash",
+    MessageBoxA(nullptr, "The game has crashed. Please upload the logs to the support channel in discord.", "Crash",
                 MB_OK | MB_ICONERROR);
 
     return EXCEPTION_EXECUTE_HANDLER;
