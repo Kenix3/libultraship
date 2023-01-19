@@ -9,7 +9,7 @@ std::shared_ptr<Resource> MatrixFactory::ReadResource(uint32_t version, std::sha
 
     switch (version) {
         case 0:
-            factory = std::shared_ptr<MatrixFactoryV0>();
+            factory = std::make_shared<MatrixFactoryV0>();
             break;
     }
 
