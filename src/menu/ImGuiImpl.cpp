@@ -312,7 +312,25 @@ void ImGuiRenderDrawData(ImDrawData* data) {
     }
 }
 
+bool supportsWindowedFullscreen() {
+#ifdef __SWITCH__
+    return false;
+#endif
+
+    // We don't yet support windowed fullscreen on DirectX
+    switch (impl.backend) {
+        case Backend::SDL:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool supportsViewports() {
+#ifdef __SWITCH__
+    return false;
+#endif
+
     switch (impl.backend) {
         case Backend::DX11:
             return true;
