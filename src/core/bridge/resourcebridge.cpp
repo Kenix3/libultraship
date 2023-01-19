@@ -24,17 +24,6 @@ std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
 }
 
 std::shared_ptr<Ship::Texture> GetResourceTexByName(const char* name) {
-    if (strcmp(name, "__OTR__virtual/gEmptyTexture") == 0) {
-        auto tex = std::make_shared<Ship::Texture>();
-        tex->Type = Ship::TextureType::RGBA32bpp;
-        tex->Flags = TEX_FLAG_LOAD_AS_RAW;
-        tex->ImageData = new uint8_t[4]{ 0, 0, 0, 0 };
-        tex->Width = 1;
-        tex->Height = 1;
-
-        return tex;
-    }
-
     return std::static_pointer_cast<Ship::Texture>(LoadResource(name, true));
 }
 
