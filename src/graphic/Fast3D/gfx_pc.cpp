@@ -729,7 +729,7 @@ static void import_texture_ia4(int tile) {
 }
 
 static void import_texture_ia8(int tile) {
-    uint8_t rgba32_buf[16384];
+    uint8_t rgba32_buf[32768];
     const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
@@ -757,7 +757,7 @@ static void import_texture_ia8(int tile) {
 }
 
 static void import_texture_ia16(int tile) {
-    uint8_t rgba32_buf[8192];
+    uint8_t rgba32_buf[32768];
     const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
@@ -815,7 +815,7 @@ static void import_texture_i4(int tile) {
 }
 
 static void import_texture_i8(int tile) {
-    uint8_t rgba32_buf[16384];
+    uint8_t rgba32_buf[32768];
     const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
@@ -875,7 +875,7 @@ static void import_texture_ci4(int tile) {
 }
 
 static void import_texture_ci8(int tile) {
-    uint8_t rgba32_buf[16384];
+    uint8_t rgba32_buf[32768];
     const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =

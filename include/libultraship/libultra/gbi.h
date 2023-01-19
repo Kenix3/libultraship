@@ -3009,11 +3009,8 @@ typedef union {
  *  the g*DPLoadBlock macros directly, you will need to handle this
  *  tile manipulation yourself.  RJM.
  */
-#ifdef _HW_VERSION_1
+
 #define G_TX_LDBLK_MAX_TXL 4095
-#else
-#define G_TX_LDBLK_MAX_TXL 2047
-#endif /* _HW_VERSION_1 */
 
 #define TXL2WORDS(txls, b_txl) MAX(1, ((txls) * (b_txl) / 8))
 #define CALC_DXT(width, b_txl) (((1 << G_TX_DXT_FRAC) + TXL2WORDS(width, b_txl) - 1) / TXL2WORDS(width, b_txl))
