@@ -98,6 +98,8 @@ struct ColorCombiner {
 static map<uint64_t, struct ColorCombiner> color_combiner_pool;
 static map<uint64_t, struct ColorCombiner>::iterator prev_combiner = color_combiner_pool.end();
 
+static uint8_t* tex_upload_buffer = nullptr;
+
 static struct RSP {
     float modelview_matrix_stack[11][4][4];
     uint8_t modelview_matrix_stack_size;
@@ -591,11 +593,6 @@ static void gfx_texture_cache_delete(const uint8_t* orig_addr) {
 }
 
 static void apply_tlut(int tile, const uint8_t* addr, uint16_t width, uint16_t height, Ship::TextureType type) {
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[width * height * 4];
-#else
-    uint8_t rgba32_buf[width * height * 4];
-#endif
     uint8_t pal_idx = rdp.texture_tile[tile].palette;
 
     if (type == Ship::TextureType::Palette4bpp) {
@@ -608,10 +605,10 @@ static void apply_tlut(int tile, const uint8_t* addr, uint16_t width, uint16_t h
             uint8_t r = col16 >> 11;
             uint8_t g = (col16 >> 6) & 0x1f;
             uint8_t b = (col16 >> 1) & 0x1f;
-            rgba32_buf[4 * i + 0] = SCALE_5_8(r);
-            rgba32_buf[4 * i + 1] = SCALE_5_8(g);
-            rgba32_buf[4 * i + 2] = SCALE_5_8(b);
-            rgba32_buf[4 * i + 3] = a ? 255 : 0;
+            tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
+            tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
+            tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
+            tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
         }
     } else if (type == Ship::TextureType::Palette8bpp) {
         for (int i = 0; i < width * height; i++) {
@@ -622,17 +619,14 @@ static void apply_tlut(int tile, const uint8_t* addr, uint16_t width, uint16_t h
             uint8_t r = col16 >> 11;
             uint8_t g = (col16 >> 6) & 0x1f;
             uint8_t b = (col16 >> 1) & 0x1f;
-            rgba32_buf[4 * i + 0] = SCALE_5_8(r);
-            rgba32_buf[4 * i + 1] = SCALE_5_8(g);
-            rgba32_buf[4 * i + 2] = SCALE_5_8(b);
-            rgba32_buf[4 * i + 3] = a ? 255 : 0;
+            tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
+            tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
+            tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
+            tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
         }
     }
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
-#ifdef _WIN32
-    delete[] rgba32_buf;
-#endif
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
 static void import_texture_raw(int tile) {
@@ -664,28 +658,22 @@ static void import_texture_rgba16(int tile) {
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-    uint32_t width = rdp.texture_tile[tile].line_size_bytes / 2;
-    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
-
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[width * height * 4];
-#else
-    uint8_t rgba32_buf[width * height * 4];
-#endif
-
     for (uint32_t i = 0; i < size_bytes / 2; i++) {
         uint16_t col16 = (addr[2 * i] << 8) | addr[2 * i + 1];
         uint8_t a = col16 & 1;
         uint8_t r = col16 >> 11;
         uint8_t g = (col16 >> 6) & 0x1f;
         uint8_t b = (col16 >> 1) & 0x1f;
-        rgba32_buf[4 * i + 0] = SCALE_5_8(r);
-        rgba32_buf[4 * i + 1] = SCALE_5_8(g);
-        rgba32_buf[4 * i + 2] = SCALE_5_8(b);
-        rgba32_buf[4 * i + 3] = a ? 255 : 0;
+        tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
+        tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
+        tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
+        tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
     }
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    uint32_t width = rdp.texture_tile[tile].line_size_bytes / 2;
+    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
+
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -711,15 +699,6 @@ static void import_texture_ia4(int tile) {
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-    uint32_t width = rdp.texture_tile[tile].line_size_bytes * 2;
-    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
-
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[width * height * 4];
-#else
-    uint8_t rgba32_buf[width * height * 4];
-#endif
-
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
         uint8_t byte = addr[i / 2];
         uint8_t part = (byte >> (4 - (i % 2) * 4)) & 0xf;
@@ -728,13 +707,16 @@ static void import_texture_ia4(int tile) {
         uint8_t r = intensity;
         uint8_t g = intensity;
         uint8_t b = intensity;
-        rgba32_buf[4 * i + 0] = SCALE_3_8(r);
-        rgba32_buf[4 * i + 1] = SCALE_3_8(g);
-        rgba32_buf[4 * i + 2] = SCALE_3_8(b);
-        rgba32_buf[4 * i + 3] = alpha ? 255 : 0;
+        tex_upload_buffer[4 * i + 0] = SCALE_3_8(r);
+        tex_upload_buffer[4 * i + 1] = SCALE_3_8(g);
+        tex_upload_buffer[4 * i + 2] = SCALE_3_8(b);
+        tex_upload_buffer[4 * i + 3] = alpha ? 255 : 0;
     }
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    uint32_t width = rdp.texture_tile[tile].line_size_bytes * 2;
+    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
+
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -746,28 +728,22 @@ static void import_texture_ia8(int tile) {
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[size_bytes * 4];
-#else
-    uint8_t rgba32_buf[size_bytes * 4];
-#endif
-
     for (uint32_t i = 0; i < size_bytes; i++) {
         uint8_t intensity = addr[i] >> 4;
         uint8_t alpha = addr[i] & 0xf;
         uint8_t r = intensity;
         uint8_t g = intensity;
         uint8_t b = intensity;
-        rgba32_buf[4 * i + 0] = SCALE_4_8(r);
-        rgba32_buf[4 * i + 1] = SCALE_4_8(g);
-        rgba32_buf[4 * i + 2] = SCALE_4_8(b);
-        rgba32_buf[4 * i + 3] = SCALE_4_8(alpha);
+        tex_upload_buffer[4 * i + 0] = SCALE_4_8(r);
+        tex_upload_buffer[4 * i + 1] = SCALE_4_8(g);
+        tex_upload_buffer[4 * i + 2] = SCALE_4_8(b);
+        tex_upload_buffer[4 * i + 3] = SCALE_4_8(alpha);
     }
 
     uint32_t width = rdp.texture_tile[tile].line_size_bytes;
     uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -779,28 +755,22 @@ static void import_texture_ia16(int tile) {
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-    uint32_t width = rdp.texture_tile[tile].line_size_bytes / 2;
-    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
-
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[width * height * 4];
-#else
-    uint8_t rgba32_buf[width * height * 4];
-#endif
-
     for (uint32_t i = 0; i < size_bytes / 2; i++) {
         uint8_t intensity = addr[2 * i];
         uint8_t alpha = addr[2 * i + 1];
         uint8_t r = intensity;
         uint8_t g = intensity;
         uint8_t b = intensity;
-        rgba32_buf[4 * i + 0] = r;
-        rgba32_buf[4 * i + 1] = g;
-        rgba32_buf[4 * i + 2] = b;
-        rgba32_buf[4 * i + 3] = alpha;
+        tex_upload_buffer[4 * i + 0] = r;
+        tex_upload_buffer[4 * i + 1] = g;
+        tex_upload_buffer[4 * i + 2] = b;
+        tex_upload_buffer[4 * i + 3] = alpha;
     }
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    uint32_t width = rdp.texture_tile[tile].line_size_bytes / 2;
+    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
+
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -812,15 +782,6 @@ static void import_texture_i4(int tile) {
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-    uint32_t width = rdp.texture_tile[tile].line_size_bytes * 2;
-    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
-
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[width * height * 4];
-#else
-    uint8_t rgba32_buf[width * height * 4];
-#endif
-
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
         uint8_t byte = addr[i / 2];
         uint8_t part = (byte >> (4 - (i % 2) * 4)) & 0xf;
@@ -829,13 +790,16 @@ static void import_texture_i4(int tile) {
         uint8_t g = intensity;
         uint8_t b = intensity;
         uint8_t a = intensity;
-        rgba32_buf[4 * i + 0] = SCALE_4_8(r);
-        rgba32_buf[4 * i + 1] = SCALE_4_8(g);
-        rgba32_buf[4 * i + 2] = SCALE_4_8(b);
-        rgba32_buf[4 * i + 3] = SCALE_4_8(a);
+        tex_upload_buffer[4 * i + 0] = SCALE_4_8(r);
+        tex_upload_buffer[4 * i + 1] = SCALE_4_8(g);
+        tex_upload_buffer[4 * i + 2] = SCALE_4_8(b);
+        tex_upload_buffer[4 * i + 3] = SCALE_4_8(a);
     }
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    uint32_t width = rdp.texture_tile[tile].line_size_bytes * 2;
+    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
+
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -847,28 +811,22 @@ static void import_texture_i8(int tile) {
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[size_bytes * 4];
-#else
-    uint8_t rgba32_buf[size_bytes * 4];
-#endif
-
     for (uint32_t i = 0; i < size_bytes; i++) {
         uint8_t intensity = addr[i];
         uint8_t r = intensity;
         uint8_t g = intensity;
         uint8_t b = intensity;
         uint8_t a = intensity;
-        rgba32_buf[4 * i + 0] = r;
-        rgba32_buf[4 * i + 1] = g;
-        rgba32_buf[4 * i + 2] = b;
-        rgba32_buf[4 * i + 3] = a;
+        tex_upload_buffer[4 * i + 0] = r;
+        tex_upload_buffer[4 * i + 1] = g;
+        tex_upload_buffer[4 * i + 2] = b;
+        tex_upload_buffer[4 * i + 3] = a;
     }
 
     uint32_t width = rdp.texture_tile[tile].line_size_bytes;
     uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -883,15 +841,6 @@ static void import_texture_ci4(int tile) {
     const uint8_t* palette = rdp.palettes[pal_idx / 8] + (pal_idx % 8) * 16 * 2; // 16 pixel entries, 16 bits each
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-    uint32_t width = rdp.texture_tile[tile].line_size_bytes * 2;
-    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
-
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[width * height * 4];
-#else
-    uint8_t rgba32_buf[width * height * 4];
-#endif
-
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
         uint8_t byte = addr[i / 2];
         uint8_t idx = (byte >> (4 - (i % 2) * 4)) & 0xf;
@@ -900,13 +849,16 @@ static void import_texture_ci4(int tile) {
         uint8_t r = col16 >> 11;
         uint8_t g = (col16 >> 6) & 0x1f;
         uint8_t b = (col16 >> 1) & 0x1f;
-        rgba32_buf[4 * i + 0] = SCALE_5_8(r);
-        rgba32_buf[4 * i + 1] = SCALE_5_8(g);
-        rgba32_buf[4 * i + 2] = SCALE_5_8(b);
-        rgba32_buf[4 * i + 3] = a ? 255 : 0;
+        tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
+        tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
+        tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
+        tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
     }
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    uint32_t width = rdp.texture_tile[tile].line_size_bytes * 2;
+    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
+
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
 static void import_texture_ci8(int tile) {
@@ -915,15 +867,6 @@ static void import_texture_ci8(int tile) {
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
-
-    uint32_t width = rdp.texture_tile[tile].line_size_bytes;
-    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
-
-#ifdef _WIN32
-    uint8_t* rgba32_buf = new uint8_t[width * height * 4];
-#else
-    uint8_t rgba32_buf[width * height * 4];
-#endif
 
     for (uint32_t i = 0, j = 0; i < size_bytes; j += full_image_line_size_bytes - line_size_bytes) {
         for (uint32_t k = 0; k < line_size_bytes; i++, k++, j++) {
@@ -934,10 +877,10 @@ static void import_texture_ci8(int tile) {
             uint8_t r = col16 >> 11;
             uint8_t g = (col16 >> 6) & 0x1f;
             uint8_t b = (col16 >> 1) & 0x1f;
-            rgba32_buf[4 * i + 0] = SCALE_5_8(r);
-            rgba32_buf[4 * i + 1] = SCALE_5_8(g);
-            rgba32_buf[4 * i + 2] = SCALE_5_8(b);
-            rgba32_buf[4 * i + 3] = a ? 255 : 0;
+            tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
+            tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
+            tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
+            tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
         }
     }
 
@@ -945,7 +888,10 @@ static void import_texture_ci8(int tile) {
         int bp = 0;
     }
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    uint32_t width = rdp.texture_tile[tile].line_size_bytes;
+    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
+
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -2835,6 +2781,11 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 
     for (int i = 0; i < 16; i++) {
         segmentPointers[i] = 0;
+    }
+
+    if (tex_upload_buffer == nullptr) {
+        int max_tex_size = gfx_rapi->get_max_texture_size();
+        tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
 
     // Used in the 120 star TAS
