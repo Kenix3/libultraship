@@ -275,6 +275,11 @@ float Window::GetCurrentAspectRatio() {
 void Window::InitializeAudioPlayer(std::string_view audioBackend) {
     // Param can override
     mAudioBackend = audioBackend;
+#ifdef __APPLE__
+    if (mAudioBackend == "coreaudio") {
+        mAudioPlayer = std::make_shared<OSXAudioPlayer>();
+    }
+#endif
 #ifdef _WIN32
     if (audioBackend == "wasapi") {
         mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
@@ -293,7 +298,9 @@ void Window::InitializeAudioPlayer(std::string_view audioBackend) {
     }
 
     // Defaults if not on list above
-#ifdef _WIN32
+#ifdef __APPLE__
+    mAudioPlayer = std::make_shared<OSXAudioPlayer>();
+#elif defined(_WIN32)
     mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
 #elif defined(__linux)
     mAudioPlayer = std::make_shared<PulseAudioPlayer>();

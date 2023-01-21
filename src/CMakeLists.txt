@@ -18,7 +18,10 @@ set(Source_Files__Audio
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.cpp
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/OSXAudioPlayer.h)
+    list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/OSXAudioPlayer.mm)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/WasapiAudioPlayer.h)
     list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/WasapiAudioPlayer.cpp)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -182,6 +185,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.h
         ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm
     )
+
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 endif()
 
 source_group("Misc" FILES ${Source_Files__Misc})
@@ -338,7 +343,6 @@ set(Source_Files__Lib__stb
 source_group("Extern\\stb" FILES ${Source_Files__Lib__stb})
 target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
 
-
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
@@ -355,7 +359,7 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ZAPDUtils StrHash64
+    PRIVATE ZAPDUtils StrHash64 OpenEmuHelpers
     PUBLIC ImGui Mercury storm tinyxml2
 )
 
@@ -368,7 +372,12 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_Library(OSX_FOUNDATION Foundation)
     find_Library(OSX_AVFOUNDATION AVFoundation)
-    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${CMAKE_DL_LIBS})
+    find_Library(OSX_COREFOUNDATION CoreFoundation)
+    find_Library(OSX_COREAUDIO CoreAudio)
+    find_Library(OSX_COREAUDIOKIT CoreAudioKit)
+    find_Library(OSX_AUDIOTOOLBOX AudioToolbox)
+    find_Library(OSX_AUDIOUNIT AudioUnit)
+    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${OSX_COREFOUNDATION} ${OSX_AUDIOTOOLBOX} ${OSX_AUDIOUNIT} ${OSX_COREAUDIO} ${OSX_COREAUDIOKIT} ${CMAKE_DL_LIBS})
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -385,6 +394,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         _CONSOLE
         _CRT_SECURE_NO_WARNINGS
         ENABLE_DX11
+    )
+endif()
+
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
     )
 endif()
 

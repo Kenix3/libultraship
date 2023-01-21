@@ -27,7 +27,9 @@ class AudioPlayer {
 };
 } // namespace Ship
 
-#ifdef _WIN32
+#ifdef __APPLE__
+#include "OSXAudioPlayer.h"
+#elif defined(_WIN32)
 #include "WasapiAudioPlayer.h"
 #elif defined(__linux)
 #include "PulseAudioPlayer.h"

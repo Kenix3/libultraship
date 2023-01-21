@@ -131,3 +131,34 @@ add_library(StrHash64 STATIC)
 target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
 
 target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
+
+#=================== TPCircularBuffer ===================
+
+set(TPCIRCULARBUFFER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/TPCircularBuffer)
+add_library(TPCircularBuffer STATIC)
+
+target_sources(TPCircularBuffer PRIVATE ${TPCIRCULARBUFFER_DIR}/TPCircularBuffer.c)
+
+target_include_directories(TPCircularBuffer PUBLIC ${TPCIRCULARBUFFER_DIR})
+
+#=================== OpenEmu ===================
+
+set(OPENEMU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenEmu)
+add_library(OpenEmuHelpers STATIC)
+
+target_sources(OpenEmuHelpers
+    PRIVATE
+    ${OPENEMU_DIR}/OEAudioUnit.mm
+    ${OPENEMU_DIR}/OEGameAudio.mm
+    ${OPENEMU_DIR}/OERingBuffer.m
+)
+
+target_include_directories(OpenEmuHelpers PUBLIC ${OPENEMU_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
+
+target_link_libraries(OpenEmuHelpers PUBLIC TPCircularBuffer)
+
+set_target_properties(OpenEmuHelpers PROPERTIES
+    XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
+)
+
+

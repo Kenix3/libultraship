@@ -119,6 +119,9 @@ std::vector<std::pair<const char*, const char*>> audioBackends = {
 #ifdef _WIN32
     { "wasapi", "Windows Audio Session API" },
 #endif
+#if defined(__APPLE__)
+    { "coreaudio", "Core Audio" },
+#endif
 #if defined(__linux)
     { "pulse", "PulseAudio" },
 #endif

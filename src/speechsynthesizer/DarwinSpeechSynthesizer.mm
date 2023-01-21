@@ -12,7 +12,7 @@ namespace Ship {
 DarwinSpeechSynthesizer::DarwinSpeechSynthesizer() {}
 
 bool DarwinSpeechSynthesizer::DoInit() {
-    mSynthesizer = [[AVSpeechSynthesizer alloc] init];
+    mSynthesizer = (__bridge_retained void *)[[AVSpeechSynthesizer alloc] init];
     return true;
 }
 
@@ -24,7 +24,7 @@ void DarwinSpeechSynthesizer::Speak(const char* text) {
         [utterance setPrefersAssistiveTechnologySettings:YES];
     }
 
-    [(AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
-    [(AVSpeechSynthesizer *)mSynthesizer speakUtterance:utterance];
+    [(__bridge AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+    [(__bridge AVSpeechSynthesizer *)mSynthesizer speakUtterance:utterance];
 }
 }
