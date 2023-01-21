@@ -42,7 +42,7 @@
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
-static constexpr size_t kMaxBufferPoolSize = 5;
+static constexpr size_t kMaxVertexBufferPoolSize = 3;
 static constexpr NS::UInteger METAL_MAX_MULTISAMPLE_SAMPLE_COUNT = 8;
 static constexpr NS::UInteger MAX_PIXEL_DEPTH_COORDS = 1024;
 
@@ -125,7 +125,8 @@ static struct {
     MTL::Device* device;
     MTL::CommandQueue* command_queue;
 
-    std::queue<MTL::Buffer*> buffer_pool;
+    int current_vertex_buffer_pool_index = 0;
+    MTL::Buffer* vertex_buffer_pool[kMaxVertexBufferPoolSize];
     std::unordered_map<std::pair<uint64_t, uint32_t>, struct ShaderProgramMetal, hash_pair_shader_ids>
         shader_program_pool;
 
@@ -179,31 +180,6 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
     return MTL::SamplerAddressModeClampToEdge;
 }
 
-static MTL::Buffer* next_available_buffer() {
-    if (mctx.buffer_pool.size() == 0) {
-        // Create a new buffer that can hold all draw triangle buffers. Size buf_vbo size in gfx_pc * 50.
-        MTL::Buffer* new_buffer =
-            mctx.device->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
-        mctx.buffer_pool.push(new_buffer);
-        SPDLOG_DEBUG("Metal: new buffer for pool created");
-
-        return new_buffer;
-    }
-
-    return mctx.buffer_pool.front();
-}
-
-static void pop_buffer_and_wait_to_requeue(MTL::CommandBuffer* command_buffer) {
-    MTL::Buffer* buffer = mctx.buffer_pool.front();
-    mctx.buffer_pool.pop();
-
-    command_buffer->addCompletedHandler(^void(MTL::CommandBuffer* cmd_buf) {
-      if (mctx.buffer_pool.size() <= kMaxBufferPoolSize) {
-          mctx.buffer_pool.push(buffer);
-      }
-    });
-}
-
 // MARK: - ImGui & SDL Wrappers
 
 bool Metal_IsSupported() {
@@ -219,6 +195,12 @@ bool Metal_Init(SDL_Renderer* renderer) {
 
     mctx.device = mctx.layer->device();
     mctx.command_queue = mctx.device->newCommandQueue();
+
+    for (int i = 0; i < kMaxVertexBufferPoolSize; i++) {
+        MTL::Buffer* new_buffer =
+            mctx.device->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
+        mctx.vertex_buffer_pool[i] = new_buffer;
+    }
 
     autorelease_pool->release();
 
@@ -546,7 +528,7 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         current_framebuffer.command_encoder->setDepthBias(0, mctx.zmode_decal ? -2 : 0, 0);
     }
 
-    MTL::Buffer* vertex_buffer = next_available_buffer();
+    MTL::Buffer* vertex_buffer = mctx.vertex_buffer_pool[mctx.current_vertex_buffer_pool_index];
     memcpy((char*)vertex_buffer->contents() + mctx.current_vertex_buffer_offset, buf_vbo, sizeof(float) * buf_vbo_len);
 
     if (!current_framebuffer.has_bounded_vertex_buffer) {
@@ -632,8 +614,7 @@ void gfx_metal_end_frame(void) {
     auto screen_framebuffer = mctx.framebuffers[0];
     screen_framebuffer.command_encoder->endEncoding();
     screen_framebuffer.command_buffer->presentDrawable(mctx.current_drawable);
-
-    pop_buffer_and_wait_to_requeue(screen_framebuffer.command_buffer);
+    mctx.current_vertex_buffer_pool_index = (mctx.current_vertex_buffer_pool_index + 1) % kMaxVertexBufferPoolSize;
     screen_framebuffer.command_buffer->commit();
 
     mctx.drawn_framebuffers.clear();
