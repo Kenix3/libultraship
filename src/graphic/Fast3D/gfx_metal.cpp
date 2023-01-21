@@ -30,10 +30,10 @@
 #include <SDL_render.h>
 #include <ImGui/backends/imgui_impl_metal.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/fmt.h>
 
 #include "gfx_cc.h"
 #include "gfx_pc.h"
-#include "gfx_metal_bridge.h"
 #include "gfx_metal_shader.h"
 
 #include "libultraship/libultra/gbi.h"
@@ -121,7 +121,7 @@ struct CoordUniforms {
 static struct {
     // Elements that only need to be setup once
     SDL_Renderer* renderer;
-    void* layer; // CA::MetalLayer*
+    CA::MetalLayer* layer; // CA::MetalLayer*
     MTL::Device* device;
     MTL::CommandQueue* command_queue;
 
@@ -207,17 +207,17 @@ static void pop_buffer_and_wait_to_requeue(MTL::CommandBuffer* command_buffer) {
 // MARK: - ImGui & SDL Wrappers
 
 bool Metal_IsSupported() {
-    return is_metal_supported();
+    return MTLCopyAllDevices()->count() > 0;
 }
 
 bool Metal_Init(SDL_Renderer* renderer) {
     mctx.renderer = renderer;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
-    mctx.layer = SDL_RenderGetMetalLayer(renderer);
-    set_layer_pixel_format(mctx.layer);
+    mctx.layer = (CA::MetalLayer *)SDL_RenderGetMetalLayer(renderer);
+    mctx.layer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
 
-    mctx.device = get_layer_device(mctx.layer);
+    mctx.device = mctx.layer->device();
     mctx.command_queue = mctx.device->newCommandQueue();
 
     autorelease_pool->release();
@@ -683,7 +683,7 @@ int gfx_metal_create_framebuffer(void) {
 
 static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) {
     mctx.current_drawable = nullptr;
-    mctx.current_drawable = get_layer_next_drawable(mctx.layer);
+    mctx.current_drawable = mctx.layer->nextDrawable();
 
     bool msaa_enabled = CVarGetInteger("gMSAAValue", 1) > 1;
 
@@ -753,7 +753,7 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
     if (fb_id == 0) {
         int width, height;
         SDL_GetRendererOutputSize(mctx.renderer, &width, &height);
-        set_layer_drawable_size(mctx.layer, width, height);
+        mctx.layer->setDrawableSize({ CGFloat(width), CGFloat(height) });
 
         return;
     }
@@ -889,10 +889,12 @@ void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale) {
 
     if (fb.render_target && fb.command_buffer == nullptr && fb.command_encoder == nullptr) {
         fb.command_buffer = mctx.command_queue->commandBuffer();
-        set_command_buffer_label(fb.command_buffer, fb_id);
+        std::string fbcb_label = fmt::format("FrameBuffer {} Command Buffer", fb_id);
+        fb.command_buffer->setLabel(NS::String::string(fbcb_label.c_str(), NS::UTF8StringEncoding));
 
         fb.command_encoder = fb.command_buffer->renderCommandEncoder(fb.render_pass_descriptor);
-        set_command_encoder_label(fb.command_encoder, fb_id);
+        std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
+        fb.command_encoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
         fb.command_encoder->setDepthClipMode(MTL::DepthClipModeClamp);
     }
 

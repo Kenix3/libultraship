@@ -301,8 +301,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND Source_Files__Graphic
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal_bridge.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal_bridge.h
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal_shader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal_shader.h
     )
