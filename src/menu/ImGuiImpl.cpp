@@ -376,9 +376,6 @@ bool supportsViewports() {
         case Backend::DX11:
             return true;
         case Backend::SDL:
-            if (impl.metal.renderer) {
-                return false;
-            }
             return true;
         default:
             return false;
@@ -821,7 +818,7 @@ void Render() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        if (impl.backend == Backend::SDL) {
+        if (impl.backend == Backend::SDL && impl.opengl.context != nullptr) {
             SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
             SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
 
