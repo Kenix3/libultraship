@@ -51,6 +51,8 @@ void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
     texture->Width = reader->ReadUInt32();
     texture->Height = reader->ReadUInt32();
     texture->Flags = reader->ReadUInt32();
+    texture->HByteScale = reader->ReadFloat();
+    texture->VPixelScale = reader->ReadFloat();
 
     uint32_t dataSize = reader->ReadUInt32();
 
