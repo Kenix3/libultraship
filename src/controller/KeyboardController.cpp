@@ -26,7 +26,7 @@ bool KeyboardController::PressButton(int32_t scancode) {
             readSuccess = true;
         }
     }
-    
+
     return readSuccess;
 }
 

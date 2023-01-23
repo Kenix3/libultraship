@@ -41,16 +41,7 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 }
 
 void osContGetReadData(OSContPad* pad) {
-    for (int32_t i = 0; i < __osMaxControllers; i++) {
-        pad[i].button = 0;
-        pad[i].stick_x = 0;
-        pad[i].stick_y = 0;
-        pad[i].right_stick_x = 0;
-        pad[i].right_stick_y = 0;
-        pad[i].err_no = 0;
-        pad[i].gyro_x = 0;
-        pad[i].gyro_y = 0;
-    }
+    memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
     if (SohImGui::GetInputEditor()->IsOpened()) {
         return;
