@@ -372,6 +372,9 @@ void Window::InitializeLogging() {
 
 #if (!defined(_WIN32) && !defined(__WIIU__)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
+        // LLVM on Windows allocs a hidden console in its entrypoint function.
+        // We free that console here to create our own. Not ifdef'd because
+        FreeConsole();
         if (AllocConsole() == 0) {
             throw std::system_error(GetLastError(), std::generic_category(), "Failed to create debug console");
         }

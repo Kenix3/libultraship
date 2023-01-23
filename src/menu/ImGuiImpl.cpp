@@ -52,6 +52,7 @@
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+#include <graphic/Fast3D/gfx_direct3d11.h>
 #include <ImGui/backends/imgui_impl_dx11.h>
 #include <ImGui/backends/imgui_impl_win32.h>
 #include <Windows.h>
@@ -910,7 +911,6 @@ ImTextureID GetTextureByName(const std::string& name) {
 ImTextureID GetTextureByID(int id) {
 #ifdef ENABLE_DX11
     if (impl.backend == Backend::DX11) {
-        ImTextureID gfx_d3d11_get_texture_by_id(int id);
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif
