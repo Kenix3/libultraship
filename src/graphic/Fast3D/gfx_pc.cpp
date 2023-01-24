@@ -44,8 +44,12 @@ uintptr_t gfxFramebuffer;
 
 using namespace std;
 
-#define SEG_ADDR(seg, addr) (addr | (seg << 24) | 1)
+extern "C" {
+char* ResourceMgr_LoadJPEG(char* data, int dataSize);
+}
 
+#define JPEG_MARKER 0xFFD8FFE0
+#define SEG_ADDR(seg, addr) (addr | (seg << 24) | 1)
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
@@ -2205,7 +2209,7 @@ static void gfx_dp_set_other_mode(uint32_t h, uint32_t l) {
     rdp.other_mode_l = l;
 }
 
-static void gfx_s2dex_bg_copy(const uObjBg* bg) {
+static void gfx_s2dex_bg_copy(uObjBg* bg) {
     /*
     bg->b.imageX = 0;
     bg->b.imageW = width * 4;
@@ -2220,9 +2224,40 @@ static void gfx_s2dex_bg_copy(const uObjBg* bg) {
     bg->b.imagePal = 0;
     bg->b.imageFlip = 0;
     */
+
+    uintptr_t data = (uintptr_t) bg->b.imagePtr;
+    char* test = (char*) data;
+
+    uint32_t texFlags = 0;
+    RawTexMetadata rawTexMetadata = {};
+
+    if ((data & 1) != 1) {
+        if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck((char*) data) == 1) {
+            auto raw = LoadResource((char*) data, true);
+            if(raw->Type != Ship::ResourceType::Texture) {
+                void* blob = raw->GetPointer();
+
+                if (BE32SWAP(*(u32*)blob) == JPEG_MARKER) {
+                    data = (uintptr_t) ResourceMgr_LoadJPEG((char*) blob, 320 * 240 * 2);
+                }
+            } else {
+                Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(raw).get();
+
+                texFlags = tex->Flags;
+                rawTexMetadata.width = tex->Width;
+                rawTexMetadata.height = tex->Height;
+                rawTexMetadata.h_byte_scale = tex->HByteScale;
+                rawTexMetadata.v_pixel_scale = tex->VPixelScale;
+                rawTexMetadata.type = tex->Type;
+                rawTexMetadata.name = std::string((char*) data);
+                data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+            }
+        }
+    }
+
     SUPPORT_CHECK(bg->b.imageSiz == G_IM_SIZ_16b);
-    gfx_dp_set_texture_image(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, nullptr, 0, {}, bg->b.imagePtr);
-    gfx_dp_set_tile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, 0, 0, 0, 0, 0, 0);
+    gfx_dp_set_texture_image(G_IM_FMT_CI, G_IM_SIZ_16b, 0, nullptr, texFlags, rawTexMetadata, (void*) data);
+    gfx_dp_set_tile(G_IM_FMT_CI, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, 0, 0, 0, 0, 0, 0);
     gfx_dp_load_block(G_TX_LOADTILE, 0, 0, (bg->b.imageW * bg->b.imageH >> 4) - 1, 0);
     gfx_dp_set_tile(bg->b.imageFmt, G_IM_SIZ_16b, bg->b.imageW >> 4, 0, G_TX_RENDERTILE, bg->b.imagePal, 0, 0, 0, 0, 0,
                     0);
@@ -2782,7 +2817,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 // S2DEX
             case G_BG_COPY:
                 if (!markerOn) {
-                    gfx_s2dex_bg_copy((const uObjBg*)cmd->words.w1); // not seg_addr here it seems
+                    gfx_s2dex_bg_copy((uObjBg*)cmd->words.w1); // not seg_addr here it seems
                 }
 
                 break;
