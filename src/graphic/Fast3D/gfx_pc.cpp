@@ -44,11 +44,6 @@ uintptr_t gfxFramebuffer;
 
 using namespace std;
 
-extern "C" {
-char* ResourceMgr_LoadJPEG(char* data, int dataSize);
-}
-
-#define JPEG_MARKER 0xFFD8FFE0
 #define SEG_ADDR(seg, addr) (addr | (seg << 24) | 1)
 #define SUPPORT_CHECK(x) assert(x)
 
@@ -2233,25 +2228,15 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
 
     if ((data & 1) != 1) {
         if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck((char*) data) == 1) {
-            auto raw = LoadResource((char*) data, true);
-            if(raw->Type != Ship::ResourceType::Texture) {
-                void* blob = raw->GetPointer();
-
-                if (BE32SWAP(*(u32*)blob) == JPEG_MARKER) {
-                    data = (uintptr_t) ResourceMgr_LoadJPEG((char*) blob, 320 * 240 * 2);
-                }
-            } else {
-                Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(raw).get();
-
-                texFlags = tex->Flags;
-                rawTexMetadata.width = tex->Width;
-                rawTexMetadata.height = tex->Height;
-                rawTexMetadata.h_byte_scale = tex->HByteScale;
-                rawTexMetadata.v_pixel_scale = tex->VPixelScale;
-                rawTexMetadata.type = tex->Type;
-                rawTexMetadata.name = std::string((char*) data);
-                data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
-            }
+            Ship::Texture* tex = GetResourceTexByName((char*) data).get();
+            texFlags = tex->Flags;
+            rawTexMetadata.width = tex->Width;
+            rawTexMetadata.height = tex->Height;
+            rawTexMetadata.h_byte_scale = tex->HByteScale;
+            rawTexMetadata.v_pixel_scale = tex->VPixelScale;
+            rawTexMetadata.type = tex->Type;
+            rawTexMetadata.name = std::string((char*) data);
+            data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
         }
     }
 
