@@ -2846,7 +2846,8 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     }
 
     if (tex_upload_buffer == nullptr) {
-        int max_tex_size = gfx_rapi->get_max_texture_size();
+        // We cap texture max to 8k, because why would you need more?
+        int max_tex_size = min(8096, gfx_rapi->get_max_texture_size());
         tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
 
