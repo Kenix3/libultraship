@@ -1851,7 +1851,8 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
     }
     uint32_t orig_size_bytes = (lrs + 1) << word_size_shift;
     uint32_t size_bytes = orig_size_bytes;
-    if (rdp.texture_to_load.raw_tex_metadata.h_byte_scale != 1 || rdp.texture_to_load.raw_tex_metadata.v_pixel_scale != 1) {
+    if (rdp.texture_to_load.raw_tex_metadata.h_byte_scale != 1 ||
+        rdp.texture_to_load.raw_tex_metadata.v_pixel_scale != 1) {
         size_bytes *= rdp.texture_to_load.raw_tex_metadata.h_byte_scale;
         size_bytes *= rdp.texture_to_load.raw_tex_metadata.v_pixel_scale;
     }
@@ -2220,27 +2221,27 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     bg->b.imageFlip = 0;
     */
 
-    uintptr_t data = (uintptr_t) bg->b.imagePtr;
+    uintptr_t data = (uintptr_t)bg->b.imagePtr;
 
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
     if ((data & 1) != 1) {
-        if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck((char*) data) == 1) {
-            Ship::Texture* tex = GetResourceTexByName((char*) data).get();
+        if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck((char*)data) == 1) {
+            Ship::Texture* tex = GetResourceTexByName((char*)data).get();
             texFlags = tex->Flags;
             rawTexMetadata.width = tex->Width;
             rawTexMetadata.height = tex->Height;
             rawTexMetadata.h_byte_scale = tex->HByteScale;
             rawTexMetadata.v_pixel_scale = tex->VPixelScale;
             rawTexMetadata.type = tex->Type;
-            rawTexMetadata.name = std::string((char*) data);
+            rawTexMetadata.name = std::string((char*)data);
             data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
         }
     }
 
     SUPPORT_CHECK(bg->b.imageSiz == G_IM_SIZ_16b);
-    gfx_dp_set_texture_image(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, nullptr, texFlags, rawTexMetadata, (void*) data);
+    gfx_dp_set_texture_image(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, nullptr, texFlags, rawTexMetadata, (void*)data);
     gfx_dp_set_tile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, 0, 0, 0, 0, 0, 0);
     gfx_dp_load_block(G_TX_LOADTILE, 0, 0, (bg->b.imageW * bg->b.imageH >> 4) - 1, 0);
     gfx_dp_set_tile(bg->b.imageFmt, G_IM_SIZ_16b, bg->b.imageW >> 4, 0, G_TX_RENDERTILE, bg->b.imagePal, 0, 0, 0, 0, 0,
