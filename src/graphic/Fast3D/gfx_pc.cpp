@@ -2221,7 +2221,6 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     */
 
     uintptr_t data = (uintptr_t) bg->b.imagePtr;
-    char* test = (char*) data;
 
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
