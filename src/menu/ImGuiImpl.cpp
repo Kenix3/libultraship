@@ -581,6 +581,8 @@ void DrawMainMenuAndCalculateGameSize(void) {
             if (ImGui::MenuItem("Quit",
 #if __APPLE__
                                 "Command-Q"
+#elif _WIN32
+                                "Alt+F4"
 #else
                                 "Ctrl+Q"
 #endif
