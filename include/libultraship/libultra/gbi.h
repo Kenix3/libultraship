@@ -2867,7 +2867,7 @@ typedef union {
 #define CALL_2(A, B) A B
 #define CALL_3(A, B, C) A B C
 
-#define gDPSetCombineMode(pkt, a, b) CALL_3(gDPSetCombineLERP, (pkt, a, b))
+#define gDPSetCombineMode(pkt, a, b) CALL_2(gDPSetCombineLERP, (pkt, a, b))
 #define gsDPSetCombineMode(a, b) CALL_2(gsDPSetCombineLERP, (a, b))
 #else
 #define gDPSetCombineMode(pkt, a, b) gDPSetCombineLERP(pkt, a, b)

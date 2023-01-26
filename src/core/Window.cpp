@@ -372,6 +372,9 @@ void Window::InitializeLogging() {
 
 #if (!defined(_WIN32) && !defined(__WIIU__)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
+        // LLVM on Windows allocs a hidden console in its entrypoint function.
+        // We free that console here to create our own. Not ifdef'd because
+        FreeConsole();
         if (AllocConsole() == 0) {
             throw std::system_error(GetLastError(), std::generic_category(), "Failed to create debug console");
         }
@@ -446,8 +449,10 @@ void Window::InitializeResourceManager(const std::vector<std::string>& otrFiles,
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
 #endif
-        exit(1);
+        mOtrFileExists = false;
+        return;
     }
+    mOtrFileExists = true;
 #ifdef __SWITCH__
     Ship::Switch::Init(PostInitPhase);
 #endif
@@ -545,6 +550,10 @@ void Window::SetLastScancode(int32_t scanCode) {
 
 std::shared_ptr<ConsoleVariable> Window::GetConsoleVariables() {
     return mConsoleVariables;
+}
+
+bool Window::DoesOtrFileExist() {
+    return mOtrFileExists;
 }
 
 } // namespace Ship

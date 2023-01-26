@@ -36,9 +36,6 @@ void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
 
     texture->ImageDataSize = dataSize;
     texture->ImageData = new uint8_t[dataSize];
-
-    for (uint32_t i = 0; i < dataSize; i++) {
-        texture->ImageData[i] = reader->ReadUByte();
-    }
+    reader->Read((char*)texture->ImageData, dataSize);
 }
 } // namespace Ship

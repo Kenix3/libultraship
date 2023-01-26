@@ -52,6 +52,7 @@
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+#include <graphic/Fast3D/gfx_direct3d11.h>
 #include <ImGui/backends/imgui_impl_dx11.h>
 #include <ImGui/backends/imgui_impl_win32.h>
 #include <Windows.h>
@@ -312,7 +313,25 @@ void ImGuiRenderDrawData(ImDrawData* data) {
     }
 }
 
+bool supportsWindowedFullscreen() {
+#ifdef __SWITCH__
+    return false;
+#endif
+
+    // We don't yet support windowed fullscreen on DirectX
+    switch (impl.backend) {
+        case Backend::SDL:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool supportsViewports() {
+#ifdef __SWITCH__
+    return false;
+#endif
+
     switch (impl.backend) {
         case Backend::DX11:
             return true;
@@ -545,6 +564,10 @@ void DrawMainMenuAndCalculateGameSize(void) {
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, windowPadding);
         if (ImGui::BeginMenu("Shipwright")) {
+            const char* keyboardShortcut = SohImGui::GetCurrentRenderingBackend().first == "sdl" ? "F10" : "ALT+Enter";
+            if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
+                Window::GetInstance()->ToggleFullscreen();
+            }
             if (ImGui::MenuItem("Reset",
 #if __APPLE__
                                 "Command-R"
@@ -553,6 +576,15 @@ void DrawMainMenuAndCalculateGameSize(void) {
 #endif
                                 )) {
                 console->Dispatch("reset");
+            }
+            if (ImGui::MenuItem("Quit",
+#if __APPLE__
+                                "Command-Q"
+#else
+                                "Ctrl+Q"
+#endif
+                                )) {
+                console->Dispatch("quit");
             }
             ImGui::EndMenu();
         }
@@ -892,7 +924,6 @@ ImTextureID GetTextureByName(const std::string& name) {
 ImTextureID GetTextureByID(int id) {
 #ifdef ENABLE_DX11
     if (impl.backend == Backend::DX11) {
-        ImTextureID gfx_d3d11_get_texture_by_id(int id);
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif
