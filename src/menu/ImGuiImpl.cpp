@@ -577,6 +577,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
                                 )) {
                 console->Dispatch("reset");
             }
+#if !defined(__SWITCH__) && !defined(__WIIU__)
             if (ImGui::MenuItem("Quit",
 #if __APPLE__
                                 "Command-Q"
@@ -586,6 +587,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
                                 )) {
                 Window::GetInstance()->Close();
             }
+#endif
             ImGui::EndMenu();
         }
 
