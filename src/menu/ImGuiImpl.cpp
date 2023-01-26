@@ -182,6 +182,7 @@ void ImGuiWMInit() {
 #else
         case Backend::SDL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+            SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.sdl.window), impl.sdl.context);
             break;
 #endif
