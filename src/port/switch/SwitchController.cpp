@@ -222,7 +222,6 @@ void SwitchController::WriteToSource(int32_t virtualSlot, ControllerCallback* co
     }
 
     uint8_t target = padIsHandheld(&mController->State);
-    hidSendVibrationValues(mController->Handles[target], vibrationValues, 2);
     hidSendVibrationValues(mController->Handles[1 - target], vibrationValues, 2);
     padUpdate(state);
 }
