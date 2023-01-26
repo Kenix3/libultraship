@@ -16,12 +16,7 @@ SwitchController::SwitchController(int32_t physicalSlot) : Controller(), mPhysic
 }
 
 bool SwitchController::Open() {
-    u64 mPadMask = CONTROLLER_MASK << mPhysicalSlot;
-
-    // Add handheld controller if it's the first controller
-    if (mPhysicalSlot == 0) {
-        mPadMask |= CONTROLLER_MASK << HidNpadIdType_Handheld;
-    }
+    u64 mPadMask = (CONTROLLER_MASK << mPhysicalSlot) | CONTROLLER_MASK << HidNpadIdType_Handheld;
 
     padInitializeWithMask(&mController->State, mPadMask);
     padUpdate(&mController->State);
@@ -226,7 +221,9 @@ void SwitchController::WriteToSource(int32_t virtualSlot, ControllerCallback* co
         vibrationValues[i].freq_high = 320.0f;
     }
 
-    hidSendVibrationValues(mController->Handles[padIsHandheld(state) ? 0 : 1], vibrationValues, 2);
+    uint8_t target = padIsHandheld(&mController->State);
+    hidSendVibrationValues(mController->Handles[target], vibrationValues, 2);
+    hidSendVibrationValues(mController->Handles[1 - target], vibrationValues, 2);
     padUpdate(state);
 }
 
@@ -355,14 +352,7 @@ void SwitchController::CreateDefaultBinding(int32_t virtualSlot) {
 
 void SwitchController::UpdateSixAxisSensor(HidSixAxisSensorState& state) {
     u64 styleSet = padGetStyleSet(&mController->State);
-    if (styleSet & HidNpadStyleTag_NpadHandheld) {
-        hidGetSixAxisSensorStates(mController->Sensors[0], &state, 1);
-        return;
-    }
-
-    if (styleSet & HidNpadStyleTag_NpadHandheld) {
-        hidGetSixAxisSensorStates(mController->Sensors[0], &state, 1);
-    } else if (styleSet & HidNpadStyleTag_NpadFullKey) {
+    if (styleSet & HidNpadStyleTag_NpadFullKey) {
         hidGetSixAxisSensorStates(mController->Sensors[1], &state, 1);
     } else if (styleSet & HidNpadStyleTag_NpadJoyDual) {
         u64 attrib = padGetAttributes(&mController->State);
@@ -371,6 +361,8 @@ void SwitchController::UpdateSixAxisSensor(HidSixAxisSensorState& state) {
         } else if (attrib & HidNpadAttribute_IsRightConnected) {
             hidGetSixAxisSensorStates(mController->Sensors[3], &state, 1);
         }
+    } else if (styleSet & HidNpadStyleTag_NpadHandheld) {
+        hidGetSixAxisSensorStates(mController->Sensors[0], &state, 1);
     }
 }
 
