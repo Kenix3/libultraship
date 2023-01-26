@@ -532,7 +532,7 @@ static void gfx_glx_set_frame_divisor(int divisor) {
 
 struct GfxWindowManagerAPI gfx_glx = {
     gfx_glx_init,
-    gfx_glx_close
+    gfx_glx_close,
     gfx_glx_set_keyboard_callbacks,
     gfx_glx_set_fullscreen_changed_callback,
     gfx_glx_set_fullscreen,
