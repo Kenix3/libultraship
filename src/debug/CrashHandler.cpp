@@ -115,7 +115,7 @@ void CrashHandler::PrintRegisters(ucontext_t* ctx) {
     AppendLine(regbuffer);
     snprintf(regbuffer, std::size(regbuffer), "EFL: 0x%016llX", ctx->uc_mcontext.gregs[REG_EFL]);
     AppendLine(regbuffer);
-#else
+#elif defined(__i386__)
     snprintf(regbuffer, std::size(regbuffer), "EDI: 0x%08lX", ctx->uc_mcontext.gregs[REG_EDI]);
     AppendLine(regbuffer);
     snprintf(regbuffer, std::size(regbuffer), "ESI: 0x%08lX", ctx->uc_mcontext.gregs[REG_ESI]);
