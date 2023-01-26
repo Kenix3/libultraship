@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 static const std::string mercuryRGBAObjectType = "RGBA";
+static const std::string mercuryRGBObjectType = "RGB";
 
 class Mercury {
 protected:

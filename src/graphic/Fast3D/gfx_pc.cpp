@@ -17,13 +17,13 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "U64/PR/ultra64/types.h"
-#include "U64/PR/ultra64/gbi.h"
-#include "U64/PR/ultra64/gs2dex.h"
+#include "libultraship/libultra/types.h"
+#include "libultraship/libultra/gbi.h"
+#include "libultraship/libultra/gs2dex.h"
 #include <string>
 #include <iostream>
 
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 
 #include "gfx_pc.h"
 #include "gfx_cc.h"
@@ -37,18 +37,7 @@
 #include "resource/GameVersions.h"
 #include "resource/ResourceMgr.h"
 #include "misc/Utils.h"
-
-// OTRTODO: fix header files for these
-extern "C" {
-const char* ResourceMgr_GetNameByCRC(uint64_t crc);
-int32_t* ResourceMgr_LoadMtxByCRC(uint64_t crc);
-Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc);
-Gfx* ResourceMgr_LoadGfxByCRC(uint64_t crc);
-char* ResourceMgr_LoadTexByCRC(uint64_t crc);
-void ResourceMgr_RegisterResourcePatch(uint64_t hash, uint32_t instrIndex, uintptr_t origData);
-char* ResourceMgr_LoadTexByName(char* texPath);
-int ResourceMgr_OTRSigCheck(char* imgData);
-}
+#include "libultraship/libultraship.h"
 
 uintptr_t gfxFramebuffer;
 
@@ -2214,9 +2203,8 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_MTX: {
                 uintptr_t mtxAddr = cmd->words.w1;
 
-                // OTRTODO: Temp way of dealing with gMtxClear. Need something more elegant in the future...
                 if (mtxAddr == SEG_ADDR(0, 0x12DB20) || mtxAddr == SEG_ADDR(0, 0x12DB40) ||
-                    mtxAddr == SEG_ADDR(0, 0x0FBC20)) {
+                    mtxAddr == SEG_ADDR(0, 0xFBC20)) {
                     mtxAddr = clearMtx;
                 }
 
@@ -2232,14 +2220,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
-#if _DEBUG
-                // char fileName[4096];
-                // ResourceMgr_GetNameByCRC(hash, fileName);
-
-                // printf("G_MTX_OTR: %s\n", fileName);
-#endif
-
-                int32_t* mtx = ResourceMgr_LoadMtxByCRC(hash);
+                int32_t* mtx = (int32_t*)GetResourceDataByCrc(hash, false);
 
 #ifdef F3DEX_GBI_2
                 if (mtx != NULL) {
@@ -2290,22 +2271,21 @@ static void gfx_run_dl(Gfx* cmd) {
 #endif
                 break;
             case G_VTX_OTR: {
+                // Offset added to the start of the vertices
                 uintptr_t offset = cmd->words.w1;
+                // This is a two-part display list command, so increment the instruction pointer so we can get the CRC64
+                // hash from the second
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
-#if _DEBUG
-                // char fileName[4096];
-                // ResourceMgr_GetNameByCRC(hash, fileName);
-
-                // printf("G_VTX_OTR: %s, 0x%08X\n", fileName, hash);
-#endif
+                // We need to know if the offset is a cached pointer or not. An offset greater than one million is not a
+                // real offset, so it must be a real pointer
                 if (offset > 0xFFFFF) {
                     cmd--;
                     gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (Vtx*)offset);
                     cmd++;
                 } else {
-                    Vtx* vtx = ResourceMgr_LoadVtxByCRC(hash);
+                    Vtx* vtx = (Vtx*)GetResourceDataByCrc(hash, false);
 
                     if (vtx != NULL) {
                         vtx = (Vtx*)((char*)vtx + offset);
@@ -2313,7 +2293,10 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd--;
 
                         if (ourHash != (uint64_t)-1) {
-                            ResourceMgr_RegisterResourcePatch(ourHash, cmd - dListStart, cmd->words.w1);
+                            auto res = LoadResource(ourHash, false);
+                            if (res != nullptr) {
+                                res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, offset);
+                            }
                         }
 
                         cmd->words.w1 = (uintptr_t)vtx;
@@ -2354,7 +2337,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_DL_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
+                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash, false);
 
                     if (gfx != 0) {
                         gfx_run_dl(gfx);
@@ -2384,7 +2367,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_BRANCH_Z_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = ResourceMgr_LoadGfxByCRC(hash);
+                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash, false);
 
                     if (gfx != 0) {
                         cmd = gfx;
@@ -2454,8 +2437,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 char* imgData = (char*)i;
 
                 if ((i & 1) != 1) {
-                    if (ResourceMgr_OTRSigCheck(imgData) == 1) {
-                        i = (uintptr_t)ResourceMgr_LoadTexByName(imgData);
+                    if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData) == 1) {
+                        i = (uintptr_t)GetResourceDataByName(imgData, false);
                     }
                 }
 
@@ -2466,19 +2449,14 @@ static void gfx_run_dl(Gfx* cmd) {
                 uintptr_t addr = cmd->words.w1;
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
-                fileName = ResourceMgr_GetNameByCRC(hash);
-#if _DEBUG && 0
-                char* tex = ResourceMgr_LoadTexByCRC(hash);
-                ResourceMgr_GetNameByCRC(hash, fileName);
-                printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
-#else
+                fileName = GetResourceNameByCrc(hash);
+
                 char* tex = NULL;
-#endif
 
                 if (addr != 0) {
                     tex = (char*)addr;
                 } else {
-                    tex = ResourceMgr_LoadTexByCRC(hash);
+                    tex = (char*)GetResourceDataByCrc(hash, false);
 
                     if (tex != nullptr) {
                         cmd--;
@@ -2486,7 +2464,10 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd->words.w1 = (uintptr_t)tex;
 
                         if (ourHash != (uint64_t)-1) {
-                            ResourceMgr_RegisterResourcePatch(ourHash, cmd - dListStart, oldData);
+                            auto res = LoadResource(ourHash, false);
+                            if (res != nullptr) {
+                                res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, oldData);
+                            }
                         }
 
                         cmd++;
@@ -2688,15 +2669,15 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
               bool start_in_fullscreen, uint32_t width, uint32_t height) {
     gfx_wapi = wapi;
     gfx_rapi = rapi;
-    gfx_wapi->init(game_name, start_in_fullscreen, width, height);
+    gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height);
     gfx_rapi->init();
     gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
 #ifdef __APPLE__
     gfx_current_dimensions.internal_mul = 1;
 #else
-    gfx_current_dimensions.internal_mul = CVar_GetFloat("gInternalResolution", 1);
+    gfx_current_dimensions.internal_mul = CVarGetFloat("gInternalResolution", 1);
 #endif
-    gfx_msaa_level = CVar_GetS32("gMSAAValue", 1);
+    gfx_msaa_level = CVarGetInteger("gMSAAValue", 1);
 #ifndef __WIIU__ // Wii U overrides dimentions in gfx_wapi->init to match framebuffer size
     gfx_current_dimensions.width = width;
     gfx_current_dimensions.height = height;

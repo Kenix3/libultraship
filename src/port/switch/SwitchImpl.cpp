@@ -3,12 +3,9 @@
 #include <switch.h>
 #include <SDL2/SDL.h>
 #include "SwitchPerformanceProfiles.h"
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
 #include "Utils/StringHelper.h"
-
-extern "C" s32 CVar_GetS32(const char* name, s32 defaultValue);
-extern "C" void CVar_SetS32(const char* name, s32 value);
 
 #define DOCKED_MODE 1
 #define HANDHELD_MODE 0
@@ -100,7 +97,7 @@ void Ship::Switch::GetDisplaySize(int* width, int* height) {
 }
 
 void Ship::Switch::ApplyOverclock(void) {
-    SwitchProfiles perfMode = (SwitchProfiles)CVar_GetS32("gSwitchPerfMode", (int)Ship::MAXIMUM);
+    SwitchProfiles perfMode = (SwitchProfiles)CVarGetInteger("gSwitchPerfMode", (int)Ship::MAXIMUM);
 
     if (perfMode >= 0 && perfMode <= Ship::POWERSAVINGM3) {
         if (hosversionBefore(8, 0, 0)) {

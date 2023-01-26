@@ -12,6 +12,7 @@ float clamp(float d, float min, float max) {
     const float t = d < min ? min : d;
     return t > max ? max : t;
 }
+
 } // namespace Math
 
 std::vector<std::string> splitText(const std::string text, char separator = ' ', bool keepQuotes = false) {

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 namespace Ship {
 enum class SeekOffsetType { Start, Current, End };
@@ -20,6 +21,8 @@ class Stream {
 
     virtual void Write(char* destBuffer, size_t length) = 0;
     virtual void WriteByte(int8_t value) = 0;
+
+    virtual std::vector<char> ToVector() = 0;
 
     virtual void Flush() = 0;
     virtual void Close() = 0;

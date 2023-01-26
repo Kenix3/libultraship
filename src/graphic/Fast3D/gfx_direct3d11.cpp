@@ -18,7 +18,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "graphic/Fast3D/U64/PR/ultra64/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_direct3d_common.h"
@@ -388,6 +388,10 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     window_impl.backend = SohImGui::Backend::DX11;
     window_impl.dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
     SohImGui::Init(window_impl);
+}
+
+static const char* gfx_d3d11_get_name() {
+    return "DirectX 11";
 }
 
 static struct GfxClipParameters gfx_d3d11_get_clip_parameters(void) {
@@ -1064,7 +1068,8 @@ ImTextureID gfx_d3d11_get_texture_by_id(int id) {
     return d3d.textures[id].resource_view.Get();
 }
 
-struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_clip_parameters,
+struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
+                                              gfx_d3d11_get_clip_parameters,
                                               gfx_d3d11_unload_shader,
                                               gfx_d3d11_load_shader,
                                               gfx_d3d11_create_and_load_new_shader,

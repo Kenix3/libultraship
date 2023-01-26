@@ -1,7 +1,7 @@
 #include "Controller.h"
 #include <memory>
 #include <algorithm>
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #if __APPLE__
 #include <SDL_events.h>
 #else
@@ -79,7 +79,8 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
 
     mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
-        auto& padFromBuffer = mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVar_GetS32("gSimulatedInputLag", 0))];
+        auto& padFromBuffer =
+            mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger("gSimulatedInputLag", 0))];
         pad->button |= padFromBuffer.button;
         if (pad->stick_x == 0) {
             pad->stick_x = padFromBuffer.stick_x;

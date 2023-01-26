@@ -16,6 +16,7 @@ namespace Ship {
 
 class BinaryReader {
   public:
+    BinaryReader(char* nBuffer, size_t nBufferSize);
     BinaryReader(Stream* nStream);
     BinaryReader(std::shared_ptr<Stream> nStream);
 
@@ -45,6 +46,8 @@ class BinaryReader {
     Vec2f ReadVec2f();
     Color3b ReadColor3b();
     std::string ReadString();
+
+    std::vector<char> ToVector();
 
   protected:
     std::shared_ptr<Stream> mStream;

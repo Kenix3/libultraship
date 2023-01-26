@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef __cplusplus
-#include "resource/types/GameOverlay.h"
-#include <ImGui/imgui.h>
+#include "menu/GameOverlay.h"
+#include <imgui.h>
 #include "menu/Console.h"
 #include "InputEditor.h"
 
@@ -66,6 +66,7 @@ typedef struct {
     WindowDrawFunc drawFunc;
 } CustomWindow;
 
+bool supportsWindowedFullscreen();
 bool supportsViewports();
 
 void Init(WindowImpl window_impl);

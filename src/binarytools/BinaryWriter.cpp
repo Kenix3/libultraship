@@ -1,4 +1,9 @@
 #include "BinaryWriter.h"
+#include "MemoryStream.h"
+
+Ship::BinaryWriter::BinaryWriter() {
+    mStream = std::make_shared<MemoryStream>();
+}
 
 Ship::BinaryWriter::BinaryWriter(Stream* nStream) {
     mStream.reset(nStream);
@@ -138,4 +143,8 @@ void Ship::BinaryWriter::Write(const std::string& str) {
 
 void Ship::BinaryWriter::Write(char* srcBuffer, size_t length) {
     mStream->Write(srcBuffer, length);
+}
+
+std::vector<char> Ship::BinaryWriter::ToVector() {
+    return mStream->ToVector();
 }

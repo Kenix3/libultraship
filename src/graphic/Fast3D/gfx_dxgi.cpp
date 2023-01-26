@@ -18,7 +18,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "ultra64/gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
@@ -26,14 +26,14 @@
 #include "gfx_screen_config.h"
 #include "gfx_pc.h"
 #include "menu/ImGuiImpl.h"
-#include "misc/Cvar.h"
+#include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"
 
 #define WINCLASS_NAME L"N64GAME"
-#define GFX_API_NAME "DirectX"
+#define GFX_BACKEND_NAME "DXGI"
 
 #define FRAME_INTERVAL_NS_NUMERATOR 1000000000
 #define FRAME_INTERVAL_NS_DENOMINATOR (dxgi.target_fps)
@@ -270,9 +270,9 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            CVar_SetString("gDroppedFile", fileName);
-            CVar_SetS32("gNewFileDropped", 1);
-            CVar_Save();
+            CVarSetString("gDroppedFile", fileName);
+            CVarSetInteger("gNewFileDropped", 1);
+            CVarSave();
             break;
         case WM_SYSKEYDOWN:
             if ((w_param == VK_RETURN) && ((l_param & 1 << 30) == 0)) {
@@ -287,7 +287,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     return 0;
 }
 
-void gfx_dxgi_init(const char* game_name, bool start_in_fullscreen, uint32_t width, uint32_t height) {
+void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
+                   uint32_t height) {
     LARGE_INTEGER qpc_init, qpc_freq;
     QueryPerformanceCounter(&qpc_init);
     QueryPerformanceFrequency(&qpc_freq);
@@ -302,7 +303,7 @@ void gfx_dxgi_init(const char* game_name, bool start_in_fullscreen, uint32_t wid
 
     char title[512];
     wchar_t w_title[512];
-    int len = sprintf(title, "%s (%s)", game_name, GFX_API_NAME);
+    int len = sprintf(title, "%s (%s - %s)", game_name, GFX_BACKEND_NAME, gfx_api_name);
     mbstowcs(w_title, title, len + 1);
     dxgi.game_name = game_name;
 

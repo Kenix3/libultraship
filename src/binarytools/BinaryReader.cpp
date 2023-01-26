@@ -1,6 +1,11 @@
 #include "BinaryReader.h"
+#include "MemoryStream.h"
 #include <cmath>
 #include <stdexcept>
+
+Ship::BinaryReader::BinaryReader(char* nBuffer, size_t nBufferSize) {
+    mStream = std::make_shared<MemoryStream>(nBuffer, nBufferSize);
+}
 
 Ship::BinaryReader::BinaryReader(Stream* nStream) {
     mStream.reset(nStream);
@@ -185,4 +190,8 @@ std::string Ship::BinaryReader::ReadString() {
         res += ReadChar();
     }
     return res;
+}
+
+std::vector<char> Ship::BinaryReader::ToVector() {
+    return mStream->ToVector();
 }

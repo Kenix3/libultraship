@@ -5,7 +5,10 @@
 #include <unordered_set>
 #include <spdlog/spdlog.h>
 #include "controller/ControlDeck.h"
+#include "core/ConsoleVariable.h"
+#include "debug/CrashHandler.h"
 #include "audio/AudioPlayer.h"
+#include "speechsynthesizer/SpeechSynthesizer.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "Mercury.h"
 
@@ -41,6 +44,7 @@ class Window {
     void SetCursorVisibility(bool visible);
     uint32_t GetCurrentWidth();
     uint32_t GetCurrentHeight();
+    float GetCurrentAspectRatio();
     bool IsFullscreen();
     uint32_t GetMenuBar();
     void SetMenuBar(uint32_t menuBar);
@@ -48,11 +52,17 @@ class Window {
     std::shared_ptr<ControlDeck> GetControlDeck();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     std::shared_ptr<ResourceMgr> GetResourceManager();
+    std::shared_ptr<CrashHandler> GetCrashHandler();
     std::shared_ptr<Mercury> GetConfig();
     std::shared_ptr<spdlog::logger> GetLogger();
+    std::shared_ptr<ConsoleVariable> GetConsoleVariables();
+    std::shared_ptr<SpeechSynthesizer> GetSpeechSynthesizer();
     const char* GetKeyName(int32_t scancode);
     int32_t GetLastScancode();
     void SetLastScancode(int32_t scanCode);
+    void InitializeAudioPlayer(std::string_view audioBackend);
+    void InitializeWindowManager(std::string_view gfxBackend);
+    bool DoesOtrFileExist();
 
   protected:
     Window() = default;
@@ -64,20 +74,23 @@ class Window {
     static void OnFullscreenChanged(bool isNowFullscreen);
     static std::weak_ptr<Window> mContext;
 
+    void InitializeConsoleVariables();
     void InitializeConfiguration();
     void InitializeControlDeck();
-    void InitializeAudioPlayer();
+    void InitializeCrashHandler();
     void InitializeLogging();
     void InitializeResourceManager(const std::vector<std::string>& otrFiles = {},
                                    const std::unordered_set<uint32_t>& validHashes = {});
-    void InitializeWindowManager();
+    void InitializeSpeechSynthesis();
 
     std::shared_ptr<spdlog::logger> mLogger;
-    std::shared_ptr<Mercury>
-        mConfig; // Config needs to be after the Window because we call the Window during it's destructor.
+    std::shared_ptr<Mercury> mConfig;
     std::shared_ptr<ResourceMgr> mResourceManager;
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<ConsoleVariable> mConsoleVariables;
+    std::shared_ptr<CrashHandler> mCrashHandler;
+    std::shared_ptr<SpeechSynthesizer> mSpeechSynthesizer;
 
     std::string mGfxBackend;
     std::string mAudioBackend;
@@ -92,5 +105,6 @@ class Window {
     std::string mMainPath;
     std::string mBasePath;
     std::string mPatchesPath;
+    bool mOtrFileExists;
 };
 } // namespace Ship
