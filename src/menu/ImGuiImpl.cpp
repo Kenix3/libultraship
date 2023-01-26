@@ -584,7 +584,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
                                 "Ctrl+Q"
 #endif
                                 )) {
-                console->Dispatch("quit");
+                Window::GetInstance()->Close();
             }
             ImGui::EndMenu();
         }

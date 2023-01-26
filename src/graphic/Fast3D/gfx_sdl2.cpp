@@ -323,6 +323,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 }
 
+static void gfx_sdl_close(void) {
+    is_running = false;
+}
+
 static void gfx_sdl_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
     on_fullscreen_changed_callback = on_fullscreen_changed;
 }
@@ -507,6 +511,7 @@ static const char* gfx_sdl_get_key_name(int scancode) {
 }
 
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
+                                       gfx_sdl_close,
                                        gfx_sdl_set_keyboard_callbacks,
                                        gfx_sdl_set_fullscreen_changed_callback,
                                        gfx_sdl_set_fullscreen,
