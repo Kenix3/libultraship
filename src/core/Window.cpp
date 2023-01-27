@@ -138,6 +138,10 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     Ship::RegisterHook<ExitGame>([this]() { mControlDeck->SaveControllerSettings(); });
 }
 
+void Window::Close() {
+    mWindowManagerApi->close();
+}
+
 std::string Window::GetAppDirectoryPath() {
 #ifdef __APPLE__
     FolderManager folderManager;

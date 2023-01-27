@@ -565,10 +565,6 @@ void DrawMainMenuAndCalculateGameSize(void) {
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, windowPadding);
         if (ImGui::BeginMenu("Shipwright")) {
-            const char* keyboardShortcut = SohImGui::GetCurrentRenderingBackend().first == "sdl" ? "F10" : "ALT+Enter";
-            if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
-                Window::GetInstance()->ToggleFullscreen();
-            }
             if (ImGui::MenuItem("Reset",
 #if __APPLE__
                                 "Command-R"
@@ -578,15 +574,15 @@ void DrawMainMenuAndCalculateGameSize(void) {
                                 )) {
                 console->Dispatch("reset");
             }
-            if (ImGui::MenuItem("Quit",
-#if __APPLE__
-                                "Command-Q"
-#else
-                                "Ctrl+Q"
-#endif
-                                )) {
-                console->Dispatch("quit");
+#if !defined(__SWITCH__) && !defined(__WIIU__)
+            const char* keyboardShortcut = SohImGui::GetCurrentRenderingBackend().first == "sdl" ? "F10" : "ALT+Enter";
+            if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
+                Window::GetInstance()->ToggleFullscreen();
             }
+            if (ImGui::MenuItem("Quit")) {
+                Window::GetInstance()->Close();
+            }
+#endif
             ImGui::EndMenu();
         }
 

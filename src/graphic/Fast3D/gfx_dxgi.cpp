@@ -46,6 +46,7 @@ static struct {
     bool recursive_paint_detected;
     uint32_t current_width, current_height;
     std::string game_name;
+    bool is_running = true;
 
     HMODULE dxgi_module;
     HRESULT(__stdcall* CreateDXGIFactory1)(REFIID riid, void** factory);
@@ -347,6 +348,10 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     DragAcceptFiles(dxgi.h_wnd, TRUE);
 }
 
+static void gfx_dxgi_close() {
+    dxgi.is_running = false;
+}
+
 static void gfx_dxgi_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
     dxgi.on_fullscreen_changed = on_fullscreen_changed;
 }
@@ -383,7 +388,7 @@ static void gfx_dxgi_main_loop(void (*run_one_game_iter)(void)) {
     dxgi.run_one_game_iter = run_one_game_iter;
 
     MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0)) {
+    while (GetMessage(&msg, nullptr, 0, 0) && dxgi.is_running) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
@@ -757,6 +762,7 @@ const char* gfx_dxgi_get_key_name(int scancode) {
 }
 
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
+                                                       gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
                                                        gfx_dxgi_set_fullscreen_changed_callback,
                                                        gfx_dxgi_set_fullscreen,

@@ -34,6 +34,7 @@ class Window {
     void MainLoop(void (*MainFunction)(void));
     void Initialize(const std::vector<std::string>& otrFiles = {},
                     const std::unordered_set<uint32_t>& validHashes = {});
+    void Close();
     void StartFrame();
     void SetTargetFps(int32_t fps);
     void SetMaximumFrameLatency(int32_t latency);
