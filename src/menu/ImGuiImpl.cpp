@@ -578,15 +578,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
             if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
                 Window::GetInstance()->ToggleFullscreen();
             }
-            if (ImGui::MenuItem("Quit",
-#if __APPLE__
-                                "Command-Q"
-#elif _WIN32
-                                "Alt+F4"
-#else
-                                "Ctrl+Q"
-#endif
-                                )) {
+            if (ImGui::MenuItem("Quit")) {
                 Window::GetInstance()->Close();
             }
 #endif
