@@ -198,41 +198,43 @@ bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath)
 std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) const {
     auto fileList = std::vector<SFILE_FIND_DATA>();
     SFILE_FIND_DATA findContext;
-    HANDLE hFind;
+    for(auto& path : mMpqHandles) {
+        HANDLE hFind;
 
-    hFind = SFileFindFirstFile(mMainMpq, searchMask.c_str(), &findContext, nullptr);
-    // if (hFind && GetLastError() != ERROR_NO_MORE_FILES) {
-    if (hFind != nullptr) {
-        fileList.push_back(findContext);
+        hFind = SFileFindFirstFile(path.second, searchMask.c_str(), &findContext, nullptr);
+        // if (hFind && GetLastError() != ERROR_NO_MORE_FILES) {
+        if (hFind != nullptr) {
+            fileList.push_back(findContext);
 
-        bool fileFound;
-        do {
-            fileFound = SFileFindNextFile(hFind, &findContext);
+            bool fileFound;
+            do {
+                fileFound = SFileFindNextFile(hFind, &findContext);
 
-            if (fileFound) {
-                fileList.push_back(findContext);
-            } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
-            // else if (!fileFound)
-            {
-                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
-                             mMainPath.c_str());
-                if (!SListFileFindClose(hFind)) {
-                    SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
-                                 searchMask.c_str(), mMainPath.c_str());
+                if (fileFound) {
+                    fileList.push_back(findContext);
+                } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
+                    // else if (!fileFound)
+                {
+                    SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
+                                 mMainPath.c_str());
+                    if (!SListFileFindClose(hFind)) {
+                        SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
+                                     searchMask.c_str(), mMainPath.c_str());
+                    }
+                    return fileList;
                 }
-                return fileList;
-            }
-        } while (fileFound);
-    } else if (GetLastError() != ERROR_NO_MORE_FILES) {
-        SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
-                     mMainPath.c_str());
-        return fileList;
-    }
-
-    if (hFind != nullptr) {
-        if (!SFileFindClose(hFind)) {
-            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(),
+            } while (fileFound);
+        } else if (GetLastError() != ERROR_NO_MORE_FILES) {
+            SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
                          mMainPath.c_str());
+            return fileList;
+        }
+
+        if (hFind != nullptr) {
+            if (!SFileFindClose(hFind)) {
+                SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(),
+                             mMainPath.c_str());
+            }
         }
     }
 
