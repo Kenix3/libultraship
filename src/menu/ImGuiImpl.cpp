@@ -56,6 +56,7 @@
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+#include <graphic/Fast3D/gfx_direct3d11.h>
 #include <ImGui/backends/imgui_impl_dx11.h>
 #include <ImGui/backends/imgui_impl_win32.h>
 #include <Windows.h>
@@ -206,6 +207,7 @@ void ImGuiWMInit() {
                 break;
             }
 
+            SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.opengl.window), impl.opengl.context);
             break;
 #endif
@@ -619,6 +621,15 @@ void DrawMainMenuAndCalculateGameSize(void) {
                                 )) {
                 console->Dispatch("reset");
             }
+#if !defined(__SWITCH__) && !defined(__WIIU__)
+            const char* keyboardShortcut = SohImGui::GetCurrentRenderingBackend().first == "sdl" ? "F10" : "ALT+Enter";
+            if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
+                Window::GetInstance()->ToggleFullscreen();
+            }
+            if (ImGui::MenuItem("Quit")) {
+                Window::GetInstance()->Close();
+            }
+#endif
             ImGui::EndMenu();
         }
 
@@ -958,7 +969,6 @@ ImTextureID GetTextureByName(const std::string& name) {
 ImTextureID GetTextureByID(int id) {
 #ifdef ENABLE_DX11
     if (impl.backend == Backend::DX11) {
-        ImTextureID gfx_d3d11_get_texture_by_id(int id);
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif

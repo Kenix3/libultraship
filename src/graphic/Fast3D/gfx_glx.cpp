@@ -298,6 +298,10 @@ static void gfx_glx_init(const char* game_name, const char* gfx_api_name, bool s
     glx.vsync_interval = 16666;
 }
 
+static void gfx_glx_close() {
+    glx.is_running = false;
+}
+
 static void gfx_glx_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
     glx.on_fullscreen_changed = on_fullscreen_changed;
 }
@@ -528,6 +532,7 @@ static void gfx_glx_set_frame_divisor(int divisor) {
 
 struct GfxWindowManagerAPI gfx_glx = {
     gfx_glx_init,
+    gfx_glx_close,
     gfx_glx_set_keyboard_callbacks,
     gfx_glx_set_fullscreen_changed_callback,
     gfx_glx_set_fullscreen,

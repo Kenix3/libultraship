@@ -455,7 +455,7 @@ if(MSVC)
     )
 endif()
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
 	target_compile_options(libultraship PRIVATE
 		-Wall
 		-Wextra
@@ -466,5 +466,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		-Wno-parentheses
 		-Wno-narrowing
 		-Wno-missing-field-initializers
+        -Wno-int-conversion
 	)
 endif()
