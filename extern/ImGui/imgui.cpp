@@ -1,4 +1,4 @@
-// dear imgui, v1.89.2
+// dear imgui, v1.89.3 WIP
 // (main code and documentation)
 
 // Help:
@@ -11,7 +11,7 @@
 // - FAQ                   http://dearimgui.org/faq
 // - Homepage & latest     https://github.com/ocornut/imgui
 // - Releases & changelog  https://github.com/ocornut/imgui/releases
-// - Gallery               https://github.com/ocornut/imgui/issues/5243 (please post your screenshots/video there!)
+// - Gallery               https://github.com/ocornut/imgui/issues/5886 (please post your screenshots/video there!)
 // - Wiki                  https://github.com/ocornut/imgui/wiki (lots of good stuff there)
 // - Glossary              https://github.com/ocornut/imgui/wiki/Glossary
 // - Issues & support      https://github.com/ocornut/imgui/issues
@@ -388,12 +388,13 @@ CODE
  You can read releases logs https://github.com/ocornut/imgui/releases for more details.
 
 (Docking/Viewport Branch)
- - 2022/XX/XX (1.XX) - when multi-viewports are enabled, all positions will be in your natural OS coordinates space. It means that:
+ - 2023/XX/XX (1.XX) - when multi-viewports are enabled, all positions will be in your natural OS coordinates space. It means that:
                         - reference to hard-coded positions such as in SetNextWindowPos(ImVec2(0,0)) are probably not what you want anymore.
                           you may use GetMainViewport()->Pos to offset hard-coded positions, e.g. SetNextWindowPos(GetMainViewport()->Pos)
                         - likewise io.MousePos and GetMousePos() will use OS coordinates.
                           If you query mouse positions to interact with non-imgui coordinates you will need to offset them, e.g. subtract GetWindowViewport()->Pos.
 
+ - 2023/02/07 (1.89.3) - backends: renamed "imgui_impl_sdl.cpp" to "imgui_impl_sdl2.cpp" and "imgui_impl_sdl.h" to "imgui_impl_sdl2.h". (#6146) This is in prevision for the future release of SDL3.
  - 2022/10/26 (1.89) - commented out redirecting OpenPopupContextItem() which was briefly the name of OpenPopupOnItemClick() from 1.77 to 1.79.
  - 2022/10/12 (1.89) - removed runtime patching of invalid "%f"/"%0.f" format strings for DragInt()/SliderInt(). This was obsoleted in 1.61 (May 2018). See 1.61 changelog for details.
  - 2022/09/26 (1.89) - renamed and merged keyboard modifiers key enums and flags into a same set. Kept inline redirection enums (will obsolete).
@@ -1324,8 +1325,7 @@ void ImGuiIO::AddInputCharactersUTF8(const char* utf8_chars)
     {
         unsigned int c = 0;
         utf8_chars += ImTextCharFromUtf8(&c, utf8_chars, NULL);
-        if (c != 0)
-            AddInputCharacter(c);
+        AddInputCharacter(c);
     }
 }
 
@@ -1504,7 +1504,7 @@ void ImGuiIO::AddMouseButtonEvent(int mouse_button, bool down)
     g.InputEventsQueue.push_back(e);
 }
 
-// Queue a mouse wheel event (most mouse/API will only have a Y component)
+// Queue a mouse wheel event (some mouse/API may only have a Y component)
 void ImGuiIO::AddMouseWheelEvent(float wheel_x, float wheel_y)
 {
     ImGuiContext& g = *GImGui;
@@ -1863,18 +1863,36 @@ void ImFormatStringToTempBuffer(const char** out_buf, const char** out_buf_end, 
     ImGuiContext& g = *GImGui;
     va_list args;
     va_start(args, fmt);
-    int buf_len = ImFormatStringV(g.TempBuffer.Data, g.TempBuffer.Size, fmt, args);
-    *out_buf = g.TempBuffer.Data;
-    if (out_buf_end) { *out_buf_end = g.TempBuffer.Data + buf_len; }
+    if (fmt[0] == '%' && fmt[1] == 's' && fmt[2] == 0)
+    {
+        const char* buf = va_arg(args, const char*); // Skip formatting when using "%s"
+        *out_buf = buf;
+        if (out_buf_end) { *out_buf_end = buf + strlen(buf); }
+    }
+    else
+    {
+        int buf_len = ImFormatStringV(g.TempBuffer.Data, g.TempBuffer.Size, fmt, args);
+        *out_buf = g.TempBuffer.Data;
+        if (out_buf_end) { *out_buf_end = g.TempBuffer.Data + buf_len; }
+    }
     va_end(args);
 }
 
 void ImFormatStringToTempBufferV(const char** out_buf, const char** out_buf_end, const char* fmt, va_list args)
 {
     ImGuiContext& g = *GImGui;
-    int buf_len = ImFormatStringV(g.TempBuffer.Data, g.TempBuffer.Size, fmt, args);
-    *out_buf = g.TempBuffer.Data;
-    if (out_buf_end) { *out_buf_end = g.TempBuffer.Data + buf_len; }
+    if (fmt[0] == '%' && fmt[1] == 's' && fmt[2] == 0)
+    {
+        const char* buf = va_arg(args, const char*); // Skip formatting when using "%s"
+        *out_buf = buf;
+        if (out_buf_end) { *out_buf_end = buf + strlen(buf); }
+    }
+    else
+    {
+        int buf_len = ImFormatStringV(g.TempBuffer.Data, g.TempBuffer.Size, fmt, args);
+        *out_buf = g.TempBuffer.Data;
+        if (out_buf_end) { *out_buf_end = g.TempBuffer.Data + buf_len; }
+    }
 }
 
 // CRC32 needs a 1KB lookup table (not cache friendly)
@@ -1903,7 +1921,7 @@ static const ImU32 GCrc32LookupTable[256] =
 // Known size hash
 // It is ok to call ImHashData on a string with known length but the ### operator won't be supported.
 // FIXME-OPT: Replace with e.g. FNV1a hash? CRC32 pretty much randomly access 1KB. Need to do proper measurements.
-ImGuiID ImHashData(const void* data_p, size_t data_size, ImU32 seed)
+ImGuiID ImHashData(const void* data_p, size_t data_size, ImGuiID seed)
 {
     ImU32 crc = ~seed;
     const unsigned char* data = (const unsigned char*)data_p;
@@ -1919,7 +1937,7 @@ ImGuiID ImHashData(const void* data_p, size_t data_size, ImU32 seed)
 // - If we reach ### in the string we discard the hash so far and reset to the seed.
 // - We don't do 'current += 2; continue;' after handling ### to keep the code smaller/faster (measured ~10% diff in Debug build)
 // FIXME-OPT: Replace with e.g. FNV1a hash? CRC32 pretty much randomly access 1KB. Need to do proper measurements.
-ImGuiID ImHashStr(const char* data_p, size_t data_size, ImU32 seed)
+ImGuiID ImHashStr(const char* data_p, size_t data_size, ImGuiID seed)
 {
     seed = ~seed;
     ImU32 crc = seed;
@@ -1961,7 +1979,7 @@ ImFileHandle ImFileOpen(const char* filename, const char* mode)
     // Previously we used ImTextCountCharsFromUtf8/ImTextStrFromUtf8 here but we now need to support ImWchar16 and ImWchar32!
     const int filename_wsize = ::MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
     const int mode_wsize = ::MultiByteToWideChar(CP_UTF8, 0, mode, -1, NULL, 0);
-    ImVector<ImWchar> buf;
+    ImVector<wchar_t> buf;
     buf.resize(filename_wsize + mode_wsize);
     ::MultiByteToWideChar(CP_UTF8, 0, filename, -1, (wchar_t*)&buf[0], filename_wsize);
     ::MultiByteToWideChar(CP_UTF8, 0, mode, -1, (wchar_t*)&buf[filename_wsize], mode_wsize);
@@ -2024,6 +2042,8 @@ void*   ImFileLoadToMemory(const char* filename, const char* mode, size_t* out_f
 // [SECTION] MISC HELPERS/UTILITIES (ImText* functions)
 //-----------------------------------------------------------------------------
 
+IM_MSVC_RUNTIME_CHECKS_OFF
+
 // Convert UTF-8 to 32-bit character, process single character input.
 // A nearly-branchless UTF-8 decoder, based on work of Christopher Wellons (https://github.com/skeeto/branchless-utf8).
 // We handle UTF-8 decoding error by skipping forward.
@@ -2035,7 +2055,7 @@ int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* 
     static const int shiftc[] = { 0, 18, 12, 6, 0 };
     static const int shifte[] = { 0, 6, 4, 2, 0 };
     int len = lengths[*(const unsigned char*)in_text >> 3];
-    int wanted = len + !len;
+    int wanted = len + (len ? 0 : 1);
 
     if (in_text_end == NULL)
         in_text_end = in_text + wanted; // Max length, nulls will be taken into account.
@@ -2087,8 +2107,6 @@ int ImTextStrFromUtf8(ImWchar* buf, int buf_size, const char* in_text, const cha
     {
         unsigned int c;
         in_text += ImTextCharFromUtf8(&c, in_text, in_text_end);
-        if (c == 0)
-            break;
         *buf_out++ = (ImWchar)c;
     }
     *buf_out = 0;
@@ -2104,8 +2122,6 @@ int ImTextCountCharsFromUtf8(const char* in_text, const char* in_text_end)
     {
         unsigned int c;
         in_text += ImTextCharFromUtf8(&c, in_text, in_text_end);
-        if (c == 0)
-            break;
         char_count++;
     }
     return char_count;
@@ -2199,6 +2215,7 @@ int ImTextCountUtf8BytesFromStr(const ImWchar* in_text, const ImWchar* in_text_e
     }
     return bytes_count;
 }
+IM_MSVC_RUNTIME_CHECKS_RESTORE
 
 //-----------------------------------------------------------------------------
 // [SECTION] MISC HELPERS/UTILITIES (Color functions)
@@ -3300,7 +3317,6 @@ void ImGui::RenderTextClipped(const ImVec2& pos_min, const ImVec2& pos_max, cons
         LogRenderedText(&pos_min, text, text_display_end);
 }
 
-
 // Another overly complex function until we reorganize everything into a nice all-in-one helper.
 // This is made more complex because we have dissociated the layout rectangle (pos_min..pos_max) which define _where_ the ellipsis is, from actual clipping of text and limit of the ellipsis display.
 // This is because in the context of tabs we selectively hide part of the text when the Close Button appears, but we don't want the ellipsis to move.
@@ -3324,30 +3340,12 @@ void ImGui::RenderTextEllipsis(ImDrawList* draw_list, const ImVec2& pos_min, con
 
         const ImFont* font = draw_list->_Data->Font;
         const float font_size = draw_list->_Data->FontSize;
+        const float font_scale = font_size / font->FontSize;
         const char* text_end_ellipsis = NULL;
-
-        ImWchar ellipsis_char = font->EllipsisChar;
-        int ellipsis_char_count = 1;
-        if (ellipsis_char == (ImWchar)-1)
-        {
-            ellipsis_char = font->DotChar;
-            ellipsis_char_count = 3;
-        }
-        const ImFontGlyph* glyph = font->FindGlyph(ellipsis_char);
-
-        float ellipsis_glyph_width = glyph->X1;                 // Width of the glyph with no padding on either side
-        float ellipsis_total_width = ellipsis_glyph_width;      // Full width of entire ellipsis
-
-        if (ellipsis_char_count > 1)
-        {
-            // Full ellipsis size without free spacing after it.
-            const float spacing_between_dots = 1.0f * (draw_list->_Data->FontSize / font->FontSize);
-            ellipsis_glyph_width = glyph->X1 - glyph->X0 + spacing_between_dots;
-            ellipsis_total_width = ellipsis_glyph_width * (float)ellipsis_char_count - spacing_between_dots;
-        }
+        const float ellipsis_width = font->EllipsisWidth * font_scale;
 
         // We can now claim the space between pos_max.x and ellipsis_max.x
-        const float text_avail_width = ImMax((ImMax(pos_max.x, ellipsis_max_x) - ellipsis_total_width) - pos_min.x, 1.0f);
+        const float text_avail_width = ImMax((ImMax(pos_max.x, ellipsis_max_x) - ellipsis_width) - pos_min.x, 1.0f);
         float text_size_clipped_x = font->CalcTextSizeA(font_size, text_avail_width, 0.0f, text, text_end_full, &text_end_ellipsis).x;
         if (text == text_end_ellipsis && text_end_ellipsis < text_end_full)
         {
@@ -3364,13 +3362,10 @@ void ImGui::RenderTextEllipsis(ImDrawList* draw_list, const ImVec2& pos_min, con
 
         // Render text, render ellipsis
         RenderTextClippedEx(draw_list, pos_min, ImVec2(clip_max_x, pos_max.y), text, text_end_ellipsis, &text_size, ImVec2(0.0f, 0.0f));
-        float ellipsis_x = pos_min.x + text_size_clipped_x;
-        if (ellipsis_x + ellipsis_total_width <= ellipsis_max_x)
-            for (int i = 0; i < ellipsis_char_count; i++)
-            {
-                font->RenderChar(draw_list, font_size, ImVec2(ellipsis_x, pos_min.y), GetColorU32(ImGuiCol_Text), ellipsis_char);
-                ellipsis_x += ellipsis_glyph_width;
-            }
+        ImVec2 ellipsis_pos = ImFloor(ImVec2(pos_min.x + text_size_clipped_x, pos_min.y));
+        if (ellipsis_pos.x + ellipsis_width <= ellipsis_max_x)
+            for (int i = 0; i < font->EllipsisCharCount; i++, ellipsis_pos.x += font->EllipsisCharStep * font_scale)
+                font->RenderChar(draw_list, font_size, ellipsis_pos, GetColorU32(ImGuiCol_Text), font->EllipsisChar);
     }
     else
     {
@@ -6197,12 +6192,15 @@ void ImGui::RenderWindowDecorations(ImGuiWindow* window, const ImRect& title_bar
         {
             for (int resize_grip_n = 0; resize_grip_n < resize_grip_count; resize_grip_n++)
             {
+                const ImU32 col = resize_grip_col[resize_grip_n];
+                if ((col & IM_COL32_A_MASK) == 0)
+                    continue;
                 const ImGuiResizeGripDef& grip = resize_grip_def[resize_grip_n];
                 const ImVec2 corner = ImLerp(window->Pos, window->Pos + window->Size, grip.CornerPosN);
                 window->DrawList->PathLineTo(corner + grip.InnerDir * ((resize_grip_n & 1) ? ImVec2(window_border_size, resize_grip_draw_size) : ImVec2(resize_grip_draw_size, window_border_size)));
                 window->DrawList->PathLineTo(corner + grip.InnerDir * ((resize_grip_n & 1) ? ImVec2(resize_grip_draw_size, window_border_size) : ImVec2(window_border_size, resize_grip_draw_size)));
                 window->DrawList->PathArcToFast(ImVec2(corner.x + grip.InnerDir.x * (window_rounding + window_border_size), corner.y + grip.InnerDir.y * (window_rounding + window_border_size)), window_rounding, grip.AngleMin12, grip.AngleMax12);
-                window->DrawList->PathFillConvex(resize_grip_col[resize_grip_n]);
+                window->DrawList->PathFillConvex(col);
             }
         }
 
@@ -8120,6 +8118,15 @@ ImGuiID ImGui::GetIDWithSeed(const char* str, const char* str_end, ImGuiID seed)
     return id;
 }
 
+ImGuiID ImGui::GetIDWithSeed(int n, ImGuiID seed)
+{
+    ImGuiID id = ImHashData(&n, sizeof(n), seed);
+    ImGuiContext& g = *GImGui;
+    if (g.DebugHookIdInfo == id)
+        DebugHookIdInfo(id, ImGuiDataType_S32, (void*)(intptr_t)n, NULL);
+    return id;
+}
+
 void ImGui::PopID()
 {
     ImGuiWindow* window = GImGui->CurrentWindow;
@@ -9099,7 +9106,8 @@ void ImGui::UpdateMouseWheel()
 
     // Mouse wheel scrolling
     // As a standard behavior holding SHIFT while using Vertical Mouse Wheel triggers Horizontal scroll instead
-    // (we avoid doing it on OSX as it the OS input layer handles this already)
+    // - We avoid doing it on OSX as it the OS input layer handles this already.
+    // - However this means when running on OSX over Emcripten, Shift+WheelY will incur two swappings (1 in OS, 1 here), cancelling the feature.
     const bool swap_axis = g.IO.KeyShift && !g.IO.ConfigMacOSXBehaviors;
     if (swap_axis)
     {
@@ -9485,6 +9493,13 @@ static void ImGui::ErrorCheckNewFrameSanityChecks()
     // #define IM_ASSERT(EXPR)   if (SomeCode(EXPR)) SomeMoreCode();                    // Wrong!
     // #define IM_ASSERT(EXPR)   do { if (SomeCode(EXPR)) SomeMoreCode(); } while (0)   // Correct!
     if (true) IM_ASSERT(1); else IM_ASSERT(0);
+
+    // Emscripten backends are often imprecise in their submission of DeltaTime. (#6114, #3644)
+    // Ideally the Emscripten app/backend should aim to fix or smooth this value and avoid feeding zero, but we tolerate it.
+#ifdef __EMSCRIPTEN__
+    if (g.IO.DeltaTime <= 0.0f && g.FrameCount > 0)
+        g.IO.DeltaTime = 0.00001f;
+#endif
 
     // Check user data
     // (We pass an error message in the assert expression to make it visible to programmers who are not using a debugger, as most assert handlers display their argument)
@@ -10621,7 +10636,7 @@ void ImGui::OpenPopupEx(ImGuiID id, ImGuiPopupFlags popup_flags)
     const int current_stack_size = g.BeginPopupStack.Size;
 
     if (popup_flags & ImGuiPopupFlags_NoOpenOverExistingPopup)
-        if (IsPopupOpen(0u, ImGuiPopupFlags_AnyPopupId))
+        if (IsPopupOpen((ImGuiID)0, ImGuiPopupFlags_AnyPopupId))
             return;
 
     ImGuiPopupData popup_ref; // Tagged as new ref as Window will be set back to NULL if we write this into OpenPopupStack.
@@ -15335,7 +15350,7 @@ int ImGui::DockNodeGetTabOrder(ImGuiWindow* window)
     if (tab_bar == NULL)
         return -1;
     ImGuiTabItem* tab = TabBarFindTabByID(tab_bar, window->TabId);
-    return tab ? tab_bar->GetTabOrder(tab) : -1;
+    return tab ? TabBarGetTabOrder(tab_bar, tab) : -1;
 }
 
 static void DockNodeHideWindowDuringHostWindowCreation(ImGuiWindow* window)
@@ -16087,7 +16102,7 @@ static ImGuiID ImGui::DockNodeUpdateWindowMenu(ImGuiDockNode* node, ImGuiTabBar*
                 ImGuiTabItem* tab = &tab_bar->Tabs[tab_n];
                 if (tab->Flags & ImGuiTabItemFlags_Button)
                     continue;
-                if (Selectable(tab_bar->GetTabName(tab), tab->ID == tab_bar->SelectedTabId))
+                if (Selectable(TabBarGetTabName(tab_bar, tab), tab->ID == tab_bar->SelectedTabId))
                     ret_tab_id = tab->ID;
                 SameLine();
                 Text("   ");
@@ -18663,10 +18678,13 @@ void ImGui::ShowFontAtlas(ImFontAtlas* atlas)
         DebugNodeFont(font);
         PopID();
     }
-    if (TreeNode("Atlas texture", "Atlas texture (%dx%d pixels)", atlas->TexWidth, atlas->TexHeight))
+    if (TreeNode("Font Atlas", "Font Atlas (%dx%d pixels)", atlas->TexWidth, atlas->TexHeight))
     {
-        ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-        ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
+        ImGuiContext& g = *GImGui;
+        ImGuiMetricsConfig* cfg = &g.DebugMetricsConfig;
+        Checkbox("Tint with Text Color", &cfg->ShowAtlasTintedWithTextColor); // Using text color ensure visibility of core atlas data, but will alter custom colored icons
+        ImVec4 tint_col = cfg->ShowAtlasTintedWithTextColor ? GetStyleColorVec4(ImGuiCol_Text) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+        ImVec4 border_col = GetStyleColorVec4(ImGuiCol_Border);
         Image(atlas->TexID, ImVec2((float)atlas->TexWidth, (float)atlas->TexHeight), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), tint_col, border_col);
         TreePop();
     }
@@ -19629,8 +19647,7 @@ void ImGui::DebugNodeTabBar(ImGuiTabBar* tab_bar, const char* label)
     for (int tab_n = 0; tab_n < ImMin(tab_bar->Tabs.Size, 3); tab_n++)
     {
         ImGuiTabItem* tab = &tab_bar->Tabs[tab_n];
-        p += ImFormatString(p, buf_end - p, "%s'%s'",
-            tab_n > 0 ? ", " : "", (tab->Window || tab->NameOffset != -1) ? tab_bar->GetTabName(tab) : "???");
+        p += ImFormatString(p, buf_end - p, "%s'%s'", tab_n > 0 ? ", " : "", TabBarGetTabName(tab_bar, tab));
     }
     p += ImFormatString(p, buf_end - p, (tab_bar->Tabs.Size > 3) ? " ... }" : " } ");
     if (!is_active) { PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled)); }
@@ -19647,12 +19664,12 @@ void ImGui::DebugNodeTabBar(ImGuiTabBar* tab_bar, const char* label)
     {
         for (int tab_n = 0; tab_n < tab_bar->Tabs.Size; tab_n++)
         {
-            const ImGuiTabItem* tab = &tab_bar->Tabs[tab_n];
+            ImGuiTabItem* tab = &tab_bar->Tabs[tab_n];
             PushID(tab);
             if (SmallButton("<")) { TabBarQueueReorder(tab_bar, tab, -1); } SameLine(0, 2);
             if (SmallButton(">")) { TabBarQueueReorder(tab_bar, tab, +1); } SameLine();
             Text("%02d%c Tab 0x%08X '%s' Offset: %.2f, Width: %.2f/%.2f",
-                tab_n, (tab->ID == tab_bar->SelectedTabId) ? '*' : ' ', tab->ID, (tab->Window || tab->NameOffset != -1) ? tab_bar->GetTabName(tab) : "???", tab->Offset, tab->Width, tab->ContentWidth);
+                tab_n, (tab->ID == tab_bar->SelectedTabId) ? '*' : ' ', tab->ID, TabBarGetTabName(tab_bar, tab), tab->Offset, tab->Width, tab->ContentWidth);
             PopID();
         }
         TreePop();
