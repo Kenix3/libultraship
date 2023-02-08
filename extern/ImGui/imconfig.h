@@ -118,3 +118,9 @@ namespace ImGui
     void MyFunction(const char* name, const MyMatrix44& v);
 }
 */
+
+#ifdef __SWITCH__
+#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
+#define GL_GLEXT_PROTOTYPES 1
+#include <glad/glad.h>
+#endif
