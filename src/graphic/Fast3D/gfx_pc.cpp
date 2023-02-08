@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 #include <list>
+#include <stack>
 
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
@@ -40,6 +41,7 @@
 #include "libultraship/libultraship.h"
 
 uintptr_t gfxFramebuffer;
+std::stack<std::string> currentDir;
 
 using namespace std;
 
@@ -226,6 +228,25 @@ static unsigned long get_time(void) {
     return (unsigned long)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
 #endif
+
+static std::string GetPathWithoutFileName(char* filePath) {
+    int len = strlen(filePath);
+
+    for (int i = len - 1; i >= 0; i--) {
+        if (filePath[i] == '/' || filePath[i] == '\\') {
+            return std::string(filePath).substr(0, i);
+        }
+    }
+}
+
+static char* GetPathWithCurrentDir(char* filePath) {
+    static char fullPath[4096]; // OTRTODO: This is probably a bad idea...
+    if (filePath[0] == '>') {
+        sprintf(fullPath, "%s/%s", currentDir.top().c_str(), &filePath[1]);
+        return fullPath;
+    } else
+        return filePath;
+}
 
 static void gfx_flush(void) {
     if (buf_vbo_len > 0) {
@@ -2306,6 +2327,31 @@ static void gfx_run_dl(Gfx* cmd) {
                     }
                 }
             } break;
+            case G_VTX_OTR2: {
+                char* fileName = (char*)cmd->words.w1;
+                cmd++;
+                int vtxCnt = cmd->words.w0;
+                int vtxIdxOff = cmd->words.w1 >> 16;
+                int vtxDataOff = cmd->words.w1 & 0xFFFF;
+                Vtx* vtx = (Vtx*)GetResourceDataByName((const char*)fileName, false);
+                vtx += vtxDataOff;
+                cmd--;
+                gfx_sp_vertex(vtxCnt, vtxIdxOff, vtx);
+            } break;
+            case G_DL_OTR2: {
+                fileName = (char*)cmd->words.w1;
+                Gfx* nDL = (Gfx*)GetResourceDataByName((const char*)fileName, false);
+
+                if (C0(16, 1) == 0) {
+                    // Push return address
+                    currentDir.push((char*)fileName);
+                    gfx_run_dl(nDL);
+                    currentDir.pop();
+                } else {
+                    cmd = nDL;
+                    --cmd; // increase after break
+                }
+            } break;
             case G_MODIFYVTX:
                 gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), cmd->words.w1);
                 break;
@@ -2347,6 +2393,9 @@ static void gfx_run_dl(Gfx* cmd) {
                     cmd++;
                     --cmd; // increase after break
                 }
+                break;
+            case G_PUSHCD:
+                gfx_push_current_dir((char*)cmd->words.w1);
                 break;
             case G_BRANCH_Z_OTR: {
                 // Push return address
@@ -2487,6 +2536,18 @@ static void gfx_run_dl(Gfx* cmd) {
                 cmd++;
                 break;
             }
+            case G_SETTIMG_OTR2: {
+                fileName = (char*)cmd->words.w1;
+
+                char* tex = (char*)GetResourceDataByName((const char*)fileName, false);
+                uint32_t fmt = C0(21, 3);
+                uint32_t size = C0(19, 2);
+                uint32_t width = C0(0, 10);
+
+                if (tex != NULL)
+                    gfx_dp_set_texture_image(fmt, size, width, tex, fileName);
+            }
+            break;
             case G_SETFB: {
                 gfx_flush();
                 fbActive = 1;
@@ -2890,4 +2951,11 @@ uint16_t gfx_get_pixel_depth(float x, float y) {
     get_pixel_depth_pending.clear();
 
     return get_pixel_depth_cached.find(make_pair(x, y))->second;
+}
+
+void gfx_push_current_dir(char* path) {
+    if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(path) == 1)
+        path = &path[7];
+
+    currentDir.push(GetPathWithoutFileName(path));
 }

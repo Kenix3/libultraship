@@ -9,6 +9,7 @@
 #include <filesystem>
 #include "binarytools/BinaryReader.h"
 #include "binarytools/MemoryStream.h"
+#include "binarytools/FileHelper.h"
 
 #ifdef __SWITCH__
 #include "port/switch/SwitchImpl.h"
@@ -77,42 +78,59 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
         mpqHandle = mMainMpq;
     }
 
-    bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
+    // TEST - Read from filesystem first, then the MPQ archive...
+    if (FileHelper::Exists("TestData/" + filePath)) {
+        auto byteData = FileHelper::ReadAllBytes("TestData/" + filePath);
+        std::shared_ptr<char[]> fileData(new char[byteData.size() + 1]);
+        memcpy(fileData.get(), byteData.data(), byteData.size());
 
-    if (!attempt) {
-        SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath.c_str(),
-                     mMainPath.c_str());
-        std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
-        fileToLoad->HasLoadError = true;
-        return fileToLoad;
-    }
+        // Throw in a null terminator at the end incase we're loading a text file...
+        fileData[byteData.size()] = '\0';
 
-    DWORD fileSize = SFileGetFileSize(fileHandle, 0);
-    std::shared_ptr<char[]> fileData(new char[fileSize]);
-    DWORD countBytes;
+        std::unique_lock<std::mutex> Lock(fileToLoad->FileLoadMutex);
+        fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
+        fileToLoad->Buffer = fileData;
+        fileToLoad->BufferSize = byteData.size() + 1;
+        fileToLoad->IsLoaded = true;
+        //fileToLoad->CachedData = nullptr;
+    } else {
+        bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
 
-    if (!SFileReadFile(fileHandle, fileData.get(), fileSize, &countBytes, NULL)) {
-        SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath.c_str(),
-                     mMainPath.c_str());
-        if (!SFileCloseFile(fileHandle)) {
-            SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
-                         filePath.c_str(), mMainPath.c_str());
+        if (!attempt) {
+            SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath.c_str(),
+                         mMainPath.c_str());
+            std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
+            fileToLoad->HasLoadError = true;
+            return fileToLoad;
         }
+
+        DWORD fileSize = SFileGetFileSize(fileHandle, 0);
+        std::shared_ptr<char[]> fileData(new char[fileSize]);
+        DWORD countBytes;
+
+        if (!SFileReadFile(fileHandle, fileData.get(), fileSize, &countBytes, NULL)) {
+            SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath.c_str(),
+                         mMainPath.c_str());
+            if (!SFileCloseFile(fileHandle)) {
+                SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
+                             filePath.c_str(), mMainPath.c_str());
+            }
+            std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
+            fileToLoad->HasLoadError = true;
+            return fileToLoad;
+        }
+
+        if (!SFileCloseFile(fileHandle)) {
+            SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(),
+                         mMainPath.c_str());
+        }
+
         std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
-        fileToLoad->HasLoadError = true;
-        return fileToLoad;
+        fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
+        fileToLoad->Buffer = fileData;
+        fileToLoad->BufferSize = fileSize;
+        fileToLoad->IsLoaded = true;
     }
-
-    if (!SFileCloseFile(fileHandle)) {
-        SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(),
-                     mMainPath.c_str());
-    }
-
-    std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
-    fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
-    fileToLoad->Buffer = fileData;
-    fileToLoad->BufferSize = fileSize;
-    fileToLoad->IsLoaded = true;
 
     return fileToLoad;
 }

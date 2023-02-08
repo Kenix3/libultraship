@@ -85,5 +85,6 @@ void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height);
 void gfx_get_pixel_depth_prepare(float x, float y);
 uint16_t gfx_get_pixel_depth(float x, float y);
+void gfx_push_current_dir(char* path);
 
 #endif
