@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-#include "resource/type/Texture.h"
+std::unordered_map<std::string, uint8_t*> mTextureModifiers;
 
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
     return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceNow(name)
@@ -21,6 +21,15 @@ std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
     }
 
     return LoadResource(name, now);
+}
+
+std::shared_ptr<Ship::Texture> GetResourceTexByName(const char* name) {
+    return std::static_pointer_cast<Ship::Texture>(LoadResource(name, true));
+}
+
+std::shared_ptr<Ship::Texture> GetResourceTexByCrc(uint64_t crc) {
+    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
+    return hashStr != nullptr ? GetResourceTexByName(hashStr->c_str()) : nullptr;
 }
 
 extern "C" {
@@ -227,4 +236,27 @@ void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite
         }
     }
 }
+
+bool HasTextureModifier(const char* texPath) {
+    return mTextureModifiers.contains(texPath);
+}
+
+void RegisterTextureModifier(char* texPath, uint8_t* modifier) {
+    mTextureModifiers[texPath] = modifier;
+}
+
+uint8_t* GetTextureModifier(const char* texPath) {
+    if(mTextureModifiers.contains(texPath)){
+        return mTextureModifiers[texPath];
+    }
+    return nullptr;
+}
+
+void RemoveTextureModifier(const char* texPath) {
+    if(mTextureModifiers.contains(texPath)){
+        free(mTextureModifiers[texPath]);
+        mTextureModifiers.erase(texPath);
+    }
+}
+
 }

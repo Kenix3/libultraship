@@ -141,8 +141,8 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* text_end, bo
 }
 
 void GameOverlay::Init() {
-    this->LoadFont("Press Start 2P", "assets/ship_of_harkinian/fonts/PressStart2P-Regular.ttf", 12.0f);
-    this->LoadFont("Fipps", "assets/ship_of_harkinian/fonts/Fipps-Regular.otf", 32.0f);
+    this->LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
+    this->LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);
     const std::string DefaultFont = this->Fonts.begin()->first;
     if (!this->Fonts.empty()) {
         const std::string font = CVarGetString("gOverlayFont", ImStrdup(DefaultFont.c_str()));

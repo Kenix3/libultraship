@@ -3,6 +3,8 @@
 #include "resource/Resource.h"
 #include "libultraship/libultra/types.h"
 
+#define TEX_FLAG_LOAD_AS_RAW (1 << 0)
+
 namespace Ship {
 enum class TextureType {
     Error = 0,
@@ -24,6 +26,9 @@ class Texture : public Resource {
 
     TextureType Type;
     uint16_t Width, Height;
+    uint32_t Flags = 0;
+    float HByteScale = 1;
+    float VPixelScale = 1;
     uint32_t ImageDataSize;
     uint8_t* ImageData = nullptr;
 
