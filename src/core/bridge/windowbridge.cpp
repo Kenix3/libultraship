@@ -22,4 +22,8 @@ void GetPixelDepthPrepare(float x, float y) {
 uint16_t GetPixelDepth(float x, float y) {
     return Ship::Window::GetInstance()->GetPixelDepth(x, y);
 }
+
+uint32_t DoesOtrFileExist() {
+    return Ship::Window::GetInstance()->DoesOtrFileExist();
+}
 }

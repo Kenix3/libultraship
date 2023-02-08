@@ -226,7 +226,9 @@ static void set_fullscreen(bool on, bool call_callback) {
         window_height = DESIRED_SCREEN_HEIGHT;
     }
     SDL_SetWindowSize(wnd, window_width, window_height);
-    SDL_SetWindowFullscreen(wnd, on ? SDL_WINDOW_FULLSCREEN : 0);
+    SDL_SetWindowFullscreen(
+        wnd,
+        on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0);
     SDL_SetCursor(SDL_DISABLE);
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
@@ -319,6 +321,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
             inverted_scancode_table[scancode_rmapping_nonextended[i][1]];
         inverted_scancode_table[scancode_rmapping_nonextended[i][1]] += 0x100;
     }
+}
+
+static void gfx_sdl_close(void) {
+    is_running = false;
 }
 
 static void gfx_sdl_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
@@ -505,6 +511,7 @@ static const char* gfx_sdl_get_key_name(int scancode) {
 }
 
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
+                                       gfx_sdl_close,
                                        gfx_sdl_set_keyboard_callbacks,
                                        gfx_sdl_set_fullscreen_changed_callback,
                                        gfx_sdl_set_fullscreen,

@@ -17,27 +17,30 @@ KeyboardController::KeyboardController() : Controller(), mLastScancode(-1) {
 
 bool KeyboardController::PressButton(int32_t scancode) {
     mLastKey = scancode;
+    bool readSuccess = false;
 
     for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
 
         if (getProfile(virtualSlot)->Mappings.contains(scancode)) {
             getPressedButtons(virtualSlot) |= getProfile(virtualSlot)->Mappings[scancode];
-            return true;
+            readSuccess = true;
         }
     }
 
-    return false;
+    return readSuccess;
 }
 
 bool KeyboardController::ReleaseButton(int32_t scancode) {
+    bool readSuccess = false;
+
     for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
         if (getProfile(virtualSlot)->Mappings.contains(scancode)) {
             getPressedButtons(virtualSlot) &= ~getProfile(virtualSlot)->Mappings[scancode];
-            return true;
+            readSuccess = true;
         }
     }
 
-    return false;
+    return readSuccess;
 }
 
 void KeyboardController::ReleaseAllButtons() {

@@ -1,4 +1,5 @@
 add_library(libultraship STATIC)
+set_target_properties(libultraship PROPERTIES PREFIX "")
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
@@ -11,8 +12,6 @@ endif()
 set(Source_Files__Audio
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/AudioPlayer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/audio/AudioPlayer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/mixer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/mixer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.h
@@ -433,7 +432,7 @@ if(MSVC)
     )
 endif()
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
 	target_compile_options(libultraship PRIVATE
 		-Wall
 		-Wextra
@@ -444,5 +443,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		-Wno-parentheses
 		-Wno-narrowing
 		-Wno-missing-field-initializers
+        -Wno-int-conversion
 	)
 endif()

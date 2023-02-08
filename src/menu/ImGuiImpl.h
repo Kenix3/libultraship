@@ -66,6 +66,7 @@ typedef struct {
     WindowDrawFunc drawFunc;
 } CustomWindow;
 
+bool supportsWindowedFullscreen();
 bool supportsViewports();
 
 void Init(WindowImpl window_impl);
