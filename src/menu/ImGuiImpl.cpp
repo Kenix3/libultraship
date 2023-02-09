@@ -233,6 +233,10 @@ void ImGuiProcessEvent(EventImpl event) {
 #else
         case Backend::SDL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.sdl.event));
+
+ #ifdef __SWITCH__
+            Ship::Switch::ImGuiProcessEvent(io->WantTextInput);
+ #endif
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -384,7 +388,7 @@ void Init(WindowImpl window_impl) {
     CVarRegisterInteger("gRandoMatchKeyColors", 1);
     CVarRegisterInteger("gEnableMultiViewports", 1);
 #ifdef __SWITCH__
-    Ship::Switch::SetupFont(io->Fonts);
+    Ship::Switch::ImGuiSetupFont(io->Fonts);
 #endif
 
 #ifdef __WIIU__
@@ -475,8 +479,14 @@ void Update(EventImpl event) {
 
 void DrawMainMenuAndCalculateGameSize(void) {
     console->Update();
+    const int input_queue_size_before = ImGui::GetCurrentContext()->InputEventsQueue.Size;
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
+
+ #ifdef __SWITCH__
+    Ship::Switch::ImGuiSwapABXY(input_queue_size_before);
+ #endif
+
     ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Window::GetInstance();

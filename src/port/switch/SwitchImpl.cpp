@@ -5,6 +5,7 @@
 #include "SwitchPerformanceProfiles.h"
 #include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
+#include <ImGui/imgui_internal.h>
 
 #define DOCKED_MODE 1
 #define HANDHELD_MODE 0
@@ -12,6 +13,7 @@
 static AppletHookCookie applet_hook_cookie;
 static bool isRunning = true;
 static bool hasFocus = true;
+static bool isShowingVirtualKeyboard = true;
 
 void DetectAppletMode();
 
@@ -46,7 +48,7 @@ void Ship::Switch::Exit() {
     appletSetGamePlayRecordingState(false);
 }
 
-void Ship::Switch::SetupFont(ImFontAtlas* fonts) {
+void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plInitialize(PlServiceType_System);
     static PlFontData stdFontData, extFontData;
 
@@ -73,6 +75,46 @@ void Ship::Switch::SetupFont(ImFontAtlas* fonts) {
 
     plExit();
 }
+
+void Ship::Switch::ImGuiSwapABXY(int start_event) {
+    if (CVarGetInteger("gOpenMenuBar", 0)) {
+        return;
+    }
+
+    auto& input_queue = ImGui::GetCurrentContext()->InputEventsQueue;
+    for (int n = start_event; n < input_queue.Size; n++)
+    {
+        ImGuiInputEvent& e = input_queue[n];
+        if (e.Type == ImGuiInputEventType_Key)
+        {
+            switch (e.Key.Key)
+            {
+                case ImGuiKey_GamepadFaceLeft:  e.Key.Key = ImGuiKey_GamepadFaceUp; break;   // X<>Y
+                case ImGuiKey_GamepadFaceUp:    e.Key.Key = ImGuiKey_GamepadFaceLeft; break;
+                case ImGuiKey_GamepadFaceRight: e.Key.Key = ImGuiKey_GamepadFaceDown; break;   // A<>B
+                case ImGuiKey_GamepadFaceDown:  e.Key.Key = ImGuiKey_GamepadFaceRight; break;
+            }
+        }
+    }
+ }
+
+ void Ship::Switch::ImGuiProcessEvent(bool wantsTextInput) {
+    ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
+
+    if (wantsTextInput) {
+        if (!isShowingVirtualKeyboard) {
+            state->ClearText();
+
+            isShowingVirtualKeyboard = true;
+            SDL_StartTextInput();
+        }
+    } else {
+        if (isShowingVirtualKeyboard) {
+            isShowingVirtualKeyboard = false;
+            SDL_StopTextInput();
+        }
+    }
+ }
 
 bool Ship::Switch::IsRunning() {
     return isRunning;
