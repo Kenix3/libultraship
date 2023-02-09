@@ -479,12 +479,12 @@ void Update(EventImpl event) {
 
 void DrawMainMenuAndCalculateGameSize(void) {
     console->Update();
-    const int input_queue_size_before = ImGui::GetCurrentContext()->InputEventsQueue.Size;
+    const int inputQueueSizeBefore = ImGui::GetCurrentContext()->InputEventsQueue.Size;
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
 
 #ifdef __SWITCH__
-    Ship::Switch::ImGuiSwapABXY(input_queue_size_before);
+    Ship::Switch::ImGuiSwapABXY(inputQueueSizeBefore);
 #endif
 
     ImGui::NewFrame();

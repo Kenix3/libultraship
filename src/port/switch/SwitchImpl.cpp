@@ -76,7 +76,7 @@ void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plExit();
 }
 
-void Ship::Switch::ImGuiSwapABXY(int start_event) {
+void Ship::Switch::ImGuiSwapABXY(int startEvent) {
     if (CVarGetInteger("gOpenMenuBar", 0)) {
         return;
     }
