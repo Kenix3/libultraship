@@ -76,33 +76,6 @@ void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plExit();
 }
 
-void Ship::Switch::ImGuiSwapABXY(int startEvent) {
-    if (CVarGetInteger("gOpenMenuBar", 0)) {
-        return;
-    }
-
-    auto& input_queue = ImGui::GetCurrentContext()->InputEventsQueue;
-    for (int n = startEvent; n < input_queue.Size; n++) {
-        ImGuiInputEvent& e = input_queue[n];
-        if (e.Type == ImGuiInputEventType_Key) {
-            switch (e.Key.Key) {
-                case ImGuiKey_GamepadFaceLeft:
-                    e.Key.Key = ImGuiKey_GamepadFaceUp;
-                    break; // X<>Y
-                case ImGuiKey_GamepadFaceUp:
-                    e.Key.Key = ImGuiKey_GamepadFaceLeft;
-                    break;
-                case ImGuiKey_GamepadFaceRight:
-                    e.Key.Key = ImGuiKey_GamepadFaceDown;
-                    break; // A<>B
-                case ImGuiKey_GamepadFaceDown:
-                    e.Key.Key = ImGuiKey_GamepadFaceRight;
-                    break;
-            }
-        }
-    }
-}
-
 void Ship::Switch::ImGuiProcessEvent(bool wantsTextInput) {
     ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
 

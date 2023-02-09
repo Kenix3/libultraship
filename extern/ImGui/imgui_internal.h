@@ -1257,10 +1257,22 @@ typedef ImBitArray<ImGuiKey_NamedKey_COUNT, -ImGuiKey_NamedKey_BEGIN>    ImBitAr
 #define ImGuiKey_NavKeyboardTweakFast   ImGuiMod_Shift
 #define ImGuiKey_NavGamepadTweakSlow    ImGuiKey_GamepadL1
 #define ImGuiKey_NavGamepadTweakFast    ImGuiKey_GamepadR1
+
+#ifndef ImGuiKey_NavGamepadActivate
 #define ImGuiKey_NavGamepadActivate     ImGuiKey_GamepadFaceDown
+#endif
+
+#ifndef ImGuiKey_NavGamepadCancel
 #define ImGuiKey_NavGamepadCancel       ImGuiKey_GamepadFaceRight
+#endif
+
+#ifndef ImGuiKey_NavGamepadMenu
 #define ImGuiKey_NavGamepadMenu         ImGuiKey_GamepadFaceLeft
+#endif
+
+#ifndef ImGuiKey_NavGamepadInput
 #define ImGuiKey_NavGamepadInput        ImGuiKey_GamepadFaceUp
+#endif
 
 enum ImGuiInputEventType
 {

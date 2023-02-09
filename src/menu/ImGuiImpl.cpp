@@ -482,11 +482,6 @@ void DrawMainMenuAndCalculateGameSize(void) {
     const int inputQueueSizeBefore = ImGui::GetCurrentContext()->InputEventsQueue.Size;
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
-
-#ifdef __SWITCH__
-    Ship::Switch::ImGuiSwapABXY(inputQueueSizeBefore);
-#endif
-
     ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Window::GetInstance();

@@ -123,4 +123,9 @@ namespace ImGui
 #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #define GL_GLEXT_PROTOTYPES 1
 #include <glad/glad.h>
+
+#define ImGuiKey_NavGamepadActivate     ImGuiKey_GamepadFaceRight
+#define ImGuiKey_NavGamepadCancel       ImGuiKey_GamepadFaceDown
+#define ImGuiKey_NavGamepadMenu         ImGuiKey_GamepadFaceUp
+#define ImGuiKey_NavGamepadInput        ImGuiKey_GamepadFaceLeft
 #endif
