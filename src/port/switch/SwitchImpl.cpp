@@ -82,7 +82,7 @@ void Ship::Switch::ImGuiSwapABXY(int startEvent) {
     }
 
     auto& input_queue = ImGui::GetCurrentContext()->InputEventsQueue;
-    for (int n = start_event; n < input_queue.Size; n++) {
+    for (int n = startEvent; n < input_queue.Size; n++) {
         ImGuiInputEvent& e = input_queue[n];
         if (e.Type == ImGuiInputEventType_Key) {
             switch (e.Key.Key) {
