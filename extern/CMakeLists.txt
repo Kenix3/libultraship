@@ -141,7 +141,7 @@ target_sources(TPCircularBuffer PRIVATE ${TPCIRCULARBUFFER_DIR}/TPCircularBuffer
 
 target_include_directories(TPCircularBuffer PUBLIC ${TPCIRCULARBUFFER_DIR})
 
-#=================== OpenEmu ===================
+#=================== OpenEmuHelpers ===================
 
 set(OPENEMU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenEmu)
 add_library(OpenEmuHelpers STATIC)

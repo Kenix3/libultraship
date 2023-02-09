@@ -359,7 +359,7 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ZAPDUtils StrHash64 OpenEmuHelpers
+    PRIVATE ZAPDUtils StrHash64
     PUBLIC ImGui Mercury storm tinyxml2
 )
 
@@ -377,7 +377,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_Library(OSX_COREAUDIOKIT CoreAudioKit)
     find_Library(OSX_AUDIOTOOLBOX AudioToolbox)
     find_Library(OSX_AUDIOUNIT AudioUnit)
-    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${OSX_COREFOUNDATION} ${OSX_AUDIOTOOLBOX} ${OSX_AUDIOUNIT} ${OSX_COREAUDIO} ${OSX_COREAUDIOKIT} ${CMAKE_DL_LIBS})
+    target_link_libraries(libultraship PRIVATE OpenEmuHelpers ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${OSX_COREFOUNDATION} ${OSX_AUDIOTOOLBOX} ${OSX_AUDIOUNIT} ${OSX_COREAUDIO} ${OSX_COREAUDIOKIT} ${CMAKE_DL_LIBS})
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
