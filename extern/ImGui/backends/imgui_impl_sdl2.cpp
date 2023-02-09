@@ -73,6 +73,7 @@
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
+#include "imgui_internal.h"
 
 // SDL
 // (the multi-viewports feature requires SDL features supported from SDL 2.0.4+. SDL 2.0.5+ is highly recommended)
