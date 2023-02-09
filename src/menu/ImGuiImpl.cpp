@@ -234,9 +234,9 @@ void ImGuiProcessEvent(EventImpl event) {
         case Backend::SDL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.sdl.event));
 
- #ifdef __SWITCH__
+#ifdef __SWITCH__
             Ship::Switch::ImGuiProcessEvent(io->WantTextInput);
- #endif
+#endif
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -483,9 +483,9 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
 
- #ifdef __SWITCH__
+#ifdef __SWITCH__
     Ship::Switch::ImGuiSwapABXY(input_queue_size_before);
- #endif
+#endif
 
     ImGui::NewFrame();
 
