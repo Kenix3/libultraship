@@ -113,6 +113,10 @@ struct ImGui_ImplSDL2_Data
     bool            MouseCanReportHoveredViewport;  // This is hard to use/unreliable on SDL so we'll set ImGuiBackendFlags_HasMouseHoveredViewport dynamically based on state.
     bool            UseVulkan;
 
+    #ifdef __SWITCH__
+    bool            ShowingVirtualKeyboard;
+    #endif
+
     ImGui_ImplSDL2_Data()   { memset((void*)this, 0, sizeof(*this)); }
 };
 
