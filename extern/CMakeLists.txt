@@ -52,7 +52,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_sources(ImGui
         PRIVATE
         ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_sdl.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
     )
 endif()
 

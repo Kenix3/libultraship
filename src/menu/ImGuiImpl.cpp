@@ -47,7 +47,7 @@
 
 #ifdef ENABLE_OPENGL
 #include <ImGui/backends/imgui_impl_opengl3.h>
-#include <ImGui/backends/imgui_impl_sdl.h>
+#include <ImGui/backends/imgui_impl_sdl2.h>
 
 #endif
 
