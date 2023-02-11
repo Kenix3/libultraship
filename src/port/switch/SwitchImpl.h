@@ -15,7 +15,8 @@ class Switch {
   public:
     static void Init(SwitchPhase phase);
     static void Exit();
-    static void SetupFont(ImFontAtlas* fonts);
+    static void ImGuiSetupFont(ImFontAtlas* fonts);
+    static void ImGuiProcessEvent(bool wantsTextInput);
     static bool IsRunning();
     static void GetDisplaySize(int* width, int* height);
     static void ApplyOverclock();

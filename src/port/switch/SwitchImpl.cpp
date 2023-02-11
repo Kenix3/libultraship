@@ -5,6 +5,7 @@
 #include "SwitchPerformanceProfiles.h"
 #include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
+#include <ImGui/imgui_internal.h>
 
 #define DOCKED_MODE 1
 #define HANDHELD_MODE 0
@@ -12,6 +13,7 @@
 static AppletHookCookie applet_hook_cookie;
 static bool isRunning = true;
 static bool hasFocus = true;
+static bool isShowingVirtualKeyboard = true;
 
 void DetectAppletMode();
 
@@ -46,7 +48,7 @@ void Ship::Switch::Exit() {
     appletSetGamePlayRecordingState(false);
 }
 
-void Ship::Switch::SetupFont(ImFontAtlas* fonts) {
+void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plInitialize(PlServiceType_System);
     static PlFontData stdFontData, extFontData;
 
@@ -72,6 +74,24 @@ void Ship::Switch::SetupFont(ImFontAtlas* fonts) {
     fonts->Build();
 
     plExit();
+}
+
+void Ship::Switch::ImGuiProcessEvent(bool wantsTextInput) {
+    ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
+
+    if (wantsTextInput) {
+        if (!isShowingVirtualKeyboard) {
+            state->ClearText();
+
+            isShowingVirtualKeyboard = true;
+            SDL_StartTextInput();
+        }
+    } else {
+        if (isShowingVirtualKeyboard) {
+            isShowingVirtualKeyboard = false;
+            SDL_StopTextInput();
+        }
+    }
 }
 
 bool Ship::Switch::IsRunning() {
