@@ -35,15 +35,16 @@ bool Console::BindCommand(std::shared_ptr<Console> console, const std::vector<st
         const ImGuiIO* io = &ImGui::GetIO();
         ;
         for (size_t k = 0; k < std::size(io->KeysData); k++) {
-            std::string key(ImGui::GetKeyName(k));
+            std::string key(ImGui::GetKeyName((ImGuiKey)k));
 
             if (toLowerCase(args[1]) == toLowerCase(key)) {
                 std::vector<std::string> tmp;
                 const char* const delim = " ";
                 std::ostringstream imploded;
                 std::copy(args.begin() + 2, args.end(), std::ostream_iterator<std::string>(imploded, delim));
-                console->mBindings[k] = imploded.str();
-                console->SendInfoMessage("Binding '%s' to %s", args[1].c_str(), console->mBindings[k].c_str());
+                console->mBindings[(ImGuiKey)k] = imploded.str();
+                console->SendInfoMessage("Binding '%s' to %s", args[1].c_str(),
+                                         console->mBindings[(ImGuiKey)k].c_str());
                 break;
             }
         }
@@ -56,12 +57,12 @@ bool Console::BindToggleCommand(std::shared_ptr<Console> console, const std::vec
         const ImGuiIO* io = &ImGui::GetIO();
         ;
         for (size_t k = 0; k < std::size(io->KeysData); k++) {
-            std::string key(ImGui::GetKeyName(k));
+            std::string key(ImGui::GetKeyName((ImGuiKey)k));
 
             if (toLowerCase(args[1]) == toLowerCase(key)) {
-                console->mBindingToggle[k] = args[2];
+                console->mBindingToggle[(ImGuiKey)k] = args[2];
                 console->SendInfoMessage("Binding toggle '%s' to %s", args[1].c_str(),
-                                         console->mBindingToggle[k].c_str());
+                                         console->mBindingToggle[(ImGuiKey)k].c_str());
                 break;
             }
         }

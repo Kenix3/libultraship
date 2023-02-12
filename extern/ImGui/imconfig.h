@@ -108,11 +108,6 @@
 //#define IM_DEBUG_BREAK  IM_ASSERT(0)
 //#define IM_DEBUG_BREAK  __debugbreak()
 
-//---- Debug Tools: Have the Item Picker break in the ItemAdd() function instead of ItemHoverable(),
-// (which comes earlier in the code, will catch a few extra items, allow picking items other than Hovered one.)
-// This adds a small runtime cost which is why it is not enabled by default.
-//#define IMGUI_DEBUG_TOOL_ITEM_PICKER_EX
-
 //---- Debug Tools: Enable slower asserts
 //#define IMGUI_DEBUG_PARANOID
 
@@ -123,3 +118,14 @@ namespace ImGui
     void MyFunction(const char* name, const MyMatrix44& v);
 }
 */
+
+#ifdef __SWITCH__
+#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
+#define GL_GLEXT_PROTOTYPES 1
+#include <glad/glad.h>
+
+#define ImGuiKey_NavGamepadActivate     ImGuiKey_GamepadFaceRight
+#define ImGuiKey_NavGamepadCancel       ImGuiKey_GamepadFaceDown
+#define ImGuiKey_NavGamepadMenu         ImGuiKey_GamepadFaceUp
+#define ImGuiKey_NavGamepadInput        ImGuiKey_GamepadFaceLeft
+#endif
