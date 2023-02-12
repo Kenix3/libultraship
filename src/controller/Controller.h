@@ -11,10 +11,12 @@
 
 #define EXTENDED_SCANCODE_BIT (1 << 8)
 #define AXIS_SCANCODE_BIT (1 << 9)
+#define MAX_AXIS_RANGE 85.0
 
 namespace Ship {
 enum GyroData { DRIFT_X, DRIFT_Y, GYRO_SENSITIVITY };
-
+enum Stick { LEFT, RIGHT };
+enum Axis { X, Y };
 enum DeviceProfileVersion { DEVICE_PROFILE_VERSION_V0 = 0, DEVICE_PROFILE_VERSION_V1 = 1 };
 
 #define DEVICE_PROFILE_CURRENT_VERSION DEVICE_PROFILE_VERSION_V1
@@ -44,6 +46,8 @@ class Controller {
     virtual int32_t ReadRawPress() = 0;
     virtual const std::string GetButtonName(int32_t virtualSlot, int32_t n64Button) = 0;
     virtual const std::string GetControllerName() = 0;
+    int8_t ReadStick(int32_t virtualSlot, Stick stick, Axis axis);
+    void ProcessStick(int8_t &x, int8_t &y, uint16_t deadzone);
     void Read(OSContPad* pad, int32_t virtualSlot);
     void SetButtonMapping(int32_t virtualSlot, int32_t n64Button, int32_t scancode);
     std::shared_ptr<ControllerAttachment> GetAttachment();

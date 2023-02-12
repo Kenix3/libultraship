@@ -19,6 +19,92 @@ Controller::Controller() : mIsRumbling(false) {
     }
 }
 
+int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
+    switch (stick) {
+        case Stick::LEFT: {
+            switch (axis) {
+                case Axis::X: {
+                    if (getLeftStickX(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_STICKLEFT) {
+                            return  -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_STICKRIGHT) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getLeftStickX(virtualSlot);
+                    }
+                }
+                case Axis::Y: {
+                    if (getLeftStickY(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_STICKDOWN) {
+                            return -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_STICKUP) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getLeftStickY(virtualSlot);
+                    }
+                }
+            }
+        }
+        case Stick::RIGHT: {
+            switch (axis) {
+                case Axis::X: {
+                    if (getRightStickX(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_VSTICKLEFT) {
+                            return -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKRIGHT) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getRightStickX(virtualSlot);
+                    }
+                }
+                case Axis::Y: {
+                    if (getRightStickY(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_VSTICKDOWN) {
+                            return -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKUP) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getRightStickY(virtualSlot);
+                    }
+                }
+            }
+        }
+    }
+    
+    return 0;
+}
+
+void Controller::ProcessStick(int8_t &x, int8_t &y, uint16_t deadzone) {
+    // create scaled circular dead-zone in range {-15 ... +15}
+    auto len = sqrt(x * x + y * y);
+    if (len < deadzone) {
+        len = 0;
+    } else if (len > MAX_AXIS_RANGE) {
+        len = MAX_AXIS_RANGE / len;
+    } else {
+        len = (len - deadzone) * MAX_AXIS_RANGE / (MAX_AXIS_RANGE - deadzone) / len;
+    }
+    x *= len;
+    y *= len;
+
+
+    // bound diagonals to an octagonal range {-68 ... +68}
+    if (x != 0.0f && y != 0.0f) {
+        auto slope = y / x;
+        auto edgex = copysign(MAX_AXIS_RANGE / (abs(slope) + 16.0f / 69.0f), x);
+        auto edgey = copysign(std::min(abs(edgex * slope), MAX_AXIS_RANGE / (1.0f / abs(slope) + 16.0f / 69.0f)), y);
+        edgex = edgey / slope;
+
+        auto scale = sqrt(edgex * edgex + edgey * edgey) / MAX_AXIS_RANGE;
+        x *= scale;
+        y *= scale;
+    }
+}
+
 void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     ReadFromSource(virtualSlot);
 
@@ -32,46 +118,14 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     padToBuffer.button |= getPressedButtons(virtualSlot) & 0xFFFF;
 
     // Stick Inputs
-    if (getLeftStickX(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_STICKLEFT) {
-            padToBuffer.stick_x = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_STICKRIGHT) {
-            padToBuffer.stick_x = 127;
-        }
-    } else {
-        padToBuffer.stick_x = getLeftStickX(virtualSlot);
-    }
-
-    if (getLeftStickY(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_STICKDOWN) {
-            padToBuffer.stick_y = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_STICKUP) {
-            padToBuffer.stick_y = 127;
-        }
-    } else {
-        padToBuffer.stick_y = getLeftStickY(virtualSlot);
-    }
-
-    // Stick Inputs
-    if (getRightStickX(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_VSTICKLEFT) {
-            padToBuffer.right_stick_x = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKRIGHT) {
-            padToBuffer.right_stick_x = 127;
-        }
-    } else {
-        padToBuffer.right_stick_x = getRightStickX(virtualSlot);
-    }
-
-    if (getRightStickY(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_VSTICKDOWN) {
-            padToBuffer.right_stick_y = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKUP) {
-            padToBuffer.right_stick_y = 127;
-        }
-    } else {
-        padToBuffer.right_stick_y = getRightStickY(virtualSlot);
-    }
+    int8_t leftStickX = ReadStick(virtualSlot, LEFT, X);
+    int8_t leftStickY = ReadStick(virtualSlot, LEFT, Y);
+    int8_t rightStickX = ReadStick(virtualSlot, RIGHT, X);
+    int8_t rightStickY = ReadStick(virtualSlot, RIGHT, Y);
+    
+    auto profile = getProfile(virtualSlot);
+    ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0]);
+    ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2]);
 
     // Gyro
     padToBuffer.gyro_x = getGyroX(virtualSlot);
