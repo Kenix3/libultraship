@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16.0)
 project(libultraship LANGUAGES C CXX)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     enable_language(OBJCXX)
+    set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS} -fobjc-arc")
+    set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} -fobjc-arc")
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")

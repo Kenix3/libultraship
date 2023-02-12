@@ -183,7 +183,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm
     )
 
-    set_source_files_properties( ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 endif()
 
 source_group("Misc" FILES ${Source_Files__Misc})
