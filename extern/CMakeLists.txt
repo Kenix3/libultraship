@@ -137,32 +137,35 @@ target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
 
 #=================== TPCircularBuffer ===================
 
-set(TPCIRCULARBUFFER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/TPCircularBuffer)
-add_library(TPCircularBuffer STATIC)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(TPCIRCULARBUFFER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/TPCircularBuffer)
+    add_library(TPCircularBuffer STATIC)
 
-target_sources(TPCircularBuffer PRIVATE ${TPCIRCULARBUFFER_DIR}/TPCircularBuffer.c)
+    target_sources(TPCircularBuffer PRIVATE ${TPCIRCULARBUFFER_DIR}/TPCircularBuffer.c)
 
-target_include_directories(TPCircularBuffer PUBLIC ${TPCIRCULARBUFFER_DIR})
+    target_include_directories(TPCircularBuffer PUBLIC ${TPCIRCULARBUFFER_DIR})
+endif()
 
 #=================== OpenEmuHelpers ===================
 
-set(OPENEMU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenEmu)
-add_library(OpenEmuHelpers STATIC)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(OPENEMU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenEmuHelpers)
+    add_library(OpenEmuHelpers STATIC)
 
-target_sources(OpenEmuHelpers
-    PRIVATE
-    ${OPENEMU_DIR}/OEAudioUnit.mm
-    ${OPENEMU_DIR}/OEGameAudio.mm
-    ${OPENEMU_DIR}/OERingBuffer.m
-)
+    target_sources(OpenEmuHelpers
+        PRIVATE
+        ${OPENEMU_DIR}/OEAudioUnit.mm
+        ${OPENEMU_DIR}/OEGameAudio.mm
+        ${OPENEMU_DIR}/OERingBuffer.m
+    )
 
-target_include_directories(OpenEmuHelpers PUBLIC ${OPENEMU_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
+    target_include_directories(OpenEmuHelpers PUBLIC ${OPENEMU_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
 
-target_link_libraries(OpenEmuHelpers PUBLIC TPCircularBuffer)
+    target_link_libraries(OpenEmuHelpers PUBLIC TPCircularBuffer)
 
-set_property(TARGET OpenEmuHelpers PROPERTY OBJCXX_STANDARD 11)
-set_target_properties(OpenEmuHelpers PROPERTIES
-    XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
-)
-
+    set_property(TARGET OpenEmuHelpers PROPERTY OBJCXX_STANDARD 11)
+    set_target_properties(OpenEmuHelpers PROPERTIES
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
+    )
+endif()
 

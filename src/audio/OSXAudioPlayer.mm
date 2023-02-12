@@ -8,7 +8,7 @@
 #if defined(__APPLE__)
 
 #include "OSXAudioPlayer.h"
-#include "OEGameAudio.h"
+#include <OpenEmuHelpers/OEGameAudio.h>
 
 OEGameAudio* mAudio = NULL;
 
