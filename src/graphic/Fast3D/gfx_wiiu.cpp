@@ -459,10 +459,6 @@ static void gfx_wiiu_set_target_fps(int fps) {
 static void gfx_wiiu_set_maximum_frame_latency(int latency) {
 }
 
-static float gfx_wiiu_get_detected_hz(void) {
-    return 0;
-}
-
 struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_init,
     gfx_wiiu_close,
@@ -480,7 +476,6 @@ struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_get_time,
     gfx_wiiu_set_target_fps,
     gfx_wiiu_set_maximum_frame_latency,
-    gfx_wiiu_get_detected_hz,
 };
 
 #endif

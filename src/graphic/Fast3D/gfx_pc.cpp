@@ -2836,10 +2836,6 @@ void gfx_set_maximum_frame_latency(int latency) {
     gfx_wapi->set_maximum_frame_latency(latency);
 }
 
-float gfx_get_detected_hz(void) {
-    return gfx_wapi->get_detected_hz();
-}
-
 int gfx_create_framebuffer(uint32_t width, uint32_t height) {
     uint32_t orig_width = width, orig_height = height;
     gfx_adjust_width_height_for_scale(width, height);

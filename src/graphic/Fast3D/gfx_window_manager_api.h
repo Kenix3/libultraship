@@ -23,7 +23,6 @@ struct GfxWindowManagerAPI {
     double (*get_time)(void); // For debug
     void (*set_target_fps)(int fps);
     void (*set_maximum_frame_latency)(int latency);
-    float (*get_detected_hz)(void);
     const char* (*get_key_name)(int scancode);
 };
 

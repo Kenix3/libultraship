@@ -378,15 +378,7 @@ static void gfx_dxgi_set_fullscreen(bool enable) {
 }
 
 static void gfx_dxgi_get_active_window_refresh_rate(uint32_t* refresh_rate) {
-    DXGI_SWAP_CHAIN_DESC sd;
-    dxgi.swap_chain->GetDesc(&sd);
-
-    double rr = 0;
-    if (sd.BufferDesc.RefreshRate.Denominator) {
-        rr = (double)sd.BufferDesc.RefreshRate.Numerator / (double)sd.BufferDesc.RefreshRate.Denominator;
-    }
-
-    *refresh_rate = (uint32_t)rr;
+    *refresh_rate = (uint32_t)dxgi.detected_hz;
 }
 
 static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
@@ -666,10 +658,6 @@ static void gfx_dxgi_set_maximum_frame_latency(int latency) {
     dxgi.maximum_frame_latency = latency;
 }
 
-static float gfx_dxgi_get_detected_hz() {
-    return dxgi.detected_hz;
-}
-
 void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
                                         bool (*create_device_fn)(IDXGIAdapter1* adapter, bool test_only)) {
     if (dxgi.CreateDXGIFactory2 != nullptr) {
@@ -789,7 +777,6 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_get_time,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
-                                                       gfx_dxgi_get_detected_hz,
                                                        gfx_dxgi_get_key_name };
 
 #endif
