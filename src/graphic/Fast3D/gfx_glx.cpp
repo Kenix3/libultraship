@@ -310,6 +310,10 @@ static void gfx_glx_set_fullscreen(bool enable) {
     gfx_glx_set_fullscreen_state(enable, true);
 }
 
+static void gfx_gls_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    *refresh_rate = 60;
+}
+
 static void gfx_glx_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
                                            void (*on_all_keys_up)(void)) {
     glx.on_key_down = on_key_down;
@@ -536,6 +540,7 @@ struct GfxWindowManagerAPI gfx_glx = {
     gfx_glx_set_keyboard_callbacks,
     gfx_glx_set_fullscreen_changed_callback,
     gfx_glx_set_fullscreen,
+    gfx_gls_get_active_window_refresh_rate,
     gfx_glx_show_cursor,
     gfx_glx_main_loop,
     gfx_glx_get_dimensions,

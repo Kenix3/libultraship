@@ -236,6 +236,14 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
 }
 
+static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+
+    SDL_DisplayMode mode;
+    SDL_GetCurrentDisplayMode(display_in_use, &mode);
+    *refresh_rate = mode.refresh_rate;
+}
+
 static uint64_t previous_time;
 #ifdef _WIN32
 static HANDLE timer;
@@ -515,6 +523,7 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_keyboard_callbacks,
                                        gfx_sdl_set_fullscreen_changed_callback,
                                        gfx_sdl_set_fullscreen,
+                                       gfx_sdl_get_active_window_refresh_rate,
                                        gfx_sdl_set_cursor_visibility,
                                        gfx_sdl_main_loop,
                                        gfx_sdl_get_dimensions,

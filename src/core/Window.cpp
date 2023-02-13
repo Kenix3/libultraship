@@ -268,6 +268,11 @@ uint32_t Window::GetCurrentHeight() {
     return mHeight;
 }
 
+uint32_t Window::GetRefreshRateForGameDisplay() {
+    mWindowManagerApi->get_active_window_refresh_rate(&mGameDisplayRefreshRate);
+    return mGameDisplayRefreshRate;
+}
+
 float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }

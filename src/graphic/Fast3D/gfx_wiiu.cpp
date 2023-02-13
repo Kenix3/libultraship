@@ -346,6 +346,10 @@ static void gfx_wiiu_set_fullscreen_changed_callback(void (*on_fullscreen_change
 static void gfx_wiiu_set_fullscreen(bool enable) {
 }
 
+static void gfx_wiiu_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    *refresh_rate = 60;
+}
+
 static void gfx_wiiu_show_cursor(bool hide) {
 }
 
@@ -465,6 +469,7 @@ struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_set_keyboard_callbacks,
     gfx_wiiu_set_fullscreen_changed_callback,
     gfx_wiiu_set_fullscreen,
+    gfx_wiiu_get_active_window_refresh_rate,
     gfx_wiiu_show_cursor,
     gfx_wiiu_main_loop,
     gfx_wiiu_get_dimensions,

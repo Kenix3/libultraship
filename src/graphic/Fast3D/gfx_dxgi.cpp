@@ -377,6 +377,18 @@ static void gfx_dxgi_set_fullscreen(bool enable) {
     toggle_borderless_window_full_screen(enable, true);
 }
 
+static void gfx_dxgi_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    DXGI_SWAP_CHAIN_DESC sd;
+    dxgi.swap_chain->GetDesc(&sd);
+
+    double rr = 0;
+    if (sd.BufferDesc.RefreshRate.Denominator) {
+        rr = (double)sd.BufferDesc.RefreshRate.Numerator / (double)sd.BufferDesc.RefreshRate.Denominator;
+    }
+
+    *refresh_rate = (uint32_t)rr;
+}
+
 static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
                                             void (*on_all_keys_up)(void)) {
     dxgi.on_key_down = on_key_down;
@@ -766,6 +778,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_keyboard_callbacks,
                                                        gfx_dxgi_set_fullscreen_changed_callback,
                                                        gfx_dxgi_set_fullscreen,
+                                                       gfx_dxgi_get_active_window_refresh_rate,
                                                        gfx_dxgi_set_cursor_visibility,
                                                        gfx_dxgi_main_loop,
                                                        gfx_dxgi_get_dimensions,
