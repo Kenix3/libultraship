@@ -90,18 +90,6 @@ void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzone) {
     }
     x *= len;
     y *= len;
-
-    // bound diagonals to an octagonal range {-68 ... +68}
-    if (x != 0.0f && y != 0.0f) {
-        auto slope = y / x;
-        auto edgex = copysign(MAX_AXIS_RANGE / (abs(slope) + 16.0f / 69.0f), x);
-        auto edgey = copysign(std::min(abs(edgex * slope), MAX_AXIS_RANGE / (1.0f / abs(slope) + 16.0f / 69.0f)), y);
-        edgex = edgey / slope;
-
-        auto scale = sqrt(edgex * edgex + edgey * edgey) / MAX_AXIS_RANGE;
-        x *= scale;
-        y *= scale;
-    }
 }
 
 void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
@@ -125,6 +113,10 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     auto profile = getProfile(virtualSlot);
     ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0]);
     ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2]);
+    
+    if (pad == nullptr) {
+        return;
+    }
     
     padToBuffer.stick_x = leftStickX;
     padToBuffer.stick_y = leftStickY;
