@@ -26,7 +26,7 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
                 case Axis::X: {
                     if (getLeftStickX(virtualSlot) == 0) {
                         if (getPressedButtons(virtualSlot) & BTN_STICKLEFT) {
-                            return  -MAX_AXIS_RANGE;
+                            return -MAX_AXIS_RANGE;
                         } else if (getPressedButtons(virtualSlot) & BTN_STICKRIGHT) {
                             return MAX_AXIS_RANGE;
                         }
@@ -74,11 +74,11 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
             }
         }
     }
-    
+
     return 0;
 }
 
-void Controller::ProcessStick(int8_t &x, int8_t &y, uint16_t deadzone) {
+void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzone) {
     // create scaled circular dead-zone in range {-15 ... +15}
     auto len = sqrt(x * x + y * y);
     if (len < deadzone) {
@@ -90,7 +90,6 @@ void Controller::ProcessStick(int8_t &x, int8_t &y, uint16_t deadzone) {
     }
     x *= len;
     y *= len;
-
 
     // bound diagonals to an octagonal range {-68 ... +68}
     if (x != 0.0f && y != 0.0f) {
@@ -122,7 +121,7 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     int8_t leftStickY = ReadStick(virtualSlot, LEFT, Y);
     int8_t rightStickX = ReadStick(virtualSlot, RIGHT, X);
     int8_t rightStickY = ReadStick(virtualSlot, RIGHT, Y);
-    
+
     auto profile = getProfile(virtualSlot);
     ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0]);
     ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2]);

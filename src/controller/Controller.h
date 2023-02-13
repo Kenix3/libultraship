@@ -47,7 +47,7 @@ class Controller {
     virtual const std::string GetButtonName(int32_t virtualSlot, int32_t n64Button) = 0;
     virtual const std::string GetControllerName() = 0;
     int8_t ReadStick(int32_t virtualSlot, Stick stick, Axis axis);
-    void ProcessStick(int8_t &x, int8_t &y, uint16_t deadzone);
+    void ProcessStick(int8_t& x, int8_t& y, uint16_t deadzone);
     void Read(OSContPad* pad, int32_t virtualSlot);
     void SetButtonMapping(int32_t virtualSlot, int32_t n64Button, int32_t scancode);
     std::shared_ptr<ControllerAttachment> GetAttachment();

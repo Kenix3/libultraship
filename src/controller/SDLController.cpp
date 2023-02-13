@@ -56,7 +56,8 @@ bool SDLController::Close() {
     return true;
 }
 
-void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t virtualSlot) {
+void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY,
+                                       int32_t virtualSlot) {
     const auto axisValueX = SDL_GameControllerGetAxis(mController, axisX);
     const auto axisValueY = SDL_GameControllerGetAxis(mController, axisY);
 
