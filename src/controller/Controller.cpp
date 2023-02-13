@@ -7,6 +7,7 @@
 #else
 #include <SDL2/SDL_events.h>
 #endif
+#include <spdlog/spdlog.h>
 
 namespace Ship {
 
@@ -78,15 +79,20 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
     return 0;
 }
 
-void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzone) {
+void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t deadzoneY) {
+    if (deadzoneX != deadzoneY) {
+        SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", deadzoneY, deadzoneX);
+    }
+
+    // TODO: handle deadzones separately for X and Y
     // create scaled circular dead-zone in range {-15 ... +15}
     auto len = sqrt(x * x + y * y);
-    if (len < deadzone) {
+    if (len < deadzoneX) {
         len = 0;
     } else if (len > MAX_AXIS_RANGE) {
         len = MAX_AXIS_RANGE / len;
     } else {
-        len = (len - deadzone) * MAX_AXIS_RANGE / (MAX_AXIS_RANGE - deadzone) / len;
+        len = (len - deadzoneX) * MAX_AXIS_RANGE / (MAX_AXIS_RANGE - deadzoneX) / len;
     }
     x *= len;
     y *= len;
@@ -111,8 +117,8 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     int8_t rightStickY = ReadStick(virtualSlot, RIGHT, Y);
 
     auto profile = getProfile(virtualSlot);
-    ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0]);
-    ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2]);
+    ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1]);
+    ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3]);
 
     if (pad == nullptr) {
         return;

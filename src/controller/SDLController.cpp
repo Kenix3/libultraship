@@ -61,6 +61,7 @@ void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameCon
     const auto axisValueX = SDL_GameControllerGetAxis(mController, axisX);
     const auto axisValueY = SDL_GameControllerGetAxis(mController, axisY);
 
+    // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
     auto ax = axisValueX * MAX_AXIS_RANGE / 32767.0f;
     auto ay = axisValueY * MAX_AXIS_RANGE / 32767.0f;
 

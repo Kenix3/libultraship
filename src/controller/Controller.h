@@ -11,7 +11,7 @@
 
 #define EXTENDED_SCANCODE_BIT (1 << 8)
 #define AXIS_SCANCODE_BIT (1 << 9)
-#define MAX_AXIS_RANGE 85.0
+#define MAX_AXIS_RANGE 85.0f
 
 namespace Ship {
 enum GyroData { DRIFT_X, DRIFT_Y, GYRO_SENSITIVITY };
@@ -46,8 +46,6 @@ class Controller {
     virtual int32_t ReadRawPress() = 0;
     virtual const std::string GetButtonName(int32_t virtualSlot, int32_t n64Button) = 0;
     virtual const std::string GetControllerName() = 0;
-    int8_t ReadStick(int32_t virtualSlot, Stick stick, Axis axis);
-    void ProcessStick(int8_t& x, int8_t& y, uint16_t deadzone);
     void Read(OSContPad* pad, int32_t virtualSlot);
     void SetButtonMapping(int32_t virtualSlot, int32_t n64Button, int32_t scancode);
     std::shared_ptr<ControllerAttachment> GetAttachment();
@@ -68,6 +66,8 @@ class Controller {
     bool mIsRumbling;
 
     void LoadBinding();
+    int8_t ReadStick(int32_t virtualSlot, Stick stick, Axis axis);
+    void ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t deadzoneY);
 
   private:
     struct Buttons {
