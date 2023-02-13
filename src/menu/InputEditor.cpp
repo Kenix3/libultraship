@@ -114,7 +114,7 @@ void InputEditor::DrawControllerSchema() {
     auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetPhysicalDeviceFromVirtualSlot(mCurrentPort);
     auto profile = backend->getProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
-    
+
     backend->Read(nullptr, mCurrentPort);
 
     DrawControllerSelect(mCurrentPort);
