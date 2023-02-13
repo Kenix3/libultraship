@@ -45,7 +45,7 @@ class Window {
     void SetCursorVisibility(bool visible);
     uint32_t GetCurrentWidth();
     uint32_t GetCurrentHeight();
-    uint32_t GetRefreshRateForGameDisplay();
+    uint32_t GetCurrentRefreshRate();
     float GetCurrentAspectRatio();
     bool IsFullscreen();
     uint32_t GetMenuBar();
@@ -99,7 +99,7 @@ class Window {
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
     bool mIsFullscreen;
-    uint32_t mGameDisplayRefreshRate;
+    uint32_t mRefreshRate;
     uint32_t mWidth;
     uint32_t mHeight;
     uint32_t mMenuBar;
