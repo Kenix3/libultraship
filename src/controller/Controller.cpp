@@ -125,6 +125,11 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     auto profile = getProfile(virtualSlot);
     ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0]);
     ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2]);
+    
+    padToBuffer.stick_x = leftStickX;
+    padToBuffer.stick_y = leftStickY;
+    padToBuffer.right_stick_x = rightStickX;
+    padToBuffer.right_stick_y = rightStickY;
 
     // Gyro
     padToBuffer.gyro_x = getGyroX(virtualSlot);
