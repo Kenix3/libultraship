@@ -353,6 +353,7 @@ bool useViewports() {
 }
 
 void LoadTexture(const std::string& name, const std::string& path) {
+    // TODO: Nothing ever unloads the texture from Fast3D here.
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res = Window::GetInstance()->GetResourceManager()->LoadFile(path);
 
