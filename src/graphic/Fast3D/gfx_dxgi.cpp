@@ -378,7 +378,7 @@ static void gfx_dxgi_set_fullscreen(bool enable) {
 }
 
 static void gfx_dxgi_get_active_window_refresh_rate(uint32_t* refresh_rate) {
-    *refresh_rate = (uint32_t)dxgi.detected_hz;
+    *refresh_rate = (uint32_t)roundf(dxgi.detected_hz);
 }
 
 static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
