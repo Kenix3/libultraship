@@ -71,16 +71,16 @@ void WiiUGamepad::ReadFromSource(int32_t virtualSlot) {
                 float axisY = i >= VPAD_STICK_L_EMULATION_DOWN ? status->leftStick.y : status->rightStick.y;
 
                 if (profile->Mappings[i] == BTN_STICKRIGHT || profile->Mappings[i] == BTN_STICKLEFT) {
-                    stickX = axisX * 85;
+                    stickX = axisX * MAX_AXIS_RANGE;
                     continue;
                 } else if (profile->Mappings[i] == BTN_STICKDOWN || profile->Mappings[i] == BTN_STICKUP) {
-                    stickY = axisY * 85;
+                    stickY = axisY * MAX_AXIS_RANGE;
                     continue;
                 } else if (profile->Mappings[i] == BTN_VSTICKRIGHT || profile->Mappings[i] == BTN_VSTICKLEFT) {
-                    camX = axisX * 85;
+                    camX = axisX * MAX_AXIS_RANGE;
                     continue;
                 } else if (profile->Mappings[i] == BTN_VSTICKDOWN || profile->Mappings[i] == BTN_VSTICKUP) {
-                    camY = axisY * 85;
+                    camY = axisY * MAX_AXIS_RANGE;
                     continue;
                 }
             }
@@ -92,11 +92,13 @@ void WiiUGamepad::ReadFromSource(int32_t virtualSlot) {
     }
 
     if (stickX || stickY) {
-        NormalizeStickAxis(virtualSlot, stickX, stickY, profile->AxisDeadzones[0], false);
+        getLeftStickX(virtualSlot) = stickX;
+        getLeftStickY(virtualSlot) = stickY;
     }
 
     if (camX || camY) {
-        NormalizeStickAxis(virtualSlot, camX, camY, profile->AxisDeadzones[2], true);
+        getRightStickX(virtualSlot) = camX;
+        getRightStickY(virtualSlot) = camYy;
     }
 
     if (profile->UseGyro) {
@@ -273,42 +275,6 @@ const std::string WiiUGamepad::GetButtonName(int32_t virtualSlot, int n64Button)
 
 const std::string WiiUGamepad::GetControllerName() {
     return Connected() ? "Wii U GamePad" : "Wii U GamePad (Disconnected)";
-}
-
-void WiiUGamepad::NormalizeStickAxis(int32_t virtualSlot, float x, float y, uint16_t threshold, bool isRightStick) {
-    auto profile = getProfile(virtualSlot);
-
-    // create scaled circular dead-zone in range {-15 ... +15}
-    auto len = sqrt(x * x + y * y);
-    if (len < threshold) {
-        len = 0;
-    } else if (len > 85.0) {
-        len = 85.0 / len;
-    } else {
-        len = (len - threshold) * 85.0 / (85.0 - threshold) / len;
-    }
-    x *= len;
-    y *= len;
-
-    // bound diagonals to an octagonal range {-68 ... +68}
-    if (x != 0.0 && y != 0.0) {
-        auto slope = y / x;
-        auto edgex = copysign(85.0 / (fabs(slope) + 16.0 / 69.0), x);
-        auto edgey = copysign(std::min(fabs(edgex * slope), 85.0 / (1.0 / fabs(slope) + 16.0 / 69.0)), y);
-        edgex = edgey / slope;
-
-        auto scale = sqrt(edgex * edgex + edgey * edgey) / 85.0;
-        x *= scale;
-        y *= scale;
-    }
-
-    if (isRightStick) {
-        getRightStickX(virtualSlot) = x;
-        getRightStickY(virtualSlot) = y;
-    } else {
-        getLeftStickX(virtualSlot) = x;
-        getLeftStickY(virtualSlot) = y;
-    }
 }
 
 void WiiUGamepad::CreateDefaultBinding(int32_t virtualSlot) {
