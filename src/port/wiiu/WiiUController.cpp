@@ -167,7 +167,7 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
 
     if (camX || camY) {
         getRightStickX(virtualSlot) = camX;
-        getRightStickY(virtualSlot) = camYy;
+        getRightStickY(virtualSlot) = camY;
     }
 }
 
