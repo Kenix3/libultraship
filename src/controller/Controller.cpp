@@ -34,6 +34,7 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
                     } else {
                         return getLeftStickX(virtualSlot);
                     }
+                    break;
                 }
                 case Axis::Y: {
                     if (getLeftStickY(virtualSlot) == 0) {
@@ -45,8 +46,10 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
                     } else {
                         return getLeftStickY(virtualSlot);
                     }
+                    break;
                 }
             }
+            break;
         }
         case Stick::RIGHT: {
             switch (axis) {
@@ -60,6 +63,7 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
                     } else {
                         return getRightStickX(virtualSlot);
                     }
+                    break;
                 }
                 case Axis::Y: {
                     if (getRightStickY(virtualSlot) == 0) {
@@ -71,8 +75,10 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
                     } else {
                         return getRightStickY(virtualSlot);
                     }
+                    break;
                 }
             }
+            break;
         }
     }
 
