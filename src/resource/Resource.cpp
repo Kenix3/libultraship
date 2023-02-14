@@ -22,7 +22,7 @@ Resource::~Resource() {
             continue;
         }
 
-        auto resShared = ResourceManager->GetCachedFile(hashStr->c_str());
+        auto resShared = ResourceManager->GetCachedResource(hashStr->c_str());
         if (resShared != nullptr) {
             auto res = (Ship::DisplayList*)resShared.get();
 
@@ -33,8 +33,6 @@ Resource::~Resource() {
 
     Patches.clear();
 
-    if (File != nullptr) {
-        SPDLOG_TRACE("Deconstructor called on file %s\n", File->Path.c_str());
-    }
+    SPDLOG_TRACE("Deconstructor called on resource {}\n", Path.c_str());
 }
 } // namespace Ship

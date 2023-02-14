@@ -8,7 +8,7 @@
 #include "resource/type/Texture.h"
 
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
-    return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceNow(name)
+    return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(name)
                : Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
 }
 
@@ -173,8 +173,13 @@ void DirtyResourceByCrc(uint64_t crc) {
 size_t UnloadResourceByName(const char* name) {
     return Ship::Window::GetInstance()->GetResourceManager()->UnloadResource(name);
 }
+
 size_t UnloadResourceByCrc(uint64_t crc) {
     return UnloadResourceByName(GetResourceNameByCrc(crc));
+}
+
+void UnloadAllResources() {
+    return Ship::Window::GetInstance()->GetResourceManager()->UnloadAllResources();
 }
 
 void ClearResourceCache(void) {

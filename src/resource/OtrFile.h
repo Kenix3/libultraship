@@ -2,8 +2,6 @@
 
 #include <string>
 #include <memory>
-#include <mutex>
-#include <condition_variable>
 
 namespace Ship {
 class Archive;
@@ -11,11 +9,7 @@ class Archive;
 struct OtrFile {
     std::shared_ptr<Archive> Parent;
     std::string Path;
-    std::shared_ptr<char[]> Buffer;
-    size_t BufferSize;
+    std::vector<char> Buffer;
     bool IsLoaded = false;
-    bool HasLoadError = false;
-    std::condition_variable FileLoadNotifier;
-    std::mutex FileLoadMutex;
 };
 } // namespace Ship

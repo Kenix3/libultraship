@@ -40,7 +40,7 @@ std::shared_ptr<Window> ResourceLoader::GetContext() {
 }
 
 std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> fileToLoad) {
-    auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.get(), fileToLoad->BufferSize);
+    auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.data(), fileToLoad->Buffer.size());
     auto reader = std::make_shared<BinaryReader>(stream);
 
     // OTR HEADER BEGIN
@@ -67,9 +67,10 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     }
 
     if (result != nullptr) {
-        result->File = fileToLoad;
+        //result->File = fileToLoad;
         result->Id = id;
         result->Type = resourceType;
+        result->Path = fileToLoad->Path;
         result->ResourceManager = GetContext()->GetResourceManager();
     } else {
         if (fileToLoad != nullptr) {
