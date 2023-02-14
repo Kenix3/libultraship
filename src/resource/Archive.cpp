@@ -64,7 +64,8 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
     }
 }
 
-std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent, HANDLE mpqHandle) {
+std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent,
+                                                     HANDLE mpqHandle) {
     HANDLE fileHandle = NULL;
 
     std::shared_ptr<OtrFile> fileToLoad = std::make_shared<OtrFile>();

@@ -43,7 +43,8 @@ class ResourceMgr {
     void UnloadAllResources();
     std::shared_future<std::shared_ptr<Resource>> LoadResourceAsync(const std::string& filePath);
     std::shared_ptr<std::vector<std::shared_ptr<Resource>>> CacheDirectory(const std::string& searchMask);
-    std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>> CacheDirectoryAsync(const std::string& searchMask);
+    std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
+    CacheDirectoryAsync(const std::string& searchMask);
     size_t DirtyDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask);
     int32_t OtrSignatureCheck(char* imgData);

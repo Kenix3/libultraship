@@ -24,7 +24,7 @@ class Resource {
     uint64_t Id;
     bool IsDirty = false;
     std::string Path = "";
-    //std::shared_ptr<OtrFile> File;
+    // std::shared_ptr<OtrFile> File;
     std::vector<ResourceAddressPatch> Patches;
     virtual void* GetPointer() = 0;
     virtual size_t GetPointerSize() = 0;

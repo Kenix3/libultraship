@@ -67,7 +67,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     }
 
     if (result != nullptr) {
-        //result->File = fileToLoad;
+        // result->File = fileToLoad;
         result->Id = id;
         result->Type = resourceType;
         result->Path = fileToLoad->Path;

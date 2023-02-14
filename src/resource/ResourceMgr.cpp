@@ -73,12 +73,14 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
     auto cachedResource = GetCachedResource(fileToLoad);
 
     {
-        // Another thread could have loaded the resource while we were processing, so we want to check before setting to the cache.
+        // Another thread could have loaded the resource while we were processing, so we want to check before setting to
+        // the cache.
         const std::lock_guard<std::mutex> lock(mMutex);
         if (cachedResource == nullptr) {
             mResourceCache[fileToLoad] = resource;
         } else {
-            // If another thread has already loaded this resource, discard the work we already did and return from cache.
+            // If another thread has already loaded this resource, discard the work we already did and return from
+            // cache.
             resource = cachedResource;
         }
     }
