@@ -47,7 +47,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
   private:
     std::string mMainPath;
     std::string mPatchesPath;
-    std::vector<std::string> mFileList;
+    std::vector<std::string> mOtrArchives;
     std::unordered_set<uint32_t> mValidHashes;
     std::map<std::string, HANDLE> mMpqHandles;
     std::vector<std::string> mAddedFiles;

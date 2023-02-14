@@ -22,14 +22,14 @@ Archive::Archive(const std::string& mainPath, bool enableWriting)
 
 Archive::Archive(const std::string& mainPath, const std::string& patchesPath,
                  const std::unordered_set<uint32_t>& validHashes, bool enableWriting, bool generateCrcMap)
-    : mMainPath(mainPath), mPatchesPath(patchesPath), mFileList({}), mValidHashes(validHashes) {
+    : mMainPath(mainPath), mPatchesPath(patchesPath), mOtrArchives({}), mValidHashes(validHashes) {
     mMainMpq = nullptr;
     Load(enableWriting, generateCrcMap);
 }
 
 Archive::Archive(const std::vector<std::string>& fileList, const std::unordered_set<uint32_t>& validHashes,
                  bool enableWriting, bool generateCrcMap)
-    : mFileList(fileList), mValidHashes(validHashes) {
+    : mOtrArchives(fileList), mValidHashes(validHashes) {
     mMainMpq = nullptr;
     Load(enableWriting, generateCrcMap);
 }
@@ -327,17 +327,17 @@ bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
 
 bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
     HANDLE mpqHandle = NULL;
-    if (mFileList.empty()) {
+    if (mOtrArchives.empty()) {
         if (mMainPath.length() > 0) {
             if (std::filesystem::is_directory(mMainPath)) {
                 for (const auto& p : std::filesystem::recursive_directory_iterator(mMainPath)) {
                     if (StringHelper::IEquals(p.path().extension().string(), ".otr")) {
                         SPDLOG_ERROR("Reading {} mpq", p.path().string().c_str());
-                        mFileList.push_back(p.path().string());
+                        mOtrArchives.push_back(p.path().string());
                     }
                 }
             } else if (std::filesystem::is_regular_file(mMainPath)) {
-                mFileList.push_back(mMainPath);
+                mOtrArchives.push_back(mMainPath);
             } else {
                 SPDLOG_ERROR("The directory {} does not exist", mMainPath.c_str());
                 return false;
@@ -346,24 +346,24 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
             SPDLOG_ERROR("No OTR file list or Main Path provided.");
             return false;
         }
-        if (mFileList.empty()) {
+        if (mOtrArchives.empty()) {
             SPDLOG_ERROR("No OTR files present in {}", mMainPath.c_str());
             return false;
         }
     }
     bool baseLoaded = false;
     int i = 0;
-    while (!baseLoaded && i < mFileList.size()) {
+    while (!baseLoaded && i < mOtrArchives.size()) {
 #if defined(__SWITCH__) || defined(__WIIU__)
-        std::string fullPath = mFileList[i];
+        std::string fullPath = mOtrArchives[i];
 #else
-        std::string fullPath = std::filesystem::absolute(mFileList[i]).string();
+        std::string fullPath = std::filesystem::absolute(mOtrArchives[i]).string();
 #endif
         if (SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
             SPDLOG_INFO("Opened mpq file {}.", fullPath.c_str());
             mMainMpq = mpqHandle;
             if (!ProcessOtrVersion()) {
-                SPDLOG_WARN("Attempted to load invalid OTR file {}", mFileList[i].c_str());
+                SPDLOG_WARN("Attempted to load invalid OTR file {}", mOtrArchives[i].c_str());
                 SFileCloseArchive(mpqHandle);
                 mMainMpq = nullptr;
             } else {
@@ -382,11 +382,11 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         SPDLOG_ERROR("No valid OTR file was provided.");
         return false;
     }
-    for (int j = i; j < mFileList.size(); j++) {
+    for (int j = i; j < mOtrArchives.size(); j++) {
 #if defined(__SWITCH__) || defined(__WIIU__)
-        std::string fullPath = mFileList[j];
+        std::string fullPath = mOtrArchives[j];
 #else
-        std::string fullPath = std::filesystem::absolute(mFileList[j]).string();
+        std::string fullPath = std::filesystem::absolute(mOtrArchives[j]).string();
 #endif
         if (LoadPatchMPQ(fullPath, true)) {
             SPDLOG_INFO("({}) Patched in mpq file.", fullPath.c_str());
