@@ -80,13 +80,16 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
 }
 
 void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t deadzoneY) {
+    auto x_unsigned = fabs(x);
+    auto y_unsigned = fabs(y);
+
+    // TODO: handle deadzones separately for X and Y
     if (deadzoneX != deadzoneY) {
         SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", deadzoneY, deadzoneX);
     }
 
-    // TODO: handle deadzones separately for X and Y
     // create scaled circular dead-zone in range {-15 ... +15}
-    auto len = sqrt(x * x + y * y);
+    auto len = sqrt(x_unsigned * x_unsigned + y_unsigned * y_unsigned);
     if (len < deadzoneX) {
         len = 0;
     } else if (len > MAX_AXIS_RANGE) {
@@ -94,8 +97,24 @@ void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t
     } else {
         len = (len - deadzoneX) * MAX_AXIS_RANGE / (MAX_AXIS_RANGE - deadzoneX) / len;
     }
-    x *= len;
-    y *= len;
+    x_unsigned *= len;
+    y_unsigned *= len;
+
+    // bound diagonals to an octagonal range {-68 ... +68}
+    if (x_unsigned != 0.0 && y_unsigned != 0.0) {
+        auto slope = y_unsigned / x_unsigned;
+        auto edgex = copysign(MAX_AXIS_RANGE / (fabs(slope) + 16.0 / 69.0), x_unsigned);
+        auto edgey = copysign(std::min(fabs(edgex * slope), MAX_AXIS_RANGE / (1.0 / fabs(slope) + 16.0 / 69.0)), y);
+        edgex = edgey / slope;
+
+        auto scale = sqrt(edgex * edgex + edgey * edgey) / MAX_AXIS_RANGE;
+        x_unsigned *= scale;
+        y_unsigned *= scale;
+    }
+
+    // assign back to original sign
+    x = copysign(x_unsigned, x);
+    y = copysign(y_unsigned, y);
 }
 
 void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
