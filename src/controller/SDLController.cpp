@@ -10,6 +10,8 @@
 #define strdup _strdup
 #endif
 
+#define MAX_SDL_RANGE (float)INT16_MAX
+
 namespace Ship {
 
 SDLController::SDLController(int32_t physicalSlot) : Controller(), mController(nullptr), mPhysicalSlot(physicalSlot) {
@@ -62,8 +64,8 @@ void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameCon
     const auto axisValueY = SDL_GameControllerGetAxis(mController, axisY);
 
     // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
-    auto ax = axisValueX * MAX_AXIS_RANGE / 32767.0f;
-    auto ay = axisValueY * MAX_AXIS_RANGE / 32767.0f;
+    auto ax = axisValueX * MAX_AXIS_RANGE / MAX_SDL_RANGE;
+    auto ay = axisValueY * MAX_AXIS_RANGE / MAX_SDL_RANGE;
 
     if (axisX == SDL_CONTROLLER_AXIS_LEFTX) {
         getLeftStickX(virtualSlot) = +ax;
