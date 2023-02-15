@@ -817,10 +817,6 @@ Backend WindowBackend() {
     return impl.backend;
 }
 
-float WindowRefreshRate() {
-    return gfx_get_detected_hz();
-}
-
 std::vector<std::pair<const char*, const char*>> GetAvailableRenderingBackends() {
     return renderingBackends;
 }

@@ -344,6 +344,10 @@ static void gfx_wiiu_set_fullscreen_changed_callback(void (*on_fullscreen_change
 static void gfx_wiiu_set_fullscreen(bool enable) {
 }
 
+static void gfx_wiiu_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    *refresh_rate = 60;
+}
+
 static void gfx_wiiu_show_cursor(bool hide) {
 }
 
@@ -453,16 +457,13 @@ static void gfx_wiiu_set_target_fps(int fps) {
 static void gfx_wiiu_set_maximum_frame_latency(int latency) {
 }
 
-static float gfx_wiiu_get_detected_hz(void) {
-    return 0;
-}
-
 struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_init,
     gfx_wiiu_close,
     gfx_wiiu_set_keyboard_callbacks,
     gfx_wiiu_set_fullscreen_changed_callback,
     gfx_wiiu_set_fullscreen,
+    gfx_wiiu_get_active_window_refresh_rate,
     gfx_wiiu_show_cursor,
     gfx_wiiu_main_loop,
     gfx_wiiu_get_dimensions,
@@ -473,7 +474,6 @@ struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_get_time,
     gfx_wiiu_set_target_fps,
     gfx_wiiu_set_maximum_frame_latency,
-    gfx_wiiu_get_detected_hz,
 };
 
 #endif
