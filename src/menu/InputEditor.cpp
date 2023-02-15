@@ -332,7 +332,7 @@ void InputEditor::DrawControllerSchema() {
         auto nda = notchProximityVal;
         
         ImGui::SetCursorPosX(cursorX);
-        ImGui::Text("Snap threshold: %d", nda);
+        ImGui::Text("Notch Snap Angle: %d", nda);
         ImGui::SetCursorPosX(cursorX);
         
 #ifdef __WIIU__
@@ -347,7 +347,7 @@ void InputEditor::DrawControllerSchema() {
         }
         ImGui::PopItemWidth();
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", "How near in degrees to a notch angle, you have to be for it to snap to nearest notch");
+            ImGui::SetTooltip("%s", "How near in degrees to a virtual notch angle you have to be for it to snap to nearest notch");
         }
     }
     
