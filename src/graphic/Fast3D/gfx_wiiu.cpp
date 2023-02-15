@@ -46,7 +46,6 @@
 static MEMHeapHandle heap_MEM1 = nullptr;
 static MEMHeapHandle heap_foreground = nullptr;
 
-static bool is_running = true;
 bool has_foreground = false;
 static void* mem1_storage = nullptr;
 static void* command_buffer_pool = nullptr;
@@ -95,7 +94,6 @@ bool gfx_wiiu_init_mem1(void) {
 }
 
 void gfx_wiiu_close(void) {
-    is_running = false;
 }
 
 void gfx_wiiu_destroy_mem1(void) {
@@ -354,7 +352,7 @@ static void gfx_wiiu_set_keyboard_callbacks(bool (*on_key_down)(int scancode), b
 }
 
 static void gfx_wiiu_main_loop(void (*run_one_game_iter)(void)) {
-    while (WHBProcIsRunning() && is_running) {
+    while (WHBProcIsRunning()) {
         run_one_game_iter();
     }
 
