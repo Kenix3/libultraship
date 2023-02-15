@@ -85,6 +85,16 @@ void GameOverlay::TextDrawNotification(float duration, bool shadow, const char* 
     NeedsCleanup = true;
 }
 
+void GameOverlay::ClearNotifications() {
+    for (auto it = this->RegisteredOverlays.begin(); it != this->RegisteredOverlays.end();) {
+        if (it->second->type == OverlayType::NOTIFICATION) {
+            it = this->RegisteredOverlays.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 void GameOverlay::CleanupNotifications() {
     if (!NeedsCleanup)
         return;
