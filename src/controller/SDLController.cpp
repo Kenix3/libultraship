@@ -10,6 +10,8 @@
 #define strdup _strdup
 #endif
 
+#define MAX_SDL_RANGE (float)INT16_MAX
+
 namespace Ship {
 
 SDLController::SDLController(int32_t physicalSlot) : Controller(), mController(nullptr), mPhysicalSlot(physicalSlot) {
@@ -57,39 +59,13 @@ bool SDLController::Close() {
 }
 
 void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY,
-                                       int16_t axisThreshold, int32_t virtualSlot) {
-    auto profile = getProfile(virtualSlot);
-
+                                       int32_t virtualSlot) {
     const auto axisValueX = SDL_GameControllerGetAxis(mController, axisX);
     const auto axisValueY = SDL_GameControllerGetAxis(mController, axisY);
 
-    // scale {-32768 ... +32767} to {-84 ... +84}
-    auto ax = axisValueX * 85.0f / 32767.0f;
-    auto ay = axisValueY * 85.0f / 32767.0f;
-
-    // create scaled circular dead-zone in range {-15 ... +15}
-    auto len = sqrt(ax * ax + ay * ay);
-    if (len < axisThreshold) {
-        len = 0.0f;
-    } else if (len > 85.0) {
-        len = 85.0f / len;
-    } else {
-        len = (len - axisThreshold) * 85.0f / (85.0f - axisThreshold) / len;
-    }
-    ax *= len;
-    ay *= len;
-
-    // bound diagonals to an octagonal range {-68 ... +68}
-    if (ax != 0.0f && ay != 0.0f) {
-        auto slope = ay / ax;
-        auto edgex = copysign(85.0f / (abs(slope) + 16.0f / 69.0f), ax);
-        auto edgey = copysign(std::min(abs(edgex * slope), 85.0f / (1.0f / abs(slope) + 16.0f / 69.0f)), ay);
-        edgex = edgey / slope;
-
-        auto scale = sqrt(edgex * edgex + edgey * edgey) / 85.0f;
-        ax *= scale;
-        ay *= scale;
-    }
+    // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
+    auto ax = axisValueX * MAX_AXIS_RANGE / MAX_SDL_RANGE;
+    auto ay = axisValueY * MAX_AXIS_RANGE / MAX_SDL_RANGE;
 
     if (axisX == SDL_CONTROLLER_AXIS_LEFTX) {
         getLeftStickX(virtualSlot) = +ax;
@@ -187,17 +163,14 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
     SDL_GameControllerAxis leftStickAxisX = SDL_CONTROLLER_AXIS_INVALID;
     SDL_GameControllerAxis leftStickAxisY = SDL_CONTROLLER_AXIS_INVALID;
-    int32_t leftStickDeadzone = 0;
 
     SDL_GameControllerAxis rightStickAxisX = SDL_CONTROLLER_AXIS_INVALID;
     SDL_GameControllerAxis rightStickAxisY = SDL_CONTROLLER_AXIS_INVALID;
-    int32_t rightStickDeadzone = 0;
 
     for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
         const auto axis = static_cast<SDL_GameControllerAxis>(i);
         const auto posScancode = i | AXIS_SCANCODE_BIT;
         const auto negScancode = -posScancode;
-        const auto axisDeadzone = profile->AxisDeadzones[i];
         const auto axisMinimumPress = profile->AxisMinimumPress[i];
         const auto posButton = profile->Mappings[posScancode];
         const auto negButton = profile->Mappings[negScancode];
@@ -241,12 +214,6 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", leftStickAxisX, axis);
                 }
 
-                if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", leftStickDeadzone,
-                                 axisDeadzone);
-                }
-
-                leftStickDeadzone = axisDeadzone;
                 leftStickAxisX = axis;
             }
 
@@ -255,12 +222,6 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", leftStickAxisY, axis);
                 }
 
-                if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", leftStickDeadzone,
-                                 axisDeadzone);
-                }
-
-                leftStickDeadzone = axisDeadzone;
                 leftStickAxisY = axis;
             }
 
@@ -269,12 +230,6 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", leftStickAxisX, axis);
                 }
 
-                if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", leftStickDeadzone,
-                                 axisDeadzone);
-                }
-
-                leftStickDeadzone = axisDeadzone;
                 leftStickAxisX = axis;
             }
 
@@ -283,12 +238,6 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", leftStickAxisY, axis);
                 }
 
-                if (leftStickDeadzone != 0 && leftStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}",
-                                 leftStickDeadzone, axisDeadzone);
-                }
-
-                leftStickDeadzone = axisDeadzone;
                 leftStickAxisY = axis;
             }
 
@@ -298,12 +247,6 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid PosStickX configured. Neg was {} and Pos is {}", rightStickAxisX, axis);
                 }
 
-                if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", rightStickDeadzone,
-                                 axisDeadzone);
-                }
-
-                rightStickDeadzone = axisDeadzone;
                 rightStickAxisX = axis;
             }
 
@@ -312,12 +255,6 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid PosStickY configured. Neg was {} and Pos is {}", rightStickAxisY, axis);
                 }
 
-                if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", rightStickDeadzone,
-                                 axisDeadzone);
-                }
-
-                rightStickDeadzone = axisDeadzone;
                 rightStickAxisY = axis;
             }
 
@@ -326,12 +263,6 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid NegStickX configured. Pos was {} and Neg is {}", rightStickAxisX, axis);
                 }
 
-                if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone configured. Left/Right was {} and Up/Down is {}", rightStickDeadzone,
-                                 axisDeadzone);
-                }
-
-                rightStickDeadzone = axisDeadzone;
                 rightStickAxisX = axis;
             }
 
@@ -340,23 +271,17 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
                     SPDLOG_TRACE("Invalid NegStickY configured. Pos was {} and Neg is {}", rightStickAxisY, axis);
                 }
 
-                if (rightStickDeadzone != 0 && rightStickDeadzone != axisDeadzone) {
-                    SPDLOG_TRACE("Invalid Deadzone misconfigured. Left/Right was {} and Up/Down is {}",
-                                 rightStickDeadzone, axisDeadzone);
-                }
-
-                rightStickDeadzone = axisDeadzone;
                 rightStickAxisY = axis;
             }
         }
     }
 
     if (leftStickAxisX != SDL_CONTROLLER_AXIS_INVALID && leftStickAxisY != SDL_CONTROLLER_AXIS_INVALID) {
-        NormalizeStickAxis(leftStickAxisX, leftStickAxisY, leftStickDeadzone, virtualSlot);
+        NormalizeStickAxis(leftStickAxisX, leftStickAxisY, virtualSlot);
     }
 
     if (rightStickAxisX != SDL_CONTROLLER_AXIS_INVALID && rightStickAxisY != SDL_CONTROLLER_AXIS_INVALID) {
-        NormalizeStickAxis(rightStickAxisX, rightStickAxisY, rightStickDeadzone, virtualSlot);
+        NormalizeStickAxis(rightStickAxisX, rightStickAxisY, virtualSlot);
     }
 }
 

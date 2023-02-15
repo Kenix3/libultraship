@@ -7,6 +7,7 @@
 #else
 #include <SDL2/SDL_events.h>
 #endif
+#include <spdlog/spdlog.h>
 
 namespace Ship {
 
@@ -17,6 +18,109 @@ Controller::Controller() : mIsRumbling(false) {
         mProfiles[virtualSlot] = std::make_shared<DeviceProfile>();
         mButtonData[virtualSlot] = std::make_shared<Buttons>();
     }
+}
+
+int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
+    switch (stick) {
+        case Stick::LEFT: {
+            switch (axis) {
+                case Axis::X: {
+                    if (getLeftStickX(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_STICKLEFT) {
+                            return -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_STICKRIGHT) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getLeftStickX(virtualSlot);
+                    }
+                    break;
+                }
+                case Axis::Y: {
+                    if (getLeftStickY(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_STICKDOWN) {
+                            return -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_STICKUP) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getLeftStickY(virtualSlot);
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+        case Stick::RIGHT: {
+            switch (axis) {
+                case Axis::X: {
+                    if (getRightStickX(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_VSTICKLEFT) {
+                            return -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKRIGHT) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getRightStickX(virtualSlot);
+                    }
+                    break;
+                }
+                case Axis::Y: {
+                    if (getRightStickY(virtualSlot) == 0) {
+                        if (getPressedButtons(virtualSlot) & BTN_VSTICKDOWN) {
+                            return -MAX_AXIS_RANGE;
+                        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKUP) {
+                            return MAX_AXIS_RANGE;
+                        }
+                    } else {
+                        return getRightStickY(virtualSlot);
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    return 0;
+}
+
+void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t deadzoneY) {
+    auto ux = fabs(x);
+    auto uy = fabs(y);
+
+    // TODO: handle deadzones separately for X and Y
+    if (deadzoneX != deadzoneY) {
+        SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", deadzoneY, deadzoneX);
+    }
+
+    // create scaled circular dead-zone in range {-15 ... +15}
+    auto len = sqrt(ux * ux + uy * uy);
+    if (len < deadzoneX) {
+        len = 0;
+    } else if (len > MAX_AXIS_RANGE) {
+        len = MAX_AXIS_RANGE / len;
+    } else {
+        len = (len - deadzoneX) * MAX_AXIS_RANGE / (MAX_AXIS_RANGE - deadzoneX) / len;
+    }
+    ux *= len;
+    uy *= len;
+
+    // bound diagonals to an octagonal range {-68 ... +68}
+    if (ux != 0.0 && uy != 0.0) {
+        auto slope = uy / ux;
+        auto edgex = copysign(MAX_AXIS_RANGE / (fabs(slope) + 16.0 / 69.0), ux);
+        auto edgey = copysign(std::min(fabs(edgex * slope), MAX_AXIS_RANGE / (1.0 / fabs(slope) + 16.0 / 69.0)), y);
+        edgex = edgey / slope;
+
+        auto scale = sqrt(edgex * edgex + edgey * edgey) / MAX_AXIS_RANGE;
+        ux *= scale;
+        uy *= scale;
+    }
+
+    // assign back to original sign
+    x = copysign(ux, x);
+    y = copysign(uy, y);
 }
 
 void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
@@ -32,46 +136,23 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     padToBuffer.button |= getPressedButtons(virtualSlot) & 0xFFFF;
 
     // Stick Inputs
-    if (getLeftStickX(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_STICKLEFT) {
-            padToBuffer.stick_x = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_STICKRIGHT) {
-            padToBuffer.stick_x = 127;
-        }
-    } else {
-        padToBuffer.stick_x = getLeftStickX(virtualSlot);
+    int8_t leftStickX = ReadStick(virtualSlot, LEFT, X);
+    int8_t leftStickY = ReadStick(virtualSlot, LEFT, Y);
+    int8_t rightStickX = ReadStick(virtualSlot, RIGHT, X);
+    int8_t rightStickY = ReadStick(virtualSlot, RIGHT, Y);
+
+    auto profile = getProfile(virtualSlot);
+    ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1]);
+    ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3]);
+
+    if (pad == nullptr) {
+        return;
     }
 
-    if (getLeftStickY(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_STICKDOWN) {
-            padToBuffer.stick_y = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_STICKUP) {
-            padToBuffer.stick_y = 127;
-        }
-    } else {
-        padToBuffer.stick_y = getLeftStickY(virtualSlot);
-    }
-
-    // Stick Inputs
-    if (getRightStickX(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_VSTICKLEFT) {
-            padToBuffer.right_stick_x = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKRIGHT) {
-            padToBuffer.right_stick_x = 127;
-        }
-    } else {
-        padToBuffer.right_stick_x = getRightStickX(virtualSlot);
-    }
-
-    if (getRightStickY(virtualSlot) == 0) {
-        if (getPressedButtons(virtualSlot) & BTN_VSTICKDOWN) {
-            padToBuffer.right_stick_y = -128;
-        } else if (getPressedButtons(virtualSlot) & BTN_VSTICKUP) {
-            padToBuffer.right_stick_y = 127;
-        }
-    } else {
-        padToBuffer.right_stick_y = getRightStickY(virtualSlot);
-    }
+    padToBuffer.stick_x = leftStickX;
+    padToBuffer.stick_y = leftStickY;
+    padToBuffer.right_stick_x = rightStickX;
+    padToBuffer.right_stick_y = rightStickY;
 
     // Gyro
     padToBuffer.gyro_x = getGyroX(virtualSlot);

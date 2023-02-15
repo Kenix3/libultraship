@@ -115,6 +115,8 @@ void InputEditor::DrawControllerSchema() {
     auto profile = backend->getProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
+    backend->Read(nullptr, mCurrentPort);
+
     DrawControllerSelect(mCurrentPort);
 
     SohImGui::BeginGroupPanel("Buttons", ImVec2(150, 20));
