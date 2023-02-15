@@ -326,27 +326,29 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
     }
     
-    const char* notchProximityCvar = "gNotchProximityThreshold";
-    int notchProximityVal = CVarGetInteger(notchProximityCvar, 31);
-    auto nda = notchProximityVal;
-    
-    ImGui::SetCursorPosX(cursorX);
-    ImGui::Text("Snap threshold: %d", nda);
-    ImGui::SetCursorPosX(cursorX);
-    
+    if (!isKeyboard) {
+        const char* notchProximityCvar = "gNotchProximityThreshold";
+        int notchProximityVal = CVarGetInteger(notchProximityCvar, 31);
+        auto nda = notchProximityVal;
+        
+        ImGui::SetCursorPosX(cursorX);
+        ImGui::Text("Snap threshold: %d", nda);
+        ImGui::SetCursorPosX(cursorX);
+        
 #ifdef __WIIU__
         ImGui::PushItemWidth(135.0f * 2);
 #else
         ImGui::PushItemWidth(135.0f);
 #endif
-    ImGui::SliderInt("##NotchProximityThreshold", &notchProximityVal, 0, 45, "", ImGuiSliderFlags_AlwaysClamp);
-    {
-        CVarSetInteger(notchProximityCvar, notchProximityVal);
-        SohImGui::RequestCvarSaveOnNextTick();
-    }
-    ImGui::PopItemWidth();
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", "How near in degrees to a notch angle, you have to be for it to snap to nearest notch");
+        ImGui::SliderInt("##NotchProximityThreshold", &notchProximityVal, 0, 45, "", ImGuiSliderFlags_AlwaysClamp);
+        {
+            CVarSetInteger(notchProximityCvar, notchProximityVal);
+            SohImGui::RequestCvarSaveOnNextTick();
+        }
+        ImGui::PopItemWidth();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", "How near in degrees to a notch angle, you have to be for it to snap to nearest notch");
+        }
     }
     
     ImGui::Dummy(ImVec2(0, 5));
