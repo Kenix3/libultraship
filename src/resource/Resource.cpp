@@ -2,7 +2,6 @@
 #include "resource/type/DisplayList.h"
 #include "resource/ResourceMgr.h"
 #include <spdlog/spdlog.h>
-#include <tinyxml2.h>
 #include "libultraship/libultra/gbi.h"
 
 namespace Ship {
