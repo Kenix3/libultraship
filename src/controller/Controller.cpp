@@ -9,6 +9,9 @@
 #endif
 #include <spdlog/spdlog.h>
 
+#define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
+#define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
+
 namespace Ship {
 
 Controller::Controller() : mIsRumbling(false) {
@@ -116,6 +119,19 @@ void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t
         auto scale = sqrt(edgex * edgex + edgey * edgey) / MAX_AXIS_RANGE;
         ux *= scale;
         uy *= scale;
+    }
+    
+    // map to virtual notches
+    double notchProximityVal = CVarGetInteger("gNotchProximityThreshold", 31);
+    const double notchProximityValRadians = notchProximityVal * M_TAU / 360;
+    
+    const double distance = std::sqrt((ux * ux) + (uy * uy)) / MAX_AXIS_RANGE;
+    if (distance >= MINIMUM_RADIUS_TO_MAP_NOTCH) {
+        auto angle = atan2(uy, ux) + M_TAU;
+        auto newAngle = GetClosestNotch(angle, notchProximityValRadians);
+        
+        ux = cos(newAngle) * distance * MAX_AXIS_RANGE;
+        uy = sin(newAngle) * distance * MAX_AXIS_RANGE;
     }
 
     // assign back to original sign
@@ -236,5 +252,12 @@ bool Controller::IsRumbling() {
 
 std::string Controller::GetGuid() {
     return mGuid;
+}
+
+double Controller::GetClosestNotch(double angle, double approximationThreshold) {
+    constexpr auto octagonAngle = M_TAU / 8;
+    const auto closestNotch = std::round(angle / octagonAngle) * octagonAngle;
+    const auto distanceToNotch = std::abs(fmod(closestNotch - angle + M_PI, M_TAU) - M_PI);
+    return distanceToNotch < approximationThreshold / 2 ? closestNotch : angle;
 }
 } // namespace Ship
