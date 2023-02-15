@@ -83,7 +83,7 @@ class Controller {
     std::unordered_map<int32_t, std::shared_ptr<DeviceProfile>> mProfiles;
     std::unordered_map<int32_t, std::shared_ptr<Buttons>> mButtonData = {};
     std::deque<OSContPad> mPadBuffer;
-    
+
     double GetClosestNotch(double angle, double approximationThreshold);
 };
 } // namespace Ship

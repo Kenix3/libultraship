@@ -55,7 +55,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     reader->ReadUInt32();                                           // Resource minor version number
     reader->ReadUInt64();                                           // ROM CRC
     reader->ReadUInt32();                                           // ROM Enum
-    reader->Seek(64, SeekOffsetType::Start);                   // Reserved for future file format versions...
+    reader->Seek(64, SeekOffsetType::Start);                        // Reserved for future file format versions...
     // OTR HEADER END
 
     std::shared_ptr<Resource> result = nullptr;

@@ -120,16 +120,16 @@ void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t
         ux *= scale;
         uy *= scale;
     }
-    
+
     // map to virtual notches
     double notchProximityVal = CVarGetInteger("gNotchProximityThreshold", 31);
     const double notchProximityValRadians = notchProximityVal * M_TAU / 360;
-    
+
     const double distance = std::sqrt((ux * ux) + (uy * uy)) / MAX_AXIS_RANGE;
     if (distance >= MINIMUM_RADIUS_TO_MAP_NOTCH) {
         auto angle = atan2(uy, ux) + M_TAU;
         auto newAngle = GetClosestNotch(angle, notchProximityValRadians);
-        
+
         ux = cos(newAngle) * distance * MAX_AXIS_RANGE;
         uy = sin(newAngle) * distance * MAX_AXIS_RANGE;
     }

@@ -325,16 +325,16 @@ void InputEditor::DrawControllerSchema() {
         ImGui::SliderFloat("##RStrength", &profile->RumbleStrength, 0.0f, 1.0f, "");
         ImGui::PopItemWidth();
     }
-    
+
     if (!isKeyboard) {
         const char* notchProximityCvar = "gNotchProximityThreshold";
         int notchProximityVal = CVarGetInteger(notchProximityCvar, 31);
         auto nda = notchProximityVal;
-        
+
         ImGui::SetCursorPosX(cursorX);
         ImGui::Text("Notch Snap Angle: %d", nda);
         ImGui::SetCursorPosX(cursorX);
-        
+
 #ifdef __WIIU__
         ImGui::PushItemWidth(135.0f * 2);
 #else
@@ -347,10 +347,11 @@ void InputEditor::DrawControllerSchema() {
         }
         ImGui::PopItemWidth();
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", "How near in degrees to a virtual notch angle you have to be for it to snap to nearest notch");
+            ImGui::SetTooltip(
+                "%s", "How near in degrees to a virtual notch angle you have to be for it to snap to nearest notch");
         }
     }
-    
+
     ImGui::Dummy(ImVec2(0, 5));
     SohImGui::EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 }
