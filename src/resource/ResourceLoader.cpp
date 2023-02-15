@@ -40,7 +40,7 @@ std::shared_ptr<Window> ResourceLoader::GetContext() {
 }
 
 std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> fileToLoad) {
-    auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.get(), fileToLoad->BufferSize);
+    auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.data(), fileToLoad->Buffer.size());
     auto reader = std::make_shared<BinaryReader>(stream);
 
     // OTR HEADER BEGIN
@@ -55,7 +55,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     reader->ReadUInt32();                                           // Resource minor version number
     reader->ReadUInt64();                                           // ROM CRC
     reader->ReadUInt32();                                           // ROM Enum
-    reader->Seek(64, SeekOffsetType::Start);                        // Reserved for future file format versions...
+    reader->Seek(64, SeekOffsetType::Start);                   // Reserved for future file format versions...
     // OTR HEADER END
 
     std::shared_ptr<Resource> result = nullptr;
@@ -67,9 +67,9 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     }
 
     if (result != nullptr) {
-        result->File = fileToLoad;
         result->Id = id;
         result->Type = resourceType;
+        result->Path = fileToLoad->Path;
         result->ResourceManager = GetContext()->GetResourceManager();
     } else {
         if (fileToLoad != nullptr) {

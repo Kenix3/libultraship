@@ -21,7 +21,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
     Archive(const std::string& mainPath, bool enableWriting);
     Archive(const std::string& mainPath, const std::string& patchesPath,
             const std::unordered_set<uint32_t>& validHashes, bool enableWriting, bool generateCrcMap = true);
-    Archive(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
+    Archive(const std::vector<std::string>& fileList, const std::unordered_set<uint32_t>& validHashes,
             bool enableWriting, bool generateCrcMap = true);
     ~Archive();
 
@@ -29,8 +29,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
 
     static std::shared_ptr<Archive> CreateArchive(const std::string& archivePath, int fileCapacity);
 
-    std::shared_ptr<OtrFile> LoadFile(const std::string& filePath, bool includeParent = true,
-                                      std::shared_ptr<OtrFile> fileToLoad = nullptr);
+    std::shared_ptr<OtrFile> LoadFile(const std::string& filePath, bool includeParent = true);
 
     bool AddFile(const std::string& path, uintptr_t fileData, DWORD fileSize);
     bool RemoveFile(const std::string& path);
@@ -48,7 +47,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
   private:
     std::string mMainPath;
     std::string mPatchesPath;
-    std::vector<std::string> mOtrFiles;
+    std::vector<std::string> mOtrArchives;
     std::unordered_set<uint32_t> mValidHashes;
     std::map<std::string, HANDLE> mMpqHandles;
     std::vector<std::string> mAddedFiles;
@@ -62,7 +61,6 @@ class Archive : public std::enable_shared_from_this<Archive> {
     void GenerateCrcMap();
     bool ProcessOtrVersion(HANDLE mpqHandle = nullptr);
     std::shared_ptr<OtrFile> LoadFileFromHandle(const std::string& filePath, bool includeParent = true,
-                                                std::shared_ptr<OtrFile> fileToLoad = nullptr,
                                                 HANDLE mpqHandle = nullptr);
 };
 } // namespace Ship
