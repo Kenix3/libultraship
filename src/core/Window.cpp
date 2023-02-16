@@ -427,6 +427,10 @@ void Window::InitializeLogging() {
                                                          spdlog::async_overflow_policy::block);
         GetLogger()->set_level(spdlog::level::trace);
 
+#if defined(_DEBUG)
+        GetLogger()->flush_on(spdlog::level::trace);
+#endif
+
 #ifndef __WIIU__
         GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
 #else
