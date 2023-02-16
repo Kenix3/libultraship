@@ -2437,7 +2437,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 char* imgData = (char*)i;
 
                 if ((i & 1) != 1) {
-                    if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData) == 1) {
+                    if (gfx_check_image_signature(imgData) == 1) {
                         i = (uintptr_t)GetResourceDataByName(imgData, false);
                     }
                 }
@@ -2886,4 +2886,18 @@ uint16_t gfx_get_pixel_depth(float x, float y) {
     get_pixel_depth_pending.clear();
 
     return get_pixel_depth_cached.find(make_pair(x, y))->second;
+}
+
+int32_t gfx_check_image_signature(const char* imgData) {
+    uintptr_t i = (uintptr_t)(imgData);
+
+    if ((i & 1) == 1) {
+        return 0;
+    }
+
+    if (i != 0) {
+        return Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+    }
+
+    return 0;
 }
