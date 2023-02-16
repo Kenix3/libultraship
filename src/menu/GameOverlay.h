@@ -30,6 +30,7 @@ class GameOverlay {
                                     bool hide_text_after_double_hash = false, float wrap_width = -1.0f);
     void TextDraw(float x, float y, bool shadow, ImVec4 color, const char* text, ...);
     void TextDrawNotification(float duration, bool shadow, const char* fmt, ...);
+    void ClearNotifications();
 
   protected:
     static float GetScreenWidth();
