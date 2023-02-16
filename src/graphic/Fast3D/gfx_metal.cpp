@@ -190,7 +190,7 @@ bool Metal_Init(SDL_Renderer* renderer) {
     mctx.renderer = renderer;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
-    mctx.layer = (CA::MetalLayer *)SDL_RenderGetMetalLayer(renderer);
+    mctx.layer = (CA::MetalLayer*)SDL_RenderGetMetalLayer(renderer);
     mctx.layer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
 
     mctx.device = mctx.layer->device();
