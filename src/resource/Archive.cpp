@@ -89,7 +89,8 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
     if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
         SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
         if (!SFileCloseFile(fileHandle)) {
-            SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(), filePath, mMainPath);
+            SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
+                         filePath, mMainPath);
         }
         return nullptr;
     }
@@ -126,15 +127,17 @@ bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD fileSiz
     StringHelper::ReplaceOriginal(updatedPath, "\\", "/");
 
     if (!SFileCreateFile(mMainMpq, updatedPath.c_str(), theTime, fileSize, 0, MPQ_FILE_COMPRESS, &hFile)) {
-        SPDLOG_ERROR("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), fileSize,
-                     updatedPath, mMainPath);
+        SPDLOG_ERROR("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), fileSize, updatedPath,
+                     mMainPath);
         return false;
     }
 
     if (!SFileWriteFile(hFile, (void*)fileData, fileSize, MPQ_COMPRESSION_ZLIB)) {
-        SPDLOG_ERROR("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), fileSize, updatedPath, mMainPath);
+        SPDLOG_ERROR("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), fileSize, updatedPath,
+                     mMainPath);
         if (!SFileCloseFile(hFile)) {
-            SPDLOG_ERROR("({}) Failed to close file {} after write failure in archive {}", GetLastError(), updatedPath, mMainPath);
+            SPDLOG_ERROR("({}) Failed to close file {} after write failure in archive {}", GetLastError(), updatedPath,
+                         mMainPath);
         }
         return false;
     }
@@ -142,7 +145,8 @@ bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD fileSiz
     if (!SFileFinishFile(hFile)) {
         SPDLOG_ERROR("({}) Failed to finish file {} in archive {}", GetLastError(), updatedPath, mMainPath);
         if (!SFileCloseFile(hFile)) {
-            SPDLOG_ERROR("({}) Failed to close file {} after finish failure in archive {}", GetLastError(), updatedPath, mMainPath);
+            SPDLOG_ERROR("({}) Failed to close file {} after finish failure in archive {}", GetLastError(), updatedPath,
+                         mMainPath);
         }
         return false;
     }
@@ -195,7 +199,8 @@ std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) c
             } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
             // else if (!fileFound)
             {
-                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
+                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask,
+                             mMainPath);
                 if (!SListFileFindClose(hFind)) {
                     SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
                                  searchMask, mMainPath);
