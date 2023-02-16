@@ -377,6 +377,10 @@ static void gfx_dxgi_set_fullscreen(bool enable) {
     toggle_borderless_window_full_screen(enable, true);
 }
 
+static void gfx_dxgi_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    *refresh_rate = (uint32_t)roundf(dxgi.detected_hz);
+}
+
 static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
                                             void (*on_all_keys_up)(void)) {
     dxgi.on_key_down = on_key_down;
@@ -654,10 +658,6 @@ static void gfx_dxgi_set_maximum_frame_latency(int latency) {
     dxgi.maximum_frame_latency = latency;
 }
 
-static float gfx_dxgi_get_detected_hz() {
-    return dxgi.detected_hz;
-}
-
 void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
                                         bool (*create_device_fn)(IDXGIAdapter1* adapter, bool test_only)) {
     if (dxgi.CreateDXGIFactory2 != nullptr) {
@@ -766,6 +766,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_keyboard_callbacks,
                                                        gfx_dxgi_set_fullscreen_changed_callback,
                                                        gfx_dxgi_set_fullscreen,
+                                                       gfx_dxgi_get_active_window_refresh_rate,
                                                        gfx_dxgi_set_cursor_visibility,
                                                        gfx_dxgi_main_loop,
                                                        gfx_dxgi_get_dimensions,
@@ -776,7 +777,6 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_get_time,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
-                                                       gfx_dxgi_get_detected_hz,
                                                        gfx_dxgi_get_key_name };
 
 #endif

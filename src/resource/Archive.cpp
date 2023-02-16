@@ -22,14 +22,14 @@ Archive::Archive(const std::string& mainPath, bool enableWriting)
 
 Archive::Archive(const std::string& mainPath, const std::string& patchesPath,
                  const std::unordered_set<uint32_t>& validHashes, bool enableWriting, bool generateCrcMap)
-    : mMainPath(mainPath), mPatchesPath(patchesPath), mOtrFiles({}), mValidHashes(validHashes) {
+    : mMainPath(mainPath), mPatchesPath(patchesPath), mOtrArchives({}), mValidHashes(validHashes) {
     mMainMpq = nullptr;
     Load(enableWriting, generateCrcMap);
 }
 
-Archive::Archive(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
+Archive::Archive(const std::vector<std::string>& fileList, const std::unordered_set<uint32_t>& validHashes,
                  bool enableWriting, bool generateCrcMap)
-    : mOtrFiles(otrFiles), mValidHashes(validHashes) {
+    : mOtrArchives(fileList), mValidHashes(validHashes) {
     mMainMpq = nullptr;
     Load(enableWriting, generateCrcMap);
 }
@@ -65,13 +65,11 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
 }
 
 std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent,
-                                                     std::shared_ptr<OtrFile> fileToLoad, HANDLE mpqHandle) {
+                                                     HANDLE mpqHandle) {
     HANDLE fileHandle = NULL;
 
-    if (fileToLoad == nullptr) {
-        fileToLoad = std::make_shared<OtrFile>();
-        fileToLoad->Path = filePath;
-    }
+    std::shared_ptr<OtrFile> fileToLoad = std::make_shared<OtrFile>();
+    fileToLoad->Path = filePath;
 
     if (mpqHandle == nullptr) {
         mpqHandle = mMainMpq;
@@ -80,46 +78,35 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
     bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
 
     if (!attempt) {
-        SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath.c_str(),
-                     mMainPath.c_str());
-        std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
-        fileToLoad->HasLoadError = true;
-        return fileToLoad;
+        SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
+        return nullptr;
     }
 
     DWORD fileSize = SFileGetFileSize(fileHandle, 0);
-    std::shared_ptr<char[]> fileData(new char[fileSize]);
+    fileToLoad->Buffer.resize(fileSize);
     DWORD countBytes;
 
-    if (!SFileReadFile(fileHandle, fileData.get(), fileSize, &countBytes, NULL)) {
-        SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath.c_str(),
-                     mMainPath.c_str());
+    if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
+        SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
         if (!SFileCloseFile(fileHandle)) {
             SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
-                         filePath.c_str(), mMainPath.c_str());
+                         filePath, mMainPath);
         }
-        std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
-        fileToLoad->HasLoadError = true;
-        return fileToLoad;
+        return nullptr;
     }
 
     if (!SFileCloseFile(fileHandle)) {
-        SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath.c_str(),
-                     mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
     }
 
-    std::unique_lock<std::mutex> lock(fileToLoad->FileLoadMutex);
     fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
-    fileToLoad->Buffer = fileData;
-    fileToLoad->BufferSize = fileSize;
     fileToLoad->IsLoaded = true;
 
     return fileToLoad;
 }
 
-std::shared_ptr<OtrFile> Archive::LoadFile(const std::string& filePath, bool includeParent,
-                                           std::shared_ptr<OtrFile> fileToLoad) {
-    return LoadFileFromHandle(filePath, includeParent, fileToLoad, nullptr);
+std::shared_ptr<OtrFile> Archive::LoadFile(const std::string& filePath, bool includeParent) {
+    return LoadFileFromHandle(filePath, includeParent, nullptr);
 }
 
 bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD fileSize) {
@@ -140,27 +127,26 @@ bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD fileSiz
     StringHelper::ReplaceOriginal(updatedPath, "\\", "/");
 
     if (!SFileCreateFile(mMainMpq, updatedPath.c_str(), theTime, fileSize, 0, MPQ_FILE_COMPRESS, &hFile)) {
-        SPDLOG_ERROR("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), fileSize,
-                     updatedPath.c_str(), mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), fileSize, updatedPath,
+                     mMainPath);
         return false;
     }
 
     if (!SFileWriteFile(hFile, (void*)fileData, fileSize, MPQ_COMPRESSION_ZLIB)) {
-        SPDLOG_ERROR("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), fileSize, updatedPath.c_str(),
-                     mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), fileSize, updatedPath,
+                     mMainPath);
         if (!SFileCloseFile(hFile)) {
-            SPDLOG_ERROR("({}) Failed to close file {} after write failure in archive {}", GetLastError(),
-                         updatedPath.c_str(), mMainPath.c_str());
+            SPDLOG_ERROR("({}) Failed to close file {} after write failure in archive {}", GetLastError(), updatedPath,
+                         mMainPath);
         }
         return false;
     }
 
     if (!SFileFinishFile(hFile)) {
-        SPDLOG_ERROR("({}) Failed to finish file {} in archive {}", GetLastError(), updatedPath.c_str(),
-                     mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to finish file {} in archive {}", GetLastError(), updatedPath, mMainPath);
         if (!SFileCloseFile(hFile)) {
-            SPDLOG_ERROR("({}) Failed to close file {} after finish failure in archive {}", GetLastError(),
-                         updatedPath.c_str(), mMainPath.c_str());
+            SPDLOG_ERROR("({}) Failed to close file {} after finish failure in archive {}", GetLastError(), updatedPath,
+                         mMainPath);
         }
         return false;
     }
@@ -176,7 +162,7 @@ bool Archive::RemoveFile(const std::string& path) {
     // TODO: Notify the resource manager and child Files
 
     if (!SFileRemoveFile(mMainMpq, path.c_str(), 0)) {
-        SPDLOG_ERROR("({}) Failed to remove file {} in archive {}", GetLastError(), path.c_str(), mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to remove file {} in archive {}", GetLastError(), path, mMainPath);
         return false;
     }
 
@@ -187,8 +173,7 @@ bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath)
     // TODO: Notify the resource manager and child Files
 
     if (!SFileRenameFile(mMainMpq, oldPath.c_str(), newPath.c_str())) {
-        SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldPath.c_str(),
-                     newPath.c_str(), mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldPath, newPath, mMainPath);
         return false;
     }
 
@@ -214,25 +199,23 @@ std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) c
             } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
             // else if (!fileFound)
             {
-                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
-                             mMainPath.c_str());
+                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask,
+                             mMainPath);
                 if (!SListFileFindClose(hFind)) {
                     SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
-                                 searchMask.c_str(), mMainPath.c_str());
+                                 searchMask, mMainPath);
                 }
                 return fileList;
             }
         } while (fileFound);
     } else if (GetLastError() != ERROR_NO_MORE_FILES) {
-        SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
-                     mMainPath.c_str());
+        SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
         return fileList;
     }
 
     if (hFind != nullptr) {
         if (!SFileFindClose(hFind)) {
-            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(),
-                         mMainPath.c_str());
+            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask, mMainPath);
         }
     }
 
@@ -271,7 +254,7 @@ bool Archive::Unload() {
     bool success = true;
     for (const auto& mpqHandle : mMpqHandles) {
         if (!SFileCloseArchive(mpqHandle.second)) {
-            SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mpqHandle.first.c_str());
+            SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mpqHandle.first);
             success = false;
         }
     }
@@ -289,7 +272,7 @@ bool Archive::LoadPatchMPQs() {
             for (const auto& p : std::filesystem::recursive_directory_iterator(mPatchesPath)) {
                 if (StringHelper::IEquals(p.path().extension().string(), ".otr") ||
                     StringHelper::IEquals(p.path().extension().string(), ".mpq")) {
-                    SPDLOG_ERROR("Reading {} mpq patch", p.path().string().c_str());
+                    SPDLOG_ERROR("Reading {} mpq patch", p.path().string());
                     if (!LoadPatchMPQ(p.path().string())) {
                         return false;
                     }
@@ -306,7 +289,7 @@ void Archive::GenerateCrcMap() {
 
     // Use std::string_view to avoid unnecessary string copies
     std::vector<std::string_view> lines =
-        StringHelper::Split(std::string_view(listFile->Buffer.get(), listFile->BufferSize), "\n");
+        StringHelper::Split(std::string_view(listFile->Buffer.data(), listFile->Buffer.size()), "\n");
 
     for (size_t i = 0; i < lines.size(); i++) {
         // Use std::string_view to avoid unnecessary string copies
@@ -320,9 +303,9 @@ void Archive::GenerateCrcMap() {
 }
 
 bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
-    auto t = LoadFileFromHandle("version", false, nullptr, mpqHandle);
-    if (!t->HasLoadError) {
-        auto stream = std::make_shared<MemoryStream>(t->Buffer.get(), t->BufferSize);
+    auto t = LoadFileFromHandle("version", false, mpqHandle);
+    if (t != nullptr && t->IsLoaded) {
+        auto stream = std::make_shared<MemoryStream>(t->Buffer.data(), t->Buffer.size());
         auto reader = std::make_shared<BinaryReader>(stream);
         Ship::Endianness endianness = (Ship::Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
@@ -337,43 +320,44 @@ bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
 
 bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
     HANDLE mpqHandle = NULL;
-    if (mOtrFiles.empty()) {
+    if (mOtrArchives.empty()) {
         if (mMainPath.length() > 0) {
             if (std::filesystem::is_directory(mMainPath)) {
                 for (const auto& p : std::filesystem::recursive_directory_iterator(mMainPath)) {
                     if (StringHelper::IEquals(p.path().extension().string(), ".otr")) {
-                        SPDLOG_ERROR("Reading {} mpq", p.path().string().c_str());
-                        mOtrFiles.push_back(p.path().string());
+                        SPDLOG_ERROR("Reading {} mpq", p.path().string());
+                        mOtrArchives.push_back(p.path().string());
                     }
                 }
             } else if (std::filesystem::is_regular_file(mMainPath)) {
-                mOtrFiles.push_back(mMainPath);
+                mOtrArchives.push_back(mMainPath);
             } else {
-                SPDLOG_ERROR("The directory {} does not exist", mMainPath.c_str());
+                SPDLOG_ERROR("The directory {} does not exist", mMainPath);
                 return false;
             }
         } else {
             SPDLOG_ERROR("No OTR file list or Main Path provided.");
             return false;
         }
-        if (mOtrFiles.empty()) {
-            SPDLOG_ERROR("No OTR files present in {}", mMainPath.c_str());
+        if (mOtrArchives.empty()) {
+            SPDLOG_ERROR("No OTR files present in {}", mMainPath);
             return false;
         }
     }
     bool baseLoaded = false;
     int i = 0;
-    while (!baseLoaded && i < mOtrFiles.size()) {
+    while (!baseLoaded && i < mOtrArchives.size()) {
 #if defined(__SWITCH__) || defined(__WIIU__)
-        std::string fullPath = mOtrFiles[i];
+        std::string fullPath = mOtrArchives[i];
 #else
-        std::string fullPath = std::filesystem::absolute(mOtrFiles[i]).string();
+        std::string fullPath = std::filesystem::absolute(mOtrArchives[i]).string();
 #endif
         if (SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
-            SPDLOG_INFO("Opened mpq file {}.", fullPath.c_str());
+            SPDLOG_INFO("Opened mpq file {}.", fullPath);
             mMainMpq = mpqHandle;
-            if (!ProcessOtrVersion()) {
-                SPDLOG_WARN("Attempted to load invalid OTR file {}", mOtrFiles[i].c_str());
+            mMainPath = fullPath;
+            if (!ProcessOtrVersion(mMainMpq)) {
+                SPDLOG_WARN("Attempted to load invalid OTR file {}", mOtrArchives[i]);
                 SFileCloseArchive(mpqHandle);
                 mMainMpq = nullptr;
             } else {
@@ -392,14 +376,14 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         SPDLOG_ERROR("No valid OTR file was provided.");
         return false;
     }
-    for (int j = i; j < mOtrFiles.size(); j++) {
+    for (int j = i; j < mOtrArchives.size(); j++) {
 #if defined(__SWITCH__) || defined(__WIIU__)
-        std::string fullPath = mOtrFiles[j];
+        std::string fullPath = mOtrArchives[j];
 #else
-        std::string fullPath = std::filesystem::absolute(mOtrFiles[j]).string();
+        std::string fullPath = std::filesystem::absolute(mOtrArchives[j]).string();
 #endif
         if (LoadPatchMPQ(fullPath, true)) {
-            SPDLOG_INFO("({}) Patched in mpq file.", fullPath.c_str());
+            SPDLOG_INFO("({}) Patched in mpq file.", fullPath);
         }
         if (generateCrcMap) {
             GenerateCrcMap();
@@ -420,21 +404,19 @@ bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
         return true;
     }
     if (!SFileOpenArchive(fullPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
-        SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path.c_str(),
-                     mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path, mMainPath);
         return false;
     } else {
         // We don't always want to validate the "version" file, only when we're loading standalone OTRs as patches
         // i.e. Ocarina of Time along with Master Quest.
         if (validateVersion) {
             if (!ProcessOtrVersion(patchHandle)) {
-                SPDLOG_INFO("({}) Missing version file. Attempting to apply patch anyway.", path.c_str());
+                SPDLOG_INFO("({}) Missing version file. Attempting to apply patch anyway.", path);
             }
         }
     }
     if (!SFileOpenPatchArchive(mMainMpq, fullPath.c_str(), "", 0)) {
-        SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path.c_str(),
-                     mMainPath.c_str());
+        SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path, mMainPath);
         return false;
     }
 

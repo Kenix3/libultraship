@@ -19,6 +19,7 @@
 #include "menu/GameOverlay.h"
 #include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
+#include "resource/OtrFile.h"
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include <spdlog/common.h>
@@ -352,15 +353,16 @@ bool useViewports() {
 }
 
 void LoadTexture(const std::string& name, const std::string& path) {
+    // TODO: Nothing ever unloads the texture from Fast3D here.
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res = Window::GetInstance()->GetResourceManager()->LoadFile(path);
 
     const auto asset = new GameAsset{ api->new_texture() };
-    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.get()), res->BufferSize,
+    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
                                              &asset->width, &asset->height, nullptr, 4);
 
     if (imgData == nullptr) {
-        std::cout << "Found error: " << stbi_failure_reason() << std::endl;
+        SPDLOG_ERROR("Error loading imgui texture {}", stbi_failure_reason());
         return;
     }
 
@@ -815,10 +817,6 @@ void DrawSettings() {
 
 Backend WindowBackend() {
     return impl.backend;
-}
-
-float WindowRefreshRate() {
-    return gfx_get_detected_hz();
 }
 
 std::vector<std::pair<const char*, const char*>> GetAvailableRenderingBackends() {

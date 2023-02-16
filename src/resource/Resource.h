@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "OtrFile.h"
 #include "ResourceType.h"
 #include "libultraship/version.h"
 #include "binarytools/BinaryWriter.h"
@@ -23,20 +22,11 @@ class Resource {
     uint32_t ResourceVersion;
     uint64_t Id;
     bool IsDirty = false;
-    std::shared_ptr<OtrFile> File;
+    std::string Path = "";
     std::vector<ResourceAddressPatch> Patches;
     virtual void* GetPointer() = 0;
     virtual size_t GetPointerSize() = 0;
     virtual ~Resource();
     void RegisterResourceAddressPatch(uint64_t crc, uint32_t instructionIndex, intptr_t originalData);
-};
-
-class ResourcePromise {
-  public:
-    std::shared_ptr<Resource> Res;
-    std::shared_ptr<OtrFile> File;
-    std::condition_variable ResourceLoadNotifier;
-    std::mutex ResourceLoadMutex;
-    bool HasResourceLoaded = false;
 };
 } // namespace Ship
