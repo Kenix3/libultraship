@@ -65,6 +65,7 @@ Window::Window(std::string Name)
 
 Window::~Window() {
     SPDLOG_DEBUG("destruct window");
+    spdlog::shutdown();
 }
 
 void Window::CreateDefaults() {
