@@ -56,11 +56,20 @@ bool ResourceMgr::DidLoadSuccessfully() {
 
 std::shared_ptr<OtrFile> ResourceMgr::LoadFileProcess(const std::string& fileToLoad) {
     auto file = mArchive->LoadFile(fileToLoad, true);
-    SPDLOG_TRACE("Loaded File {} on ResourceMgr thread", file->Path);
+    if (file != nullptr) {
+        SPDLOG_TRACE("Loaded File {} on ResourceMgr", file->Path);
+    } else {
+        SPDLOG_WARN("Could not load File {} in ResourceMgr", fileToLoad);
+    }
     return file;
 }
 
 std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fileToLoad) {
+    if (OtrSignatureCheck(fileToLoad.c_str())) {
+        auto newFilePath = fileToLoad.substr(7);
+        return LoadResourceProcess(newFilePath);
+    }
+
     // While waiting in the queue, another thread could have loaded the resource.
     // In a last attempt to avoid doing work that will be discarded, let's check if the cached version exists.
     auto cacheCheck = GetCachedResource(fileToLoad);
@@ -86,9 +95,9 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
     }
 
     if (resource != nullptr) {
-        SPDLOG_TRACE("Loaded Resource {} on ResourceMgr thread", fileToLoad);
+        SPDLOG_TRACE("Loaded Resource {} on ResourceMgr", fileToLoad);
     } else {
-        SPDLOG_ERROR("Resource load FAILED {} on ResourceMgr thread", fileToLoad);
+        SPDLOG_WARN("Resource load FAILED {} on ResourceMgr", fileToLoad);
     }
 
     return resource;
@@ -111,8 +120,7 @@ std::shared_ptr<OtrFile> ResourceMgr::LoadFile(const std::string& filePath) {
 }
 
 std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(const std::string& filePath) {
-    if (filePath[0] == '_' && filePath[1] == '_' && filePath[2] == 'O' && filePath[3] == 'T' && filePath[4] == 'R' &&
-        filePath[5] == '_' && filePath[6] == '_') {
+    if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
         return LoadResourceAsync(newFilePath);
     }
@@ -230,31 +238,17 @@ std::shared_ptr<Window> ResourceMgr::GetContext() {
     return mContext;
 }
 
-int32_t ResourceMgr::OtrSignatureCheck(char* imgData) {
-    uintptr_t i = (uintptr_t)(imgData);
-
-    // if (i == 0xD9000000 || i == 0xE7000000 || (i & 1) == 1)
-    if ((i & 1) == 1) {
-        return 0;
-    }
-
-    // if ((i & 0xFF000000) != 0xAB000000 && (i & 0xFF000000) != 0xCD000000 && i != 0) {
-    if (i != 0) {
-        if (imgData[0] == '_' && imgData[1] == '_' && imgData[2] == 'O' && imgData[3] == 'T' && imgData[4] == 'R' &&
-            imgData[5] == '_' && imgData[6] == '_') {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
 size_t ResourceMgr::UnloadResource(const std::string& filePath) {
     return mResourceCache.erase(filePath);
 }
 
 void ResourceMgr::UnloadAllResources() {
     mResourceCache.clear();
+}
+
+bool ResourceMgr::OtrSignatureCheck(const char* fileName) {
+    return fileName[0] == '_' && fileName[1] == '_' && fileName[2] == 'O' && fileName[3] == 'T' && fileName[4] == 'R' &&
+           fileName[5] == '_' && fileName[6] == '_';
 }
 
 } // namespace Ship
