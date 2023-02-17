@@ -15,7 +15,9 @@ extern "C" {
 #endif
 
 bool SpeechSynthesizerInit(void);
-void SpeechSynthesizerSpeak(const char* text);
+
+void SpeechSynthesizerSpeakEnglish(const char* text);
+void SpeechSynthesizerSpeak(const char* text, const char* language);
 
 #ifdef __cplusplus
 };

@@ -16,7 +16,7 @@ class DarwinSpeechSynthesizer : public SpeechSynthesizer {
   public:
     DarwinSpeechSynthesizer();
 
-    void Speak(const char* text);
+    void Speak(const char* text, const char* language);
 
   protected:
     bool DoInit(void);

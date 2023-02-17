@@ -22,19 +22,18 @@ bool SAPISpeechSynthesizer::DoInit() {
     return true;
 }
 
-void SpeakThreadTask(const char* text) {
-    const int w = 512;
-    int* wp = const_cast<int*>(&w);
-    *wp = strlen(text);
-
-    wchar_t wtext[w];
-    mbstowcs(wtext, text, strlen(text) + 1);
+void SpeakThreadTask(const char* text, const char* language) {
+    std::wstring wtext = L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='";
+    wtext += std::wstring(language, language + strlen(language));
+    wtext += L"'>";
+    wtext += std::wstring(text, text + strlen(text));
+    wtext += L"</speak>";
 
     mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 }
 
-void SAPISpeechSynthesizer::Speak(const char* text) {
-    std::thread t1(SpeakThreadTask, text);
+void SAPISpeechSynthesizer::Speak(const char* text, const char* language) {
+    std::thread t1(SpeakThreadTask, text, language);
     t1.detach();
 }
 } // namespace Ship
