@@ -8,6 +8,8 @@
 #include "SAPISpeechSynthesizer.h"
 #include <sapi.h>
 #include <thread>
+#include <string>
+#include <spdlog/fmt/fmt.h>
 
 ISpVoice* mVoice = NULL;
 
@@ -23,11 +25,14 @@ bool SAPISpeechSynthesizer::DoInit() {
 }
 
 void SpeakThreadTask(const char* text, const char* language) {
-    std::wstring wtext = L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='";
-    wtext += std::wstring(language, language + strlen(language));
-    wtext += L"'>";
-    wtext += std::wstring(text, text + strlen(text));
-    wtext += L"</speak>";
+    std::string speak = fmt::format("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", language, text);
+
+    const int w = 512;
+    int* wp = const_cast<int*>(&w);
+    *wp = strlen(speak.c_str());
+
+    wchar_t wtext[w];
+    mbstowcs(wtext, speak.c_str(), strlen(speak.c_str()) + 1);
 
     mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 }
