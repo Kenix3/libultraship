@@ -31,15 +31,17 @@ void SAPISpeechSynthesizer::DoUninitialize() {
 }
 
 void SpeakThreadTask(const char* text, const char* language) {
-    std::string speak = fmt::format(
-        "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", language, text);
+    auto speak =
+        fmt::format("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>",
+                    language, text)
+            .c_str();
 
     const int w = 512;
     int* wp = const_cast<int*>(&w);
-    *wp = strlen(speak.c_str());
+    *wp = strlen(speak));
 
     wchar_t wtext[w];
-    mbstowcs(wtext, speak.c_str(), strlen(speak.c_str()) + 1);
+    mbstowcs(wtext, speak), strlen(speak)) + 1);
 
     mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 }
