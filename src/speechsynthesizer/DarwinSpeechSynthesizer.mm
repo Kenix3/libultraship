@@ -16,6 +16,11 @@ bool DarwinSpeechSynthesizer::DoInit() {
     return true;
 }
 
+void DarwinSpeechSynthesizer::DoUninitialize() {
+    [(AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+    mSynthesizer = nil;
+}
+
 void DarwinSpeechSynthesizer::Speak(const char* text, const char* language) {
     AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:@(text)];
     [utterance setVoice:[AVSpeechSynthesisVoice voiceWithLanguage:@(language)]];

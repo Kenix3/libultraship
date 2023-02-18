@@ -20,6 +20,7 @@ class SAPISpeechSynthesizer : public SpeechSynthesizer {
 
   protected:
     bool DoInit(void);
+    void DoUninitialize(void);
 };
 } // namespace Ship
 

@@ -24,6 +24,12 @@ bool SAPISpeechSynthesizer::DoInit() {
     return true;
 }
 
+void SAPISpeechSynthesizer::DoUninitialize() {
+    mVoice->Release();
+    mVoice = NULL;
+    CoUninitialize();
+}
+
 void SpeakThreadTask(const char* text, const char* language) {
     std::string speak = fmt::format(
         "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", language, text);

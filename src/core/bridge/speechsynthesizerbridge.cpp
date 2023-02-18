@@ -23,6 +23,15 @@ bool SpeechSynthesizerInit(void) {
     return false;
 }
 
+void SpeechSynthesizerUninitialize(void) {
+    auto speechSynthesizer = Ship::Window::GetInstance()->GetSpeechSynthesizer();
+    if (speechSynthesizer == nullptr) {
+        return;
+    }
+
+    speechSynthesizer->Uninitialize();
+}
+
 void SpeechSynthesizerSpeakEnglish(const char* text) {
     SpeechSynthesizerSpeak(text, "en-US");
 }

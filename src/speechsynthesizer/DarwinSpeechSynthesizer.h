@@ -9,7 +9,6 @@
 #define DarwinSpeechSynthesizer_h
 
 #include "SpeechSynthesizer.h"
-#include <stdio.h>
 
 namespace Ship {
 class DarwinSpeechSynthesizer : public SpeechSynthesizer {
@@ -20,6 +19,7 @@ class DarwinSpeechSynthesizer : public SpeechSynthesizer {
 
   protected:
     bool DoInit(void);
+    void DoUninitialize(void);
 
   private:
     void* mSynthesizer;
