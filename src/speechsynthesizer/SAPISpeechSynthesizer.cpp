@@ -38,10 +38,10 @@ void SpeakThreadTask(const char* text, const char* language) {
 
     const int w = 512;
     int* wp = const_cast<int*>(&w);
-    *wp = strlen(speak));
+    *wp = strlen(speak);
 
     wchar_t wtext[w];
-    mbstowcs(wtext, speak), strlen(speak)) + 1);
+    mbstowcs(wtext, speak, strlen(speak) + 1);
 
     mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 }
