@@ -106,7 +106,7 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
 void ControlDeck::LoadControllerSettings() {
     std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
 
-    for (auto const& val : config->rjson["Controllers"]["Deck"].items()) {
+    for (auto const& val : config->rjson_legacy["Controllers"]["Deck"].items()) {
         int32_t slot = std::stoi(val.key().substr(5));
 
         for (size_t dev = 0; dev < mPhysicalDevices.size(); dev++) {
@@ -130,13 +130,13 @@ void ControlDeck::LoadControllerSettings() {
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
 
-            if (!(config->rjson["Controllers"].contains(guid) &&
-                  config->rjson["Controllers"][guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
+            if (!(config->rjson_legacy["Controllers"].contains(guid) &&
+                  config->rjson_legacy["Controllers"][guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
                 continue;
             }
 
             auto profile = device->getProfile(virtualSlot);
-            auto rawProfile = config->rjson["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            auto rawProfile = config->rjson_legacy["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
 
             profile->Mappings.clear();
             profile->AxisDeadzones.clear();
@@ -214,7 +214,7 @@ void ControlDeck::SaveControllerSettings() {
                 continue;
             }
 
-            auto rawProfile = config->rjson["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            auto rawProfile = config->rjson_legacy["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
             config->setInt(NESTED("Version", ""), profile->Version);
             config->setBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
             config->setFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);

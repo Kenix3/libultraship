@@ -25,7 +25,7 @@ protected:
     std::string mPath;
 public:
     explicit Mercury(std::string mPath);
-    nlohmann::json rjson;
+    nlohmann::json rjson_legacy; //todo: figure out how to stop using this
     std::unordered_map<std::string, std::pair<std::any, MercuryType>> mJsonData;
     std::string getString(const std::string& key, const std::string& def = "");
     float getFloat(const std::string& key, float defValue = 0.0f);

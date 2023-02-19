@@ -89,30 +89,6 @@ void Mercury::setArray(const std::string& key, std::vector<uint32_t> array) {
 
 void Mercury::erase(const std::string& key) {
     this->mJsonData.erase(key);
-
-    std::vector<std::string> split = StringHelper::Split(key, ".");
-
-    std::string keyString = split.back();
-
-    split.pop_back();
-
-    std::string pathString = "";
-    for (int i = 0; i < split.size(); i++) {
-        pathString += "/";
-        pathString += split[i];
-    }
-
-    auto path = nlohmann::json_pointer<nlohmann::json>{pathString};
-
-    auto& parentElement = this->rjson[path];
-    parentElement.erase(keyString);
-
-    try {
-        std::ofstream file(this->mPath);
-        file << this->rjson.dump(4);
-    } catch (...) {
-        // OTRTODO: Log error
-    }
 }
 
 void Mercury::reload() {
@@ -120,8 +96,9 @@ void Mercury::reload() {
         return;
     }
     try {
-        this->rjson = json::parse(std::ifstream(this->mPath));
-        scanJsonObject("", this->rjson);
+        nlohmann::json rjson;
+        rjson = json::parse(std::ifstream(this->mPath));
+        scanJsonObject("", rjson);
     } catch (json::parse_error& ex) {
         // OTRTODO: Log error
     }
@@ -132,12 +109,13 @@ void Mercury::save() {
         return;
     }
 
+    nlohmann::json rjson;
     for (auto& [key, value] : this->mJsonData) {
         std::vector<std::string> split = StringHelper::Split(key, ".");
         if(split.size() == 1) {
-            writeDataType(this->rjson[split[0]], value);
+            writeDataType(rjson[split[0]], value);
         } else {
-            json* current = &this->rjson;
+            json* current = &rjson;
             for (int i = 0; i < split.size() - 1; i++) {
                 if (current->contains(split[i])) {
                     current = &(*current)[split[i]];
@@ -152,7 +130,7 @@ void Mercury::save() {
 
     try {
         std::ofstream file(this->mPath);
-        file << this->rjson.dump(4);
+        file << rjson.dump(4);
     } catch (...) {
         // OTRTODO: Log error
     }

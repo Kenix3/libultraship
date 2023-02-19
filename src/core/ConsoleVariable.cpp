@@ -201,7 +201,7 @@ void ConsoleVariable::Load() {
     std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
     conf->reload();
 
-    LoadFromPath("", conf->rjson["CVars"].items());
+    LoadFromPath("", conf->rjson_legacy["CVars"].items());
 
     LoadLegacy();
 }
