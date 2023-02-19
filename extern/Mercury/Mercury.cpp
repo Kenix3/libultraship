@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <any>
+#include <algorithm>
 #include <Utils/StringHelper.h>
 
 namespace fs = std::filesystem;
@@ -88,6 +89,30 @@ void Mercury::setArray(const std::string& key, std::vector<uint32_t> array) {
 
 void Mercury::erase(const std::string& key) {
     this->mJsonData.erase(key);
+
+    std::vector<std::string> split = StringHelper::Split(key, ".");
+
+    std::string keyString = split.back();
+
+    split.pop_back();
+
+    std::string pathString = "";
+    for (int i = 0; i < split.size(); i++) {
+        pathString += "/";
+        pathString += split[i];
+    }
+
+    auto path = nlohmann::json_pointer<nlohmann::json>{pathString};
+
+    auto& parentElement = this->rjson[path];
+    parentElement.erase(keyString);
+
+    try {
+        std::ofstream file(this->mPath);
+        file << this->rjson.dump(4);
+    } catch (...) {
+        // OTRTODO: Log error
+    }
 }
 
 void Mercury::reload() {
