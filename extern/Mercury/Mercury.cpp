@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <unordered_map>
 #include <any>
-#include <algorithm>
 #include <Utils/StringHelper.h>
 
 namespace fs = std::filesystem;
