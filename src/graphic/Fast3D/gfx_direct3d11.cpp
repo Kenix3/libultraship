@@ -699,7 +699,11 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         rasterizer_desc.CullMode = D3D11_CULL_NONE;
         rasterizer_desc.FrontCounterClockwise = true;
         rasterizer_desc.DepthBias = 0;
-        rasterizer_desc.SlopeScaledDepthBias = d3d.zmode_decal ? -2.0f : 0.0f;
+        // SSDB = SlopeScaledDepthBias (name in D3D) 120 leads to -2 at 240p which is the intended resolution (I was told)
+        static int SSDBfactor = 120; // could be changed to constant and moved to a header to share with OGL if the value is accepted
+        // get internal resolution and overwrite the Offset with scaled version
+        float SSDB = -1.0f * (float)d3d.render_target_height / SSDBfactor;
+        rasterizer_desc.SlopeScaledDepthBias = d3d.zmode_decal ? SSDB : 0.0f;
         rasterizer_desc.DepthBiasClamp = 0.0f;
         rasterizer_desc.DepthClipEnable = false;
         rasterizer_desc.ScissorEnable = true;
