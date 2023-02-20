@@ -32,10 +32,6 @@ void SpeechSynthesizerUninitialize(void) {
     speechSynthesizer->Uninitialize();
 }
 
-void SpeechSynthesizerSpeakEnglish(const char* text) {
-    SpeechSynthesizerSpeak(text, "en-US");
-}
-
 void SpeechSynthesizerSpeak(const char* text, const char* language) {
     auto speechSynthesizer = Ship::Window::GetInstance()->GetSpeechSynthesizer();
     if (speechSynthesizer == nullptr) {
