@@ -328,7 +328,7 @@ void InputEditor::DrawControllerSchema() {
 
     if (!isKeyboard) {
         const char* notchProximityCvar = "gNotchProximityThreshold";
-        int notchProximityVal = CVarGetInteger(notchProximityCvar, 31);
+        int notchProximityVal = CVarGetInteger(notchProximityCvar, 0);
         auto nda = notchProximityVal;
 
         ImGui::SetCursorPosX(cursorX);
