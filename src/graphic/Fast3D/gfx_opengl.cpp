@@ -46,6 +46,7 @@
 #include "menu/ImGuiImpl.h"
 #include "core/Window.h"
 #include "gfx_pc.h"
+#include <core/bridge/consolevariablebridge.h>
 
 using namespace std;
 
@@ -721,16 +722,27 @@ static void gfx_opengl_set_depth_test_and_mask(bool depth_test, bool z_upd) {
 static void gfx_opengl_set_zmode_decal(bool zmode_decal) {
     if (zmode_decal) {
         
-        GLfloat Offset1 = -2; // original value
-        // SSDB = SlopeScaledDepthBias (name in D3D) 120 leads to -2 at 240p which is the original resolution (I was told)
-        // could be changed to constant and moved to a header to share with OGL if the value is accepted
-        static int SSDBfactor = 120; 
-        // get internal resolution and overwrite the Offset with scaled version if calculation is successful 
-        const size_t fbsize = framebuffers.size();
-        if (framebuffers.size() > current_framebuffer) { //safety check for vector size can probably be removed
-            Offset1 = -1.0f * (float)framebuffers[current_framebuffer].height / SSDBfactor;
+        // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
+        // fighting
+        const int n64modeFactor = 120;
+        const int noVanishFactor = 100;
+        GLfloat SSDB = -2;
+        switch (CVarGetInteger("gDirtPathFix", 0)) {
+            case 1: // scaled z-fighting (N64 mode like)
+                if (framebuffers.size() > current_framebuffer) { // safety check for vector size can probably be removed
+                    SSDB = -1.0f * (GLfloat)framebuffers[current_framebuffer].height / n64modeFactor;
+                }
+                break;
+            case 2: // no vanishing paths
+                if (framebuffers.size() > current_framebuffer) { // safety check for vector size can probably be removed
+                    SSDB = -1.0f * (GLfloat)framebuffers[current_framebuffer].height / noVanishFactor;
+                }
+                break;
+            case 0: // disabled
+            default:
+                SSDB = -2;
         }
-        glPolygonOffset(Offset1, -2);
+        glPolygonOffset(SSDB, -2);
         glEnable(GL_POLYGON_OFFSET_FILL);
     } else {
         glPolygonOffset(0, 0);
