@@ -23,12 +23,21 @@ bool SpeechSynthesizerInit(void) {
     return false;
 }
 
-void SpeechSynthesizerSpeak(const char* text) {
+void SpeechSynthesizerUninitialize(void) {
     auto speechSynthesizer = Ship::Window::GetInstance()->GetSpeechSynthesizer();
     if (speechSynthesizer == nullptr) {
         return;
     }
 
-    speechSynthesizer->Speak(text);
+    speechSynthesizer->Uninitialize();
+}
+
+void SpeechSynthesizerSpeak(const char* text, const char* language) {
+    auto speechSynthesizer = Ship::Window::GetInstance()->GetSpeechSynthesizer();
+    if (speechSynthesizer == nullptr) {
+        return;
+    }
+
+    speechSynthesizer->Speak(text, language);
 }
 }

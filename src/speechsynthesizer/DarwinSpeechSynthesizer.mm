@@ -16,9 +16,14 @@ bool DarwinSpeechSynthesizer::DoInit() {
     return true;
 }
 
-void DarwinSpeechSynthesizer::Speak(const char* text) {
+void DarwinSpeechSynthesizer::DoUninitialize() {
+    [(AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+    mSynthesizer = nil;
+}
+
+void DarwinSpeechSynthesizer::Speak(const char* text, const char* language) {
     AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:@(text)];
-    [utterance setVoice:[AVSpeechSynthesisVoice voiceWithIdentifier:@"com.apple.voice.compact.en-US.Samantha"]];
+    [utterance setVoice:[AVSpeechSynthesisVoice voiceWithLanguage:@(language)]];
 
     if (@available(macOS 11.0, *)) {
         [utterance setPrefersAssistiveTechnologySettings:YES];
