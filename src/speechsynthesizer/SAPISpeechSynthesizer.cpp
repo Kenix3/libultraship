@@ -10,6 +10,7 @@
 #include <thread>
 #include <string>
 #include <spdlog/fmt/fmt.h>
+#include <spdlog/fmt/xchar.h>
 
 ISpVoice* mVoice = NULL;
 
@@ -31,19 +32,23 @@ void SAPISpeechSynthesizer::DoUninitialize() {
 }
 
 void SpeakThreadTask(const char* text, const char* language) {
-    auto speak =
-        fmt::format("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>",
-                    language, text)
-            .c_str();
+    std::string locale = fmt::format("{}.UTF-8", language);
+    locale.replace(locale.find("-"), 1, "_");
 
-    const int w = 512;
-    int* wp = const_cast<int*>(&w);
-    *wp = strlen(speak);
+    const size_t languageSize = strlen(language) + 1;
+    wchar_t* wLanguage = new wchar_t[languageSize];
+    mbstowcs(wLanguage, language, languageSize);
 
-    wchar_t wtext[w];
-    mbstowcs(wtext, speak, strlen(speak) + 1);
+    const size_t textSize = strlen(text) + 1;
+    wchar_t* wText = new wchar_t[textSize];
+    std::setlocale(LC_ALL, locale.c_str());
+    mbstowcs(wText, text, textSize);
+    
+    auto speakText = fmt::format(L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", wLanguage, wText);
+    mVoice->Speak(speakText.c_str(), SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 
-    mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
+    delete[] wLanguage;
+    delete[] wText;
 }
 
 void SAPISpeechSynthesizer::Speak(const char* text, const char* language) {
