@@ -583,7 +583,8 @@ void DrawMainMenuAndCalculateGameSize(void) {
                 console->Dispatch("reset");
             }
 #if !defined(__SWITCH__) && !defined(__WIIU__)
-            const char* keyboardShortcut = strcmp(SohImGui::GetCurrentRenderingBackend().first, "sdl") == 0 ? "F10" : "ALT+Enter";
+            const char* keyboardShortcut =
+                strcmp(SohImGui::GetCurrentRenderingBackend().first, "sdl") == 0 ? "F10" : "ALT+Enter";
             if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
                 Window::GetInstance()->ToggleFullscreen();
             }

@@ -54,8 +54,8 @@ std::shared_ptr<Window> Window::CreateInstance(const std::string name, const std
 }
 
 Window::Window(std::string Name)
-    : mLogger(nullptr), mConfig(nullptr), mResourceManager(nullptr),
-      mAudioPlayer(nullptr), mControlDeck(nullptr), mName(std::move(Name)) {
+    : mLogger(nullptr), mConfig(nullptr), mResourceManager(nullptr), mAudioPlayer(nullptr), mControlDeck(nullptr),
+      mName(std::move(Name)) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mIsFullscreen = false;

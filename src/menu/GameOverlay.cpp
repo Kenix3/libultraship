@@ -215,12 +215,12 @@ void GameOverlay::Draw() {
                     this->TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
                     break;
                 case ConsoleVariableType::Color:
-                    this->TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text,
-                        var->Color.r, var->Color.g, var->Color.b, var->Color.a);
+                    this->TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text, var->Color.r, var->Color.g,
+                                   var->Color.b, var->Color.a);
                     break;
                 case ConsoleVariableType::Color24:
-                    this->TextDraw(30, textY, true, color, "%s (%u, %u, %u)", text,
-                        var->Color24.r, var->Color24.g, var->Color24.b);
+                    this->TextDraw(30, textY, true, color, "%s (%u, %u, %u)", text, var->Color24.r, var->Color24.g,
+                                   var->Color24.b);
                     break;
             }
 
