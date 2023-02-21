@@ -11,8 +11,21 @@ namespace Ship {
 SpeechSynthesizer::SpeechSynthesizer() : mInitialized(false){};
 
 bool SpeechSynthesizer::Init(void) {
+    if (mInitialized) {
+        return true;
+    }
+
     mInitialized = DoInit();
-    return IsInitialized();
+    return mInitialized;
+}
+
+void SpeechSynthesizer::Uninitialize(void) {
+    if (!mInitialized) {
+        return;
+    }
+
+    DoUninitialize();
+    mInitialized = false;
 }
 
 bool SpeechSynthesizer::IsInitialized(void) {

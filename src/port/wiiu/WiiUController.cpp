@@ -92,16 +92,16 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
                             i >= WPAD_PRO_STICK_R_EMULATION_LEFT ? status->pro.rightStick.y : status->pro.leftStick.y;
 
                         if (profile->Mappings[i] == BTN_STICKRIGHT || profile->Mappings[i] == BTN_STICKLEFT) {
-                            stickX = axisX * 85;
+                            stickX = axisX * MAX_AXIS_RANGE;
                             continue;
                         } else if (profile->Mappings[i] == BTN_STICKDOWN || profile->Mappings[i] == BTN_STICKUP) {
-                            stickY = axisY * 85;
+                            stickY = axisY * MAX_AXIS_RANGE;
                             continue;
                         } else if (profile->Mappings[i] == BTN_VSTICKRIGHT || profile->Mappings[i] == BTN_VSTICKLEFT) {
-                            camX = axisX * 85;
+                            camX = axisX * MAX_AXIS_RANGE;
                             continue;
                         } else if (profile->Mappings[i] == BTN_VSTICKDOWN || profile->Mappings[i] == BTN_VSTICKUP) {
-                            camY = axisY * 85;
+                            camY = axisY * MAX_AXIS_RANGE;
                             continue;
                         }
                     }
@@ -124,16 +124,16 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
                                                                                : status->classic.leftStick.y;
 
                         if (profile->Mappings[i] == BTN_STICKRIGHT || profile->Mappings[i] == BTN_STICKLEFT) {
-                            stickX = axisX * 85;
+                            stickX = axisX * MAX_AXIS_RANGE;
                             continue;
                         } else if (profile->Mappings[i] == BTN_STICKDOWN || profile->Mappings[i] == BTN_STICKUP) {
-                            stickY = axisY * 85;
+                            stickY = axisY * MAX_AXIS_RANGE;
                             continue;
                         } else if (profile->Mappings[i] == BTN_VSTICKRIGHT || profile->Mappings[i] == BTN_VSTICKLEFT) {
-                            camX = axisX * 85;
+                            camX = axisX * MAX_AXIS_RANGE;
                             continue;
                         } else if (profile->Mappings[i] == BTN_VSTICKDOWN || profile->Mappings[i] == BTN_VSTICKUP) {
-                            camY = axisY * 85;
+                            camY = axisY * MAX_AXIS_RANGE;
                             continue;
                         }
                     }
@@ -155,17 +155,19 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
                     }
                 }
             }
-            stickX += status->nunchuck.stick.x * 85;
-            stickY += status->nunchuck.stick.y * 85;
+            stickX += status->nunchuck.stick.x * MAX_AXIS_RANGE;
+            stickY += status->nunchuck.stick.y * MAX_AXIS_RANGE;
             break;
     }
 
     if (stickX || stickY) {
-        NormalizeStickAxis(virtualSlot, stickX, stickY, profile->AxisDeadzones[0], false);
+        getLeftStickX(virtualSlot) = stickX;
+        getLeftStickY(virtualSlot) = stickY;
     }
 
     if (camX || camY) {
-        NormalizeStickAxis(virtualSlot, camX, camY, profile->AxisDeadzones[2], true);
+        getRightStickX(virtualSlot) = camX;
+        getRightStickY(virtualSlot) = camY;
     }
 }
 
@@ -439,42 +441,6 @@ const std::string WiiUController::GetButtonName(int32_t virtualSlot, int n64Butt
 
 const std::string WiiUController::GetControllerName() {
     return controllerName;
-}
-
-void WiiUController::NormalizeStickAxis(int32_t virtualSlot, float x, float y, uint16_t threshold, bool isRightStick) {
-    auto profile = getProfile(virtualSlot);
-
-    // create scaled circular dead-zone in range {-15 ... +15}
-    auto len = sqrt(x * x + y * y);
-    if (len < threshold) {
-        len = 0;
-    } else if (len > 85.0) {
-        len = 85.0 / len;
-    } else {
-        len = (len - threshold) * 85.0 / (85.0 - threshold) / len;
-    }
-    x *= len;
-    y *= len;
-
-    // bound diagonals to an octagonal range {-68 ... +68}
-    if (x != 0.0 && y != 0.0) {
-        auto slope = y / x;
-        auto edgex = copysign(85.0 / (fabs(slope) + 16.0 / 69.0), x);
-        auto edgey = copysign(std::min(fabs(edgex * slope), 85.0 / (1.0 / fabs(slope) + 16.0 / 69.0)), y);
-        edgex = edgey / slope;
-
-        auto scale = sqrt(edgex * edgex + edgey * edgey) / 85.0;
-        x *= scale;
-        y *= scale;
-    }
-
-    if (isRightStick) {
-        getRightStickX(virtualSlot) = x;
-        getRightStickY(virtualSlot) = y;
-    } else {
-        getLeftStickX(virtualSlot) = x;
-        getLeftStickY(virtualSlot) = y;
-    }
 }
 
 void WiiUController::CreateDefaultBinding(int32_t virtualSlot) {

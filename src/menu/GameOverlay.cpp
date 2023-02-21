@@ -42,12 +42,12 @@ bool GameOverlay::OverlayCommand(std::shared_ptr<Console> Console, const std::ve
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
     std::shared_ptr<Archive> base = Window::GetInstance()->GetResourceManager()->GetArchive();
-    std::shared_ptr<OtrFile> font = std::make_shared<OtrFile>();
-    base->LoadFile(path, false, font);
+    std::shared_ptr<OtrFile> font = base->LoadFile(path, false);
     if (font->IsLoaded) {
-        char* fontData = new char[font->BufferSize];
-        memcpy(fontData, font->Buffer.get(), font->BufferSize);
-        Fonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->BufferSize, fontSize);
+        // TODO: Nothing is ever unloading the font or this fontData array.
+        char* fontData = new char[font->Buffer.size()];
+        memcpy(fontData, font->Buffer.data(), font->Buffer.size());
+        Fonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer.size(), fontSize);
     }
 }
 
@@ -83,6 +83,16 @@ void GameOverlay::TextDrawNotification(float duration, bool shadow, const char* 
     this->RegisteredOverlays[StringHelper::Sprintf("NotificationID:%d%d", rand(), this->RegisteredOverlays.size())] =
         new Overlay({ OverlayType::NOTIFICATION, ImStrdup(buf), duration, duration });
     NeedsCleanup = true;
+}
+
+void GameOverlay::ClearNotifications() {
+    for (auto it = this->RegisteredOverlays.begin(); it != this->RegisteredOverlays.end();) {
+        if (it->second->type == OverlayType::NOTIFICATION) {
+            it = this->RegisteredOverlays.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void GameOverlay::CleanupNotifications() {

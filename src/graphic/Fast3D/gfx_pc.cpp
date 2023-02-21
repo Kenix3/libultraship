@@ -2437,7 +2437,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 char* imgData = (char*)i;
 
                 if ((i & 1) != 1) {
-                    if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData) == 1) {
+                    if (gfx_check_image_signature(imgData) == 1) {
                         i = (uintptr_t)GetResourceDataByName(imgData, false);
                     }
                 }
@@ -2836,10 +2836,6 @@ void gfx_set_maximum_frame_latency(int latency) {
     gfx_wapi->set_maximum_frame_latency(latency);
 }
 
-float gfx_get_detected_hz(void) {
-    return gfx_wapi->get_detected_hz();
-}
-
 int gfx_create_framebuffer(uint32_t width, uint32_t height) {
     uint32_t orig_width = width, orig_height = height;
     gfx_adjust_width_height_for_scale(width, height);
@@ -2890,4 +2886,18 @@ uint16_t gfx_get_pixel_depth(float x, float y) {
     get_pixel_depth_pending.clear();
 
     return get_pixel_depth_cached.find(make_pair(x, y))->second;
+}
+
+int32_t gfx_check_image_signature(const char* imgData) {
+    uintptr_t i = (uintptr_t)(imgData);
+
+    if ((i & 1) == 1) {
+        return 0;
+    }
+
+    if (i != 0) {
+        return Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+    }
+
+    return 0;
 }

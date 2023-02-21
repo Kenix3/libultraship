@@ -143,3 +143,10 @@ add_library(StrHash64 STATIC)
 target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
 
 target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
+
+#=================== thread-pool ===================
+
+set(THREADPOOL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thread-pool)
+add_library(ThreadPool INTERFACE)
+
+target_include_directories(ThreadPool INTERFACE ${THREADPOOL_DIR})

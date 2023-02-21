@@ -11,10 +11,12 @@
 
 #define EXTENDED_SCANCODE_BIT (1 << 8)
 #define AXIS_SCANCODE_BIT (1 << 9)
+#define MAX_AXIS_RANGE 85.0f
 
 namespace Ship {
 enum GyroData { DRIFT_X, DRIFT_Y, GYRO_SENSITIVITY };
-
+enum Stick { LEFT, RIGHT };
+enum Axis { X, Y };
 enum DeviceProfileVersion { DEVICE_PROFILE_VERSION_V0 = 0, DEVICE_PROFILE_VERSION_V1 = 1 };
 
 #define DEVICE_PROFILE_CURRENT_VERSION DEVICE_PROFILE_VERSION_V1
@@ -64,6 +66,8 @@ class Controller {
     bool mIsRumbling;
 
     void LoadBinding();
+    int8_t ReadStick(int32_t virtualSlot, Stick stick, Axis axis);
+    void ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t deadzoneY);
 
   private:
     struct Buttons {
@@ -79,5 +83,7 @@ class Controller {
     std::unordered_map<int32_t, std::shared_ptr<DeviceProfile>> mProfiles;
     std::unordered_map<int32_t, std::shared_ptr<Buttons>> mButtonData = {};
     std::deque<OSContPad> mPadBuffer;
+
+    double GetClosestNotch(double angle, double approximationThreshold);
 };
 } // namespace Ship

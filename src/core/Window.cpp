@@ -66,6 +66,7 @@ Window::Window(std::string Name)
 
 Window::~Window() {
     SPDLOG_DEBUG("destruct window");
+    spdlog::shutdown();
 }
 
 void Window::CreateDefaults() {
@@ -270,6 +271,11 @@ uint32_t Window::GetCurrentHeight() {
     return mHeight;
 }
 
+uint32_t Window::GetCurrentRefreshRate() {
+    mWindowManagerApi->get_active_window_refresh_rate(&mRefreshRate);
+    return mRefreshRate;
+}
+
 float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
@@ -435,6 +441,10 @@ void Window::InitializeLogging() {
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
         GetLogger()->set_level(spdlog::level::trace);
+
+#if defined(_DEBUG)
+        GetLogger()->flush_on(spdlog::level::trace);
+#endif
 
 #ifndef __WIIU__
         GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");

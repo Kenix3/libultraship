@@ -16,12 +16,14 @@ class SpeechSynthesizer {
     SpeechSynthesizer();
 
     bool Init(void);
-    virtual void Speak(const char* text) = 0;
+    void Uninitialize(void);
+    virtual void Speak(const char* text, const char* language) = 0;
 
     bool IsInitialized(void);
 
   protected:
     virtual bool DoInit(void) = 0;
+    virtual void DoUninitialize(void) = 0;
 
   private:
     bool mInitialized;

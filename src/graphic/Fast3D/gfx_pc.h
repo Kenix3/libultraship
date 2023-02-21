@@ -80,10 +80,10 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 void gfx_end_frame(void);
 void gfx_set_target_fps(int);
 void gfx_set_maximum_frame_latency(int latency);
-float gfx_get_detected_hz(void);
 void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height);
 void gfx_get_pixel_depth_prepare(float x, float y);
 uint16_t gfx_get_pixel_depth(float x, float y);
+int32_t gfx_check_image_signature(const char* imgData);
 
 #endif

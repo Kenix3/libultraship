@@ -87,7 +87,6 @@ void CancelFrame(void);
 void DrawSettings();
 
 Backend WindowBackend();
-float WindowRefreshRate();
 std::vector<std::pair<const char*, const char*>> GetAvailableRenderingBackends();
 std::pair<const char*, const char*> GetCurrentRenderingBackend();
 void SetCurrentRenderingBackend(uint8_t index, std::pair<const char*, const char*>);

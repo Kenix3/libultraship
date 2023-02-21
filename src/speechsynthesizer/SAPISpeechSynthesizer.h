@@ -16,10 +16,11 @@ class SAPISpeechSynthesizer : public SpeechSynthesizer {
   public:
     SAPISpeechSynthesizer();
 
-    void Speak(const char* text);
+    void Speak(const char* text, const char* language);
 
   protected:
     bool DoInit(void);
+    void DoUninitialize(void);
 };
 } // namespace Ship
 
