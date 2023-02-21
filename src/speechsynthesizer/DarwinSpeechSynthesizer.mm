@@ -17,7 +17,7 @@ bool DarwinSpeechSynthesizer::DoInit() {
 }
 
 void DarwinSpeechSynthesizer::DoUninitialize() {
-    [(AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+    [(__bridge AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
     mSynthesizer = nil;
 }
 

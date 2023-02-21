@@ -196,7 +196,7 @@ bool Metal_Init(SDL_Renderer* renderer) {
     mctx.device = mctx.layer->device();
     mctx.command_queue = mctx.device->newCommandQueue();
 
-    for (int i = 0; i < kMaxVertexBufferPoolSize; i++) {
+    for (size_t i = 0; i < kMaxVertexBufferPoolSize; i++) {
         MTL::Buffer* new_buffer =
             mctx.device->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
         mctx.vertex_buffer_pool[i] = new_buffer;
