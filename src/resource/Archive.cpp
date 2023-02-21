@@ -345,7 +345,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         }
     }
     bool baseLoaded = false;
-    int i = 0;
+    size_t i = 0;
     while (!baseLoaded && i < mOtrArchives.size()) {
 #if defined(__SWITCH__) || defined(__WIIU__)
         std::string fullPath = mOtrArchives[i];
@@ -376,7 +376,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         SPDLOG_ERROR("No valid OTR file was provided.");
         return false;
     }
-    for (int j = i; j < mOtrArchives.size(); j++) {
+    for (size_t j = i; j < mOtrArchives.size(); j++) {
 #if defined(__SWITCH__) || defined(__WIIU__)
         std::string fullPath = mOtrArchives[j];
 #else

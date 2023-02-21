@@ -54,7 +54,7 @@ void ControlDeck::ScanPhysicalDevices() {
 
     mPhysicalDevices.push_back(std::make_shared<DummyController>("Disconnected", "None", false));
 
-    for (const auto device : mPhysicalDevices) {
+    for (const auto &device : mPhysicalDevices) {
         for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
             device->CreateDefaultBinding(i);
         }
@@ -124,8 +124,7 @@ void ControlDeck::LoadControllerSettings() {
         config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
     }
 
-    for (const auto device : mPhysicalDevices) {
-
+    for (const auto &device : mPhysicalDevices) {
         std::string guid = device->GetGuid();
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
