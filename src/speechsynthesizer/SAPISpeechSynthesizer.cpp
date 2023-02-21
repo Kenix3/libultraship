@@ -43,8 +43,9 @@ void SpeakThreadTask(const char* text, const char* language) {
     wchar_t* wText = new wchar_t[textSize];
     std::setlocale(LC_ALL, locale.c_str());
     mbstowcs(wText, text, textSize);
-    
-    auto speakText = fmt::format(L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", wLanguage, wText);
+
+    auto speakText = fmt::format(
+        L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", wLanguage, wText);
     mVoice->Speak(speakText.c_str(), SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 
     delete[] wLanguage;
