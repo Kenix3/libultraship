@@ -32,16 +32,16 @@ void SAPISpeechSynthesizer::DoUninitialize() {
 }
 
 void SpeakThreadTask(const char* text, const char* language) {
-    std::string locale = fmt::format("{}.UTF-8", language);
-    locale.replace(locale.find("-"), 1, "_");
-
     const size_t languageSize = strlen(language) + 1;
     wchar_t* wLanguage = new wchar_t[languageSize];
     mbstowcs(wLanguage, language, languageSize);
 
+    std::string locale = fmt::format("{}.UTF-8", language);
+    locale.replace(locale.find("-"), 1, "_");
+    std::setlocale(LC_ALL, locale.c_str());
+
     const size_t textSize = strlen(text) + 1;
     wchar_t* wText = new wchar_t[textSize];
-    std::setlocale(LC_ALL, locale.c_str());
     mbstowcs(wText, text, textSize);
 
     auto speakText = fmt::format(
