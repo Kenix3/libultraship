@@ -122,8 +122,7 @@ float GameOverlay::GetStringWidth(const char* text) {
     return CalculateTextSize(text).x;
 }
 
-ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, bool shortenText,
-                                      float wrapWidth) {
+ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, bool shortenText, float wrapWidth) {
     ImGuiContext& g = *GImGui;
 
     const char* text_display_end;

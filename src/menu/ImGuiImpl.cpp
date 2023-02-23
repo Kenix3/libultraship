@@ -111,7 +111,7 @@ const char* filters[3] = {
 
 std::vector<std::pair<const char*, const char*>> renderingBackends = {
 #ifdef _WIN32
-    { "dx11", "DirectX" },
+    { "Dx11", "DirectX" },
 #endif
 #ifndef __WIIU__
     { "sdl", "OpenGL" }
@@ -203,18 +203,18 @@ void ImGuiWMInit() {
 #else
         case Backend::SDL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (impl.metal.window) {
-                ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(impl.metal.window));
+            if (impl.Metal.Window) {
+                ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(impl.Metal.Window));
                 break;
             }
 
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
-            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.opengl.window), impl.opengl.context);
+            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.Opengl.Window), impl.Opengl.Context);
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case Backend::DX11:
-            ImGui_ImplWin32_Init(impl.dx11.window);
+            ImGui_ImplWin32_Init(impl.Dx11.Window);
             break;
 #endif
         default:
@@ -231,8 +231,8 @@ void ImGuiBackendInit() {
 #else
         case Backend::SDL:
 #ifdef __APPLE__
-            if (impl.metal.renderer) {
-                Metal_Init(impl.metal.renderer);
+            if (impl.Metal.renderer) {
+                Metal_Init(impl.Metal.renderer);
                 break;
             }
 
@@ -245,8 +245,8 @@ void ImGuiBackendInit() {
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case Backend::DX11:
-            ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.dx11.device),
-                                static_cast<ID3D11DeviceContext*>(impl.dx11.device_context));
+            ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.Dx11.Device),
+                                static_cast<ID3D11DeviceContext*>(impl.Dx11.DeviceContext));
             break;
 #endif
         default:
@@ -258,11 +258,11 @@ void ImGuiProcessEvent(EventImpl event) {
     switch (impl.backend) {
 #ifdef __WIIU__
         case Backend::GX2:
-            if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.gx2.input)) {}
+            if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
             break;
 #else
         case Backend::SDL:
-            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.sdl.event));
+            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
             Ship::Switch::ImGuiProcessEvent(io->WantTextInput);
@@ -271,8 +271,8 @@ void ImGuiProcessEvent(EventImpl event) {
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case Backend::DX11:
-            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.win32.handle), event.win32.msg, event.win32.wparam,
-                                           event.win32.lparam);
+            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
+                                           event.Win32.Param2);
             break;
 #endif
         default:
@@ -310,8 +310,8 @@ void ImGuiBackendNewFrame() {
 #else
         case Backend::SDL:
 #ifdef __APPLE__
-            if (impl.metal.renderer) {
-                Metal_NewFrame(impl.metal.renderer);
+            if (impl.Metal.renderer) {
+                Metal_NewFrame(impl.Metal.renderer);
                 break;
             }
 #endif
@@ -342,7 +342,7 @@ void ImGuiRenderDrawData(ImDrawData* data) {
 #else
         case Backend::SDL:
 #ifdef __APPLE__
-            if (impl.metal.renderer) {
+            if (impl.Metal.renderer) {
                 Metal_RenderDrawData(data);
                 break;
             }
@@ -417,9 +417,9 @@ void LoadTexture(const std::string& name, const std::string& path) {
 
 // MARK: - Public API
 
-void Init(WindowImpl window_impl) {
+void Init(WindowImpl windowImpl) {
     CVarLoad();
-    impl = window_impl;
+    impl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
     io = &ImGui::GetIO();
@@ -446,8 +446,8 @@ void Init(WindowImpl window_impl) {
     io->FontGlobalScale = 2.0f;
 
     // Setup display sizes
-    io->DisplaySize.x = window_impl.gx2.width;
-    io->DisplaySize.y = window_impl.gx2.height;
+    io->DisplaySize.x = windowImpl.Gx2.Width;
+    io->DisplaySize.y = windowImpl.Gx2.height;
 #endif
 
     PopulateBackendIds(Window::GetInstance()->GetConfig());
@@ -694,8 +694,8 @@ void DrawMainMenuAndCalculateGameSize(void) {
 
     for (auto& windowIter : customWindows) {
         CustomWindow& window = windowIter.second;
-        if (window.drawFunc != nullptr) {
-            window.drawFunc(window.enabled);
+        if (window.DrawFunc != nullptr) {
+            window.DrawFunc(window.Enabled);
         }
     }
 
@@ -836,7 +836,7 @@ void Render() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        if (impl.backend == Backend::SDL && impl.opengl.context != nullptr) {
+        if (impl.backend == Backend::SDL && impl.Opengl.Context != nullptr) {
             SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
             SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
 
@@ -912,7 +912,7 @@ void AddWindow(const std::string& category, const std::string& name, WindowDrawF
         return;
     }
 
-    customWindows[name] = { .enabled = isEnabled, .drawFunc = drawFunc };
+    customWindows[name] = { .Enabled = isEnabled, .DrawFunc = drawFunc };
 
     if (isHidden) {
         hiddenwindowCategories[category].emplace_back(name);
@@ -922,7 +922,7 @@ void AddWindow(const std::string& category, const std::string& name, WindowDrawF
 }
 
 void EnableWindow(const std::string& name, bool isEnabled) {
-    customWindows[name].enabled = isEnabled;
+    customWindows[name].Enabled = isEnabled;
 }
 
 Ship::GameOverlay* GetGameOverlay() {
@@ -976,7 +976,7 @@ ImTextureID GetTextureByID(int id) {
     }
 #endif
 #ifdef __APPLE__
-    if (impl.metal.window) {
+    if (impl.Metal.Window) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif

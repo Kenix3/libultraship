@@ -331,7 +331,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         SDL_GL_MakeCurrent(wnd, ctx);
         SDL_GL_SetSwapInterval(1);
 
-        window_impl.opengl = { wnd, ctx };
+        window_impl.Opengl = { wnd, ctx };
     } else {
         renderer = SDL_CreateRenderer(wnd, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         if (renderer == NULL) {
@@ -340,7 +340,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         }
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
-        window_impl.metal = { wnd, renderer };
+        window_impl.Metal = { wnd, renderer };
     }
 
     window_impl.backend = SohImGui::Backend::SDL;
@@ -446,7 +446,7 @@ static void gfx_sdl_handle_events(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         SohImGui::EventImpl event_impl;
-        event_impl.sdl = { &event };
+        event_impl.Sdl = { &event };
         SohImGui::Update(event_impl);
         switch (event.type) {
 #ifndef TARGET_WEB

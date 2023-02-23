@@ -386,7 +386,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     SohImGui::WindowImpl window_impl;
     window_impl.backend = SohImGui::Backend::DX11;
-    window_impl.dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
+    window_impl.Dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
     SohImGui::Init(window_impl);
 }
 
