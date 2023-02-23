@@ -7,26 +7,16 @@
 static const std::string mercuryRGBAObjectType = "RGBA";
 static const std::string mercuryRGBObjectType = "RGB";
 
-typedef enum {
-    String,
-    Float,
-    Bool,
-    Int,
-    UInt,
-    ArrayString,
-    ArrayFloat,
-    ArrayBool,
-    ArrayInt,
-    ArrayUInt
-} MercuryType;
-
 class Mercury {
 protected:
-    std::string mPath;
+    std::string path_;
 public:
-    explicit Mercury(std::string mPath);
+    explicit Mercury(std::string path);
+
+    nlohmann::json vjson;
     nlohmann::json rjson;
-    std::unordered_map<std::string, std::pair<std::any, MercuryType>> mJsonData;
+    nlohmann::json nested(const std::string& key);
+    static std::string formatNestedKey(const std::string& key);
     std::string getString(const std::string& key, const std::string& def = "");
     float getFloat(const std::string& key, float defValue = 0.0f);
     bool getBool(const std::string& key, bool defValue = false);
@@ -39,25 +29,22 @@ public:
     void setInt(const std::string& key, int value);
     void setUInt(const std::string& key, uint32_t value);
     void erase(const std::string& key);
-    void setArray(const std::string& key, std::vector<std::string> array);
-    void setArray(const std::string& key, std::vector<float> array);
-    void setArray(const std::string& key, std::vector<bool> array);
-    void setArray(const std::string& key, std::vector<int> array);
-    void setArray(const std::string& key, std::vector<uint32_t> array);
+    void set(const std::string& key, std::any value);
+    template< typename T > void setArray(const std::string& key, std::vector<T> array);
 
     void reload();
-    void save();
+    void save() const;
     bool isNewInstance = false;
-
-    void scanJsonObject(const std::string& parent, const nlohmann::json &j);
-    void writeDataType(nlohmann::json& obj, const std::pair<std::any, MercuryType>& value);
-
-    void setValue(const std::string &keyName, const nlohmann::json &value);
 };
 
 template< typename T >
 std::vector<T> Mercury::getArray(const std::string& key) {
-    if (this->mJsonData.contains(key))
-        return std::any_cast<std::vector<T>>(this->mJsonData[key]);
+	if (nlohmann::json tmp = this->nested(key); tmp.is_array())
+        return tmp.get<std::vector<T>>();
     return std::vector<T>();
 };
+
+template <typename T>
+void Mercury::setArray(const std::string& key, std::vector<T> array) {
+    this->vjson[formatNestedKey(key)] = nlohmann::json(array);
+}
