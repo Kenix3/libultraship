@@ -537,9 +537,9 @@ void DrawMainMenuAndCalculateGameSize(void) {
     const std::shared_ptr<Mercury> conf = Window::GetInstance()->GetConfig();
 
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
-                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                                    ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
+                                   ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
+                                   ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                   ImGuiWindowFlags_NoResize;
     if (CVarGetInteger("gOpenMenuBar", 0)) {
         windowFlags |= ImGuiWindowFlags_MenuBar;
     }
