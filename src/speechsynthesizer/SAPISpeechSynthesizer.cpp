@@ -31,7 +31,7 @@ void SAPISpeechSynthesizer::DoUninitialize() {
     CoUninitialize();
 }
 
-std::wstring c2ws(const char* text) {
+std::wstring CharToWideString(const char* text) {
     std::string str(text);
     int textSize = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
     std::wstring wstrTo(textSize, 0);
@@ -40,8 +40,8 @@ std::wstring c2ws(const char* text) {
 }
 
 void SpeakThreadTask(const char* text, const char* language) {
-    auto wLanguage = c2ws(language);
-    auto wText = c2ws(text);
+    auto wLanguage = CharToWideString(language);
+    auto wText = CharToWideString(text);
 
     auto speakText = fmt::format(
         L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", wLanguage, wText);
