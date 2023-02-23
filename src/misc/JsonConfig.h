@@ -15,9 +15,9 @@ class JsonConfig {
   public:
     explicit JsonConfig(std::string path);
 
-    /// Set to `true` when JsonFile is inited with an invalid path.
-    /// Indicating that this is considered a "fresh file" and will be created upon save.
-    bool mIsNewFile = false;
+    /// Returns `true` when JsonFile is inited with an invalid path.
+    /// Indicating that this is considered a "fresh config" and will be created upon save.
+    bool IsNewConfig();
 
     /// Grab the underlying JSON object at the key or nullptr if does not exist
     json::value_type GetRawEntry(std::string key);
@@ -40,4 +40,7 @@ class JsonConfig {
     bool GetBoolean(std::string key, bool defaultValue = false);
 
     void PersistToDisk();
+
+  private:
+    bool mIsNewConfig = false;
 };

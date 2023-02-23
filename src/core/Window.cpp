@@ -70,7 +70,7 @@ Window::~Window() {
 }
 
 void Window::CreateDefaults() {
-    if (mConfig->mIsNewFile) {
+    if (mConfig->IsNewConfig()) {
         mConfig->SetInteger("Window.Width", 640);
         mConfig->SetInteger("Window.Height", 480);
 

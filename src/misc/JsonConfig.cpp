@@ -9,7 +9,7 @@ namespace fs = std::filesystem;
 JsonConfig::JsonConfig(std::string path) : mPath(path) {
     // check if path exists and that it's a file
     if (!fs::exists(path) || !fs::is_regular_file(path)) {
-        mIsNewFile = true;
+        mIsNewConfig = true;
         mJson = json::object();
         return;
     }
@@ -21,7 +21,7 @@ JsonConfig::JsonConfig(std::string path) : mPath(path) {
         SPDLOG_ERROR("Failed to parse JSON file: {}", e.what());
 
         // If failure to parse, we will create a new file
-        mIsNewFile = true;
+        mIsNewConfig = true;
         mJson = json::object();
     }
 }
@@ -67,6 +67,10 @@ json::value_type JsonConfig::GetArbitraryType(std::string key) {
 }
 
 // MARK: - Public API
+
+bool JsonConfig::IsNewConfig() {
+    return mIsNewConfig;
+}
 
 void JsonConfig::DeleteEntry(std::string key) {
     auto keyParts = StringHelper::Split(key, ".");
@@ -179,5 +183,5 @@ void JsonConfig::PersistToDisk() {
     file.close();
 #endif
 
-    mIsNewFile = false;
+    mIsNewConfig = false;
 }
