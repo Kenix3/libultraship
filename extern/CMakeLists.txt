@@ -124,17 +124,6 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(NLOHMANN_JSON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann-json)
 add_subdirectory(${NLOHMANN_JSON_DIR})
 
-#=================== Mercury ===================
-
-set(MERCURY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Mercury)
-add_library(Mercury STATIC)
-set_property(TARGET Mercury PROPERTY CXX_STANDARD 20)
-
-target_sources(Mercury PRIVATE ${MERCURY_DIR}/Mercury.cpp)
-target_include_directories(Mercury PUBLIC ${MERCURY_DIR} ${ZAPDUTILS_DIR})
-
-target_link_libraries(Mercury PUBLIC ZAPDUtils nlohmann_json::nlohmann_json)
-
 #=================== StrHash64 ===================
 
 set(STRHASH64_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StrHash64)
