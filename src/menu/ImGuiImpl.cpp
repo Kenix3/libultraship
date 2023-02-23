@@ -447,7 +447,7 @@ void Init(WindowImpl windowImpl) {
 
     // Setup display sizes
     io->DisplaySize.x = windowImpl.Gx2.Width;
-    io->DisplaySize.y = windowImpl.Gx2.height;
+    io->DisplaySize.y = windowImpl.Gx2.Height;
 #endif
 
     PopulateBackendIds(Window::GetInstance()->GetConfig());
