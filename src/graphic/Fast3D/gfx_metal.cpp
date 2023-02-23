@@ -525,7 +525,24 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         current_framebuffer.command_encoder->setTriangleFillMode(MTL::TriangleFillModeFill);
         current_framebuffer.command_encoder->setCullMode(MTL::CullModeNone);
         current_framebuffer.command_encoder->setFrontFacingWinding(MTL::WindingCounterClockwise);
-        current_framebuffer.command_encoder->setDepthBias(0, mctx.zmode_decal ? -2 : 0, 0);
+
+        // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
+        // fighting
+        const int n64modeFactor = 120;
+        const int noVanishFactor = 100;
+        float SSDB = -2;
+        switch (CVarGetInteger("gDirtPathFix", 0)) {
+            case 1: // scaled z-fighting (N64 mode like)
+                SSDB = -1.0f * (float)mctx.render_target_height / n64modeFactor;
+                break;
+            case 2: // no vanishing paths
+                SSDB = -1.0f * (float)mctx.render_target_height / noVanishFactor;
+                break;
+            case 0: // disabled
+            default:
+                SSDB = -2;
+        }
+        current_framebuffer.command_encoder->setDepthBias(0, mctx.zmode_decal ? SSDB : 0, 0);
     }
 
     MTL::Buffer* vertex_buffer = mctx.vertex_buffer_pool[mctx.current_vertex_buffer_pool_index];
