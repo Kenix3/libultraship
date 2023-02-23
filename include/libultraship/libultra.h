@@ -8,7 +8,6 @@
 #include "libultra/gbi.h"
 #include "libultra/gs2dex.h"
 #include "libultra/gu.h"
-#include "libultra/hardware.h"
 #include "libultra/internal.h"
 #include "libultra/interrupt.h"
 #include "libultra/mbi.h"
