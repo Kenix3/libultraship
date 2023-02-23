@@ -32,6 +32,7 @@
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 #include "gfx_pc.h"
+#include <core/bridge/consolevariablebridge.h>
 #define DEBUG_D3D 0
 
 using namespace Microsoft::WRL; // For ComPtr
@@ -699,7 +700,23 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         rasterizer_desc.CullMode = D3D11_CULL_NONE;
         rasterizer_desc.FrontCounterClockwise = true;
         rasterizer_desc.DepthBias = 0;
-        rasterizer_desc.SlopeScaledDepthBias = d3d.zmode_decal ? -2.0f : 0.0f;
+        // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
+        // fighting
+        const int n64modeFactor = 120;
+        const int noVanishFactor = 100;
+        float SSDB = -2;
+        switch (CVarGetInteger("gDirtPathFix", 0)) {
+            case 1: // scaled z-fighting (N64 mode like)
+                SSDB = -1.0f * (float)d3d.render_target_height / n64modeFactor;
+                break;
+            case 2: // no vanishing paths
+                SSDB = -1.0f * (float)d3d.render_target_height / noVanishFactor;
+                break;
+            case 0: // disabled
+            default:
+                SSDB = -2;
+        }
+        rasterizer_desc.SlopeScaledDepthBias = d3d.zmode_decal ? SSDB : 0.0f;
         rasterizer_desc.DepthBiasClamp = 0.0f;
         rasterizer_desc.DepthClipEnable = false;
         rasterizer_desc.ScissorEnable = true;
