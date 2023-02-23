@@ -201,8 +201,6 @@ void ConsoleVariable::Save() {
 
 void ConsoleVariable::Load() {
     std::shared_ptr<JsonFile> conf = Ship::Window::GetInstance()->GetConfig();
-    // TODO: Why was it reloading the config?
-//    conf->reload();
 
     auto cvarRawConfig = conf->GetRawEntry("CVars");
     if (cvarRawConfig != nullptr) {

@@ -20,8 +20,7 @@ JsonFile::JsonFile(std::string path) : mPath(path) {
     }  catch (json::parse_error& e) {
         SPDLOG_ERROR("Failed to parse JSON file: {}", e.what());
 
-        // TODO: Think about what we want to do in this case.
-        // As it is written here, we'll create a new file and overwrite.
+        // If failure to parse, we will create a new file
         mIsNewFile = true;
         mJson = json::object();
     }
