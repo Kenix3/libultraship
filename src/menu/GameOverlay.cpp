@@ -9,7 +9,7 @@
 #include <Utils/StringHelper.h>
 
 namespace Ship {
-bool GameOverlay::OverlayCommand(std::shared_ptr<Console> Console, const std::vector<std::string>& args) {
+bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args) {
     if (args.size() < 3) {
         return CMD_FAILED;
     }
@@ -122,15 +122,15 @@ float GameOverlay::GetStringWidth(const char* text) {
     return CalculateTextSize(text).x;
 }
 
-ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* text_end, bool hide_text_after_double_hash,
-                                      float wrap_width) {
+ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, bool shortenText,
+                                      float wrapWidth) {
     ImGuiContext& g = *GImGui;
 
     const char* text_display_end;
-    if (hide_text_after_double_hash)
-        text_display_end = ImGui::FindRenderedTextEnd(text, text_end); // Hide anything after a '##' string
+    if (shortenText)
+        text_display_end = ImGui::FindRenderedTextEnd(text, textEnd); // Hide anything after a '##' string
     else
-        text_display_end = text_end;
+        text_display_end = textEnd;
 
     GameOverlay* overlay = SohImGui::GetGameOverlay();
 
@@ -138,7 +138,7 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* text_end, bo
     const float font_size = font->FontSize;
     if (text == text_display_end)
         return ImVec2(0.0f, font_size);
-    ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, wrap_width, text, text_display_end, NULL);
+    ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, wrapWidth, text, text_display_end, NULL);
 
     // Round
     // FIXME: This has been here since Dec 2015 (7b0bf230) but down the line we want this out.
