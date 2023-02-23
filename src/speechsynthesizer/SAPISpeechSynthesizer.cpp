@@ -31,25 +31,21 @@ void SAPISpeechSynthesizer::DoUninitialize() {
     CoUninitialize();
 }
 
+std::wstring c2ws(const char* text) {
+    std::string str(text);
+    int textSize = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(textSize, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], textSize);
+    return wstrTo;
+}
+
 void SpeakThreadTask(const char* text, const char* language) {
-    const size_t languageSize = strlen(language) + 1;
-    wchar_t* wLanguage = new wchar_t[languageSize];
-    mbstowcs(wLanguage, language, languageSize);
-
-    std::string locale = fmt::format("{}.UTF-8", language);
-    locale.replace(locale.find("-"), 1, "_");
-    std::setlocale(LC_ALL, locale.c_str());
-
-    const size_t textSize = strlen(text) + 1;
-    wchar_t* wText = new wchar_t[textSize];
-    mbstowcs(wText, text, textSize);
+    auto wLanguage = c2ws(language);
+    auto wText = c2ws(text);
 
     auto speakText = fmt::format(
         L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", wLanguage, wText);
     mVoice->Speak(speakText.c_str(), SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
-
-    delete[] wLanguage;
-    delete[] wText;
 }
 
 void SAPISpeechSynthesizer::Speak(const char* text, const char* language) {
