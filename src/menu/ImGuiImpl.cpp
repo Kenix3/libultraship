@@ -153,7 +153,7 @@ void InitSettings() {
     });
 }
 
-void PopulateBackendIds(std::shared_ptr<JsonFile> cfg) {
+void PopulateBackendIds(std::shared_ptr<JsonConfig> cfg) {
     std::string renderingBackend = cfg->GetString("Window.GfxBackend");
     std::string gfxApi = cfg->GetString("Window.GfxApi");
 
@@ -534,7 +534,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Window::GetInstance();
-    const std::shared_ptr<JsonFile> conf = Window::GetInstance()->GetConfig();
+    const std::shared_ptr<JsonConfig> conf = Window::GetInstance()->GetConfig();
 
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |

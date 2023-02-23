@@ -175,8 +175,8 @@ set(Source_Files__Misc
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/stox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/JsonFile.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/JsonFile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/misc/JsonConfig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/misc/JsonConfig.cpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")

@@ -250,7 +250,7 @@ void Window::AllKeysUp(void) {
 }
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
-    std::shared_ptr<JsonFile> pConf = Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonConfig> pConf = Window::GetInstance()->GetConfig();
 
     Window::GetInstance()->mIsFullscreen = isNowFullscreen;
     pConf->SetBoolean("Window.Fullscreen.Enabled", isNowFullscreen);
@@ -489,7 +489,7 @@ void Window::InitializeResourceManager(const std::vector<std::string>& otrFiles,
 
 void Window::InitializeConfiguration() {
     auto configPath = GetPathRelativeToAppDirectory("shipofharkinian.json");
-    mConfig = std::make_shared<JsonFile>(GetPathRelativeToAppDirectory("shipofharkinian.json"));
+    mConfig = std::make_shared<JsonConfig>(GetPathRelativeToAppDirectory("shipofharkinian.json"));
 }
 
 void Window::InitializeSpeechSynthesis() {
@@ -554,7 +554,7 @@ std::shared_ptr<CrashHandler> Window::GetCrashHandler() {
     return mCrashHandler;
 }
 
-std::shared_ptr<JsonFile> Window::GetConfig() {
+std::shared_ptr<JsonConfig> Window::GetConfig() {
     return mConfig;
 }
 

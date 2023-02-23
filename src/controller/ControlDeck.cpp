@@ -104,7 +104,7 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
     StringHelper::Sprintf("Controllers.%s.Slot_%d." key, device->GetGuid().c_str(), virtualSlot, __VA_ARGS__)
 
 void ControlDeck::LoadControllerSettings() {
-    std::shared_ptr<JsonFile> config = Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonConfig> config = Window::GetInstance()->GetConfig();
 
     auto deckConfig = config->GetRawEntry("Controllers.Deck");
     if (deckConfig != nullptr) {
@@ -198,7 +198,7 @@ void ControlDeck::LoadControllerSettings() {
 }
 
 void ControlDeck::SaveControllerSettings() {
-    std::shared_ptr<JsonFile> config = Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonConfig> config = Window::GetInstance()->GetConfig();
 
     for (size_t i = 0; i < mVirtualDevices.size(); i++) {
         std::shared_ptr<Controller> backend = mPhysicalDevices[mVirtualDevices[i]];

@@ -4,7 +4,7 @@
 
 using json = nlohmann::json;
 
-class JsonFile {
+class JsonConfig {
   private:
     std::string mPath;
     json mJson;
@@ -13,7 +13,7 @@ class JsonFile {
     json::value_type GetArbitraryType(std::string key);
 
   public:
-    explicit JsonFile(std::string path);
+    explicit JsonConfig(std::string path);
 
     /// Set to `true` when JsonFile is inited with an invalid  path.
     /// Demonstrating that a new file will be created upon save.

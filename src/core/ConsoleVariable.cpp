@@ -162,13 +162,13 @@ void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue)
 }
 
 void ConsoleVariable::ClearVariable(const char* name) {
-    std::shared_ptr<JsonFile> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonConfig> conf = Ship::Window::GetInstance()->GetConfig();
     mVariables.erase(name);
     conf->DeleteEntry(StringHelper::Sprintf("CVars.%s", name));
 }
 
 void ConsoleVariable::Save() {
-    std::shared_ptr<JsonFile> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonConfig> conf = Ship::Window::GetInstance()->GetConfig();
 
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
@@ -200,7 +200,7 @@ void ConsoleVariable::Save() {
 }
 
 void ConsoleVariable::Load() {
-    std::shared_ptr<JsonFile> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonConfig> conf = Ship::Window::GetInstance()->GetConfig();
 
     auto cvarRawConfig = conf->GetRawEntry("CVars");
     if (cvarRawConfig != nullptr) {
