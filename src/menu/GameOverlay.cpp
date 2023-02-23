@@ -136,8 +136,9 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
 
     ImFont* font = overlay->CurrentFont == "Default" ? g.Font : overlay->Fonts[overlay->CurrentFont];
     const float fontSize = font->FontSize;
-    if (text == textDisplayEnd)
+    if (text == textDisplayEnd) {
         return ImVec2(0.0f, fontSize);
+    }
     ImVec2 textSize = font->CalcTextSizeA(fontSize, FLT_MAX, wrapWidth, text, textDisplayEnd, NULL);
 
     // Round
