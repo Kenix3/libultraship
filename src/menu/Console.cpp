@@ -107,7 +107,7 @@ void Console::Draw() {
     const ImVec2 pos = ImGui::GetWindowPos();
     const ImVec2 size = ImGui::GetWindowSize();
     // SohImGui::ShowCursor(ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_RectOnly),
-    // SohImGui::Dialogues::dConsole);
+    // SohImGui::Dialogues::Console);
 
     // Renders autocomplete window
     if (this->mOpenAutocomplete) {

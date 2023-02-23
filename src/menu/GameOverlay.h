@@ -20,14 +20,14 @@ struct Overlay {
 
 class GameOverlay {
   public:
-    static bool OverlayCommand(std::shared_ptr<Console> Console, const std::vector<std::string>& args);
+    static bool OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
 
     void Init();
     void Draw();
     void DrawSettings();
     static float GetStringWidth(const char* text);
-    static ImVec2 CalculateTextSize(const char* text, const char* text_end = NULL,
-                                    bool hide_text_after_double_hash = false, float wrap_width = -1.0f);
+    static ImVec2 CalculateTextSize(const char* text, const char* textEnd = NULL, bool shortenText = false,
+                                    float wrapWidth = -1.0f);
     void TextDraw(float x, float y, bool shadow, ImVec4 color, const char* text, ...);
     void TextDrawNotification(float duration, bool shadow, const char* fmt, ...);
     void ClearNotifications();

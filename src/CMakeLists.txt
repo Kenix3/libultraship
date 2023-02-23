@@ -182,6 +182,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.h
         ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm
     )
+
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 endif()
 
 source_group("Misc" FILES ${Source_Files__Misc})
@@ -295,6 +297,13 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.h
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.cpp
     )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND Source_Files__Graphic
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal_shader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal_shader.h
+    )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     list(APPEND Source_Files__Graphic
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_wiiu.h
@@ -338,6 +347,12 @@ set(Source_Files__Lib__stb
 source_group("Extern\\stb" FILES ${Source_Files__Lib__stb})
 target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
 
+#=================== metal-cpp ===================
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
+endif()
+
 
 #=================== Packages & Includes ===================
 
@@ -368,7 +383,9 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_Library(OSX_FOUNDATION Foundation)
     find_Library(OSX_AVFOUNDATION AVFoundation)
-    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${CMAKE_DL_LIBS})
+    find_library(METAL Metal)
+    find_library(QUARTZCORE QuartzCore)
+    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${METAL} ${QUARTZCORE} ${CMAKE_DL_LIBS})
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -385,6 +402,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         _CONSOLE
         _CRT_SECURE_NO_WARNINGS
         ENABLE_DX11
+    )
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
     )
 endif()
 

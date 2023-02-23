@@ -3,6 +3,7 @@
 #ifdef __cplusplus
 #include "menu/GameOverlay.h"
 #include <imgui.h>
+#include <SDL2/SDL.h>
 #include "menu/Console.h"
 #include "InputEditor.h"
 
@@ -20,56 +21,60 @@ enum class Backend {
 };
 
 enum class Dialogues {
-    dConsole,
-    dMenubar,
-    dLoadSettings,
+    Console,
+    Menubar,
+    LoadSettings,
 };
 
 typedef struct {
     Backend backend;
     union {
         struct {
-            void* window;
-            void* device_context;
-            void* device;
-        } dx11;
+            void* Window;
+            void* DeviceContext;
+            void* Device;
+        } Dx11;
         struct {
-            void* window;
-            void* context;
-        } sdl;
+            void* Window;
+            void* Context;
+        } Opengl;
         struct {
-            uint32_t width;
-            uint32_t height;
-        } gx2;
+            void* Window;
+            SDL_Renderer* Renderer;
+        } Metal;
+        struct {
+            uint32_t Width;
+            uint32_t Height;
+        } Gx2;
     };
 } WindowImpl;
 
 typedef union {
     struct {
-        void* handle;
-        int msg;
-        int wparam;
-        int lparam;
-    } win32;
+        void* Handle;
+        int Msg;
+        int Param1;
+        int Param2;
+    } Win32;
     struct {
-        void* event;
-    } sdl;
+        void* Event;
+    } Sdl;
     struct {
-        void* input;
-    } gx2;
+        void* Input;
+    } Gx2;
 } EventImpl;
 
 using WindowDrawFunc = void (*)(bool& enabled);
 
 typedef struct {
-    bool enabled;
-    WindowDrawFunc drawFunc;
+    bool Enabled;
+    WindowDrawFunc DrawFunc;
 } CustomWindow;
 
-bool supportsWindowedFullscreen();
-bool supportsViewports();
+bool SupportsWindowedFullscreen();
+bool SupportsViewports();
 
-void Init(WindowImpl window_impl);
+void Init(WindowImpl windowImpl);
 void Update(EventImpl event);
 
 void DrawMainMenuAndCalculateGameSize(void);
