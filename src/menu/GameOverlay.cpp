@@ -125,28 +125,29 @@ float GameOverlay::GetStringWidth(const char* text) {
 ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, bool shortenText, float wrapWidth) {
     ImGuiContext& g = *GImGui;
 
-    const char* text_display_end;
-    if (shortenText)
-        text_display_end = ImGui::FindRenderedTextEnd(text, textEnd); // Hide anything after a '##' string
-    else
-        text_display_end = textEnd;
+    const char* textDisplayEnd;
+    if (shortenText) {
+        textDisplayEnd = ImGui::FindRenderedTextEnd(text, textEnd); // Hide anything after a '##' string
+    } else {
+        textDisplayEnd = textEnd;
+    }
 
     GameOverlay* overlay = SohImGui::GetGameOverlay();
 
     ImFont* font = overlay->CurrentFont == "Default" ? g.Font : overlay->Fonts[overlay->CurrentFont];
-    const float font_size = font->FontSize;
-    if (text == text_display_end)
-        return ImVec2(0.0f, font_size);
-    ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, wrapWidth, text, text_display_end, NULL);
+    const float fontSize = font->FontSize;
+    if (text == textDisplayEnd)
+        return ImVec2(0.0f, fontSize);
+    ImVec2 textSize = font->CalcTextSizeA(fontSize, FLT_MAX, wrapWidth, text, textDisplayEnd, NULL);
 
     // Round
     // FIXME: This has been here since Dec 2015 (7b0bf230) but down the line we want this out.
     // FIXME: Investigate using ceilf or e.g.
     // - https://git.musl-libc.org/cgit/musl/tree/src/math/ceilf.c
     // - https://embarkstudios.github.io/rust-gpu/api/src/libm/math/ceilf.rs.html
-    text_size.x = IM_FLOOR(text_size.x + 0.99999f);
+    textSize.x = IM_FLOOR(textSize.x + 0.99999f);
 
-    return text_size;
+    return textSize;
 }
 
 void GameOverlay::Init() {

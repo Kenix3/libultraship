@@ -77,7 +77,7 @@ bool oldCursorState = true;
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 #define HOOK(b) \
     if (b)      \
-        needs_save = true;
+        needsSave = true;
 OSContPad* pads;
 
 std::map<std::string, GameAsset*> DefaultAssets;
@@ -95,7 +95,7 @@ static ImVector<ImRect> s_GroupPanelLabelStack;
 std::function<void(void)> clientDrawMenu;
 std::function<void(void)> clientSetupHooks;
 
-bool needs_save = false;
+bool needsSave = false;
 int lastRenderingBackendID = 0;
 int lastAudioBackendID = 0;
 bool statsWindowOpen;
@@ -360,7 +360,7 @@ void ImGuiRenderDrawData(ImDrawData* data) {
     }
 }
 
-bool supportsWindowedFullscreen() {
+bool SupportsWindowedFullscreen() {
 #ifdef __SWITCH__
     return false;
 #endif
@@ -374,7 +374,7 @@ bool supportsWindowedFullscreen() {
     }
 }
 
-bool supportsViewports() {
+bool SupportsViewports() {
 #ifdef __SWITCH__
     return false;
 #endif
@@ -390,7 +390,7 @@ bool supportsViewports() {
 }
 
 bool useViewports() {
-    return supportsViewports() && CVarGetInteger("gEnableMultiViewports", 1);
+    return SupportsViewports() && CVarGetInteger("gEnableMultiViewports", 1);
 }
 
 void LoadTexture(const std::string& name, const std::string& path) {
@@ -519,9 +519,9 @@ void Init(WindowImpl windowImpl) {
 }
 
 void Update(EventImpl event) {
-    if (needs_save) {
+    if (needsSave) {
         CVarSave();
-        needs_save = false;
+        needsSave = false;
     }
     ImGuiProcessEvent(event);
 }
@@ -534,14 +534,14 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Window::GetInstance();
-    const std::shared_ptr<Mercury> pConf = Window::GetInstance()->GetConfig();
+    const std::shared_ptr<Mercury> conf = Window::GetInstance()->GetConfig();
 
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
                                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
                                     ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
     if (CVarGetInteger("gOpenMenuBar", 0)) {
-        window_flags |= ImGuiWindowFlags_MenuBar;
+        windowFlags |= ImGuiWindowFlags_MenuBar;
     }
 
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -551,10 +551,10 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
-    ImGui::Begin("Main - Deck", nullptr, window_flags);
+    ImGui::Begin("Main - Deck", nullptr, windowFlags);
     ImGui::PopStyleVar(3);
 
-    ImVec2 top_left_pos = ImGui::GetWindowPos();
+    ImVec2 topLeftPos = ImGui::GetWindowPos();
 
     const ImGuiID dockId = ImGui::GetID("main_dock");
 
@@ -572,7 +572,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
         bool menuBar = !CVarGetInteger("gOpenMenuBar", 0);
         CVarSetInteger("gOpenMenuBar", menuBar);
-        needs_save = true;
+        needsSave = true;
         Window::GetInstance()->SetMenuBar(menuBar);
         if (Window::GetInstance()->IsFullscreen()) {
             setCursorVisibility(menuBar);
@@ -709,15 +709,15 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor();
 
-    ImVec2 main_pos = ImGui::GetWindowPos();
-    main_pos.x -= top_left_pos.x;
-    main_pos.y -= top_left_pos.y;
+    ImVec2 mainPos = ImGui::GetWindowPos();
+    mainPos.x -= topLeftPos.x;
+    mainPos.y -= topLeftPos.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     gfx_current_dimensions.width = (uint32_t)(size.x * gfx_current_dimensions.internal_mul);
     gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
-    gfx_current_game_window_viewport.x = (int16_t)main_pos.x;
-    gfx_current_game_window_viewport.y = (int16_t)main_pos.y;
+    gfx_current_game_window_viewport.x = (int16_t)mainPos.x;
+    gfx_current_game_window_viewport.y = (int16_t)mainPos.y;
     gfx_current_game_window_viewport.width = (int16_t)size.x;
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
@@ -758,7 +758,7 @@ void AddSetupHooksDelegate(std::function<void(void)> setupHooksMethod) {
 }
 
 void DrawFramebufferAndGameInput(void) {
-    const ImVec2 main_pos = ImGui::GetWindowPos();
+    const ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     if (CVarGetInteger("gLowResMode", 0) == 1) {
@@ -780,11 +780,11 @@ void DrawFramebufferAndGameInput(void) {
     const float scale = CVarGetFloat("gInputScale", 1.0f);
 #endif
 
-    ImVec2 BtnPos = ImVec2(160 * scale, 85 * scale);
+    ImVec2 btnPos = ImVec2(160 * scale, 85 * scale);
 
     if (CVarGetInteger("gInputEnabled", 0)) {
-        ImGui::SetNextWindowSize(BtnPos);
-        ImGui::SetNextWindowPos(ImVec2(main_pos.x + size.x - BtnPos.x - 20, main_pos.y + size.y - BtnPos.y - 20));
+        ImGui::SetNextWindowSize(btnPos);
+        ImGui::SetNextWindowPos(ImVec2(mainPos.x + size.x - btnPos.x - 20, mainPos.y + size.y - btnPos.y - 20));
 
         if (pads != nullptr && ImGui::Begin("Game Buttons", nullptr,
                                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
@@ -837,13 +837,13 @@ void Render() {
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         if (impl.backend == Backend::SDL && impl.Opengl.Context != nullptr) {
-            SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
-            SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+            SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
+            SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
 
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
 
-            SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+            SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
         } else {
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
@@ -962,7 +962,7 @@ void DispatchConsoleCommand(const std::string& line) {
 }
 
 void RequestCvarSaveOnNextTick() {
-    needs_save = true;
+    needsSave = true;
 }
 
 ImTextureID GetTextureByName(const std::string& name) {
