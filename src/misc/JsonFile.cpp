@@ -17,7 +17,7 @@ JsonFile::JsonFile(std::string path) : mPath(path) {
     try {
         std::ifstream ifs(path);
         mJson = json::parse(ifs);
-    }  catch (json::parse_error& e) {
+    } catch (json::parse_error& e) {
         SPDLOG_ERROR("Failed to parse JSON file: {}", e.what());
 
         // If failure to parse, we will create a new file
@@ -48,7 +48,7 @@ void JsonFile::SetArbitraryType(std::string key, json::value_type value) {
 
 json::value_type JsonFile::GetArbitraryType(std::string key) {
     auto keyParts = StringHelper::Split(key, ".");
-    
+
     // find the deepest nested key if it exists
     json* currentJson = &mJson;
     for (size_t i = 0; i < keyParts.size() - 1; i++) {
@@ -171,6 +171,6 @@ void JsonFile::PersistToDisk() {
     std::ofstream file(mPath);
     file << mJson.dump(4);
     file.close();
-    
+
     mIsNewFile = false;
 }

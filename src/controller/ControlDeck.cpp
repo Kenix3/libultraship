@@ -105,18 +105,18 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
 
 void ControlDeck::LoadControllerSettings() {
     std::shared_ptr<JsonFile> config = Window::GetInstance()->GetConfig();
-    
+
     auto deckConfig = config->GetRawEntry("Controllers.Deck");
     if (deckConfig != nullptr) {
         for (auto& [key, val] : deckConfig.items()) {
             int32_t slot = std::stoi(key.substr(5));
-            
+
             for (size_t dev = 0; dev < mPhysicalDevices.size(); dev++) {
                 std::string guid = mPhysicalDevices[dev]->GetGuid();
                 if (guid != val) {
                     continue;
                 }
-                
+
                 mVirtualDevices[slot] = dev;
             }
         }
@@ -132,7 +132,8 @@ void ControlDeck::LoadControllerSettings() {
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
             auto controllersConfig = config->GetRawEntry("Controllers");
-            if (controllersConfig == nullptr || !(controllersConfig.contains(guid) &&
+            if (controllersConfig == nullptr ||
+                !(controllersConfig.contains(guid) &&
                   controllersConfig[guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
                 continue;
             }
@@ -215,7 +216,7 @@ void ControlDeck::SaveControllerSettings() {
             if (!device->Connected()) {
                 continue;
             }
-            
+
             auto rawProfile = config->GetRawEntry("Controllers")[guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
             config->SetInteger(NESTED("Version", ""), profile->Version);
             config->SetBoolean(NESTED("Rumble.Enabled", ""), profile->UseRumble);
