@@ -168,9 +168,16 @@ bool JsonFile::GetBoolean(std::string key, bool defaultValue) {
 }
 
 void JsonFile::PersistToDisk() {
+#if defined(__SWITCH__) || defined(__WIIU__)
+    FILE* w fopen(mPath.c_str(), "w");
+    std::string jsonStr = mJson.dump(4);
+    fwrite(jsonStr.c_str(), sizeof(char), jsonStr.length(), w);
+    fclose(w);
+#else
     std::ofstream file(mPath);
     file << mJson.dump(4);
     file.close();
+#endif
 
     mIsNewFile = false;
 }
