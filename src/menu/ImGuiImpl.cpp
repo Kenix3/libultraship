@@ -231,8 +231,8 @@ void ImGuiBackendInit() {
 #else
         case Backend::SDL:
 #ifdef __APPLE__
-            if (impl.Metal.renderer) {
-                Metal_Init(impl.Metal.renderer);
+            if (impl.Metal.Renderer) {
+                Metal_Init(impl.Metal.Renderer);
                 break;
             }
 
@@ -310,8 +310,8 @@ void ImGuiBackendNewFrame() {
 #else
         case Backend::SDL:
 #ifdef __APPLE__
-            if (impl.Metal.renderer) {
-                Metal_NewFrame(impl.Metal.renderer);
+            if (impl.Metal.Renderer) {
+                Metal_NewFrame(impl.Metal.Renderer);
                 break;
             }
 #endif
@@ -342,7 +342,7 @@ void ImGuiRenderDrawData(ImDrawData* data) {
 #else
         case Backend::SDL:
 #ifdef __APPLE__
-            if (impl.Metal.renderer) {
+            if (impl.Metal.Renderer) {
                 Metal_RenderDrawData(data);
                 break;
             }
