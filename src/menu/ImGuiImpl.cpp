@@ -153,9 +153,9 @@ void InitSettings() {
     });
 }
 
-void PopulateBackendIds(std::shared_ptr<Mercury> cfg) {
-    std::string renderingBackend = cfg->getString("Window.GfxBackend");
-    std::string gfxApi = cfg->getString("Window.GfxApi");
+void PopulateBackendIds(std::shared_ptr<JsonFile> cfg) {
+    std::string renderingBackend = cfg->GetString("Window.GfxBackend");
+    std::string gfxApi = cfg->GetString("Window.GfxApi");
 
     int matchType = 2; // 0 = backend, 1 = gfxApi, 2 = both
 
@@ -181,7 +181,7 @@ void PopulateBackendIds(std::shared_ptr<Mercury> cfg) {
         }
     }
 
-    std::string audioBackend = cfg->getString("Window.AudioBackend");
+    std::string audioBackend = cfg->GetString("Window.AudioBackend");
     if (audioBackend.empty()) {
         lastAudioBackendID = 0;
     } else {
@@ -534,7 +534,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Window::GetInstance();
-    const std::shared_ptr<Mercury> conf = Window::GetInstance()->GetConfig();
+    const std::shared_ptr<JsonFile> conf = Window::GetInstance()->GetConfig();
 
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
@@ -883,13 +883,13 @@ std::pair<const char*, const char*> GetCurrentAudioBackend() {
 }
 
 void SetCurrentRenderingBackend(uint8_t index, std::pair<const char*, const char*> backend) {
-    Window::GetInstance()->GetConfig()->setString("Window.GfxBackend", backend.first);
-    Window::GetInstance()->GetConfig()->setString("Window.GfxApi", backend.second);
+    Window::GetInstance()->GetConfig()->SetString("Window.GfxBackend", backend.first);
+    Window::GetInstance()->GetConfig()->SetString("Window.GfxApi", backend.second);
     lastRenderingBackendID = index;
 }
 
 void SetCurrentAudioBackend(uint8_t index, std::pair<const char*, const char*> backend) {
-    Window::GetInstance()->GetConfig()->setString("Window.AudioBackend", backend.first);
+    Window::GetInstance()->GetConfig()->SetString("Window.AudioBackend", backend.first);
     lastAudioBackendID = index;
 }
 

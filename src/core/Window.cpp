@@ -70,25 +70,26 @@ Window::~Window() {
 }
 
 void Window::CreateDefaults() {
-    if (GetConfig()->isNewInstance) {
-        GetConfig()->setInt("Window.Width", 640);
-        GetConfig()->setInt("Window.Height", 480);
+    if (mConfig->mIsNewFile) {
+        mConfig->SetInteger("Window.Width", 640);
+        mConfig->SetInteger("Window.Height", 480);
 
-        GetConfig()->setString("Window.GfxBackend", "");
-        GetConfig()->setString("Window.GfxApi", "");
-        GetConfig()->setString("Window.AudioBackend", "");
+        mConfig->SetString("Window.GfxBackend", "");
+        mConfig->SetString("Window.GfxApi", "");
+        mConfig->SetString("Window.AudioBackend", "");
 
-        GetConfig()->setBool("Window.Fullscreen.Enabled", false);
-        GetConfig()->setInt("Window.Fullscreen.Width", 1920);
-        GetConfig()->setInt("Window.Fullscreen.Height", 1080);
+        mConfig->SetBoolean("Window.Fullscreen.Enabled", false);
+        mConfig->SetInteger("Window.Fullscreen.Width", 1920);
+        mConfig->SetInteger("Window.Fullscreen.Height", 1080);
 
-        GetConfig()->setString("Game.SaveName", "");
-        GetConfig()->setString("Game.Main Archive", "");
-        GetConfig()->setString("Game.Patches Archive", "");
+        mConfig->SetString("Game.SaveName", "");
+        mConfig->SetString("Game.Main Archive", "");
+        mConfig->SetString("Game.Patches Archive", "");
 
-        GetConfig()->setInt("Shortcuts.Fullscreen", 0x044);
-        GetConfig()->setInt("Shortcuts.Console", 0x029);
-        GetConfig()->save();
+        mConfig->SetInteger("Shortcuts.Fullscreen", 0x044);
+        mConfig->SetInteger("Shortcuts.Console", 0x029);
+
+        mConfig->PersistToDisk();
     }
 }
 
@@ -119,18 +120,18 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     }
 #endif
 
-    mIsFullscreen = GetConfig()->getBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
+    mIsFullscreen = mConfig->GetBoolean("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
 
     if (mIsFullscreen) {
-        mWidth = GetConfig()->getInt("Window.Fullscreen.Width", steamDeckGameMode ? 1280 : 1920);
-        mHeight = GetConfig()->getInt("Window.Fullscreen.Height", steamDeckGameMode ? 800 : 1080);
+        mWidth = mConfig->GetInteger("Window.Fullscreen.Width", steamDeckGameMode ? 1280 : 1920);
+        mHeight = mConfig->GetInteger("Window.Fullscreen.Height", steamDeckGameMode ? 800 : 1080);
     } else {
-        mWidth = GetConfig()->getInt("Window.Width", 640);
-        mHeight = GetConfig()->getInt("Window.Height", 480);
+        mWidth = mConfig->GetInteger("Window.Width", 640);
+        mHeight = mConfig->GetInteger("Window.Height", 480);
     }
 
-    InitializeWindowManager(GetConfig()->getString("Window.GfxBackend"), GetConfig()->getString("Window.GfxApi"));
-    InitializeAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
+    InitializeWindowManager(mConfig->GetString("Window.GfxBackend"), mConfig->GetString("Window.GfxApi"));
+    InitializeAudioPlayer(mConfig->GetString("Window.AudioBackend"));
 
     InitializeSpeechSynthesis();
 
@@ -204,7 +205,7 @@ void Window::MainLoop(void (*MainFunction)(void)) {
 }
 
 bool Window::KeyUp(int32_t scancode) {
-    if (scancode == GetInstance()->GetConfig()->getInt("Shortcuts.Fullscreen", 0x044)) {
+    if (scancode == GetInstance()->GetConfig()->GetInteger("Shortcuts.Fullscreen", 0x044)) {
         GetInstance()->ToggleFullscreen();
     }
 
@@ -249,10 +250,10 @@ void Window::AllKeysUp(void) {
 }
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
-    std::shared_ptr<Mercury> pConf = Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonFile> pConf = Window::GetInstance()->GetConfig();
 
     Window::GetInstance()->mIsFullscreen = isNowFullscreen;
-    pConf->setBool("Window.Fullscreen.Enabled", isNowFullscreen);
+    pConf->SetBoolean("Window.Fullscreen.Enabled", isNowFullscreen);
     if (isNowFullscreen) {
         bool menuBarOpen = Window::GetInstance()->GetMenuBar();
         Window::GetInstance()->SetCursorVisibility(menuBarOpen);
@@ -459,8 +460,8 @@ void Window::InitializeLogging() {
 
 void Window::InitializeResourceManager(const std::vector<std::string>& otrFiles,
                                        const std::unordered_set<uint32_t>& validHashes) {
-    mMainPath = mConfig->getString("Game.Main Archive", GetAppDirectoryPath());
-    mPatchesPath = mConfig->getString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+    mMainPath = mConfig->GetString("Game.Main Archive", GetAppDirectoryPath());
+    mPatchesPath = mConfig->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
         mResourceManager = std::make_shared<ResourceMgr>(GetInstance(), mMainPath, mPatchesPath, validHashes);
     } else {
@@ -487,7 +488,8 @@ void Window::InitializeResourceManager(const std::vector<std::string>& otrFiles,
 }
 
 void Window::InitializeConfiguration() {
-    mConfig = std::make_shared<Mercury>(GetPathRelativeToAppDirectory("shipofharkinian.json"));
+    auto configPath = GetPathRelativeToAppDirectory("shipofharkinian.json");
+    mConfig = std::make_shared<JsonFile>(GetPathRelativeToAppDirectory("shipofharkinian.json"));
 }
 
 void Window::InitializeSpeechSynthesis() {
@@ -552,7 +554,7 @@ std::shared_ptr<CrashHandler> Window::GetCrashHandler() {
     return mCrashHandler;
 }
 
-std::shared_ptr<Mercury> Window::GetConfig() {
+std::shared_ptr<JsonFile> Window::GetConfig() {
     return mConfig;
 }
 

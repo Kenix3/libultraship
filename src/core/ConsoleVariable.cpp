@@ -3,8 +3,10 @@
 #include <functional>
 #include <Utils/File.h>
 #include <misc/Utils.h>
-#include "Mercury.h"
 #include "core/Window.h"
+
+#define RGBAType "RGBA"
+#define RGBType "RGB"
 
 namespace Ship {
 
@@ -160,48 +162,52 @@ void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue)
 }
 
 void ConsoleVariable::ClearVariable(const char* name) {
-    std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonFile> conf = Ship::Window::GetInstance()->GetConfig();
     mVariables.erase(name);
-    conf->erase(StringHelper::Sprintf("CVars.%s", name));
+    conf->DeleteEntry(StringHelper::Sprintf("CVars.%s", name));
 }
 
 void ConsoleVariable::Save() {
-    std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonFile> conf = Ship::Window::GetInstance()->GetConfig();
 
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
 
         if (variable.second->Type == ConsoleVariableType::String && variable.second != nullptr &&
             variable.second->String.length() > 0) {
-            conf->setString(key, std::string(variable.second->String));
+            conf->SetString(key, std::string(variable.second->String));
         } else if (variable.second->Type == ConsoleVariableType::Integer) {
-            conf->setInt(key, variable.second->Integer);
+            conf->SetInteger(key, variable.second->Integer);
         } else if (variable.second->Type == ConsoleVariableType::Float) {
-            conf->setFloat(key, variable.second->Float);
+            conf->SetFloat(key, variable.second->Float);
         } else if (variable.second->Type == ConsoleVariableType::Color ||
                    variable.second->Type == ConsoleVariableType::Color24) {
             auto keyStr = key.c_str();
             Color_RGBA8 clr = variable.second->Color;
-            conf->setUInt(StringHelper::Sprintf("%s.R", keyStr), clr.r);
-            conf->setUInt(StringHelper::Sprintf("%s.G", keyStr), clr.g);
-            conf->setUInt(StringHelper::Sprintf("%s.B", keyStr), clr.b);
+            conf->SetUInteger(StringHelper::Sprintf("%s.R", keyStr), clr.r);
+            conf->SetUInteger(StringHelper::Sprintf("%s.G", keyStr), clr.g);
+            conf->SetUInteger(StringHelper::Sprintf("%s.B", keyStr), clr.b);
             if (variable.second->Type == ConsoleVariableType::Color) {
-                conf->setUInt(StringHelper::Sprintf("%s.A", keyStr), clr.a);
-                conf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBAObjectType);
+                conf->SetUInteger(StringHelper::Sprintf("%s.A", keyStr), clr.a);
+                conf->SetString(StringHelper::Sprintf("%s.Type", keyStr), RGBAType);
             } else {
-                conf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBObjectType);
+                conf->SetString(StringHelper::Sprintf("%s.Type", keyStr), RGBType);
             }
         }
     }
 
-    conf->save();
+    conf->PersistToDisk();
 }
 
 void ConsoleVariable::Load() {
-    std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
-    conf->reload();
+    std::shared_ptr<JsonFile> conf = Ship::Window::GetInstance()->GetConfig();
+    // TODO: Why was it reloading the config?
+//    conf->reload();
 
-    LoadFromPath("", conf->rjson["CVars"].items());
+    auto cvarRawConfig = conf->GetRawEntry("CVars");
+    if (cvarRawConfig != nullptr) {
+        LoadFromPath("", cvarRawConfig.items());
+    }
 
     LoadLegacy();
 }
@@ -219,14 +225,14 @@ void ConsoleVariable::LoadFromPath(
             case nlohmann::detail::value_t::array:
                 break;
             case nlohmann::detail::value_t::object:
-                if (value.contains("Type") && value["Type"].get<std::string>() == mercuryRGBAObjectType) {
+                if (value.contains("Type") && value["Type"].get<std::string>() == RGBAType) {
                     Color_RGBA8 clr;
                     clr.r = value["R"].get<uint8_t>();
                     clr.g = value["G"].get<uint8_t>();
                     clr.b = value["B"].get<uint8_t>();
                     clr.a = value["A"].get<uint8_t>();
                     SetColor(itemPath.c_str(), clr);
-                } else if (value.contains("Type") && value["Type"].get<std::string>() == mercuryRGBObjectType) {
+                } else if (value.contains("Type") && value["Type"].get<std::string>() == RGBType) {
                     Color_RGB8 clr;
                     clr.r = value["R"].get<uint8_t>();
                     clr.g = value["G"].get<uint8_t>();

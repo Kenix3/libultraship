@@ -175,6 +175,8 @@ set(Source_Files__Misc
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/stox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/Utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/misc/JsonFile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/misc/JsonFile.cpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -370,8 +372,8 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ZAPDUtils StrHash64
-    PUBLIC ImGui Mercury storm tinyxml2
+    PRIVATE ZAPDUtils StrHash64 nlohmann_json::nlohmann_json
+    PUBLIC ImGui storm tinyxml2
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")

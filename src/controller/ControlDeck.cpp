@@ -104,46 +104,48 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
     StringHelper::Sprintf("Controllers.%s.Slot_%d." key, device->GetGuid().c_str(), virtualSlot, __VA_ARGS__)
 
 void ControlDeck::LoadControllerSettings() {
-    std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
-
-    for (auto const& val : config->rjson["Controllers"]["Deck"].items()) {
-        int32_t slot = std::stoi(val.key().substr(5));
-
-        for (size_t dev = 0; dev < mPhysicalDevices.size(); dev++) {
-            std::string guid = mPhysicalDevices[dev]->GetGuid();
-            if (guid != val.value()) {
-                continue;
+    std::shared_ptr<JsonFile> config = Window::GetInstance()->GetConfig();
+    
+    auto deckConfig = config->GetRawEntry("Controllers.Deck");
+    if (deckConfig != nullptr) {
+        for (auto& [key, val] : deckConfig.items()) {
+            int32_t slot = std::stoi(key.substr(5));
+            
+            for (size_t dev = 0; dev < mPhysicalDevices.size(); dev++) {
+                std::string guid = mPhysicalDevices[dev]->GetGuid();
+                if (guid != val) {
+                    continue;
+                }
+                
+                mVirtualDevices[slot] = dev;
             }
-
-            mVirtualDevices[slot] = dev;
         }
     }
 
     for (size_t i = 0; i < mVirtualDevices.size(); i++) {
         std::shared_ptr<Controller> backend = mPhysicalDevices[mVirtualDevices[i]];
-        config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
+        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
     }
 
     for (const auto device : mPhysicalDevices) {
-
         std::string guid = device->GetGuid();
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-
-            if (!(config->rjson["Controllers"].contains(guid) &&
-                  config->rjson["Controllers"][guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
+            auto controllersConfig = config->GetRawEntry("Controllers");
+            if (controllersConfig == nullptr || !(controllersConfig.contains(guid) &&
+                  controllersConfig[guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
                 continue;
             }
 
             auto profile = device->getProfile(virtualSlot);
-            auto rawProfile = config->rjson["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            auto rawProfile = controllersConfig[guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
 
             profile->Mappings.clear();
             profile->AxisDeadzones.clear();
             profile->AxisDeadzones.clear();
             profile->GyroData.clear();
 
-            profile->Version = config->getInt(NESTED("Version", ""), DEVICE_PROFILE_VERSION_V0);
+            profile->Version = config->GetInteger(NESTED("Version", ""), DEVICE_PROFILE_VERSION_V0);
 
             switch (profile->Version) {
 
@@ -152,9 +154,9 @@ void ControlDeck::LoadControllerSettings() {
                     // Load up defaults for the things we can't load.
                     device->CreateDefaultBinding(virtualSlot);
 
-                    profile->UseRumble = config->getBool(NESTED("Rumble.Enabled", ""));
-                    profile->RumbleStrength = config->getFloat(NESTED("Rumble.Strength", ""));
-                    profile->UseGyro = config->getBool(NESTED("Gyro.Enabled", ""));
+                    profile->UseRumble = config->GetBoolean(NESTED("Rumble.Enabled", ""));
+                    profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
+                    profile->UseGyro = config->GetBoolean(NESTED("Gyro.Enabled", ""));
 
                     for (auto const& val : rawProfile["Mappings"].items()) {
                         device->SetButtonMapping(virtualSlot, std::stoi(val.key().substr(4)), val.value());
@@ -163,9 +165,9 @@ void ControlDeck::LoadControllerSettings() {
                     break;
 
                 case DEVICE_PROFILE_VERSION_V1:
-                    profile->UseRumble = config->getBool(NESTED("Rumble.Enabled", ""));
-                    profile->RumbleStrength = config->getFloat(NESTED("Rumble.Strength", ""));
-                    profile->UseGyro = config->getBool(NESTED("Gyro.Enabled", ""));
+                    profile->UseRumble = config->GetBoolean(NESTED("Rumble.Enabled", ""));
+                    profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
+                    profile->UseGyro = config->GetBoolean(NESTED("Gyro.Enabled", ""));
 
                     for (auto const& val : rawProfile["AxisDeadzones"].items()) {
                         profile->AxisDeadzones[std::stoi(val.key())] = val.value();
@@ -195,11 +197,11 @@ void ControlDeck::LoadControllerSettings() {
 }
 
 void ControlDeck::SaveControllerSettings() {
-    std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
+    std::shared_ptr<JsonFile> config = Window::GetInstance()->GetConfig();
 
     for (size_t i = 0; i < mVirtualDevices.size(); i++) {
         std::shared_ptr<Controller> backend = mPhysicalDevices[mVirtualDevices[i]];
-        config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
+        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
     }
 
     for (const auto& device : mPhysicalDevices) {
@@ -213,38 +215,38 @@ void ControlDeck::SaveControllerSettings() {
             if (!device->Connected()) {
                 continue;
             }
-
-            auto rawProfile = config->rjson["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
-            config->setInt(NESTED("Version", ""), profile->Version);
-            config->setBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
-            config->setFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
-            config->setBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
+            
+            auto rawProfile = config->GetRawEntry("Controllers")[guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            config->SetInteger(NESTED("Version", ""), profile->Version);
+            config->SetBoolean(NESTED("Rumble.Enabled", ""), profile->UseRumble);
+            config->SetFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
+            config->SetBoolean(NESTED("Gyro.Enabled", ""), profile->UseGyro);
 
             for (auto const& val : rawProfile["Mappings"].items()) {
-                config->setInt(NESTED("Mappings.%s", val.key().c_str()), -1);
+                config->SetInteger(NESTED("Mappings.%s", val.key().c_str()), -1);
             }
 
             for (auto const& [key, val] : profile->AxisDeadzones) {
-                config->setFloat(NESTED("AxisDeadzones.%d", key), val);
+                config->SetFloat(NESTED("AxisDeadzones.%d", key), val);
             }
 
             for (auto const& [key, val] : profile->AxisMinimumPress) {
-                config->setFloat(NESTED("AxisMinimumPress.%d", key), val);
+                config->SetFloat(NESTED("AxisMinimumPress.%d", key), val);
             }
 
             for (auto const& [key, val] : profile->GyroData) {
-                config->setFloat(NESTED("GyroData.%d", key), val);
+                config->SetFloat(NESTED("GyroData.%d", key), val);
             }
 
             for (auto const& [key, val] : profile->Mappings) {
-                config->setInt(NESTED("Mappings.BTN_%d", val), key);
+                config->SetInteger(NESTED("Mappings.BTN_%d", val), key);
             }
 
             virtualSlot++;
         }
     }
 
-    config->save();
+    config->PersistToDisk();
 }
 
 std::shared_ptr<Controller> ControlDeck::GetPhysicalDevice(int32_t deviceSlot) {

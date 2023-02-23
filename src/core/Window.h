@@ -10,7 +10,7 @@
 #include "audio/AudioPlayer.h"
 #include "speechsynthesizer/SpeechSynthesizer.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
-#include "Mercury.h"
+#include "misc/JSONFile.h"
 
 struct GfxRenderingAPI;
 struct GfxWindowManagerAPI;
@@ -55,7 +55,7 @@ class Window {
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     std::shared_ptr<ResourceMgr> GetResourceManager();
     std::shared_ptr<CrashHandler> GetCrashHandler();
-    std::shared_ptr<Mercury> GetConfig();
+    std::shared_ptr<JsonFile> GetConfig();
     std::shared_ptr<spdlog::logger> GetLogger();
     std::shared_ptr<ConsoleVariable> GetConsoleVariables();
     std::shared_ptr<SpeechSynthesizer> GetSpeechSynthesizer();
@@ -86,7 +86,7 @@ class Window {
     void InitializeSpeechSynthesis();
 
     std::shared_ptr<spdlog::logger> mLogger;
-    std::shared_ptr<Mercury> mConfig;
+    std::shared_ptr<JsonFile> mConfig;
     std::shared_ptr<ResourceMgr> mResourceManager;
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     std::shared_ptr<ControlDeck> mControlDeck;

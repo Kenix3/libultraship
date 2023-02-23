@@ -2,7 +2,6 @@
 
 #include "Controller.h"
 #include <vector>
-#include <Mercury.h>
 
 namespace Ship {
 
