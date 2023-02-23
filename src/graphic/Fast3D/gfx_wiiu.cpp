@@ -307,8 +307,8 @@ static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool 
 
     SohImGui::WindowImpl window_impl;
     window_impl.backend = SohImGui::Backend::GX2;
-    window_impl.gx2.width = WIIU_DEFAULT_FB_WIDTH;
-    window_impl.gx2.height = WIIU_DEFAULT_FB_HEIGHT;
+    window_impl.Gx2.Width = WIIU_DEFAULT_FB_WIDTH;
+    window_impl.Gx2.Height = WIIU_DEFAULT_FB_HEIGHT;
     SohImGui::Init(window_impl);
 }
 
@@ -393,7 +393,7 @@ static void gfx_wiiu_handle_events(void) {
     }
 
     SohImGui::EventImpl event_impl;
-    event_impl.gx2.input = &input;
+    event_impl.Gx2.Input = &input;
     SohImGui::Update(event_impl);
 }
 
