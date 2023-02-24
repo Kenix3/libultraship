@@ -2,7 +2,6 @@
 #include <filesystem>
 #include <fstream>
 #include <spdlog/spdlog.h>
-#include <Utils/StringHelper.h>
 
 namespace fs = std::filesystem;
 
@@ -26,44 +25,24 @@ JsonConfig::JsonConfig(std::string path) : mPath(path) {
     }
 }
 
-void JsonConfig::SetArbitraryType(std::string key, json::value_type value) {
-    auto keyParts = StringHelper::Split(key, ".");
+json::json_pointer JsonConfig::DotKeyToPointer(std::string key) {
+    std::replace(key.begin(), key.end(), '.', '/');
+    key = "/" + key;
 
-    if (keyParts.size() > 1) {
-        // nested key
-        json* currentJson = &mJson;
-        for (size_t i = 0; i < keyParts.size() - 1; i++) {
-            if (!currentJson->contains(keyParts[i])) {
-                // create new object
-                (*currentJson)[keyParts[i]] = json::object();
-            }
-            currentJson = &(*currentJson)[keyParts[i]];
-        }
-        (*currentJson)[keyParts[keyParts.size() - 1]] = value;
-    } else {
-        // not nested
-        mJson[key] = value;
-    }
+    return json::json_pointer(key);
+}
+
+void JsonConfig::SetArbitraryType(std::string key, json::value_type value) {
+    auto ptr = DotKeyToPointer(key);
+    mJson[ptr] = value;
 }
 
 json::value_type JsonConfig::GetArbitraryType(std::string key) {
-    auto keyParts = StringHelper::Split(key, ".");
+    auto ptr = DotKeyToPointer(key);
 
-    // find the deepest nested key if it exists
-    json* currentJson = &mJson;
-    for (size_t i = 0; i < keyParts.size() - 1; i++) {
-        if (!currentJson->contains(keyParts[i])) {
-            return nullptr;
-        }
-        currentJson = &(*currentJson)[keyParts[i]];
-    }
-
-    // extract the value if possible
-    if (currentJson->contains(keyParts[keyParts.size() - 1])) {
-        return (*currentJson)[keyParts[keyParts.size() - 1]];
-    } else {
-        return nullptr;
-    }
+    try {
+        return mJson.at(ptr);
+    } catch (json::out_of_range& e) { return nullptr; }
 }
 
 // MARK: - Public API
@@ -73,32 +52,31 @@ bool JsonConfig::IsNewConfig() {
 }
 
 void JsonConfig::DeleteEntry(std::string key) {
-    auto keyParts = StringHelper::Split(key, ".");
+    // nlohmann::json doesn't have a way to delete a json pointer so
+    // we'll work around it by grabbing the parent object of the key
+    // we want to delete and deleting the key
 
-    // clear nested key, if after deletion parent is empty, delete it too
-    if (keyParts.size() > 1) {
-        json* currentJson = &mJson;
-        for (size_t i = 0; i < keyParts.size() - 1; i++) {
-            if (!currentJson->contains(keyParts[i])) {
-                return;
-            }
-            currentJson = &(*currentJson)[keyParts[i]];
-        }
-        (*currentJson).erase(keyParts[keyParts.size() - 1]);
+    auto currentKey = key;
+    auto parentKey = key;
 
-        // delete empty parents
-        for (size_t i = keyParts.size() - 1; i > 0; i--) {
-            if ((*currentJson).empty()) {
-                currentJson = &mJson;
-                for (size_t j = 0; j < i - 1; j++) {
-                    currentJson = &(*currentJson)[keyParts[j]];
-                }
-                (*currentJson).erase(keyParts[i - 1]);
-            }
+    try {
+        bool shouldStop = false;
+        while (!shouldStop) {
+            // grab parent of current key
+            parentKey = currentKey.substr(0, currentKey.find_last_of('.'));
+            auto parentPtr = DotKeyToPointer(parentKey);
+
+            // grab parent object at key and delete the current key
+            auto& parent = mJson.at(parentPtr);
+            parent.erase(currentKey.substr(currentKey.find_last_of('.') + 1));
+
+            // set variable for whether we should keep recursing parents
+            shouldStop = parent.empty() || parentKey == currentKey;
+            currentKey = parentKey;
         }
-    } else {
-        // not nested
-        mJson.erase(key);
+    } catch (json::out_of_range& e) {
+        // at can throw, showing that a parent object doesn't exist
+        // ignore and don't do anything
     }
 }
 
