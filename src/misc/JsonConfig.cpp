@@ -68,7 +68,15 @@ void JsonConfig::DeleteEntry(std::string key) {
 
             // grab parent object at key and delete the current key
             auto& parent = mJson.at(parentPtr);
-            parent.erase(currentKey.substr(currentKey.find_last_of('.') + 1));
+            auto keyToDelete = currentKey.substr(currentKey.find_last_of('.') + 1);
+
+            // check if parent object is an array and delete index
+            if (parent.is_array()) {
+                auto index = std::stoi(keyToDelete);
+                parent.erase(index);
+            } else {
+                parent.erase(keyToDelete);
+            }
 
             // set variable for whether we should keep recursing parents
             shouldStop = parent.empty() || parentKey == currentKey;
