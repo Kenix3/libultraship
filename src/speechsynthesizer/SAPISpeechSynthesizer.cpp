@@ -31,17 +31,16 @@ void SAPISpeechSynthesizer::DoUninitialize() {
     CoUninitialize();
 }
 
-std::wstring CharToWideString(const char* text) {
-    std::string str(text);
-    int textSize = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+std::wstring CharToWideString(std::string text) {
+    int textSize = MultiByteToWideChar(CP_UTF8, 0, &text[0], (int)text.size(), NULL, 0);
     std::wstring wstrTo(textSize, 0);
-    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], textSize);
+    MultiByteToWideChar(CP_UTF8, 0, &text[0], (int)text.size(), &wstrTo[0], textSize);
     return wstrTo;
 }
 
-void SpeakThreadTask(const char* text, const char* language) {
-    auto wLanguage = CharToWideString(language);
+void SpeakThreadTask(std::string text, std::string language) {
     auto wText = CharToWideString(text);
+    auto wLanguage = CharToWideString(language);
 
     auto speakText = fmt::format(
         L"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", wLanguage, wText);
@@ -49,7 +48,11 @@ void SpeakThreadTask(const char* text, const char* language) {
 }
 
 void SAPISpeechSynthesizer::Speak(const char* text, const char* language) {
-    std::thread t1(SpeakThreadTask, text, language);
+    // convert to string so char buffers don't have to be kept alive by caller
+    std::string textStr(text);
+    std::string languageStr(language);
+
+    std::thread t1(SpeakThreadTask, textStr, languageStr);
     t1.detach();
 }
 } // namespace Ship
