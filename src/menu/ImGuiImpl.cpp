@@ -2,6 +2,7 @@
 
 #include "ImGuiImpl.h"
 
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <utility>
@@ -629,7 +630,8 @@ void DrawMainMenuAndCalculateGameSize(void) {
                 console->Dispatch("reset");
             }
 #if !defined(__SWITCH__) && !defined(__WIIU__)
-            const char* keyboardShortcut = SohImGui::GetCurrentRenderingBackend().first == "sdl" ? "F10" : "ALT+Enter";
+            const char* keyboardShortcut =
+                strcmp(SohImGui::GetCurrentRenderingBackend().first, "sdl") == 0 ? "F10" : "ALT+Enter";
             if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
                 Window::GetInstance()->ToggleFullscreen();
             }
