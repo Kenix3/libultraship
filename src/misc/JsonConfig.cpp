@@ -98,7 +98,7 @@ void JsonConfig::SetInteger(std::string key, int32_t value) {
 
 int32_t JsonConfig::GetInteger(std::string key, int32_t defaultValue) {
     json::value_type value = GetArbitraryType(key);
-    if (value.is_number_integer()) {
+    if (value && value.is_number_integer()) {
         return value;
     } else {
         return defaultValue;
@@ -111,7 +111,7 @@ void JsonConfig::SetUInteger(std::string key, uint32_t value) {
 
 uint32_t JsonConfig::GetUInteger(std::string key, uint32_t defaultValue) {
     json::value_type value = GetArbitraryType(key);
-    if (value.is_number_unsigned()) {
+    if (value && value.is_number_unsigned()) {
         return value;
     } else {
         return defaultValue;
@@ -124,7 +124,7 @@ void JsonConfig::SetFloat(std::string key, float value) {
 
 float JsonConfig::GetFloat(std::string key, float defaultValue) {
     json::value_type value = GetArbitraryType(key);
-    if (value.is_number_float()) {
+    if (value && value.is_number_float()) {
         return value;
     } else {
         return defaultValue;
@@ -137,7 +137,7 @@ void JsonConfig::SetString(std::string key, std::string value) {
 
 std::string JsonConfig::GetString(std::string key, std::string defaultValue) {
     json::value_type value = GetArbitraryType(key);
-    if (value.is_string() && !value.get<std::string>().empty()) {
+    if (value && value.is_string() && !value.get<std::string>().empty()) {
         return value;
     } else {
         return defaultValue;
@@ -150,7 +150,7 @@ void JsonConfig::SetBoolean(std::string key, bool value) {
 
 bool JsonConfig::GetBoolean(std::string key, bool defaultValue) {
     json::value_type value = GetArbitraryType(key);
-    if (value.is_boolean()) {
+    if (value && value.is_boolean()) {
         return value;
     } else {
         return defaultValue;
