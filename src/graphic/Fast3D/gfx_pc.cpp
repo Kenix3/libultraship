@@ -212,18 +212,17 @@ static map<int, FBInfo> framebuffers;
 static set<pair<float, float>> get_pixel_depth_pending;
 static unordered_map<pair<float, float>, uint16_t, hash_pair_ff> get_pixel_depth_cached;
 
-#ifdef _WIN32
-// TODO: Properly implement for MSVC
-static unsigned long get_time(void) {
-    return 0;
-}
-#else
+#if defined(_DEBUG) && !defined(_WIN32) // TODO: Properly implement for MSVC
 #include <time.h>
 #include <string>
 static unsigned long get_time(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (unsigned long)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+}
+#else
+static unsigned long get_time(void) {
+    return 0;
 }
 #endif
 
