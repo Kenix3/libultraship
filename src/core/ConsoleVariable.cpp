@@ -11,45 +11,62 @@ namespace Ship {
 ConsoleVariable::ConsoleVariable() {
 }
 
-std::shared_ptr<CVar> ConsoleVariable::Get(const char* name) {
+std::shared_ptr<CVar> ConsoleVariable::Get(const std::string& name) {
     auto it = mVariables.find(name);
     return it != mVariables.end() ? it->second : nullptr;
 }
 
-int32_t ConsoleVariable::GetInteger(const char* name, int32_t defaultValue) {
+int32_t ConsoleVariable::GetInteger(const std::string& name, int32_t defaultValue) {
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Integer) {
+        assert(Get<int32_t>(name) == variable->Integer);
+
         return variable->Integer;
     }
 
+    RegisterEmbedded(name, defaultValue);
+    assert(Get<int32_t>(name) == defaultValue);
+
     return defaultValue;
 }
 
-float ConsoleVariable::GetFloat(const char* name, float defaultValue) {
+float ConsoleVariable::GetFloat(const std::string& name, float defaultValue) {
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Float) {
+        assert(Get<float>(name) == variable->Float);
+
         return variable->Float;
     }
 
+    RegisterEmbedded(name, defaultValue);
+    assert(Get<float>(name) == defaultValue);
+
     return defaultValue;
 }
 
-const char* ConsoleVariable::GetString(const char* name, const char* defaultValue) {
+const char* ConsoleVariable::GetString(const std::string& name, const char* defaultValue) {
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::String) {
+        assert(Get<std::string>(name) == variable->String);
+
         return variable->String.c_str();
     }
+
+    RegisterEmbedded(name, std::string(defaultValue));
+    assert(Get<std::string>(name) == defaultValue);
 
     return defaultValue;
 }
 
-Color_RGBA8 ConsoleVariable::GetColor(const char* name, Color_RGBA8 defaultValue) {
+Color_RGBA8 ConsoleVariable::GetColor(const std::string& name, Color_RGBA8 defaultValue) {
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Color) {
+        assert(Get<Color_RGBA8>(name) == variable->Color);
+
         return variable->Color;
     } else if (variable != nullptr && variable->Type == ConsoleVariableType::Color24) {
         Color_RGBA8 temp;
@@ -60,13 +77,18 @@ Color_RGBA8 ConsoleVariable::GetColor(const char* name, Color_RGBA8 defaultValue
         return temp;
     }
 
+    RegisterEmbedded(name, defaultValue);
+    assert(Get<Color_RGBA8>(name) == defaultValue);
+
     return defaultValue;
 }
 
-Color_RGB8 ConsoleVariable::GetColor24(const char* name, Color_RGB8 defaultValue) {
+Color_RGB8 ConsoleVariable::GetColor24(const std::string& name, Color_RGB8 defaultValue) {
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Color24) {
+        assert(Get<Color_RGB8>(name) == variable->Color24);
+
         return variable->Color24;
     } else if (variable != nullptr && variable->Type == ConsoleVariableType::Color) {
         Color_RGB8 temp;
@@ -76,93 +98,118 @@ Color_RGB8 ConsoleVariable::GetColor24(const char* name, Color_RGB8 defaultValue
         return temp;
     }
 
+    RegisterEmbedded(name, defaultValue);
+    assert(Get<Color_RGB8>(name) == defaultValue);
+
     return defaultValue;
 }
 
-void ConsoleVariable::SetInteger(const char* name, int32_t value) {
+void ConsoleVariable::SetInteger(const std::string& name, int32_t value) {
     auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
+
+        RegisterEmbedded(name, value);
     }
 
     variable->Type = ConsoleVariableType::Integer;
     variable->Integer = value;
+
+    Set<int32_t>(name, value);
 }
 
-void ConsoleVariable::SetFloat(const char* name, float value) {
+void ConsoleVariable::SetFloat(const std::string& name, float value) {
     auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
+
+        RegisterEmbedded(name, value);
     }
 
     variable->Type = ConsoleVariableType::Float;
     variable->Float = value;
+
+    Set<float>(name, value);
 }
 
-void ConsoleVariable::SetString(const char* name, const char* value) {
+void ConsoleVariable::SetString(const std::string& name, const char* value) {
     auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
+
+        RegisterEmbedded(name, std::string(value));
     }
 
     variable->Type = ConsoleVariableType::String;
     variable->String = std::string(value);
+
+    Set<std::string>(name, value);
 }
 
-void ConsoleVariable::SetColor(const char* name, Color_RGBA8 value) {
+void ConsoleVariable::SetColor(const std::string& name, Color_RGBA8 value) {
     auto& variable = mVariables[name];
     if (!variable) {
         variable = std::make_shared<CVar>();
+
+        RegisterEmbedded(name, value);
     }
 
     variable->Type = ConsoleVariableType::Color;
     variable->Color = value;
+
+    Set<Color_RGBA8>(name, value);
 }
 
-void ConsoleVariable::SetColor24(const char* name, Color_RGB8 value) {
+void ConsoleVariable::SetColor24(const std::string& name, Color_RGB8 value) {
     auto& variable = mVariables[name];
     if (!variable) {
         variable = std::make_shared<CVar>();
+
+        RegisterEmbedded(name, value);
     }
 
     variable->Type = ConsoleVariableType::Color24;
     variable->Color24 = value;
+
+    Set<Color_RGB8>(name, value);
 }
 
-void ConsoleVariable::RegisterInteger(const char* name, int32_t defaultValue) {
+void ConsoleVariable::RegisterInteger(const std::string& name, int32_t defaultValue) {
     if (Get(name) == nullptr) {
         SetInteger(name, defaultValue);
     }
 }
 
-void ConsoleVariable::RegisterFloat(const char* name, float defaultValue) {
+void ConsoleVariable::RegisterFloat(const std::string& name, float defaultValue) {
     if (Get(name) == nullptr) {
         SetFloat(name, defaultValue);
     }
 }
 
-void ConsoleVariable::RegisterString(const char* name, const char* defaultValue) {
+void ConsoleVariable::RegisterString(const std::string& name, const char* defaultValue) {
     if (Get(name) == nullptr) {
         SetString(name, defaultValue);
     }
 }
 
-void ConsoleVariable::RegisterColor(const char* name, Color_RGBA8 defaultValue) {
+void ConsoleVariable::RegisterColor(const std::string& name, Color_RGBA8 defaultValue) {
     if (Get(name) == nullptr) {
         SetColor(name, defaultValue);
     }
 }
 
-void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue) {
+void ConsoleVariable::RegisterColor24(const std::string& name, Color_RGB8 defaultValue) {
     if (Get(name) == nullptr) {
         SetColor24(name, defaultValue);
     }
 }
 
-void ConsoleVariable::ClearVariable(const char* name) {
+void ConsoleVariable::ClearVariable(const std::string& name) {
     std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
     mVariables.erase(name);
-    conf->erase(StringHelper::Sprintf("CVars.%s", name));
+    conf->erase(StringHelper::Sprintf("CVars.%s", name.c_str()));
+    mVariables_New.erase(name);
+    conf->erase(StringHelper::Sprintf("CVars2.%s", name.c_str()));
 }
 
 void ConsoleVariable::Save() {
@@ -194,6 +241,35 @@ void ConsoleVariable::Save() {
         }
     }
 
+    for (const auto& variable : mVariables_New) {
+        if (variable.second->ShouldSave()) {
+            const std::string key = StringHelper::Sprintf("CVars2.%s", variable.first.c_str());
+            CVarInterface::VauleType cvarValue = variable.second->Get();
+            if (int32_t* data = std::get_if<int32_t>(&cvarValue)) {
+                conf->setInt(key, *data);
+            } else if (float* data = std::get_if<float>(&cvarValue)) {
+                conf->setFloat(key, *data);
+            } else if (std::string* data = std::get_if<std::string>(&cvarValue)) {
+                if (data->length() > 0) {
+                    conf->setString(key, *data);
+                }
+            } else if (Color_RGBA8* data = std::get_if<Color_RGBA8>(&cvarValue)) {
+                const char* keyStr = key.c_str();
+                conf->setUInt(StringHelper::Sprintf("%s.R", keyStr), data->r);
+                conf->setUInt(StringHelper::Sprintf("%s.G", keyStr), data->g);
+                conf->setUInt(StringHelper::Sprintf("%s.B", keyStr), data->b);
+                conf->setUInt(StringHelper::Sprintf("%s.A", keyStr), data->a);
+                conf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBAObjectType);
+            } else if (Color_RGB8* data = std::get_if<Color_RGB8>(&cvarValue)) {
+                const char* keyStr = key.c_str();
+                conf->setUInt(StringHelper::Sprintf("%s.R", keyStr), data->r);
+                conf->setUInt(StringHelper::Sprintf("%s.G", keyStr), data->g);
+                conf->setUInt(StringHelper::Sprintf("%s.B", keyStr), data->b);
+                conf->setString(StringHelper::Sprintf("%s.Type", keyStr), mercuryRGBObjectType);
+            }
+        }
+    }
+
     conf->save();
 }
 
@@ -202,6 +278,7 @@ void ConsoleVariable::Load() {
     conf->reload();
 
     LoadFromPath("", conf->rjson["CVars"].items());
+    LoadFromPath("", conf->rjson["CVars2"].items());
 
     LoadLegacy();
 }
@@ -225,35 +302,36 @@ void ConsoleVariable::LoadFromPath(
                     clr.g = value["G"].get<uint8_t>();
                     clr.b = value["B"].get<uint8_t>();
                     clr.a = value["A"].get<uint8_t>();
-                    SetColor(itemPath.c_str(), clr);
+                    SetColor(itemPath, clr);
                 } else if (value.contains("Type") && value["Type"].get<std::string>() == mercuryRGBObjectType) {
                     Color_RGB8 clr;
                     clr.r = value["R"].get<uint8_t>();
                     clr.g = value["G"].get<uint8_t>();
                     clr.b = value["B"].get<uint8_t>();
-                    SetColor24(itemPath.c_str(), clr);
+                    SetColor24(itemPath, clr);
                 } else {
                     LoadFromPath(itemPath, value.items());
                 }
 
                 break;
             case nlohmann::detail::value_t::string:
-                SetString(itemPath.c_str(), value.get<std::string>().c_str());
+                SetString(itemPath, value.get<std::string>().c_str());
                 break;
             case nlohmann::detail::value_t::boolean:
-                SetInteger(itemPath.c_str(), value.get<bool>());
+                SetInteger(itemPath, value.get<bool>());
                 break;
             case nlohmann::detail::value_t::number_unsigned:
             case nlohmann::detail::value_t::number_integer:
-                SetInteger(itemPath.c_str(), value.get<int>());
+                SetInteger(itemPath, value.get<int>());
                 break;
             case nlohmann::detail::value_t::number_float:
-                SetFloat(itemPath.c_str(), value.get<float>());
+                SetFloat(itemPath, value.get<float>());
                 break;
             default:;
         }
     }
 }
+
 void ConsoleVariable::LoadLegacy() {
     auto conf = Ship::Window::GetPathRelativeToAppDirectory("cvars.cfg");
     if (File::Exists(conf)) {
@@ -302,4 +380,5 @@ void ConsoleVariable::LoadLegacy() {
         fs::remove(conf);
     }
 }
+
 } // namespace Ship

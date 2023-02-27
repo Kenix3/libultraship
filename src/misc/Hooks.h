@@ -30,4 +30,5 @@ DEFINE_HOOK(GfxInit, void());
 DEFINE_HOOK(ExitGame, void());
 DEFINE_HOOK(LoadFile, void(uint32_t fileNum));
 DEFINE_HOOK(DeleteFile, void(uint32_t fileNum));
+DEFINE_HOOK(CVarInit, void());
 } // namespace Ship

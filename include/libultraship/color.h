@@ -7,12 +7,34 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct Color_RGB8_t {
     uint8_t r, g, b;
+
+#ifdef __cplusplus
+    bool operator==(struct Color_RGB8_t const& other) const {
+        return (r == other.r) && (g == other.g) && (b == other.b);
+    }
+
+    bool operator!=(struct Color_RGB8_t const& other) const {
+        return !(*this == other);
+    }
+#endif
+
 } Color_RGB8;
 
-typedef struct {
+typedef struct Color_RGBA8_t {
     uint8_t r, g, b, a;
+
+#ifdef __cplusplus
+    bool operator==(Color_RGBA8_t const& other) const {
+        return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
+    }
+
+    bool operator!=(Color_RGBA8_t const& other) const {
+        return !(*this == other);
+    }
+#endif
+
 } Color_RGBA8;
 
 // only use when necessary for alignment purposes

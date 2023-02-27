@@ -99,6 +99,8 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     InitializeControlDeck();
     InitializeCrashHandler();
 
+    CVarLoad();
+
     bool steamDeckGameMode = false;
 
 #ifdef __linux__
@@ -364,6 +366,8 @@ void Window::InitializeControlDeck() {
 
 void Window::InitializeConsoleVariables() {
     mConsoleVariables = std::make_shared<ConsoleVariable>();
+
+    Ship::ExecuteHooks<Ship::CVarInit>();
 }
 
 void Window::InitializeCrashHandler() {
