@@ -2472,6 +2472,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 Vtx* vtx = (Vtx*)GetResourceDataByName((const char*)fileName, false);
                 vtx += vtxDataOff;
                 cmd--;
+                
                 gfx_sp_vertex(vtxCnt, vtxIdxOff, vtx);
             } break;
             case G_DL_OTR2: {
@@ -2579,6 +2580,12 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_geometry_mode(cmd->words.w1, 0);
                 break;
 #endif
+            case (uint8_t)G_TRI1_OTR: {
+                int v00 = cmd->words.w0 & 0x0000FFFF;
+                int v01 = cmd->words.w1 >> 16;
+                int v02 = cmd->words.w1 & 0x0000FFFF;
+                gfx_sp_tri1(v00, v01, v02, false);
+            } break;
             case (uint8_t)G_TRI1:
 #ifdef F3DEX_GBI_2
                 gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
@@ -3034,6 +3041,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     gfx_run_dl(commands);
     gfx_flush();
     gfxFramebuffer = 0;
+    currentDir = std::stack<std::string>();
+
     if (game_renders_to_framebuffer) {
         gfx_rapi->start_draw_to_framebuffer(0, 1);
         gfx_rapi->clear_framebuffer();
