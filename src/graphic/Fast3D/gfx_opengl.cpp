@@ -87,6 +87,12 @@ static FilteringMode current_filter_mode = FILTER_THREE_POINT;
 GLuint pixel_depth_rb, pixel_depth_fb;
 size_t pixel_depth_rb_size;
 
+static int gfx_opengl_get_max_texture_size() {
+    GLint max_texture_size;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
+    return max_texture_size;
+}
+
 static const char* gfx_opengl_get_name() {
     return "OpenGL";
 }
@@ -991,6 +997,7 @@ FilteringMode gfx_opengl_get_texture_filter(void) {
 }
 
 struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
+                                          gfx_opengl_get_max_texture_size,
                                           gfx_opengl_get_clip_parameters,
                                           gfx_opengl_unload_shader,
                                           gfx_opengl_load_shader,
