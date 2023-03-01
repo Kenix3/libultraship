@@ -115,6 +115,8 @@ void InputEditor::DrawControllerSchema() {
     auto profile = backend->getProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
+    backend->Read(nullptr, mCurrentPort);
+
     DrawControllerSelect(mCurrentPort);
 
     SohImGui::BeginGroupPanel("Buttons", ImVec2(150, 20));
@@ -323,6 +325,33 @@ void InputEditor::DrawControllerSchema() {
         ImGui::SliderFloat("##RStrength", &profile->RumbleStrength, 0.0f, 1.0f, "");
         ImGui::PopItemWidth();
     }
+
+    if (!isKeyboard) {
+        const char* notchProximityCvar = "gNotchProximityThreshold";
+        int notchProximityVal = CVarGetInteger(notchProximityCvar, 0);
+        auto nda = notchProximityVal;
+
+        ImGui::SetCursorPosX(cursorX);
+        ImGui::Text("Notch Snap Angle: %d", nda);
+        ImGui::SetCursorPosX(cursorX);
+
+#ifdef __WIIU__
+        ImGui::PushItemWidth(135.0f * 2);
+#else
+        ImGui::PushItemWidth(135.0f);
+#endif
+        ImGui::SliderInt("##NotchProximityThreshold", &notchProximityVal, 0, 45, "", ImGuiSliderFlags_AlwaysClamp);
+        {
+            CVarSetInteger(notchProximityCvar, notchProximityVal);
+            SohImGui::RequestCvarSaveOnNextTick();
+        }
+        ImGui::PopItemWidth();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(
+                "%s", "How near in degrees to a virtual notch angle you have to be for it to snap to nearest notch");
+        }
+    }
+
     ImGui::Dummy(ImVec2(0, 5));
     SohImGui::EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 }

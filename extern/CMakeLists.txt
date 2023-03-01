@@ -52,7 +52,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_sources(ImGui
         PRIVATE
         ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_sdl.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
     )
 endif()
 
@@ -62,8 +62,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         ${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
         ${IMGUI_DIR}/backends/imgui_impl_win32.cpp
     )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_sources(ImGui
+        PRIVATE
+        ${IMGUI_DIR}/backends/imgui_impl_metal.mm
+    )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-
     target_sources(ImGui
         PRIVATE
         ${IMGUI_DIR}/backends/wiiu/imgui_impl_wiiu.cpp
@@ -72,6 +76,11 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
 endif()
 
 target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/metal-cpp)
+    target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
+endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
@@ -87,6 +96,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_package(GLEW REQUIRED)
     target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
+    set_target_properties(ImGui PROPERTIES
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
+    )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(GLEW REQUIRED)
     target_link_libraries(ImGui PUBLIC ${OPENGL_glx_LIBRARY} ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
@@ -131,3 +143,10 @@ add_library(StrHash64 STATIC)
 target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
 
 target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
+
+#=================== thread-pool ===================
+
+set(THREADPOOL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thread-pool)
+add_library(ThreadPool INTERFACE)
+
+target_include_directories(ThreadPool INTERFACE ${THREADPOOL_DIR})

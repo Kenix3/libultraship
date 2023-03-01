@@ -3085,10 +3085,6 @@ void gfx_set_maximum_frame_latency(int latency) {
     gfx_wapi->set_maximum_frame_latency(latency);
 }
 
-float gfx_get_detected_hz(void) {
-    return gfx_wapi->get_detected_hz();
-}
-
 int gfx_create_framebuffer(uint32_t width, uint32_t height) {
     uint32_t orig_width = width, orig_height = height;
     gfx_adjust_width_height_for_scale(width, height);
@@ -3146,4 +3142,17 @@ void gfx_push_current_dir(char* path) {
         path = &path[7];
 
     currentDir.push(GetPathWithoutFileName(path));
+}
+int32_t gfx_check_image_signature(const char* imgData) {
+    uintptr_t i = (uintptr_t)(imgData);
+
+    if ((i & 1) == 1) {
+        return 0;
+    }
+
+    if (i != 0) {
+        return Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+    }
+
+    return 0;
 }

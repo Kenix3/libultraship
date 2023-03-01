@@ -2,6 +2,7 @@
 
 #include "ImGuiImpl.h"
 
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <utility>
@@ -19,6 +20,7 @@
 #include "menu/GameOverlay.h"
 #include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
+#include "resource/OtrFile.h"
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include <spdlog/common.h>
@@ -36,6 +38,10 @@
 #if __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
+
+#include "graphic/Fast3D/gfx_metal.h"
+#include <ImGui/backends/imgui_impl_metal.h>
+#include <ImGui/backends/imgui_impl_sdl2.h>
 #else
 #include <SDL2/SDL_hints.h>
 #include <SDL2/SDL_video.h>
@@ -47,7 +53,7 @@
 
 #ifdef ENABLE_OPENGL
 #include <ImGui/backends/imgui_impl_opengl3.h>
-#include <ImGui/backends/imgui_impl_sdl.h>
+#include <ImGui/backends/imgui_impl_sdl2.h>
 
 #endif
 
@@ -72,7 +78,7 @@ bool oldCursorState = true;
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 #define HOOK(b) \
     if (b)      \
-        needs_save = true;
+        needsSave = true;
 OSContPad* pads;
 
 std::map<std::string, GameAsset*> DefaultAssets;
@@ -90,7 +96,7 @@ static ImVector<ImRect> s_GroupPanelLabelStack;
 std::function<void(void)> clientDrawMenu;
 std::function<void(void)> clientSetupHooks;
 
-bool needs_save = false;
+bool needsSave = false;
 int lastRenderingBackendID = 0;
 int lastAudioBackendID = 0;
 bool statsWindowOpen;
@@ -150,14 +156,29 @@ void InitSettings() {
 
 void PopulateBackendIds(std::shared_ptr<Mercury> cfg) {
     std::string renderingBackend = cfg->getString("Window.GfxBackend");
-    if (renderingBackend.empty()) {
+    std::string gfxApi = cfg->getString("Window.GfxApi");
+
+    int matchType = 2; // 0 = backend, 1 = gfxApi, 2 = both
+
+    if (renderingBackend.empty() && gfxApi.empty()) {
         lastRenderingBackendID = 0;
-    } else {
-        for (size_t i = 0; i < renderingBackends.size(); i++) {
-            if (renderingBackend == renderingBackends[i].first) {
-                lastRenderingBackendID = i;
-                break;
-            }
+    } else if (gfxApi.empty()) { // only backend is set
+        matchType = 0;
+    } else if (renderingBackend.empty()) { // only gfxApi is set
+        matchType = 1;
+    }
+
+    for (size_t i = 0; i < renderingBackends.size(); i++) {
+        if (matchType == 0 && renderingBackend == renderingBackends[i].first) {
+            lastRenderingBackendID = i;
+        }
+
+        if (matchType == 1 && gfxApi == renderingBackends[i].second) {
+            lastRenderingBackendID = i;
+        }
+
+        if (matchType == 2 && renderingBackend == renderingBackends[i].first && gfxApi == renderingBackends[i].second) {
+            lastRenderingBackendID = i;
         }
     }
 
@@ -183,13 +204,18 @@ void ImGuiWMInit() {
 #else
         case Backend::SDL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+            if (impl.Metal.Window) {
+                ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(impl.Metal.Window));
+                break;
+            }
+
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
-            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.sdl.window), impl.sdl.context);
+            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.Opengl.Window), impl.Opengl.Context);
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case Backend::DX11:
-            ImGui_ImplWin32_Init(impl.dx11.window);
+            ImGui_ImplWin32_Init(impl.Dx11.Window);
             break;
 #endif
         default:
@@ -205,7 +231,12 @@ void ImGuiBackendInit() {
             break;
 #else
         case Backend::SDL:
-#if defined(__APPLE__)
+#ifdef __APPLE__
+            if (impl.Metal.Renderer) {
+                Metal_Init(impl.Metal.Renderer);
+                break;
+            }
+
             ImGui_ImplOpenGL3_Init("#version 410 core");
 #else
             ImGui_ImplOpenGL3_Init("#version 120");
@@ -215,8 +246,8 @@ void ImGuiBackendInit() {
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case Backend::DX11:
-            ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.dx11.device),
-                                static_cast<ID3D11DeviceContext*>(impl.dx11.device_context));
+            ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(impl.Dx11.Device),
+                                static_cast<ID3D11DeviceContext*>(impl.Dx11.DeviceContext));
             break;
 #endif
         default:
@@ -228,17 +259,21 @@ void ImGuiProcessEvent(EventImpl event) {
     switch (impl.backend) {
 #ifdef __WIIU__
         case Backend::GX2:
-            if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.gx2.input)) {}
+            if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
             break;
 #else
         case Backend::SDL:
-            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.sdl.event));
+            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+
+#ifdef __SWITCH__
+            Ship::Switch::ImGuiProcessEvent(io->WantTextInput);
+#endif
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case Backend::DX11:
-            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.win32.handle), event.win32.msg, event.win32.wparam,
-                                           event.win32.lparam);
+            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
+                                           event.Win32.Param2);
             break;
 #endif
         default:
@@ -253,7 +288,7 @@ void ImGuiWMNewFrame() {
             break;
 #else
         case Backend::SDL:
-            ImGui_ImplSDL2_NewFrame(static_cast<SDL_Window*>(impl.sdl.window));
+            ImGui_ImplSDL2_NewFrame();
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -275,6 +310,12 @@ void ImGuiBackendNewFrame() {
             break;
 #else
         case Backend::SDL:
+#ifdef __APPLE__
+            if (impl.Metal.Renderer) {
+                Metal_NewFrame(impl.Metal.Renderer);
+                break;
+            }
+#endif
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
@@ -301,6 +342,12 @@ void ImGuiRenderDrawData(ImDrawData* data) {
             break;
 #else
         case Backend::SDL:
+#ifdef __APPLE__
+            if (impl.Metal.Renderer) {
+                Metal_RenderDrawData(data);
+                break;
+            }
+#endif
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
@@ -314,7 +361,7 @@ void ImGuiRenderDrawData(ImDrawData* data) {
     }
 }
 
-bool supportsWindowedFullscreen() {
+bool SupportsWindowedFullscreen() {
 #ifdef __SWITCH__
     return false;
 #endif
@@ -328,7 +375,7 @@ bool supportsWindowedFullscreen() {
     }
 }
 
-bool supportsViewports() {
+bool SupportsViewports() {
 #ifdef __SWITCH__
     return false;
 #endif
@@ -344,19 +391,20 @@ bool supportsViewports() {
 }
 
 bool useViewports() {
-    return supportsViewports() && CVarGetInteger("gEnableMultiViewports", 1);
+    return SupportsViewports() && CVarGetInteger("gEnableMultiViewports", 1);
 }
 
 void LoadTexture(const std::string& name, const std::string& path) {
+    // TODO: Nothing ever unloads the texture from Fast3D here.
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res = Window::GetInstance()->GetResourceManager()->LoadFile(path);
 
     const auto asset = new GameAsset{ api->new_texture() };
-    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.get()), res->BufferSize,
+    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
                                              &asset->width, &asset->height, nullptr, 4);
 
     if (imgData == nullptr) {
-        std::cout << "Found error: " << stbi_failure_reason() << std::endl;
+        SPDLOG_ERROR("Error loading imgui texture {}", stbi_failure_reason());
         return;
     }
 
@@ -370,9 +418,9 @@ void LoadTexture(const std::string& name, const std::string& path) {
 
 // MARK: - Public API
 
-void Init(WindowImpl window_impl) {
+void Init(WindowImpl windowImpl) {
     CVarLoad();
-    impl = window_impl;
+    impl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
     io = &ImGui::GetIO();
@@ -384,7 +432,13 @@ void Init(WindowImpl window_impl) {
     CVarRegisterInteger("gRandoMatchKeyColors", 1);
     CVarRegisterInteger("gEnableMultiViewports", 1);
 #ifdef __SWITCH__
-    Ship::Switch::SetupFont(io->Fonts);
+    Ship::Switch::ImGuiSetupFont(io->Fonts);
+#endif
+
+#ifdef __APPLE__
+    if (Metal_IsSupported()) {
+        renderingBackends.insert(renderingBackends.begin(), { "sdl", "Metal" });
+    }
 #endif
 
 #ifdef __WIIU__
@@ -393,8 +447,8 @@ void Init(WindowImpl window_impl) {
     io->FontGlobalScale = 2.0f;
 
     // Setup display sizes
-    io->DisplaySize.x = window_impl.gx2.width;
-    io->DisplaySize.y = window_impl.gx2.height;
+    io->DisplaySize.x = windowImpl.Gx2.Width;
+    io->DisplaySize.y = windowImpl.Gx2.Height;
 #endif
 
     PopulateBackendIds(Window::GetInstance()->GetConfig());
@@ -466,28 +520,29 @@ void Init(WindowImpl window_impl) {
 }
 
 void Update(EventImpl event) {
-    if (needs_save) {
+    if (needsSave) {
         CVarSave();
-        needs_save = false;
+        needsSave = false;
     }
     ImGuiProcessEvent(event);
 }
 
 void DrawMainMenuAndCalculateGameSize(void) {
     console->Update();
+    const int inputQueueSizeBefore = ImGui::GetCurrentContext()->InputEventsQueue.Size;
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Window::GetInstance();
-    const std::shared_ptr<Mercury> pConf = Window::GetInstance()->GetConfig();
+    const std::shared_ptr<Mercury> conf = Window::GetInstance()->GetConfig();
 
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
-                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                                    ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
+                                   ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
+                                   ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                   ImGuiWindowFlags_NoResize;
     if (CVarGetInteger("gOpenMenuBar", 0)) {
-        window_flags |= ImGuiWindowFlags_MenuBar;
+        windowFlags |= ImGuiWindowFlags_MenuBar;
     }
 
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -497,10 +552,10 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
-    ImGui::Begin("Main - Deck", nullptr, window_flags);
+    ImGui::Begin("Main - Deck", nullptr, windowFlags);
     ImGui::PopStyleVar(3);
 
-    ImVec2 top_left_pos = ImGui::GetWindowPos();
+    ImVec2 topLeftPos = ImGui::GetWindowPos();
 
     const ImGuiID dockId = ImGui::GetID("main_dock");
 
@@ -518,7 +573,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
         bool menuBar = !CVarGetInteger("gOpenMenuBar", 0);
         CVarSetInteger("gOpenMenuBar", menuBar);
-        needs_save = true;
+        needsSave = true;
         Window::GetInstance()->SetMenuBar(menuBar);
         if (Window::GetInstance()->IsFullscreen()) {
             setCursorVisibility(menuBar);
@@ -575,7 +630,8 @@ void DrawMainMenuAndCalculateGameSize(void) {
                 console->Dispatch("reset");
             }
 #if !defined(__SWITCH__) && !defined(__WIIU__)
-            const char* keyboardShortcut = SohImGui::GetCurrentRenderingBackend().first == "sdl" ? "F10" : "ALT+Enter";
+            const char* keyboardShortcut =
+                strcmp(SohImGui::GetCurrentRenderingBackend().first, "sdl") == 0 ? "F10" : "ALT+Enter";
             if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
                 Window::GetInstance()->ToggleFullscreen();
             }
@@ -640,8 +696,8 @@ void DrawMainMenuAndCalculateGameSize(void) {
 
     for (auto& windowIter : customWindows) {
         CustomWindow& window = windowIter.second;
-        if (window.drawFunc != nullptr) {
-            window.drawFunc(window.enabled);
+        if (window.DrawFunc != nullptr) {
+            window.DrawFunc(window.Enabled);
         }
     }
 
@@ -655,15 +711,15 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor();
 
-    ImVec2 main_pos = ImGui::GetWindowPos();
-    main_pos.x -= top_left_pos.x;
-    main_pos.y -= top_left_pos.y;
+    ImVec2 mainPos = ImGui::GetWindowPos();
+    mainPos.x -= topLeftPos.x;
+    mainPos.y -= topLeftPos.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     gfx_current_dimensions.width = (uint32_t)(size.x * gfx_current_dimensions.internal_mul);
     gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
-    gfx_current_game_window_viewport.x = (int16_t)main_pos.x;
-    gfx_current_game_window_viewport.y = (int16_t)main_pos.y;
+    gfx_current_game_window_viewport.x = (int16_t)mainPos.x;
+    gfx_current_game_window_viewport.y = (int16_t)mainPos.y;
     gfx_current_game_window_viewport.width = (int16_t)size.x;
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
@@ -704,7 +760,7 @@ void AddSetupHooksDelegate(std::function<void(void)> setupHooksMethod) {
 }
 
 void DrawFramebufferAndGameInput(void) {
-    const ImVec2 main_pos = ImGui::GetWindowPos();
+    const ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     if (CVarGetInteger("gLowResMode", 0) == 1) {
@@ -726,11 +782,11 @@ void DrawFramebufferAndGameInput(void) {
     const float scale = CVarGetFloat("gInputScale", 1.0f);
 #endif
 
-    ImVec2 BtnPos = ImVec2(160 * scale, 85 * scale);
+    ImVec2 btnPos = ImVec2(160 * scale, 85 * scale);
 
     if (CVarGetInteger("gInputEnabled", 0)) {
-        ImGui::SetNextWindowSize(BtnPos);
-        ImGui::SetNextWindowPos(ImVec2(main_pos.x + size.x - BtnPos.x - 20, main_pos.y + size.y - BtnPos.y - 20));
+        ImGui::SetNextWindowSize(btnPos);
+        ImGui::SetNextWindowPos(ImVec2(mainPos.x + size.x - btnPos.x - 20, mainPos.y + size.y - btnPos.y - 20));
 
         if (pads != nullptr && ImGui::Begin("Game Buttons", nullptr,
                                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
@@ -782,14 +838,14 @@ void Render() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        if (impl.backend == Backend::SDL) {
-            SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
-            SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+        if (impl.backend == Backend::SDL && impl.Opengl.Context != nullptr) {
+            SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
+            SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
 
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
 
-            SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+            SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
         } else {
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
@@ -812,10 +868,6 @@ Backend WindowBackend() {
     return impl.backend;
 }
 
-float WindowRefreshRate() {
-    return gfx_get_detected_hz();
-}
-
 std::vector<std::pair<const char*, const char*>> GetAvailableRenderingBackends() {
     return renderingBackends;
 }
@@ -834,6 +886,7 @@ std::pair<const char*, const char*> GetCurrentAudioBackend() {
 
 void SetCurrentRenderingBackend(uint8_t index, std::pair<const char*, const char*> backend) {
     Window::GetInstance()->GetConfig()->setString("Window.GfxBackend", backend.first);
+    Window::GetInstance()->GetConfig()->setString("Window.GfxApi", backend.second);
     lastRenderingBackendID = index;
 }
 
@@ -861,7 +914,7 @@ void AddWindow(const std::string& category, const std::string& name, WindowDrawF
         return;
     }
 
-    customWindows[name] = { .enabled = isEnabled, .drawFunc = drawFunc };
+    customWindows[name] = { .Enabled = isEnabled, .DrawFunc = drawFunc };
 
     if (isHidden) {
         hiddenwindowCategories[category].emplace_back(name);
@@ -871,7 +924,7 @@ void AddWindow(const std::string& category, const std::string& name, WindowDrawF
 }
 
 void EnableWindow(const std::string& name, bool isEnabled) {
-    customWindows[name].enabled = isEnabled;
+    customWindows[name].Enabled = isEnabled;
 }
 
 Ship::GameOverlay* GetGameOverlay() {
@@ -911,7 +964,7 @@ void DispatchConsoleCommand(const std::string& line) {
 }
 
 void RequestCvarSaveOnNextTick() {
-    needs_save = true;
+    needsSave = true;
 }
 
 ImTextureID GetTextureByName(const std::string& name) {
@@ -922,6 +975,11 @@ ImTextureID GetTextureByID(int id) {
 #ifdef ENABLE_DX11
     if (impl.backend == Backend::DX11) {
         return gfx_d3d11_get_texture_by_id(id);
+    }
+#endif
+#ifdef __APPLE__
+    if (impl.Metal.Window) {
+        return gfx_metal_get_texture_by_id(id);
     }
 #endif
 #ifdef __WIIU__

@@ -28,8 +28,7 @@ class SDLController : public Controller {
     SDL_GameController* mController;
     int32_t mPhysicalSlot;
     bool mSupportsGyro;
-    void NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int16_t axisThreshold,
-                            int32_t virtualSlot);
+    void NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t virtualSlot);
     bool Close();
 };
 } // namespace Ship

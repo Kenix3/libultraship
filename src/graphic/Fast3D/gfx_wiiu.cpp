@@ -46,7 +46,6 @@
 static MEMHeapHandle heap_MEM1 = nullptr;
 static MEMHeapHandle heap_foreground = nullptr;
 
-static bool is_running = true;
 bool has_foreground = false;
 static void* mem1_storage = nullptr;
 static void* command_buffer_pool = nullptr;
@@ -95,7 +94,6 @@ bool gfx_wiiu_init_mem1(void) {
 }
 
 void gfx_wiiu_close(void) {
-    is_running = false;
 }
 
 void gfx_wiiu_destroy_mem1(void) {
@@ -309,8 +307,8 @@ static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool 
 
     SohImGui::WindowImpl window_impl;
     window_impl.backend = SohImGui::Backend::GX2;
-    window_impl.gx2.width = WIIU_DEFAULT_FB_WIDTH;
-    window_impl.gx2.height = WIIU_DEFAULT_FB_HEIGHT;
+    window_impl.Gx2.Width = WIIU_DEFAULT_FB_WIDTH;
+    window_impl.Gx2.Height = WIIU_DEFAULT_FB_HEIGHT;
     SohImGui::Init(window_impl);
 }
 
@@ -346,6 +344,10 @@ static void gfx_wiiu_set_fullscreen_changed_callback(void (*on_fullscreen_change
 static void gfx_wiiu_set_fullscreen(bool enable) {
 }
 
+static void gfx_wiiu_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    *refresh_rate = 60;
+}
+
 static void gfx_wiiu_show_cursor(bool hide) {
 }
 
@@ -354,7 +356,7 @@ static void gfx_wiiu_set_keyboard_callbacks(bool (*on_key_down)(int scancode), b
 }
 
 static void gfx_wiiu_main_loop(void (*run_one_game_iter)(void)) {
-    while (WHBProcIsRunning() && is_running) {
+    while (WHBProcIsRunning()) {
         run_one_game_iter();
     }
 
@@ -391,7 +393,7 @@ static void gfx_wiiu_handle_events(void) {
     }
 
     SohImGui::EventImpl event_impl;
-    event_impl.gx2.input = &input;
+    event_impl.Gx2.Input = &input;
     SohImGui::Update(event_impl);
 }
 
@@ -455,16 +457,13 @@ static void gfx_wiiu_set_target_fps(int fps) {
 static void gfx_wiiu_set_maximum_frame_latency(int latency) {
 }
 
-static float gfx_wiiu_get_detected_hz(void) {
-    return 0;
-}
-
 struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_init,
     gfx_wiiu_close,
     gfx_wiiu_set_keyboard_callbacks,
     gfx_wiiu_set_fullscreen_changed_callback,
     gfx_wiiu_set_fullscreen,
+    gfx_wiiu_get_active_window_refresh_rate,
     gfx_wiiu_show_cursor,
     gfx_wiiu_main_loop,
     gfx_wiiu_get_dimensions,
@@ -475,7 +474,6 @@ struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_get_time,
     gfx_wiiu_set_target_fps,
     gfx_wiiu_set_maximum_frame_latency,
-    gfx_wiiu_get_detected_hz,
 };
 
 #endif

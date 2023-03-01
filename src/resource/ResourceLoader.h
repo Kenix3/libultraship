@@ -5,10 +5,10 @@
 #include "ResourceType.h"
 #include "ResourceFactory.h"
 #include "Resource.h"
-#include "OtrFile.h"
 
 namespace Ship {
 class Window;
+struct OtrFile;
 
 class ResourceLoader {
   public:

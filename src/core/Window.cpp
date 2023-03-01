@@ -13,6 +13,7 @@
 #include "graphic/Fast3D/gfx_dxgi.h"
 #include "graphic/Fast3D/gfx_glx.h"
 #include "graphic/Fast3D/gfx_opengl.h"
+#include "graphic/Fast3D/gfx_metal.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
 #include "graphic/Fast3D/gfx_wiiu.h"
@@ -54,8 +55,8 @@ std::shared_ptr<Window> Window::CreateInstance(const std::string name, const std
 }
 
 Window::Window(std::string Name)
-    : mName(std::move(Name)), mAudioPlayer(nullptr), mControlDeck(nullptr), mResourceManager(nullptr), mLogger(nullptr),
-      mConfig(nullptr) {
+    : mLogger(nullptr), mConfig(nullptr), mResourceManager(nullptr), mAudioPlayer(nullptr), mControlDeck(nullptr),
+      mName(std::move(Name)) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mIsFullscreen = false;
@@ -65,6 +66,7 @@ Window::Window(std::string Name)
 
 Window::~Window() {
     SPDLOG_DEBUG("destruct window");
+    spdlog::shutdown();
 }
 
 void Window::CreateDefaults() {
@@ -73,6 +75,7 @@ void Window::CreateDefaults() {
         GetConfig()->setInt("Window.Height", 480);
 
         GetConfig()->setString("Window.GfxBackend", "");
+        GetConfig()->setString("Window.GfxApi", "");
         GetConfig()->setString("Window.AudioBackend", "");
 
         GetConfig()->setBool("Window.Fullscreen.Enabled", false);
@@ -126,7 +129,7 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
         mHeight = GetConfig()->getInt("Window.Height", 480);
     }
 
-    InitializeWindowManager(GetConfig()->getString("Window.GfxBackend"));
+    InitializeWindowManager(GetConfig()->getString("Window.GfxBackend"), GetConfig()->getString("Window.GfxApi"));
     InitializeAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
 
     InitializeSpeechSynthesis();
@@ -268,6 +271,11 @@ uint32_t Window::GetCurrentHeight() {
     return mHeight;
 }
 
+uint32_t Window::GetCurrentRefreshRate() {
+    mWindowManagerApi->get_active_window_refresh_rate(&mRefreshRate);
+    return mRefreshRate;
+}
+
 float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
@@ -302,9 +310,10 @@ void Window::InitializeAudioPlayer(std::string_view audioBackend) {
 #endif
 }
 
-void Window::InitializeWindowManager(std::string_view gfxBackend) {
+void Window::InitializeWindowManager(std::string_view gfxBackend, std::string_view gfxApi) {
     // Param can override
     mGfxBackend = gfxBackend;
+    mGfxApi = gfxApi;
 #ifdef ENABLE_DX11
     if (gfxBackend == "dx11") {
         mRenderingApi = &gfx_direct3d11_api;
@@ -312,10 +321,15 @@ void Window::InitializeWindowManager(std::string_view gfxBackend) {
         return;
     }
 #endif
-#ifdef ENABLE_OPENGL
+#if defined(ENABLE_OPENGL) || defined(__APPLE__)
     if (gfxBackend == "sdl") {
         mRenderingApi = &gfx_opengl_api;
         mWindowManagerApi = &gfx_sdl;
+#ifdef __APPLE__
+        if (gfxApi == "Metal" && Metal_IsSupported()) {
+            mRenderingApi = &gfx_metal_api;
+        }
+#endif
         return;
     }
 #if defined(__linux__) && defined(X11_SUPPORTED)
@@ -330,13 +344,18 @@ void Window::InitializeWindowManager(std::string_view gfxBackend) {
     // Defaults if not on list above
 #ifdef ENABLE_OPENGL
     mRenderingApi = &gfx_opengl_api;
+#endif
+#ifdef __APPLE__
+    if (Metal_IsSupported()) {
+        mRenderingApi = &gfx_metal_api;
+    }
+#endif
 #if defined(__linux__) && defined(X11_SUPPORTED)
     // LINUX_TODO:
     // *mWindowManagerApi = &gfx_glx;
     mWindowManagerApi = &gfx_sdl;
 #else
     mWindowManagerApi = &gfx_sdl;
-#endif
 #endif
 #ifdef ENABLE_DX12
     mRenderingApi = &gfx_direct3d12_api;
@@ -421,6 +440,10 @@ void Window::InitializeLogging() {
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
         GetLogger()->set_level(spdlog::level::trace);
+
+#if defined(_DEBUG)
+        GetLogger()->flush_on(spdlog::level::trace);
+#endif
 
 #ifndef __WIIU__
         GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");

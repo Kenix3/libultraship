@@ -33,7 +33,6 @@ class WiiUController : public Controller {
     const std::string GetControllerName() override;
 
   protected:
-    void NormalizeStickAxis(int32_t virtualSlot, float x, float y, uint16_t threshold, bool isRightStick);
     void CreateDefaultBinding(int32_t virtualSlot) override;
 
   private:
