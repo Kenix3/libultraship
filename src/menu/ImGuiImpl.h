@@ -16,7 +16,8 @@ struct GameAsset {
 namespace SohImGui {
 enum class Backend {
     DX11,
-    SDL,
+    SDL_OPENGL,
+    SDL_METAL,
     GX2,
 };
 
