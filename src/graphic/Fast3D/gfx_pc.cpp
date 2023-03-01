@@ -1783,7 +1783,7 @@ static void gfx_dp_set_scissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32
     rdp.viewport_or_scissor_changed = true;
 }
 
-static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width,
+static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const char* texPath,
                                      uint32_t texFlags, RawTexMetadata rawTexMetdata, const void* addr) {
     rdp.texture_to_load.addr = (const uint8_t*)addr;
     rdp.texture_to_load.siz = size;
@@ -2269,7 +2269,7 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     }
 
     SUPPORT_CHECK(bg->b.imageSiz == G_IM_SIZ_16b);
-    gfx_dp_set_texture_image(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, texFlags, rawTexMetadata, (void*)data);
+    gfx_dp_set_texture_image(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, nullptr, texFlags, rawTexMetadata, (void*)data);
     gfx_dp_set_tile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, 0, 0, 0, 0, 0, 0);
     gfx_dp_load_block(G_TX_LOADTILE, 0, 0, (bg->b.imageW * bg->b.imageH >> 4) - 1, 0);
     gfx_dp_set_tile(bg->b.imageFmt, G_IM_SIZ_16b, bg->b.imageW >> 4, 0, G_TX_RENDERTILE, bg->b.imagePal, 0, 0, 0, 0, 0,
@@ -2645,7 +2645,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     }
                 }
 
-                gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), texFlags, rawTexMetdata, (void*)i);
+                gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), imgData, texFlags, rawTexMetdata, (void*)i);
                 break;
             }
             case G_SETTIMG_OTR: {
@@ -2700,7 +2700,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t width = C0(0, 10);
 
                 if (tex != NULL) {
-                    gfx_dp_set_texture_image(fmt, size, width, texFlags, rawTexMetdata, tex);
+                    gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetdata, tex);
                 }
 
                 cmd++;
