@@ -21,15 +21,6 @@ std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
     return LoadResource(name, now);
 }
 
-std::shared_ptr<Ship::Texture> GetResourceTexByName(const char* name) {
-    return std::static_pointer_cast<Ship::Texture>(LoadResource(name, true));
-}
-
-std::shared_ptr<Ship::Texture> GetResourceTexByCrc(uint64_t crc) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
-    return hashStr != nullptr ? GetResourceTexByName(hashStr->c_str()) : nullptr;
-}
-
 extern "C" {
 
 uint64_t GetResourceCrcByName(const char* name) {

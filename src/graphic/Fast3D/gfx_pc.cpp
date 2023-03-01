@@ -2251,7 +2251,7 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
 
     if ((data & 1) != 1) {
         if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck((char*)data) == 1) {
-            Ship::Texture* tex = GetResourceTexByName((char*)data).get();
+            Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
             texFlags = tex->Flags;
             rawTexMetadata.width = tex->Width;
             rawTexMetadata.height = tex->Height;
@@ -2627,7 +2627,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 if ((i & 1) != 1) {
                     if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData) == 1) {
-                        Ship::Texture* tex = GetResourceTexByName(imgData).get();
+                        Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource(imgData, true)).get();
 
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
@@ -2651,7 +2651,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetdata = {};
 
-                Ship::Texture* texture = GetResourceTexByCrc(hash).get();
+                Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(hash, true)).get();
                 texFlags = texture->Flags;
                 rawTexMetdata.width = texture->Width;
                 rawTexMetdata.height = texture->Height;
@@ -2707,7 +2707,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetadata = {};
 
-                Ship::Texture* texture = GetResourceTexByName(fileName).get();
+                Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(fileName, true)).get();
                 texFlags = texture->Flags;
                 rawTexMetadata.width = texture->Width;
                 rawTexMetadata.height = texture->Height;
