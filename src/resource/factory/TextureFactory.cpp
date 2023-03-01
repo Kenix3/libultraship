@@ -8,11 +8,11 @@ std::shared_ptr<Resource> TextureFactory::ReadResource(uint32_t version, std::sh
     auto resource = std::make_shared<Texture>();
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (version) {
-        case 0:
+    switch ((Version)version) {
+        case Version::Deckard:
             factory = std::make_shared<TextureFactoryV0>();
             break;
-        case 4:
+        case Version::Spock:
             factory = std::make_shared<TextureFactoryV1>();
             break;
     }

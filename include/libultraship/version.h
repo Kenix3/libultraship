@@ -12,8 +12,11 @@ enum class Version {
     Zhora = 3,
     // 1982: Tron
     Flynn = 4,
-    Bradley = 5
-    // ...
+    Bradley = 5,
+    Gibbs = 6,
+    // 1982: Star Trek WoK
+    Khan = 7,
+    Spock = 8
 };
 } // namespace Ship
 
