@@ -217,25 +217,22 @@ std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) c
                 } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
                     // else if (!fileFound)
                 {
-                    SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
-                                 mMainPath.c_str());
+                    SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
                     if (!SListFileFindClose(hFind)) {
                         SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
-                                     searchMask.c_str(), mMainPath.c_str());
+                                     searchMask, mMainPath);
                     }
                     return fileList;
                 }
             } while (fileFound);
         } else if (GetLastError() != ERROR_NO_MORE_FILES) {
-            SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask.c_str(),
-                         mMainPath.c_str());
+            SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
             return fileList;
         }
 
         if (hFind != nullptr) {
             if (!SFileFindClose(hFind)) {
-                SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask.c_str(),
-                             mMainPath.c_str());
+                SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask, mMainPath);
             }
         }
     }
