@@ -75,7 +75,7 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
     if (mpqHandle == nullptr) {
         mpqHandle = mMainMpq;
     }
-    
+
 #if _DEBUG
     if (FileHelper::Exists("TestData/" + filePath)) {
         auto byteData = FileHelper::ReadAllBytes("TestData/" + filePath);
@@ -90,16 +90,16 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
     } else {
 #endif
         bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
-        
+
         if (!attempt) {
             SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
             return nullptr;
         }
-        
+
         DWORD fileSize = SFileGetFileSize(fileHandle, 0);
         fileToLoad->Buffer.resize(fileSize);
         DWORD countBytes;
-        
+
         if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
             SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
             if (!SFileCloseFile(fileHandle)) {
@@ -108,11 +108,11 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
             }
             return nullptr;
         }
-        
+
         if (!SFileCloseFile(fileHandle)) {
             SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
         }
-        
+
         fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
         fileToLoad->IsLoaded = true;
 #if _DEBUG
@@ -200,7 +200,7 @@ bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath)
 std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) const {
     auto fileList = std::vector<SFILE_FIND_DATA>();
     SFILE_FIND_DATA findContext;
-    for(auto& path : mMpqHandles) {
+    for (auto& path : mMpqHandles) {
         HANDLE hFind;
 
         hFind = SFileFindFirstFile(path.second, searchMask.c_str(), &findContext, nullptr);
@@ -215,9 +215,10 @@ std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) c
                 if (fileFound) {
                     fileList.push_back(findContext);
                 } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
-                    // else if (!fileFound)
+                // else if (!fileFound)
                 {
-                    SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
+                    SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask,
+                                 mMainPath);
                     if (!SListFileFindClose(hFind)) {
                         SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
                                      searchMask, mMainPath);
@@ -232,7 +233,8 @@ std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) c
 
         if (hFind != nullptr) {
             if (!SFileFindClose(hFind)) {
-                SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask, mMainPath);
+                SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask,
+                             mMainPath);
             }
         }
     }

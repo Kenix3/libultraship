@@ -239,5 +239,4 @@ void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite
         }
     }
 }
-
 }

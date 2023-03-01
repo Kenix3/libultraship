@@ -16,7 +16,8 @@ class ResourceLoader {
 
     std::shared_ptr<Window> GetContext();
     std::shared_ptr<Resource> LoadResource(std::shared_ptr<OtrFile> fileToLoad);
-    bool RegisterResourceFactory(ResourceType resourceType, std::string resourceTypeXML, std::shared_ptr<ResourceFactory> factory);
+    bool RegisterResourceFactory(ResourceType resourceType, std::string resourceTypeXML,
+                                 std::shared_ptr<ResourceFactory> factory);
 
   protected:
     void RegisterGlobalResourceFactories();

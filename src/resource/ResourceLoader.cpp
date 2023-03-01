@@ -26,7 +26,8 @@ void ResourceLoader::RegisterGlobalResourceFactories() {
     RegisterResourceFactory(ResourceType::Blob, "Blob", std::make_shared<BlobFactory>());
 }
 
-bool ResourceLoader::RegisterResourceFactory(ResourceType resourceType, std::string resourceTypeXML, std::shared_ptr<ResourceFactory> factory) {
+bool ResourceLoader::RegisterResourceFactory(ResourceType resourceType, std::string resourceTypeXML,
+                                             std::shared_ptr<ResourceFactory> factory) {
     if (mFactories.contains(resourceType)) {
         return false;
     }
@@ -47,12 +48,12 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
     if (fileToLoad != nullptr) {
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.data(), fileToLoad->Buffer.size());
         auto reader = std::make_shared<BinaryReader>(stream);
-        
+
         // Determine if file is binary or XML...
         uint8_t firstByte = reader->ReadInt8();
         ResourceType resourceType;
         uint64_t id = 0xDEADBEEFDEADBEEF;
-        
+
         if (firstByte == '<') {
             // XML
             reader->Seek(-1, SeekOffsetType::Current);
@@ -83,16 +84,16 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
             }
             reader->SetEndianness(endianness);
             resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
-            uint32_t gameVersion = reader->ReadUInt32();                    // Game version
-            id = reader->ReadUInt64();                                      // Unique asset ID
-            reader->ReadUInt32();                                           // Resource minor version number
-            reader->ReadUInt64();                                           // ROM CRC
-            reader->ReadUInt32();                                           // ROM Enum
-            reader->Seek(64, SeekOffsetType::Start);                        // Reserved for future file format versions...
+            uint32_t gameVersion = reader->ReadUInt32();       // Game version
+            id = reader->ReadUInt64();                         // Unique asset ID
+            reader->ReadUInt32();                              // Resource minor version number
+            reader->ReadUInt64();                              // ROM CRC
+            reader->ReadUInt32();                              // ROM Enum
+            reader->Seek(64, SeekOffsetType::Start);           // Reserved for future file format versions...
             // OTR HEADER END
-            
+
             auto factory = mFactories[resourceType];
-            
+
             if (factory != nullptr) {
                 result = factory->ReadResource(gameVersion, reader);
             }

@@ -2467,7 +2467,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 Vtx* vtx = (Vtx*)GetResourceDataByName((const char*)fileName, false);
                 vtx += vtxDataOff;
                 cmd--;
-                
+
                 gfx_sp_vertex(vtxCnt, vtxIdxOff, vtx);
             } break;
             case G_DL_OTR2: {
@@ -2720,7 +2720,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t size = C0(19, 2);
                 uint32_t width = C0(0, 10);
 
-                gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata, reinterpret_cast<char*>(texture->ImageData));
+                gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata,
+                                         reinterpret_cast<char*>(texture->ImageData));
                 break;
             }
             case G_SETFB: {

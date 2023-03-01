@@ -4,8 +4,7 @@
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
-namespace Ship 
-{
+namespace Ship {
 std::shared_ptr<Resource> DisplayListFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<DisplayList>();
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
@@ -26,19 +25,17 @@ std::shared_ptr<Resource> DisplayListFactory::ReadResource(uint32_t version, std
     return resource;
 }
 
-std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(uint32_t version, tinyxml2::XMLElement* reader) 
-{
+std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(uint32_t version, tinyxml2::XMLElement* reader) {
     auto resource = std::make_shared<DisplayList>();
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-    
-    switch ((Version)version) 
-    {
+
+    switch ((Version)version) {
         case Version::Deckard:
             factory = std::make_shared<DisplayListFactoryV0>();
-        break;
+            break;
     }
 
-     if (factory == nullptr) {
+    if (factory == nullptr) {
         SPDLOG_ERROR("Failed to load DisplayList with version {}", version);
         return nullptr;
     }
@@ -114,8 +111,7 @@ std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", 
                                                           { "G_RM_ZB_XLU_DECAL2", G_RM_ZB_XLU_DECAL2 },
                                                           { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 } };
 
-void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) 
-{
+void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) {
     std::shared_ptr<DisplayList> dl = std::static_pointer_cast<DisplayList>(resource);
 
     auto child = reader->FirstChildElement();
@@ -331,7 +327,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             strcpy((char*)g.words.w1, fName.data());
 
             dl->Instructions.push_back(g);
-            
+
             g.words.w0 = child->IntAttribute("Count");
             g.words.w1 = (child->IntAttribute("VertexBufferIndex") << 16) + child->IntAttribute("VertexOffset");
         } else if (childName == "SetTextureImage") {
@@ -911,7 +907,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
     }
 }
 
-	uint32_t DisplayListFactoryV0::GetCombineLERPValue(std::string valStr) {
+uint32_t DisplayListFactoryV0::GetCombineLERPValue(std::string valStr) {
     std::string strings[] = { "G_CCMUX_COMBINED",
                               "G_CCMUX_TEXEL0",
                               "G_CCMUX_TEXEL1",
