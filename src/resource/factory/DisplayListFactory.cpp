@@ -2,6 +2,8 @@
 #include "resource/type/DisplayList.h"
 #include "spdlog/spdlog.h"
 
+#define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
+
 namespace Ship 
 {
 std::shared_ptr<Resource> DisplayListFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
@@ -973,7 +975,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                           G_ACMUX_LOD_FRACTION,
                           G_ACMUX_PRIM_LOD_FRAC };
 
-    for (int i = 0; i < ARRAYSIZE(values); i++) {
+    for (int i = 0; i < ARRAY_COUNT(values); i++) {
         if (valStr == strings[i])
             return values[i];
     }
