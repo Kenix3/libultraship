@@ -14,9 +14,15 @@ enum class Version {
     Flynn = 4,
     Bradley = 5,
     Gibbs = 6,
-    // 1982: Star Trek WoK
+    // 1982: Wrath of Khan
     Khan = 7,
-    Spock = 8
+    Spock = 8,
+    Sulu = 9,
+    // 1982: The Thing
+    MacReady = 10,
+    Blair = 11,
+    Childs = 12,
+    // ...
 };
 } // namespace Ship
 
