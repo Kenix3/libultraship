@@ -323,15 +323,14 @@ void Window::InitializeWindowManager(std::string_view gfxBackend, std::string_vi
 #endif
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
     if (gfxBackend == "sdl") {
-        if (gfxApi == "OpenGL") {
-            mRenderingApi = &gfx_opengl_api;
-        }
+        mRenderingApi = &gfx_opengl_api;
+        mWindowManagerApi = &gfx_sdl;
 #ifdef __APPLE__
-        else if (gfxApi == "Metal") {
+        if (gfxApi == "Metal" && Metal_IsSupported()) {
             mRenderingApi = &gfx_metal_api;
         }
 #endif
-        mWindowManagerApi = &gfx_sdl;
+        return;
     }
 #if defined(__linux__) && defined(X11_SUPPORTED)
     if (gfxBackend == "glx") {

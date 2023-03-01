@@ -139,7 +139,7 @@ void ControlDeck::LoadControllerSettings() {
 
             profile->Mappings.clear();
             profile->AxisDeadzones.clear();
-            profile->AxisDeadzones.clear();
+            profile->AxisMinimumPress.clear();
             profile->GyroData.clear();
 
             profile->Version = config->getInt(NESTED("Version", ""), DEVICE_PROFILE_VERSION_V0);
@@ -165,6 +165,7 @@ void ControlDeck::LoadControllerSettings() {
                     profile->UseRumble = config->getBool(NESTED("Rumble.Enabled", ""));
                     profile->RumbleStrength = config->getFloat(NESTED("Rumble.Strength", ""));
                     profile->UseGyro = config->getBool(NESTED("Gyro.Enabled", ""));
+                    profile->NotchProximityThreshold = config->getInt(NESTED("Notches.ProximityThreshold", ""));
 
                     for (auto const& val : rawProfile["AxisDeadzones"].items()) {
                         profile->AxisDeadzones[std::stoi(val.key())] = val.value();
@@ -218,6 +219,7 @@ void ControlDeck::SaveControllerSettings() {
             config->setBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
             config->setFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
             config->setBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
+            config->setInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
 
             for (auto const& val : rawProfile["Mappings"].items()) {
                 config->setInt(NESTED("Mappings.%s", val.key().c_str()), -1);

@@ -112,7 +112,7 @@ const char* filters[3] = {
 
 std::vector<std::pair<const char*, const char*>> renderingBackends = {
 #ifdef _WIN32
-    { "Dx11", "DirectX" },
+    { "dx11", "DirectX" },
 #endif
 #ifndef __WIIU__
     { "sdl", "OpenGL" }
