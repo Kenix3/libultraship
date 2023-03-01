@@ -44,10 +44,6 @@ void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origD
 void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData, bool now);
 void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueToWrite, bool now);
 void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite, bool now);
-uint8_t* GetTextureModifier(const char* texPath);
-bool HasTextureModifier(const char* texPath);
-void RegisterTextureModifier(char* texPath, uint8_t* modifier);
-void RemoveTextureModifier(const char* texPath);
 
 #ifdef __cplusplus
 };

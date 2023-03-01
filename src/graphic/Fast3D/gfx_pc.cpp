@@ -874,8 +874,7 @@ static void import_texture_raw(int tile) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
 
     const char* name = metadata->name.c_str();
-    const bool has_modifier = HasTextureModifier(name);
-    const uint8_t* addr = has_modifier ? GetTextureModifier(name) : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
@@ -929,10 +928,6 @@ static void import_texture_raw(int tile) {
     }
 
     gfx_rapi->upload_texture(tex_upload_buffer, result_new_line_size / 4, result_new_height);
-    if(has_modifier){
-        gfx_texture_cache_delete((const uint8_t*) addr);
-        free((void*) addr);
-    }
 }
 
 static void import_texture(int i, int tile) {

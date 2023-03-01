@@ -5,8 +5,6 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-std::unordered_map<std::string, uint8_t*> mTextureModifiers;
-
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
     return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(name)
                : Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
@@ -239,28 +237,6 @@ void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite
         if ((index * sizeof(int16_t)) < res->ImageDataSize) {
             ((int16_t*)res->ImageData)[index] = valueToWrite;
         }
-    }
-}
-
-bool HasTextureModifier(const char* texPath) {
-    return mTextureModifiers.contains(texPath);
-}
-
-void RegisterTextureModifier(char* texPath, uint8_t* modifier) {
-    mTextureModifiers[texPath] = modifier;
-}
-
-uint8_t* GetTextureModifier(const char* texPath) {
-    if(mTextureModifiers.contains(texPath)){
-        return mTextureModifiers[texPath];
-    }
-    return nullptr;
-}
-
-void RemoveTextureModifier(const char* texPath) {
-    if(mTextureModifiers.contains(texPath)){
-        free(mTextureModifiers[texPath]);
-        mTextureModifiers.erase(texPath);
     }
 }
 
