@@ -26,6 +26,7 @@ struct DeviceProfile {
     bool UseRumble = false;
     bool UseGyro = false;
     float RumbleStrength = 1.0f;
+    int32_t NotchProximityThreshold = 0;
     std::unordered_map<int32_t, float> AxisDeadzones;
     std::unordered_map<int32_t, float> AxisMinimumPress;
     std::unordered_map<int32_t, float> GyroData;
@@ -67,7 +68,7 @@ class Controller {
 
     void LoadBinding();
     int8_t ReadStick(int32_t virtualSlot, Stick stick, Axis axis);
-    void ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t deadzoneY);
+    void ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold);
 
   private:
     struct Buttons {

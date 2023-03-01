@@ -88,7 +88,7 @@ int8_t Controller::ReadStick(int32_t virtualSlot, Stick stick, Axis axis) {
     return 0;
 }
 
-void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t deadzoneY) {
+void Controller::ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold) {
     auto ux = fabs(x);
     auto uy = fabs(y);
 
@@ -122,8 +122,7 @@ void Controller::ProcessStick(int8_t& x, int8_t& y, uint16_t deadzoneX, uint16_t
     }
 
     // map to virtual notches
-    double notchProximityVal = CVarGetInteger("gNotchProximityThreshold", 0);
-    const double notchProximityValRadians = notchProximityVal * M_TAU / 360;
+    const double notchProximityValRadians = notchProxmityThreshold * M_TAU / 360;
 
     const double distance = std::sqrt((ux * ux) + (uy * uy)) / MAX_AXIS_RANGE;
     if (distance >= MINIMUM_RADIUS_TO_MAP_NOTCH) {
@@ -158,8 +157,10 @@ void Controller::Read(OSContPad* pad, int32_t virtualSlot) {
     int8_t rightStickY = ReadStick(virtualSlot, RIGHT, Y);
 
     auto profile = getProfile(virtualSlot);
-    ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1]);
-    ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3]);
+    ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1],
+                 profile->NotchProximityThreshold);
+    ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3],
+                 profile->NotchProximityThreshold);
 
     if (pad == nullptr) {
         return;

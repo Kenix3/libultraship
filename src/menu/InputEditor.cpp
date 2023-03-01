@@ -327,12 +327,8 @@ void InputEditor::DrawControllerSchema() {
     }
 
     if (!isKeyboard) {
-        const char* notchProximityCvar = "gNotchProximityThreshold";
-        int notchProximityVal = CVarGetInteger(notchProximityCvar, 0);
-        auto nda = notchProximityVal;
-
         ImGui::SetCursorPosX(cursorX);
-        ImGui::Text("Notch Snap Angle: %d", nda);
+        ImGui::Text("Notch Snap Angle: %d", profile->NotchProximityThreshold);
         ImGui::SetCursorPosX(cursorX);
 
 #ifdef __WIIU__
@@ -340,11 +336,8 @@ void InputEditor::DrawControllerSchema() {
 #else
         ImGui::PushItemWidth(135.0f);
 #endif
-        ImGui::SliderInt("##NotchProximityThreshold", &notchProximityVal, 0, 45, "", ImGuiSliderFlags_AlwaysClamp);
-        {
-            CVarSetInteger(notchProximityCvar, notchProximityVal);
-            SohImGui::RequestCvarSaveOnNextTick();
-        }
+        ImGui::SliderInt("##NotchProximityThreshold", &profile->NotchProximityThreshold, 0, 45, "",
+                         ImGuiSliderFlags_AlwaysClamp);
         ImGui::PopItemWidth();
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip(
@@ -368,10 +361,10 @@ void InputEditor::DrawHud() {
     ImVec2 maxSize = ImVec2(2200, 505);
 #elif defined(__WIIU__)
     ImVec2 minSize = ImVec2(641 * 2, 250 * 2);
-    ImVec2 maxSize = ImVec2(1200 * 2, 290 * 2);
+    ImVec2 maxSize = ImVec2(1200 * 2, 330 * 2);
 #else
     ImVec2 minSize = ImVec2(641, 250);
-    ImVec2 maxSize = ImVec2(1200, 290);
+    ImVec2 maxSize = ImVec2(1200, 330);
 #endif
 
     ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
