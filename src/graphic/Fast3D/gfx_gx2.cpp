@@ -136,6 +136,7 @@ static const char* gfx_gx2_get_name() {
 }
 
 static int gfx_gx2_get_max_texture_size() {
+    // TODO: This should be a define from the Wii U toolchain, but there isn't one yet
     return 8192;
 }
 
