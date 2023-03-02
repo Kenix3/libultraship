@@ -1327,7 +1327,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             z = (z + w) / 2.0f;
         }
 
-        //if (markerOn) {
+        // if (markerOn) {
         //     z = 10;
         //}
 
