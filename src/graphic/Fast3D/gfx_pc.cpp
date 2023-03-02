@@ -896,17 +896,9 @@ static void import_texture_raw(int tile) {
     uint32_t num_originally_loaded_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].orig_size_bytes;
 
     uint32_t result_orig_line_size = rdp.texture_tile[tile].line_size_bytes;
-    uint32_t result_orig_width = result_orig_line_size;
     switch (rdp.texture_tile[tile].siz) {
-        case G_IM_SIZ_4b:
-            result_orig_width *= 2;
-            break;
         case G_IM_SIZ_32b:
             result_orig_line_size *= 2;
-            result_orig_width /= 2;
-            break;
-        case G_IM_SIZ_16b:
-            result_orig_width /= 2;
             break;
     }
     uint32_t result_orig_height = num_originally_loaded_bytes / result_orig_line_size;
