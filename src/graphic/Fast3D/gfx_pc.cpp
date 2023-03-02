@@ -2242,7 +2242,7 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     RawTexMetadata rawTexMetadata = {};
 
     if ((data & 1) != 1) {
-        if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck((char*)data) == 1) {
+        if (gfx_check_image_signature((char*)data) == 1) {
             Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
             texFlags = tex->Flags;
             rawTexMetadata.width = tex->Width;
@@ -2618,7 +2618,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 RawTexMetadata rawTexMetdata = {};
 
                 if ((i & 1) != 1) {
-                    if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData) == 1) {
+                    if (gfx_check_image_signature(imgData) == 1) {
                         Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource(imgData, true)).get();
 
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
@@ -3126,7 +3126,7 @@ uint16_t gfx_get_pixel_depth(float x, float y) {
 }
 
 void gfx_push_current_dir(char* path) {
-    if (Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(path) == 1)
+    if (gfx_check_image_signature(path) == 1)
         path = &path[7];
 
     currentDir.push(GetPathWithoutFileName(path));
