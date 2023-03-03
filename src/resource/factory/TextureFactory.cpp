@@ -12,7 +12,7 @@ std::shared_ptr<Resource> TextureFactory::ReadResource(uint32_t version, std::sh
         case Version::Deckard:
             factory = std::make_shared<TextureFactoryV0>();
             break;
-        case 9:
+        case Version::Roy:
             factory = std::make_shared<TextureFactoryV1>();
             break;
     }

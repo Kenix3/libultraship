@@ -332,6 +332,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         SDL_GL_SetSwapInterval(1);
 
         window_impl.Opengl = { wnd, ctx };
+        window_impl.backend = SohImGui::Backend::SDL_OPENGL;
     } else {
         renderer = SDL_CreateRenderer(wnd, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         if (renderer == NULL) {
@@ -341,9 +342,9 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
         window_impl.Metal = { wnd, renderer };
+        window_impl.backend = SohImGui::Backend::SDL_METAL;
     }
 
-    window_impl.backend = SohImGui::Backend::SDL;
     SohImGui::Init(window_impl);
 
     for (size_t i = 0; i < sizeof(windows_scancode_table) / sizeof(SDL_Scancode); i++) {

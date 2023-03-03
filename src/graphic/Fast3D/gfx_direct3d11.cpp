@@ -392,7 +392,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 }
 
 static int gfx_d3d11_get_max_texture_size() {
-    return 16384;
+    return D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 }
 
 static const char* gfx_d3d11_get_name() {
