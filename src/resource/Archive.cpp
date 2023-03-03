@@ -86,8 +86,6 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
         fileToLoad->Buffer[byteData.size()] = '\0';
 
         fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
-        fileToLoad->Buffer = fileData.get();
-        // fileToLoad->BufferSize = byteData.size() + 1;
         fileToLoad->IsLoaded = true;
     } else {
 #endif
