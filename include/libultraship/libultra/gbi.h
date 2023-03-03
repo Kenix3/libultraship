@@ -167,10 +167,10 @@
 #define G_VTX_OTR2 0x24
 #define G_SETTIMG_OTR2 0x25
 #define G_TRI1_OTR 0x26
-#define G_DL_OTR2 0x27
+#define G_DL_OTR_FILEPATH 0x27
 #define G_PUSHCD 0x28
 #define G_MTX_OTR2 0x29
-#define G_DL_OTR 0x31
+#define G_DL_OTR_HASH 0x31
 #define G_VTX_OTR 0x32
 #define G_MARKER 0x33
 #define G_INVALTEXCACHE 0x34
@@ -1767,13 +1767,13 @@ typedef union {
 #define gsSPPushCD(pkt, dl) gDma1p(pkt, G_PUSHCD, dl, 0, G_DL_PUSH)
 #define __gSPDisplayList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_PUSH)
 #define gsSPDisplayList(dl) gsDma1p(G_DL, dl, 0, G_DL_PUSH)
-#define gsSPDisplayListOTR(dl) gsDma1p(G_DL_OTR, dl, 0, G_DL_PUSH)
-#define gsSPDisplayListOTR2(dl) gsDma1p(G_DL_OTR2, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_PUSH)
 
 #define gSPBranchList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchList(dl) gsDma1p(G_DL, dl, 0, G_DL_NOPUSH)
-#define gsSPBranchListOTR(dl) gsDma1p(G_DL_OTR, dl, 0, G_DL_NOPUSH)
-#define gsSPBranchListOTR2(dl) gsDma1p(G_DL_OTR2, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_NOPUSH)
 
 #define gSPSprite2DBase(pkt, s) gDma1p(pkt, G_SPRITE2D_BASE, s, sizeof(uSprite), 0)
 #define gsSPSprite2DBase(s) gsDma1p(G_SPRITE2D_BASE, s, sizeof(uSprite), 0)

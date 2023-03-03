@@ -2464,7 +2464,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 gfx_sp_vertex(vtxCnt, vtxIdxOff, vtx);
             } break;
-            case G_DL_OTR2: {
+            case G_DL_OTR_FILEPATH: {
                 fileName = (char*)cmd->words.w1;
                 Gfx* nDL = (Gfx*)GetResourceDataByName((const char*)fileName, false);
 
@@ -2494,7 +2494,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     --cmd; // increase after break
                 }
                 break;
-            case G_DL_OTR:
+            case G_DL_OTR_HASH:
                 if (C0(16, 1) == 0) {
                     // Push return address
 

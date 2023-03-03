@@ -63,7 +63,7 @@ void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
         uint8_t opcode = (uint8_t)(command.words.w0 >> 24);
 
         // These are 128-bit commands, so read an extra 64 bits...
-        if (opcode == G_SETTIMG_OTR || opcode == G_DL_OTR || opcode == G_VTX_OTR || opcode == G_BRANCH_Z_OTR ||
+        if (opcode == G_SETTIMG_OTR || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR || opcode == G_BRANCH_Z_OTR ||
             opcode == G_MARKER || opcode == G_MTX_OTR) {
             command.words.w0 = reader->ReadUInt32();
             command.words.w1 = reader->ReadUInt32();
@@ -796,12 +796,12 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             std::string dlPath = (char*)child->Attribute("Path");
             if (dlPath[0] == '>' && dlPath[1] == '0' && (dlPath[2] == 'x' || dlPath[2] == 'X')) {
                 uint32_t seg = std::stoul(dlPath.substr(1), nullptr, 16);
-                g = { gsSPBranchListOTR(seg | 1) };
+                g = { gsSPBranchListOTRHash(seg | 1) };
             } else {
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
                 strcpy(dlPath2, dlPath.c_str());
 
-                g = gsSPBranchListOTR2(dlPath2);
+                g = gsSPBranchListOTRFilePath(dlPath2);
             }
         } else if (childName == "CallDisplayList") {
             std::string dlPath = (char*)child->Attribute("Path");
@@ -812,7 +812,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
                 strcpy(dlPath2, dlPath.c_str());
 
-                g = gsSPDisplayListOTR2(dlPath2);
+                g = gsSPDisplayListOTRFilePath(dlPath2);
             }
         } else if (childName == "ClearGeometryMode" || childName == "SetGeometryMode") {
             uint64_t clearData = 0;
