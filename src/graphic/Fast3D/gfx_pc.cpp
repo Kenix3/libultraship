@@ -2416,7 +2416,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), seg_addr(cmd->words.w1));
 #endif
                 break;
-            case G_VTX_OTR: {
+            case G_VTX_OTR_HASH: {
                 // Offset added to the start of the vertices
                 uintptr_t offset = cmd->words.w1;
                 // This is a two-part display list command, so increment the instruction pointer so we can get the CRC64
@@ -2452,7 +2452,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     }
                 }
             } break;
-            case G_VTX_OTR2: {
+            case G_VTX_OTR_FILEPATH: {
                 char* fileName = (char*)cmd->words.w1;
                 cmd++;
                 int vtxCnt = cmd->words.w0;

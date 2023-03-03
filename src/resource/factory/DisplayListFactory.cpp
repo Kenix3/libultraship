@@ -63,7 +63,7 @@ void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
         uint8_t opcode = (uint8_t)(command.words.w0 >> 24);
 
         // These are 128-bit commands, so read an extra 64 bits...
-        if (opcode == G_SETTIMG_OTR || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR || opcode == G_BRANCH_Z_OTR ||
+        if (opcode == G_SETTIMG_OTR || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH || opcode == G_BRANCH_Z_OTR ||
             opcode == G_MARKER || opcode == G_MTX_OTR) {
             command.words.w0 = reader->ReadUInt32();
             command.words.w1 = reader->ReadUInt32();
@@ -324,18 +324,10 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
             g = gsSPVertexOTR2_P1(filePath);
 
-            // g.words.w0 &= 0x00FFFFFF;
-            // g.words.w0 += (G_VTX_OTR2 << 24);
-            // g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
-            // strcpy((char*)g.words.w1, fName.data());
-
             dl->Instructions.push_back(g);
 
             g = gsSPVertexOTR2_P2(child->IntAttribute("Count"), child->IntAttribute("VertexBufferIndex"),
                                   child->IntAttribute("VertexOffset"));
-
-            // g.words.w0 = child->IntAttribute("Count");
-            // g.words.w1 = (child->IntAttribute("VertexBufferIndex") << 16) + child->IntAttribute("VertexOffset");
         } else if (childName == "SetTextureImage") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;

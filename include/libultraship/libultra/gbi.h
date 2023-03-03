@@ -164,14 +164,14 @@
 #define G_SETFB 0x21
 #define G_RESETFB 0x22
 #define G_SETTIMG_FB 0x23
-#define G_VTX_OTR2 0x24
+#define G_VTX_OTR_FILEPATH 0x24
 #define G_SETTIMG_OTR2 0x25
 #define G_TRI1_OTR 0x26
 #define G_DL_OTR_FILEPATH 0x27
 #define G_PUSHCD 0x28
 #define G_MTX_OTR2 0x29
 #define G_DL_OTR_HASH 0x31
-#define G_VTX_OTR 0x32
+#define G_VTX_OTR_HASH 0x32
 #define G_MARKER 0x33
 #define G_INVALTEXCACHE 0x34
 #define G_BRANCH_Z_OTR 0x35
@@ -1734,7 +1734,7 @@ typedef union {
     { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v) }
 
 #define gsSPVertexOTR2_P1(filePathPtr) \
-    { (_SHIFTL(G_VTX_OTR2, 24, 8), (uintptr_t)(filePathPtr)) }
+    { (_SHIFTL(G_VTX_OTR_FILEPATH, 24, 8), (uintptr_t)(filePathPtr)) }
 
 #define gsSPVertexOTR2_P2(vtxCnt, vtxBufOffset, vtxDataOffset) \
     { ((uintptr_t)(vtxCnt), (uintptr_t)((vtxBufOffset << 16) | (vtxDataOffset))) }
