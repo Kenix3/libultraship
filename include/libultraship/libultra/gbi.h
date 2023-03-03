@@ -1876,19 +1876,22 @@ typedef union {
  */
 #if (defined(F3DLP_GBI) || defined(F3DEX_GBI))
 #define __gsSP1Triangle_w1(v0, v1, v2) (_SHIFTL((v0)*2, 16, 8) | _SHIFTL((v1)*2, 8, 8) | _SHIFTL((v2)*2, 0, 8))
-#define __gsSP1Triangle_w1f(v0, v1, v2, flag)       \
-    (((flag) == 0) ? __gsSP1Triangle_w1(v0, v1, v2) \
-                   : ((flag) == 1) ? __gsSP1Triangle_w1(v1, v2, v0) : __gsSP1Triangle_w1(v2, v0, v1))
+#define __gsSP1Triangle_w1f(v0, v1, v2, flag)         \
+    (((flag) == 0)   ? __gsSP1Triangle_w1(v0, v1, v2) \
+     : ((flag) == 1) ? __gsSP1Triangle_w1(v1, v2, v0) \
+                     : __gsSP1Triangle_w1(v2, v0, v1))
 #define __gsSPLine3D_w1(v0, v1, wd) (_SHIFTL((v0)*2, 16, 8) | _SHIFT((v1)*2, 8, 8) | _SHIFT((wd), 0, 8))
 #define __gsSPLine3D_w1f(v0, v1, wd, flag) (((flag) == 0) ? __gsSPLine3D_w1(v0, v1, wd) : __gsSPLine3D_w1(v1, v0, wd))
-#define __gsSP1Quadrangle_w1f(v0, v1, v2, v3, flag)                 \
-    (((flag) == 0) ? __gsSP1Triangle_w1(v0, v1, v2)                 \
-                   : ((flag) == 1) ? __gsSP1Triangle_w1(v1, v2, v3) \
-                                   : ((flag) == 2) ? __gsSP1Triangle_w1(v2, v3, v0) : __gsSP1Triangle_w1(v3, v0, v1))
-#define __gsSP1Quadrangle_w2f(v0, v1, v2, v3, flag)                 \
-    (((flag) == 0) ? __gsSP1Triangle_w1(v0, v2, v3)                 \
-                   : ((flag) == 1) ? __gsSP1Triangle_w1(v1, v3, v0) \
-                                   : ((flag) == 2) ? __gsSP1Triangle_w1(v2, v0, v1) : __gsSP1Triangle_w1(v3, v1, v2))
+#define __gsSP1Quadrangle_w1f(v0, v1, v2, v3, flag)   \
+    (((flag) == 0)   ? __gsSP1Triangle_w1(v0, v1, v2) \
+     : ((flag) == 1) ? __gsSP1Triangle_w1(v1, v2, v3) \
+     : ((flag) == 2) ? __gsSP1Triangle_w1(v2, v3, v0) \
+                     : __gsSP1Triangle_w1(v3, v0, v1))
+#define __gsSP1Quadrangle_w2f(v0, v1, v2, v3, flag)   \
+    (((flag) == 0)   ? __gsSP1Triangle_w1(v0, v2, v3) \
+     : ((flag) == 1) ? __gsSP1Triangle_w1(v1, v3, v0) \
+     : ((flag) == 2) ? __gsSP1Triangle_w1(v2, v0, v1) \
+                     : __gsSP1Triangle_w1(v3, v1, v2))
 #else
 #define __gsSP1Triangle_w1f(v0, v1, v2, flag) \
     (_SHIFTL((flag), 24, 8) | _SHIFTL((v0)*10, 16, 8) | _SHIFTL((v1)*10, 8, 8) | _SHIFTL((v2)*10, 0, 8))

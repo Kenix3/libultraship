@@ -1684,7 +1684,7 @@ class alignas(void*) CD3DX12_PIPELINE_STATE_STREAM_SUBOBJECT {
         _Inner = i;
         return *this;
     }
-    operator InnerStructType const&() const {
+    operator InnerStructType const &() const {
         return _Inner;
     }
     operator InnerStructType&() {
