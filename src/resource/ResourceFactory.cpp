@@ -14,6 +14,7 @@ void ResourceVersionFactory::WriteFileXML(std::shared_ptr<tinyxml2::XMLElement> 
                                           std::shared_ptr<Resource> resource) {
 }
 std::shared_ptr<Resource> ResourceFactory::ReadResourceXML(uint32_t version, tinyxml2::XMLElement* reader) {
-    return std::shared_ptr<Resource>();
+    // return std::shared_ptr<Resource>();
+    return nullptr;
 }
 } // namespace Ship

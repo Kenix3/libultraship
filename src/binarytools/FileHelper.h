@@ -24,9 +24,15 @@ class FileHelper {
 
         int32_t fileSize = (int32_t)file.tellg();
         file.seekg(0);
-        char* data = new char[fileSize];
-        file.read(data, fileSize);
-        std::vector<uint8_t> result = std::vector<uint8_t>(data, data + fileSize);
+        char* data = nullptr;
+        std::vector<uint8_t> result;
+
+        try {
+            data = new char[fileSize];
+            file.read(data, fileSize);
+            result = std::vector<uint8_t>(data, data + fileSize);
+        } catch (const std::exception& e) { delete[] data; }
+
         delete[] data;
 
         return result;

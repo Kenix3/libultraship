@@ -285,7 +285,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             const char* ac1 = child->Attribute("Ac1", 0);
             const char* ad1 = child->Attribute("Ad1", 0);
 
-            g = gsDPSetCombineLERP2(
+            g = gsDPSetCombineLERP_NoMacros(
                 GetCombineLERPValue(a0), GetCombineLERPValue(b0), GetCombineLERPValue(c0), GetCombineLERPValue(d0),
                 GetCombineLERPValue(aa0), GetCombineLERPValue(ab0), GetCombineLERPValue(ac0), GetCombineLERPValue(ad0),
                 GetCombineLERPValue(a1), GetCombineLERPValue(b1), GetCombineLERPValue(c1), GetCombineLERPValue(d1),
