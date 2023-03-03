@@ -2714,7 +2714,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t size = C0(19, 2);
                 uint32_t width = C0(0, 10);
 
-                gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata, reinterpret_cast<char*>(texture->ImageData));
+                gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata,
+                                         reinterpret_cast<char*>(texture->ImageData));
                 break;
             }
             case G_SETFB: {

@@ -51,85 +51,86 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.data(), fileToLoad->Buffer.size());
         auto reader = std::make_shared<BinaryReader>(stream);
 
-    if (firstByte == '<') {
-        // XML
-        reader->Seek(-1, SeekOffsetType::Current);
-
         if (firstByte == '<') {
             // XML
             reader->Seek(-1, SeekOffsetType::Current);
 
-            std::string xmlStr = reader->ReadCString();
+            if (firstByte == '<') {
+                // XML
+                reader->Seek(-1, SeekOffsetType::Current);
 
-            tinyxml2::XMLDocument doc;
-            tinyxml2::XMLError eResult = doc.Parse(xmlStr.data());
+                std::string xmlStr = reader->ReadCString();
 
-            // OTRTODO: Error checking
+                tinyxml2::XMLDocument doc;
+                tinyxml2::XMLError eResult = doc.Parse(xmlStr.data());
 
-            auto root = doc.FirstChildElement();
+                // OTRTODO: Error checking
 
-            std::string nodeName = root->Name();
-            uint32_t gameVersion = root->IntAttribute("Version");
+                auto root = doc.FirstChildElement();
 
-        if (factory != nullptr) {
-            result = factory->ReadResourceXML(gameVersion, root);
-            resourceType = mFactoriesTypes[nodeName];
-        }
-    } else {
-        Endianness endianness = (Endianness)firstByte;
+                std::string nodeName = root->Name();
+                uint32_t gameVersion = root->IntAttribute("Version");
 
-        // OTR HEADER BEGIN
-        for (int i = 0; i < 3; i++) {
-            reader->ReadInt8();
-        }
+                if (factory != nullptr) {
+                    result = factory->ReadResourceXML(gameVersion, root);
+                    resourceType = mFactoriesTypes[nodeName];
+                }
+            } else {
+                Endianness endianness = (Endianness)firstByte;
 
-            if (factory != nullptr) {
-                result = factory->ReadResourceXML(gameVersion, root);
-                resourceType = mFactoriesTypes[nodeName];
+                // OTR HEADER BEGIN
+                for (int i = 0; i < 3; i++) {
+                    reader->ReadInt8();
+                }
+
+                if (factory != nullptr) {
+                    result = factory->ReadResourceXML(gameVersion, root);
+                    resourceType = mFactoriesTypes[nodeName];
+                }
             }
-        } else {
-            // OTR HEADER BEGIN
-            Endianness endianness = (Endianness)firstByte;
-            for (int i = 0; i < 3; i++) {
-                reader->ReadInt8();
+            else {
+                // OTR HEADER BEGIN
+                Endianness endianness = (Endianness)firstByte;
+                for (int i = 0; i < 3; i++) {
+                    reader->ReadInt8();
+                }
+                reader->SetEndianness(endianness);
+                resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
+                uint32_t gameVersion = reader->ReadUInt32();       // Game version
+                id = reader->ReadUInt64();                         // Unique asset ID
+                reader->ReadUInt32();                              // Resource minor version number
+                reader->ReadUInt64();                              // ROM CRC
+                reader->ReadUInt32();                              // ROM Enum
+                reader->Seek(64, SeekOffsetType::Start);           // Reserved for future file format versions...
+                // OTR HEADER END
+
+                resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
+                uint32_t gameVersion = reader->ReadUInt32();       // Game version
+                id = reader->ReadUInt64();                         // Unique asset ID
+                reader->ReadUInt32();                              // Resource minor version number
+                reader->ReadUInt64();                              // ROM CRC
+                reader->ReadUInt32();                              // ROM Enum
+                reader->Seek(64, SeekOffsetType::Start);           // Reserved for future file format versions...
+                                                                   // OTR HEADER END
+
+                if (factory != nullptr) {
+                    result = factory->ReadResource(gameVersion, reader);
+                }
             }
-            reader->SetEndianness(endianness);
-            resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
-            uint32_t gameVersion = reader->ReadUInt32();       // Game version
-            id = reader->ReadUInt64();                         // Unique asset ID
-            reader->ReadUInt32();                              // Resource minor version number
-            reader->ReadUInt64();                              // ROM CRC
-            reader->ReadUInt32();                              // ROM Enum
-            reader->Seek(64, SeekOffsetType::Start);           // Reserved for future file format versions...
-            // OTR HEADER END
 
-        resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
-        uint32_t gameVersion = reader->ReadUInt32();       // Game version
-        id = reader->ReadUInt64();                         // Unique asset ID
-        reader->ReadUInt32();                              // Resource minor version number
-        reader->ReadUInt64();                              // ROM CRC
-        reader->ReadUInt32();                              // ROM Enum
-        reader->Seek(64, SeekOffsetType::Start);           // Reserved for future file format versions...
-        // OTR HEADER END
-
-            if (factory != nullptr) {
-                result = factory->ReadResource(gameVersion, reader);
+            if (result != nullptr) {
+                result->Id = id;
+                result->Type = resourceType;
+                result->Path = fileToLoad->Path;
+                result->ResourceManager = GetContext()->GetResourceManager();
+            } else {
+                if (fileToLoad != nullptr) {
+                    SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceType, fileToLoad->Path);
+                } else {
+                    SPDLOG_ERROR("Failed to load resource because the file did not load.");
+                }
             }
-        }
 
-    if (result != nullptr) {
-        result->Id = id;
-        result->Type = resourceType;
-        result->Path = fileToLoad->Path;
-        result->ResourceManager = GetContext()->GetResourceManager();
-    } else {
-        if (fileToLoad != nullptr) {
-            SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceType, fileToLoad->Path);
-        } else {
-            SPDLOG_ERROR("Failed to load resource because the file did not load.");
+            return result;
         }
-    }
-
-    return result;
-}
-} // namespace Ship
+    } // namespace Ship
