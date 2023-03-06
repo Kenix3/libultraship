@@ -33,8 +33,9 @@ class PathHelper {
         fs::path output;
 
         for (std::string str : split) {
-            if (str.find_last_of(".") == std::string::npos)
+            if (str.find_last_of(".") == std::string::npos) {
                 output /= str;
+            }
         }
 
         return output;
