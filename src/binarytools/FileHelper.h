@@ -19,8 +19,9 @@ class FileHelper {
     static std::vector<uint8_t> ReadAllBytes(const fs::path& filePath) {
         std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
 
-        if (!file)
+        if (!file) {
             return std::vector<uint8_t>();
+        }
 
         int32_t fileSize = (int32_t)file.tellg();
         file.seekg(0);
@@ -31,7 +32,7 @@ class FileHelper {
             data = new char[fileSize];
             file.read(data, fileSize);
             result = std::vector<uint8_t>(data, data + fileSize);
-        } catch (const std::exception& e) { delete[] data; }
+        } catch (const std::exception& e) { delete[] data; throw e; }
 
         delete[] data;
 
@@ -64,8 +65,9 @@ class FileHelper {
     };
 
     static void WriteAllBytes(const std::string& filePath, const std::vector<char>& data) {
-        if (!Directory::Exists(PathHelper::GetDirectoryName(filePath)))
+        if (!Directory::Exists(PathHelper::GetDirectoryName(filePath))) {
             Directory::MakeDirectory(PathHelper::GetDirectoryName(filePath).string());
+        }
 
         std::ofstream file(filePath, std::ios::binary);
         file.write((char*)data.data(), data.size());

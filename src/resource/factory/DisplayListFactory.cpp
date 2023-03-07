@@ -187,18 +187,19 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
             uint8_t paramInt = 0;
 
-            if (param == "G_MTX_PUSH")
+            if (param == "G_MTX_PUSH") {
                 paramInt = G_MTX_PUSH;
-            else if (param == "G_MTX_NOPUSH")
+            } else if (param == "G_MTX_NOPUSH") {
                 paramInt = G_MTX_NOPUSH;
-            else if (param == "G_MTX_LOAD")
+            } else if (param == "G_MTX_LOAD") {
                 paramInt = G_MTX_LOAD;
-            else if (param == "G_MTX_MUL")
+            } else if (param == "G_MTX_MUL") {
                 paramInt = G_MTX_MUL;
-            else if (param == "G_MTX_MODELVIEW")
+            } else if (param == "G_MTX_MODELVIEW") {
                 paramInt = G_MTX_MODELVIEW;
-            else if (param == "G_MTX_PROJECTION")
+            } else if (param == "G_MTX_PROJECTION") {
                 paramInt = G_MTX_PROJECTION;
+            }
 
             if (fName[0] == '>' && fName[1] == '0' && fName[2] == 'x') {
                 int offset = strtol(fName.c_str() + 1, NULL, 16);
@@ -214,27 +215,33 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
         } else if (childName == "SetCycleType") {
             uint32_t param = 0;
 
-            if (child->Attribute("G_CYC_1CYCLE", 0))
+            if (child->Attribute("G_CYC_1CYCLE", 0)) {
                 param |= G_CYC_1CYCLE;
+            }
 
-            if (child->Attribute("G_CYC_2CYCLE", 0))
+            if (child->Attribute("G_CYC_2CYCLE", 0)) {
                 param |= G_CYC_2CYCLE;
+            }
 
-            if (child->Attribute("G_CYC_COPY", 0))
+            if (child->Attribute("G_CYC_COPY", 0)) {
                 param |= G_CYC_COPY;
+            }
 
-            if (child->Attribute("G_CYC_FILL", 0))
+            if (child->Attribute("G_CYC_FILL", 0)) {
                 param |= G_CYC_FILL;
+            }
 
             g = gsDPSetCycleType(param);
         } else if (childName == "PipelineMode") {
             uint32_t param = 0;
 
-            if (child->Attribute("G_PM_1PRIMITIVE", 0))
+            if (child->Attribute("G_PM_1PRIMITIVE", 0)) {
                 param |= G_PM_1PRIMITIVE;
+            }
 
-            if (child->Attribute("G_PM_NPRIMITIVE", 0))
+            if (child->Attribute("G_PM_NPRIMITIVE", 0)) {
                 param |= G_PM_NPRIMITIVE;
+            }
 
             g = gsDPPipelineMode(param);
         } else if (childName == "TileSync") {
@@ -251,12 +258,13 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             std::string mode = child->Attribute("Mode");
             uint32_t modeVal = 0;
 
-            if (mode == "G_TT_NONE")
+            if (mode == "G_TT_NONE") {
                 modeVal = G_TT_NONE;
-            else if (mode == "G_TT_RGBA16")
+            } else if (mode == "G_TT_RGBA16") {
                 modeVal = G_TT_RGBA16;
-            else if (mode == "G_TT_IA16")
+            } else if (mode == "G_TT_IA16") {
                 modeVal = G_TT_IA16;
+            }
 
             g = gsDPSetTextureLUT(modeVal);
         } else if (childName == "LoadTLUTCmd") {
@@ -334,33 +342,34 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             std::string fmt = child->Attribute("Format");
             uint32_t fmtVal = G_IM_FMT_RGBA;
 
-            if (fmt == "G_IM_FMT_I")
+            if (fmt == "G_IM_FMT_I") {
                 fmtVal = G_IM_FMT_I;
-            else if (fmt == "G_IM_FMT_IA")
+            } else if (fmt == "G_IM_FMT_IA") {
                 fmtVal = G_IM_FMT_IA;
-            else if (fmt == "G_IM_FMT_CI")
+            } else if (fmt == "G_IM_FMT_CI") {
                 fmtVal = G_IM_FMT_CI;
-            else if (fmt == "G_IM_FMT_YUV")
+            } else if (fmt == "G_IM_FMT_YUV") {
                 fmtVal = G_IM_FMT_YUV;
-            else if (fmt == "G_IM_FMT_RGBA")
+            } else if (fmt == "G_IM_FMT_RGBA") {
                 fmtVal = G_IM_FMT_RGBA;
+            }
 
             std::string siz = child->Attribute("Size");
             uint32_t sizVal = G_IM_SIZ_32b;
 
-            if (siz == "G_IM_SIZ_8b_LOAD_BLOCK")
+            if (siz == "G_IM_SIZ_8b_LOAD_BLOCK") {
                 sizVal = G_IM_SIZ_8b_LOAD_BLOCK;
-            else if (siz == "G_IM_SIZ_4b")
+            } else if (siz == "G_IM_SIZ_4b") {
                 sizVal = G_IM_SIZ_4b;
-            else if (siz == "G_IM_SIZ_8b")
+            } else if (siz == "G_IM_SIZ_8b") {
                 sizVal = G_IM_SIZ_8b;
-            else if (siz == "G_IM_SIZ_16b" || siz == "G_IM_SIZ_16b_LOAD_BLOCK")
+            } else if (siz == "G_IM_SIZ_16b" || siz == "G_IM_SIZ_16b_LOAD_BLOCK") {
                 sizVal = G_IM_SIZ_16b;
-            else if (siz == "G_IM_SIZ_32b")
+            } else if (siz == "G_IM_SIZ_32b") {
                 sizVal = G_IM_SIZ_32b;
-            else if (siz == "G_IM_SIZ_DD")
+            } else if (siz == "G_IM_SIZ_DD") {
                 sizVal = G_IM_SIZ_DD;
-            else {
+            } else {
                 int bp = 0;
             }
 
@@ -397,33 +406,34 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             std::string fmt = child->Attribute("Format");
             uint32_t fmtVal = G_IM_FMT_RGBA;
 
-            if (fmt == "G_IM_FMT_I")
+            if (fmt == "G_IM_FMT_I") {
                 fmtVal = G_IM_FMT_I;
-            else if (fmt == "G_IM_FMT_IA")
+            } else if (fmt == "G_IM_FMT_IA") {
                 fmtVal = G_IM_FMT_IA;
-            else if (fmt == "G_IM_FMT_CI")
+            } else if (fmt == "G_IM_FMT_CI") {
                 fmtVal = G_IM_FMT_CI;
-            else if (fmt == "G_IM_FMT_YUV")
+            } else if (fmt == "G_IM_FMT_YUV") {
                 fmtVal = G_IM_FMT_YUV;
-            else if (fmt == "G_IM_FMT_RGBA")
+            } else if (fmt == "G_IM_FMT_RGBA") {
                 fmtVal = G_IM_FMT_RGBA;
+            }
 
             std::string siz = child->Attribute("Size");
             uint32_t sizVal = G_IM_SIZ_32b;
 
-            if (siz == "G_IM_SIZ_8b_LOAD_BLOCK")
+            if (siz == "G_IM_SIZ_8b_LOAD_BLOCK") {
                 sizVal = G_IM_SIZ_8b_LOAD_BLOCK;
-            else if (siz == "G_IM_SIZ_4b")
+            } else if (siz == "G_IM_SIZ_4b") {
                 sizVal = G_IM_SIZ_4b;
-            else if (siz == "G_IM_SIZ_8b")
+            } else if (siz == "G_IM_SIZ_8b") {
                 sizVal = G_IM_SIZ_8b;
-            else if (siz == "G_IM_SIZ_16b" || siz == "G_IM_SIZ_16b_LOAD_BLOCK")
+            } else if (siz == "G_IM_SIZ_16b" || siz == "G_IM_SIZ_16b_LOAD_BLOCK") {
                 sizVal = G_IM_SIZ_16b;
-            else if (siz == "G_IM_SIZ_32b")
+            } else if (siz == "G_IM_SIZ_32b") {
                 sizVal = G_IM_SIZ_32b;
-            else if (siz == "G_IM_SIZ_DD")
+            } else if (siz == "G_IM_SIZ_DD") {
                 sizVal = G_IM_SIZ_DD;
-            else {
+            } else {
                 int bp = 0;
             }
 
@@ -432,29 +442,37 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             uint32_t cmt0Val = 0;
             uint32_t cmt1Val = 0;
 
-            if (cms0 == "G_TX_MIRROR")
+            if (cms0 == "G_TX_MIRROR") {
                 cms0Val = G_TX_MIRROR;
+            }
 
-            if (cms0 == "G_TX_CLAMP")
+            if (cms0 == "G_TX_CLAMP") {
                 cms0Val = G_TX_CLAMP;
+            }
 
-            if (cms1 == "G_TX_MIRROR")
+            if (cms1 == "G_TX_MIRROR") {
                 cms1Val = G_TX_MIRROR;
+            }
 
-            if (cms1 == "G_TX_CLAMP")
+            if (cms1 == "G_TX_CLAMP") {
                 cms1Val = G_TX_CLAMP;
+            }
 
-            if (cmt0 == "G_TX_MIRROR")
+            if (cmt0 == "G_TX_MIRROR") {
                 cmt0Val = G_TX_MIRROR;
+            }
 
-            if (cmt0 == "G_TX_CLAMP")
+            if (cmt0 == "G_TX_CLAMP") {
                 cmt0Val = G_TX_CLAMP;
+            }
 
-            if (cmt1 == "G_TX_MIRROR")
+            if (cmt1 == "G_TX_MIRROR") {
                 cmt1Val = G_TX_MIRROR;
+            }
 
-            if (cmt1 == "G_TX_CLAMP")
+            if (cmt1 == "G_TX_CLAMP") {
                 cmt1Val = G_TX_CLAMP;
+            }
 
             g = gsDPSetTile(fmtVal, sizVal, line, tmem, tile, palette, cmt0Val | cmt1Val, maskT, shiftT,
                             cms0Val | cms1Val, maskS, shiftS);
@@ -473,203 +491,268 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             uint32_t data = 0;
             uint32_t cmdVal = 0;
 
-            if (cmdStr == "G_SETOTHERMODE_H")
+            if (cmdStr == "G_SETOTHERMODE_H") {
                 cmdVal = G_SETOTHERMODE_H;
-            else if (cmdStr == "G_SETOTHERMODE_L")
+            } else if (cmdStr == "G_SETOTHERMODE_L") {
                 cmdVal = G_SETOTHERMODE_L;
+            }
 
             // OTRTODO: There are so many more of these we haven't added in yet...
-            if (child->Attribute("G_AD_PATTERN", 0))
+            if (child->Attribute("G_AD_PATTERN", 0)) {
                 data |= G_AD_PATTERN;
+            }
 
-            if (child->Attribute("G_AD_NOTPATTERN", 0))
+            if (child->Attribute("G_AD_NOTPATTERN", 0)) {
                 data |= G_AD_NOTPATTERN;
+            }
 
-            if (child->Attribute("G_AD_DISABLE", 0))
+            if (child->Attribute("G_AD_DISABLE", 0)) {
                 data |= G_AD_DISABLE;
+            }
 
-            if (child->Attribute("G_AD_NOISE", 0))
+            if (child->Attribute("G_AD_NOISE", 0)) {
                 data |= G_AD_NOISE;
+            }
 
-            if (child->Attribute("G_CD_MAGICSQ", 0))
+            if (child->Attribute("G_CD_MAGICSQ", 0)) {
                 data |= G_CD_MAGICSQ;
+            }
 
-            if (child->Attribute("G_CD_BAYER", 0))
+            if (child->Attribute("G_CD_BAYER", 0)) {
                 data |= G_CD_BAYER;
+            }
 
-            if (child->Attribute("G_CD_NOISE", 0))
+            if (child->Attribute("G_CD_NOISE", 0)) {
                 data |= G_CD_NOISE;
+            }
 
-            if (child->Attribute("G_CK_NONE", 0))
+            if (child->Attribute("G_CK_NONE", 0)) {
                 data |= G_CK_NONE;
+            }
 
-            if (child->Attribute("G_CK_KEY", 0))
+            if (child->Attribute("G_CK_KEY", 0)) {
                 data |= G_CK_KEY;
+            }
 
-            if (child->Attribute("G_TC_CONV", 0))
+            if (child->Attribute("G_TC_CONV", 0)) {
                 data |= G_TC_CONV;
+            }
 
-            if (child->Attribute("G_TC_FILTCONV", 0))
+            if (child->Attribute("G_TC_FILTCONV", 0)) {
                 data |= G_TC_FILTCONV;
+            }
 
-            if (child->Attribute("G_TC_FILT", 0))
+            if (child->Attribute("G_TC_FILT", 0)) {
                 data |= G_TC_FILT;
+            }
 
-            if (child->Attribute("G_TF_POINT", 0))
+            if (child->Attribute("G_TF_POINT", 0)) {
                 data |= G_TF_POINT;
+            }
 
-            if (child->Attribute("G_TF_AVERAGE", 0))
+            if (child->Attribute("G_TF_AVERAGE", 0)) {
                 data |= G_TF_AVERAGE;
+            }
 
-            if (child->Attribute("G_TF_BILERP", 0))
+            if (child->Attribute("G_TF_BILERP", 0)) {
                 data |= G_TF_BILERP;
+            }
 
-            if (child->Attribute("G_TL_TILE", 0))
+            if (child->Attribute("G_TL_TILE", 0)) {
                 data |= G_TL_TILE;
+            }
 
-            if (child->Attribute("G_TL_LOD", 0))
+            if (child->Attribute("G_TL_LOD", 0)) {
                 data |= G_TL_LOD;
+            }
 
-            if (child->Attribute("G_TD_CLAMP", 0))
+            if (child->Attribute("G_TD_CLAMP", 0)) {
                 data |= G_TD_CLAMP;
+            }
 
-            if (child->Attribute("G_TD_SHARPEN", 0))
+            if (child->Attribute("G_TD_SHARPEN", 0)) {
                 data |= G_TD_SHARPEN;
+            }
 
-            if (child->Attribute("G_TD_DETAIL", 0))
+            if (child->Attribute("G_TD_DETAIL", 0)) {
                 data |= G_TD_DETAIL;
+            }
 
-            if (child->Attribute("G_TP_NONE", 0))
+            if (child->Attribute("G_TP_NONE", 0)) {
                 data |= G_TP_NONE;
+            }
 
-            if (child->Attribute("G_TP_PERSP", 0))
+            if (child->Attribute("G_TP_PERSP", 0)) {
                 data |= G_TP_PERSP;
+            }
 
-            if (child->Attribute("G_CYC_1CYCLE", 0))
+            if (child->Attribute("G_CYC_1CYCLE", 0)) {
                 data |= G_CYC_1CYCLE;
+            }
 
-            if (child->Attribute("G_CYC_COPY", 0))
+            if (child->Attribute("G_CYC_COPY", 0)) {
                 data |= G_CYC_COPY;
+            }
 
-            if (child->Attribute("G_CYC_FILL", 0))
+            if (child->Attribute("G_CYC_FILL", 0)) {
                 data |= G_CYC_FILL;
+            }
 
-            if (child->Attribute("G_CYC_2CYCLE", 0))
+            if (child->Attribute("G_CYC_2CYCLE", 0)) {
                 data |= G_CYC_2CYCLE;
+            }
 
-            if (child->Attribute("G_PM_1PRIMITIVE", 0))
+            if (child->Attribute("G_PM_1PRIMITIVE", 0)) {
                 data |= G_PM_1PRIMITIVE;
+            }
 
-            if (child->Attribute("G_PM_NPRIMITIVE", 0))
+            if (child->Attribute("G_PM_NPRIMITIVE", 0)) {
                 data |= G_PM_NPRIMITIVE;
+            }
 
-            if (child->Attribute("G_RM_FOG_SHADE_A", 0))
+            if (child->Attribute("G_RM_FOG_SHADE_A", 0)) {
                 data |= G_RM_FOG_SHADE_A;
+            }
 
-            if (child->Attribute("G_RM_FOG_PRIM_A", 0))
+            if (child->Attribute("G_RM_FOG_PRIM_A", 0)) {
                 data |= G_RM_FOG_PRIM_A;
+            }
 
-            if (child->Attribute("G_RM_PASS", 0))
+            if (child->Attribute("G_RM_PASS", 0)) {
                 data |= G_RM_PASS;
+            }
 
-            if (child->Attribute("G_ZS_PIXEL", 0))
+            if (child->Attribute("G_ZS_PIXEL", 0)) {
                 data |= G_ZS_PIXEL;
+            }
 
-            if (child->Attribute("G_ZS_PRIM", 0))
+            if (child->Attribute("G_ZS_PRIM", 0)) {
                 data |= G_ZS_PRIM;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_SURF", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_SURF", 0)) {
                 data |= G_RM_AA_ZB_OPA_SURF;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_SURF2", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_SURF2", 0)) {
                 data |= G_RM_AA_ZB_OPA_SURF2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_SURF2", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_SURF2", 0)) {
                 data |= G_RM_AA_ZB_OPA_SURF2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_SURF", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_SURF", 0)) {
                 data |= G_RM_AA_ZB_XLU_SURF;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_SURF2", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_SURF2", 0)) {
                 data |= G_RM_AA_ZB_XLU_SURF2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_DECAL", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_DECAL", 0)) {
                 data |= G_RM_AA_ZB_OPA_DECAL;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_DECAL2", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_DECAL2", 0)) {
                 data |= G_RM_AA_ZB_OPA_DECAL2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_DECAL", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_DECAL", 0)) {
                 data |= G_RM_AA_ZB_XLU_DECAL;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_DECAL2", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_DECAL2", 0)) {
                 data |= G_RM_AA_ZB_XLU_DECAL2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_INTER", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_INTER", 0)) {
                 data |= G_RM_AA_ZB_OPA_INTER;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_INTER2", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_INTER2", 0)) {
                 data |= G_RM_AA_ZB_OPA_INTER2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_INTER", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_INTER", 0)) {
                 data |= G_RM_AA_ZB_XLU_INTER;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_INTER2", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_INTER2", 0)) {
                 data |= G_RM_AA_ZB_XLU_INTER2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_LINE", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_LINE", 0)) {
                 data |= G_RM_AA_ZB_XLU_LINE;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_XLU_LINE2", 0))
+            if (child->Attribute("G_RM_AA_ZB_XLU_LINE2", 0)) {
                 data |= G_RM_AA_ZB_XLU_LINE2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_DEC_LINE", 0))
+            if (child->Attribute("G_RM_AA_ZB_DEC_LINE", 0)) {
                 data |= G_RM_AA_ZB_DEC_LINE;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_DEC_LINE2", 0))
+            if (child->Attribute("G_RM_AA_ZB_DEC_LINE2", 0)) {
                 data |= G_RM_AA_ZB_DEC_LINE2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_TEX_EDGE", 0))
+            if (child->Attribute("G_RM_AA_ZB_TEX_EDGE", 0)) {
                 data |= G_RM_AA_ZB_TEX_EDGE;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_TEX_EDGE2", 0))
+            if (child->Attribute("G_RM_AA_ZB_TEX_EDGE2", 0)) {
                 data |= G_RM_AA_ZB_TEX_EDGE2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_TEX_INTER", 0))
+            if (child->Attribute("G_RM_AA_ZB_TEX_INTER", 0)) {
                 data |= G_RM_AA_ZB_TEX_INTER;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_TEX_INTER2", 0))
+            if (child->Attribute("G_RM_AA_ZB_TEX_INTER2", 0)) {
                 data |= G_RM_AA_ZB_TEX_INTER2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_SUB_SURF", 0))
+            if (child->Attribute("G_RM_AA_ZB_SUB_SURF", 0)) {
                 data |= G_RM_AA_ZB_SUB_SURF;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_SUB_SURF2", 0))
+            if (child->Attribute("G_RM_AA_ZB_SUB_SURF2", 0)) {
                 data |= G_RM_AA_ZB_SUB_SURF2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_PCL_SURF", 0))
+            if (child->Attribute("G_RM_AA_ZB_PCL_SURF", 0)) {
                 data |= G_RM_AA_ZB_PCL_SURF;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_PCL_SURF2", 0))
+            if (child->Attribute("G_RM_AA_ZB_PCL_SURF2", 0)) {
                 data |= G_RM_AA_ZB_PCL_SURF2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_TERR", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_TERR", 0)) {
                 data |= G_RM_AA_ZB_OPA_TERR;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_OPA_TERR2", 0))
+            if (child->Attribute("G_RM_AA_ZB_OPA_TERR2", 0)) {
                 data |= G_RM_AA_ZB_OPA_TERR2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_TEX_TERR", 0))
+            if (child->Attribute("G_RM_AA_ZB_TEX_TERR", 0)) {
                 data |= G_RM_AA_ZB_TEX_TERR;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_TEX_TERR2", 0))
+            if (child->Attribute("G_RM_AA_ZB_TEX_TERR2", 0)) {
                 data |= G_RM_AA_ZB_TEX_TERR2;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_SUB_TERR", 0))
+            if (child->Attribute("G_RM_AA_ZB_SUB_TERR", 0)) {
                 data |= G_RM_AA_ZB_SUB_TERR;
+            }
 
-            if (child->Attribute("G_RM_AA_ZB_SUB_TERR2", 0))
+            if (child->Attribute("G_RM_AA_ZB_SUB_TERR2", 0)) {
                 data |= G_RM_AA_ZB_SUB_TERR2;
+            }
 
             g = gsSPSetOtherMode(cmdVal, sft, length, data);
         } else if (childName == "LoadTextureBlock") {
@@ -684,29 +767,37 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             uint32_t cms = 0;
             uint32_t cmt = 0;
 
-            if (child->Attribute("CMS_TXMirror", 0))
+            if (child->Attribute("CMS_TXMirror", 0)) {
                 cms |= G_TX_MIRROR;
+            }
 
-            if (child->Attribute("CMS_TXNoMirror", 0))
+            if (child->Attribute("CMS_TXNoMirror", 0)) {
                 cms |= G_TX_NOMIRROR;
+            }
 
-            if (child->Attribute("CMS_TXWrap", 0))
+            if (child->Attribute("CMS_TXWrap", 0)) {
                 cms |= G_TX_WRAP;
+            }
 
-            if (child->Attribute("CMS_TXClamp", 0))
+            if (child->Attribute("CMS_TXClamp", 0)) {
                 cms |= G_TX_CLAMP;
+            }
 
-            if (child->Attribute("CMT_TXMirror", 0))
+            if (child->Attribute("CMT_TXMirror", 0)) {
                 cmt |= G_TX_MIRROR;
+            }
 
-            if (child->Attribute("CMT_TXNoMirror", 0))
+            if (child->Attribute("CMT_TXNoMirror", 0)) {
                 cmt |= G_TX_NOMIRROR;
+            }
 
-            if (child->Attribute("CMT_TXWrap", 0))
+            if (child->Attribute("CMT_TXWrap", 0)) {
                 cmt |= G_TX_WRAP;
+            }
 
-            if (child->Attribute("CMT_TXClamp", 0))
+            if (child->Attribute("CMT_TXClamp", 0)) {
                 cmt |= G_TX_CLAMP;
+            }
 
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
@@ -739,8 +830,9 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
             dl->Instructions.push_back(g);
 
-            for (int j = 1; j < 7; j++)
+            for (int j = 1; j < 7; j++) {
                 dl->Instructions.push_back(g2[j]);
+            }
 
             g = gsDPPipeSync();
         } else if (childName == "EndDisplayList") {
@@ -781,8 +873,9 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                 } break;
             }
 
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < 4; j++) {
                 dl->Instructions.push_back(g2[j]);
+            }
 
         } else if (childName == "JumpToDisplayList") {
             std::string dlPath = (char*)child->Attribute("Path");
@@ -809,43 +902,55 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
         } else if (childName == "ClearGeometryMode" || childName == "SetGeometryMode") {
             uint64_t clearData = 0;
 
-            if (child->Attribute("G_SHADE", 0))
+            if (child->Attribute("G_SHADE", 0)) {
                 clearData |= G_SHADE;
+            }
 
-            if (child->Attribute("G_LIGHTING", 0))
+            if (child->Attribute("G_LIGHTING", 0)) {
                 clearData |= G_LIGHTING;
+            }
 
-            if (child->Attribute("G_SHADING_SMOOTH", 0))
+            if (child->Attribute("G_SHADING_SMOOTH", 0)) {
                 clearData |= G_SHADING_SMOOTH;
+            }
 
-            if (child->Attribute("G_ZBUFFER", 0))
+            if (child->Attribute("G_ZBUFFER", 0)) {
                 clearData |= G_ZBUFFER;
+            }
 
-            if (child->Attribute("G_TEXTURE_GEN", 0))
+            if (child->Attribute("G_TEXTURE_GEN", 0)) {
                 clearData |= G_TEXTURE_GEN;
+            }
 
-            if (child->Attribute("G_TEXTURE_GEN_LINEAR", 0))
+            if (child->Attribute("G_TEXTURE_GEN_LINEAR", 0)) {
                 clearData |= G_TEXTURE_GEN_LINEAR;
+            }
 
-            if (child->Attribute("G_CULL_BACK", 0))
+            if (child->Attribute("G_CULL_BACK", 0)) {
                 clearData |= G_CULL_BACK;
+            }
 
-            if (child->Attribute("G_CULL_FRONT", 0))
+            if (child->Attribute("G_CULL_FRONT", 0)) {
                 clearData |= G_CULL_FRONT;
+            }
 
-            if (child->Attribute("G_CULL_BOTH", 0))
+            if (child->Attribute("G_CULL_BOTH", 0)) {
                 clearData |= G_CULL_BOTH;
+            }
 
-            if (child->Attribute("G_FOG", 0))
+            if (child->Attribute("G_FOG", 0)) {
                 clearData |= G_FOG;
+            }
 
-            if (child->Attribute("G_CLIPPING", 0))
+            if (child->Attribute("G_CLIPPING", 0)) {
                 clearData |= G_CLIPPING;
+            }
 
-            if (childName == "ClearGeometryMode")
+            if (childName == "ClearGeometryMode") {
                 g = gsSPClearGeometryMode(clearData);
-            else
+            } else {
                 g = gsSPSetGeometryMode(clearData);
+            }
         } else if (childName == "LightColor") {
             int n = child->IntAttribute("N");
             uint32_t col = child->IntAttribute("Col");
@@ -887,8 +992,9 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                 } break;
             }
 
-            for (int j = 0; j < 2; j++)
+            for (int j = 0; j < 2; j++) {
                 dl->Instructions.push_back(g2[j]);
+            }
 
         } else if (childName == "SetRenderMode") {
             std::string rawMode1 = child->Attribute("Mode1");
@@ -970,8 +1076,9 @@ uint32_t DisplayListFactoryV0::GetCombineLERPValue(std::string valStr) {
                           G_ACMUX_PRIM_LOD_FRAC };
 
     for (int i = 0; i < ARRAY_COUNT(values); i++) {
-        if (valStr == strings[i])
+        if (valStr == strings[i]) {
             return values[i];
+        }
     }
 
     return G_CCMUX_1;

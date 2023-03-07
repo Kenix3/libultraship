@@ -197,8 +197,9 @@ std::string Ship::BinaryReader::ReadCString() {
 
     unsigned char c = 0;
     do {
-        if (mStream->GetBaseAddress() >= mStream->GetLength())
+        if (mStream->GetBaseAddress() >= mStream->GetLength()) {
             break;
+        }
 
         c = ReadChar();
         res += c;
