@@ -32,7 +32,10 @@ class FileHelper {
             data = new char[fileSize];
             file.read(data, fileSize);
             result = std::vector<uint8_t>(data, data + fileSize);
-        } catch (const std::exception& e) { delete[] data; throw e; }
+        } catch (const std::exception& e) {
+            delete[] data;
+            throw e;
+        }
 
         delete[] data;
 
