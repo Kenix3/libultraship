@@ -2637,7 +2637,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), imgData, texFlags, rawTexMetdata, (void*)i);
                 break;
             }
-            case G_SETTIMG_OTR: {
+            case G_SETTIMG_OTR_HASH: {
                 uintptr_t addr = cmd->words.w1;
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
@@ -2657,7 +2657,7 @@ static void gfx_run_dl(Gfx* cmd) {
 #if _DEBUG && 0
                 tex = reinterpret_cast<char*>(texture->imageData);
                 ResourceMgr_GetNameByCRC(hash, fileName);
-                printf("G_SETTIMG_OTR: %s, %08X\n", fileName, hash);
+                printf("G_SETTIMG_OTR_HASH: %s, %08X\n", fileName, hash);
 #else
                 char* tex = NULL;
 #endif
@@ -2695,7 +2695,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 cmd++;
                 break;
             }
-            case G_SETTIMG_OTR2: {
+            case G_SETTIMG_OTR_FILEPATH: {
                 fileName = (char*)cmd->words.w1;
 
                 uint32_t texFlags = 0;

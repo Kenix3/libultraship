@@ -160,12 +160,12 @@
 #define G_TEXRECT 0xe4         /* -28 */
 
 // CUSTOM OTR COMMANDS
-#define G_SETTIMG_OTR 0x20
+#define G_SETTIMG_OTR_HASH 0x20
 #define G_SETFB 0x21
 #define G_RESETFB 0x22
 #define G_SETTIMG_FB 0x23
 #define G_VTX_OTR_FILEPATH 0x24
-#define G_SETTIMG_OTR2 0x25
+#define G_SETTIMG_OTR_FILEPATH 0x25
 #define G_TRI1_OTR 0x26
 #define G_DL_OTR_FILEPATH 0x27
 #define G_PUSHCD 0x28
