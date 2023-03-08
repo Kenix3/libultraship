@@ -2243,18 +2243,16 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
-    if ((data & 1) != 1) {
-        if (gfx_check_image_signature((char*)data) == 1) {
-            Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
-            texFlags = tex->Flags;
-            rawTexMetadata.width = tex->Width;
-            rawTexMetadata.height = tex->Height;
-            rawTexMetadata.h_byte_scale = tex->HByteScale;
-            rawTexMetadata.v_pixel_scale = tex->VPixelScale;
-            rawTexMetadata.type = tex->Type;
-            rawTexMetadata.name = std::string((char*)data);
-            data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
-        }
+    if ((bool) gfx_check_image_signature((char*)data)) {
+        Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
+        texFlags = tex->Flags;
+        rawTexMetadata.width = tex->Width;
+        rawTexMetadata.height = tex->Height;
+        rawTexMetadata.h_byte_scale = tex->HByteScale;
+        rawTexMetadata.v_pixel_scale = tex->VPixelScale;
+        rawTexMetadata.type = tex->Type;
+        rawTexMetadata.name = std::string((char*)data);
+        data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
     }
 
     SUPPORT_CHECK(bg->b.imageSiz == G_IM_SIZ_16b);
