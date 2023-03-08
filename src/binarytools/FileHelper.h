@@ -54,7 +54,7 @@ class FileHelper {
             memset(data, 0, fileSize + 1);
             file.read(data, fileSize);
             str = std::string((const char*)data);
-        } catch (const std::exception& e) { 
+        } catch (const std::exception& e) {
             delete[] data;
             throw e;
         }
