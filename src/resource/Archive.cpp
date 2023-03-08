@@ -9,6 +9,7 @@
 #include <filesystem>
 #include "binarytools/BinaryReader.h"
 #include "binarytools/MemoryStream.h"
+#include "binarytools/FileHelper.h"
 
 #ifdef __SWITCH__
 #include "port/switch/SwitchImpl.h"
@@ -75,32 +76,48 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
         mpqHandle = mMainMpq;
     }
 
-    bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
+#if _DEBUG
+    if (FileHelper::Exists("TestData/" + filePath)) {
+        auto byteData = FileHelper::ReadAllBytes("TestData/" + filePath);
+        fileToLoad->Buffer.resize(byteData.size() + 1);
+        memcpy(fileToLoad->Buffer.data(), byteData.data(), byteData.size() + 1);
 
-    if (!attempt) {
-        SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
-        return nullptr;
-    }
+        // Throw in a null terminator at the end incase we're loading a text file...
+        fileToLoad->Buffer[byteData.size()] = '\0';
 
-    DWORD fileSize = SFileGetFileSize(fileHandle, 0);
-    fileToLoad->Buffer.resize(fileSize);
-    DWORD countBytes;
+        fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
+        fileToLoad->IsLoaded = true;
+    } else {
+#endif
+        bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
 
-    if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
-        SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
-        if (!SFileCloseFile(fileHandle)) {
-            SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
-                         filePath, mMainPath);
+        if (!attempt) {
+            SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
+            return nullptr;
         }
-        return nullptr;
-    }
 
-    if (!SFileCloseFile(fileHandle)) {
-        SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
-    }
+        DWORD fileSize = SFileGetFileSize(fileHandle, 0);
+        fileToLoad->Buffer.resize(fileSize);
+        DWORD countBytes;
 
-    fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
-    fileToLoad->IsLoaded = true;
+        if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
+            SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
+            if (!SFileCloseFile(fileHandle)) {
+                SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
+                             filePath, mMainPath);
+            }
+            return nullptr;
+        }
+
+        if (!SFileCloseFile(fileHandle)) {
+            SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
+        }
+
+        fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
+        fileToLoad->IsLoaded = true;
+#if _DEBUG
+    }
+#endif
 
     return fileToLoad;
 }
@@ -183,39 +200,42 @@ bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath)
 std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) const {
     auto fileList = std::vector<SFILE_FIND_DATA>();
     SFILE_FIND_DATA findContext;
-    HANDLE hFind;
+    for (auto& path : mMpqHandles) {
+        HANDLE hFind;
 
-    hFind = SFileFindFirstFile(mMainMpq, searchMask.c_str(), &findContext, nullptr);
-    // if (hFind && GetLastError() != ERROR_NO_MORE_FILES) {
-    if (hFind != nullptr) {
-        fileList.push_back(findContext);
+        hFind = SFileFindFirstFile(path.second, searchMask.c_str(), &findContext, nullptr);
+        // if (hFind && GetLastError() != ERROR_NO_MORE_FILES) {
+        if (hFind != nullptr) {
+            fileList.push_back(findContext);
 
-        bool fileFound;
-        do {
-            fileFound = SFileFindNextFile(hFind, &findContext);
+            bool fileFound;
+            do {
+                fileFound = SFileFindNextFile(hFind, &findContext);
 
-            if (fileFound) {
-                fileList.push_back(findContext);
-            } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
-            // else if (!fileFound)
-            {
-                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask,
-                             mMainPath);
-                if (!SListFileFindClose(hFind)) {
-                    SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
-                                 searchMask, mMainPath);
+                if (fileFound) {
+                    fileList.push_back(findContext);
+                } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
+                // else if (!fileFound)
+                {
+                    SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask,
+                                 mMainPath);
+                    if (!SListFileFindClose(hFind)) {
+                        SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
+                                     searchMask, mMainPath);
+                    }
+                    return fileList;
                 }
-                return fileList;
-            }
-        } while (fileFound);
-    } else if (GetLastError() != ERROR_NO_MORE_FILES) {
-        SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
-        return fileList;
-    }
+            } while (fileFound);
+        } else if (GetLastError() != ERROR_NO_MORE_FILES) {
+            SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
+            return fileList;
+        }
 
-    if (hFind != nullptr) {
-        if (!SFileFindClose(hFind)) {
-            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask, mMainPath);
+        if (hFind != nullptr) {
+            if (!SFileFindClose(hFind)) {
+                SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask,
+                             mMainPath);
+            }
         }
     }
 

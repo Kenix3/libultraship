@@ -7,6 +7,7 @@
 
 #ifdef __cplusplus
 #include "resource/Archive.h"
+#include "resource/type/Texture.h"
 #include "resource/Resource.h"
 
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now);

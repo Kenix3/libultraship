@@ -160,12 +160,18 @@
 #define G_TEXRECT 0xe4         /* -28 */
 
 // CUSTOM OTR COMMANDS
-#define G_SETTIMG_OTR 0x20
+#define G_SETTIMG_OTR_HASH 0x20
 #define G_SETFB 0x21
 #define G_RESETFB 0x22
 #define G_SETTIMG_FB 0x23
-#define G_DL_OTR 0x31
-#define G_VTX_OTR 0x32
+#define G_VTX_OTR_FILEPATH 0x24
+#define G_SETTIMG_OTR_FILEPATH 0x25
+#define G_TRI1_OTR 0x26
+#define G_DL_OTR_FILEPATH 0x27
+#define G_PUSHCD 0x28
+#define G_MTX_OTR2 0x29
+#define G_DL_OTR_HASH 0x31
+#define G_VTX_OTR_HASH 0x32
 #define G_MARKER 0x33
 #define G_INVALTEXCACHE 0x34
 #define G_BRANCH_Z_OTR 0x35
@@ -1726,6 +1732,13 @@ typedef union {
     })
 #define gsSPVertex(v, n, v0) \
     { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v) }
+
+#define gsSPVertexOTR2_P1(filePathPtr) \
+    { (_SHIFTL(G_VTX_OTR_FILEPATH, 24, 8), (uintptr_t)(filePathPtr)) }
+
+#define gsSPVertexOTR2_P2(vtxCnt, vtxBufOffset, vtxDataOffset) \
+    { ((uintptr_t)(vtxCnt), (uintptr_t)((vtxBufOffset << 16) | (vtxDataOffset))) }
+
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
 /*
  * F3DEX_GBI: G_VTX GBI format was changed to support 64 vertice.
@@ -1751,11 +1764,16 @@ typedef union {
 #define gsSPViewport(v) gsDma1p(G_MOVEMEM, (v), sizeof(Vp), G_MV_VIEWPORT)
 #endif /* F3DEX_GBI_2 */
 
+#define gsSPPushCD(pkt, dl) gDma1p(pkt, G_PUSHCD, dl, 0, G_DL_PUSH)
 #define __gSPDisplayList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_PUSH)
 #define gsSPDisplayList(dl) gsDma1p(G_DL, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_PUSH)
 
 #define gSPBranchList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchList(dl) gsDma1p(G_DL, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_NOPUSH)
 
 #define gSPSprite2DBase(pkt, s) gDma1p(pkt, G_SPRITE2D_BASE, s, sizeof(uSprite), 0)
 #define gsSPSprite2DBase(s) gsDma1p(G_SPRITE2D_BASE, s, sizeof(uSprite), 0)
@@ -1894,6 +1912,9 @@ typedef union {
     })
 #define gsSP1Triangle(v0, v1, v2, flag) \
     { _SHIFTL(G_TRI1, 24, 8) | __gsSP1Triangle_w1f(v0, v1, v2, flag), 0 }
+
+#define gsSP1TriangleOTR(v0, v1, v2, flag) \
+    { _SHIFTL(G_TRI1_OTR, 24, 8) | __gsSP1Triangle_w1f(v0, v1, v2, flag), 0 }
 
 /***
  ***  Line
@@ -2844,6 +2865,12 @@ typedef union {
                                    G_ACMUX_##Ad1))                                                                 \
     }
 
+#define gsDPSetCombineLERP_NoMacros(a0, b0, c0, d0, Aa0, Ab0, Ac0, Ad0, a1, b1, c1, d1, Aa1, Ab1, Ac1, Ad1) \
+    {                                                                                                       \
+        _SHIFTL(G_SETCOMBINE, 24, 8) | _SHIFTL(GCCc0w0(a0, c0, Aa0, Ac0) | GCCc1w0(a1, c1), 0, 24),         \
+            (unsigned int)(GCCc0w1(b0, d0, Ab0, Ad0) | GCCc1w1(b1, Aa1, Ac1, d1, Ab1, Ad1))                 \
+    }
+
 /*
  * SetCombineMode macros are NOT redunant. It allow the C preprocessor
  * to substitute single parameter which includes commas in the token and
@@ -3009,11 +3036,8 @@ typedef union {
  *  the g*DPLoadBlock macros directly, you will need to handle this
  *  tile manipulation yourself.  RJM.
  */
-#ifdef _HW_VERSION_1
+
 #define G_TX_LDBLK_MAX_TXL 4095
-#else
-#define G_TX_LDBLK_MAX_TXL 2047
-#endif /* _HW_VERSION_1 */
 
 #define TXL2WORDS(txls, b_txl) MAX(1, ((txls) * (b_txl) / 8))
 #define CALC_DXT(width, b_txl) (((1 << G_TX_DXT_FRAC) + TXL2WORDS(width, b_txl) - 1) / TXL2WORDS(width, b_txl))

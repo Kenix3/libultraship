@@ -5,8 +5,6 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-#include "resource/type/Texture.h"
-
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
     return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(name)
                : Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
