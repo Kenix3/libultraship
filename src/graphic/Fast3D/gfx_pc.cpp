@@ -1755,6 +1755,10 @@ static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t t
     rdp.texture_tile[tile].shiftt = shiftt;
     rdp.texture_tile[tile].line_size_bytes = line * 8;
 
+    if (rdp.texture_tile[tile].line_size_bytes > 15000) {
+        int bp = 0;
+    }
+
     rdp.texture_tile[tile].tmem = tmem;
     // rdp.texture_tile[tile].tmem_index = tmem / 256; // tmem is the 64-bit word offset, so 256 words means 2 kB
     rdp.texture_tile[tile].tmem_index =
