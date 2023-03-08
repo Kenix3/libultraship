@@ -2243,7 +2243,7 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
-    if ((bool) gfx_check_image_signature((char*)data)) {
+    if ((bool)gfx_check_image_signature((char*)data)) {
         Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
