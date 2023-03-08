@@ -46,10 +46,19 @@ class FileHelper {
         std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
         int32_t fileSize = (int32_t)file.tellg();
         file.seekg(0);
-        char* data = new char[fileSize + 1];
-        memset(data, 0, fileSize + 1);
-        file.read(data, fileSize);
-        std::string str = std::string((const char*)data);
+        char* data = nullptr;
+        std::string str;
+
+        try {
+            data = new char[fileSize + 1];
+            memset(data, 0, fileSize + 1);
+            file.read(data, fileSize);
+            str = std::string((const char*)data);
+        } catch (const std::exception& e) { 
+            delete[] data;
+            throw e;
+        }
+
         delete[] data;
 
         return str;
