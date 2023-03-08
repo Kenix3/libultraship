@@ -207,6 +207,20 @@ size_t ResourceMgr::DirtyDirectory(const std::string& searchMask) {
     return countDirtied;
 }
 
+size_t ResourceMgr::UnloadDirectory(const std::string& searchMask) {
+    auto fileList = ListFiles(searchMask);
+    size_t countUnloaded = 0;
+
+    for (size_t i = 0; i < fileList->size(); i++) {
+        auto fileName = std::string(fileList->operator[](i));
+
+        size_t count = UnloadResource(fileName);
+        countUnloaded += count;
+    }
+
+    return countUnloaded;
+}
+
 std::shared_ptr<std::vector<std::string>> ResourceMgr::ListFiles(const std::string& searchMask) {
     auto result = std::make_shared<std::vector<std::string>>();
     auto fileList = mArchive->ListFiles(searchMask);
@@ -216,10 +230,6 @@ std::shared_ptr<std::vector<std::string>> ResourceMgr::ListFiles(const std::stri
     }
 
     return result;
-}
-
-void ResourceMgr::InvalidateResourceCache() {
-    mResourceCache.clear();
 }
 
 const std::string* ResourceMgr::HashToString(uint64_t hash) {

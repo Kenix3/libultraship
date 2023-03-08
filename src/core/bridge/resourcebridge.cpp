@@ -168,21 +168,22 @@ void DirtyResourceByCrc(uint64_t crc) {
     }
 }
 
-size_t UnloadResourceByName(const char* name) {
-    return Ship::Window::GetInstance()->GetResourceManager()->UnloadResource(name);
+void UnloadResourceByName(const char* name) {
+    Ship::Window::GetInstance()->GetResourceManager()->UnloadResource(name);
 }
 
-size_t UnloadResourceByCrc(uint64_t crc) {
-    return UnloadResourceByName(GetResourceNameByCrc(crc));
+void UnloadResourceByCrc(uint64_t crc) {
+    UnloadResourceByName(GetResourceNameByCrc(crc));
 }
 
 void UnloadAllResources() {
-    return Ship::Window::GetInstance()->GetResourceManager()->UnloadAllResources();
+    Ship::Window::GetInstance()->GetResourceManager()->UnloadAllResources();
 }
 
-void ClearResourceCache(void) {
-    Ship::Window::GetInstance()->GetResourceManager()->InvalidateResourceCache();
+void UnloadResourceDirectory(const char* name) {
+    Ship::Window::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
+
 
 void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now) {
     auto res = LoadResource(name, now);

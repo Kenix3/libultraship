@@ -31,7 +31,6 @@ class ResourceMgr {
     std::shared_ptr<Archive> GetArchive();
     std::shared_ptr<Window> GetContext();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
-    void InvalidateResourceCache();
     std::vector<uint32_t> GetGameVersions();
     void PushGameVersion(uint32_t newGameVersion);
     std::shared_future<std::shared_ptr<OtrFile>> LoadFileAsync(const std::string& filePath);
@@ -46,6 +45,7 @@ class ResourceMgr {
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
     CacheDirectoryAsync(const std::string& searchMask);
     size_t DirtyDirectory(const std::string& searchMask);
+    size_t UnloadDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask);
     bool OtrSignatureCheck(const char* fileName);
     const std::string* HashToString(uint64_t hash);
