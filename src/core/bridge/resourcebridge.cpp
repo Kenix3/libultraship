@@ -184,7 +184,6 @@ void UnloadResourceDirectory(const char* name) {
     Ship::Window::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
 
-
 void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now) {
     auto res = LoadResource(name, now);
 
