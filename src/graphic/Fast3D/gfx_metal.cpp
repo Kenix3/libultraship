@@ -237,6 +237,10 @@ static const char* gfx_metal_get_name() {
     return "Metal";
 }
 
+static int gfx_metal_get_max_texture_size() {
+    return mctx.device->supportsFamily(MTL::GPUFamilyApple3) ? 16384 : 8192;
+}
+
 // Forward declare this method
 int gfx_metal_create_framebuffer(void);
 
@@ -1023,6 +1027,7 @@ ImTextureID gfx_metal_get_texture_by_id(int fb_id) {
 }
 
 struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
+                                         gfx_metal_get_max_texture_size,
                                          gfx_metal_get_clip_parameters,
                                          gfx_metal_unload_shader,
                                          gfx_metal_load_shader,

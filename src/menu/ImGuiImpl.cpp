@@ -497,17 +497,17 @@ void Init(WindowImpl windowImpl) {
             setCursorVisibility(menuBarOpen);
         }
 
-        LoadTexture("Game_Icon", "assets/ship_of_harkinian/icons/gSohIcon.png");
-        LoadTexture("A-Btn", "assets/ship_of_harkinian/buttons/ABtn.png");
-        LoadTexture("B-Btn", "assets/ship_of_harkinian/buttons/BBtn.png");
-        LoadTexture("L-Btn", "assets/ship_of_harkinian/buttons/LBtn.png");
-        LoadTexture("R-Btn", "assets/ship_of_harkinian/buttons/RBtn.png");
-        LoadTexture("Z-Btn", "assets/ship_of_harkinian/buttons/ZBtn.png");
-        LoadTexture("Start-Btn", "assets/ship_of_harkinian/buttons/StartBtn.png");
-        LoadTexture("C-Left", "assets/ship_of_harkinian/buttons/CLeft.png");
-        LoadTexture("C-Right", "assets/ship_of_harkinian/buttons/CRight.png");
-        LoadTexture("C-Up", "assets/ship_of_harkinian/buttons/CUp.png");
-        LoadTexture("C-Down", "assets/ship_of_harkinian/buttons/CDown.png");
+        LoadTexture("Game_Icon", "textures/icons/gSohIcon.png");
+        LoadTexture("A-Btn", "textures/buttons/ABtn.png");
+        LoadTexture("B-Btn", "textures/buttons/BBtn.png");
+        LoadTexture("L-Btn", "textures/buttons/LBtn.png");
+        LoadTexture("R-Btn", "textures/buttons/RBtn.png");
+        LoadTexture("Z-Btn", "textures/buttons/ZBtn.png");
+        LoadTexture("Start-Btn", "textures/buttons/StartBtn.png");
+        LoadTexture("C-Left", "textures/buttons/CLeft.png");
+        LoadTexture("C-Right", "textures/buttons/CRight.png");
+        LoadTexture("C-Up", "textures/buttons/CUp.png");
+        LoadTexture("C-Down", "textures/buttons/CDown.png");
     });
 
     Ship::RegisterHook<Ship::ControllerRead>([](OSContPad* cont_pad) { pads = cont_pad; });

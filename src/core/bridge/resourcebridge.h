@@ -7,6 +7,7 @@
 
 #ifdef __cplusplus
 #include "resource/Archive.h"
+#include "resource/type/Texture.h"
 #include "resource/Resource.h"
 
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now);
@@ -33,8 +34,9 @@ void LoadResourceDirectory(const char* name);
 void DirtyResourceDirectory(const char* name);
 void DirtyResourceByName(const char* name);
 void DirtyResourceByCrc(uint64_t crc);
-size_t UnloadResourceByName(const char* name);
-size_t UnloadResourceByCrc(uint64_t crc);
+void UnloadResourceByName(const char* name);
+void UnloadResourceByCrc(uint64_t crc);
+void UnloadResourceDirectory(const char* name);
 void UnloadAllResources();
 void ClearResourceCache(void);
 void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now);
