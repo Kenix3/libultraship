@@ -111,8 +111,8 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
                 SPDLOG_ERROR("Failed to load resource because the file did not load.");
             }
         }
-
-        return result;
     }
+
+    return result;
 }
 } // namespace Ship
