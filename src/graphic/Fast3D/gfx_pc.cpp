@@ -831,10 +831,10 @@ static void import_texture_ci8(int tile) {
         result_line_size *= metadata->h_byte_scale;
     }
 
-    uint32_t width = rdp.texture_tile[tile].line_size_bytes;
-    uint32_t height = size_bytes / rdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = result_line_size;
+    uint32_t height = size_bytes / result_line_size;
 
-    gfx_rapi->upload_texture(rgba32_buf, width, height);
+    gfx_rapi->upload_texture(tex_upload_buffer, width, height);
     // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
@@ -1424,10 +1424,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
         if (clip_parameters.z_is_from_0_to_1) {
             z = (z + w) / 2.0f;
         }
-
-        // if (markerOn) {
-        //     z = 10;
-        //}
 
         buf_vbo[buf_vbo_len++] = v_arr[i]->x;
         buf_vbo[buf_vbo_len++] = clip_parameters.invert_y ? -v_arr[i]->y : v_arr[i]->y;
