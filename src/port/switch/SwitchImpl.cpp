@@ -49,7 +49,7 @@ void Ship::Switch::Exit() {
 }
 
 void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
-    plInitialize(PlServiceType_System);
+    plInitialize(PlServiceType_User);
     static PlFontData stdFontData, extFontData;
 
     PlFontData fonts_std;
