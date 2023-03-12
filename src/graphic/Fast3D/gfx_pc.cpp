@@ -2284,14 +2284,8 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_texture_cache_delete((const uint8_t*)texAddr);
                 }
             } break;
-            case G_NOOP: {
-                uint32_t index = C0(0, 16);
-                uint32_t type = C0(16, 8);
-                if (type == 2) {
-                    const char* str = (const char*)cmd->words.w1;
-                    // printf("%s, %u\n", str, index);
-                }
-            } break;
+            case G_NOOP:
+                break;
             case G_MTX: {
                 uintptr_t mtxAddr = cmd->words.w1;
 
@@ -2458,8 +2452,6 @@ static void gfx_run_dl(Gfx* cmd) {
                     }
                 } else {
                     cmd = (Gfx*)seg_addr(cmd->words.w1);
-                    cmd++;
-                    --cmd; // increase after break
                 }
                 break;
             case G_PUSHCD:
@@ -2865,16 +2857,6 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
         // We cap texture max to 8k, because why would you need more?
         int max_tex_size = min(8096, gfx_rapi->get_max_texture_size());
         tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
-    }
-
-    // Used in the 120 star TAS
-    static uint32_t precomp_shaders[] = { 0x01200200, 0x00000045, 0x00000200, 0x01200a00, 0x00000a00, 0x01a00045,
-                                          0x00000551, 0x01045045, 0x05a00a00, 0x01200045, 0x05045045, 0x01045a00,
-                                          0x01a00a00, 0x0000038d, 0x01081081, 0x0120038d, 0x03200045, 0x03200a00,
-                                          0x01a00a6f, 0x01141045, 0x07a00a00, 0x05200200, 0x03200200, 0x09200200,
-                                          0x0920038d, 0x09200045 };
-    for (size_t i = 0; i < sizeof(precomp_shaders) / sizeof(uint32_t); i++) {
-        // gfx_lookup_or_create_shader_program(precomp_shaders[i]);
     }
 
     Ship::ExecuteHooks<Ship::GfxInit>();
