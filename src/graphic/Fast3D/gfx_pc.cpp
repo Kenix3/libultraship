@@ -2645,7 +2645,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 RawTexMetadata rawTexMetdata = {};
 
                 Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(hash, true)).get();
-                if(texture != nullptr) {
+                if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetdata.width = texture->Width;
                     rawTexMetdata.height = texture->Height;
@@ -2705,7 +2705,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 RawTexMetadata rawTexMetadata = {};
 
                 Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(fileName, true)).get();
-                if(texture != nullptr){
+                if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
                     rawTexMetadata.height = texture->Height;
@@ -2719,7 +2719,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     uint32_t width = C0(0, 10);
 
                     gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata,
-                                            reinterpret_cast<char*>(texture->ImageData));
+                                             reinterpret_cast<char*>(texture->ImageData));
                 } else {
                     SPDLOG_ERROR("G_SETTIMG_OTR_FILEPATH: Texture is null");
                 }
