@@ -2191,18 +2191,16 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
-    if ((data & 1) != 1) {
-        if (gfx_check_image_signature((char*)data) == 1) {
-            Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
-            texFlags = tex->Flags;
-            rawTexMetadata.width = tex->Width;
-            rawTexMetadata.height = tex->Height;
-            rawTexMetadata.h_byte_scale = tex->HByteScale;
-            rawTexMetadata.v_pixel_scale = tex->VPixelScale;
-            rawTexMetadata.type = tex->Type;
-            rawTexMetadata.name = std::string((char*)data);
-            data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
-        }
+    if ((bool)gfx_check_image_signature((char*)data)) {
+        Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
+        texFlags = tex->Flags;
+        rawTexMetadata.width = tex->Width;
+        rawTexMetadata.height = tex->Height;
+        rawTexMetadata.h_byte_scale = tex->HByteScale;
+        rawTexMetadata.v_pixel_scale = tex->VPixelScale;
+        rawTexMetadata.type = tex->Type;
+        rawTexMetadata.name = std::string((char*)data);
+        data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
     }
 
     SUPPORT_CHECK(bg->b.imageSiz == G_IM_SIZ_16b);
@@ -2574,55 +2572,60 @@ static void gfx_run_dl(Gfx* cmd) {
                 uintptr_t addr = cmd->words.w1;
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
+
                 fileName = GetResourceNameByCrc(hash);
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetdata = {};
 
                 Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(hash, true)).get();
-                texFlags = texture->Flags;
-                rawTexMetdata.width = texture->Width;
-                rawTexMetdata.height = texture->Height;
-                rawTexMetdata.h_byte_scale = texture->HByteScale;
-                rawTexMetdata.v_pixel_scale = texture->VPixelScale;
-                rawTexMetdata.type = texture->Type;
-                rawTexMetdata.name = std::string(fileName);
+                if (texture != nullptr) {
+                    texFlags = texture->Flags;
+                    rawTexMetdata.width = texture->Width;
+                    rawTexMetdata.height = texture->Height;
+                    rawTexMetdata.h_byte_scale = texture->HByteScale;
+                    rawTexMetdata.v_pixel_scale = texture->VPixelScale;
+                    rawTexMetdata.type = texture->Type;
+                    rawTexMetdata.name = std::string(fileName);
 
 #if _DEBUG && 0
-                tex = reinterpret_cast<char*>(texture->imageData);
-                ResourceMgr_GetNameByCRC(hash, fileName);
-                printf("G_SETTIMG_OTR_HASH: %s, %08X\n", fileName, hash);
+                    tex = reinterpret_cast<char*>(texture->imageData);
+                    ResourceMgr_GetNameByCRC(hash, fileName);
+                    printf("G_SETTIMG_OTR_HASH: %s, %08X\n", fileName, hash);
 #else
-                char* tex = NULL;
+                    char* tex = NULL;
 #endif
 
-                if (addr != 0) {
-                    tex = (char*)addr;
-                } else {
-                    tex = reinterpret_cast<char*>(texture->ImageData);
-                    if (tex != nullptr) {
-                        cmd--;
-                        uintptr_t oldData = cmd->words.w1;
-                        cmd->words.w1 = (uintptr_t)tex;
+                    if (addr != 0) {
+                        tex = (char*)addr;
+                    } else {
+                        tex = reinterpret_cast<char*>(texture->ImageData);
+                        if (tex != nullptr) {
+                            cmd--;
+                            uintptr_t oldData = cmd->words.w1;
+                            cmd->words.w1 = (uintptr_t)tex;
 
-                        if (ourHash != (uint64_t)-1) {
-                            auto res = LoadResource(ourHash, false);
-                            if (res != nullptr) {
-                                res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, oldData);
+                            if (ourHash != (uint64_t)-1) {
+                                auto res = LoadResource(ourHash, false);
+                                if (res != nullptr) {
+                                    res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, oldData);
+                                }
                             }
+
+                            cmd++;
                         }
-
-                        cmd++;
                     }
-                }
 
-                cmd--;
+                    cmd--;
 
-                uint32_t fmt = C0(21, 3);
-                uint32_t size = C0(19, 2);
-                uint32_t width = C0(0, 10);
+                    uint32_t fmt = C0(21, 3);
+                    uint32_t size = C0(19, 2);
+                    uint32_t width = C0(0, 10);
 
-                if (tex != NULL) {
-                    gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetdata, tex);
+                    if (tex != NULL) {
+                        gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetdata, tex);
+                    }
+                } else {
+                    SPDLOG_ERROR("G_SETTIMG_OTR_HASH: Texture is null");
                 }
 
                 cmd++;
@@ -2635,20 +2638,24 @@ static void gfx_run_dl(Gfx* cmd) {
                 RawTexMetadata rawTexMetadata = {};
 
                 Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(fileName, true)).get();
-                texFlags = texture->Flags;
-                rawTexMetadata.width = texture->Width;
-                rawTexMetadata.height = texture->Height;
-                rawTexMetadata.h_byte_scale = texture->HByteScale;
-                rawTexMetadata.v_pixel_scale = texture->VPixelScale;
-                rawTexMetadata.type = texture->Type;
-                rawTexMetadata.name = std::string(fileName);
+                if (texture != nullptr) {
+                    texFlags = texture->Flags;
+                    rawTexMetadata.width = texture->Width;
+                    rawTexMetadata.height = texture->Height;
+                    rawTexMetadata.h_byte_scale = texture->HByteScale;
+                    rawTexMetadata.v_pixel_scale = texture->VPixelScale;
+                    rawTexMetadata.type = texture->Type;
+                    rawTexMetadata.name = std::string(fileName);
 
-                uint32_t fmt = C0(21, 3);
-                uint32_t size = C0(19, 2);
-                uint32_t width = C0(0, 10);
+                    uint32_t fmt = C0(21, 3);
+                    uint32_t size = C0(19, 2);
+                    uint32_t width = C0(0, 10);
 
-                gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata,
-                                         reinterpret_cast<char*>(texture->ImageData));
+                    gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata,
+                                             reinterpret_cast<char*>(texture->ImageData));
+                } else {
+                    SPDLOG_ERROR("G_SETTIMG_OTR_FILEPATH: Texture is null");
+                }
                 break;
             }
             case G_SETFB: {
