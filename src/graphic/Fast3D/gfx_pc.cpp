@@ -226,21 +226,6 @@ static map<int, FBInfo> framebuffers;
 static set<pair<float, float>> get_pixel_depth_pending;
 static unordered_map<pair<float, float>, uint16_t, hash_pair_ff> get_pixel_depth_cached;
 
-#ifdef _WIN32
-// TODO: Properly implement for MSVC
-static unsigned long get_time(void) {
-    return 0;
-}
-#else
-#include <time.h>
-#include <string>
-static unsigned long get_time(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (unsigned long)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-}
-#endif
-
 static std::string GetPathWithoutFileName(char* filePath) {
     int len = strlen(filePath);
 
@@ -264,20 +249,9 @@ static char* GetPathWithCurrentDir(char* filePath) {
 
 static void gfx_flush(void) {
     if (buf_vbo_len > 0) {
-        int num = buf_vbo_num_tris;
-        unsigned long t0 = get_time();
-
-        if (markerOn) {
-            int bp = 0;
-        }
-
         gfx_rapi->draw_triangles(buf_vbo, buf_vbo_len, buf_vbo_num_tris);
         buf_vbo_len = 0;
         buf_vbo_num_tris = 0;
-        unsigned long t1 = get_time();
-        /*if (t1 - t0 > 1000) {
-            printf("f: %d %d\n", num, (int)(t1 - t0));
-        }*/
     }
 }
 
@@ -333,10 +307,6 @@ static const char* acmux_to_string(uint32_t acmux) {
 }
 
 static void gfx_generate_cc(struct ColorCombiner* comb, uint64_t cc_id) {
-    if (markerOn) {
-        int bp = 0;
-    }
-
     bool is_2cyc = (cc_id & (uint64_t)SHADER_OPT_2CYC << CC_SHADER_OPT_POS) != 0;
 
     uint8_t c[2][2][4];
@@ -856,10 +826,6 @@ static void import_texture_ci8(int tile) {
         }
     }
 
-    if (size_bytes > 15000) {
-        int bp = 0;
-    }
-
     uint32_t result_line_size = rdp.texture_tile[tile].line_size_bytes;
     if (metadata->h_byte_scale != 1) {
         result_line_size *= metadata->h_byte_scale;
@@ -940,7 +906,6 @@ static void import_texture(int i, int tile) {
         return;
     }
 
-    int t0 = get_time();
     if (fmt == G_IM_FMT_RGBA) {
         if (siz == G_IM_SIZ_16b) {
             import_texture_rgba16(tile);
@@ -979,8 +944,6 @@ static void import_texture(int i, int tile) {
     } else {
         abort();
     }
-    int t1 = get_time();
-    // printf("Time diff: %d\n", t1 - t0);
 }
 
 static void gfx_normalize_vector(float v[3]) {
@@ -1452,10 +1415,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     uint8_t num_inputs;
     bool used_textures[2];
 
-    if (markerOn) {
-        int bp = 0;
-    }
-
     gfx_rapi->shader_get_info(prg, &num_inputs, used_textures);
 
     struct GfxClipParameters clip_parameters = gfx_rapi->get_clip_parameters();
@@ -1464,10 +1423,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
         float z = v_arr[i]->z, w = v_arr[i]->w;
         if (clip_parameters.z_is_from_0_to_1) {
             z = (z + w) / 2.0f;
-        }
-
-        if (markerOn) {
-            // z = 10;
         }
 
         buf_vbo[buf_vbo_len++] = v_arr[i]->x;
@@ -1635,9 +1590,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
     if (++buf_vbo_num_tris == MAX_BUFFERED) {
         // if (++buf_vbo_num_tris == 1) {
-        if (markerOn) {
-            int bp = 0;
-        }
         gfx_flush();
     }
 }
@@ -1842,10 +1794,6 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
 }
 
 static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
-    if (markerOn) {
-        int bp = 0;
-    }
-
     SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(uls == 0);
     SUPPORT_CHECK(ult == 0);
@@ -2290,8 +2238,6 @@ static inline void* seg_addr(uintptr_t w1) {
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
-unsigned int dListBP;
-int matrixBP;
 uintptr_t clearMtx;
 
 static void gfx_run_dl(Gfx* cmd) {
@@ -2338,14 +2284,8 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_texture_cache_delete((const uint8_t*)texAddr);
                 }
             } break;
-            case G_NOOP: {
-                uint32_t index = C0(0, 16);
-                uint32_t type = C0(16, 8);
-                if (type == 2) {
-                    const char* str = (const char*)cmd->words.w1;
-                    // printf("%s, %u\n", str, index);
-                }
-            } break;
+            case G_NOOP:
+                break;
             case G_MTX: {
                 uintptr_t mtxAddr = cmd->words.w1;
 
@@ -2482,10 +2422,6 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), cmd->words.w1);
                 break;
             case G_DL:
-                if (cmd->words.w1 == dListBP) {
-                    int bp = 0;
-                }
-
                 if (C0(16, 1) == 0) {
                     // Push return address
                     gfx_run_dl((Gfx*)seg_addr(cmd->words.w1));
@@ -2516,8 +2452,6 @@ static void gfx_run_dl(Gfx* cmd) {
                     }
                 } else {
                     cmd = (Gfx*)seg_addr(cmd->words.w1);
-                    cmd++;
-                    --cmd; // increase after break
                 }
                 break;
             case G_PUSHCD:
@@ -2586,7 +2520,6 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
 #ifdef F3DEX_GBI_2
             case G_QUAD: {
-                int bp = 0;
                 [[fallthrough]];
             }
 #endif
@@ -2926,16 +2859,6 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
         tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
 
-    // Used in the 120 star TAS
-    static uint32_t precomp_shaders[] = { 0x01200200, 0x00000045, 0x00000200, 0x01200a00, 0x00000a00, 0x01a00045,
-                                          0x00000551, 0x01045045, 0x05a00a00, 0x01200045, 0x05045045, 0x01045a00,
-                                          0x01a00a00, 0x0000038d, 0x01081081, 0x0120038d, 0x03200045, 0x03200a00,
-                                          0x01a00a6f, 0x01141045, 0x07a00a00, 0x05200200, 0x03200200, 0x09200200,
-                                          0x0920038d, 0x09200045 };
-    for (size_t i = 0; i < sizeof(precomp_shaders) / sizeof(uint32_t); i++) {
-        // gfx_lookup_or_create_shader_program(precomp_shaders[i]);
-    }
-
     Ship::ExecuteHooks<Ship::GfxInit>();
 }
 
@@ -3017,7 +2940,6 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
     current_mtx_replacements = &mtx_replacements;
 
-    double t0 = gfx_wapi->get_time();
     gfx_rapi->update_framebuffer_parameters(0, gfx_current_window_dimensions.width,
                                             gfx_current_window_dimensions.height, 1, false, true, true,
                                             !game_renders_to_framebuffer);
@@ -3053,8 +2975,6 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     }
     SohImGui::DrawFramebufferAndGameInput();
     SohImGui::Render();
-    double t1 = gfx_wapi->get_time();
-    // printf("Process %f %f\n", t1, t1 - t0);
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
     has_drawn_imgui_menu = false;
