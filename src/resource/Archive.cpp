@@ -229,8 +229,7 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::ListFiles(const std::stri
 
     if (hFind != nullptr) {
         if (!SFileFindClose(hFind)) {
-            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask,
-                         mMainPath);
+            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask, mMainPath);
         }
 
         return fileList;
