@@ -145,7 +145,7 @@ uint32_t HasGameVersion(uint32_t hash) {
 }
 
 void LoadResourceDirectory(const char* name) {
-    Ship::Window::GetInstance()->GetResourceManager()->CacheDirectory(name);
+    Ship::Window::GetInstance()->GetResourceManager()->LoadDirectory(name);
 }
 
 void DirtyResourceDirectory(const char* name) {
