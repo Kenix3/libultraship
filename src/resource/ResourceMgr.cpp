@@ -225,8 +225,8 @@ std::shared_ptr<std::vector<std::string>> ResourceMgr::ListFiles(const std::stri
     auto result = std::make_shared<std::vector<std::string>>();
     auto fileList = mArchive->ListFiles(searchMask);
 
-    for (size_t i = 0; i < fileList.size(); i++) {
-        result->push_back(fileList[i].cFileName);
+    for (size_t i = 0; i < fileList->size(); i++) {
+        result->push_back(fileList->operator[](i).cFileName);
     }
 
     return result;
