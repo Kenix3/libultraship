@@ -162,7 +162,7 @@ std::shared_ptr<Resource> ResourceMgr::GetCachedResource(const std::string& file
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-ResourceMgr::CacheDirectoryAsync(const std::string& searchMask) {
+ResourceMgr::LoadDirectoryAsync(const std::string& searchMask) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Resource>>>>();
     auto fileList = ListFiles(searchMask);
     loadedList->reserve(fileList->size());
@@ -176,8 +176,8 @@ ResourceMgr::CacheDirectoryAsync(const std::string& searchMask) {
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::CacheDirectory(const std::string& searchMask) {
-    auto futureList = CacheDirectoryAsync(searchMask);
+std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::LoadDirectory(const std::string& searchMask) {
+    auto futureList = LoadDirectoryAsync(searchMask);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
 
     for (size_t i = 0; i < futureList->size(); i++) {
