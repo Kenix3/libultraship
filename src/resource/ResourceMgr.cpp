@@ -257,8 +257,8 @@ void ResourceMgr::UnloadAllResources() {
 }
 
 bool ResourceMgr::OtrSignatureCheck(const char* fileName) {
-    return fileName[0] == '_' && fileName[1] == '_' && fileName[2] == 'O' && fileName[3] == 'T' && fileName[4] == 'R' &&
-           fileName[5] == '_' && fileName[6] == '_';
+    static const char* sOtrSignature = "__OTR__";
+    return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
 }
 
 } // namespace Ship
