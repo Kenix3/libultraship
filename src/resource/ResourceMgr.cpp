@@ -90,12 +90,12 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
         return cachedResource;
     }
 
-    // If we are attempting to load an HD asset, we can return null 
+    // If we are attempting to load an HD asset, we can return null
     if (!loadExact && CVarGetInteger("gHdAssets", 0) && filePath.substr(0, 3) == "hd/") {
         if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
             try {
-                // If we have attempted to cache an HD asset, but failed, we return nullptr and rely on the calling function to return a SD asset.
-                // If we have NOT attempted load already, attempt the load.
+                // If we have attempted to cache an HD asset, but failed, we return nullptr and rely on the calling
+                // function to return a SD asset. If we have NOT attempted load already, attempt the load.
                 auto loadError = std::get<ResourceLoadError>(cacheLine);
                 if (loadError != ResourceLoadError::NotCached) {
                     return nullptr;
@@ -180,7 +180,8 @@ std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath)
     return LoadResourceAsync(filePath).get();
 }
 
-std::variant<ResourceMgr::ResourceLoadError, std::shared_ptr<Resource>> ResourceMgr::CheckCache(const std::string& filePath, bool loadExact) {
+std::variant<ResourceMgr::ResourceLoadError, std::shared_ptr<Resource>>
+ResourceMgr::CheckCache(const std::string& filePath, bool loadExact) {
     if (!loadExact && CVarGetInteger("gHdAssets", 0) && filePath.substr(0, 3) != "hd/") {
         const auto hdPath = "hd/" + filePath;
         auto hdCacheResult = CheckCache(hdPath, loadExact);
@@ -207,7 +208,8 @@ std::shared_ptr<Resource> ResourceMgr::GetCachedResource(const std::string& file
     return GetCachedResource(CheckCache(filePath, loadExact));
 }
 
-std::shared_ptr<Resource> ResourceMgr::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<Resource>> cacheLine) {
+std::shared_ptr<Resource>
+ResourceMgr::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<Resource>> cacheLine) {
     // Gets the cached resource based on a cache line std::variant from the cache map.
     if (std::holds_alternative<std::shared_ptr<Resource>>(cacheLine)) {
         try {
