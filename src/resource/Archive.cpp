@@ -197,7 +197,7 @@ bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath)
     return true;
 }
 
-std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::ListFiles(const std::string& searchMask) const {
+std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::string& searchMask) {
     auto fileList = std::make_shared<std::vector<SFILE_FIND_DATA>>();
     SFILE_FIND_DATA findContext;
     HANDLE hFind;
@@ -238,11 +238,22 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::ListFiles(const std::stri
     return fileList;
 }
 
-bool Archive::HasFile(const std::string& filename) const {
+std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& searchMask) {
+    auto result = std::make_shared<std::vector<std::string>>();
+    auto fileList = FindFiles(searchMask);
+
+    for (size_t i = 0; i < fileList->size(); i++) {
+        result->push_back(fileList->operator[](i).cFileName);
+    }
+
+    return result;
+}
+
+bool Archive::HasFile(const std::string& filename) {
     bool result = false;
     auto start = std::chrono::steady_clock::now();
 
-    auto lst = ListFiles(filename);
+    auto lst = FindFiles(filename);
 
     for (const auto& item : *lst) {
         if (item.cFileName == filename) {

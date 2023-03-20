@@ -235,7 +235,7 @@ ResourceMgr::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<R
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
 ResourceMgr::LoadDirectoryAsync(const std::string& searchMask) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Resource>>>>();
-    auto fileList = ListFiles(searchMask);
+    auto fileList = GetArchive()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
@@ -261,7 +261,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::LoadDirecto
 }
 
 size_t ResourceMgr::DirtyDirectory(const std::string& searchMask) {
-    auto fileList = ListFiles(searchMask);
+    auto fileList = GetArchive()->ListFiles(searchMask);
     size_t countDirtied = 0;
 
     for (size_t i = 0; i < fileList->size(); i++) {
@@ -282,7 +282,7 @@ size_t ResourceMgr::DirtyDirectory(const std::string& searchMask) {
 }
 
 size_t ResourceMgr::UnloadDirectory(const std::string& searchMask) {
-    auto fileList = ListFiles(searchMask);
+    auto fileList = GetArchive()->ListFiles(searchMask);
     size_t countUnloaded = 0;
 
     for (size_t i = 0; i < fileList->size(); i++) {
@@ -293,17 +293,6 @@ size_t ResourceMgr::UnloadDirectory(const std::string& searchMask) {
     }
 
     return countUnloaded;
-}
-
-std::shared_ptr<std::vector<std::string>> ResourceMgr::ListFiles(const std::string& searchMask) {
-    auto result = std::make_shared<std::vector<std::string>>();
-    auto fileList = mArchive->ListFiles(searchMask);
-
-    for (size_t i = 0; i < fileList->size(); i++) {
-        result->push_back(fileList->operator[](i).cFileName);
-    }
-
-    return result;
 }
 
 const std::string* ResourceMgr::HashToString(uint64_t hash) {
