@@ -115,6 +115,22 @@ std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", 
                                                           { "G_RM_ZB_XLU_DECAL2", G_RM_ZB_XLU_DECAL2 },
                                                           { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 } };
 
+static Gfx gsSPVertexOTR2_P1(char* filePathPtr) {
+    Gfx g;
+    g.words.w0 = G_VTX_OTR_FILEPATH << 24;
+    g.words.w1 = (uintptr_t)filePathPtr;
+
+    return g;
+}
+
+static Gfx gsSPVertexOTR2_P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
+    Gfx g;
+    g.words.w0 = (uintptr_t)vtxCnt;
+    g.words.w1 = (uintptr_t)((vtxBufOffset << 16) | vtxDataOffset);
+
+    return g;
+}
+
 void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) {
     std::shared_ptr<DisplayList> dl = std::static_pointer_cast<DisplayList>(resource);
 
@@ -317,8 +333,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             int v01 = child->IntAttribute("V01");
             int v02 = child->IntAttribute("V02");
 
-            g = gsSP1TriangleOTR(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
-                                 child->IntAttribute("Flag0"));
+            g = gsSP1TriangleOTR(v00, v01, v02, child->IntAttribute("Flag0"));
             g.words.w0 &= 0xFF000000;
             g.words.w0 |= v00;
             g.words.w1 |= v01 << 16;

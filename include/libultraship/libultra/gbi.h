@@ -1733,12 +1733,6 @@ typedef union {
 #define gsSPVertex(v, n, v0) \
     { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v) }
 
-#define gsSPVertexOTR2_P1(filePathPtr) \
-    { (_SHIFTL(G_VTX_OTR_FILEPATH, 24, 8), (uintptr_t)(filePathPtr)) }
-
-#define gsSPVertexOTR2_P2(vtxCnt, vtxBufOffset, vtxDataOffset) \
-    { ((uintptr_t)(vtxCnt), (uintptr_t)((vtxBufOffset << 16) | (vtxDataOffset))) }
-
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
 /*
  * F3DEX_GBI: G_VTX GBI format was changed to support 64 vertice.
