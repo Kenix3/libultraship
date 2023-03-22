@@ -4,8 +4,8 @@
 
 namespace Ship {
 std::shared_ptr<Resource> ArrayFactory::ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
-                                       std::shared_ptr<ResourceInitData> initData,
-                                       std::shared_ptr<BinaryReader> reader) {
+                                                     std::shared_ptr<ResourceInitData> initData,
+                                                     std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Array>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
