@@ -5,13 +5,8 @@
 #include "libultraship/libultra/gbi.h"
 
 namespace Ship {
-void Resource::RegisterResourceAddressPatch(uint64_t crc, uint32_t instructionIndex, intptr_t originalData) {
-    ResourceAddressPatch patch;
-    patch.ResourceCrc = crc;
-    patch.InstructionIndex = instructionIndex;
-    patch.OriginalData = originalData;
-
-    Patches.push_back(patch);
+Resource::Resource(std::shared_ptr<ResourceMgr> resourceManager, std::shared_ptr<ResourceInitData> initData)
+    : ResourceManager(resourceManager), InitData(initData) {
 }
 
 Resource::~Resource() {
@@ -21,17 +16,33 @@ Resource::~Resource() {
             continue;
         }
 
-        auto resShared = ResourceManager->GetCachedResource(hashStr->c_str());
-        if (resShared != nullptr) {
-            auto res = (Ship::DisplayList*)resShared.get();
-
-            Gfx* gfx = &((Gfx*)res->Instructions.data())[Patches[i].InstructionIndex];
-            gfx->words.w1 = Patches[i].OriginalData;
+        auto patchedResource = ResourceManager->GetCachedResource(*hashStr);
+        if (patchedResource != nullptr) {
+            auto dl = static_pointer_cast<DisplayList>(patchedResource);
+            if (dl != nullptr) {
+                Gfx* gfx = &(dl->Instructions.data())[Patches[i].InstructionIndex];
+                gfx->words.w1 = Patches[i].OriginalData;
+            } else {
+                SPDLOG_WARN("Failed to unpatch resource {} during resource {} unload.", patchedResource->InitData->Path,
+                            InitData->Path);
+            }
+        } else {
+            SPDLOG_WARN("Failed to get cached resource {} to unpatch during resource {} unload.", *hashStr,
+                        InitData->Path);
         }
     }
 
     Patches.clear();
 
-    SPDLOG_TRACE("Deconstructor called on resource {}\n", Path.c_str());
+    SPDLOG_TRACE("Resource Unloaded: {}\n", InitData->Path);
+}
+
+void Resource::RegisterResourceAddressPatch(uint64_t crc, uint32_t instructionIndex, intptr_t originalData) {
+    ResourceAddressPatch patch;
+    patch.ResourceCrc = crc;
+    patch.InstructionIndex = instructionIndex;
+    patch.OriginalData = originalData;
+
+    Patches.push_back(patch);
 }
 } // namespace Ship

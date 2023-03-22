@@ -3,18 +3,20 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<Resource> VertexFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Vertex>();
+std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                      std::shared_ptr<ResourceInitData> initData,
+                                                      std::shared_ptr<BinaryReader> reader) {
+    auto resource = std::make_shared<Vertex>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)version) {
+    switch ((Version)resource->InitData->ResourceVersion) {
         case Version::Deckard:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", version);
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
         return nullptr;
     }
 
@@ -23,18 +25,20 @@ std::shared_ptr<Resource> VertexFactory::ReadResource(uint32_t version, std::sha
     return resource;
 }
 
-std::shared_ptr<Resource> VertexFactory::ReadResourceXML(uint32_t version, tinyxml2::XMLElement* reader) {
-    auto resource = std::make_shared<Vertex>();
+std::shared_ptr<Resource> VertexFactory::ReadResourceXML(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                         std::shared_ptr<ResourceInitData> initData,
+                                                         tinyxml2::XMLElement* reader) {
+    auto resource = std::make_shared<Vertex>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)version) {
+    switch ((Version)resource->InitData->ResourceVersion) {
         case Version::Deckard:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", version);
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
         return nullptr;
     }
 

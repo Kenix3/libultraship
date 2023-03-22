@@ -9,6 +9,9 @@
 #include <StormLib.h>
 #include "core/bridge/consolevariablebridge.h"
 
+// Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
+extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
+
 namespace Ship {
 
 ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
@@ -260,39 +263,39 @@ std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::LoadDirecto
     return loadedList;
 }
 
-size_t ResourceMgr::DirtyDirectory(const std::string& searchMask) {
-    auto fileList = GetArchive()->ListFiles(searchMask);
-    size_t countDirtied = 0;
+std::shared_ptr<std::vector<std::string>> ResourceMgr::FindLoadedFiles(const std::string& searchMask) {
+    const char* wildCard = searchMask.c_str();
+    auto list = std::make_shared<std::vector<std::string>>();
 
-    for (size_t i = 0; i < fileList->size(); i++) {
-        const auto fileName = std::string(fileList->operator[](i));
-
-        // We want to synchronously load the resource here because we don't know if it's in the thread pool queue.
-        auto cacheCheck = LoadResource(fileName);
-        if (cacheCheck != nullptr) {
-            cacheCheck->IsDirty = true;
-            countDirtied++;
-        } else {
-            // Remove from cache completely if the resource is a nullptr
-            UnloadResource(fileName);
+    for (const auto& [key, value] : mResourceCache) {
+        if (SFileCheckWildCard(key.c_str(), wildCard)) {
+            list->push_back(key);
         }
     }
 
-    return countDirtied;
+    return list;
 }
 
-size_t ResourceMgr::UnloadDirectory(const std::string& searchMask) {
-    auto fileList = GetArchive()->ListFiles(searchMask);
-    size_t countUnloaded = 0;
+void ResourceMgr::DirtyDirectory(const std::string& searchMask) {
+    auto list = FindLoadedFiles(searchMask);
 
-    for (size_t i = 0; i < fileList->size(); i++) {
-        auto fileName = std::string(fileList->operator[](i));
-
-        size_t count = UnloadResource(fileName);
-        countUnloaded += count;
+    for (const auto& key : *list.get()) {
+        auto resource = GetCachedResource(key);
+        // If it's a resource, we will set the dirty flag, else we will just unload it.
+        if (resource != nullptr) {
+            resource->IsDirty = true;
+        } else {
+            UnloadResource(key);
+        }
     }
+}
 
-    return countUnloaded;
+void ResourceMgr::UnloadDirectory(const std::string& searchMask) {
+    auto list = FindLoadedFiles(searchMask);
+
+    for (const auto& key : *list.get()) {
+        UnloadResource(key);
+    }
 }
 
 const std::string* ResourceMgr::HashToString(uint64_t hash) {
@@ -312,11 +315,18 @@ std::shared_ptr<Window> ResourceMgr::GetContext() {
 }
 
 size_t ResourceMgr::UnloadResource(const std::string& filePath) {
-    return mResourceCache.erase(filePath);
-}
+    // Store a shared pointer here so that the erase doesn't destruct the resource.
+    // The resource will attempt to load other resources on the destructor, and this will fail because we already hold
+    // the mutex.
+    std::variant<ResourceLoadError, std::shared_ptr<Resource>> value = nullptr;
+    size_t ret = 0;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        value = mResourceCache[filePath];
+        ret = mResourceCache.erase(filePath);
+    }
 
-void ResourceMgr::UnloadAllResources() {
-    mResourceCache.clear();
+    return ret;
 }
 
 bool ResourceMgr::OtrSignatureCheck(const char* fileName) {

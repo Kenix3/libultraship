@@ -21,6 +21,8 @@ enum class TextureType {
 
 class Texture : public Resource {
   public:
+    using Resource::Resource;
+
     void* GetPointer();
     size_t GetPointerSize();
 
