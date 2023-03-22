@@ -197,7 +197,7 @@ bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath)
     return true;
 }
 
-std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::ListFiles(const std::string& searchMask) const {
+std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::string& searchMask) {
     auto fileList = std::make_shared<std::vector<SFILE_FIND_DATA>>();
     SFILE_FIND_DATA findContext;
     HANDLE hFind;
@@ -238,23 +238,20 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::ListFiles(const std::stri
     return fileList;
 }
 
-bool Archive::HasFile(const std::string& filename) const {
-    bool result = false;
-    auto start = std::chrono::steady_clock::now();
+std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& searchMask) {
+    auto result = std::make_shared<std::vector<std::string>>();
+    auto fileList = FindFiles(searchMask);
 
-    auto lst = ListFiles(filename);
-
-    for (const auto& item : *lst) {
-        if (item.cFileName == filename) {
-            result = true;
-            break;
-        }
+    for (size_t i = 0; i < fileList->size(); i++) {
+        result->push_back(fileList->operator[](i).cFileName);
     }
 
-    auto end = std::chrono::steady_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
     return result;
+}
+
+bool Archive::HasFile(const std::string& searchMask) {
+    auto list = FindFiles(searchMask);
+    return list->size() > 0;
 }
 
 const std::string* Archive::HashToString(uint64_t hash) const {

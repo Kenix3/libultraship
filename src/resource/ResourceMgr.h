@@ -48,7 +48,6 @@ class ResourceMgr {
     LoadDirectoryAsync(const std::string& searchMask);
     size_t DirtyDirectory(const std::string& searchMask);
     size_t UnloadDirectory(const std::string& searchMask);
-    std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask);
     bool OtrSignatureCheck(const char* fileName);
     const std::string* HashToString(uint64_t hash);
 
