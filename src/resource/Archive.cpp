@@ -250,7 +250,7 @@ std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& 
 }
 
 bool Archive::HasFile(const std::string& searchMask) {
-    auto list = FindFiles(filename);
+    auto list = FindFiles(searchMask);
     return list.size() > 0;
 }
 
