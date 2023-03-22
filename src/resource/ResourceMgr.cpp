@@ -316,7 +316,8 @@ std::shared_ptr<Window> ResourceMgr::GetContext() {
 
 size_t ResourceMgr::UnloadResource(const std::string& filePath) {
     // Store a shared pointer here so that the erase doesn't destruct the resource.
-    // The resource will attempt to load other resources on the destructor, and this will fail because we already hold the mutex.
+    // The resource will attempt to load other resources on the destructor, and this will fail because we already hold
+    // the mutex.
     std::variant<ResourceLoadError, std::shared_ptr<Resource>> value = nullptr;
     size_t ret = 0;
     {

@@ -7,8 +7,8 @@ namespace Ship {
 class ArrayFactory : public ResourceFactory {
   public:
     std::shared_ptr<Resource> ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
-                                                   std::shared_ptr<ResourceInitData> initData,
-                                                   std::shared_ptr<BinaryReader> reader) override;
+                                           std::shared_ptr<ResourceInitData> initData,
+                                           std::shared_ptr<BinaryReader> reader) override;
 };
 
 class ArrayFactoryV0 : public ResourceVersionFactory {

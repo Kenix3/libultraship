@@ -5,7 +5,8 @@
 #include "libultraship/libultra/gbi.h"
 
 namespace Ship {
-Resource::Resource(std::shared_ptr<ResourceMgr> resourceManager, std::shared_ptr<ResourceInitData> initData) : ResourceManager(resourceManager), InitData(initData) {
+Resource::Resource(std::shared_ptr<ResourceMgr> resourceManager, std::shared_ptr<ResourceInitData> initData)
+    : ResourceManager(resourceManager), InitData(initData) {
 }
 
 Resource::~Resource() {
@@ -22,10 +23,12 @@ Resource::~Resource() {
                 Gfx* gfx = &(dl->Instructions.data())[Patches[i].InstructionIndex];
                 gfx->words.w1 = Patches[i].OriginalData;
             } else {
-                SPDLOG_WARN("Failed to unpatch resource {} during resource {} unload.", patchedResource->InitData->Path, InitData->Path);
+                SPDLOG_WARN("Failed to unpatch resource {} during resource {} unload.", patchedResource->InitData->Path,
+                            InitData->Path);
             }
         } else {
-            SPDLOG_WARN("Failed to get cached resource {} to unpatch during resource {} unload.", *hashStr, InitData->Path);
+            SPDLOG_WARN("Failed to get cached resource {} to unpatch during resource {} unload.", *hashStr,
+                        InitData->Path);
         }
     }
 
