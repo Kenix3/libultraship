@@ -249,7 +249,7 @@ std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& 
     return result;
 }
 
-bool Archive::HasFile(const std::string& filename) {
+bool Archive::HasFile(const std::string& searchMask) {
     bool result = false;
     auto start = std::chrono::steady_clock::now();
 
