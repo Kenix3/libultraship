@@ -250,22 +250,8 @@ std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& 
 }
 
 bool Archive::HasFile(const std::string& searchMask) {
-    bool result = false;
-    auto start = std::chrono::steady_clock::now();
-
-    auto lst = FindFiles(filename);
-
-    for (const auto& item : *lst) {
-        if (item.cFileName == filename) {
-            result = true;
-            break;
-        }
-    }
-
-    auto end = std::chrono::steady_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-    return result;
+    auto list = FindFiles(filename);
+    return list.size() > 0;
 }
 
 const std::string* Archive::HashToString(uint64_t hash) const {
