@@ -37,7 +37,6 @@ void DirtyResourceByCrc(uint64_t crc);
 void UnloadResourceByName(const char* name);
 void UnloadResourceByCrc(uint64_t crc);
 void UnloadResourceDirectory(const char* name);
-void UnloadAllResources();
 void ClearResourceCache(void);
 void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now);
 void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData, bool now);

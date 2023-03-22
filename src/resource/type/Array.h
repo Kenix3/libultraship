@@ -68,6 +68,8 @@ enum class ArrayResourceType {
 
 class Array : public Resource {
   public:
+    using Resource::Resource;
+
     void* GetPointer();
     size_t GetPointerSize();
 

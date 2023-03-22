@@ -5,18 +5,20 @@
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
 namespace Ship {
-std::shared_ptr<Resource> DisplayListFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<DisplayList>();
+std::shared_ptr<Resource> DisplayListFactory::ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                           std::shared_ptr<ResourceInitData> initData,
+                                                           std::shared_ptr<BinaryReader> reader) {
+    auto resource = std::make_shared<DisplayList>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)version) {
+    switch ((Version)resource->InitData->ResourceVersion) {
         case Version::Deckard:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", version);
+        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->InitData->ResourceVersion);
         return nullptr;
     }
 
@@ -25,18 +27,20 @@ std::shared_ptr<Resource> DisplayListFactory::ReadResource(uint32_t version, std
     return resource;
 }
 
-std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(uint32_t version, tinyxml2::XMLElement* reader) {
-    auto resource = std::make_shared<DisplayList>();
+std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                              std::shared_ptr<ResourceInitData> initData,
+                                                              tinyxml2::XMLElement* reader) {
+    auto resource = std::make_shared<DisplayList>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)version) {
+    switch ((Version)resource->InitData->ResourceVersion) {
         case Version::Deckard:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", version);
+        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->InitData->ResourceVersion);
         return nullptr;
     }
 

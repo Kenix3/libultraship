@@ -41,13 +41,13 @@ class ResourceMgr {
     std::shared_ptr<Resource> LoadResource(const std::string& filePath);
     std::shared_ptr<Resource> LoadResourceProcess(const std::string& filePath, bool loadExact = false);
     size_t UnloadResource(const std::string& filePath);
-    void UnloadAllResources();
     std::shared_future<std::shared_ptr<Resource>> LoadResourceAsync(const std::string& filePath);
     std::shared_ptr<std::vector<std::shared_ptr<Resource>>> LoadDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
     LoadDirectoryAsync(const std::string& searchMask);
-    size_t DirtyDirectory(const std::string& searchMask);
-    size_t UnloadDirectory(const std::string& searchMask);
+    std::shared_ptr<std::vector<std::string>> FindLoadedFiles(const std::string& searchMask);
+    void DirtyDirectory(const std::string& searchMask);
+    void UnloadDirectory(const std::string& searchMask);
     bool OtrSignatureCheck(const char* fileName);
     const std::string* HashToString(uint64_t hash);
 

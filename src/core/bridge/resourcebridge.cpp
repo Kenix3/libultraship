@@ -176,10 +176,6 @@ void UnloadResourceByCrc(uint64_t crc) {
     UnloadResourceByName(GetResourceNameByCrc(crc));
 }
 
-void UnloadAllResources() {
-    Ship::Window::GetInstance()->GetResourceManager()->UnloadAllResources();
-}
-
 void UnloadResourceDirectory(const char* name) {
     Ship::Window::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
