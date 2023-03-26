@@ -58,6 +58,7 @@ struct ShaderProgram {
     GLint attrib_locations[16];
     uint8_t attrib_sizes[16];
     uint8_t num_attribs;
+    bool used_noise;
     GLint frame_count_location;
     GLint noise_scale_location;
 };
@@ -115,8 +116,10 @@ static void gfx_opengl_vertex_array_set_attribs(struct ShaderProgram* prg) {
 }
 
 static void gfx_opengl_set_uniforms(struct ShaderProgram* prg) {
-    glUniform1i(prg->frame_count_location, frame_count);
-    glUniform1f(prg->noise_scale_location, current_noise_scale);
+    if (prg->used_noise) {
+        glUniform1i(prg->frame_count_location, frame_count);
+        glUniform1f(prg->noise_scale_location, current_noise_scale);
+    }
 }
 
 static void gfx_opengl_unload_shader(struct ShaderProgram* old_prg) {
@@ -253,6 +256,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     size_t vs_len = 0;
     size_t fs_len = 0;
     size_t num_floats = 4;
+    const bool used_noise = cc_features.opt_alpha && cc_features.opt_noise;
 
     // Vertex shader
 #ifdef __APPLE__
@@ -395,13 +399,15 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "uniform sampler2D uTex1;");
     }
 
-    append_line(fs_buf, &fs_len, "uniform int frame_count;");
-    append_line(fs_buf, &fs_len, "uniform float noise_scale;");
+    if (used_noise) {
+        append_line(fs_buf, &fs_len, "uniform int frame_count;");
+        append_line(fs_buf, &fs_len, "uniform float noise_scale;");
 
-    append_line(fs_buf, &fs_len, "float random(in vec3 value) {");
-    append_line(fs_buf, &fs_len, "    float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
-    append_line(fs_buf, &fs_len, "    return fract(sin(random) * 143758.5453);");
-    append_line(fs_buf, &fs_len, "}");
+        append_line(fs_buf, &fs_len, "float random(in vec3 value) {");
+        append_line(fs_buf, &fs_len, "    float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
+        append_line(fs_buf, &fs_len, "    return fract(sin(random) * 143758.5453);");
+        append_line(fs_buf, &fs_len, "}");
+    }
 
     if (current_filter_mode == FILTER_THREE_POINT) {
 #if __APPLE__
@@ -508,7 +514,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "if (texel.a > 0.19) texel.a = 1.0; else discard;");
     }
 
-    if (cc_features.opt_alpha && cc_features.opt_noise) {
+    if (used_noise) {
         append_line(fs_buf, &fs_len,
                     "texel.a *= floor(clamp(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + "
                     "texel.a, 0.0, 1.0));");
@@ -639,6 +645,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     prg->used_textures[1] = cc_features.used_textures[1];
     prg->num_floats = num_floats;
     prg->num_attribs = cnt;
+    prg->used_noise = used_noise;
 
     gfx_opengl_load_shader(prg);
 
@@ -651,8 +658,10 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         glUniform1i(sampler_location, 1);
     }
 
-    prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
-    prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
+    if (used_noise) {
+        prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
+        prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
+    }
 
     return prg;
 }
@@ -818,6 +827,10 @@ static void gfx_opengl_on_resize(void) {
 
 static void gfx_opengl_start_frame(void) {
     frame_count++;
+    if (frame_count > 150) {
+        // No high values, as noise starts to look ugly
+        frame_count = 0;
+    }
 }
 
 static void gfx_opengl_end_frame(void) {
