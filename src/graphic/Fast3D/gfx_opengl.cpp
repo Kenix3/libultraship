@@ -430,7 +430,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
             append_line(fs_buf, &fs_len, "vec4 c1 = TEX_OFFSET(vec2(offset.x - sign(offset.x), offset.y));");
             append_line(fs_buf, &fs_len, "vec4 c2 = TEX_OFFSET(vec2(offset.x, offset.y - sign(offset.y)));");
             append_line(fs_buf, &fs_len, "return c0 + abs(offset.x)*(c1-c0) + abs(offset.y)*(c2-c0);");
-    } else {
+        } else {
             append_line(fs_buf, &fs_len, "vec4 hookTexture2D(in sampler2D tex, in vec2 texCoord, in vec2 texSize) {");
 #if __APPLE__
             append_line(fs_buf, &fs_len, "return texture(tex, texCoord);");
@@ -552,7 +552,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
     append_line(fs_buf, &fs_len, "}");
 
-    if(!used_noise && used_rand) {
+    if (!used_noise && used_rand) {
         append_rand_function(fs_buf, &fs_len);
     }
 
