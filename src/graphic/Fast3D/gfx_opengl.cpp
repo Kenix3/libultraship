@@ -254,8 +254,8 @@ static void append_rand_function(char* buf, size_t* len) {
     append_line(buf, len, "uniform float noise_scale;");
 
     append_line(buf, len, "float random(in vec3 value) {");
-    append_line(buf, len, "    float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
-    append_line(buf, len, "    return fract(sin(random) * 143758.5453);");
+    append_line(buf, len, "float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
+    append_line(buf, len, "return fract(sin(random) * 143758.5453);");
     append_line(buf, len, "}");
 }
 
@@ -481,7 +481,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         }
     }
 
-    append_line(fs_buf, &fs_len, cc_features.opt_alpha ? "vec4 texel;" : "vec3 texel;");
+    append_str(fs_buf, &fs_len, cc_features.opt_alpha ? "vec4 " : "vec3 ");
     for (int c = 0; c < (cc_features.opt_2cyc ? 2 : 1); c++) {
         append_str(fs_buf, &fs_len, "texel = ");
         if (!cc_features.color_alpha_same[c] && cc_features.opt_alpha) {
