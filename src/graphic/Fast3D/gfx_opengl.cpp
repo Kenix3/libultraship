@@ -153,7 +153,7 @@ static void append_line(char* buf, size_t* len, const char* str) {
 #define RAND_NOISE "((random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + 1.0) / 2.0)"
 
 static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
-                                      bool hint_single_element, bool& use_rand) {
+                                      bool hint_single_element) {
     if (!only_alpha) {
         switch (item) {
             case SHADER_0:
@@ -183,7 +183,6 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_COMBINED:
                 return with_alpha ? "texel" : "texel.rgb";
             case SHADER_NOISE:
-                use_rand = true;
                 return with_alpha ? "vec4(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")"
                                   : "vec3(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")";
         }
@@ -212,7 +211,6 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_COMBINED:
                 return "texel.a";
             case SHADER_NOISE:
-                use_rand = true;
                 return RAND_NOISE;
         }
     }
@@ -221,42 +219,46 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
 
 #undef RAND_NOISE
 
-static void append_formula(char* buf, size_t* len, uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix,
-                           bool with_alpha, bool only_alpha, bool opt_alpha, bool& use_rand) {
+static bool does_formula_use_noise(uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix, bool only_alpha) {
     if (do_single) {
-        append_str(buf, len, shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, false, use_rand));
+        return c[only_alpha][3] == SHADER_NOISE;
     } else if (do_multiply) {
-        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false, use_rand));
+        return c[only_alpha][0] == SHADER_NOISE || c[only_alpha][2] == SHADER_NOISE;
+    } else if (do_mix) {
+        return c[only_alpha][0] == SHADER_NOISE || c[only_alpha][1] == SHADER_NOISE || c[only_alpha][2] == SHADER_NOISE;
+    } else {
+        return c[only_alpha][0] == SHADER_NOISE || c[only_alpha][1] == SHADER_NOISE ||
+               c[only_alpha][2] == SHADER_NOISE || c[only_alpha][3] == SHADER_NOISE;
+    }
+    return false;
+}
+
+static void append_formula(char* buf, size_t* len, uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix,
+                           bool with_alpha, bool only_alpha, bool opt_alpha) {
+    if (do_single) {
+        append_str(buf, len, shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, false));
+    } else if (do_multiply) {
+        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false));
         append_str(buf, len, " * ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true));
     } else if (do_mix) {
         append_str(buf, len, "mix(");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, false, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, false));
         append_str(buf, len, ", ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false));
         append_str(buf, len, ", ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true));
         append_str(buf, len, ")");
     } else {
         append_str(buf, len, "(");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false));
         append_str(buf, len, " - ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, false, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, false));
         append_str(buf, len, ") * ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true));
         append_str(buf, len, " + ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, false, use_rand));
+        append_str(buf, len, shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, false));
     }
-}
-
-static void append_rand_function(char* buf, size_t* len) {
-    append_line(buf, len, "uniform int frame_count;");
-    append_line(buf, len, "uniform float noise_scale;");
-
-    append_line(buf, len, "float random(in vec3 value) {");
-    append_line(buf, len, "float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
-    append_line(buf, len, "return fract(sin(random) * 143758.5453);");
-    append_line(buf, len, "}");
 }
 
 static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
@@ -268,8 +270,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     size_t vs_len = 0;
     size_t fs_len = 0;
     size_t num_floats = 4;
-    const bool used_noise = cc_features.opt_alpha && cc_features.opt_noise;
-    bool used_rand = false;
+    bool used_noise = cc_features.opt_alpha && cc_features.opt_noise;
 
     // Vertex shader
 #ifdef __APPLE__
@@ -412,8 +413,33 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "uniform sampler2D uTex1;");
     }
 
+    if (!used_noise) {
+        for (int c = 0; c < (cc_features.opt_2cyc ? 2 : 1); c++) {
+            if (!cc_features.color_alpha_same[c] && cc_features.opt_alpha) {
+                if (does_formula_use_noise(cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0],
+                                           cc_features.do_mix[c][0], false) ||
+                    does_formula_use_noise(cc_features.c[c], cc_features.do_single[c][1], cc_features.do_multiply[c][1],
+                                           cc_features.do_mix[c][1], true)) {
+                    used_noise = true;
+                    break;
+                }
+            } else {
+                if (does_formula_use_noise(cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0],
+                                           cc_features.do_mix[c][0], false)) {
+                    used_noise = true;
+                    break;
+                }
+            }
+        }
+    }
     if (used_noise) {
-        append_rand_function(fs_buf, &fs_len);
+        append_line(fs_buf, &fs_len, "uniform int frame_count;");
+        append_line(fs_buf, &fs_len, "uniform float noise_scale;");
+
+        append_line(fs_buf, &fs_len, "float random(in vec3 value) {");
+        append_line(fs_buf, &fs_len, "float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
+        append_line(fs_buf, &fs_len, "return fract(sin(random) * 143758.5453);");
+        append_line(fs_buf, &fs_len, "}");
     }
 
     if (cc_features.used_textures[0] || cc_features.used_textures[1]) {
@@ -487,15 +513,15 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         if (!cc_features.color_alpha_same[c] && cc_features.opt_alpha) {
             append_str(fs_buf, &fs_len, "vec4(");
             append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][0],
-                           cc_features.do_multiply[c][0], cc_features.do_mix[c][0], false, false, true, used_rand);
+                           cc_features.do_multiply[c][0], cc_features.do_mix[c][0], false, false, true);
             append_str(fs_buf, &fs_len, ", ");
             append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][1],
-                           cc_features.do_multiply[c][1], cc_features.do_mix[c][1], true, true, true, used_rand);
+                           cc_features.do_multiply[c][1], cc_features.do_mix[c][1], true, true, true);
             append_str(fs_buf, &fs_len, ")");
         } else {
             append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][0],
                            cc_features.do_multiply[c][0], cc_features.do_mix[c][0], cc_features.opt_alpha, false,
-                           cc_features.opt_alpha, used_rand);
+                           cc_features.opt_alpha);
         }
         append_line(fs_buf, &fs_len, ";");
 
@@ -551,10 +577,6 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 #endif
     }
     append_line(fs_buf, &fs_len, "}");
-
-    if (!used_noise && used_rand) {
-        append_rand_function(fs_buf, &fs_len);
-    }
 
     vs_buf[vs_len] = '\0';
     fs_buf[fs_len] = '\0';
@@ -654,7 +676,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     prg->used_textures[1] = cc_features.used_textures[1];
     prg->num_floats = num_floats;
     prg->num_attribs = cnt;
-    prg->used_noise = used_noise || used_rand;
+    prg->used_noise = used_noise;
 
     gfx_opengl_load_shader(prg);
 
@@ -667,7 +689,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         glUniform1i(sampler_location, 1);
     }
 
-    if (prg->used_noise) {
+    if (used_noise) {
         prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
         prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
     }
