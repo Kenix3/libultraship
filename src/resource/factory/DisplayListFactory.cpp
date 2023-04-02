@@ -354,7 +354,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             dl->Instructions.push_back(g);
 
             g = GsSpVertexOtR2P2(child->IntAttribute("Count"), child->IntAttribute("VertexBufferIndex"),
-                                  child->IntAttribute("VertexOffset"));
+                                 child->IntAttribute("VertexOffset"));
         } else if (childName == "SetTextureImage") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
