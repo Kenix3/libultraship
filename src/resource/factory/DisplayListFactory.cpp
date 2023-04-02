@@ -115,7 +115,7 @@ std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", 
                                                           { "G_RM_ZB_XLU_DECAL2", G_RM_ZB_XLU_DECAL2 },
                                                           { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 } };
 
-static Gfx gsSPVertexOTR2_P1(char* filePathPtr) {
+static Gfx GsSpVertexOtR2P1(char* filePathPtr) {
     Gfx g;
     g.words.w0 = G_VTX_OTR_FILEPATH << 24;
     g.words.w1 = (uintptr_t)filePathPtr;
@@ -123,7 +123,7 @@ static Gfx gsSPVertexOTR2_P1(char* filePathPtr) {
     return g;
 }
 
-static Gfx gsSPVertexOTR2_P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
+static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
     Gfx g;
     g.words.w0 = (uintptr_t)vtxCnt;
     g.words.w1 = (uintptr_t)((vtxBufOffset << 16) | vtxDataOffset);
@@ -349,12 +349,12 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             char* filePath = (char*)malloc(fName.size() + 1);
             strcpy(filePath, fName.data());
 
-            g = gsSPVertexOTR2_P1(filePath);
+            g = GsSpVertexOtR2P1(filePath);
 
             dl->Instructions.push_back(g);
 
-            g = gsSPVertexOTR2_P2(child->IntAttribute("Count"), child->IntAttribute("VertexBufferIndex"),
-                                  child->IntAttribute("VertexOffset"));
+            g = GsSpVertexOtR2P2(child->IntAttribute("Count"), child->IntAttribute("VertexBufferIndex"),
+                                 child->IntAttribute("VertexOffset"));
         } else if (childName == "SetTextureImage") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
