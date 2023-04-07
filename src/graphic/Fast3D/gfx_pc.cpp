@@ -2595,10 +2595,10 @@ static void gfx_run_dl(Gfx* cmd) {
                     char* tex = NULL;
 #endif
 
-                    // OTRTODO: We have disabled caching for now to fix a texture corruption issue with HD texture support.
-                    // In doing so, there is a potential performance hit since we are not caching lookups.
-                    // We need to do proper profiling to see whether or not it is worth it to keep the caching system.
-                    
+                    // OTRTODO: We have disabled caching for now to fix a texture corruption issue with HD texture
+                    // support. In doing so, there is a potential performance hit since we are not caching lookups. We
+                    // need to do proper profiling to see whether or not it is worth it to keep the caching system.
+
                     tex = reinterpret_cast<char*>(texture->ImageData);
 
                     if (tex != nullptr) {
