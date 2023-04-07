@@ -2595,28 +2595,22 @@ static void gfx_run_dl(Gfx* cmd) {
                     char* tex = NULL;
 #endif
 
-                    // TODO: We need to comment this bit out for now to fix a texture corruption issue with HD texture support.
+                    // OTRTODO: We have disabled caching for now to fix a texture corruption issue with HD texture support.
                     // In doing so, there is a potential performance hit since we are not caching lookups.
                     // We need to do proper profiling to see whether or not it is worth it to keep the caching system.
-                    /* if (addr != 0) 
-                    {
-                        tex = (char*)addr;
-                    } else */{
-                        tex = reinterpret_cast<char*>(texture->ImageData);
-                        if (tex != nullptr) {
-                            cmd--;
-                            uintptr_t oldData = cmd->words.w1;
-                            cmd->words.w1 = (uintptr_t)tex;
+                    
+                    tex = reinterpret_cast<char*>(texture->ImageData);
 
-                            if (ourHash != (uint64_t)-1) {
-                                auto res = LoadResource(ourHash, false);
-                                if (res != nullptr) {
-                                    res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, oldData);
-                                }
-                            }
+                    if (tex != nullptr) {
+                        cmd--;
+                        uintptr_t oldData = cmd->words.w1;
+                        cmd->words.w1 = (uintptr_t)tex;
 
-                            cmd++;
+                        if (ourHash != (uint64_t)-1) {
+                            auto res = LoadResource(ourHash, false);
                         }
+
+                        cmd++;
                     }
 
                     cmd--;
