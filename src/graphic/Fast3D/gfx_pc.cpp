@@ -2425,8 +2425,9 @@ static void gfx_run_dl(Gfx* cmd) {
                     // Push return address
                     Gfx* subGFX = (Gfx*)seg_addr(cmd->words.w1);
 
-                    if (subGFX != nullptr)
+                    if (subGFX != nullptr) {
                         gfx_run_dl(subGFX);
+                    }
                 } else {
                     cmd = (Gfx*)seg_addr(cmd->words.w1);
                     --cmd; // increase after break
