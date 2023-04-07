@@ -38,8 +38,6 @@ void UnloadResourceByName(const char* name);
 void UnloadResourceByCrc(uint64_t crc);
 void UnloadResourceDirectory(const char* name);
 void ClearResourceCache(void);
-void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now);
-void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData, bool now);
 void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueToWrite, bool now);
 void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite, bool now);
 

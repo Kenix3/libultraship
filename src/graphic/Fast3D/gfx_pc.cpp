@@ -2378,9 +2378,6 @@ static void gfx_run_dl(Gfx* cmd) {
 
                         if (ourHash != (uint64_t)-1) {
                             auto res = LoadResource(ourHash, false);
-                            if (res != nullptr) {
-                                res->RegisterResourceAddressPatch(ourHash, cmd - dListStart, offset);
-                            }
                         }
 
                         cmd->words.w1 = (uintptr_t)vtx;
@@ -2406,13 +2403,18 @@ static void gfx_run_dl(Gfx* cmd) {
                 fileName = (char*)cmd->words.w1;
                 Gfx* nDL = (Gfx*)GetResourceDataByName((const char*)fileName, false);
 
-                if (C0(16, 1) == 0) {
+                if (C0(16, 1) == 0 && nDL != nullptr) {
                     // Push return address
                     currentDir.push((char*)fileName);
                     gfx_run_dl(nDL);
                     currentDir.pop();
-                } else {
-                    cmd = nDL;
+                } else 
+                {
+                    if (nDL != nullptr) {
+                        cmd = nDL;
+                    } else {
+                        return;
+                    }
                     --cmd; // increase after break
                 }
             } break;
@@ -2422,7 +2424,10 @@ static void gfx_run_dl(Gfx* cmd) {
             case G_DL:
                 if (C0(16, 1) == 0) {
                     // Push return address
-                    gfx_run_dl((Gfx*)seg_addr(cmd->words.w1));
+                    Gfx* subGFX = (Gfx*)seg_addr(cmd->words.w1);
+
+                    if (subGFX != nullptr)
+                        gfx_run_dl(subGFX);
                 } else {
                     cmd = (Gfx*)seg_addr(cmd->words.w1);
                     --cmd; // increase after break

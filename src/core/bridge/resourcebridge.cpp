@@ -180,33 +180,6 @@ void UnloadResourceDirectory(const char* name) {
     Ship::Window::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
 
-void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now) {
-    auto res = LoadResource(name, now);
-
-    if (res != nullptr) {
-        const auto hash = GetResourceCrcByName(name);
-        Ship::ResourceAddressPatch patch;
-        patch.ResourceCrc = hash;
-        patch.InstructionIndex = index;
-        patch.OriginalData = origData;
-
-        res->Patches.push_back(patch);
-    }
-}
-
-void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData, bool now) {
-    auto res = LoadResource(crc, now);
-
-    if (res != nullptr) {
-        Ship::ResourceAddressPatch patch;
-        patch.ResourceCrc = crc;
-        patch.InstructionIndex = index;
-        patch.OriginalData = origData;
-
-        res->Patches.push_back(patch);
-    }
-}
-
 void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueToWrite, bool now) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
 
