@@ -2408,8 +2408,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     currentDir.push((char*)fileName);
                     gfx_run_dl(nDL);
                     currentDir.pop();
-                } else 
-                {
+                } else {
                     if (nDL != nullptr) {
                         cmd = nDL;
                     } else {
