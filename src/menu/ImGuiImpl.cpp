@@ -438,13 +438,13 @@ void Init(WindowImpl windowImpl) {
     float baseFontSize = 13.0f;
     // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
     float iconFontSize = baseFontSize * 2.0f / 3.0f;
-    static const ImWchar iconsRanges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    static const ImWchar sIconsRanges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
     ImFontConfig iconsConfig;
     iconsConfig.MergeMode = true;
     iconsConfig.PixelSnapH = true;
     iconsConfig.GlyphMinAdvanceX = iconFontSize;
     io->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize, &iconsConfig,
-                                                    iconsRanges);
+                                                    sIconsRanges);
 
     statsWindowOpen = CVarGetInteger("gStatsEnabled", 0);
     CVarRegisterInteger("gRandomizeRupeeNames", 1);
