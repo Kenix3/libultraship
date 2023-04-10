@@ -24,6 +24,7 @@
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include <spdlog/common.h>
+#include "menu/Fonts.h"
 
 #ifdef __WIIU__
 #include <gx2/registers.h> // GX2SetViewport / GX2SetScissor
@@ -430,7 +431,18 @@ void Init(WindowImpl windowImpl) {
     ImGui::SetCurrentContext(ctx);
     io = &ImGui::GetIO();
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
+    
+    // Add Font Awesome and merge it into the default font.
     io->Fonts->AddFontDefault();
+    float baseFontSize = 13.0f; // This must match the default font size, which is 13.0f.
+    float iconFontSize = baseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = iconFontSize;
+    io->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize, &icons_config, icons_ranges);
+
     statsWindowOpen = CVarGetInteger("gStatsEnabled", 0);
     CVarRegisterInteger("gRandomizeRupeeNames", 1);
     CVarRegisterInteger("gRandoRelevantNavi", 1);
