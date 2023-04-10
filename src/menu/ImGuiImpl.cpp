@@ -431,7 +431,7 @@ void Init(WindowImpl windowImpl) {
     ImGui::SetCurrentContext(ctx);
     io = &ImGui::GetIO();
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
-    
+
     // Add Font Awesome and merge it into the default font.
     io->Fonts->AddFontDefault();
     // This must match the default font size, which is 13.0f.
