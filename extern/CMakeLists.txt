@@ -1,7 +1,7 @@
 find_package(OpenGL QUIET)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-    find_package(SDL2 CONFIG REQUIRED)
+    find_package(sdl2 CONFIG REQUIRED)
 else()
     find_package(SDL2 REQUIRED)
 endif()
