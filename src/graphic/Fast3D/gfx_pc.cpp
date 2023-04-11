@@ -129,7 +129,7 @@ static struct RSP {
 struct RawTexMetadata {
     uint16_t width, height;
     float h_byte_scale = 1, v_pixel_scale = 1;
-    std::string name;
+    std::shared_ptr<Ship::Texture> resource;
     Ship::TextureType type;
 };
 
@@ -840,8 +840,6 @@ static void import_texture_ci8(int tile) {
 
 static void import_texture_raw(int tile) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-
-    const char* name = metadata->name.c_str();
     const uint8_t* addr = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
 
     uint16_t width = metadata->width;
@@ -2192,14 +2190,14 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     RawTexMetadata rawTexMetadata = {};
 
     if ((bool)gfx_check_image_signature((char*)data)) {
-        Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true)).get();
+        std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
         rawTexMetadata.h_byte_scale = tex->HByteScale;
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
-        rawTexMetadata.name = std::string((char*)data);
+        rawTexMetadata.resource = tex;
         data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
     }
 
@@ -2557,7 +2555,8 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 if ((i & 1) != 1) {
                     if (gfx_check_image_signature(imgData) == 1) {
-                        Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(LoadResource(imgData, true)).get();
+                        std::shared_ptr<Ship::Texture> tex =
+                            std::static_pointer_cast<Ship::Texture>(LoadResource(imgData, true));
 
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
@@ -2566,7 +2565,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         rawTexMetdata.h_byte_scale = tex->HByteScale;
                         rawTexMetdata.v_pixel_scale = tex->VPixelScale;
                         rawTexMetdata.type = tex->Type;
-                        rawTexMetdata.name = std::string(imgData);
+                        rawTexMetdata.resource = tex;
                     }
                 }
 
@@ -2582,7 +2581,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetdata = {};
 
-                Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(hash, true)).get();
+                std::shared_ptr<Ship::Texture> texture =
+                    std::static_pointer_cast<Ship::Texture>(LoadResource(hash, true));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetdata.width = texture->Width;
@@ -2590,7 +2590,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     rawTexMetdata.h_byte_scale = texture->HByteScale;
                     rawTexMetdata.v_pixel_scale = texture->VPixelScale;
                     rawTexMetdata.type = texture->Type;
-                    rawTexMetdata.name = std::string(fileName);
+                    rawTexMetdata.resource = texture;
 
 #if _DEBUG && 0
                     tex = reinterpret_cast<char*>(texture->imageData);
@@ -2640,7 +2640,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetadata = {};
 
-                Ship::Texture* texture = std::static_pointer_cast<Ship::Texture>(LoadResource(fileName, true)).get();
+                std::shared_ptr<Ship::Texture> texture =
+                    std::static_pointer_cast<Ship::Texture>(LoadResource(fileName, true));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -2648,7 +2649,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     rawTexMetadata.h_byte_scale = texture->HByteScale;
                     rawTexMetadata.v_pixel_scale = texture->VPixelScale;
                     rawTexMetadata.type = texture->Type;
-                    rawTexMetadata.name = std::string(fileName);
+                    rawTexMetadata.resource = texture;
 
                     uint32_t fmt = C0(21, 3);
                     uint32_t size = C0(19, 2);
