@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include "menu/Console.h"
 #include "InputEditor.h"
+#include "menu/IconsFontAwesome4.h"
 
 struct GameAsset {
     uint32_t textureId;
