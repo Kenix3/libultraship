@@ -152,7 +152,7 @@ std::string Window::GetAppBundlePath() {
 #endif
 
 #ifdef __linux__
-    char* fpath = std::getenv("SHIP_HOME");
+    char* fpath = std::getenv("SHIP_BIN_DIR");
     if (fpath != NULL) {
         return std::string(fpath);
     }
