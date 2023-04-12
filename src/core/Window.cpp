@@ -153,8 +153,9 @@ std::string Window::GetAppBundlePath() {
 
 #ifdef __linux__
     char* fpath = std::getenv("SHIP_HOME");
-    if (fpath != NULL)
+    if (fpath != NULL) {
         return std::string(fpath);
+    }
 #endif
 
     return ".";
@@ -170,8 +171,9 @@ std::string Window::GetAppDirectoryPath() {
 
 #ifdef __linux__
     char* fpath = std::getenv("SHIP_HOME");
-    if (fpath != NULL)
+    if (fpath != NULL) {
         return std::string(fpath);
+    }
 #endif
 
     return ".";
