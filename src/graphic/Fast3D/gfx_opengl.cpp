@@ -53,7 +53,7 @@ using namespace std;
 struct ShaderProgram {
     GLuint opengl_program_id;
     uint8_t num_inputs;
-    bool used_textures[2];
+    bool used_textures[SHADER_MAX_TEXURES];
     uint8_t num_floats;
     GLint attrib_locations[16];
     uint8_t attrib_sizes[16];
@@ -249,7 +249,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
     char vs_buf[1024];
-    char fs_buf[3000];
+    char fs_buf[6000];
     size_t vs_len = 0;
     size_t fs_len = 0;
     size_t num_floats = 4;
@@ -394,6 +394,18 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     if (cc_features.used_textures[1]) {
         append_line(fs_buf, &fs_len, "uniform sampler2D uTex1;");
     }
+    if (cc_features.used_masks[0]) {
+        append_line(fs_buf, &fs_len, "uniform sampler2D uTexMask0;");
+    }
+    if (cc_features.used_masks[1]) {
+        append_line(fs_buf, &fs_len, "uniform sampler2D uTexMask1;");
+    }
+    if (cc_features.used_blend[0]) {
+        append_line(fs_buf, &fs_len, "uniform sampler2D uTexBlend0;");
+    }
+    if (cc_features.used_blend[1]) {
+        append_line(fs_buf, &fs_len, "uniform sampler2D uTexBlend1;");
+    }
 
     append_line(fs_buf, &fs_len, "uniform int frame_count;");
     append_line(fs_buf, &fs_len, "uniform float noise_scale;");
@@ -447,25 +459,36 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
             fs_len += sprintf(fs_buf + fs_len, "vec2 texSize%d = textureSize(uTex%d, 0);\n", i, i);
 
             if (!s && !t) {
-                fs_len += sprintf(fs_buf + fs_len, "vec4 texVal%d = hookTexture2D(uTex%d, vTexCoord%d, texSize%d);\n",
-                                  i, i, i, i);
+                fs_len += sprintf(fs_buf + fs_len, "vec2 vTexCoordAdj%d = vTexCoord%d;\n", i, i);
             } else {
                 if (s && t) {
-                    fs_len += sprintf(fs_buf + fs_len,
-                                      "vec4 texVal%d = hookTexture2D(uTex%d, clamp(vTexCoord%d, 0.5 / texSize%d, "
-                                      "vec2(vTexClampS%d, vTexClampT%d)), texSize%d);\n",
-                                      i, i, i, i, i, i, i);
+                    fs_len += sprintf(fs_buf + fs_len, "vec2 vTexCoordAdj%d = clamp(vTexCoord%d, 0.5 / texSize%d, "
+                                      "vec2(vTexClampS%d, vTexClampT%d));\n", i, i, i, i, i);
                 } else if (s) {
-                    fs_len += sprintf(fs_buf + fs_len,
-                                      "vec4 texVal%d = hookTexture2D(uTex%d, vec2(clamp(vTexCoord%d.s, 0.5 / "
-                                      "texSize%d.s, vTexClampS%d), vTexCoord%d.t), texSize%d);\n",
-                                      i, i, i, i, i, i, i);
+                    fs_len += sprintf(fs_buf + fs_len, "vec2 vTexCoordAdj%d = vec2(clamp(vTexCoord%d.s, 0.5 / "
+                                      "texSize%d.s, vTexClampS%d), vTexCoord%d.t);\n", i, i, i, i, i);
                 } else {
-                    fs_len += sprintf(fs_buf + fs_len,
-                                      "vec4 texVal%d = hookTexture2D(uTex%d, vec2(vTexCoord%d.s, clamp(vTexCoord%d.t, "
-                                      "0.5 / texSize%d.t, vTexClampT%d)), texSize%d);\n",
-                                      i, i, i, i, i, i, i);
+                    fs_len += sprintf(fs_buf + fs_len, "vec2 vTexCoordAdj%d = vec2(vTexCoord%d.s, clamp(vTexCoord%d.t, "
+                                      "0.5 / texSize%d.t, vTexClampT%d));\n", i, i, i, i, i);
                 }
+            }
+
+            fs_len += sprintf(fs_buf + fs_len, "vec4 texVal%d = hookTexture2D(uTex%d, vTexCoordAdj%d, texSize%d);\n", i,
+                              i, i, i);
+            if (cc_features.used_masks[i]) {
+                fs_len += sprintf(fs_buf + fs_len, "vec2 maskSize%d = textureSize(uTexMask%d, 0);\n", i, i);
+
+                fs_len += sprintf(fs_buf + fs_len,
+                                  "vec4 maskVal%d = hookTexture2D(uTexMask%d, vTexCoordAdj%d, maskSize%d);\n", i, i, i, i);
+                if (cc_features.used_blend[i]) {
+                    fs_len += sprintf(fs_buf + fs_len,
+                                      "vec4 blendVal%d = hookTexture2D(uTexBlend%d, vTexCoordAdj%d, texSize%d);\n", i,
+                                      i, i, i);
+                } else {
+                    fs_len += sprintf(fs_buf + fs_len, "vec4 blendVal%d = vec4(0, 0, 0, 0);\n", i);
+                }
+
+                fs_len += sprintf(fs_buf + fs_len, "texVal%d = mix(texVal%d, blendVal%d, maskVal%d.a);\n", i, i, i, i);
             }
         }
     }
@@ -637,6 +660,10 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     prg->num_inputs = cc_features.num_inputs;
     prg->used_textures[0] = cc_features.used_textures[0];
     prg->used_textures[1] = cc_features.used_textures[1];
+    prg->used_textures[2] = cc_features.used_masks[0];
+    prg->used_textures[3] = cc_features.used_masks[1];
+    prg->used_textures[4] = cc_features.used_blend[0];
+    prg->used_textures[5] = cc_features.used_blend[1];
     prg->num_floats = num_floats;
     prg->num_attribs = cnt;
 
@@ -649,6 +676,22 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     if (cc_features.used_textures[1]) {
         GLint sampler_location = glGetUniformLocation(shader_program, "uTex1");
         glUniform1i(sampler_location, 1);
+    }
+    if (cc_features.used_masks[0]) {
+        GLint sampler_location = glGetUniformLocation(shader_program, "uTexMask0");
+        glUniform1i(sampler_location, 2);
+    }
+    if (cc_features.used_masks[1]) {
+        GLint sampler_location = glGetUniformLocation(shader_program, "uTexMask1");
+        glUniform1i(sampler_location, 3);
+    }
+    if (cc_features.used_blend[0]) {
+        GLint sampler_location = glGetUniformLocation(shader_program, "uTexBlend0");
+        glUniform1i(sampler_location, 4);
+    }
+    if (cc_features.used_blend[1]) {
+        GLint sampler_location = glGetUniformLocation(shader_program, "uTexBlend1");
+        glUniform1i(sampler_location, 5);
     }
 
     prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");

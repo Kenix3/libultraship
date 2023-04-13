@@ -51,7 +51,7 @@ struct PerDrawCB {
         uint32_t height;
         uint32_t linear_filtering;
         uint32_t padding;
-    } textures[2];
+    } textures[SHADER_MAX_TEXURES];
 };
 
 struct Coord {
@@ -86,7 +86,7 @@ struct ShaderProgramD3D11 {
     uint32_t shader_id1;
     uint8_t num_inputs;
     uint8_t num_floats;
-    bool used_textures[2];
+    bool used_textures[SHADER_MAX_TEXURES];
 };
 
 static struct {
@@ -127,7 +127,7 @@ static struct {
 
     std::vector<struct TextureData> textures;
     int current_tile;
-    uint32_t current_texture_ids[2];
+    uint32_t current_texture_ids[SHADER_MAX_TEXURES];
 
     std::vector<Framebuffer> framebuffers;
 
@@ -149,8 +149,8 @@ static struct {
     struct ShaderProgramD3D11* last_shader_program = nullptr;
     uint32_t last_vertex_buffer_stride = 0;
     ComPtr<ID3D11BlendState> last_blend_state = nullptr;
-    ComPtr<ID3D11ShaderResourceView> last_resource_views[2] = { nullptr, nullptr };
-    ComPtr<ID3D11SamplerState> last_sampler_states[2] = { nullptr, nullptr };
+    ComPtr<ID3D11ShaderResourceView> last_resource_views[SHADER_MAX_TEXURES] = { nullptr, nullptr };
+    ComPtr<ID3D11SamplerState> last_sampler_states[SHADER_MAX_TEXURES] = { nullptr, nullptr };
     int8_t last_depth_test = -1;
     int8_t last_depth_mask = -1;
     int8_t last_zmode_decal = -1;
@@ -255,10 +255,10 @@ static void gfx_d3d11_init(void) {
         d3d.last_shader_program = nullptr;
         d3d.last_vertex_buffer_stride = 0;
         d3d.last_blend_state.Reset();
-        d3d.last_resource_views[0].Reset();
-        d3d.last_resource_views[1].Reset();
-        d3d.last_sampler_states[0].Reset();
-        d3d.last_sampler_states[1].Reset();
+        for (int i = 0; i < SHADER_MAX_TEXURES; i++) {
+            d3d.last_resource_views[i].Reset();
+            d3d.last_sampler_states[i].Reset();
+        }
         d3d.last_depth_test = -1;
         d3d.last_depth_mask = -1;
         d3d.last_zmode_decal = -1;
@@ -414,7 +414,7 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
-    char buf[4096];
+    char buf[8192];
     size_t len, num_floats;
 
     gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
@@ -538,6 +538,10 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     prg->num_floats = num_floats;
     prg->used_textures[0] = cc_features.used_textures[0];
     prg->used_textures[1] = cc_features.used_textures[1];
+    prg->used_textures[2] = cc_features.used_masks[0];
+    prg->used_textures[3] = cc_features.used_masks[1];
+    prg->used_textures[4] = cc_features.used_blend[0];
+    prg->used_textures[5] = cc_features.used_blend[1];
 
     return (struct ShaderProgram*)(d3d.shader_program = prg);
 }
@@ -733,7 +737,7 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
 
     bool textures_changed = false;
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < SHADER_MAX_TEXURES; i++) {
         if (d3d.shader_program->used_textures[i]) {
             if (d3d.last_resource_views[i].Get() != d3d.textures[d3d.current_texture_ids[i]].resource_view.Get()) {
                 d3d.last_resource_views[i] = d3d.textures[d3d.current_texture_ids[i]].resource_view.Get();

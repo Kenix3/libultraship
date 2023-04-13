@@ -115,7 +115,7 @@ static void append_formula(char* buf, size_t* len, const uint8_t c[2][4], bool d
     }
 }
 
-void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_floats, const CCFeatures& cc_features,
+void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_floats, const CCFeatures& cc_features,
                                       bool include_root_signature, bool three_point_filtering) {
     len = 0;
     num_floats = 4;
@@ -175,6 +175,18 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
     if (cc_features.used_textures[1]) {
         append_line(buf, &len, "Texture2D g_texture1 : register(t1);");
         append_line(buf, &len, "SamplerState g_sampler1 : register(s1);");
+    }
+    if (cc_features.used_masks[0]) {
+        append_line(buf, &len, "Texture2D g_textureMask0 : register(t2);");
+    }
+    if (cc_features.used_masks[1]) {
+        append_line(buf, &len, "Texture2D g_textureMask1 : register(t3);");
+    }
+    if (cc_features.used_blend[0]) {
+        append_line(buf, &len, "Texture2D g_textureBlend0 : register(t4);");
+    }
+    if (cc_features.used_blend[1]) {
+        append_line(buf, &len, "Texture2D g_textureBlend1 : register(t5);");
     }
 
     // Constant buffer and random function
@@ -307,16 +319,53 @@ void gfx_direct3d_common_build_shader(char buf[4096], size_t& len, size_t& num_f
             }
             if (three_point_filtering) {
                 len += sprintf(buf + len, "    float4 texVal%d;\r\n", i);
-                len += sprintf(buf + len, "    if (textures[%d].linear_filtering)\r\n", i);
-                len += sprintf(buf + len,
-                               "        texVal%d = tex2D3PointFilter(g_texture%d, g_sampler%d, tc%d, "
-                               "float2(textures[%d].width, textures[%d].height));\r\n",
-                               i, i, i, i, i, i);
-                len += sprintf(buf + len, "    else\r\n");
+                len += sprintf(buf + len, "    if (textures[%d].linear_filtering) {\r\n", i);
+                if (cc_features.used_masks[i]) {
+                    len += sprintf(buf + len,
+                                   "        texVal%d = tex2D3PointFilter(g_texture%d, g_sampler%d, tc%d, "
+                                   "float2(textures[%d].width, textures[%d].height));\r\n",
+                                   i, i, i, i, i, i);
+                    len += sprintf(buf + len, "        float2 maskSize%d;\r\n", i);
+                    len += sprintf(buf + len, "        g_textureMask%d.GetDimensions(maskSize%d.x, maskSize%d.y);\r\n", i, i, i);
+                    len += sprintf(buf + len,
+                                   "        float4 maskVal%d = tex2D3PointFilter(g_textureMask%d, g_sampler%d, tc%d, "
+                                   "maskSize%d);\r\n",
+                                   i, i, i, i, i);
+                    if (cc_features.used_blend[i]) {
+                        len += sprintf(buf + len,
+                                       "        float4 blendVal%d = tex2D3PointFilter(g_textureBlend%d, g_sampler%d, "
+                                       "tc%d, float2(textures[%d].width, textures[%d].height));\r\n",
+                                       i, i, i, i, i, i);
+                    } else {
+                        len += sprintf(buf + len, "        float4 blendVal%d = float4(0, 0, 0, 0);\r\n", i);
+                    }
+                    len +=
+                        sprintf(buf + len, "        texVal%d = lerp(texVal%d, blendVal%d, maskVal%d.a);\r\n", i, i, i, i);
+                } else {
+                    len += sprintf(buf + len,
+                                   "        texVal%d = tex2D3PointFilter(g_texture%d, g_sampler%d, tc%d, "
+                                   "float2(textures[%d].width, textures[%d].height));\r\n",
+                                   i, i, i, i, i, i);
+                }
+                len += sprintf(buf + len, "    } else {\r\n");
                 len += sprintf(buf + len, "        texVal%d = g_texture%d.Sample(g_sampler%d, tc%d);\r\n", i, i, i, i);
+                len += sprintf(buf + len, "    }\r\n");
             } else {
                 len +=
                     sprintf(buf + len, "    float4 texVal%d = g_texture%d.Sample(g_sampler%d, tc%d);\r\n", i, i, i, i);
+                if (cc_features.used_masks[i]) {
+                    if (cc_features.used_blend[i]) {
+                        len += sprintf(buf + len,
+                                       "    float4 blendVal%d = g_textureBlend%d.Sample(g_sampler%d, tc%d);\r\n", i,
+                                i, i, i);
+                    } else {
+                        len += sprintf(buf + len, "    float4 blendVal%d = float4(0, 0, 0, 0);\r\n", i);
+                    }
+                    len += sprintf(buf + len,
+                                   "    texVal%d = lerp(texVal%d, blendVal%d, "
+                                   "g_textureMask%d.Sample(g_sampler%d, tc%d).a);\r\n",
+                                   i, i, i, i, i, i);
+                }
             }
         }
     }

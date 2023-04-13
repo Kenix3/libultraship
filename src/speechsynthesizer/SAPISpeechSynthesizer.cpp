@@ -11,7 +11,7 @@
 #include <string>
 #include <spdlog/fmt/fmt.h>
 
-ISpVoice* mVoice = NULL;
+static ISpVoice* mVoice = NULL;
 
 namespace Ship {
 SAPISpeechSynthesizer::SAPISpeechSynthesizer() {

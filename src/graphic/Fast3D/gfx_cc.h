@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <compare>
 
 /*enum {
     CC_0,
@@ -45,7 +46,22 @@ enum {
 #define SHADER_OPT_TEXEL0_CLAMP_T (1 << 9)
 #define SHADER_OPT_TEXEL1_CLAMP_S (1 << 10)
 #define SHADER_OPT_TEXEL1_CLAMP_T (1 << 11)
-#define CC_SHADER_OPT_POS 56
+#define SHADER_OPT_TEXEL0_MASK (1 << 12)
+#define SHADER_OPT_TEXEL1_MASK (1 << 13)
+#define SHADER_OPT_TEXEL0_BLEND (1 << 14)
+#define SHADER_OPT_TEXEL1_BLEND (1 << 15)
+
+struct ColorCombinerKey {
+    uint64_t combine_mode;
+    uint64_t options;
+
+    auto operator<=>(const ColorCombinerKey&) const = default;
+};
+
+#define SHADER_MAX_TEXURES 6
+#define SHADER_FIRST_TEXTURE 0
+#define SHADER_FIRST_MASK_TEXTURE 2
+#define SHADER_FIRST_REPLACEMENT_TEXTURE 4
 
 struct CCFeatures {
     uint8_t c[2][2][4];
@@ -58,6 +74,8 @@ struct CCFeatures {
     bool opt_invisible;
     bool opt_grayscale;
     bool used_textures[2];
+    bool used_masks[2];
+    bool used_blend[2];
     bool clamp[2][2];
     int num_inputs;
     bool do_single[2][2];
