@@ -564,10 +564,7 @@ static bool gfx_dxgi_start_frame(void) {
         dxgi.length_in_vsync_frames = 1;
         dxgi.use_timer = true;
     }
-    */
     
-    
-    /* 
     Replace the fractional VSync code by forcing the interval to be a
     specific number.Potentially have this behind a config option in
     the future to let users turn off or on VSync entirely.
