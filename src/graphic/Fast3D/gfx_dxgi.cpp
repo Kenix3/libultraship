@@ -437,7 +437,6 @@ static bool gfx_dxgi_start_frame(void) {
 }
 
 static void gfx_dxgi_swap_buffers_begin(void) {
-    dxgi.length_in_vsync_frames = 1;
     LARGE_INTEGER t;
     if (dxgi.use_timer) {
         QueryPerformanceCounter(&t);
