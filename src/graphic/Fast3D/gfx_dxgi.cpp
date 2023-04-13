@@ -422,6 +422,12 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
 }
 
 static bool gfx_dxgi_start_frame(void) {
+
+    // Commented out code is responsible for handling fractional VSync.
+    // Currently it's causing the interval to change rapidly when a VRR
+    // display is used (GSync or FreeSync), causing a big hit to performance.
+
+    /*
     DXGI_FRAME_STATISTICS stats;
     if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
         (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -484,10 +490,10 @@ static bool gfx_dxgi_start_frame(void) {
         UINT queued_vsyncs = 0;
         bool is_first = true;
         for (const std::pair<UINT, UINT>& p : dxgi.pending_frame_stats) {
-            /*if (is_first && dxgi.zero_latency) {
-                is_first = false;
-                continue;
-            }*/
+            //if (is_first && dxgi.zero_latency) {
+                //is_first = false;
+                //continue;
+            //}
             queued_vsyncs += p.second;
         }
 
@@ -558,6 +564,14 @@ static bool gfx_dxgi_start_frame(void) {
         dxgi.length_in_vsync_frames = 1;
         dxgi.use_timer = true;
     }
+    */
+    
+    // Replace the fractional VSync code by forcing the interval to be a specific number.
+    // Potentially have this behind a config options to let users turn off or on VSync entirely.
+    // 0 = VSync off.
+    // 1 = VSync on.
+    dxgi.length_in_vsync_frames = 1;
+    dxgi.dropped_frame = false;
 
     return true;
 }
