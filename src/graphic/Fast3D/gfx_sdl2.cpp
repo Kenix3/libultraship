@@ -42,7 +42,7 @@
 static SDL_Window* wnd;
 static SDL_GLContext ctx;
 static SDL_Renderer* renderer;
-static int inverted_scancode_table[512];
+static int sdl_to_lus_table[512];
 static int vsync_enabled = 0;
 static int window_width = DESIRED_SCREEN_WIDTH;
 static int window_height = DESIRED_SCREEN_HEIGHT;
@@ -53,7 +53,7 @@ static bool (*on_key_down_callback)(int scancode);
 static bool (*on_key_up_callback)(int scancode);
 static void (*on_all_keys_up_callback)(void);
 
-const SDL_Scancode windows_scancode_table[] = {
+const SDL_Scancode lus_to_sdl_table[] = {
     SDL_SCANCODE_UNKNOWN,
     SDL_SCANCODE_ESCAPE,
     SDL_SCANCODE_1,
@@ -347,19 +347,19 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
     SohImGui::Init(window_impl);
 
-    for (size_t i = 0; i < sizeof(windows_scancode_table) / sizeof(SDL_Scancode); i++) {
-        inverted_scancode_table[windows_scancode_table[i]] = i;
+    for (size_t i = 0; i < sizeof(lus_to_sdl_table) / sizeof(SDL_Scancode); i++) {
+        sdl_to_lus_table[lus_to_sdl_table[i]] = i;
     }
 
     for (size_t i = 0; i < sizeof(scancode_rmapping_extended) / sizeof(scancode_rmapping_extended[0]); i++) {
-        inverted_scancode_table[scancode_rmapping_extended[i][0]] =
-            inverted_scancode_table[scancode_rmapping_extended[i][1]] + 0x100;
+        sdl_to_lus_table[scancode_rmapping_extended[i][0]] =
+            sdl_to_lus_table[scancode_rmapping_extended[i][1]] + 0x100;
     }
 
     for (size_t i = 0; i < sizeof(scancode_rmapping_nonextended) / sizeof(scancode_rmapping_nonextended[0]); i++) {
-        inverted_scancode_table[scancode_rmapping_nonextended[i][0]] =
-            inverted_scancode_table[scancode_rmapping_nonextended[i][1]];
-        inverted_scancode_table[scancode_rmapping_nonextended[i][1]] += 0x100;
+        sdl_to_lus_table[scancode_rmapping_nonextended[i][0]] =
+            sdl_to_lus_table[scancode_rmapping_nonextended[i][1]];
+        sdl_to_lus_table[scancode_rmapping_nonextended[i][1]] += 0x100;
     }
 }
 
@@ -414,7 +414,7 @@ static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height) {
 
 static int translate_scancode(int scancode) {
     if (scancode < 512) {
-        return inverted_scancode_table[scancode];
+        return sdl_to_lus_table[scancode];
     } else {
         return 0;
     }
@@ -422,7 +422,7 @@ static int translate_scancode(int scancode) {
 
 static int untranslate_scancode(int translatedScancode) {
     for (int i = 0; i < 512; i++) {
-        if (inverted_scancode_table[i] == translatedScancode) {
+        if (sdl_to_lus_table[i] == translatedScancode) {
             return i;
         }
     }
