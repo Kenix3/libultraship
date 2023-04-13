@@ -16,6 +16,7 @@
 #include "controller/SDLController.h"
 #include "controller/ControlDeck.h"
 #include "controller/KeyboardController.h"
+#include "controller/KeyboardScancodes.h"
 #include "controller/DummyController.h"
 #include "binarytools/BinaryReader.h"
 #if defined(__linux__) || defined(__BSD__)
