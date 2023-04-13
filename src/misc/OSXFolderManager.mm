@@ -18,6 +18,11 @@ FolderManager::~FolderManager() {
     [(NSAutoreleasePool *)m_autoreleasePool release];
 }
 
+const char * FolderManager::getMainBundlePath() {
+    NSString *bundlePath = [[NSBundle mainBundle] resourcePath];
+    return [bundlePath UTF8String];
+}
+
 const char * FolderManager::pathForDirectory(SearchPathDirectory directory, SearchPathDomainMask domainMask) {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSArray *URLs = [fileManager URLsForDirectory:(NSSearchPathDirectory)directory inDomains:domainMask];

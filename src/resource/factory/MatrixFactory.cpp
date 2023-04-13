@@ -3,18 +3,20 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<Resource> MatrixFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Matrix>();
+std::shared_ptr<Resource> MatrixFactory::ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                      std::shared_ptr<ResourceInitData> initData,
+                                                      std::shared_ptr<BinaryReader> reader) {
+    auto resource = std::make_shared<Matrix>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (version) {
+    switch (resource->InitData->ResourceVersion) {
         case 0:
             factory = std::make_shared<MatrixFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Matrix with version {}", version);
+        SPDLOG_ERROR("Failed to load Matrix with version {}", resource->InitData->ResourceVersion);
         return nullptr;
     }
 

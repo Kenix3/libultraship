@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include "menu/Console.h"
 #include "InputEditor.h"
+#include "menu/IconsFontAwesome4.h"
 
 struct GameAsset {
     uint32_t textureId;
@@ -16,7 +17,8 @@ struct GameAsset {
 namespace SohImGui {
 enum class Backend {
     DX11,
-    SDL,
+    SDL_OPENGL,
+    SDL_METAL,
     GX2,
 };
 

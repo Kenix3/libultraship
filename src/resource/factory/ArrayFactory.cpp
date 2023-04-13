@@ -3,18 +3,20 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<Resource> ArrayFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Array>();
+std::shared_ptr<Resource> ArrayFactory::ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                     std::shared_ptr<ResourceInitData> initData,
+                                                     std::shared_ptr<BinaryReader> reader) {
+    auto resource = std::make_shared<Array>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (version) {
+    switch (resource->InitData->ResourceVersion) {
         case 0:
             factory = std::make_shared<ArrayFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Array with version {}", version);
+        SPDLOG_ERROR("Failed to load Array with version {}", resource->InitData->ResourceVersion);
         return nullptr;
     }
 

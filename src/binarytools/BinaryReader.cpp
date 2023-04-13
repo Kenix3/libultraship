@@ -192,6 +192,22 @@ std::string Ship::BinaryReader::ReadString() {
     return res;
 }
 
+std::string Ship::BinaryReader::ReadCString() {
+    std::string res;
+
+    unsigned char c = 0;
+    do {
+        if (mStream->GetBaseAddress() >= mStream->GetLength()) {
+            break;
+        }
+
+        c = ReadChar();
+        res += c;
+    } while (c != '\0');
+
+    return res;
+}
+
 std::vector<char> Ship::BinaryReader::ToVector() {
     return mStream->ToVector();
 }

@@ -5,8 +5,6 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-#include "resource/type/Texture.h"
-
 std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
     return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(name)
                : Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
@@ -147,7 +145,7 @@ uint32_t HasGameVersion(uint32_t hash) {
 }
 
 void LoadResourceDirectory(const char* name) {
-    Ship::Window::GetInstance()->GetResourceManager()->CacheDirectory(name);
+    Ship::Window::GetInstance()->GetResourceManager()->LoadDirectory(name);
 }
 
 void DirtyResourceDirectory(const char* name) {
@@ -170,47 +168,16 @@ void DirtyResourceByCrc(uint64_t crc) {
     }
 }
 
-size_t UnloadResourceByName(const char* name) {
-    return Ship::Window::GetInstance()->GetResourceManager()->UnloadResource(name);
+void UnloadResourceByName(const char* name) {
+    Ship::Window::GetInstance()->GetResourceManager()->UnloadResource(name);
 }
 
-size_t UnloadResourceByCrc(uint64_t crc) {
-    return UnloadResourceByName(GetResourceNameByCrc(crc));
+void UnloadResourceByCrc(uint64_t crc) {
+    UnloadResourceByName(GetResourceNameByCrc(crc));
 }
 
-void UnloadAllResources() {
-    return Ship::Window::GetInstance()->GetResourceManager()->UnloadAllResources();
-}
-
-void ClearResourceCache(void) {
-    Ship::Window::GetInstance()->GetResourceManager()->InvalidateResourceCache();
-}
-
-void RegisterResourcePatchByName(const char* name, size_t index, uintptr_t origData, bool now) {
-    auto res = LoadResource(name, now);
-
-    if (res != nullptr) {
-        const auto hash = GetResourceCrcByName(name);
-        Ship::ResourceAddressPatch patch;
-        patch.ResourceCrc = hash;
-        patch.InstructionIndex = index;
-        patch.OriginalData = origData;
-
-        res->Patches.push_back(patch);
-    }
-}
-
-void RegisterResourcePatchByCrc(uint64_t crc, size_t index, uintptr_t origData, bool now) {
-    auto res = LoadResource(crc, now);
-
-    if (res != nullptr) {
-        Ship::ResourceAddressPatch patch;
-        patch.ResourceCrc = crc;
-        patch.InstructionIndex = index;
-        patch.OriginalData = origData;
-
-        res->Patches.push_back(patch);
-    }
+void UnloadResourceDirectory(const char* name) {
+    Ship::Window::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
 
 void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueToWrite, bool now) {

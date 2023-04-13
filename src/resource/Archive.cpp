@@ -9,6 +9,7 @@
 #include <filesystem>
 #include "binarytools/BinaryReader.h"
 #include "binarytools/MemoryStream.h"
+#include "binarytools/FileHelper.h"
 
 #ifdef __SWITCH__
 #include "port/switch/SwitchImpl.h"
@@ -75,32 +76,48 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
         mpqHandle = mMainMpq;
     }
 
-    bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
+#if _DEBUG
+    if (FileHelper::Exists("TestData/" + filePath)) {
+        auto byteData = FileHelper::ReadAllBytes("TestData/" + filePath);
+        fileToLoad->Buffer.resize(byteData.size() + 1);
+        memcpy(fileToLoad->Buffer.data(), byteData.data(), byteData.size() + 1);
 
-    if (!attempt) {
-        SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
-        return nullptr;
-    }
+        // Throw in a null terminator at the end incase we're loading a text file...
+        fileToLoad->Buffer[byteData.size()] = '\0';
 
-    DWORD fileSize = SFileGetFileSize(fileHandle, 0);
-    fileToLoad->Buffer.resize(fileSize);
-    DWORD countBytes;
+        fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
+        fileToLoad->IsLoaded = true;
+    } else {
+#endif
+        bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
 
-    if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
-        SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
-        if (!SFileCloseFile(fileHandle)) {
-            SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
-                         filePath, mMainPath);
+        if (!attempt) {
+            SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
+            return nullptr;
         }
-        return nullptr;
-    }
 
-    if (!SFileCloseFile(fileHandle)) {
-        SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
-    }
+        DWORD fileSize = SFileGetFileSize(fileHandle, 0);
+        fileToLoad->Buffer.resize(fileSize);
+        DWORD countBytes;
 
-    fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
-    fileToLoad->IsLoaded = true;
+        if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
+            SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
+            if (!SFileCloseFile(fileHandle)) {
+                SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
+                             filePath, mMainPath);
+            }
+            return nullptr;
+        }
+
+        if (!SFileCloseFile(fileHandle)) {
+            SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
+        }
+
+        fileToLoad->Parent = includeParent ? shared_from_this() : nullptr;
+        fileToLoad->IsLoaded = true;
+#if _DEBUG
+    }
+#endif
 
     return fileToLoad;
 }
@@ -180,25 +197,22 @@ bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath)
     return true;
 }
 
-std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) const {
-    auto fileList = std::vector<SFILE_FIND_DATA>();
+std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::string& searchMask) {
+    auto fileList = std::make_shared<std::vector<SFILE_FIND_DATA>>();
     SFILE_FIND_DATA findContext;
     HANDLE hFind;
 
     hFind = SFileFindFirstFile(mMainMpq, searchMask.c_str(), &findContext, nullptr);
-    // if (hFind && GetLastError() != ERROR_NO_MORE_FILES) {
     if (hFind != nullptr) {
-        fileList.push_back(findContext);
+        fileList->push_back(findContext);
 
         bool fileFound;
         do {
             fileFound = SFileFindNextFile(hFind, &findContext);
 
             if (fileFound) {
-                fileList.push_back(findContext);
-            } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES)
-            // else if (!fileFound)
-            {
+                fileList->push_back(findContext);
+            } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES) {
                 SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask,
                              mMainPath);
                 if (!SListFileFindClose(hFind)) {
@@ -217,28 +231,27 @@ std::vector<SFILE_FIND_DATA> Archive::ListFiles(const std::string& searchMask) c
         if (!SFileFindClose(hFind)) {
             SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask, mMainPath);
         }
+
+        return fileList;
     }
 
     return fileList;
 }
 
-bool Archive::HasFile(const std::string& filename) const {
-    bool result = false;
-    auto start = std::chrono::steady_clock::now();
+std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& searchMask) {
+    auto result = std::make_shared<std::vector<std::string>>();
+    auto fileList = FindFiles(searchMask);
 
-    auto lst = ListFiles(filename);
-
-    for (const auto& item : lst) {
-        if (item.cFileName == filename) {
-            result = true;
-            break;
-        }
+    for (size_t i = 0; i < fileList->size(); i++) {
+        result->push_back(fileList->operator[](i).cFileName);
     }
 
-    auto end = std::chrono::steady_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
     return result;
+}
+
+bool Archive::HasFile(const std::string& searchMask) {
+    auto list = FindFiles(searchMask);
+    return list->size() > 0;
 }
 
 const std::string* Archive::HashToString(uint64_t hash) const {

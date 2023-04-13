@@ -3,22 +3,46 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<Resource> VertexFactory::ReadResource(uint32_t version, std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Vertex>();
+std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                      std::shared_ptr<ResourceInitData> initData,
+                                                      std::shared_ptr<BinaryReader> reader) {
+    auto resource = std::make_shared<Vertex>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (version) {
-        case 0:
+    switch ((Version)resource->InitData->ResourceVersion) {
+        case Version::Deckard:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", version);
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
         return nullptr;
     }
 
     factory->ParseFileBinary(reader, resource);
+
+    return resource;
+}
+
+std::shared_ptr<Resource> VertexFactory::ReadResourceXML(std::shared_ptr<ResourceMgr> resourceMgr,
+                                                         std::shared_ptr<ResourceInitData> initData,
+                                                         tinyxml2::XMLElement* reader) {
+    auto resource = std::make_shared<Vertex>(resourceMgr, initData);
+    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
+
+    switch ((Version)resource->InitData->ResourceVersion) {
+        case Version::Deckard:
+            factory = std::make_shared<VertexFactoryV0>();
+            break;
+    }
+
+    if (factory == nullptr) {
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
+        return nullptr;
+    }
+
+    factory->ParseFileXML(reader, resource);
 
     return resource;
 }
@@ -43,6 +67,32 @@ void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
         data.v.cn[2] = reader->ReadUByte();
         data.v.cn[3] = reader->ReadUByte();
         vertex->VertexList.push_back(data);
+    }
+}
+void Ship::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) {
+    std::shared_ptr<Vertex> vertex = std::static_pointer_cast<Vertex>(resource);
+    auto child = reader->FirstChildElement();
+
+    while (child != nullptr) {
+        std::string childName = child->Name();
+
+        if (childName == "Vtx") {
+            Vtx data;
+            data.v.ob[0] = child->IntAttribute("X");
+            data.v.ob[1] = child->IntAttribute("Y");
+            data.v.ob[2] = child->IntAttribute("Z");
+            data.v.flag = 0;
+            data.v.tc[0] = child->IntAttribute("S");
+            data.v.tc[1] = child->IntAttribute("T");
+            data.v.cn[0] = child->IntAttribute("R");
+            data.v.cn[1] = child->IntAttribute("G");
+            data.v.cn[2] = child->IntAttribute("B");
+            data.v.cn[3] = child->IntAttribute("A");
+
+            vertex->VertexList.push_back(data);
+        }
+
+        child = child->NextSiblingElement();
     }
 }
 } // namespace Ship

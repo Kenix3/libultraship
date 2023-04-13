@@ -24,6 +24,7 @@
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include <spdlog/common.h>
+#include "menu/Fonts.h"
 
 #ifdef __WIIU__
 #include <gx2/registers.h> // GX2SetViewport / GX2SetScissor
@@ -35,7 +36,7 @@
 #include "graphic/Fast3D/gfx_gx2.h"
 #endif
 
-#if __APPLE__
+#ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
 
@@ -202,15 +203,17 @@ void ImGuiWMInit() {
             ImGui_ImplWiiU_Init();
             break;
 #else
-        case Backend::SDL:
+        case Backend::SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (impl.Metal.Window) {
-                ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(impl.Metal.Window));
-                break;
-            }
-
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(impl.Opengl.Window), impl.Opengl.Context);
+            break;
+#endif
+#if __APPLE__
+        case Backend::SDL_METAL:
+            SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+            SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+            ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(impl.Metal.Window));
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -230,17 +233,18 @@ void ImGuiBackendInit() {
             ImGui_ImplGX2_Init();
             break;
 #else
-        case Backend::SDL:
+        case Backend::SDL_OPENGL:
 #ifdef __APPLE__
-            if (impl.Metal.Renderer) {
-                Metal_Init(impl.Metal.Renderer);
-                break;
-            }
-
             ImGui_ImplOpenGL3_Init("#version 410 core");
 #else
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif
+            break;
+#endif
+
+#ifdef __APPLE__
+        case Backend::SDL_METAL:
+            Metal_Init(impl.Metal.Renderer);
             break;
 #endif
 
@@ -262,7 +266,8 @@ void ImGuiProcessEvent(EventImpl event) {
             if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
             break;
 #else
-        case Backend::SDL:
+        case Backend::SDL_OPENGL:
+        case Backend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
@@ -287,7 +292,8 @@ void ImGuiWMNewFrame() {
         case Backend::GX2:
             break;
 #else
-        case Backend::SDL:
+        case Backend::SDL_OPENGL:
+        case Backend::SDL_METAL:
             ImGui_ImplSDL2_NewFrame();
             break;
 #endif
@@ -309,14 +315,13 @@ void ImGuiBackendNewFrame() {
             ImGui_ImplGX2_NewFrame();
             break;
 #else
-        case Backend::SDL:
-#ifdef __APPLE__
-            if (impl.Metal.Renderer) {
-                Metal_NewFrame(impl.Metal.Renderer);
-                break;
-            }
-#endif
+        case Backend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
+            break;
+#endif
+#ifdef __APPLE__
+        case Backend::SDL_METAL:
+            Metal_NewFrame(impl.Metal.Renderer);
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -341,14 +346,13 @@ void ImGuiRenderDrawData(ImDrawData* data) {
             ImGui_ImplWiiU_DrawKeyboardOverlay();
             break;
 #else
-        case Backend::SDL:
-#ifdef __APPLE__
-            if (impl.Metal.Renderer) {
-                Metal_RenderDrawData(data);
-                break;
-            }
-#endif
+        case Backend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
+            break;
+#endif
+#ifdef __APPLE__
+        case Backend::SDL_METAL:
+            Metal_RenderDrawData(data);
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -368,7 +372,8 @@ bool SupportsWindowedFullscreen() {
 
     // We don't yet support windowed fullscreen on DirectX
     switch (impl.backend) {
-        case Backend::SDL:
+        case Backend::SDL_OPENGL:
+        case Backend::SDL_METAL:
             return true;
         default:
             return false;
@@ -383,7 +388,8 @@ bool SupportsViewports() {
     switch (impl.backend) {
         case Backend::DX11:
             return true;
-        case Backend::SDL:
+        case Backend::SDL_OPENGL:
+        case Backend::SDL_METAL:
             return true;
         default:
             return false;
@@ -425,7 +431,21 @@ void Init(WindowImpl windowImpl) {
     ImGui::SetCurrentContext(ctx);
     io = &ImGui::GetIO();
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
+
+    // Add Font Awesome and merge it into the default font.
     io->Fonts->AddFontDefault();
+    // This must match the default font size, which is 13.0f.
+    float baseFontSize = 13.0f;
+    // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+    float iconFontSize = baseFontSize * 2.0f / 3.0f;
+    static const ImWchar sIconsRanges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig iconsConfig;
+    iconsConfig.MergeMode = true;
+    iconsConfig.PixelSnapH = true;
+    iconsConfig.GlyphMinAdvanceX = iconFontSize;
+    io->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize, &iconsConfig,
+                                                    sIconsRanges);
+
     statsWindowOpen = CVarGetInteger("gStatsEnabled", 0);
     CVarRegisterInteger("gRandomizeRupeeNames", 1);
     CVarRegisterInteger("gRandoRelevantNavi", 1);
@@ -492,17 +512,17 @@ void Init(WindowImpl windowImpl) {
             setCursorVisibility(menuBarOpen);
         }
 
-        LoadTexture("Game_Icon", "assets/ship_of_harkinian/icons/gSohIcon.png");
-        LoadTexture("A-Btn", "assets/ship_of_harkinian/buttons/ABtn.png");
-        LoadTexture("B-Btn", "assets/ship_of_harkinian/buttons/BBtn.png");
-        LoadTexture("L-Btn", "assets/ship_of_harkinian/buttons/LBtn.png");
-        LoadTexture("R-Btn", "assets/ship_of_harkinian/buttons/RBtn.png");
-        LoadTexture("Z-Btn", "assets/ship_of_harkinian/buttons/ZBtn.png");
-        LoadTexture("Start-Btn", "assets/ship_of_harkinian/buttons/StartBtn.png");
-        LoadTexture("C-Left", "assets/ship_of_harkinian/buttons/CLeft.png");
-        LoadTexture("C-Right", "assets/ship_of_harkinian/buttons/CRight.png");
-        LoadTexture("C-Up", "assets/ship_of_harkinian/buttons/CUp.png");
-        LoadTexture("C-Down", "assets/ship_of_harkinian/buttons/CDown.png");
+        LoadTexture("Game_Icon", "textures/icons/gSohIcon.png");
+        LoadTexture("A-Btn", "textures/buttons/ABtn.png");
+        LoadTexture("B-Btn", "textures/buttons/BBtn.png");
+        LoadTexture("L-Btn", "textures/buttons/LBtn.png");
+        LoadTexture("R-Btn", "textures/buttons/RBtn.png");
+        LoadTexture("Z-Btn", "textures/buttons/ZBtn.png");
+        LoadTexture("Start-Btn", "textures/buttons/StartBtn.png");
+        LoadTexture("C-Left", "textures/buttons/CLeft.png");
+        LoadTexture("C-Right", "textures/buttons/CRight.png");
+        LoadTexture("C-Up", "textures/buttons/CUp.png");
+        LoadTexture("C-Down", "textures/buttons/CDown.png");
     });
 
     Ship::RegisterHook<Ship::ControllerRead>([](OSContPad* cont_pad) { pads = cont_pad; });
@@ -621,7 +641,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, windowPadding);
         if (ImGui::BeginMenu("Shipwright")) {
             if (ImGui::MenuItem("Reset",
-#if __APPLE__
+#ifdef __APPLE__
                                 "Command-R"
 #else
                                 "Ctrl+R"
@@ -838,7 +858,8 @@ void Render() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        if (impl.backend == Backend::SDL && impl.Opengl.Context != nullptr) {
+        if ((impl.backend == Backend::SDL_OPENGL || impl.backend == Backend::SDL_METAL) &&
+            impl.Opengl.Context != nullptr) {
             SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
             SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
 
@@ -978,7 +999,7 @@ ImTextureID GetTextureByID(int id) {
     }
 #endif
 #ifdef __APPLE__
-    if (impl.Metal.Window) {
+    if (impl.backend == Backend::SDL_METAL) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif

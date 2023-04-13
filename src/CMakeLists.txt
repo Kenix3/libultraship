@@ -160,6 +160,8 @@ set(Source_Files__Menu
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/Fonts.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/IconsFontAwesome4.h
 )
 
 source_group("Menu" FILES ${Source_Files__Menu})
