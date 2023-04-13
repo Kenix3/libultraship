@@ -57,6 +57,7 @@ class FolderManager {
     FolderManager();
     ~FolderManager();
 
+    const char* getMainBundlePath();
     const char* pathForDirectory(SearchPathDirectory directory, SearchPathDomainMask domainMask);
     const char* pathForDirectoryAppropriateForItemAtPath(SearchPathDirectory directory, SearchPathDomainMask domainMask,
                                                          const char* itemPath, bool create = false);

@@ -145,6 +145,22 @@ void Window::Close() {
     mWindowManagerApi->close();
 }
 
+std::string Window::GetAppBundlePath() {
+#ifdef __APPLE__
+    FolderManager folderManager;
+    return folderManager.getMainBundlePath();
+#endif
+
+#ifdef __linux__
+    char* fpath = std::getenv("SHIP_BIN_DIR");
+    if (fpath != NULL) {
+        return std::string(fpath);
+    }
+#endif
+
+    return ".";
+}
+
 std::string Window::GetAppDirectoryPath() {
 #ifdef __APPLE__
     FolderManager folderManager;
@@ -155,11 +171,16 @@ std::string Window::GetAppDirectoryPath() {
 
 #ifdef __linux__
     char* fpath = std::getenv("SHIP_HOME");
-    if (fpath != NULL)
+    if (fpath != NULL) {
         return std::string(fpath);
+    }
 #endif
 
     return ".";
+}
+
+std::string Window::GetPathRelativeToAppBundle(const char* path) {
+    return GetAppBundlePath() + "/" + path;
 }
 
 std::string Window::GetPathRelativeToAppDirectory(const char* path) {
