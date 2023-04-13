@@ -352,13 +352,11 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     for (size_t i = 0; i < sizeof(scancode_rmapping_extended) / sizeof(scancode_rmapping_extended[0]); i++) {
-        sdl_to_lus_table[scancode_rmapping_extended[i][0]] =
-            sdl_to_lus_table[scancode_rmapping_extended[i][1]] + 0x100;
+        sdl_to_lus_table[scancode_rmapping_extended[i][0]] = sdl_to_lus_table[scancode_rmapping_extended[i][1]] + 0x100;
     }
 
     for (size_t i = 0; i < sizeof(scancode_rmapping_nonextended) / sizeof(scancode_rmapping_nonextended[0]); i++) {
-        sdl_to_lus_table[scancode_rmapping_nonextended[i][0]] =
-            sdl_to_lus_table[scancode_rmapping_nonextended[i][1]];
+        sdl_to_lus_table[scancode_rmapping_nonextended[i][0]] = sdl_to_lus_table[scancode_rmapping_nonextended[i][1]];
         sdl_to_lus_table[scancode_rmapping_nonextended[i][1]] += 0x100;
     }
 }
