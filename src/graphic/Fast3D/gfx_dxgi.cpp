@@ -426,12 +426,10 @@ static bool gfx_dxgi_start_frame(void) {
     // Originally this contained code which was responsible for handling fractional VSync.
     // It was causing a big performance hit when using VRR displays (GSync or FreeSync),
     // because it was causing the interval to change rapidly.
-    // 
     // Instead of fractional VSync, set the interval to a specific number.
     // Can be potentially set with a config option in the future to enable/disable VSync entirely.
     // 0 = VSync off.
     // 1 = VSync on.
-    
     dxgi.length_in_vsync_frames = 1;
     dxgi.dropped_frame = false;
 
