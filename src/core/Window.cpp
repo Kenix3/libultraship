@@ -453,7 +453,7 @@ void Window::InitializeLogging() {
 
 #ifndef __WIIU__
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log").c_str());
-        auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
+        auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 7, 10);
         fileSink->set_level(spdlog::level::trace);
         sinks.push_back(fileSink);
 #endif
