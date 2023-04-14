@@ -486,10 +486,10 @@ static bool gfx_dxgi_start_frame(void) {
         UINT queued_vsyncs = 0;
         bool is_first = true;
         for (const std::pair<UINT, UINT>& p : dxgi.pending_frame_stats) {
-            //if (is_first && dxgi.zero_latency) {
-                //is_first = false;
-                //continue;
-            //}
+            /*if (is_first && dxgi.zero_latency) {
+                is_first = false;
+                continue;
+            */}
             queued_vsyncs += p.second;
         }
 
