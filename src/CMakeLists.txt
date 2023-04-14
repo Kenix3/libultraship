@@ -418,7 +418,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         ENABLE_OPENGL
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        SPDLOG_ACTIVE_LEVEL=0
+        SPDLOG_ACTIVE_LEVEL=1
     )
 else ()
     target_compile_definitions(libultraship PRIVATE

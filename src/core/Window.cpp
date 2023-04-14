@@ -454,13 +454,13 @@ void Window::InitializeLogging() {
 #ifndef __WIIU__
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log").c_str());
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
-        fileSink->set_level(spdlog::level::trace);
+        fileSink->set_level(spdlog::level::debug);
         sinks.push_back(fileSink);
 #endif
 
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
-        GetLogger()->set_level(spdlog::level::trace);
+        GetLogger()->set_level(spdlog::level::debug);
 
 #if defined(_DEBUG)
         GetLogger()->flush_on(spdlog::level::trace);
