@@ -489,7 +489,7 @@ static bool gfx_dxgi_start_frame(void) {
             /*if (is_first && dxgi.zero_latency) {
                 is_first = false;
                 continue;
-            */}
+            }*/
             queued_vsyncs += p.second;
         }
 
