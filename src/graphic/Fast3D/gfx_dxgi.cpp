@@ -216,15 +216,13 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
 }
 
 static void onkeydown(WPARAM w_param, LPARAM l_param) {
-    int scancode = ((l_param >> 16) & 0x1ff);
-    int key = scancode < 512 ? windows_scancode_table[scancode] + 1 : 0;
+    int key = ((l_param >> 16) & 0x1ff);
     if (dxgi.on_key_down != nullptr) {
         dxgi.on_key_down(key);
     }
 }
 static void onkeyup(WPARAM w_param, LPARAM l_param) {
-    int scancode = ((l_param >> 16) & 0x1ff);
-    int key = scancode < 512 ? windows_scancode_table[scancode] + 1 : 0;
+    int key = ((l_param >> 16) & 0x1ff);
     if (dxgi.on_key_up != nullptr) {
         dxgi.on_key_up(key);
     }
