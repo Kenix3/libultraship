@@ -77,8 +77,9 @@ static struct {
     uint32_t applied_maximum_frame_latency;
     HANDLE timer;
     bool use_timer;
-    bool allow_tearing;
+    BOOL allow_tearing;
     bool tearing_support;
+    bool force_disable_vsync = true;
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
@@ -425,7 +426,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
 }
 
 static bool gfx_dxgi_start_frame(void) {
-    if (!dxgi.tearing_support) {
+    if (!dxgi.tearing_support || !dxgi.force_disable_vsync) {
         DXGI_FRAME_STATISTICS stats;
         if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
             (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -580,6 +581,20 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         QueryPerformanceCounter(&t);
         dxgi.previous_present_time = t;
         ThrowIfFailed(dxgi.swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+    } else if (dxgi.force_disable_vsync) {
+        QueryPerformanceCounter(&t);
+        int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
+                       FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
+        int64_t left = next - qpc_to_100ns(t.QuadPart);
+        if (left > 0) {
+            LARGE_INTEGER li;
+            li.QuadPart = -left;
+            SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
+            WaitForSingleObject(dxgi.timer, INFINITE);
+        }
+        QueryPerformanceCounter(&t);
+        dxgi.previous_present_time = t;
+        ThrowIfFailed(dxgi.swap_chain->Present(0, 0));
     } else {
         if (dxgi.use_timer) {
             QueryPerformanceCounter(&t);
@@ -609,7 +624,7 @@ static void gfx_dxgi_swap_buffers_end(void) {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
-    if (!dxgi.tearing_support) {
+    if (!dxgi.tearing_support || !dxgi.force_disable_vsync) {
         if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
             // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
             // swap chain
@@ -697,7 +712,7 @@ void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
                                               sizeof(dxgi.allow_tearing));
         }
 
-        dxgi.tearing_support = SUCCEEDED(hr) && dxgi.allow_tearing;
+        dxgi.tearing_support = false; // SUCCEEDED(hr) && dxgi.allow_tearing;
     }
 
     ComPtr<IDXGIAdapter1> adapter;
