@@ -712,7 +712,7 @@ void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
                                               sizeof(dxgi.allow_tearing));
         }
 
-        dxgi.tearing_support = SUCCEEDED(hr) && dxgi.allow_tearing;
+        dxgi.tearing_support = SUCCEEDED(hr) && dxgi.allow_tearing && !dxgi.force_disable_vsync;
     }
 
     ComPtr<IDXGIAdapter1> adapter;
