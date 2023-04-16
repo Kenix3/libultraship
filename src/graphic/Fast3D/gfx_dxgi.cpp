@@ -590,7 +590,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     }
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;
-    
+
     if (dxgi.tearing_support) {
         ThrowIfFailed(dxgi.swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
     } else {
