@@ -567,7 +567,6 @@ static bool gfx_dxgi_start_frame(void) {
     } else {
         dxgi.length_in_vsync_frames = 0;
         dxgi.dropped_frame = false;
-        dxgi.use_timer = true;
     }
 
     return true;
@@ -575,25 +574,27 @@ static bool gfx_dxgi_start_frame(void) {
 
 static void gfx_dxgi_swap_buffers_begin(void) {
     // dxgi.length_in_vsync_frames = 1;
-    LARGE_INTEGER t;
-    if (dxgi.use_timer) {
-        QueryPerformanceCounter(&t);
-        int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
-                       FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
-        int64_t left = next - qpc_to_100ns(t.QuadPart);
-        if (left > 0) {
-            LARGE_INTEGER li;
-            li.QuadPart = -left;
-            SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
-            WaitForSingleObject(dxgi.timer, INFINITE);
-        }
-    }
-    QueryPerformanceCounter(&t);
-    dxgi.previous_present_time = t;
 
+    LARGE_INTEGER t;
     if (dxgi.tearing_support) {
+        QueryPerformanceCounter(&t);
+        dxgi.previous_present_time = t;
         ThrowIfFailed(dxgi.swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
     } else {
+        if (dxgi.use_timer) {
+            QueryPerformanceCounter(&t);
+            int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
+                           FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
+            int64_t left = next - qpc_to_100ns(t.QuadPart);
+            if (left > 0) {
+                LARGE_INTEGER li;
+                li.QuadPart = -left;
+                SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
+                WaitForSingleObject(dxgi.timer, INFINITE);
+            }
+        }
+        QueryPerformanceCounter(&t);
+        dxgi.previous_present_time = t;
         ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
     }
     UINT this_present_id;
