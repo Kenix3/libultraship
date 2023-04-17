@@ -297,6 +297,10 @@ uint32_t Window::GetCurrentRefreshRate() {
     return mRefreshRate;
 }
 
+bool Window::HasVRRSupport() {
+    return mWindowManagerApi->has_vrr_support();
+}
+
 bool Window::GetVSyncStatus() {
     return mWindowManagerApi->get_vsync();
 }
