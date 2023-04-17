@@ -48,6 +48,8 @@ class Window {
     uint32_t GetCurrentWidth();
     uint32_t GetCurrentHeight();
     uint32_t GetCurrentRefreshRate();
+    bool GetVSyncStatus();
+    void SetVSyncStatus(bool status);
     float GetCurrentAspectRatio();
     bool IsFullscreen();
     uint32_t GetMenuBar();

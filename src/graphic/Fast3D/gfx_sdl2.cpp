@@ -43,7 +43,7 @@ static SDL_Window* wnd;
 static SDL_GLContext ctx;
 static SDL_Renderer* renderer;
 static int sdl_to_lus_table[512];
-static int vsync_enabled = 0;
+static bool vsync_enabled = false;
 static int window_width = DESIRED_SCREEN_WIDTH;
 static int window_height = DESIRED_SCREEN_HEIGHT;
 static bool fullscreen_state;
@@ -329,12 +329,16 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
         SDL_GL_MakeCurrent(wnd, ctx);
-        SDL_GL_SetSwapInterval(1);
+        SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
 
         window_impl.Opengl = { wnd, ctx };
         window_impl.backend = SohImGui::Backend::SDL_OPENGL;
     } else {
-        renderer = SDL_CreateRenderer(wnd, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        uint32_t flags = SDL_RENDERER_ACCELERATED;
+        if (vsync_enabled) {
+            flags |= SDL_RENDERER_PRESENTVSYNC;
+        }
+        renderer = SDL_CreateRenderer(wnd, -1, flags);
         if (renderer == NULL) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
@@ -545,6 +549,18 @@ static const char* gfx_sdl_get_key_name(int scancode) {
     return SDL_GetScancodeName((SDL_Scancode)untranslate_scancode(scancode));
 }
 
+bool gfx_sdl_has_vrr_support() {
+    return false;
+}
+
+void gfx_sdl_set_vsync(bool vsync) {
+    vsync_enabled = vsync;
+}
+
+bool gfx_sdl_get_vsync() {
+    return vsync_enabled;
+}
+
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_close,
                                        gfx_sdl_set_keyboard_callbacks,
@@ -561,6 +577,9 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_get_time,
                                        gfx_sdl_set_target_fps,
                                        gfx_sdl_set_maximum_frame_latency,
-                                       gfx_sdl_get_key_name };
+                                       gfx_sdl_get_key_name,
+                                       gfx_sdl_has_vrr_support,
+                                       gfx_sdl_set_vsync,
+                                       gfx_sdl_get_vsync };
 
 #endif

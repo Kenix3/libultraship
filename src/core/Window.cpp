@@ -297,6 +297,14 @@ uint32_t Window::GetCurrentRefreshRate() {
     return mRefreshRate;
 }
 
+bool Window::GetVSyncStatus() {
+    return mWindowManagerApi->get_vsync();
+}
+
+void Window::SetVSyncStatus(bool status) {
+    mWindowManagerApi->set_vsync(status);
+}
+
 float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }

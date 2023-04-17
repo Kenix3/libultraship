@@ -577,11 +577,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     // dxgi.length_in_vsync_frames = 1;
 
     LARGE_INTEGER t;
-    if (dxgi.tearing_support) {
-        QueryPerformanceCounter(&t);
-        dxgi.previous_present_time = t;
-        ThrowIfFailed(dxgi.swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
-    } else if (dxgi.force_disable_vsync) {
+    if (dxgi.force_disable_vsync) {
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
@@ -595,6 +591,10 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         QueryPerformanceCounter(&t);
         dxgi.previous_present_time = t;
         ThrowIfFailed(dxgi.swap_chain->Present(0, 0));
+    } else if (dxgi.tearing_support) {
+        QueryPerformanceCounter(&t);
+        dxgi.previous_present_time = t;
+        ThrowIfFailed(dxgi.swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
     } else {
         if (dxgi.use_timer) {
             QueryPerformanceCounter(&t);
@@ -712,7 +712,7 @@ void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
                                               sizeof(dxgi.allow_tearing));
         }
 
-        dxgi.tearing_support = SUCCEEDED(hr) && dxgi.allow_tearing && !dxgi.force_disable_vsync;
+        dxgi.tearing_support = SUCCEEDED(hr) && dxgi.allow_tearing;
     }
 
     ComPtr<IDXGIAdapter1> adapter;
@@ -750,7 +750,7 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
         dxgi.dxgi1_4 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : // Introduced in DXGI 1.4 and Windows 10
             DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // Apparently flip sequential was also backported to Win 7 Platform Update
     swap_chain_desc.Flags = dxgi_13 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
-    if (dxgi.tearing_support) {
+    if (dxgi.tearing_support && !dxgi.force_disable_vsync) {
         swap_chain_desc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
     }
     swap_chain_desc.SampleDesc.Count = 1;
@@ -805,6 +805,18 @@ const char* gfx_dxgi_get_key_name(int scancode) {
     return text;
 }
 
+bool gfx_dxgi_has_vrr_support() {
+    return dxgi.tearing_support;
+}
+
+void gfx_dxgi_set_vsync(bool vsync) {
+    dxgi.force_disable_vsync = !vsync;
+}
+
+bool gfx_dxgi_get_vsync() {
+    return !dxgi.force_disable_vsync;
+}
+
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
@@ -821,6 +833,9 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_get_time,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
-                                                       gfx_dxgi_get_key_name };
+                                                       gfx_dxgi_get_key_name,
+                                                       gfx_dxgi_has_vrr_support,
+                                                       gfx_dxgi_set_vsync,
+                                                       gfx_dxgi_get_vsync };
 
 #endif
