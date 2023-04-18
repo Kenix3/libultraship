@@ -57,13 +57,13 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
         resourceInitData->Id = 0xDEADBEEFDEADBEEF;
         resourceInitData->Type = ResourceType::None;
         resourceInitData->ResourceVersion = -1;
-        resourceInitData->isCustom = false;
+        resourceInitData->IsCustom = false;
         resourceInitData->ByteOrder = Endianness::Native;
 
         // If first byte is '<' then we are loading XML, else we are loading OTR binary.
         if (firstByte == '<') {
             // XML
-            resourceInitData->isCustom = true;
+            resourceInitData->IsCustom = true;
             reader->Seek(-1, SeekOffsetType::Current);
 
             std::string xmlStr = reader->ReadCString();
@@ -90,7 +90,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
             resourceInitData->ByteOrder = (Endianness)firstByte;
             reader->SetEndianness(resourceInitData->ByteOrder);
             // Is this asset custom?
-            resourceInitData->isCustom = (bool)reader->ReadInt8();
+            resourceInitData->IsCustom = (bool)reader->ReadInt8();
             // Unused two bytes
             for (int i = 0; i < 2; i++) {
                 reader->ReadInt8();
