@@ -51,14 +51,19 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
 
         // Determine if file is binary or XML...
         uint8_t firstByte = reader->ReadInt8();
-        ResourceType resourceType;
-        uint32_t resourceVersion = -1;
-        uint64_t id = 0xDEADBEEFDEADBEEF;
-        Endianness endianness = Endianness::Native;
+
+        auto resourceInitData = std::make_shared<ResourceInitData>();
+        resourceInitData->Path = fileToLoad->Path;
+        resourceInitData->Id = 0xDEADBEEFDEADBEEF;
+        resourceInitData->Type = ResourceType::None;
+        resourceInitData->ResourceVersion = -1;
+        resourceInitData->IsCustom = false;
+        resourceInitData->ByteOrder = Endianness::Native;
 
         // If first byte is '<' then we are loading XML, else we are loading OTR binary.
         if (firstByte == '<') {
             // XML
+            resourceInitData->IsCustom = true;
             reader->Seek(-1, SeekOffsetType::Current);
 
             std::string xmlStr = reader->ReadCString();
@@ -71,53 +76,52 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
             auto root = doc.FirstChildElement();
 
             std::string nodeName = root->Name();
-            resourceVersion = root->IntAttribute("Version");
+            resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
             auto factory = mFactoriesStr[nodeName];
+            resourceInitData->Type = mFactoriesTypes[nodeName];
 
             if (factory != nullptr) {
-                resourceType = mFactoriesTypes[nodeName];
-
-                auto resourceInitData = std::make_shared<ResourceInitData>();
-                resourceInitData->Id = id;
-                resourceInitData->Type = resourceType;
-                resourceInitData->Path = fileToLoad->Path;
-                resourceInitData->ByteOrder = endianness;
-                resourceInitData->ResourceVersion = resourceVersion;
                 result = factory->ReadResourceXML(GetContext()->GetResourceManager(), resourceInitData, root);
             }
         } else {
             // OTR HEADER BEGIN
-            endianness = (Endianness)firstByte;
-            for (int i = 0; i < 3; i++) {
+            // Byte Order
+            resourceInitData->ByteOrder = (Endianness)firstByte;
+            reader->SetEndianness(resourceInitData->ByteOrder);
+            // Is this asset custom?
+            resourceInitData->IsCustom = (bool)reader->ReadInt8();
+            // Unused two bytes
+            for (int i = 0; i < 2; i++) {
                 reader->ReadInt8();
             }
-            reader->SetEndianness(endianness);
-            resourceType = (ResourceType)reader->ReadUInt32(); // The type of the resource
-            resourceVersion = reader->ReadUInt32();            // Resource version
-            id = reader->ReadUInt64();                         // Unique asset ID
-            reader->ReadUInt32();                              // ????
-            reader->ReadUInt64();                              // ROM CRC
-            reader->ReadUInt32();                              // ROM Enum
-            reader->Seek(64, SeekOffsetType::Start);           // Reserved for future file format versions...
+            // The type of the resource
+            resourceInitData->Type = (ResourceType)reader->ReadUInt32();
+            // Resource version
+            resourceInitData->ResourceVersion = reader->ReadUInt32();
+            // Unique asset ID
+            resourceInitData->Id = reader->ReadUInt64();
+            // ????
+            reader->ReadUInt32();
+            // ROM CRC
+            reader->ReadUInt64();
+            // ROM Enum
+            reader->ReadUInt32();
+            // Reserved for future file format versions...
+            reader->Seek(64, SeekOffsetType::Start);
             // OTR HEADER END
 
-            auto factory = mFactories[resourceType];
+            auto factory = mFactories[resourceInitData->Type];
 
             if (factory != nullptr) {
-                auto resourceInitData = std::make_shared<ResourceInitData>();
-                resourceInitData->Id = id;
-                resourceInitData->Type = resourceType;
-                resourceInitData->Path = fileToLoad->Path;
-                resourceInitData->ByteOrder = endianness;
-                resourceInitData->ResourceVersion = resourceVersion;
                 result = factory->ReadResource(GetContext()->GetResourceManager(), resourceInitData, reader);
             }
         }
 
         if (result == nullptr) {
             if (fileToLoad != nullptr) {
-                SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceType, fileToLoad->Path);
+                SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceInitData->Type,
+                             resourceInitData->Path);
             } else {
                 SPDLOG_ERROR("Failed to load resource because the file did not load.");
             }

@@ -3,6 +3,9 @@
 namespace Ship {
 
 enum class ResourceType {
+    // Not set
+    None = 0x00000000,
+
     // Common
     Archive = 0x4F415243,     // OARC (UNUSED)
     DisplayList = 0x4F444C54, // ODLT

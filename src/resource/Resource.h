@@ -14,6 +14,7 @@ struct ResourceInitData {
     ResourceType Type;
     uint32_t ResourceVersion;
     uint64_t Id;
+    bool IsCustom;
 };
 
 class Resource {
