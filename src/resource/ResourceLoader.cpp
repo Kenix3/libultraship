@@ -119,12 +119,8 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> 
         }
 
         if (result == nullptr) {
-            if (fileToLoad != nullptr) {
-                SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceInitData->Type,
-                             resourceInitData->Path);
-            } else {
-                SPDLOG_ERROR("Failed to load resource because the file did not load.");
-            }
+            SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", (uint32_t)resourceInitData->Type,
+                         resourceInitData->Path);
         }
     }
 
