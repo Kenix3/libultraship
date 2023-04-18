@@ -19,7 +19,7 @@ struct ResourceInitData {
 
 class Resource {
   public:
-    inline static const std::string SwappableAssetPrefix = "hd/";
+    inline static const std::string gHdAssetPrefix = "hd/";
 
     std::shared_ptr<ResourceMgr> ResourceManager;
     std::shared_ptr<ResourceInitData> InitData;
