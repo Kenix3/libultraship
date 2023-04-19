@@ -78,7 +78,7 @@ static struct {
     HANDLE timer;
     bool use_timer;
     bool tearing_support;
-    bool force_disable_vsync = true;
+    bool vsync_enabled = true;
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
