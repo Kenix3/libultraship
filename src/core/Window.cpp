@@ -301,7 +301,7 @@ bool Window::HasVRRSupport() {
     return mWindowManagerApi->has_vrr_support();
 }
 
-bool Window::GetVSyncStatus() {
+bool Window::GetVerticalSync() {
     return mWindowManagerApi->get_vsync();
 }
 
