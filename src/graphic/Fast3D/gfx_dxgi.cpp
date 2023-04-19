@@ -425,7 +425,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
 }
 
 static bool gfx_dxgi_start_frame(void) {
-    if (!dxgi.tearing_support || !dxgi.force_disable_vsync) {
+    if (!dxgi.tearing_support || dxgi.vsync_enabled) {
         DXGI_FRAME_STATISTICS stats;
         if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
             (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
