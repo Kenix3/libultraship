@@ -576,7 +576,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     // dxgi.length_in_vsync_frames = 1;
 
     LARGE_INTEGER t;
-    if (dxgi.force_disable_vsync) {
+    if (!dxgi.vsync_enabled) {
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
