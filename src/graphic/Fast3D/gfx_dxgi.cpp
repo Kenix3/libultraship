@@ -805,7 +805,7 @@ const char* gfx_dxgi_get_key_name(int scancode) {
     return text;
 }
 
-bool gfx_dxgi_has_vrr_support() {
+bool gfx_dxgi_can_disable_vsync() {
     return dxgi.tearing_support;
 }
 
