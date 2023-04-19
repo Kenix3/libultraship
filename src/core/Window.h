@@ -50,7 +50,7 @@ class Window {
     uint32_t GetCurrentRefreshRate();
     bool HasVRRSupport();
     bool GetVSyncStatus();
-    void SetVSyncStatus(bool status);
+    void SetVerticalSync(bool status);
     float GetCurrentAspectRatio();
     bool IsFullscreen();
     uint32_t GetMenuBar();
