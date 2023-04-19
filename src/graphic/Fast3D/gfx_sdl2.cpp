@@ -549,7 +549,7 @@ static const char* gfx_sdl_get_key_name(int scancode) {
     return SDL_GetScancodeName((SDL_Scancode)untranslate_scancode(scancode));
 }
 
-bool gfx_sdl_has_vrr_support() {
+bool gfx_sdl_can_disable_vsync() {
     return false;
 }
 
