@@ -49,7 +49,7 @@ class Window {
     uint32_t GetCurrentHeight();
     uint32_t GetCurrentRefreshRate();
     bool HasVRRSupport();
-    bool GetVSyncStatus();
+    bool GetVerticalSync();
     void SetVerticalSync(bool status);
     float GetCurrentAspectRatio();
     bool IsFullscreen();
