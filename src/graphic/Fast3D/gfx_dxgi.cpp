@@ -623,7 +623,7 @@ static void gfx_dxgi_swap_buffers_end(void) {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
-    if (!dxgi.tearing_support || !dxgi.force_disable_vsync) {
+    if (!dxgi.tearing_support || dxgi.vsync_enabled) {
         if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
             // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
             // swap chain
