@@ -48,7 +48,7 @@ class Window {
     uint32_t GetCurrentWidth();
     uint32_t GetCurrentHeight();
     uint32_t GetCurrentRefreshRate();
-    bool HasVRRSupport();
+    bool CanDisableVerticalSync();
     bool GetVerticalSync();
     void SetVerticalSync(bool vsync);
     float GetCurrentAspectRatio();
