@@ -78,7 +78,6 @@ static struct {
     HANDLE timer;
     bool use_timer;
     bool tearing_support;
-    bool vsync_enabled = true;
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
@@ -425,7 +424,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
 }
 
 static bool gfx_dxgi_start_frame(void) {
-    if (!dxgi.tearing_support || dxgi.vsync_enabled) {
+    if (!dxgi.tearing_support || CVarGetInteger("gVsyncEnabled", 1)) {
         DXGI_FRAME_STATISTICS stats;
         if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
             (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -576,7 +575,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     // dxgi.length_in_vsync_frames = 1;
 
     LARGE_INTEGER t;
-    if (!dxgi.vsync_enabled) {
+    if (!CVarGetInteger("gVsyncEnabled", 1)) {
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
@@ -623,7 +622,7 @@ static void gfx_dxgi_swap_buffers_end(void) {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
-    if (!dxgi.tearing_support || dxgi.vsync_enabled) {
+    if (!dxgi.tearing_support || CVarGetInteger("gVsyncEnabled", 1)) {
         if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
             // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
             // swap chain
@@ -749,7 +748,7 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
         dxgi.dxgi1_4 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : // Introduced in DXGI 1.4 and Windows 10
             DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // Apparently flip sequential was also backported to Win 7 Platform Update
     swap_chain_desc.Flags = dxgi_13 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
-    if (dxgi.tearing_support && dxgi.vsync_enabled) {
+    if (dxgi.tearing_support && CVarGetInteger("gVsyncEnabled", 1)) {
         swap_chain_desc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
     }
     swap_chain_desc.SampleDesc.Count = 1;
@@ -808,14 +807,6 @@ bool gfx_dxgi_can_disable_vsync() {
     return dxgi.tearing_support;
 }
 
-void gfx_dxgi_set_vsync(bool vsync) {
-    dxgi.vsync_enabled = vsync;
-}
-
-bool gfx_dxgi_get_vsync() {
-    return dxgi.vsync_enabled;
-}
-
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
@@ -833,8 +824,6 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
                                                        gfx_dxgi_get_key_name,
-                                                       gfx_dxgi_can_disable_vsync,
-                                                       gfx_dxgi_set_vsync,
-                                                       gfx_dxgi_get_vsync };
+                                                       gfx_dxgi_can_disable_vsync };
 
 #endif

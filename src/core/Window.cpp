@@ -130,7 +130,6 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     }
 
     InitializeWindowManager(GetConfig()->getString("Window.GfxBackend"), GetConfig()->getString("Window.GfxApi"));
-    SetVerticalSync(CVarGetInteger("gVsyncEnabled", true));
     
     InitializeAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
 
@@ -301,14 +300,6 @@ uint32_t Window::GetCurrentRefreshRate() {
 
 bool Window::CanDisableVerticalSync() {
     return mWindowManagerApi->can_disable_vsync();
-}
-
-bool Window::GetVerticalSync() {
-    return mWindowManagerApi->get_vsync();
-}
-
-void Window::SetVerticalSync(bool vsync) {
-    mWindowManagerApi->set_vsync(vsync);
 }
 
 float Window::GetCurrentAspectRatio() {

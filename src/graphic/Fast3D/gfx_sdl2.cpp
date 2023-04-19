@@ -553,14 +553,6 @@ bool gfx_sdl_can_disable_vsync() {
     return false;
 }
 
-void gfx_sdl_set_vsync(bool vsync) {
-    vsync_enabled = vsync;
-}
-
-bool gfx_sdl_get_vsync() {
-    return vsync_enabled;
-}
-
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_close,
                                        gfx_sdl_set_keyboard_callbacks,
@@ -578,8 +570,6 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_target_fps,
                                        gfx_sdl_set_maximum_frame_latency,
                                        gfx_sdl_get_key_name,
-                                       gfx_sdl_can_disable_vsync,
-                                       gfx_sdl_set_vsync,
-                                       gfx_sdl_get_vsync };
+                                       gfx_sdl_can_disable_vsync };
 
 #endif
