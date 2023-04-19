@@ -809,7 +809,7 @@ bool gfx_dxgi_can_disable_vsync() {
 }
 
 void gfx_dxgi_set_vsync(bool vsync) {
-    dxgi.force_disable_vsync = !vsync;
+    dxgi.vsync_enabled = vsync;
 }
 
 bool gfx_dxgi_get_vsync() {
