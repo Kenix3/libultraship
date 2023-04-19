@@ -297,7 +297,7 @@ uint32_t Window::GetCurrentRefreshRate() {
     return mRefreshRate;
 }
 
-bool Window::HasVRRSupport() {
+bool Window::CanDisableVerticalSync() {
     return mWindowManagerApi->has_vrr_support();
 }
 
