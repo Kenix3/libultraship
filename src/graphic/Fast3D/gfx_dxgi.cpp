@@ -706,13 +706,13 @@ void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
 
         ComPtr<IDXGIFactory5> factory;
         HRESULT hr = dxgi.factory.As(&factory);
-
+        BOOL allowTearing = FALSE;
         if (SUCCEEDED(hr)) {
-            hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &dxgi.allow_tearing,
-                                              sizeof(dxgi.allow_tearing));
+            hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing,
+                                              sizeof(allowTearing));
         }
 
-        dxgi.tearing_support = SUCCEEDED(hr) && dxgi.allow_tearing;
+        dxgi.tearing_support = SUCCEEDED(hr) && allowTearing;
     }
 
     ComPtr<IDXGIAdapter1> adapter;
