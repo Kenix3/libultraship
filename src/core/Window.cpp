@@ -305,7 +305,7 @@ bool Window::GetVerticalSync() {
     return mWindowManagerApi->get_vsync();
 }
 
-void Window::SetVerticalSync(bool vsyncToggle) {
+void Window::SetVerticalSync(bool vsync) {
     mWindowManagerApi->set_vsync(vsync);
 }
 
