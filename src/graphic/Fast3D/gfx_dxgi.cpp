@@ -813,7 +813,7 @@ void gfx_dxgi_set_vsync(bool vsync) {
 }
 
 bool gfx_dxgi_get_vsync() {
-    return !dxgi.force_disable_vsync;
+    return dxgi.vsync_enabled;
 }
 
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
