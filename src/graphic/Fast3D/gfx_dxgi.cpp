@@ -77,7 +77,6 @@ static struct {
     uint32_t applied_maximum_frame_latency;
     HANDLE timer;
     bool use_timer;
-    BOOL allow_tearing;
     bool tearing_support;
     bool force_disable_vsync = true;
     LARGE_INTEGER previous_present_time;
