@@ -130,7 +130,7 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     }
 
     InitializeWindowManager(GetConfig()->getString("Window.GfxBackend"), GetConfig()->getString("Window.GfxApi"));
-    
+
     InitializeAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
 
     InitializeSpeechSynthesis();

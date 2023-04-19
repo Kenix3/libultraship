@@ -706,8 +706,7 @@ void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
         HRESULT hr = dxgi.factory.As(&factory);
         BOOL allowTearing = FALSE;
         if (SUCCEEDED(hr)) {
-            hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing,
-                                              sizeof(allowTearing));
+            hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
         }
 
         dxgi.tearing_support = SUCCEEDED(hr) && allowTearing;
