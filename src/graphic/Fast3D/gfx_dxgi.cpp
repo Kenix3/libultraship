@@ -834,7 +834,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
                                                        gfx_dxgi_get_key_name,
-                                                       gfx_dxgi_has_vrr_support,
+                                                       gfx_dxgi_can_disable_vsync,
                                                        gfx_dxgi_set_vsync,
                                                        gfx_dxgi_get_vsync };
 
