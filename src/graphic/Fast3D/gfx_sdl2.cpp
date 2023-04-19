@@ -578,7 +578,7 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_target_fps,
                                        gfx_sdl_set_maximum_frame_latency,
                                        gfx_sdl_get_key_name,
-                                       gfx_sdl_has_vrr_support,
+                                       gfx_sdl_can_disable_vsync,
                                        gfx_sdl_set_vsync,
                                        gfx_sdl_get_vsync };
 
