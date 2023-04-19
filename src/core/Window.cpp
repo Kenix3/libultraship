@@ -306,7 +306,7 @@ bool Window::GetVerticalSync() {
 }
 
 void Window::SetVerticalSync(bool vsyncToggle) {
-    mWindowManagerApi->set_vsync(status);
+    mWindowManagerApi->set_vsync(vsync);
 }
 
 float Window::GetCurrentAspectRatio() {
