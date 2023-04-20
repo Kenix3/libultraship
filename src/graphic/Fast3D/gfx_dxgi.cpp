@@ -11,6 +11,7 @@
 #include <wrl/client.h>
 #include <dxgi1_3.h>
 #include <dxgi1_4.h>
+#include <dxgi1_5.h>
 #include <versionhelpers.h>
 
 #include <shellscalingapi.h>
@@ -76,6 +77,8 @@ static struct {
     uint32_t applied_maximum_frame_latency;
     HANDLE timer;
     bool use_timer;
+    bool tearing_support;
+    bool is_vsync_enabled;
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
@@ -497,7 +500,8 @@ static bool gfx_dxgi_start_frame(void) {
 
         double vsyncs_to_wait = (double)(int64_t)(dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR - last_end_ns) /
                                 estimated_vsync_interval_ns;
-        // printf("ts: %llu, last_end_ns: %llu, Init v: %f\n", dxgi.frame_timestamp / 3, last_end_ns, vsyncs_to_wait);
+        // printf("ts: %llu, last_end_ns: %llu, Init v: %f\n", dxgi.frame_timestamp / 3, last_end_ns,
+        // vsyncs_to_wait);
 
         if (vsyncs_to_wait <= 0) {
             // Too late
@@ -563,9 +567,8 @@ static bool gfx_dxgi_start_frame(void) {
 }
 
 static void gfx_dxgi_swap_buffers_begin(void) {
-    // dxgi.length_in_vsync_frames = 1;
     LARGE_INTEGER t;
-    if (dxgi.use_timer) {
+    if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
@@ -579,8 +582,8 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     }
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;
-
     ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
+
     UINT this_present_id;
     if (dxgi.swap_chain->GetLastPresentCount(&this_present_id) == S_OK) {
         dxgi.pending_frame_stats.insert(std::make_pair(this_present_id, dxgi.length_in_vsync_frames));
@@ -593,9 +596,10 @@ static void gfx_dxgi_swap_buffers_end(void) {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
-    if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
-        // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate swap
-        // chain
+    if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency ||
+        dxgi.is_vsync_enabled != CVarGetInteger("gVsyncEnabled", 1)) {
+        // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
+        // swap chain
         if (dxgi.waitable_object != nullptr) {
             if (!dxgi.dropped_frame) {
                 // Wait the last time on this swap chain
@@ -606,9 +610,8 @@ static void gfx_dxgi_swap_buffers_end(void) {
         }
 
         dxgi.before_destroy_swap_chain_fn();
-
         dxgi.swap_chain.Reset();
-
+        dxgi.is_vsync_enabled = CVarGetInteger("gVsyncEnabled", 1);
         gfx_dxgi_create_swap_chain(dxgi.swap_chain_device.Get(), move(dxgi.before_destroy_swap_chain_fn));
 
         dxgi.frame_timestamp = 0;
@@ -667,11 +670,18 @@ void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
         ThrowIfFailed(dxgi.CreateDXGIFactory1(__uuidof(IDXGIFactory2), &dxgi.factory));
     }
 
-    {
-        ComPtr<IDXGIFactory4> factory4;
-        if (dxgi.factory->QueryInterface(__uuidof(IDXGIFactory4), &factory4) == S_OK) {
-            dxgi.dxgi1_4 = true;
+    ComPtr<IDXGIFactory4> factory4;
+    if (dxgi.factory->QueryInterface(__uuidof(IDXGIFactory4), &factory4) == S_OK) {
+        dxgi.dxgi1_4 = true;
+
+        ComPtr<IDXGIFactory5> factory;
+        HRESULT hr = dxgi.factory.As(&factory);
+        BOOL allowTearing = FALSE;
+        if (SUCCEEDED(hr)) {
+            hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
         }
+
+        dxgi.tearing_support = SUCCEEDED(hr) && allowTearing;
     }
 
     ComPtr<IDXGIAdapter1> adapter;
@@ -709,6 +719,9 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
         dxgi.dxgi1_4 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : // Introduced in DXGI 1.4 and Windows 10
             DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // Apparently flip sequential was also backported to Win 7 Platform Update
     swap_chain_desc.Flags = dxgi_13 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
+    if (dxgi.tearing_support && !dxgi.is_vsync_enabled) {
+        swap_chain_desc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+    }
     swap_chain_desc.SampleDesc.Count = 1;
 
     run_as_dpi_aware([&]() {
@@ -761,6 +774,10 @@ const char* gfx_dxgi_get_key_name(int scancode) {
     return text;
 }
 
+bool gfx_dxgi_can_disable_vsync() {
+    return dxgi.tearing_support;
+}
+
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
@@ -777,6 +794,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_get_time,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
-                                                       gfx_dxgi_get_key_name };
+                                                       gfx_dxgi_get_key_name,
+                                                       gfx_dxgi_can_disable_vsync };
 
 #endif

@@ -24,6 +24,7 @@ struct GfxWindowManagerAPI {
     void (*set_target_fps)(int fps);
     void (*set_maximum_frame_latency)(int latency);
     const char* (*get_key_name)(int scancode);
+    bool (*can_disable_vsync)();
 };
 
 #endif

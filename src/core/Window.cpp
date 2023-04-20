@@ -96,6 +96,7 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     InitializeConsoleVariables();
     InitializeLogging();
     InitializeConfiguration();
+    CVarLoad();
     InitializeResourceManager(otrFiles, validHashes);
     CreateDefaults();
     InitializeControlDeck();
@@ -130,6 +131,7 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     }
 
     InitializeWindowManager(GetConfig()->getString("Window.GfxBackend"), GetConfig()->getString("Window.GfxApi"));
+
     InitializeAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
 
     InitializeSpeechSynthesis();
@@ -295,6 +297,10 @@ uint32_t Window::GetCurrentHeight() {
 uint32_t Window::GetCurrentRefreshRate() {
     mWindowManagerApi->get_active_window_refresh_rate(&mRefreshRate);
     return mRefreshRate;
+}
+
+bool Window::CanDisableVerticalSync() {
+    return mWindowManagerApi->can_disable_vsync();
 }
 
 float Window::GetCurrentAspectRatio() {
