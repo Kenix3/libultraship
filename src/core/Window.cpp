@@ -96,6 +96,7 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
     InitializeConsoleVariables();
     InitializeLogging();
     InitializeConfiguration();
+    CVarLoad();
     InitializeResourceManager(otrFiles, validHashes);
     CreateDefaults();
     InitializeControlDeck();

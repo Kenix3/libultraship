@@ -78,6 +78,7 @@ static struct {
     HANDLE timer;
     bool use_timer;
     bool tearing_support;
+    bool is_vsync_enabled;
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
@@ -424,158 +425,151 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
 }
 
 static bool gfx_dxgi_start_frame(void) {
-    if (!dxgi.tearing_support || CVarGetInteger("gVsyncEnabled", 1)) {
-        DXGI_FRAME_STATISTICS stats;
-        if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
-            (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
-            {
-                LARGE_INTEGER t0;
-                QueryPerformanceCounter(&t0);
-                // printf("Get frame stats: %llu\n", (unsigned long long)(t0.QuadPart - dxgi.qpc_init));
-            }
-            // printf("stats: %u %u %u %u %u %.6f\n", dxgi.pending_frame_stats.rbegin()->first,
-            // dxgi.pending_frame_stats.rbegin()->second, stats.PresentCount, stats.PresentRefreshCount,
-            // stats.SyncRefreshCount, (double)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init) / dxgi.qpc_freq);
-            if (dxgi.frame_stats.empty() || dxgi.frame_stats.rbegin()->second.PresentCount != stats.PresentCount) {
-                dxgi.frame_stats.insert(std::make_pair(stats.PresentCount, stats));
-            }
-            if (dxgi.frame_stats.size() > 3) {
-                dxgi.frame_stats.erase(dxgi.frame_stats.begin());
-            }
+    DXGI_FRAME_STATISTICS stats;
+    if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
+        (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
+        {
+            LARGE_INTEGER t0;
+            QueryPerformanceCounter(&t0);
+            // printf("Get frame stats: %llu\n", (unsigned long long)(t0.QuadPart - dxgi.qpc_init));
         }
-        if (!dxgi.frame_stats.empty()) {
-            while (!dxgi.pending_frame_stats.empty() &&
-                   dxgi.pending_frame_stats.begin()->first < dxgi.frame_stats.rbegin()->first) {
-                dxgi.pending_frame_stats.erase(dxgi.pending_frame_stats.begin());
-            }
+        // printf("stats: %u %u %u %u %u %.6f\n", dxgi.pending_frame_stats.rbegin()->first,
+        // dxgi.pending_frame_stats.rbegin()->second, stats.PresentCount, stats.PresentRefreshCount,
+        // stats.SyncRefreshCount, (double)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init) / dxgi.qpc_freq);
+        if (dxgi.frame_stats.empty() || dxgi.frame_stats.rbegin()->second.PresentCount != stats.PresentCount) {
+            dxgi.frame_stats.insert(std::make_pair(stats.PresentCount, stats));
         }
-        while (dxgi.pending_frame_stats.size() > 40) {
-            // Just make sure the list doesn't grow too large if GetFrameStatistics fails.
+        if (dxgi.frame_stats.size() > 3) {
+            dxgi.frame_stats.erase(dxgi.frame_stats.begin());
+        }
+    }
+    if (!dxgi.frame_stats.empty()) {
+        while (!dxgi.pending_frame_stats.empty() &&
+               dxgi.pending_frame_stats.begin()->first < dxgi.frame_stats.rbegin()->first) {
             dxgi.pending_frame_stats.erase(dxgi.pending_frame_stats.begin());
+        }
+    }
+    while (dxgi.pending_frame_stats.size() > 40) {
+        // Just make sure the list doesn't grow too large if GetFrameStatistics fails.
+        dxgi.pending_frame_stats.erase(dxgi.pending_frame_stats.begin());
 
-            // These are not that useful anymore
-            dxgi.frame_stats.clear();
+        // These are not that useful anymore
+        dxgi.frame_stats.clear();
+    }
+
+    dxgi.use_timer = false;
+
+    dxgi.frame_timestamp += FRAME_INTERVAL_NS_NUMERATOR;
+
+    if (dxgi.frame_stats.size() >= 2) {
+        DXGI_FRAME_STATISTICS* first = &dxgi.frame_stats.begin()->second;
+        DXGI_FRAME_STATISTICS* last = &dxgi.frame_stats.rbegin()->second;
+        uint64_t sync_qpc_diff = last->SyncQPCTime.QuadPart - first->SyncQPCTime.QuadPart;
+        UINT sync_vsync_diff = last->SyncRefreshCount - first->SyncRefreshCount;
+        UINT present_vsync_diff = last->PresentRefreshCount - first->PresentRefreshCount;
+        UINT present_diff = last->PresentCount - first->PresentCount;
+
+        if (sync_vsync_diff == 0) {
+            sync_vsync_diff = 1;
         }
 
-        dxgi.use_timer = false;
+        double estimated_vsync_interval = (double)sync_qpc_diff / (double)sync_vsync_diff;
+        uint64_t estimated_vsync_interval_ns = qpc_to_ns(estimated_vsync_interval);
+        // printf("Estimated vsync_interval: %d\n", (int)estimated_vsync_interval_ns);
+        if (estimated_vsync_interval_ns < 2000 || estimated_vsync_interval_ns > 1000000000) {
+            // Unreasonable, maybe a monitor change
+            estimated_vsync_interval_ns = 16666666;
+            estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
+        }
 
-        dxgi.frame_timestamp += FRAME_INTERVAL_NS_NUMERATOR;
+        dxgi.detected_hz = (float)((double)1000000000 / (double)estimated_vsync_interval_ns);
 
-        if (dxgi.frame_stats.size() >= 2) {
-            DXGI_FRAME_STATISTICS* first = &dxgi.frame_stats.begin()->second;
-            DXGI_FRAME_STATISTICS* last = &dxgi.frame_stats.rbegin()->second;
-            uint64_t sync_qpc_diff = last->SyncQPCTime.QuadPart - first->SyncQPCTime.QuadPart;
-            UINT sync_vsync_diff = last->SyncRefreshCount - first->SyncRefreshCount;
-            UINT present_vsync_diff = last->PresentRefreshCount - first->PresentRefreshCount;
-            UINT present_diff = last->PresentCount - first->PresentCount;
+        UINT queued_vsyncs = 0;
+        bool is_first = true;
+        for (const std::pair<UINT, UINT>& p : dxgi.pending_frame_stats) {
+            /*if (is_first && dxgi.zero_latency) {
+                is_first = false;
+                continue;
+            }*/
+            queued_vsyncs += p.second;
+        }
 
-            if (sync_vsync_diff == 0) {
-                sync_vsync_diff = 1;
-            }
+        uint64_t last_frame_present_end_qpc =
+            (last->SyncQPCTime.QuadPart - dxgi.qpc_init) + estimated_vsync_interval * queued_vsyncs;
+        uint64_t last_end_ns = qpc_to_ns(last_frame_present_end_qpc);
 
-            double estimated_vsync_interval = (double)sync_qpc_diff / (double)sync_vsync_diff;
-            uint64_t estimated_vsync_interval_ns = qpc_to_ns(estimated_vsync_interval);
-            // printf("Estimated vsync_interval: %d\n", (int)estimated_vsync_interval_ns);
-            if (estimated_vsync_interval_ns < 2000 || estimated_vsync_interval_ns > 1000000000) {
-                // Unreasonable, maybe a monitor change
-                estimated_vsync_interval_ns = 16666666;
-                estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
-            }
+        double vsyncs_to_wait =
+            (double)(int64_t)(dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR - last_end_ns) /
+            estimated_vsync_interval_ns;
+        // printf("ts: %llu, last_end_ns: %llu, Init v: %f\n", dxgi.frame_timestamp / 3, last_end_ns,
+        // vsyncs_to_wait);
 
-            dxgi.detected_hz = (float)((double)1000000000 / (double)estimated_vsync_interval_ns);
+        if (vsyncs_to_wait <= 0) {
+            // Too late
 
-            UINT queued_vsyncs = 0;
-            bool is_first = true;
-            for (const std::pair<UINT, UINT>& p : dxgi.pending_frame_stats) {
-                /*if (is_first && dxgi.zero_latency) {
-                    is_first = false;
-                    continue;
-                }*/
-                queued_vsyncs += p.second;
-            }
-
-            uint64_t last_frame_present_end_qpc =
-                (last->SyncQPCTime.QuadPart - dxgi.qpc_init) + estimated_vsync_interval * queued_vsyncs;
-            uint64_t last_end_ns = qpc_to_ns(last_frame_present_end_qpc);
-
-            double vsyncs_to_wait =
-                (double)(int64_t)(dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR - last_end_ns) /
-                estimated_vsync_interval_ns;
-            // printf("ts: %llu, last_end_ns: %llu, Init v: %f\n", dxgi.frame_timestamp / 3, last_end_ns,
-            // vsyncs_to_wait);
-
-            if (vsyncs_to_wait <= 0) {
-                // Too late
-
-                if ((int64_t)(dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR - last_end_ns) < -66666666) {
-                    // The application must have been paused or similar
-                    vsyncs_to_wait = round(((double)FRAME_INTERVAL_NS_NUMERATOR / FRAME_INTERVAL_NS_DENOMINATOR) /
-                                           estimated_vsync_interval_ns);
-                    if (vsyncs_to_wait < 1) {
-                        vsyncs_to_wait = 1;
-                    }
-                    dxgi.frame_timestamp =
-                        FRAME_INTERVAL_NS_DENOMINATOR * (last_end_ns + vsyncs_to_wait * estimated_vsync_interval_ns);
-                } else {
-                    // Drop frame
-                    // printf("Dropping frame\n");
-                    dxgi.dropped_frame = true;
-                    return false;
+            if ((int64_t)(dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR - last_end_ns) < -66666666) {
+                // The application must have been paused or similar
+                vsyncs_to_wait = round(((double)FRAME_INTERVAL_NS_NUMERATOR / FRAME_INTERVAL_NS_DENOMINATOR) /
+                                       estimated_vsync_interval_ns);
+                if (vsyncs_to_wait < 1) {
+                    vsyncs_to_wait = 1;
                 }
+                dxgi.frame_timestamp =
+                    FRAME_INTERVAL_NS_DENOMINATOR * (last_end_ns + vsyncs_to_wait * estimated_vsync_interval_ns);
+            } else {
+                // Drop frame
+                // printf("Dropping frame\n");
+                dxgi.dropped_frame = true;
+                return false;
             }
-            double orig_wait = vsyncs_to_wait;
-            if (floor(vsyncs_to_wait) != vsyncs_to_wait) {
-                uint64_t left = last_end_ns + floor(vsyncs_to_wait) * estimated_vsync_interval_ns;
-                uint64_t right = last_end_ns + ceil(vsyncs_to_wait) * estimated_vsync_interval_ns;
-                uint64_t adjusted_desired_time =
-                    dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR +
-                    (last_end_ns + (FRAME_INTERVAL_NS_NUMERATOR / FRAME_INTERVAL_NS_DENOMINATOR) >
-                             dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR
-                         ? 2000000
-                         : -2000000);
-                int64_t diff_left = adjusted_desired_time - left;
-                int64_t diff_right = right - adjusted_desired_time;
-                if (diff_left < 0) {
-                    diff_left = -diff_left;
-                }
-                if (diff_right < 0) {
-                    diff_right = -diff_right;
-                }
-                if (diff_left < diff_right) {
-                    vsyncs_to_wait = floor(vsyncs_to_wait);
-                } else {
-                    vsyncs_to_wait = ceil(vsyncs_to_wait);
-                }
-                if (vsyncs_to_wait == 0) {
-                    // printf("vsyncs_to_wait became 0 so dropping frame\n");
-                    dxgi.dropped_frame = true;
-                    return false;
-                }
+        }
+        double orig_wait = vsyncs_to_wait;
+        if (floor(vsyncs_to_wait) != vsyncs_to_wait) {
+            uint64_t left = last_end_ns + floor(vsyncs_to_wait) * estimated_vsync_interval_ns;
+            uint64_t right = last_end_ns + ceil(vsyncs_to_wait) * estimated_vsync_interval_ns;
+            uint64_t adjusted_desired_time =
+                dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR +
+                (last_end_ns + (FRAME_INTERVAL_NS_NUMERATOR / FRAME_INTERVAL_NS_DENOMINATOR) >
+                         dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR
+                     ? 2000000
+                     : -2000000);
+            int64_t diff_left = adjusted_desired_time - left;
+            int64_t diff_right = right - adjusted_desired_time;
+            if (diff_left < 0) {
+                diff_left = -diff_left;
             }
-            // printf("v: %d\n", (int)vsyncs_to_wait);
-            if (vsyncs_to_wait > 4) {
-                // Invalid, so use timer based solution
-                vsyncs_to_wait = 4;
-                dxgi.use_timer = true;
+            if (diff_right < 0) {
+                diff_right = -diff_right;
             }
-            dxgi.length_in_vsync_frames = vsyncs_to_wait;
-        } else {
-            dxgi.length_in_vsync_frames = 1;
+            if (diff_left < diff_right) {
+                vsyncs_to_wait = floor(vsyncs_to_wait);
+            } else {
+                vsyncs_to_wait = ceil(vsyncs_to_wait);
+            }
+            if (vsyncs_to_wait == 0) {
+                // printf("vsyncs_to_wait became 0 so dropping frame\n");
+                dxgi.dropped_frame = true;
+                return false;
+            }
+        }
+        // printf("v: %d\n", (int)vsyncs_to_wait);
+        if (vsyncs_to_wait > 4) {
+            // Invalid, so use timer based solution
+            vsyncs_to_wait = 4;
             dxgi.use_timer = true;
         }
+        dxgi.length_in_vsync_frames = vsyncs_to_wait;
     } else {
-        dxgi.length_in_vsync_frames = 0;
-        dxgi.dropped_frame = false;
+        dxgi.length_in_vsync_frames = 1;
+        dxgi.use_timer = true;
     }
 
     return true;
 }
 
 static void gfx_dxgi_swap_buffers_begin(void) {
-    // dxgi.length_in_vsync_frames = 1;
-
     LARGE_INTEGER t;
-    if (!CVarGetInteger("gVsyncEnabled", 1)) {
+    if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
@@ -586,30 +580,11 @@ static void gfx_dxgi_swap_buffers_begin(void) {
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
             WaitForSingleObject(dxgi.timer, INFINITE);
         }
-        QueryPerformanceCounter(&t);
-        dxgi.previous_present_time = t;
-        ThrowIfFailed(dxgi.swap_chain->Present(0, 0));
-    } else if (dxgi.tearing_support) {
-        QueryPerformanceCounter(&t);
-        dxgi.previous_present_time = t;
-        ThrowIfFailed(dxgi.swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
-    } else {
-        if (dxgi.use_timer) {
-            QueryPerformanceCounter(&t);
-            int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
-                           FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
-            int64_t left = next - qpc_to_100ns(t.QuadPart);
-            if (left > 0) {
-                LARGE_INTEGER li;
-                li.QuadPart = -left;
-                SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
-                WaitForSingleObject(dxgi.timer, INFINITE);
-            }
-        }
-        QueryPerformanceCounter(&t);
-        dxgi.previous_present_time = t;
-        ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
     }
+    QueryPerformanceCounter(&t);
+    dxgi.previous_present_time = t;
+    ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
+
     UINT this_present_id;
     if (dxgi.swap_chain->GetLastPresentCount(&this_present_id) == S_OK) {
         dxgi.pending_frame_stats.insert(std::make_pair(this_present_id, dxgi.length_in_vsync_frames));
@@ -622,40 +597,38 @@ static void gfx_dxgi_swap_buffers_end(void) {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
-    if (!dxgi.tearing_support || CVarGetInteger("gVsyncEnabled", 1)) {
-        if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
-            // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
-            // swap chain
-            if (dxgi.waitable_object != nullptr) {
-                if (!dxgi.dropped_frame) {
-                    // Wait the last time on this swap chain
-                    WaitForSingleObject(dxgi.waitable_object, INFINITE);
-                }
-                CloseHandle(dxgi.waitable_object);
-                dxgi.waitable_object = nullptr;
-            }
-
-            dxgi.before_destroy_swap_chain_fn();
-
-            dxgi.swap_chain.Reset();
-
-            gfx_dxgi_create_swap_chain(dxgi.swap_chain_device.Get(), move(dxgi.before_destroy_swap_chain_fn));
-
-            dxgi.frame_timestamp = 0;
-            dxgi.frame_stats.clear();
-            dxgi.pending_frame_stats.clear();
-
-            return; // Make sure we don't wait a second time on the waitable object, since that would hang the program
-        } else if (dxgi.applied_maximum_frame_latency != dxgi.maximum_frame_latency) {
-            apply_maximum_frame_latency(false);
-        }
-
-        if (!dxgi.dropped_frame) {
-            if (dxgi.waitable_object != nullptr) {
+    if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency ||
+        dxgi.is_vsync_enabled != CVarGetInteger("gVsyncEnabled", 1)) {
+        // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
+        // swap chain
+        if (dxgi.waitable_object != nullptr) {
+            if (!dxgi.dropped_frame) {
+                // Wait the last time on this swap chain
                 WaitForSingleObject(dxgi.waitable_object, INFINITE);
             }
-            // else TODO: maybe sleep until some estimated time the frame will be shown to reduce lag
+            CloseHandle(dxgi.waitable_object);
+            dxgi.waitable_object = nullptr;
         }
+
+        dxgi.before_destroy_swap_chain_fn();
+        dxgi.swap_chain.Reset();
+        dxgi.is_vsync_enabled = CVarGetInteger("gVsyncEnabled", 1);
+        gfx_dxgi_create_swap_chain(dxgi.swap_chain_device.Get(), move(dxgi.before_destroy_swap_chain_fn));
+
+        dxgi.frame_timestamp = 0;
+        dxgi.frame_stats.clear();
+        dxgi.pending_frame_stats.clear();
+
+        return; // Make sure we don't wait a second time on the waitable object, since that would hang the program
+    } else if (dxgi.applied_maximum_frame_latency != dxgi.maximum_frame_latency) {
+        apply_maximum_frame_latency(false);
+    }
+
+    if (!dxgi.dropped_frame) {
+        if (dxgi.waitable_object != nullptr) {
+            WaitForSingleObject(dxgi.waitable_object, INFINITE);
+        }
+        // else TODO: maybe sleep until some estimated time the frame will be shown to reduce lag
     }
 
     DXGI_FRAME_STATISTICS stats;
@@ -747,7 +720,7 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
         dxgi.dxgi1_4 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : // Introduced in DXGI 1.4 and Windows 10
             DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // Apparently flip sequential was also backported to Win 7 Platform Update
     swap_chain_desc.Flags = dxgi_13 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
-    if (dxgi.tearing_support && CVarGetInteger("gVsyncEnabled", 1)) {
+    if (dxgi.tearing_support && !dxgi.is_vsync_enabled) {
         swap_chain_desc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
     }
     swap_chain_desc.SampleDesc.Count = 1;

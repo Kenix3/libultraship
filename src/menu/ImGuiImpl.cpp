@@ -425,7 +425,6 @@ void LoadTexture(const std::string& name, const std::string& path) {
 // MARK: - Public API
 
 void Init(WindowImpl windowImpl) {
-    CVarLoad();
     impl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
