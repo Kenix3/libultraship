@@ -498,9 +498,8 @@ static bool gfx_dxgi_start_frame(void) {
             (last->SyncQPCTime.QuadPart - dxgi.qpc_init) + estimated_vsync_interval * queued_vsyncs;
         uint64_t last_end_ns = qpc_to_ns(last_frame_present_end_qpc);
 
-        double vsyncs_to_wait =
-            (double)(int64_t)(dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR - last_end_ns) /
-            estimated_vsync_interval_ns;
+        double vsyncs_to_wait = (double)(int64_t)(dxgi.frame_timestamp / FRAME_INTERVAL_NS_DENOMINATOR - last_end_ns) /
+                                estimated_vsync_interval_ns;
         // printf("ts: %llu, last_end_ns: %llu, Init v: %f\n", dxgi.frame_timestamp / 3, last_end_ns,
         // vsyncs_to_wait);
 
