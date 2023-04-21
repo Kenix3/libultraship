@@ -471,9 +471,9 @@ void Window::InitializeLogging() {
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
 #ifdef _DEBUG
-        GetLogger()->set_level(spdlog::level::debug);
-#else
         GetLogger()->set_level(spdlog::level::trace);
+#else
+        GetLogger()->set_level(spdlog::level::debug);
 #endif
 
 #if defined(_DEBUG)
