@@ -898,14 +898,15 @@ static void import_texture_raw(int tile) {
     }
 
     // Safely only copy the amount of bytes the resource can allow
-    for (uint32_t i = 0, j = 0; i < safe_loaded_bytes; i += safe_line_size_bytes, j += safe_full_image_line_size_bytes) {
+    for (uint32_t i = 0, j = 0; i < safe_loaded_bytes;
+         i += safe_line_size_bytes, j += safe_full_image_line_size_bytes) {
         memcpy(tex_upload_buffer + i, addr + j, safe_line_size_bytes);
     }
 
     // Set the remaining bytes to load as 0
     if (num_loaded_bytes > resource_image_size_bytes) {
         memset(tex_upload_buffer + resource_image_size_bytes, 0, num_loaded_bytes - resource_image_size_bytes);
-    } 
+    }
 
     gfx_rapi->upload_texture(tex_upload_buffer, result_new_line_size / 4, result_new_height);
 }
