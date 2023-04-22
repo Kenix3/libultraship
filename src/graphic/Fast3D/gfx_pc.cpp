@@ -845,6 +845,7 @@ static void import_texture_raw(int tile) {
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
     Ship::TextureType type = metadata->type;
+    std::shared_ptr<Ship::Texture> resource = metadata->resource;
 
     // if texture type is CI4 or CI8 we need to apply tlut to it
     switch (type) {
@@ -881,9 +882,30 @@ static void import_texture_raw(int tile) {
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
 
-    for (uint32_t i = 0, j = 0; i < num_loaded_bytes; i += line_size_bytes, j += full_image_line_size_bytes) {
-        memcpy(tex_upload_buffer + i, addr + j, line_size_bytes);
+    // Get the resource's true image size
+    uint32_t resource_image_size_bytes = resource->ImageDataSize;
+    uint32_t safe_full_image_line_size_bytes = full_image_line_size_bytes;
+    uint32_t safe_line_size_bytes = line_size_bytes;
+    uint32_t safe_loaded_bytes = num_loaded_bytes;
+
+    // Sometimes the texture load commands will specify a size larger than the authentic texture
+    // Normally the OOB info is read as garbage, but will cause a crash on some platforms
+    // Restrict the bytes to a safe amount
+    if (num_loaded_bytes > resource_image_size_bytes) {
+        safe_loaded_bytes = resource_image_size_bytes;
+        safe_line_size_bytes = resource_image_size_bytes;
+        safe_full_image_line_size_bytes = resource_image_size_bytes;
     }
+
+    // Safely only copy the amount of bytes the resource can allow
+    for (uint32_t i = 0, j = 0; i < safe_loaded_bytes; i += safe_line_size_bytes, j += safe_full_image_line_size_bytes) {
+        memcpy(tex_upload_buffer + i, addr + j, safe_line_size_bytes);
+    }
+
+    // Set the remaining bytes to load as 0
+    if (num_loaded_bytes > resource_image_size_bytes) {
+        memset(tex_upload_buffer + resource_image_size_bytes, 0, num_loaded_bytes - resource_image_size_bytes);
+    } 
 
     gfx_rapi->upload_texture(tex_upload_buffer, result_new_line_size / 4, result_new_height);
 }
