@@ -46,6 +46,20 @@ size_t GetResourceSizeByCrc(uint64_t crc, bool now) {
     return GetResourceSizeByName(GetResourceNameByCrc(crc), now);
 }
 
+uint8_t GetResourceIsCustomByName(const char* name, bool now) {
+    auto resource = LoadResource(name, now);
+
+    if (resource == nullptr) {
+        return false;
+    }
+
+    return resource->InitData->IsCustom;
+}
+
+uint8_t GetResourceIsCustomByCrc(uint64_t crc, bool now) {
+    return GetResourceIsCustomByName(GetResourceNameByCrc(crc), now);
+}
+
 void* GetResourceDataByName(const char* name, bool now) {
     auto resource = LoadResource(name, now);
 

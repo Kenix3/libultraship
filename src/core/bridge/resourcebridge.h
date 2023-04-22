@@ -20,6 +20,8 @@ uint64_t GetResourceCrcByName(const char* name);
 const char* GetResourceNameByCrc(uint64_t crc);
 size_t GetResourceSizeByName(const char* name, bool now);
 size_t GetResourceSizeByCrc(uint64_t crc, bool now);
+uint8_t GetResourceIsCustomByName(const char* name, bool now);
+uint8_t GetResourceIsCustomByCrc(uint64_t crc, bool now);
 void* GetResourceDataByName(const char* name, bool now);
 void* GetResourceDataByCrc(uint64_t crc, bool now);
 uint16_t GetResourceTexWidthByName(const char* name, bool now);
