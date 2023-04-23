@@ -3,9 +3,12 @@
 
 #pragma once
 
-#define OOT_NTSC_10 0xEC7011B7
-#define OOT_NTSC_11 0xD43DA81F
-#define OOT_NTSC_12 0x693BA2AE
+#define OOT_NTSC_US_10 0xEC7011B7
+#define OOT_NTSC_US_11 0xD43DA81F
+#define OOT_NTSC_US_12 0x693BA2AE
+// #define OOT_NTSC_JP_10 ?
+// #define OOT_NTSC_JP_11 ?
+// #define OOT_NTSC_JP_12 ?
 #define OOT_PAL_10 0xB044B569
 #define OOT_PAL_11 0xB2055FBD
 #define OOT_NTSC_JP_GC_CE 0xF7F52DB8
