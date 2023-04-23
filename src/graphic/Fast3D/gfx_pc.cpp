@@ -1437,7 +1437,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                 gfx_flush();
                 import_texture(i, tile, false);
                 if (rdp.loaded_texture[i].masked) {
-                    import_texture_mask(SHADER_FIRST_MASK_TEXTURE+ i, tile);
+                    import_texture_mask(SHADER_FIRST_MASK_TEXTURE + i, tile);
                 }
                 if (rdp.loaded_texture[i].blended) {
                     import_texture(SHADER_FIRST_REPLACEMENT_TEXTURE + i, tile, true);

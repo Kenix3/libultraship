@@ -326,7 +326,8 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
                                    "float2(textures[%d].width, textures[%d].height));\r\n",
                                    i, i, i, i, i, i);
                     len += sprintf(buf + len, "        float2 maskSize%d;\r\n", i);
-                    len += sprintf(buf + len, "        g_textureMask%d.GetDimensions(maskSize%d.x, maskSize%d.y);\r\n", i, i, i);
+                    len += sprintf(buf + len, "        g_textureMask%d.GetDimensions(maskSize%d.x, maskSize%d.y);\r\n",
+                                   i, i, i);
                     len += sprintf(buf + len,
                                    "        float4 maskVal%d = tex2D3PointFilter(g_textureMask%d, g_sampler%d, tc%d, "
                                    "maskSize%d);\r\n",
@@ -339,8 +340,8 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
                     } else {
                         len += sprintf(buf + len, "        float4 blendVal%d = float4(0, 0, 0, 0);\r\n", i);
                     }
-                    len +=
-                        sprintf(buf + len, "        texVal%d = lerp(texVal%d, blendVal%d, maskVal%d.a);\r\n", i, i, i, i);
+                    len += sprintf(buf + len, "        texVal%d = lerp(texVal%d, blendVal%d, maskVal%d.a);\r\n", i, i,
+                                   i, i);
                 } else {
                     len += sprintf(buf + len,
                                    "        texVal%d = tex2D3PointFilter(g_texture%d, g_sampler%d, tc%d, "
@@ -356,8 +357,8 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
                 if (cc_features.used_masks[i]) {
                     if (cc_features.used_blend[i]) {
                         len += sprintf(buf + len,
-                                       "    float4 blendVal%d = g_textureBlend%d.Sample(g_sampler%d, tc%d);\r\n", i,
-                                i, i, i);
+                                       "    float4 blendVal%d = g_textureBlend%d.Sample(g_sampler%d, tc%d);\r\n", i, i,
+                                       i, i);
                     } else {
                         len += sprintf(buf + len, "    float4 blendVal%d = float4(0, 0, 0, 0);\r\n", i);
                     }
