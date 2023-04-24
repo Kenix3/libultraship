@@ -130,7 +130,6 @@ struct RawTexMetadata {
     uint16_t width, height;
     float h_byte_scale = 1, v_pixel_scale = 1;
     std::shared_ptr<Ship::Texture> resource;
-    std::string name;
     Ship::TextureType type;
 };
 
@@ -583,8 +582,9 @@ static void gfx_texture_cache_delete(const uint8_t* orig_addr) {
 
 static void import_texture_rgba16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -612,8 +612,9 @@ static void import_texture_rgba16(int tile, bool importReplacement) {
 
 static void import_texture_rgba32(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -628,8 +629,9 @@ static void import_texture_rgba32(int tile, bool importReplacement) {
 
 static void import_texture_ia4(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -659,8 +661,9 @@ static void import_texture_ia4(int tile, bool importReplacement) {
 
 static void import_texture_ia8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -688,8 +691,9 @@ static void import_texture_ia8(int tile, bool importReplacement) {
 
 static void import_texture_ia16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -717,8 +721,9 @@ static void import_texture_ia16(int tile, bool importReplacement) {
 
 static void import_texture_i4(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -748,8 +753,9 @@ static void import_texture_i4(int tile, bool importReplacement) {
 
 static void import_texture_i8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -777,8 +783,9 @@ static void import_texture_i8(int tile, bool importReplacement) {
 
 static void import_texture_ci4(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -814,8 +821,9 @@ static void import_texture_ci4(int tile, bool importReplacement) {
 
 static void import_texture_ci8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -851,8 +859,9 @@ static void import_texture_ci8(int tile, bool importReplacement) {
 
 static void import_texture_raw(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                            : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+    const uint8_t* addr = importReplacement && (metadata->resource != nullptr)
+                              ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                              : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
@@ -908,8 +917,9 @@ static void import_texture(int i, int tile, bool importReplacement) {
     uint8_t palette_index = rdp.texture_tile[tile].palette;
 
     const RawTexMetadata* metadata = &rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* orig_addr = importReplacement ? masked_textures.find(metadata->name)->second.replacementData
-                                                 : rdp.loaded_texture[tmem_index].addr;
+    const uint8_t* orig_addr = importReplacement && (metadata->resource != nullptr)
+                                   ? masked_textures.find(metadata->resource->InitData->Path)->second.replacementData
+                                   : rdp.loaded_texture[tmem_index].addr;
 
     TextureCacheKey key;
     if (fmt == G_IM_FMT_CI) {
@@ -972,7 +982,11 @@ static void import_texture_mask(int i, int tile) {
     uint32_t tmem_index = rdp.texture_tile[tile].tmem_index;
     RawTexMetadata metadata = rdp.loaded_texture[tmem_index].raw_tex_metadata;
 
-    auto maskIter = masked_textures.find(metadata.name);
+    if (metadata.resource == nullptr) {
+        return;
+    }
+
+    auto maskIter = masked_textures.find(metadata.resource->InitData->Path);
     if (maskIter == masked_textures.end()) {
         return;
     }
@@ -1933,7 +1947,10 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata = rdp.texture_to_load.raw_tex_metadata;
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr;
 
-    auto maskedTextureIter = masked_textures.find(rdp.texture_to_load.raw_tex_metadata.name);
+    const std::string& texPath = rdp.texture_to_load.raw_tex_metadata.resource != nullptr
+                                     ? rdp.texture_to_load.raw_tex_metadata.resource->InitData->Path
+                                     : "";
+    auto maskedTextureIter = masked_textures.find(texPath);
     if (maskedTextureIter != masked_textures.end()) {
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].masked = true;
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].blended =
@@ -1999,7 +2016,10 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].raw_tex_metadata = rdp.texture_to_load.raw_tex_metadata;
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr + start_offset_bytes;
 
-    auto maskedTextureIter = masked_textures.find(rdp.texture_to_load.raw_tex_metadata.name);
+    const std::string& texPath = rdp.texture_to_load.raw_tex_metadata.resource != nullptr
+                                     ? rdp.texture_to_load.raw_tex_metadata.resource->InitData->Path
+                                     : "";
+    auto maskedTextureIter = masked_textures.find(texPath);
     if (maskedTextureIter != masked_textures.end()) {
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].masked = true;
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].blended =
@@ -2325,7 +2345,6 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
         rawTexMetadata.resource = tex;
-        rawTexMetadata.name = std::string((char*)data);
         data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
     }
 
@@ -2719,7 +2738,6 @@ static void gfx_run_dl(Gfx* cmd) {
                     rawTexMetadata.v_pixel_scale = texture->VPixelScale;
                     rawTexMetadata.type = texture->Type;
                     rawTexMetadata.resource = texture;
-                    rawTexMetadata.name = std::string(fileName);
 
 #if _DEBUG && 0
                     tex = reinterpret_cast<char*>(texture->imageData);
@@ -2779,7 +2797,6 @@ static void gfx_run_dl(Gfx* cmd) {
                     rawTexMetadata.v_pixel_scale = texture->VPixelScale;
                     rawTexMetadata.type = texture->Type;
                     rawTexMetadata.resource = texture;
-                    rawTexMetadata.name = std::string(fileName);
 
                     uint32_t fmt = C0(21, 3);
                     uint32_t size = C0(19, 2);
