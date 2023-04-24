@@ -193,24 +193,4 @@ void UnloadResourceByCrc(uint64_t crc) {
 void UnloadResourceDirectory(const char* name) {
     Ship::Window::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
-
-void WriteTextureDataInt16ByName(const char* name, size_t index, int16_t valueToWrite, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
-
-    if (res != nullptr) {
-        if ((index * sizeof(int16_t)) < res->ImageDataSize) {
-            ((int16_t*)res->ImageData)[index] = valueToWrite;
-        }
-    }
-}
-
-void WriteTextureDataInt16ByCrc(uint64_t crc, size_t index, int16_t valueToWrite, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
-
-    if (res != nullptr) {
-        if ((index * sizeof(int16_t)) < res->ImageDataSize) {
-            ((int16_t*)res->ImageData)[index] = valueToWrite;
-        }
-    }
-}
 }

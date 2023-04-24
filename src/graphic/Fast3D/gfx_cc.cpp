@@ -25,6 +25,10 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
 
     cc_features->used_textures[0] = false;
     cc_features->used_textures[1] = false;
+    cc_features->used_masks[0] = false;
+    cc_features->used_masks[1] = false;
+    cc_features->used_blend[0] = false;
+    cc_features->used_blend[1] = false;
     cc_features->num_inputs = 0;
 
     for (int c = 0; c < 2; c++) {
@@ -54,5 +58,19 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
         cc_features->do_mix[c][1] = cc_features->c[c][1][1] == cc_features->c[c][1][3];
         cc_features->color_alpha_same[c] =
             ((shader_id0 >> c * 32) & 0xffff) == ((shader_id0 >> (c * 32 + 16)) & 0xffff);
+    }
+
+    if (cc_features->used_textures[0] && (shader_id1 & SHADER_OPT_TEXEL0_MASK)) {
+        cc_features->used_masks[0] = true;
+    }
+    if (cc_features->used_textures[1] && (shader_id1 & SHADER_OPT_TEXEL1_MASK)) {
+        cc_features->used_masks[1] = true;
+    }
+
+    if (cc_features->used_textures[0] && (shader_id1 & SHADER_OPT_TEXEL0_BLEND)) {
+        cc_features->used_blend[0] = true;
+    }
+    if (cc_features->used_textures[1] && (shader_id1 & SHADER_OPT_TEXEL1_BLEND)) {
+        cc_features->used_blend[1] = true;
     }
 }
