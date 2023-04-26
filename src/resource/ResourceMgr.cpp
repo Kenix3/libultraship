@@ -75,13 +75,14 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
         return LoadResourceProcess(newFilePath);
     }
 
-    // Attempt to load the HD version of the asset, if we fail then we continue trying to load the standard asset.
+    // Attempt to load the alternate version of the asset, if we fail then we continue trying to load the standard
+    // asset.
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(Resource::gAltAssetPrefix)) {
-        const auto hdPath = Resource::gAltAssetPrefix + filePath;
-        auto hdResource = LoadResourceProcess(hdPath, loadExact);
+        const auto altPath = Resource::gAltAssetPrefix + filePath;
+        auto altResource = LoadResourceProcess(altPath, loadExact);
 
-        if (hdResource != nullptr) {
-            return hdResource;
+        if (altResource != nullptr) {
+            return altResource;
         }
     }
 
@@ -92,13 +93,13 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
     if (cachedResource != nullptr) {
         return cachedResource;
     }
-    // Check for resource load errors which can indicate an HD asset.
-    // If we are attempting to load an HD asset, we can return null
+    // Check for resource load errors which can indicate an alternate asset.
+    // If we are attempting to load an alternate asset, we can return null
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && filePath.starts_with(Resource::gAltAssetPrefix)) {
         if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
             try {
-                // If we have attempted to cache an HD asset, but failed, we return nullptr and rely on the calling
-                // function to return a SD asset. If we have NOT attempted load already, attempt the load.
+                // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
+                // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
                 auto loadError = std::get<ResourceLoadError>(cacheLine);
                 if (loadError != ResourceLoadError::NotCached) {
                     return nullptr;
@@ -190,13 +191,13 @@ std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath)
 std::variant<ResourceMgr::ResourceLoadError, std::shared_ptr<Resource>>
 ResourceMgr::CheckCache(const std::string& filePath, bool loadExact) {
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(Resource::gAltAssetPrefix)) {
-        const auto hdPath = Resource::gAltAssetPrefix + filePath;
-        auto hdCacheResult = CheckCache(hdPath, loadExact);
+        const auto altPath = Resource::gAltAssetPrefix + filePath;
+        auto altCacheResult = CheckCache(altPath, loadExact);
 
         // If the type held at this cache index is a resource, then we return it.
         // Else we attempt to load standard definition assets.
-        if (std::holds_alternative<std::shared_ptr<Resource>>(hdCacheResult)) {
-            return hdCacheResult;
+        if (std::holds_alternative<std::shared_ptr<Resource>>(altCacheResult)) {
+            return altCacheResult;
         }
     }
 
