@@ -19,7 +19,7 @@ struct ResourceInitData {
 
 class Resource {
   public:
-    inline static const std::string gHdAssetPrefix = "alt/";
+    inline static const std::string gAltAssetPrefix = "alt/";
 
     std::shared_ptr<ResourceMgr> ResourceManager;
     std::shared_ptr<ResourceInitData> InitData;

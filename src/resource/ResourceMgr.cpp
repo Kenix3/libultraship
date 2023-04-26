@@ -76,8 +76,8 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
     }
 
     // Attempt to load the HD version of the asset, if we fail then we continue trying to load the standard asset.
-    if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(Resource::gHdAssetPrefix)) {
-        const auto hdPath = Resource::gHdAssetPrefix + filePath;
+    if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(Resource::gAltAssetPrefix)) {
+        const auto hdPath = Resource::gAltAssetPrefix + filePath;
         auto hdResource = LoadResourceProcess(hdPath, loadExact);
 
         if (hdResource != nullptr) {
@@ -94,7 +94,7 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
     }
     // Check for resource load errors which can indicate an HD asset.
     // If we are attempting to load an HD asset, we can return null
-    if (!loadExact && CVarGetInteger("gAltAssets", 0) && filePath.starts_with(Resource::gHdAssetPrefix)) {
+    if (!loadExact && CVarGetInteger("gAltAssets", 0) && filePath.starts_with(Resource::gAltAssetPrefix)) {
         if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
             try {
                 // If we have attempted to cache an HD asset, but failed, we return nullptr and rely on the calling
@@ -189,8 +189,8 @@ std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath)
 
 std::variant<ResourceMgr::ResourceLoadError, std::shared_ptr<Resource>>
 ResourceMgr::CheckCache(const std::string& filePath, bool loadExact) {
-    if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(Resource::gHdAssetPrefix)) {
-        const auto hdPath = Resource::gHdAssetPrefix + filePath;
+    if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(Resource::gAltAssetPrefix)) {
+        const auto hdPath = Resource::gAltAssetPrefix + filePath;
         auto hdCacheResult = CheckCache(hdPath, loadExact);
 
         // If the type held at this cache index is a resource, then we return it.
