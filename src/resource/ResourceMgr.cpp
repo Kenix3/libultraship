@@ -164,7 +164,8 @@ std::shared_ptr<OtrFile> ResourceMgr::LoadFile(const std::string& filePath) {
     return LoadFileAsync(filePath).get();
 }
 
-std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(const std::string& filePath) {
+std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(const std::string& filePath,
+                                                                             bool loadExact) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
@@ -172,7 +173,7 @@ std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(con
     }
 
     // Check the cache before queueing the job.
-    auto cacheCheck = GetCachedResource(filePath);
+    auto cacheCheck = GetCachedResource(filePath, loadExact);
     if (cacheCheck) {
         auto promise = std::make_shared<std::promise<std::shared_ptr<Resource>>>();
         promise->set_value(cacheCheck);
@@ -181,11 +182,11 @@ std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(con
 
     const auto newFilePath = std::string(filePath);
 
-    return mThreadPool->submit(&ResourceMgr::LoadResourceProcess, this, newFilePath, false);
+    return mThreadPool->submit(&ResourceMgr::LoadResourceProcess, this, newFilePath, loadExact);
 }
 
-std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath) {
-    return LoadResourceAsync(filePath).get();
+std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath, bool loadExact) {
+    return LoadResourceAsync(filePath, loadExact).get();
 }
 
 std::variant<ResourceMgr::ResourceLoadError, std::shared_ptr<Resource>>
