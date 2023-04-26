@@ -164,7 +164,8 @@ std::shared_ptr<OtrFile> ResourceMgr::LoadFile(const std::string& filePath) {
     return LoadFileAsync(filePath).get();
 }
 
-std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(const std::string& filePath, bool loadExact) {
+std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(const std::string& filePath,
+                                                                             bool loadExact) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
