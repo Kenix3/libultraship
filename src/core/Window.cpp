@@ -369,9 +369,8 @@ void Window::InitializeWindowManager(std::string_view gfxBackend, std::string_vi
 #endif
 
     // Defaults if not on list above
-#ifdef ENABLE_OPENGL
+#if defined(ENABLE_OPENGL) || defined(__APPLE__)
     mRenderingApi = &gfx_opengl_api;
-#endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
         mRenderingApi = &gfx_metal_api;
@@ -383,6 +382,7 @@ void Window::InitializeWindowManager(std::string_view gfxBackend, std::string_vi
     mWindowManagerApi = &gfx_sdl;
 #else
     mWindowManagerApi = &gfx_sdl;
+#endif
 #endif
 #ifdef ENABLE_DX12
     mRenderingApi = &gfx_direct3d12_api;
