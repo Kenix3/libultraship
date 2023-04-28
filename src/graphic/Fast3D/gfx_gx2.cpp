@@ -17,6 +17,7 @@
 #define _LANGUAGE_C
 #endif
 #include "libultraship/libultra/gbi.h"
+#include <core/bridge/consolevariablebridge.h>
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
@@ -109,6 +110,7 @@ static uint32_t current_scissor_width = WIIU_DEFAULT_FB_WIDTH;
 static uint32_t current_scissor_height = WIIU_DEFAULT_FB_HEIGHT;
 
 static bool current_zmode_decal = false;
+static bool current_SSDB = -2.0f;
 static bool current_use_alpha = false;
 
 static inline GX2SamplerVar* GX2GetPixelSamplerVar(const GX2PixelShader* shader, const char* name) {
@@ -370,13 +372,38 @@ static void gfx_gx2_set_depth_test_and_mask(bool depth_test, bool z_upd) {
 static void gfx_gx2_set_zmode_decal(bool zmode_decal) {
     current_zmode_decal = zmode_decal;
     if (zmode_decal) {
+        // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
+        // fighting
+        const int n64modeFactor = 120;
+        const int noVanishFactor = 100;
+        float SSDB = -2.0f;
+        switch (CVarGetInteger("gDirtPathFix", 0)) {
+            // scaled z-fighting (N64 mode like)
+            case 1:
+                if (current_framebuffer) {
+                    SSDB = -1.0f * (float)current_framebuffer->color_buffer.surface.height / n64modeFactor;
+                }
+                break;
+            // no vanishing paths
+            case 2:
+                if (current_framebuffer) {
+                    SSDB = -1.0f * (float)current_framebuffer->color_buffer.surface.height / noVanishFactor;
+                }
+                break;
+            // disabled
+            case 0:
+            default:
+                SSDB = -2.0f;
+        }
+
+        current_SSDB = SSDB;
+        GX2SetPolygonOffset(SSDB, SSDB, SSDB, SSDB, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, TRUE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, TRUE, TRUE, FALSE);
-        GX2SetPolygonOffset(-2.0f, -2.0f, -2.0f, -2.0f, 0.0f);
     } else {
+        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, FALSE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, FALSE, FALSE, FALSE);
-        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     }
 }
 
@@ -528,13 +555,13 @@ static void gfx_gx2_start_frame(void) {
     GX2SetDepthOnlyControl(current_depth_test, current_depth_write, current_depth_compare_function);
 
     if (current_zmode_decal) {
+        GX2SetPolygonOffset(current_SSDB, current_SSDB, current_SSDB, current_SSDB, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, TRUE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, TRUE, TRUE, FALSE);
-        GX2SetPolygonOffset(-2.0f, -2.0f, -2.0f, -2.0f, 0.0f);
     } else {
+        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, FALSE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, FALSE, FALSE, FALSE);
-        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     }
 
     frame_count++;
