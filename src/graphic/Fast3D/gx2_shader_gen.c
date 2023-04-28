@@ -18,11 +18,112 @@
 #define GRAYSCALE_REG  _R4
 
 enum {
-    SHADER_TEXINFO0 = SHADER_COMBINED + 1,
+    SHADER_TEXINFO0 = SHADER_NOISE + 1,
     SHADER_TEXINFO1,
+    SHADER_MASKTEX0,
+    SHADER_MASKTEX1,
+    SHADER_BLENDTEX0,
+    SHADER_BLENDTEX1,
+    SHADER_MAX,
 };
 
-static uint8_t get_reg(struct CCFeatures *cc_features, uint8_t c) {
+#define REG_TABLE_UNUSED 0xff
+#define REG_TABLE_RESERVED 0xfe
+
+struct RegTable {
+    uint8_t used;
+    uint8_t regs[128];
+};
+
+static inline int reg_table_find_free(struct RegTable* tbl, bool reuse_texinfo) {
+    for (int i = 0; i < 128; i++) {
+        // this is to make sure that things like mask and blend don't overwrite
+        // texinfo while sampling which is needed for later textures
+        if (reuse_texinfo && (i == 1 || i == 2)) {
+            continue;
+        }
+
+        if (tbl->regs[i] == REG_TABLE_UNUSED) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static void reg_table_build(struct RegTable* tbl, struct CCFeatures *cc_features, bool needs_noise) {
+    tbl->used = 0;
+    memset(tbl->regs, REG_TABLE_UNUSED, 128);
+
+    // reg1 is used for the current texel value
+    tbl->regs[TEXEL_REG] = SHADER_COMBINED;
+
+    // frag coords will always be placed in R0, and is afterwards used
+    // for storing the noise data
+    if (needs_noise) {
+        tbl->regs[FRAG_COORD_REG] = SHADER_NOISE;
+    }
+
+    if (cc_features->opt_fog) {
+        tbl->regs[FOG_REG] = REG_TABLE_RESERVED;
+    }
+
+    if (cc_features->opt_grayscale) {
+        tbl->regs[GRAYSCALE_REG] = REG_TABLE_RESERVED;
+    }
+
+    for (int i = 0; i < cc_features->num_inputs; i++) {
+        tbl->regs[5 + i] = SHADER_INPUT_1 + i;
+    }
+
+    // for the rest of regs we find unused ones
+    if (cc_features->used_textures[0]) {
+        int reg = reg_table_find_free(tbl, false);
+        assert(reg != -1);
+        tbl->regs[reg] = SHADER_TEXEL0;
+    }
+
+    if (cc_features->used_textures[1]) {
+        int reg = reg_table_find_free(tbl, false);
+        assert(reg != -1);
+        tbl->regs[reg] = SHADER_TEXEL1;
+    }
+
+    if (cc_features->used_masks[0]) {
+        int reg = reg_table_find_free(tbl, true);
+        assert(reg != -1);
+        tbl->regs[reg] = SHADER_MASKTEX0;
+    }
+
+    if (cc_features->used_masks[1]) {
+        int reg = reg_table_find_free(tbl, true);
+        assert(reg != -1);
+        tbl->regs[reg] = SHADER_MASKTEX1;
+    }
+
+    if (cc_features->used_blend[0]) {
+        int reg = reg_table_find_free(tbl, true);
+        assert(reg != -1);
+        tbl->regs[reg] = SHADER_BLENDTEX0;
+    }
+
+    if (cc_features->used_blend[1]) {
+        int reg = reg_table_find_free(tbl, true);
+        assert(reg != -1);
+        tbl->regs[reg] = SHADER_BLENDTEX1;
+    }
+
+    // find the highest used reg
+    for (int cnt = 127; cnt >= 0; cnt--) {
+        if (tbl->regs[cnt] != REG_TABLE_UNUSED) {
+            tbl->used = cnt + 1;
+            break;
+        }
+    }
+}
+
+static uint8_t get_reg(struct RegTable* tbl, uint8_t c) {
+    // these are technically not regs but constants
     if (c == SHADER_0) {
         return ALU_SRC_0;
     }
@@ -30,67 +131,27 @@ static uint8_t get_reg(struct CCFeatures *cc_features, uint8_t c) {
         return ALU_SRC_1;
     }
 
-    if (c == SHADER_COMBINED) {
-        return TEXEL_REG;
+    switch (c) {
+    case SHADER_TEXINFO0:
+    case SHADER_TEXEL0A:
+        c = SHADER_TEXEL0;
+        break;
+    case SHADER_TEXINFO1:
+    case SHADER_TEXEL1A:
+        c = SHADER_TEXEL1;
+        break;
+    default:
+        break;
     }
 
-    if (c >= SHADER_INPUT_1 && c <= SHADER_INPUT_7) {
-        return _R(5 + (c - SHADER_INPUT_1));
-    }
-
-    uint8_t input_last = (cc_features->num_inputs + 5) - 1;
-
-    if (c == SHADER_TEXEL0 || c == SHADER_TEXEL0A) {
-        // reuse unused regs
-        if (!cc_features->opt_noise) {
-            return FRAG_COORD_REG;
-        } else if (!cc_features->opt_fog) {
-            return FOG_REG;
-        } else if (!cc_features->opt_grayscale) {
-            return GRAYSCALE_REG;
+    for (int i = 0; i < tbl->used; i++) {
+        if (tbl->regs[i] == c) {
+            return _R(i);
         }
-
-        return _R(input_last + 1);
-    }
-    if (c == SHADER_TEXEL1 || c == SHADER_TEXEL1A) {
-        // if the shader doesn't use texture 0 we can reuse it for texture 1
-        if (!cc_features->used_textures[0]) {
-            return get_reg(cc_features, SHADER_TEXEL0);
-        }
-        // reuse unused regs which tex 0 doesn't use yet
-        else if (!cc_features->opt_fog && get_reg(cc_features, SHADER_TEXEL0) != FOG_REG) {
-            return FOG_REG;
-        } else if (!cc_features->opt_grayscale && get_reg(cc_features, SHADER_TEXEL0) != GRAYSCALE_REG) {
-            return GRAYSCALE_REG;
-        }
-
-        return _R(input_last + 2);
     }
 
-    // reuse the regs above
-    if (c == SHADER_TEXINFO0) {
-        return get_reg(cc_features, SHADER_TEXEL0);
-    }
-    if (c == SHADER_TEXINFO1) {
-        return get_reg(cc_features, SHADER_TEXEL1);
-    }
-
+    assert(0 && "Failed to find reg!");
     return 0;
-}
-
-static uint8_t get_num_regs(struct CCFeatures *cc_features) {
-    uint8_t input_count = cc_features->num_inputs + 5;
-
-    uint8_t last_tex_reg;
-    if (cc_features->used_textures[1]) {
-        last_tex_reg = get_reg(cc_features, SHADER_TEXEL1) + 1;
-    } else if (cc_features->used_textures[0]) {
-        last_tex_reg = get_reg(cc_features, SHADER_TEXEL0) + 1;
-    } else {
-        return input_count;
-    }
-    
-    return (last_tex_reg < input_count) ? input_count : last_tex_reg;
 }
 
 #define ADD_INSTR(...) \
@@ -98,8 +159,8 @@ static uint8_t get_num_regs(struct CCFeatures *cc_features) {
     memcpy(*alu_ptr, tmp, sizeof(tmp)); \
     *alu_ptr += sizeof(tmp) / sizeof(uint64_t)
 
-static inline void add_tex_clamp_S_T(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t tex) {
-    uint8_t texinfo_reg = get_reg(cc_features, (tex == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
+static void add_tex_clamp_S_T(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t tex) {
+    uint8_t texinfo_reg = get_reg(tbl, (tex == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
     uint8_t texcoord_reg = (tex == 0) ? _R1 : _R2;
 
     ADD_INSTR(
@@ -132,8 +193,8 @@ static inline void add_tex_clamp_S_T(struct CCFeatures *cc_features, uint64_t **
     );
 }
 
-static inline void add_tex_clamp_S(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t tex) {
-    uint8_t texinfo_reg = get_reg(cc_features, (tex == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
+static void add_tex_clamp_S(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t tex) {
+    uint8_t texinfo_reg = get_reg(tbl, (tex == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
     uint8_t texcoord_reg = (tex == 0) ? _R1 : _R2;
 
     ADD_INSTR(
@@ -157,8 +218,8 @@ static inline void add_tex_clamp_S(struct CCFeatures *cc_features, uint64_t **al
     );
 }
 
-static inline void add_tex_clamp_T(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t tex) {
-    uint8_t texinfo_reg = get_reg(cc_features, (tex == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
+static void add_tex_clamp_T(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t tex) {
+    uint8_t texinfo_reg = get_reg(tbl, (tex == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
     uint8_t texcoord_reg = (tex == 0) ? _R1 : _R2;
 
     ADD_INSTR(
@@ -182,9 +243,9 @@ static inline void add_tex_clamp_T(struct CCFeatures *cc_features, uint64_t **al
     );
 }
 
-static inline void add_mov(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t src, bool single) {
+static void add_mov(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t src, bool single) {
     bool src_alpha = (src == SHADER_TEXEL0A) || (src == SHADER_TEXEL1A);
-    src = get_reg(cc_features, src);
+    src = get_reg(tbl, src);
 
     /* texel = src */
     if (single) {
@@ -202,11 +263,11 @@ static inline void add_mov(struct CCFeatures *cc_features, uint64_t **alu_ptr, u
     }
 }
 
-static inline void add_mul(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t src0, uint8_t src1, bool single) {
+static void add_mul(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t src0, uint8_t src1, bool single) {
     bool src0_alpha = (src0 == SHADER_TEXEL0A) || (src0 == SHADER_TEXEL1A);
     bool src1_alpha = (src1 == SHADER_TEXEL0A) || (src1 == SHADER_TEXEL1A);
-    src0 = get_reg(cc_features, src0);
-    src1 = get_reg(cc_features, src1);
+    src0 = get_reg(tbl, src0);
+    src1 = get_reg(tbl, src1);
 
     /* texel = src0 * src1 */
     if (single) {
@@ -224,15 +285,15 @@ static inline void add_mul(struct CCFeatures *cc_features, uint64_t **alu_ptr, u
     }
 }
 
-static inline void add_mix(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t src0, uint8_t src1, uint8_t src2, uint8_t src3, bool single) {
+static void add_mix(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t src0, uint8_t src1, uint8_t src2, uint8_t src3, bool single) {
     bool src0_alpha = (src0 == SHADER_TEXEL0A) || (src0 == SHADER_TEXEL1A);
     bool src1_alpha = (src1 == SHADER_TEXEL0A) || (src1 == SHADER_TEXEL1A);
     bool src2_alpha = (src2 == SHADER_TEXEL0A) || (src2 == SHADER_TEXEL1A);
     bool src3_alpha = (src3 == SHADER_TEXEL0A) || (src3 == SHADER_TEXEL1A);
-    src0 = get_reg(cc_features, src0);
-    src1 = get_reg(cc_features, src1);
-    src2 = get_reg(cc_features, src2);
-    src3 = get_reg(cc_features, src3);
+    src0 = get_reg(tbl, src0);
+    src1 = get_reg(tbl, src1);
+    src2 = get_reg(tbl, src2);
+    src3 = get_reg(tbl, src3);
 
     /* texel = (src0 - src1) * src2 - src3 */
     if (single) {
@@ -259,25 +320,25 @@ static inline void add_mix(struct CCFeatures *cc_features, uint64_t **alu_ptr, u
 }
 #undef ADD_INSTR
 
-static void append_tex_clamp(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t tex, bool s, bool t) {
+static void append_tex_clamp(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t tex, bool s, bool t) {
     if (s && t) {
-        add_tex_clamp_S_T(cc_features, alu_ptr, tex);
+        add_tex_clamp_S_T(tbl, alu_ptr, tex);
     } else if (s) {
-        add_tex_clamp_S(cc_features, alu_ptr, tex);
+        add_tex_clamp_S(tbl, alu_ptr, tex);
     } else {
-        add_tex_clamp_T(cc_features, alu_ptr, tex);
+        add_tex_clamp_T(tbl, alu_ptr, tex);
     }
 }
 
-static void append_formula(struct CCFeatures *cc_features, uint64_t **alu_ptr, uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix, bool only_alpha) {
+static void append_formula(struct RegTable* tbl, uint64_t **alu_ptr, uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix, bool only_alpha) {
     if (do_single) {
-        add_mov(cc_features, alu_ptr, c[only_alpha][3], only_alpha);
+        add_mov(tbl, alu_ptr, c[only_alpha][3], only_alpha);
     } else if (do_multiply) {
-        add_mul(cc_features, alu_ptr, c[only_alpha][0], c[only_alpha][2], only_alpha);
+        add_mul(tbl, alu_ptr, c[only_alpha][0], c[only_alpha][2], only_alpha);
     } else if (do_mix) {
-        add_mix(cc_features, alu_ptr, c[only_alpha][0], c[only_alpha][1], c[only_alpha][2], c[only_alpha][1], only_alpha);
+        add_mix(tbl, alu_ptr, c[only_alpha][0], c[only_alpha][1], c[only_alpha][2], c[only_alpha][1], only_alpha);
     } else {
-        add_mix(cc_features, alu_ptr, c[only_alpha][0], c[only_alpha][1], c[only_alpha][2], c[only_alpha][3], only_alpha);
+        add_mix(tbl, alu_ptr, c[only_alpha][0], c[only_alpha][1], c[only_alpha][2], c[only_alpha][3], only_alpha);
     }
 }
 
@@ -351,17 +412,18 @@ static const uint64_t noise_instructions[] = {
     ALU_LAST,
     ALU_LITERAL(0x480C63A3 /* 143758.5453f */),
 
-    ALU_FRACT( _R127, _x, ALU_SRC_PV, _x)
+    ALU_FRACT(__, _x, ALU_SRC_PV, _x)
     ALU_LAST,
 
-    /* texel.a *= floor(R127.x + 0.5); */
-    ALU_ADD(__, _x, _R127, _x, ALU_SRC_0_5, _x)
+    /* (PV + 1.0) / 2.0 */
+    ALU_ADD(__, _x, ALU_SRC_PV, _x, ALU_SRC_1, _x)
     ALU_LAST,
 
-    ALU_FLOOR(__, _x, ALU_SRC_PV, _x)
-    ALU_LAST,
-
-    ALU_MUL(TEXEL_REG, _w, TEXEL_REG, _w, ALU_SRC_PV, _x)
+    /* place noise data into xyzw */
+    ALU_MUL(FRAG_COORD_REG, _x, ALU_SRC_PV, _x, ALU_SRC_0_5, _x),
+    ALU_MUL(FRAG_COORD_REG, _y, ALU_SRC_PV, _x, ALU_SRC_0_5, _x),
+    ALU_MUL(FRAG_COORD_REG, _z, ALU_SRC_PV, _x, ALU_SRC_0_5, _x),
+    ALU_MUL(FRAG_COORD_REG, _w, ALU_SRC_PV, _x, ALU_SRC_0_5, _x)
     ALU_LAST,
 };
 
@@ -370,8 +432,12 @@ static GX2UniformVar uniformVars[] = {
 };
 
 static GX2SamplerVar samplerVars[] = {
-    { "uTex0", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, 0 },
-    { "uTex1", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, 1 },
+    { "uTex0", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, SHADER_FIRST_TEXTURE + 0 },
+    { "uTex1", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, SHADER_FIRST_TEXTURE + 1 },
+    { "uTexMask0", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, SHADER_FIRST_MASK_TEXTURE + 0 },
+    { "uTexMask1", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, SHADER_FIRST_MASK_TEXTURE + 1 },
+    { "uTexBlend0", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, SHADER_FIRST_REPLACEMENT_TEXTURE + 0 },
+    { "uTexBlend1", GX2_SAMPLER_VAR_TYPE_SAMPLER_2D, SHADER_FIRST_REPLACEMENT_TEXTURE + 1 },
 };
 
 #define ADD_INSTR(...) \
@@ -404,6 +470,25 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
         }
     }
 
+    // check if we should prepare randomness for noise
+    bool needs_noise = cc_features->opt_alpha && cc_features->opt_noise;
+    if (!needs_noise) {
+        for (int i = 0; i < (cc_features->opt_2cyc ? 2 : 1); i++) {
+            for (int j = 0; j < (cc_features->opt_alpha ? 2 : 1); j++) {
+                for (int k = 0; k < 4; k++) {
+                    if (cc_features->c[i][j][k] == SHADER_NOISE) {
+                        needs_noise = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // build the reg table
+    struct RegTable reg_table;
+    reg_table_build(&reg_table, cc_features, needs_noise);
+
     uint32_t texclamp_alu_offset = base_alu_offset;
     uint32_t texclamp_alu_size = 0;
     uint32_t texclamp_alu_cnt = 0;
@@ -414,7 +499,7 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
 
         for (int i = 0; i < 2; i++) {
             if (cc_features->used_textures[i] && texclamp[i]) {
-                append_tex_clamp(cc_features, &cur_buf, i, cc_features->clamp[i][0], cc_features->clamp[i][1]);
+                append_tex_clamp(&reg_table, &cur_buf, i, cc_features->clamp[i][0], cc_features->clamp[i][1]);
             }
         }
 
@@ -426,10 +511,44 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
     uint32_t main_alu0_offset = texclamp_alu_offset + texclamp_alu_cnt;
     cur_buf = program_buf + main_alu0_offset;
 
+    for (int i = 0; i < 2; i++) {
+        if (cc_features->used_textures[i] && cc_features->used_masks[i]) {
+            uint8_t dst_reg = get_reg(&reg_table, (i == 0) ? SHADER_TEXEL0 : SHADER_TEXEL1);
+            uint8_t mask_reg = get_reg(&reg_table, (i == 0) ? SHADER_MASKTEX0 : SHADER_MASKTEX1);
+            uint8_t blend_reg;
+            if (cc_features->used_blend[i]) {
+                blend_reg = get_reg(&reg_table, (i == 0) ? SHADER_BLENDTEX0 : SHADER_BLENDTEX1);
+            } else {
+                blend_reg = ALU_SRC_0;
+            }
+
+            /* texVal%d = mix(texVal%d, blendVal%d, maskVal%d.a) */
+            ADD_INSTR(
+                ALU_ADD(__, _x, blend_reg, _x, dst_reg _NEG, _x),
+                ALU_ADD(__, _y, blend_reg, _y, dst_reg _NEG, _y),
+                ALU_ADD(__, _z, blend_reg, _z, dst_reg _NEG, _z),
+                ALU_ADD(__, _w, blend_reg, _w, dst_reg _NEG, _w)
+                ALU_LAST,
+
+                ALU_MULADD(dst_reg, _x, ALU_SRC_PV, _x, mask_reg, _w, dst_reg, _x),
+                ALU_MULADD(dst_reg, _y, ALU_SRC_PV, _y, mask_reg, _w, dst_reg, _y),
+                ALU_MULADD(dst_reg, _z, ALU_SRC_PV, _z, mask_reg, _w, dst_reg, _z),
+                ALU_MULADD(dst_reg, _w, ALU_SRC_PV, _w, mask_reg, _w, dst_reg, _w)
+                ALU_LAST,
+            );
+        }
+    }
+
+    // do noise calculation for SHADER_NOISE if necessary
+    if (needs_noise) {
+        memcpy(cur_buf, noise_instructions, sizeof(noise_instructions));
+        cur_buf += sizeof(noise_instructions) / sizeof(uint64_t);
+    }
+
     for (int c = 0; c < (cc_features->opt_2cyc ? 2 : 1); c++) {
-        append_formula(cc_features, &cur_buf, cc_features->c[c], cc_features->do_single[c][0], cc_features->do_multiply[c][0], cc_features->do_mix[c][0], false);
+        append_formula(&reg_table, &cur_buf, cc_features->c[c], cc_features->do_single[c][0], cc_features->do_multiply[c][0], cc_features->do_mix[c][0], false);
         if (cc_features->opt_alpha) {
-            append_formula(cc_features, &cur_buf, cc_features->c[c], cc_features->do_single[c][1], cc_features->do_multiply[c][1], cc_features->do_mix[c][1], true);
+            append_formula(&reg_table, &cur_buf, cc_features->c[c], cc_features->do_single[c][1], cc_features->do_multiply[c][1], cc_features->do_mix[c][1], true);
         }
     }
 
@@ -467,8 +586,31 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
     cur_buf = program_buf + main_alu1_offset;
 
     if (cc_features->opt_alpha && cc_features->opt_noise) {
-        memcpy(cur_buf, noise_instructions, sizeof(noise_instructions));
-        cur_buf += sizeof(noise_instructions) / sizeof(uint64_t);
+        ADD_INSTR(
+            /* we need to undo the stuff we did for SHADER_NOISE first */
+            ALU_MUL(__, _x, FRAG_COORD_REG, _x, ALU_SRC_LITERAL, _x)
+            ALU_LAST,
+            ALU_LITERAL(0x40000000 /*2.0f*/),
+
+            ALU_ADD(__, _x, ALU_SRC_PV, _x, ALU_SRC_1 _NEG, _x)
+            ALU_LAST,
+
+            /* texel.a *= floor(clamp(random() + texel.a, 0.0, 1.0)); */
+            ALU_ADD(__, _x, ALU_SRC_PV, _x, TEXEL_REG, _w)
+            ALU_LAST,
+
+            ALU_MAX(__, _x, ALU_SRC_PV, _x, ALU_SRC_0, _x)
+            ALU_LAST,
+
+            ALU_MIN(__, _x, ALU_SRC_PV, _x, ALU_SRC_1, _x)
+            ALU_LAST,
+
+            ALU_FLOOR(__, _x, ALU_SRC_PV, _x)
+            ALU_LAST,
+
+            ALU_MUL(TEXEL_REG, _w, TEXEL_REG, _w, ALU_SRC_PV, _x)
+            ALU_LAST,
+        );
     }
 
     if (cc_features->opt_grayscale) {
@@ -521,22 +663,25 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
     const uint32_t main_alu1_cnt = main_alu1_size / sizeof(uint64_t);
 
     // tex
-    uint32_t num_textures = cc_features->used_textures[0] + cc_features->used_textures[1];
+    uint32_t num_textures = 0;
     uint32_t num_texinfo = texclamp[0] + texclamp[1];
 
     uint32_t texinfo_offset = ROUNDUP(main_alu1_offset + main_alu1_cnt, 16);
     uint32_t cur_tex_offset = texinfo_offset;
 
     for (int i = 0; i < 2; i++) {
-        if (cc_features->used_textures[i] && texclamp[i]) {
-            uint8_t dst_reg = get_reg(cc_features, (i == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
+        if (cc_features->used_textures[i]) {
+            if (texclamp[i]) {
+                uint8_t dst_reg = get_reg(&reg_table, (i == 0) ? SHADER_TEXINFO0 : SHADER_TEXINFO1);
+                int32_t loc = SHADER_FIRST_TEXTURE + i;
 
-            uint64_t texinfo_buf[] = {
-                TEX_GET_TEXTURE_INFO(dst_reg, _x, _y, _m, _m, _R1, _0, _0, _0, _0,  _t(i), _s(i))
-            };
+                uint64_t texinfo_buf[] = {
+                    TEX_GET_TEXTURE_INFO(dst_reg, _x, _y, _m, _m, _R1, _0, _0, _0, _0,  _t(loc), _s(loc))
+                };
 
-            memcpy(program_buf + cur_tex_offset, texinfo_buf, sizeof(texinfo_buf));
-            cur_tex_offset += sizeof(texinfo_buf) / sizeof(uint64_t);
+                memcpy(program_buf + cur_tex_offset, texinfo_buf, sizeof(texinfo_buf));
+                cur_tex_offset += sizeof(texinfo_buf) / sizeof(uint64_t);
+            }
         }
     }
 
@@ -545,14 +690,47 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
     for (int i = 0; i < 2; i++) {
         if (cc_features->used_textures[i]) {
             uint8_t texcoord_reg = (i == 0) ? _R1 : _R2;
-            uint8_t dst_reg = get_reg(cc_features, (i == 0) ? SHADER_TEXEL0 : SHADER_TEXEL1);
+
+            // we need to sample these first or we override texcoords
+            if (cc_features->used_masks[i]) {
+                uint8_t dst_reg = get_reg(&reg_table, (i == 0) ? SHADER_MASKTEX0 : SHADER_MASKTEX1);
+                int32_t loc = SHADER_FIRST_MASK_TEXTURE + i;
+
+                uint64_t tex_buf[] = {
+                    TEX_SAMPLE(dst_reg, _x, _y, _z, _w, texcoord_reg, _x, _y, _0, _x, _t(loc), _s(loc))
+                };
+
+                memcpy(program_buf + cur_tex_offset, tex_buf, sizeof(tex_buf));
+                cur_tex_offset += sizeof(tex_buf) / sizeof(uint64_t);
+
+                num_textures++;
+            }
+
+            if (cc_features->used_blend[i]) {
+                uint8_t dst_reg = get_reg(&reg_table, (i == 0) ? SHADER_BLENDTEX0 : SHADER_BLENDTEX1);
+                int32_t loc = SHADER_FIRST_REPLACEMENT_TEXTURE + i;
+
+                uint64_t tex_buf[] = {
+                    TEX_SAMPLE(dst_reg, _x, _y, _z, _w, texcoord_reg, _x, _y, _0, _x, _t(loc), _s(loc))
+                };
+
+                memcpy(program_buf + cur_tex_offset, tex_buf, sizeof(tex_buf));
+                cur_tex_offset += sizeof(tex_buf) / sizeof(uint64_t);
+
+                num_textures++;
+            }
+
+            uint8_t dst_reg = get_reg(&reg_table, (i == 0) ? SHADER_TEXEL0 : SHADER_TEXEL1);
+            int32_t loc = SHADER_FIRST_TEXTURE + i;
 
             uint64_t tex_buf[] = {
-                TEX_SAMPLE(dst_reg, _x, _y, _z, _w, texcoord_reg, _x, _y, _0, _x, _t(i), _s(i))
+                TEX_SAMPLE(dst_reg, _x, _y, _z, _w, texcoord_reg, _x, _y, _0, _x, _t(loc), _s(loc))
             };
 
             memcpy(program_buf + cur_tex_offset, tex_buf, sizeof(tex_buf));
             cur_tex_offset += sizeof(tex_buf) / sizeof(uint64_t);
+
+            num_textures++;
         }
     }
 
@@ -588,12 +766,15 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
     // regs
     const uint32_t num_ps_inputs = 4 + cc_features->num_inputs;
 
-    psh->regs.sq_pgm_resources_ps = get_num_regs(cc_features); // num_gprs
+    psh->regs.sq_pgm_resources_ps = reg_table.used; // num_gprs
     psh->regs.sq_pgm_exports_ps = 2; // export_mode
     psh->regs.spi_ps_in_control_0 = (num_ps_inputs + 1) // num_interp
-        | (1 << 8) // position_ena
         | (1 << 26) // persp_gradient_ena
         | (1 << 28); // baryc_sample_cntl
+
+    if (needs_noise) {
+        psh->regs.spi_ps_in_control_0 |= (1 << 8); // position_ena
+    }
 
     psh->regs.num_spi_ps_input_cntl = num_ps_inputs + 1;
 
@@ -726,7 +907,7 @@ static int generateVertexShader(GX2VertexShader *vsh, struct CCFeatures *cc_feat
     vsh->mode = GX2_SHADER_MODE_UNIFORM_REGISTER;
 
     // attribs
-    vsh->attribVarCount = sizeof(attribVars) / sizeof(GX2AttribVar);
+    vsh->attribVarCount = num_ps_inputs + 5;
     vsh->attribVars = attribVars;
 
     return 0;
@@ -808,6 +989,7 @@ int gx2GenerateShaderGroup(struct ShaderGroup *group, struct CCFeatures *cc_feat
 void gx2FreeShaderGroup(struct ShaderGroup *group) {
     free(group->vertexShader.program);
     free(group->pixelShader.program);
+    free(group->pixelShader.samplerVars);
     free(group->fetchShader.program);
 }
 

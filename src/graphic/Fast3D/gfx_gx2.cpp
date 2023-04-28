@@ -48,7 +48,7 @@ struct ShaderProgram {
     bool used_textures[2];
     bool used_noise;
     uint32_t window_params_offset;
-    uint32_t samplers_location[2];
+    int32_t samplers_location[SHADER_MAX_TEXTURES];
 };
 
 struct Texture {
@@ -172,11 +172,9 @@ static struct GfxClipParameters gfx_gx2_get_clip_parameters(void) {
 }
 
 static void gfx_gx2_set_uniforms(struct ShaderProgram* prg) {
-    if (prg->used_noise) {
-        float window_params_array[2] = { current_noise_scale, (float)frame_count };
+    float window_params_array[4] = { current_noise_scale, (float)frame_count, 0.0f, 0.0f };
 
-        GX2SetPixelUniformReg(prg->window_params_offset, 2, window_params_array);
-    }
+    GX2SetPixelUniformReg(prg->window_params_offset, 4, window_params_array);
 }
 
 static void gfx_gx2_unload_shader(struct ShaderProgram* old_prg) {
@@ -215,6 +213,10 @@ static struct ShaderProgram* gfx_gx2_create_and_load_new_shader(uint64_t shader_
     prg->window_params_offset = GX2GetPixelUniformVarOffset(&prg->group.pixelShader, "window_params");
     prg->samplers_location[0] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTex0");
     prg->samplers_location[1] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTex1");
+    prg->samplers_location[2] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexMask0");
+    prg->samplers_location[3] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexMask1");
+    prg->samplers_location[4] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexBlend0");
+    prg->samplers_location[5] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexBlend1");
 
     prg->used_noise = cc_features.opt_alpha && cc_features.opt_noise;
 
@@ -260,14 +262,15 @@ static void gfx_gx2_select_texture(int tile, uint32_t texture_id) {
     current_tile = tile;
 
     if (current_shader_program) {
-        uint32_t sampler_location = current_shader_program->samplers_location[tile];
+        int32_t sampler_location = current_shader_program->samplers_location[tile];
+        if (sampler_location != -1) {
+            if (tex->texture_uploaded) {
+                GX2SetPixelTexture(&tex->texture, sampler_location);
+            }
 
-        if (tex->texture_uploaded) {
-            GX2SetPixelTexture(&tex->texture, sampler_location);
-        }
-
-        if (tex->sampler_set) {
-            GX2SetPixelSampler(&tex->sampler, sampler_location);
+            if (tex->sampler_set) {
+                GX2SetPixelSampler(&tex->sampler, sampler_location);
+            }
         }
     }
 }
@@ -315,7 +318,7 @@ static void gfx_gx2_upload_texture(const uint8_t* rgba32_buf, uint32_t width, ui
 
     GX2Invalidate(GX2_INVALIDATE_MODE_CPU_TEXTURE, tex->texture.surface.image, tex->texture.surface.imageSize);
 
-    if (current_shader_program) {
+    if (current_shader_program && current_shader_program->samplers_location[current_tile] != -1) {
         GX2SetPixelTexture(&tex->texture, current_shader_program->samplers_location[current_tile]);
     }
 
@@ -349,7 +352,7 @@ static void gfx_gx2_set_sampler_parameters(int tile, bool linear_filter, uint32_
 
     GX2InitSamplerClamping(&tex->sampler, gfx_cm_to_gx2(cms), gfx_cm_to_gx2(cmt), GX2_TEX_CLAMP_MODE_WRAP);
 
-    if (current_shader_program) {
+    if (current_shader_program && current_shader_program->samplers_location[tile] != -1) {
         GX2SetPixelSampler(&tex->sampler, current_shader_program->samplers_location[tile]);
     }
 

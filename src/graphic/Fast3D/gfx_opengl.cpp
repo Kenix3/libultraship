@@ -53,7 +53,7 @@ using namespace std;
 struct ShaderProgram {
     GLuint opengl_program_id;
     uint8_t num_inputs;
-    bool used_textures[SHADER_MAX_TEXURES];
+    bool used_textures[SHADER_MAX_TEXTURES];
     uint8_t num_floats;
     GLint attrib_locations[16];
     uint8_t attrib_sizes[16];

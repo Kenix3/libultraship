@@ -3,7 +3,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
 #include <compare>
+#endif
 
 /*enum {
     CC_0,
@@ -55,10 +58,12 @@ struct ColorCombinerKey {
     uint64_t combine_mode;
     uint64_t options;
 
+#ifdef __cplusplus
     auto operator<=>(const ColorCombinerKey&) const = default;
+#endif
 };
 
-#define SHADER_MAX_TEXURES 6
+#define SHADER_MAX_TEXTURES 6
 #define SHADER_FIRST_TEXTURE 0
 #define SHADER_FIRST_MASK_TEXTURE 2
 #define SHADER_FIRST_REPLACEMENT_TEXTURE 4
