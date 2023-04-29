@@ -169,7 +169,7 @@ std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(con
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
-        return LoadResourceAsync(newFilePath);
+        return LoadResourceAsync(newFilePath, loadExact);
     }
 
     // Check the cache before queueing the job.

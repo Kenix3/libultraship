@@ -1013,7 +1013,8 @@ ImTextureID GetTextureByID(int id) {
 
 void LoadResource(const std::string& name, const std::string& path, const ImVec4& tint) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
-    const auto res = static_cast<Ship::Texture*>(Window::GetInstance()->GetResourceManager()->LoadResource(path).get());
+    const auto res =
+        static_cast<Ship::Texture*>(Window::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
 
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res->Width * res->Height * 4);
