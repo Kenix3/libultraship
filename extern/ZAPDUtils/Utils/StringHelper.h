@@ -24,7 +24,8 @@ public:
 	static int64_t StrToL(const std::string& str, int32_t base = 10);
 	static std::string BoolStr(bool b);
 	static bool HasOnlyDigits(const std::string& str);
-	static bool HasOnlyHexDigits(std::string_view str);
-	static bool HasOnlyHexDigits(const std::string& str); 
+	static bool IsValidHex(std::string_view str);
+	static bool IsValidHex(const std::string& str); 
+	static bool IsValidOffset(std::string_view str);
 	static bool IEquals(const std::string& a, const std::string& b);
 };

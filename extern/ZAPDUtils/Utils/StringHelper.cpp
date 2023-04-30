@@ -142,79 +142,32 @@ bool StringHelper::HasOnlyDigits(const std::string& str)
 	return std::all_of(str.begin(), str.end(), ::isdigit);
 }
 
-bool HasOnlyHexDigits(const std::string& str)
+bool StringHelper::IsValidHex(std::string_view str)
 {
-	if (str.length() == 0)
-    {
-        return false;
-    }
-    else if(str.length() == 1)
-    {
-        return ::isdigit(str[0]);
-    }
-    else if (str.length() == 2)
-    {
-        if (str[1] == 'x' || str[1] == 'X')
-        {
-            return false;
-        }
-        else
-        {
-            return std::all_of(str.begin(), str.end(), ::isdigit);
-        }
-    } 
-    else if (str.length() >= 3)
-    {
-        if (str[1] == 'x' || str[1] == 'X')
-        {
-            return std::all_of(str.begin() + 2, str.end(), ::isxdigit);
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else
-    {
-        return false; // ??
-    }
+	if (str.length() < 3)
+	{
+		return false;
+	}
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+	{
+		return std::all_of(str.begin() + 2, str.end(), ::isxdigit);
+	}
+	return false;
 }
-bool HasOnlyHexDigits(std::string_view str) 
+
+bool StringHelper::IsValidOffset(std::string_view str)
 {
-	if (str.length() == 0)
-    {
-        return false;
-    }
-    else if(str.length() == 1)
-    {
-        return ::isdigit(str[0]);
-    }
-    else if (str.length() == 2)
-    {
-        if (str[1] == 'x' || str[1] == 'X')
-        {
-            return false;
-        }
-        else
-        {
-            return std::all_of(str.begin(), str.end(), ::isdigit);
-        }
-    } 
-    else if (str.length() >= 3)
-    {
-        if (str[1] == 'x' || str[1] == 'X')
-        {
-            return std::all_of(str.begin() + 2, str.end(), ::isxdigit);
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else
-    {
-        return false; // ??
-    }
+	if (str.length() == 1)
+	{
+		// 0 is a valid offset
+		return isdigit(str[0]);
+	}
+	return IsValidHex(str);
+}
+
+bool StringHelper::IsValidHex(const std::string& str)
+{
+	return IsValidHex(std::string_view(str.c_str()));
 }
 
 bool StringHelper::IEquals(const std::string& a, const std::string& b)
