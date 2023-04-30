@@ -142,6 +142,8 @@ bool StringHelper::HasOnlyDigits(const std::string& str)
 	return std::all_of(str.begin(), str.end(), ::isdigit);
 }
 
+// Validate a hex string based on the c89 standard
+// https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.html#Integer-Constants
 bool StringHelper::IsValidHex(std::string_view str)
 {
 	if (str.length() < 3)
