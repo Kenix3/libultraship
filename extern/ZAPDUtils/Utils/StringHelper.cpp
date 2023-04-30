@@ -157,6 +157,12 @@ bool StringHelper::IsValidHex(std::string_view str)
 	return false;
 }
 
+
+bool StringHelper::IsValidHex(const std::string& str)
+{
+	return IsValidHex(std::string_view(str.c_str()));
+}
+
 bool StringHelper::IsValidOffset(std::string_view str)
 {
 	if (str.length() == 1)
@@ -167,10 +173,16 @@ bool StringHelper::IsValidOffset(std::string_view str)
 	return IsValidHex(str);
 }
 
-bool StringHelper::IsValidHex(const std::string& str)
+bool StringHelper::IsValidOffset(const std::string& str)
 {
-	return IsValidHex(std::string_view(str.c_str()));
+	if (str.length() == 1)
+	{
+		// 0 is a valid offset
+		return isdigit(str[0]);
+	}
+	return IsValidHex(str);
 }
+
 
 bool StringHelper::IEquals(const std::string& a, const std::string& b)
 {

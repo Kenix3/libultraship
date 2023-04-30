@@ -27,5 +27,6 @@ public:
 	static bool IsValidHex(std::string_view str);
 	static bool IsValidHex(const std::string& str); 
 	static bool IsValidOffset(std::string_view str);
+	static bool IsValidOffset(const std::string& str);
 	static bool IEquals(const std::string& a, const std::string& b);
 };
