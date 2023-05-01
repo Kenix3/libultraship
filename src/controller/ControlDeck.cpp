@@ -111,7 +111,7 @@ void ControlDeck::LoadControllerSettings() {
 
         for (size_t dev = 0; dev < mPhysicalDevices.size(); dev++) {
             std::string guid = mPhysicalDevices[dev]->GetGuid();
-            if (guid != val.value()) {
+            if (guid != val.value().get<std::string>()) {
                 continue;
             }
 

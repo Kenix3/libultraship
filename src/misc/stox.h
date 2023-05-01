@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <cstdint>
 
 namespace Ship {
 bool stob(const std::string& s, bool defaultVal = false);
