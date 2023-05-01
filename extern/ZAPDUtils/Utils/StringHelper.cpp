@@ -1,7 +1,9 @@
 #include "StringHelper.h"
 
+#if (_MSC_VER)
 #pragma optimize("2", on)
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #ifndef _MSC_VER
 #define vsprintf_s vsprintf
@@ -139,6 +141,48 @@ bool StringHelper::HasOnlyDigits(const std::string& str)
 {
 	return std::all_of(str.begin(), str.end(), ::isdigit);
 }
+
+// Validate a hex string based on the c89 standard
+// https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.html#Integer-Constants
+bool StringHelper::IsValidHex(std::string_view str)
+{
+	if (str.length() < 3)
+	{
+		return false;
+	}
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+	{
+		return std::all_of(str.begin() + 2, str.end(), ::isxdigit);
+	}
+	return false;
+}
+
+
+bool StringHelper::IsValidHex(const std::string& str)
+{
+	return IsValidHex(std::string_view(str.c_str()));
+}
+
+bool StringHelper::IsValidOffset(std::string_view str)
+{
+	if (str.length() == 1)
+	{
+		// 0 is a valid offset
+		return isdigit(str[0]);
+	}
+	return IsValidHex(str);
+}
+
+bool StringHelper::IsValidOffset(const std::string& str)
+{
+	if (str.length() == 1)
+	{
+		// 0 is a valid offset
+		return isdigit(str[0]);
+	}
+	return IsValidHex(str);
+}
+
 
 bool StringHelper::IEquals(const std::string& a, const std::string& b)
 {
