@@ -40,10 +40,10 @@ class BinaryReader {
     uint64_t ReadUInt64();
     float ReadFloat();
     double ReadDouble();
-    Vec3f ReadVec3f();
-    Vec3s ReadVec3s();
-    Vec3s ReadVec3b();
-    Vec2f ReadVec2f();
+    ZAPDUtils::Vec3f ReadVec3f();
+    ZAPDUtils::Vec3s ReadVec3s();
+    ZAPDUtils::Vec3s ReadVec3b();
+    ZAPDUtils::Vec2f ReadVec2f();
     Color3b ReadColor3b();
     std::string ReadString();
     std::string ReadCString();
