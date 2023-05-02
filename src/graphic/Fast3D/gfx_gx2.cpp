@@ -17,6 +17,7 @@
 #define _LANGUAGE_C
 #endif
 #include "libultraship/libultra/gbi.h"
+#include <core/bridge/consolevariablebridge.h>
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
@@ -48,7 +49,7 @@ struct ShaderProgram {
     bool used_textures[2];
     bool used_noise;
     uint32_t window_params_offset;
-    uint32_t samplers_location[2];
+    int32_t samplers_location[SHADER_MAX_TEXTURES];
 };
 
 struct Texture {
@@ -109,6 +110,7 @@ static uint32_t current_scissor_width = WIIU_DEFAULT_FB_WIDTH;
 static uint32_t current_scissor_height = WIIU_DEFAULT_FB_HEIGHT;
 
 static bool current_zmode_decal = false;
+static bool current_SSDB = -2.0f;
 static bool current_use_alpha = false;
 
 static inline GX2SamplerVar* GX2GetPixelSamplerVar(const GX2PixelShader* shader, const char* name) {
@@ -172,11 +174,9 @@ static struct GfxClipParameters gfx_gx2_get_clip_parameters(void) {
 }
 
 static void gfx_gx2_set_uniforms(struct ShaderProgram* prg) {
-    if (prg->used_noise) {
-        float window_params_array[2] = { current_noise_scale, (float)frame_count };
+    float window_params_array[4] = { current_noise_scale, (float)frame_count, 0.0f, 0.0f };
 
-        GX2SetPixelUniformReg(prg->window_params_offset, 2, window_params_array);
-    }
+    GX2SetPixelUniformReg(prg->window_params_offset, 4, window_params_array);
 }
 
 static void gfx_gx2_unload_shader(struct ShaderProgram* old_prg) {
@@ -215,6 +215,10 @@ static struct ShaderProgram* gfx_gx2_create_and_load_new_shader(uint64_t shader_
     prg->window_params_offset = GX2GetPixelUniformVarOffset(&prg->group.pixelShader, "window_params");
     prg->samplers_location[0] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTex0");
     prg->samplers_location[1] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTex1");
+    prg->samplers_location[2] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexMask0");
+    prg->samplers_location[3] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexMask1");
+    prg->samplers_location[4] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexBlend0");
+    prg->samplers_location[5] = GX2GetPixelSamplerVarLocation(&prg->group.pixelShader, "uTexBlend1");
 
     prg->used_noise = cc_features.opt_alpha && cc_features.opt_noise;
 
@@ -260,14 +264,15 @@ static void gfx_gx2_select_texture(int tile, uint32_t texture_id) {
     current_tile = tile;
 
     if (current_shader_program) {
-        uint32_t sampler_location = current_shader_program->samplers_location[tile];
+        int32_t sampler_location = current_shader_program->samplers_location[tile];
+        if (sampler_location != -1) {
+            if (tex->texture_uploaded) {
+                GX2SetPixelTexture(&tex->texture, sampler_location);
+            }
 
-        if (tex->texture_uploaded) {
-            GX2SetPixelTexture(&tex->texture, sampler_location);
-        }
-
-        if (tex->sampler_set) {
-            GX2SetPixelSampler(&tex->sampler, sampler_location);
+            if (tex->sampler_set) {
+                GX2SetPixelSampler(&tex->sampler, sampler_location);
+            }
         }
     }
 }
@@ -315,7 +320,7 @@ static void gfx_gx2_upload_texture(const uint8_t* rgba32_buf, uint32_t width, ui
 
     GX2Invalidate(GX2_INVALIDATE_MODE_CPU_TEXTURE, tex->texture.surface.image, tex->texture.surface.imageSize);
 
-    if (current_shader_program) {
+    if (current_shader_program && current_shader_program->samplers_location[current_tile] != -1) {
         GX2SetPixelTexture(&tex->texture, current_shader_program->samplers_location[current_tile]);
     }
 
@@ -349,7 +354,7 @@ static void gfx_gx2_set_sampler_parameters(int tile, bool linear_filter, uint32_
 
     GX2InitSamplerClamping(&tex->sampler, gfx_cm_to_gx2(cms), gfx_cm_to_gx2(cmt), GX2_TEX_CLAMP_MODE_WRAP);
 
-    if (current_shader_program) {
+    if (current_shader_program && current_shader_program->samplers_location[tile] != -1) {
         GX2SetPixelSampler(&tex->sampler, current_shader_program->samplers_location[tile]);
     }
 
@@ -367,13 +372,38 @@ static void gfx_gx2_set_depth_test_and_mask(bool depth_test, bool z_upd) {
 static void gfx_gx2_set_zmode_decal(bool zmode_decal) {
     current_zmode_decal = zmode_decal;
     if (zmode_decal) {
+        // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
+        // fighting
+        const int n64modeFactor = 120;
+        const int noVanishFactor = 100;
+        float SSDB = -2.0f;
+        switch (CVarGetInteger("gDirtPathFix", 0)) {
+            // scaled z-fighting (N64 mode like)
+            case 1:
+                if (current_framebuffer) {
+                    SSDB = -1.0f * (float)current_framebuffer->color_buffer.surface.height / n64modeFactor;
+                }
+                break;
+            // no vanishing paths
+            case 2:
+                if (current_framebuffer) {
+                    SSDB = -1.0f * (float)current_framebuffer->color_buffer.surface.height / noVanishFactor;
+                }
+                break;
+            // disabled
+            case 0:
+            default:
+                SSDB = -2.0f;
+        }
+
+        current_SSDB = SSDB;
+        GX2SetPolygonOffset(SSDB, SSDB, SSDB, SSDB, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, TRUE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, TRUE, TRUE, FALSE);
-        GX2SetPolygonOffset(-2.0f, -2.0f, -2.0f, -2.0f, 0.0f);
     } else {
+        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, FALSE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, FALSE, FALSE, FALSE);
-        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     }
 }
 
@@ -525,13 +555,13 @@ static void gfx_gx2_start_frame(void) {
     GX2SetDepthOnlyControl(current_depth_test, current_depth_write, current_depth_compare_function);
 
     if (current_zmode_decal) {
+        GX2SetPolygonOffset(current_SSDB, current_SSDB, current_SSDB, current_SSDB, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, TRUE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, TRUE, TRUE, FALSE);
-        GX2SetPolygonOffset(-2.0f, -2.0f, -2.0f, -2.0f, 0.0f);
     } else {
+        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         GX2SetPolygonControl(GX2_FRONT_FACE_CCW, FALSE, FALSE, FALSE, GX2_POLYGON_MODE_TRIANGLE,
                              GX2_POLYGON_MODE_TRIANGLE, FALSE, FALSE, FALSE);
-        GX2SetPolygonOffset(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     }
 
     frame_count++;

@@ -51,7 +51,7 @@ struct PerDrawCB {
         uint32_t height;
         uint32_t linear_filtering;
         uint32_t padding;
-    } textures[SHADER_MAX_TEXURES];
+    } textures[SHADER_MAX_TEXTURES];
 };
 
 struct Coord {
@@ -86,7 +86,7 @@ struct ShaderProgramD3D11 {
     uint32_t shader_id1;
     uint8_t num_inputs;
     uint8_t num_floats;
-    bool used_textures[SHADER_MAX_TEXURES];
+    bool used_textures[SHADER_MAX_TEXTURES];
 };
 
 static struct {
@@ -127,7 +127,7 @@ static struct {
 
     std::vector<struct TextureData> textures;
     int current_tile;
-    uint32_t current_texture_ids[SHADER_MAX_TEXURES];
+    uint32_t current_texture_ids[SHADER_MAX_TEXTURES];
 
     std::vector<Framebuffer> framebuffers;
 
@@ -149,8 +149,8 @@ static struct {
     struct ShaderProgramD3D11* last_shader_program = nullptr;
     uint32_t last_vertex_buffer_stride = 0;
     ComPtr<ID3D11BlendState> last_blend_state = nullptr;
-    ComPtr<ID3D11ShaderResourceView> last_resource_views[SHADER_MAX_TEXURES] = { nullptr, nullptr };
-    ComPtr<ID3D11SamplerState> last_sampler_states[SHADER_MAX_TEXURES] = { nullptr, nullptr };
+    ComPtr<ID3D11ShaderResourceView> last_resource_views[SHADER_MAX_TEXTURES] = { nullptr, nullptr };
+    ComPtr<ID3D11SamplerState> last_sampler_states[SHADER_MAX_TEXTURES] = { nullptr, nullptr };
     int8_t last_depth_test = -1;
     int8_t last_depth_mask = -1;
     int8_t last_zmode_decal = -1;
@@ -255,7 +255,7 @@ static void gfx_d3d11_init(void) {
         d3d.last_shader_program = nullptr;
         d3d.last_vertex_buffer_stride = 0;
         d3d.last_blend_state.Reset();
-        for (int i = 0; i < SHADER_MAX_TEXURES; i++) {
+        for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
             d3d.last_resource_views[i].Reset();
             d3d.last_sampler_states[i].Reset();
         }
@@ -737,7 +737,7 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
 
     bool textures_changed = false;
 
-    for (int i = 0; i < SHADER_MAX_TEXURES; i++) {
+    for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
         if (d3d.shader_program->used_textures[i]) {
             if (d3d.last_resource_views[i].Get() != d3d.textures[d3d.current_texture_ids[i]].resource_view.Get()) {
                 d3d.last_resource_views[i] = d3d.textures[d3d.current_texture_ids[i]].resource_view.Get();

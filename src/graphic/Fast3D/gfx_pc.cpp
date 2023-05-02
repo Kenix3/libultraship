@@ -187,7 +187,7 @@ static struct RenderingState {
     bool alpha_blend;
     struct XYWidthHeight viewport, scissor;
     struct ShaderProgram* shader_program;
-    TextureCacheNode* textures[SHADER_MAX_TEXURES];
+    TextureCacheNode* textures[SHADER_MAX_TEXTURES];
 } rendering_state;
 
 struct GfxDimensions gfx_current_window_dimensions;

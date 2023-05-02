@@ -457,6 +457,14 @@ static void gfx_wiiu_set_target_fps(int fps) {
 static void gfx_wiiu_set_maximum_frame_latency(int latency) {
 }
 
+static const char* gfx_wiiu_get_key_name(int scancode) {
+    return "";
+}
+
+bool gfx_wiiu_can_disable_vsync() {
+    return false;
+}
+
 struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_init,
     gfx_wiiu_close,
@@ -474,6 +482,8 @@ struct GfxWindowManagerAPI gfx_wiiu = {
     gfx_wiiu_get_time,
     gfx_wiiu_set_target_fps,
     gfx_wiiu_set_maximum_frame_latency,
+    gfx_wiiu_get_key_name,
+    gfx_wiiu_can_disable_vsync,
 };
 
 #endif
