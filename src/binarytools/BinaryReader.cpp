@@ -163,20 +163,20 @@ double Ship::BinaryReader::ReadDouble() {
     return result;
 }
 
-Vec3f Ship::BinaryReader::ReadVec3f() {
-    return Vec3f();
+ZAPDUtils::Vec3f Ship::BinaryReader::ReadVec3f() {
+    return ZAPDUtils::Vec3f();
 }
 
-Vec3s Ship::BinaryReader::ReadVec3s() {
-    return Vec3s(0, 0, 0);
+ZAPDUtils::Vec3s Ship::BinaryReader::ReadVec3s() {
+    return ZAPDUtils::Vec3s(0, 0, 0);
 }
 
-Vec3s Ship::BinaryReader::ReadVec3b() {
-    return Vec3s(0, 0, 0);
+ZAPDUtils::Vec3s Ship::BinaryReader::ReadVec3b() {
+    return ZAPDUtils::Vec3s(0, 0, 0);
 }
 
-Vec2f Ship::BinaryReader::ReadVec2f() {
-    return Vec2f();
+ZAPDUtils::Vec2f Ship::BinaryReader::ReadVec2f() {
+    return ZAPDUtils::Vec2f();
 }
 
 Color3b Ship::BinaryReader::ReadColor3b() {
