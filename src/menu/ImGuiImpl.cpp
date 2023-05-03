@@ -471,7 +471,7 @@ void InitGui(WindowImpl windowImpl) {
 
     if (CVarGetInteger("gOpenMenuBar", 0) != 1) {
 #if defined(__SWITCH__) || defined(__WIIU__)
-        ImGui::overlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
+        overlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
 #else
         overlay->TextDrawNotification(30.0f, true, "Press F1 to access enhancements menu");
 #endif
