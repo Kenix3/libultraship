@@ -14,13 +14,13 @@
 #include "misc/Hooks.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <ImGui/imgui_internal.h>
-#include "resource/ResourceMgr.h"
+#include "resource/ResourceManager.h"
 #include "core/Window.h"
 #include "core/bridge/consolevariablebridge.h"
 #include "menu/GameOverlay.h"
 #include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
-#include "resource/OtrFile.h"
+#include "resource/File.h"
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include <spdlog/common.h>

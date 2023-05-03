@@ -8,14 +8,14 @@
 
 namespace Ship {
 class Window;
-struct OtrFile;
+struct File;
 
 class ResourceLoader {
   public:
     ResourceLoader(std::shared_ptr<Window> context);
 
     std::shared_ptr<Window> GetContext();
-    std::shared_ptr<Resource> LoadResource(std::shared_ptr<OtrFile> fileToLoad);
+    std::shared_ptr<Resource> LoadResource(std::shared_ptr<File> fileToLoad);
     bool RegisterResourceFactory(ResourceType resourceType, std::string resourceTypeXML,
                                  std::shared_ptr<ResourceFactory> factory);
 

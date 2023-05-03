@@ -6,7 +6,7 @@
 #include "controller/KeyboardController.h"
 #include "menu/Console.h"
 #include "misc/Hooks.h"
-#include "resource/ResourceMgr.h"
+#include "resource/ResourceManager.h"
 #include <string>
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
@@ -496,9 +496,9 @@ void Window::InitializeResourceManager(const std::vector<std::string>& otrFiles,
     mMainPath = mConfig->getString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = mConfig->getString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
-        mResourceManager = std::make_shared<ResourceMgr>(GetInstance(), mMainPath, mPatchesPath, validHashes);
+        mResourceManager = std::make_shared<ResourceManager>(GetInstance(), mMainPath, mPatchesPath, validHashes);
     } else {
-        mResourceManager = std::make_shared<ResourceMgr>(GetInstance(), otrFiles, validHashes);
+        mResourceManager = std::make_shared<ResourceManager>(GetInstance(), otrFiles, validHashes);
     }
 
     if (!mResourceManager->DidLoadSuccessfully()) {
@@ -578,7 +578,7 @@ std::shared_ptr<AudioPlayer> Window::GetAudioPlayer() {
     return mAudioPlayer;
 }
 
-std::shared_ptr<ResourceMgr> Window::GetResourceManager() {
+std::shared_ptr<ResourceManager> Window::GetResourceManager() {
     return mResourceManager;
 }
 

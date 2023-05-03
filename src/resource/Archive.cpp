@@ -1,8 +1,8 @@
 #include "Archive.h"
 #include "Resource.h"
-#include "OtrFile.h"
+#include "File.h"
 #include "core/Window.h"
-#include "resource/ResourceMgr.h"
+#include "resource/ResourceManager.h"
 #include <spdlog/spdlog.h>
 #include "Utils/StringHelper.h"
 #include <StrHash64.h>
@@ -43,7 +43,7 @@ bool Archive::IsMainMPQValid() {
     return mMainMpq != nullptr;
 }
 
-std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, int fileCapacity) {
+std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, size_t fileCapacity) {
     auto archive = std::make_shared<Archive>(archivePath, true);
 
     TCHAR* fileName = new TCHAR[archivePath.size() + 1];
@@ -65,11 +65,11 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
     }
 }
 
-std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent,
+std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent,
                                                      HANDLE mpqHandle) {
     HANDLE fileHandle = NULL;
 
-    std::shared_ptr<OtrFile> fileToLoad = std::make_shared<OtrFile>();
+    std::shared_ptr<File> fileToLoad = std::make_shared<File>();
     fileToLoad->Path = filePath;
 
     if (mpqHandle == nullptr) {
@@ -122,11 +122,11 @@ std::shared_ptr<OtrFile> Archive::LoadFileFromHandle(const std::string& filePath
     return fileToLoad;
 }
 
-std::shared_ptr<OtrFile> Archive::LoadFile(const std::string& filePath, bool includeParent) {
+std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, bool includeParent) {
     return LoadFileFromHandle(filePath, includeParent, nullptr);
 }
 
-bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD fileSize) {
+bool Archive::AddFile(const std::string& filePath, uintptr_t fileData, DWORD fileSize) {
     HANDLE hFile;
 #ifdef _WIN32
     SYSTEMTIME sysTime;
@@ -139,7 +139,7 @@ bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD fileSiz
     time(&theTime);
 #endif
 
-    std::string updatedPath = path;
+    std::string updatedPath = filePath;
 
     StringHelper::ReplaceOriginal(updatedPath, "\\", "/");
 
@@ -175,34 +175,34 @@ bool Archive::AddFile(const std::string& path, uintptr_t fileData, DWORD fileSiz
     return true;
 }
 
-bool Archive::RemoveFile(const std::string& path) {
+bool Archive::RemoveFile(const std::string& filePath) {
     // TODO: Notify the resource manager and child Files
 
-    if (!SFileRemoveFile(mMainMpq, path.c_str(), 0)) {
-        SPDLOG_ERROR("({}) Failed to remove file {} in archive {}", GetLastError(), path, mMainPath);
+    if (!SFileRemoveFile(mMainMpq, filePath.c_str(), 0)) {
+        SPDLOG_ERROR("({}) Failed to remove file {} in archive {}", GetLastError(), filePath, mMainPath);
         return false;
     }
 
     return true;
 }
 
-bool Archive::RenameFile(const std::string& oldPath, const std::string& newPath) {
+bool Archive::RenameFile(const std::string& oldFilePath, const std::string& newFilePath) {
     // TODO: Notify the resource manager and child Files
 
-    if (!SFileRenameFile(mMainMpq, oldPath.c_str(), newPath.c_str())) {
-        SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldPath, newPath, mMainPath);
+    if (!SFileRenameFile(mMainMpq, oldFilePath.c_str(), newFilePath.c_str())) {
+        SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldFilePath, newFilePath, mMainPath);
         return false;
     }
 
     return true;
 }
 
-std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::string& searchMask) {
+std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::string& fileSearchMask) {
     auto fileList = std::make_shared<std::vector<SFILE_FIND_DATA>>();
     SFILE_FIND_DATA findContext;
     HANDLE hFind;
 
-    hFind = SFileFindFirstFile(mMainMpq, searchMask.c_str(), &findContext, nullptr);
+    hFind = SFileFindFirstFile(mMainMpq, fileSearchMask.c_str(), &findContext, nullptr);
     if (hFind != nullptr) {
         fileList->push_back(findContext);
 
@@ -213,23 +213,23 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::stri
             if (fileFound) {
                 fileList->push_back(findContext);
             } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES) {
-                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask,
+                SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), fileSearchMask,
                              mMainPath);
                 if (!SListFileFindClose(hFind)) {
                     SPDLOG_ERROR("({}) Failed to close file search {} after failure in archive {}", GetLastError(),
-                                 searchMask, mMainPath);
+                                 fileSearchMask, mMainPath);
                 }
                 return fileList;
             }
         } while (fileFound);
     } else if (GetLastError() != ERROR_NO_MORE_FILES) {
-        SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), searchMask, mMainPath);
+        SPDLOG_ERROR("({}), Failed to search with mask {} in archive {}", GetLastError(), fileSearchMask, mMainPath);
         return fileList;
     }
 
     if (hFind != nullptr) {
         if (!SFileFindClose(hFind)) {
-            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), searchMask, mMainPath);
+            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), fileSearchMask, mMainPath);
         }
 
         return fileList;
@@ -238,9 +238,9 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::stri
     return fileList;
 }
 
-std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& searchMask) {
+std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& fileSearchMask) {
     auto result = std::make_shared<std::vector<std::string>>();
-    auto fileList = FindFiles(searchMask);
+    auto fileList = FindFiles(fileSearchMask);
 
     for (size_t i = 0; i < fileList->size(); i++) {
         result->push_back(fileList->operator[](i).cFileName);
@@ -249,8 +249,8 @@ std::shared_ptr<std::vector<std::string>> Archive::ListFiles(const std::string& 
     return result;
 }
 
-bool Archive::HasFile(const std::string& searchMask) {
-    auto list = FindFiles(searchMask);
+bool Archive::HasFile(const std::string& fileSearchMask) {
+    auto list = FindFiles(fileSearchMask);
     return list->size() > 0;
 }
 
@@ -406,30 +406,30 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
     return true;
 }
 
-bool Archive::LoadPatchMPQ(const std::string& path, bool validateVersion) {
+bool Archive::LoadPatchMPQ(const std::string& otrPath, bool validateVersion) {
     HANDLE patchHandle = NULL;
 #if defined(__SWITCH__) || defined(__WIIU__)
-    std::string fullPath = path;
+    std::string fullPath = otrPath;
 #else
-    std::string fullPath = std::filesystem::absolute(path).string();
+    std::string fullPath = std::filesystem::absolute(otrPath).string();
 #endif
     if (mMpqHandles.contains(fullPath)) {
         return true;
     }
     if (!SFileOpenArchive(fullPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
-        SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), path, mMainPath);
+        SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), otrPath, mMainPath);
         return false;
     } else {
         // We don't always want to validate the "version" file, only when we're loading standalone OTRs as patches
         // i.e. Ocarina of Time along with Master Quest.
         if (validateVersion) {
             if (!ProcessOtrVersion(patchHandle)) {
-                SPDLOG_INFO("({}) Missing version file. Attempting to apply patch anyway.", path);
+                SPDLOG_INFO("({}) Missing version file. Attempting to apply patch anyway.", otrPath);
             }
         }
     }
     if (!SFileOpenPatchArchive(mMainMpq, fullPath.c_str(), "", 0)) {
-        SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), path, mMainPath);
+        SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), otrPath, mMainPath);
         return false;
     }
 

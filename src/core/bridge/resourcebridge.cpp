@@ -1,6 +1,6 @@
 #include "core/bridge/resourcebridge.h"
 #include "core/Window.h"
-#include "resource/ResourceMgr.h"
+#include "resource/ResourceManager.h"
 #include <string>
 #include <algorithm>
 #include <StrHash64.h>
@@ -28,7 +28,7 @@ uint64_t GetResourceCrcByName(const char* name) {
 }
 
 const char* GetResourceNameByCrc(uint64_t crc) {
-    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->HashToString(crc);
+    const std::string* hashStr = Ship::Window::GetInstance()->GetResourceManager()->GetArchive()->HashToString(crc);
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 
@@ -148,13 +148,13 @@ size_t GetResourceTexSizeByCrc(uint64_t crc, bool now) {
 }
 
 void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
-    auto list = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions();
+    auto list = Ship::Window::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
 
 uint32_t HasGameVersion(uint32_t hash) {
-    auto list = Ship::Window::GetInstance()->GetResourceManager()->GetGameVersions();
+    auto list = Ship::Window::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 

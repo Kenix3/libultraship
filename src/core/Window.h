@@ -16,7 +16,7 @@ struct GfxRenderingAPI;
 struct GfxWindowManagerAPI;
 
 namespace Ship {
-class ResourceMgr;
+class ResourceManager;
 
 class Window {
   public:
@@ -56,7 +56,7 @@ class Window {
     std::string GetName();
     std::shared_ptr<ControlDeck> GetControlDeck();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
-    std::shared_ptr<ResourceMgr> GetResourceManager();
+    std::shared_ptr<ResourceManager> GetResourceManager();
     std::shared_ptr<CrashHandler> GetCrashHandler();
     std::shared_ptr<Mercury> GetConfig();
     std::shared_ptr<spdlog::logger> GetLogger();
@@ -90,7 +90,7 @@ class Window {
 
     std::shared_ptr<spdlog::logger> mLogger;
     std::shared_ptr<Mercury> mConfig;
-    std::shared_ptr<ResourceMgr> mResourceManager;
+    std::shared_ptr<ResourceManager> mResourceManager;
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     std::shared_ptr<ControlDeck> mControlDeck;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;

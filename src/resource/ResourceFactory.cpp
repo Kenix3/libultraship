@@ -13,7 +13,7 @@ void ResourceVersionFactory::WriteFileBinary(std::shared_ptr<BinaryWriter> write
 void ResourceVersionFactory::WriteFileXML(tinyxml2::XMLElement* writer, std::shared_ptr<Resource> resource) {
 }
 
-std::shared_ptr<Resource> ResourceFactory::ReadResourceXML(std::shared_ptr<ResourceMgr> resourceMgr,
+std::shared_ptr<Resource> ResourceFactory::ReadResourceXML(std::shared_ptr<ResourceManager> resourceMgr,
                                                            std::shared_ptr<ResourceInitData> initData,
                                                            tinyxml2::XMLElement* reader) {
     return nullptr;

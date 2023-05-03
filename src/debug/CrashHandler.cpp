@@ -2,7 +2,7 @@
 #include "Utils/StringHelper.h"
 #include "CrashHandler.h"
 #include "core/Window.h"
-#include "resource/ResourceMgr.h"
+#include "resource/ResourceManager.h"
 #include "resource/GameVersions.h"
 
 #ifdef _WIN32
