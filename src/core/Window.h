@@ -32,7 +32,7 @@ class Window {
     ~Window();
     void WriteSaveFile(const std::filesystem::path& savePath, uintptr_t addr, void* dramAddr, size_t size);
     void ReadSaveFile(std::filesystem::path savePath, uintptr_t addr, void* dramAddr, size_t size);
-    void CreateDefaults();
+    void CreateDefaultSettings();
     void MainLoop(void (*MainFunction)(void));
     void Initialize(const std::vector<std::string>& otrFiles = {},
                     const std::unordered_set<uint32_t>& validHashes = {});
