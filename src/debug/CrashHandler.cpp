@@ -403,9 +403,9 @@ extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
     crashHandler->PrintStack(ex->ContextRecord);
     MessageBoxA(nullptr,
                 (Ship::Window::GetInstance()->GetName() +
-                    " has crashed. Please upload the logs to the support channel in discord.").c_str(),
-                "Crash",
-                MB_OK | MB_ICONERROR);
+                 " has crashed. Please upload the logs to the support channel in discord.")
+                    .c_str(),
+                "Crash", MB_OK | MB_ICONERROR);
 
     return EXCEPTION_EXECUTE_HANDLER;
 }

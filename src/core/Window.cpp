@@ -40,7 +40,8 @@ std::shared_ptr<Window> Window::GetInstance() {
     return mContext.lock();
 }
 
-std::shared_ptr<Window> Window::CreateInstance(const std::string name, const std::string shortName, const std::vector<std::string>& otrFiles,
+std::shared_ptr<Window> Window::CreateInstance(const std::string name, const std::string shortName,
+                                               const std::vector<std::string>& otrFiles,
                                                const std::unordered_set<uint32_t>& validHashes) {
     if (mContext.expired()) {
         auto shared = std::make_shared<Window>(name, shortName);

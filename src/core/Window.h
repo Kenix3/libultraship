@@ -22,8 +22,8 @@ class Window {
   public:
     static std::shared_ptr<Window> GetInstance();
     static std::shared_ptr<Window> CreateInstance(const std::string name, const std::string shortName,
-                                           const std::vector<std::string>& otrFiles = {},
-                                           const std::unordered_set<uint32_t>& validHashes = {});
+                                                  const std::vector<std::string>& otrFiles = {},
+                                                  const std::unordered_set<uint32_t>& validHashes = {});
 
     static std::string GetAppBundlePath();
     static std::string GetAppDirectoryPath();
