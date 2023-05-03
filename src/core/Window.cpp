@@ -69,7 +69,7 @@ Window::~Window() {
     spdlog::shutdown();
 }
 
-void Window::CreateDefaults() {
+void Window::CreateDefaultSettings() {
     if (GetConfig()->isNewInstance) {
         GetConfig()->setInt("Window.Width", 640);
         GetConfig()->setInt("Window.Height", 480);
@@ -93,12 +93,11 @@ void Window::CreateDefaults() {
 }
 
 void Window::Initialize(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes) {
-    InitializeConsoleVariables();
     InitializeLogging();
     InitializeConfiguration();
-    CVarLoad();
+    InitializeConsoleVariables();
     InitializeResourceManager(otrFiles, validHashes);
-    CreateDefaults();
+    CreateDefaultSettings();
     InitializeControlDeck();
     InitializeCrashHandler();
 

@@ -30,7 +30,7 @@ class Window {
 
     Window(std::string Name);
     ~Window();
-    void CreateDefaults();
+    void CreateDefaultSettings();
     void MainLoop(void (*MainFunction)(void));
     void Initialize(const std::vector<std::string>& otrFiles = {},
                     const std::unordered_set<uint32_t>& validHashes = {});
