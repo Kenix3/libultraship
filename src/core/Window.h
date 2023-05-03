@@ -30,8 +30,6 @@ class Window {
 
     Window(std::string Name);
     ~Window();
-    void WriteSaveFile(const std::filesystem::path& savePath, uintptr_t addr, void* dramAddr, size_t size);
-    void ReadSaveFile(std::filesystem::path savePath, uintptr_t addr, void* dramAddr, size_t size);
     void CreateDefaults();
     void MainLoop(void (*MainFunction)(void));
     void Initialize(const std::vector<std::string>& otrFiles = {},
