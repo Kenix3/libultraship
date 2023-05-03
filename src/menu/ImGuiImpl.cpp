@@ -67,8 +67,6 @@
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif
-
-using namespace Ship;
 bool oldCursorState = true;
 
 #define BindButton(btn, status)                                                                                     \
@@ -85,8 +83,7 @@ OSContPad* pads;
 std::map<std::string, GameAsset*> DefaultAssets;
 std::vector<std::string> emptyArgs;
 
-namespace SohImGui {
-
+namespace Ship {
 WindowImpl impl;
 ImGuiIO* io;
 std::shared_ptr<Console> console = std::make_shared<Console>();
@@ -424,7 +421,7 @@ void LoadTexture(const std::string& name, const std::string& path) {
 
 // MARK: - Public API
 
-void Init(WindowImpl windowImpl) {
+void InitGui(WindowImpl windowImpl) {
     impl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
@@ -474,9 +471,9 @@ void Init(WindowImpl windowImpl) {
 
     if (CVarGetInteger("gOpenMenuBar", 0) != 1) {
 #if defined(__SWITCH__) || defined(__WIIU__)
-        SohImGui::overlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
+        ImGui::overlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
 #else
-        SohImGui::overlay->TextDrawNotification(30.0f, true, "Press F1 to access enhancements menu");
+        overlay->TextDrawNotification(30.0f, true, "Press F1 to access enhancements menu");
 #endif
     }
 
@@ -511,7 +508,7 @@ void Init(WindowImpl windowImpl) {
             setCursorVisibility(menuBarOpen);
         }
 
-        LoadTexture("Game_Icon", "textures/icons/gSohIcon.png");
+        LoadTexture("Game_Icon", "textures/icons/gIcon.png");
         LoadTexture("A-Btn", "textures/buttons/ABtn.png");
         LoadTexture("B-Btn", "textures/buttons/BBtn.png");
         LoadTexture("L-Btn", "textures/buttons/LBtn.png");
@@ -538,7 +535,7 @@ void Init(WindowImpl windowImpl) {
 #endif
 }
 
-void Update(EventImpl event) {
+void UpdateGui(EventImpl event) {
     if (needsSave) {
         CVarSave();
         needsSave = false;
@@ -650,7 +647,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
             }
 #if !defined(__SWITCH__) && !defined(__WIIU__)
             const char* keyboardShortcut =
-                strcmp(SohImGui::GetCurrentRenderingBackend().first, "sdl") == 0 ? "F10" : "ALT+Enter";
+                strcmp(GetCurrentRenderingBackend().first, "sdl") == 0 ? "F10" : "ALT+Enter";
             if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
                 Window::GetInstance()->ToggleFullscreen();
             }
@@ -853,7 +850,7 @@ void DrawFramebufferAndGameInput(void) {
     }
 }
 
-void Render() {
+void RenderImGui() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
@@ -930,7 +927,7 @@ void SetMSAALevel(uint32_t value) {
 void AddWindow(const std::string& category, const std::string& name, WindowDrawFunc drawFunc, bool isEnabled,
                bool isHidden) {
     if (customWindows.contains(name)) {
-        SPDLOG_ERROR("SohImGui::AddWindow: Attempting to add duplicate window name %s", name.c_str());
+        SPDLOG_ERROR("ImGui::AddWindow: Attempting to add duplicate window name %s", name.c_str());
         return;
     }
 
@@ -1036,7 +1033,7 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
             break;
         default:
             // TODO convert other image types
-            SPDLOG_WARN("SohImGui::LoadResource: Attempting to load unsupporting image type %s", path.c_str());
+            SPDLOG_WARN("ImGui::LoadResource: Attempting to load unsupporting image type %s", path.c_str());
             return;
     }
 
@@ -1184,4 +1181,4 @@ void EndGroupPanel(float minHeight) {
 
     ImGui::EndGroup();
 }
-} // namespace SohImGui
+} // namespace Ship

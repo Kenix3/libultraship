@@ -157,10 +157,6 @@ static void ImGui_ImplWiiU_UpdateControllerInput(ImGui_ImplWiiU_ControllerInput*
     ImGui_ImplWiiU_Data* bd = ImGui_ImplWiiU_GetBackendData();
     ImGuiIO& io = ImGui::GetIO();
 
-    // SoH removal to make opening the menu easier
-    // if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
-    //     return;
-
     uint32_t vpad_buttons = input->vpad ? input->vpad->hold : 0;
     uint32_t wpad_buttons = 0;
     uint32_t classic_buttons = 0;

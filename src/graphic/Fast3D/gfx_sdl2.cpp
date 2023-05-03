@@ -309,7 +309,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     wnd = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
-    SohImGui::WindowImpl window_impl;
+    Ship::WindowImpl window_impl;
 
     if (use_opengl) {
 #ifndef __SWITCH__
@@ -332,7 +332,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
 
         window_impl.Opengl = { wnd, ctx };
-        window_impl.backend = SohImGui::Backend::SDL_OPENGL;
+        window_impl.backend = Ship::Backend::SDL_OPENGL;
     } else {
         uint32_t flags = SDL_RENDERER_ACCELERATED;
         if (vsync_enabled) {
@@ -346,10 +346,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
         window_impl.Metal = { wnd, renderer };
-        window_impl.backend = SohImGui::Backend::SDL_METAL;
+        window_impl.backend = Ship::Backend::SDL_METAL;
     }
 
-    SohImGui::Init(window_impl);
+    Ship::InitGui(window_impl);
 
     for (size_t i = 0; i < sizeof(lus_to_sdl_table) / sizeof(SDL_Scancode); i++) {
         sdl_to_lus_table[lus_to_sdl_table[i]] = i;
@@ -448,9 +448,9 @@ static void gfx_sdl_onkeyup(int scancode) {
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        SohImGui::EventImpl event_impl;
+        Ship::EventImpl event_impl;
         event_impl.Sdl = { &event };
-        SohImGui::Update(event_impl);
+        Ship::UpdateGui(event_impl);
         switch (event.type) {
 #ifndef TARGET_WEB
             // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

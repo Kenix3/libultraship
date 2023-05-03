@@ -3073,7 +3073,7 @@ struct GfxRenderingAPI* gfx_get_current_rendering_api(void) {
 void gfx_start_frame(void) {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height);
-    SohImGui::DrawMainMenuAndCalculateGameSize();
+    Ship::DrawMainMenuAndCalculateGameSize();
     has_drawn_imgui_menu = true;
     if (gfx_current_dimensions.height == 0) {
         // Avoid division by zero
@@ -3130,8 +3130,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
         if (has_drawn_imgui_menu) {
-            SohImGui::DrawFramebufferAndGameInput();
-            SohImGui::CancelFrame();
+            Ship::DrawFramebufferAndGameInput();
+            Ship::CancelFrame();
             has_drawn_imgui_menu = false;
         }
         return;
@@ -3139,7 +3139,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     dropped_frame = false;
 
     if (!has_drawn_imgui_menu) {
-        SohImGui::DrawMainMenuAndCalculateGameSize();
+        Ship::DrawMainMenuAndCalculateGameSize();
     }
 
     current_mtx_replacements = &mtx_replacements;
@@ -3177,8 +3177,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
             gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
     }
-    SohImGui::DrawFramebufferAndGameInput();
-    SohImGui::Render();
+    Ship::DrawFramebufferAndGameInput();
+    Ship::RenderImGui();
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
     has_drawn_imgui_menu = false;

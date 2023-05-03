@@ -23,7 +23,7 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include "log/spd/sohconsole_sink.h"
+#include "log/spd/ConsoleSink.h"
 #ifdef __APPLE__
 #include "misc/OSXFolderManager.h"
 #elif defined(__SWITCH__)
@@ -166,7 +166,7 @@ std::string Window::GetAppDirectoryPath() {
 #ifdef __APPLE__
     FolderManager folderManager;
     std::string fpath = std::string(folderManager.pathForDirectory(NSApplicationSupportDirectory, NSUserDomainMask));
-    fpath.append("/com.shipofharkinian.soh");
+    fpath.append("/com.libultraship" + GetName());
     return fpath;
 #endif
 
@@ -415,9 +415,9 @@ void Window::InitializeLogging() {
         spdlog::init_thread_pool(8192, 1);
         std::vector<spdlog::sink_ptr> sinks;
 
-        auto SohConsoleSink = std::make_shared<spdlog::sinks::soh_sink_mt>();
-        // SohConsoleSink->set_level(spdlog::level::trace);
-        sinks.push_back(SohConsoleSink);
+        auto consoleSink = std::make_shared<spdlog::sinks::lus_sink_mt>();
+        // consoleSink->set_level(spdlog::level::trace);
+        sinks.push_back(consoleSink);
 
 #if (!defined(_WIN32) && !defined(__WIIU__)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
