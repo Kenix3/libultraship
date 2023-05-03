@@ -59,9 +59,9 @@ void Init() {
     // make sure the required folders exist
     mkdir("/vol/external01/wiiu/", 0755);
     mkdir("/vol/external01/wiiu/apps/", 0755);
-    mkdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetName()).c_str(), 0755);
+    mkdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetShortName()).c_str(), 0755);
 
-    chdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetName()).c_str());
+    chdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetShortName()).c_str());
 
     KPADInit();
     WPADEnableURCC(true);
