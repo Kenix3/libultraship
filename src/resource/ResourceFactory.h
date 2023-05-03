@@ -6,13 +6,13 @@
 #include "Resource.h"
 
 namespace Ship {
-class ResourceMgr;
+class ResourceManager;
 class ResourceFactory {
   public:
-    virtual std::shared_ptr<Resource> ReadResource(std::shared_ptr<ResourceMgr> resourceMgr,
+    virtual std::shared_ptr<Resource> ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                    std::shared_ptr<ResourceInitData> initData,
                                                    std::shared_ptr<BinaryReader> reader) = 0;
-    virtual std::shared_ptr<Resource> ReadResourceXML(std::shared_ptr<ResourceMgr> resourceMgr,
+    virtual std::shared_ptr<Resource> ReadResourceXML(std::shared_ptr<ResourceManager> resourceMgr,
                                                       std::shared_ptr<ResourceInitData> initData,
                                                       tinyxml2::XMLElement* reader);
 };

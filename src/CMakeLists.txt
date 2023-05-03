@@ -218,12 +218,12 @@ target_sources(libultraship PRIVATE ${Source_Files__Port})
 set(Source_Files__Resource
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/OtrFile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/File.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceType.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceMgr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.h

@@ -1,6 +1,6 @@
-#include "ResourceMgr.h"
+#include "ResourceManager.h"
 #include <spdlog/spdlog.h>
-#include "OtrFile.h"
+#include "File.h"
 #include "Archive.h"
 #include "GameVersions.h"
 #include <algorithm>
@@ -14,8 +14,8 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace Ship {
 
-ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
-                         const std::unordered_set<uint32_t>& validHashes)
+ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::string& mainPath,
+                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
@@ -32,8 +32,8 @@ ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::string& mai
     }
 }
 
-ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
-                         const std::unordered_set<uint32_t>& validHashes)
+ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
+                                 const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
@@ -50,25 +50,25 @@ ResourceMgr::ResourceMgr(std::shared_ptr<Window> context, const std::vector<std:
     }
 }
 
-ResourceMgr::~ResourceMgr() {
-    SPDLOG_INFO("destruct ResourceMgr");
+ResourceManager::~ResourceManager() {
+    SPDLOG_INFO("destruct ResourceManager");
 }
 
-bool ResourceMgr::DidLoadSuccessfully() {
+bool ResourceManager::DidLoadSuccessfully() {
     return mArchive != nullptr && mArchive->IsMainMPQValid();
 }
 
-std::shared_ptr<OtrFile> ResourceMgr::LoadFileProcess(const std::string& filePath) {
+std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {
     auto file = mArchive->LoadFile(filePath, true);
     if (file != nullptr) {
-        SPDLOG_TRACE("Loaded File {} on ResourceMgr", file->Path);
+        SPDLOG_TRACE("Loaded File {} on ResourceManager", file->Path);
     } else {
-        SPDLOG_WARN("Could not load File {} in ResourceMgr", filePath);
+        SPDLOG_WARN("Could not load File {} in ResourceManager", filePath);
     }
     return file;
 }
 
-std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& filePath, bool loadExact) {
+std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         const auto newFilePath = filePath.substr(7);
@@ -140,32 +140,24 @@ std::shared_ptr<Resource> ResourceMgr::LoadResourceProcess(const std::string& fi
     }
 
     if (resource != nullptr) {
-        SPDLOG_TRACE("Loaded Resource {} on ResourceMgr", filePath);
+        SPDLOG_TRACE("Loaded Resource {} on ResourceManager", filePath);
     } else {
-        SPDLOG_WARN("Resource load FAILED {} on ResourceMgr", filePath);
+        SPDLOG_WARN("Resource load FAILED {} on ResourceManager", filePath);
     }
 
     return resource;
 }
 
-std::vector<uint32_t> ResourceMgr::GetGameVersions() {
-    return mArchive->GetGameVersions();
+std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath) {
+    return mThreadPool->submit(&ResourceManager::LoadFileProcess, this, filePath).share();
 }
 
-void ResourceMgr::PushGameVersion(uint32_t newGameVersion) {
-    mArchive->PushGameVersion(newGameVersion);
-}
-
-std::shared_future<std::shared_ptr<OtrFile>> ResourceMgr::LoadFileAsync(const std::string& filePath) {
-    return mThreadPool->submit(&ResourceMgr::LoadFileProcess, this, filePath).share();
-}
-
-std::shared_ptr<OtrFile> ResourceMgr::LoadFile(const std::string& filePath) {
+std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
     return LoadFileAsync(filePath).get();
 }
 
-std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(const std::string& filePath,
-                                                                             bool loadExact) {
+std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
+                                                                                 bool loadExact) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
@@ -182,15 +174,15 @@ std::shared_future<std::shared_ptr<Resource>> ResourceMgr::LoadResourceAsync(con
 
     const auto newFilePath = std::string(filePath);
 
-    return mThreadPool->submit(&ResourceMgr::LoadResourceProcess, this, newFilePath, loadExact);
+    return mThreadPool->submit(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
 }
 
-std::shared_ptr<Resource> ResourceMgr::LoadResource(const std::string& filePath, bool loadExact) {
+std::shared_ptr<Resource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact) {
     return LoadResourceAsync(filePath, loadExact).get();
 }
 
-std::variant<ResourceMgr::ResourceLoadError, std::shared_ptr<Resource>>
-ResourceMgr::CheckCache(const std::string& filePath, bool loadExact) {
+std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<Resource>>
+ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(Resource::gAltAssetPrefix)) {
         const auto altPath = Resource::gAltAssetPrefix + filePath;
         auto altCacheResult = CheckCache(altPath, loadExact);
@@ -212,13 +204,13 @@ ResourceMgr::CheckCache(const std::string& filePath, bool loadExact) {
     return resourceCacheFind->second;
 }
 
-std::shared_ptr<Resource> ResourceMgr::GetCachedResource(const std::string& filePath, bool loadExact) {
+std::shared_ptr<Resource> ResourceManager::GetCachedResource(const std::string& filePath, bool loadExact) {
     // Gets the cached resource based on filePath.
     return GetCachedResource(CheckCache(filePath, loadExact));
 }
 
 std::shared_ptr<Resource>
-ResourceMgr::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<Resource>> cacheLine) {
+ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<Resource>> cacheLine) {
     // Gets the cached resource based on a cache line std::variant from the cache map.
     if (std::holds_alternative<std::shared_ptr<Resource>>(cacheLine)) {
         try {
@@ -242,7 +234,7 @@ ResourceMgr::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<R
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-ResourceMgr::LoadDirectoryAsync(const std::string& searchMask) {
+ResourceManager::LoadDirectoryAsync(const std::string& searchMask) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Resource>>>>();
     auto fileList = GetArchive()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
@@ -256,7 +248,7 @@ ResourceMgr::LoadDirectoryAsync(const std::string& searchMask) {
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::LoadDirectory(const std::string& searchMask) {
+std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
     auto futureList = LoadDirectoryAsync(searchMask);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
 
@@ -269,7 +261,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceMgr::LoadDirecto
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::string>> ResourceMgr::FindLoadedFiles(const std::string& searchMask) {
+std::shared_ptr<std::vector<std::string>> ResourceManager::FindLoadedFiles(const std::string& searchMask) {
     const char* wildCard = searchMask.c_str();
     auto list = std::make_shared<std::vector<std::string>>();
 
@@ -282,7 +274,7 @@ std::shared_ptr<std::vector<std::string>> ResourceMgr::FindLoadedFiles(const std
     return list;
 }
 
-void ResourceMgr::DirtyDirectory(const std::string& searchMask) {
+void ResourceManager::DirtyDirectory(const std::string& searchMask) {
     auto list = FindLoadedFiles(searchMask);
 
     for (const auto& key : *list.get()) {
@@ -296,7 +288,7 @@ void ResourceMgr::DirtyDirectory(const std::string& searchMask) {
     }
 }
 
-void ResourceMgr::UnloadDirectory(const std::string& searchMask) {
+void ResourceManager::UnloadDirectory(const std::string& searchMask) {
     auto list = FindLoadedFiles(searchMask);
 
     for (const auto& key : *list.get()) {
@@ -304,23 +296,19 @@ void ResourceMgr::UnloadDirectory(const std::string& searchMask) {
     }
 }
 
-const std::string* ResourceMgr::HashToString(uint64_t hash) {
-    return mArchive->HashToString(hash);
-}
-
-std::shared_ptr<Archive> ResourceMgr::GetArchive() {
+std::shared_ptr<Archive> ResourceManager::GetArchive() {
     return mArchive;
 }
 
-std::shared_ptr<ResourceLoader> ResourceMgr::GetResourceLoader() {
+std::shared_ptr<ResourceLoader> ResourceManager::GetResourceLoader() {
     return mResourceLoader;
 }
 
-std::shared_ptr<Window> ResourceMgr::GetContext() {
+std::shared_ptr<Window> ResourceManager::GetContext() {
     return mContext;
 }
 
-size_t ResourceMgr::UnloadResource(const std::string& filePath) {
+size_t ResourceManager::UnloadResource(const std::string& filePath) {
     // Store a shared pointer here so that the erase doesn't destruct the resource.
     // The resource will attempt to load other resources on the destructor, and this will fail because we already hold
     // the mutex.
@@ -335,7 +323,7 @@ size_t ResourceMgr::UnloadResource(const std::string& filePath) {
     return ret;
 }
 
-bool ResourceMgr::OtrSignatureCheck(const char* fileName) {
+bool ResourceManager::OtrSignatureCheck(const char* fileName) {
     static const char* sOtrSignature = "__OTR__";
     return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
 }

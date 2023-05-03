@@ -1,8 +1,8 @@
 #include "ResourceLoader.h"
 #include "ResourceFactory.h"
-#include "ResourceMgr.h"
+#include "ResourceManager.h"
 #include "Resource.h"
-#include "OtrFile.h"
+#include "File.h"
 #include "binarytools/MemoryStream.h"
 #include "binarytools/BinaryReader.h"
 #include "factory/TextureFactory.h"
@@ -42,7 +42,7 @@ std::shared_ptr<Window> ResourceLoader::GetContext() {
     return mContext;
 }
 
-std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<OtrFile> fileToLoad) {
+std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
     std::shared_ptr<Resource> result = nullptr;
 
     if (fileToLoad != nullptr) {

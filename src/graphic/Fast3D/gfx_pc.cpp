@@ -37,7 +37,7 @@
 #include "menu/ImGuiImpl.h"
 #include "resource/GameVersions.h"
 #include "resource/Resource.h"
-#include "resource/ResourceMgr.h"
+#include "resource/ResourceManager.h"
 #include "resource/type/Texture.h"
 #include "misc/Utils.h"
 #include "libultraship/libultraship.h"

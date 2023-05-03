@@ -6,7 +6,7 @@
 #include "binarytools/BinaryWriter.h"
 
 namespace Ship {
-class ResourceMgr;
+class ResourceManager;
 
 struct ResourceInitData {
     std::string Path;
@@ -21,12 +21,12 @@ class Resource {
   public:
     inline static const std::string gAltAssetPrefix = "alt/";
 
-    std::shared_ptr<ResourceMgr> ResourceManager;
+    std::shared_ptr<Ship::ResourceManager> ResourceManager;
     std::shared_ptr<ResourceInitData> InitData;
     bool IsDirty = false;
     virtual void* GetPointer() = 0;
     virtual size_t GetPointerSize() = 0;
-    Resource(std::shared_ptr<ResourceMgr> resourceManager, std::shared_ptr<ResourceInitData> initData);
+    Resource(std::shared_ptr<Ship::ResourceManager> resourceManager, std::shared_ptr<ResourceInitData> initData);
     virtual ~Resource();
 };
 } // namespace Ship

@@ -5,7 +5,7 @@
 #define LUSCLASSES_H
 
 #include "resource/Archive.h"
-#include "resource/ResourceMgr.h"
+#include "resource/ResourceManager.h"
 #include "core/Window.h"
 #include "debug/CrashHandler.h"
 #include "menu/Console.h"
