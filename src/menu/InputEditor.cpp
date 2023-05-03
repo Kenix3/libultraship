@@ -128,7 +128,7 @@ void InputEditor::DrawControllerSchema() {
     DrawButton("START", BTN_START, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    ImGui::EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
+    Ship::EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
 #else
     Ship::EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
 #endif
@@ -140,7 +140,7 @@ void InputEditor::DrawControllerSchema() {
     DrawButton("Right", BTN_DRIGHT, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    ImGui::EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
+    Ship::EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
 #else
     EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
 #endif
@@ -182,7 +182,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::Dummy(ImVec2(0, 6));
     }
 #ifdef __SWITCH__
-    ImGui::EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
+    Ship::EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
 #else
     EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
 #endif
@@ -224,7 +224,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        ImGui::EndGroupPanel(43.0f);
+        Ship::EndGroupPanel(43.0f);
 #else
         EndGroupPanel(14.0f);
 #endif
@@ -283,7 +283,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        ImGui::EndGroupPanel(46.0f);
+        Ship::EndGroupPanel(46.0f);
 #else
         EndGroupPanel(14.0f);
 #endif

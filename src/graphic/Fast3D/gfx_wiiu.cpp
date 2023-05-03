@@ -305,11 +305,11 @@ static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool 
     gfx_current_dimensions.width = gfx_current_game_window_viewport.width = WIIU_DEFAULT_FB_WIDTH;
     gfx_current_dimensions.height = gfx_current_game_window_viewport.height = WIIU_DEFAULT_FB_HEIGHT;
 
-    ImGui::WindowImpl window_impl;
-    window_impl.backend = ImGui::Backend::GX2;
+    Ship::WindowImpl window_impl;
+    window_impl.backend = Ship::Backend::GX2;
     window_impl.Gx2.Width = WIIU_DEFAULT_FB_WIDTH;
     window_impl.Gx2.Height = WIIU_DEFAULT_FB_HEIGHT;
-    ImGui::Init(window_impl);
+    Ship::InitGui(window_impl);
 }
 
 static void gfx_wiiu_shutdown(void) {
@@ -392,9 +392,9 @@ static void gfx_wiiu_handle_events(void) {
         }
     }
 
-    ImGui::EventImpl event_impl;
+    Ship::EventImpl event_impl;
     event_impl.Gx2.Input = &input;
-    ImGui::Update(event_impl);
+    Ship::UpdateGui(event_impl);
 }
 
 static bool gfx_wiiu_start_frame(void) {
