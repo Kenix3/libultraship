@@ -233,9 +233,9 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
-    SohImGui::EventImpl event_impl;
+    Ship::EventImpl event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    SohImGui::Update(event_impl);
+    Ship::UpdateGui(event_impl);
     switch (message) {
         case WM_SIZE:
             dxgi.current_width = (uint32_t)(l_param & 0xffff);

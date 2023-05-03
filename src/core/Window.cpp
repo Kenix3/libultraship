@@ -23,7 +23,7 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include "log/spd/sohconsole_sink.h"
+#include "log/spd/ConsoleSink.h"
 #ifdef __APPLE__
 #include "misc/OSXFolderManager.h"
 #elif defined(__SWITCH__)
@@ -40,10 +40,11 @@ std::shared_ptr<Window> Window::GetInstance() {
     return mContext.lock();
 }
 
-std::shared_ptr<Window> Window::CreateInstance(const std::string name, const std::vector<std::string>& otrFiles,
+std::shared_ptr<Window> Window::CreateInstance(const std::string name, const std::string shortName,
+                                               const std::vector<std::string>& otrFiles,
                                                const std::unordered_set<uint32_t>& validHashes) {
     if (mContext.expired()) {
-        auto shared = std::make_shared<Window>(name);
+        auto shared = std::make_shared<Window>(name, shortName);
         mContext = shared;
         shared->Initialize(otrFiles, validHashes);
         return shared;
@@ -54,9 +55,9 @@ std::shared_ptr<Window> Window::CreateInstance(const std::string name, const std
     return GetInstance();
 }
 
-Window::Window(std::string Name)
+Window::Window(std::string name, std::string shortName)
     : mLogger(nullptr), mConfig(nullptr), mResourceManager(nullptr), mAudioPlayer(nullptr), mControlDeck(nullptr),
-      mName(std::move(Name)) {
+      mName(std::move(name)), mShortName(std::move(shortName)) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mIsFullscreen = false;
@@ -166,7 +167,7 @@ std::string Window::GetAppDirectoryPath() {
 #ifdef __APPLE__
     FolderManager folderManager;
     std::string fpath = std::string(folderManager.pathForDirectory(NSApplicationSupportDirectory, NSUserDomainMask));
-    fpath.append("/com.shipofharkinian.soh");
+    fpath.append("/com.libultraship." + Window::GetInstance()->GetShortName());
     return fpath;
 #endif
 
@@ -415,9 +416,9 @@ void Window::InitializeLogging() {
         spdlog::init_thread_pool(8192, 1);
         std::vector<spdlog::sink_ptr> sinks;
 
-        auto SohConsoleSink = std::make_shared<spdlog::sinks::soh_sink_mt>();
-        // SohConsoleSink->set_level(spdlog::level::trace);
-        sinks.push_back(SohConsoleSink);
+        auto consoleSink = std::make_shared<spdlog::sinks::lus_sink_mt>();
+        // consoleSink->set_level(spdlog::level::trace);
+        sinks.push_back(consoleSink);
 
 #if (!defined(_WIN32) && !defined(__WIIU__)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
@@ -545,6 +546,10 @@ void Window::SetMenuBar(uint32_t menuBar) {
 
 std::string Window::GetName() {
     return mName;
+}
+
+std::string Window::GetShortName() {
+    return mShortName;
 }
 
 std::shared_ptr<ControlDeck> Window::GetControlDeck() {

@@ -21,14 +21,16 @@ class ResourceManager;
 class Window {
   public:
     static std::shared_ptr<Window> GetInstance();
-    static std::shared_ptr<Window> CreateInstance(const std::string name, const std::vector<std::string>& otrFiles = {},
+    static std::shared_ptr<Window> CreateInstance(const std::string name, const std::string shortName,
+                                                  const std::vector<std::string>& otrFiles = {},
                                                   const std::unordered_set<uint32_t>& validHashes = {});
+
     static std::string GetAppBundlePath();
     static std::string GetAppDirectoryPath();
     static std::string GetPathRelativeToAppDirectory(const char* path);
     static std::string GetPathRelativeToAppBundle(const char* path);
 
-    Window(std::string Name);
+    Window(std::string name, std::string shortName);
     ~Window();
     void CreateDefaultSettings();
     void MainLoop(void (*MainFunction)(void));
@@ -52,6 +54,7 @@ class Window {
     uint32_t GetMenuBar();
     void SetMenuBar(uint32_t menuBar);
     std::string GetName();
+    std::string GetShortName();
     std::shared_ptr<ControlDeck> GetControlDeck();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     std::shared_ptr<ResourceManager> GetResourceManager();
@@ -104,9 +107,10 @@ class Window {
     uint32_t mRefreshRate;
     uint32_t mWidth;
     uint32_t mHeight;
-    uint32_t mMenuBar;
+    bool mMenuBar;
     int32_t mLastScancode;
     std::string mName;
+    std::string mShortName;
     std::string mMainPath;
     std::string mBasePath;
     std::string mPatchesPath;

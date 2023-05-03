@@ -14,9 +14,9 @@ bool AudioPlayerInit(void) {
     }
 
     // loop over available audio apis if current fails
-    auto audioBackends = SohImGui::GetAvailableAudioBackends();
+    auto audioBackends = Ship::GetAvailableAudioBackends();
     for (uint8_t i = 0; i < audioBackends.size(); i++) {
-        SohImGui::SetCurrentAudioBackend(i, audioBackends[i]);
+        Ship::SetCurrentAudioBackend(i, audioBackends[i]);
         Ship::Window::GetInstance()->InitializeAudioPlayer(audioBackends[i].first);
         if (audio->Init()) {
             return true;

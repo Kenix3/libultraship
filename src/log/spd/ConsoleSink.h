@@ -18,12 +18,9 @@
 namespace spdlog {
 namespace sinks {
 
-/*
- * Android sink (logging using __android_log_write)
- */
-template <typename Mutex> class sohconsole_sink final : public base_sink<Mutex> {
+template <typename Mutex> class ConsoleSink final : public base_sink<Mutex> {
   public:
-    explicit sohconsole_sink(std::string tag = "spdlog", bool use_raw_msg = false)
+    explicit ConsoleSink(std::string tag = "spdlog", bool use_raw_msg = false)
         : tag_(std::move(tag)), use_raw_msg_(use_raw_msg) {
     }
 
@@ -37,8 +34,8 @@ template <typename Mutex> class sohconsole_sink final : public base_sink<Mutex> 
         }
         formatted.push_back('\0');
         const char* msg_output = formatted.data();
-        if (CVarGetInteger("gSinkEnabled", 0) && SohImGui::GetConsole()->IsOpened()) {
-            SohImGui::GetConsole()->Append("Logs", msg.level, "%s", msg_output);
+        if (CVarGetInteger("gSinkEnabled", 0) && Ship::GetConsole()->IsOpened()) {
+            Ship::GetConsole()->Append("Logs", msg.level, "%s", msg_output);
         }
     }
 
@@ -50,7 +47,7 @@ template <typename Mutex> class sohconsole_sink final : public base_sink<Mutex> 
     bool use_raw_msg_;
 };
 
-using soh_sink_mt = sohconsole_sink<std::mutex>;
-using soh_sink_st = sohconsole_sink<details::null_mutex>;
+using lus_sink_mt = ConsoleSink<std::mutex>;
+using lus_sink_st = ConsoleSink<details::null_mutex>;
 } // namespace sinks
 } // namespace spdlog

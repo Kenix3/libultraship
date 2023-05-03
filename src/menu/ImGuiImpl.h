@@ -14,7 +14,7 @@ struct GameAsset {
     int height;
 };
 
-namespace SohImGui {
+namespace Ship {
 enum class Backend {
     DX11,
     SDL_OPENGL,
@@ -76,15 +76,15 @@ typedef struct {
 bool SupportsWindowedFullscreen();
 bool SupportsViewports();
 
-void Init(WindowImpl windowImpl);
-void Update(EventImpl event);
+void InitGui(WindowImpl windowImpl);
+void UpdateGui(EventImpl event);
 
 void DrawMainMenuAndCalculateGameSize(void);
 void RegisterMenuDrawMethod(std::function<void(void)> drawMethod);
 void AddSetupHooksDelegate(std::function<void(void)> setupHooksMethod);
 
 void DrawFramebufferAndGameInput(void);
-void Render(void);
+void RenderImGui(void);
 void CancelFrame(void);
 void DrawSettings();
 
@@ -123,6 +123,6 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
 void setCursorVisibility(bool visible);
 void BeginGroupPanel(const char* name, const ImVec2& size = ImVec2(0.0f, 0.0f));
 void EndGroupPanel(float minHeight = 0.0f);
-} // namespace SohImGui
+} // namespace Ship
 
 #endif

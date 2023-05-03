@@ -43,7 +43,7 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
-    if (SohImGui::GetInputEditor()->IsOpened()) {
+    if (Ship::GetInputEditor()->IsOpened()) {
         return;
     }
 

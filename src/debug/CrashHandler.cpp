@@ -184,13 +184,6 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
             if (status == 0) {
                 nameFound = demangled;
             }
-#if 0
-            char command[256];
-            char addrLine[128];
-            snprintf(command, sizeof(command), "addr2line -e soh.elf %s + 0x%lX", nameFound, (uintptr_t)arr[i] - (uintptr_t)info.dli_saddr);
-            pipe = popen(command, "r");
-            fgets(addrLine, 128, pipe);
-#endif
 
             functionName = StringHelper::Sprintf("%s (+0x%X)", nameFound, (char*)arr[i] - (char*)info.dli_saddr);
             free(demangled);
@@ -198,8 +191,11 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
         snprintf(intToCharBuffer, sizeof(intToCharBuffer), "%i ", (int)i);
         WRITE_VAR_LINE(crashHandler, intToCharBuffer, functionName.c_str());
     }
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "SoH has crashed",
-                             "SoH Has crashed. Please upload the logs to the support channel in discord.", nullptr);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, (Ship::Window::GetInstance()->GetName() + " has crashed").c_str(),
+                             (Ship::Window::GetInstance()->GetName() +
+                              " has crashed. Please upload the logs to the support channel in discord.")
+                                 .c_str(),
+                             nullptr);
     free(symbols);
     crashHandler->PrintCommon();
 
@@ -406,8 +402,11 @@ extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
 
     WRITE_VAR_LINE(crashHandler, "Exception: ", exceptionString);
     crashHandler->PrintStack(ex->ContextRecord);
-    MessageBoxA(nullptr, "The game has crashed. Please upload the logs to the support channel in discord.", "Crash",
-                MB_OK | MB_ICONERROR);
+    MessageBoxA(nullptr,
+                (Ship::Window::GetInstance()->GetName() +
+                 " has crashed. Please upload the logs to the support channel in discord.")
+                    .c_str(),
+                "Crash", MB_OK | MB_ICONERROR);
 
     return EXCEPTION_EXECUTE_HANDLER;
 }

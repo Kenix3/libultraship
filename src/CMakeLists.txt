@@ -142,7 +142,7 @@ set(Source_Files__Log
 source_group("Log" FILES ${Source_Files__Log})
 
 set(Source_Files__Log__SPDLog
-    ${CMAKE_CURRENT_SOURCE_DIR}/log/spd/sohconsole_sink.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/log/spd/ConsoleSink.h
 )
 
 source_group("Log\\SPDLog" FILES ${Source_Files__Log__SPDLog})
