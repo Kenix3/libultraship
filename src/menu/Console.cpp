@@ -106,8 +106,6 @@ void Console::Draw() {
     ImGui::Begin("Console", &this->mOpened, ImGuiWindowFlags_NoFocusOnAppearing);
     const ImVec2 pos = ImGui::GetWindowPos();
     const ImVec2 size = ImGui::GetWindowSize();
-    // SohImGui::ShowCursor(ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_RectOnly),
-    // SohImGui::Dialogues::Console);
 
     // Renders autocomplete window
     if (this->mOpenAutocomplete) {
@@ -318,12 +316,12 @@ void Console::Dispatch(const std::string& line) {
     if (this->mCommands.contains(cmd_args[0])) {
         const CommandEntry entry = this->mCommands[cmd_args[0]];
         if (!entry.handler(shared_from_this(), cmd_args) && !entry.arguments.empty()) {
-            SendErrorMessage("[SOH] Usage: " + cmd_args[0] + " " + BuildUsage(entry));
+            SendErrorMessage("[LUS] Usage: " + cmd_args[0] + " " + BuildUsage(entry));
         }
 
         return;
     }
-    SendErrorMessage("[SOH] Command not found");
+    SendErrorMessage("[LUS] Command not found");
 }
 
 int Console::CallbackStub(ImGuiInputTextCallbackData* data) {
