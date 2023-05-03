@@ -65,8 +65,7 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
     }
 }
 
-std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent,
-                                                     HANDLE mpqHandle) {
+std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent, HANDLE mpqHandle) {
     HANDLE fileHandle = NULL;
 
     std::shared_ptr<File> fileToLoad = std::make_shared<File>();
@@ -190,7 +189,8 @@ bool Archive::RenameFile(const std::string& oldFilePath, const std::string& newF
     // TODO: Notify the resource manager and child Files
 
     if (!SFileRenameFile(mMainMpq, oldFilePath.c_str(), newFilePath.c_str())) {
-        SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldFilePath, newFilePath, mMainPath);
+        SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldFilePath, newFilePath,
+                     mMainPath);
         return false;
     }
 
@@ -229,7 +229,8 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::stri
 
     if (hFind != nullptr) {
         if (!SFileFindClose(hFind)) {
-            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), fileSearchMask, mMainPath);
+            SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), fileSearchMask,
+                         mMainPath);
         }
 
         return fileList;

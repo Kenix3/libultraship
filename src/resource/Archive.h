@@ -60,6 +60,6 @@ class Archive : public std::enable_shared_from_this<Archive> {
     void GenerateCrcMap();
     bool ProcessOtrVersion(HANDLE mpqHandle = nullptr);
     std::shared_ptr<File> LoadFileFromHandle(const std::string& filePath, bool includeParent = true,
-                                                HANDLE mpqHandle = nullptr);
+                                             HANDLE mpqHandle = nullptr);
 };
 } // namespace Ship

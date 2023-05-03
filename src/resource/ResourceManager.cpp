@@ -14,8 +14,8 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace Ship {
 
-ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
-                         const std::unordered_set<uint32_t>& validHashes)
+ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::string& mainPath,
+                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
@@ -33,7 +33,7 @@ ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::str
 }
 
 ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
-                         const std::unordered_set<uint32_t>& validHashes)
+                                 const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
@@ -157,7 +157,7 @@ std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
 }
 
 std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
-                                                                             bool loadExact) {
+                                                                                 bool loadExact) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);

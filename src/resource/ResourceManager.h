@@ -24,9 +24,9 @@ class ResourceManager {
 
   public:
     ResourceManager(std::shared_ptr<Window> context, const std::string& mainPath, const std::string& patchesPath,
-                const std::unordered_set<uint32_t>& validHashes);
+                    const std::unordered_set<uint32_t>& validHashes);
     ResourceManager(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
-                const std::unordered_set<uint32_t>& validHashes);
+                    const std::unordered_set<uint32_t>& validHashes);
     ~ResourceManager();
 
     bool DidLoadSuccessfully();
