@@ -167,7 +167,7 @@ std::string Window::GetAppDirectoryPath() {
 #ifdef __APPLE__
     FolderManager folderManager;
     std::string fpath = std::string(folderManager.pathForDirectory(NSApplicationSupportDirectory, NSUserDomainMask));
-    fpath.append("/com.libultraship." + GetShortName());
+    fpath.append("/com.libultraship." + Window::GetInstance()->GetShortName());
     return fpath;
 #endif
 
