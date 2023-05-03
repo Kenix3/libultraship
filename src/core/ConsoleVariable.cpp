@@ -9,6 +9,7 @@
 namespace Ship {
 
 ConsoleVariable::ConsoleVariable() {
+    Load();
 }
 
 std::shared_ptr<CVar> ConsoleVariable::Get(const char* name) {
