@@ -28,7 +28,8 @@ void ControlDeck::ScanDevices() {
 
     auto controlDeck = Window::GetInstance()->GetControlDeck();
 
-    // Always load controllers that need their device indices zero based first because we add some other devices afterward.
+    // Always load controllers that need their device indices zero based first because we add some other devices
+    // afterward.
     int32_t i;
 
 #ifndef __WIIU__

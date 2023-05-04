@@ -236,7 +236,7 @@ bool Window::KeyUp(int32_t scancode) {
     bool isProcessed = false;
     auto controlDeck = GetInstance()->GetControlDeck();
     const auto pad = dynamic_cast<KeyboardController*>(
-            controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
+        controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
     if (pad != nullptr) {
         if (pad->ReleaseButton(scancode)) {
             isProcessed = true;
@@ -250,7 +250,7 @@ bool Window::KeyDown(int32_t scancode) {
     bool isProcessed = false;
     auto controlDeck = GetInstance()->GetControlDeck();
     const auto pad = dynamic_cast<KeyboardController*>(
-            controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
+        controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
     if (pad != nullptr) {
         if (pad->PressButton(scancode)) {
             isProcessed = true;
@@ -265,7 +265,7 @@ bool Window::KeyDown(int32_t scancode) {
 void Window::AllKeysUp(void) {
     auto controlDeck = Window::GetInstance()->GetControlDeck();
     const auto pad = dynamic_cast<KeyboardController*>(
-            controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
+        controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
     if (pad != nullptr) {
         pad->ReleaseAllButtons();
     }

@@ -1,7 +1,9 @@
 #include "DummyController.h"
 
 namespace Ship {
-DummyController::DummyController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, const std::string& guid, const std::string& keyName, bool connected) : Controller(controlDeck, deviceIndex) {
+DummyController::DummyController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, const std::string& guid,
+                                 const std::string& keyName, bool connected)
+    : Controller(controlDeck, deviceIndex) {
     mGuid = guid;
     mControllerName = guid;
     mIsConnected = connected;

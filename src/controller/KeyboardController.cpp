@@ -11,7 +11,8 @@
 
 namespace Ship {
 
-KeyboardController::KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex) : Controller(controlDeck, deviceIndex), mLastScancode(-1) {
+KeyboardController::KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
+    : Controller(controlDeck, deviceIndex), mLastScancode(-1) {
     mGuid = "Keyboard";
     mControllerName = "Keyboard";
 }

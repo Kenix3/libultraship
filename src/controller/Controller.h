@@ -51,7 +51,7 @@ class Controller {
     virtual int32_t SetRumble(int32_t portIndex, bool rumble) = 0;
     virtual int32_t SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) = 0;
 
-    std::string GetControllerName() ;
+    std::string GetControllerName();
     void ReadToPad(OSContPad* pad, int32_t portIndex);
     void SetButtonMapping(int32_t portIndex, int32_t n64Button, int32_t scancode);
     std::shared_ptr<ControllerAttachment> GetAttachment();

@@ -14,7 +14,8 @@
 
 namespace Ship {
 
-Controller::Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex) : mIsRumbling(false), mAttachment(nullptr), mDeviceIndex(deviceIndex), mControlDeck(controlDeck) {
+Controller::Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
+    : mIsRumbling(false), mAttachment(nullptr), mDeviceIndex(deviceIndex), mControlDeck(controlDeck) {
     for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
         mProfiles[portIndex] = std::make_shared<DeviceProfile>();
         mButtonData[portIndex] = std::make_shared<Buttons>();
