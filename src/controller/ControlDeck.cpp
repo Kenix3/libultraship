@@ -67,10 +67,10 @@ void ControlDeck::ScanPhysicalDevices() {
     LoadControllerSettings();
 }
 
-void ControlDeck::SetPhysicalDevice(int32_t slot, int32_t deviceSlot) {
-    const std::shared_ptr<Controller> backend = mPhysicalDevices[deviceSlot];
-    mVirtualDevices[slot] = deviceSlot;
-    *mControllerBits |= (backend->Connected()) << slot;
+void ControlDeck::SetPhysicalDevice(int32_t virtualIndex, int32_t physicalIndex) {
+    const std::shared_ptr<Controller> backend = mPhysicalDevices[physicalIndex];
+    mVirtualDevices[virtualIndex] = physicalIndex;
+    *mControllerBits |= (backend->Connected()) << virtualIndex;
 }
 
 void ControlDeck::WriteToPad(OSContPad* pad) const {
@@ -246,15 +246,15 @@ void ControlDeck::SaveControllerSettings() {
     config->save();
 }
 
-std::shared_ptr<Controller> ControlDeck::GetPhysicalDevice(int32_t deviceSlot) {
-    return mPhysicalDevices[deviceSlot];
+std::shared_ptr<Controller> ControlDeck::GetPhysicalDevice(int32_t physicalIndex) {
+    return mPhysicalDevices[physicalIndex];
 }
 
 size_t ControlDeck::GetNumPhysicalDevices() {
     return mPhysicalDevices.size();
 }
 
-int32_t ControlDeck::GetVirtualDevice(int32_t slot) {
+int32_t ControlDeck::GetPhysicalIndexFromVirtualIndex(int32_t slot) {
     return mVirtualDevices[slot];
 }
 
@@ -262,8 +262,8 @@ size_t ControlDeck::GetNumVirtualDevices() {
     return mVirtualDevices.size();
 }
 
-std::shared_ptr<Controller> ControlDeck::GetPhysicalDeviceFromVirtualSlot(int32_t slot) {
-    return GetPhysicalDevice(GetVirtualDevice(slot));
+std::shared_ptr<Controller> ControlDeck::GetPhysicalDeviceFromVirtualIndex(int32_t virtualIndex) {
+    return GetPhysicalDevice(GetPhysicalIndexFromVirtualIndex(virtualIndex));
 }
 
 uint8_t* ControlDeck::GetControllerBits() {

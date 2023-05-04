@@ -17,7 +17,7 @@ void InputEditor::Init() {
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
     auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
-    return controlDeck->GetPhysicalDeviceFromVirtualSlot(slot);
+    return controlDeck->GetPhysicalDeviceFromVirtualIndex(slot);
 }
 
 void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentPort, int32_t* btnReading) {
@@ -67,7 +67,7 @@ void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentP
 
 void InputEditor::DrawControllerSelect(int32_t currentPort) {
     auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
-    std::string controllerName = controlDeck->GetPhysicalDeviceFromVirtualSlot(currentPort)->GetControllerName();
+    std::string controllerName = controlDeck->GetPhysicalDeviceFromVirtualIndex(currentPort)->GetControllerName();
 
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
         for (uint8_t i = 0; i < controlDeck->GetNumPhysicalDevices(); i++) {
@@ -75,7 +75,7 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
             if (deviceName != "Keyboard" && deviceName != "Auto") {
                 deviceName += "##" + std::to_string(i);
             }
-            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort))) {
+            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetPhysicalIndexFromVirtualIndex(currentPort))) {
                 controlDeck->SetPhysicalDevice(currentPort, i);
             }
         }
@@ -111,7 +111,7 @@ void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
 }
 
 void InputEditor::DrawControllerSchema() {
-    auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetPhysicalDeviceFromVirtualSlot(mCurrentPort);
+    auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetPhysicalDeviceFromVirtualIndex(mCurrentPort);
     auto profile = backend->getProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 

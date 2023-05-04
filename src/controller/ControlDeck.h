@@ -13,11 +13,11 @@ class ControlDeck {
     void WriteToPad(OSContPad* pad) const;
     void LoadControllerSettings();
     void SaveControllerSettings();
-    void SetPhysicalDevice(int32_t slot, int32_t deviceSlot);
-    std::shared_ptr<Controller> GetPhysicalDevice(int32_t deviceSlot);
-    std::shared_ptr<Controller> GetPhysicalDeviceFromVirtualSlot(int32_t slot);
+    void SetPhysicalDevice(int32_t virtualIndex, int32_t physicalIndex);
+    std::shared_ptr<Controller> GetPhysicalDevice(int32_t physicalIndex);
+    std::shared_ptr<Controller> GetPhysicalDeviceFromVirtualIndex(int32_t virtualIndex);
     size_t GetNumPhysicalDevices();
-    int32_t GetVirtualDevice(int32_t slot);
+    int32_t GetPhysicalIndexFromVirtualIndex(int32_t slot);
     size_t GetNumVirtualDevices();
     uint8_t* GetControllerBits();
     void BlockGameInput();
