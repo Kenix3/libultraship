@@ -5,11 +5,10 @@
 namespace Ship {
 class SDLController : public Controller {
   public:
-    SDLController(int32_t physicalSlot);
-    void ReadFromSource(int32_t virtualSlot) override;
-    const std::string GetControllerName() override;
-    const std::string GetButtonName(int32_t virtualSlot, int32_t n64Button) override;
-    void WriteToSource(int32_t virtualSlot, ControllerCallback* controller) override;
+    SDLController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
+    void ReadFromSource(int32_t portIndex) override;
+    const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
+    void WriteToSource(int32_t portIndex, ControllerCallback* controller) override;
     bool Connected() const override;
     bool CanGyro() const override;
     bool CanRumble() const override;
@@ -21,14 +20,12 @@ class SDLController : public Controller {
     inline static const char* AxisNames[] = { "Left Stick X", "Left Stick Y",  "Right Stick X", "Right Stick Y",
                                               "Left Trigger", "Right Trigger", "Start Button" };
 
-    void CreateDefaultBinding(int32_t virtualSlot) override;
+    void CreateDefaultBinding(int32_t portIndex) override;
 
   private:
-    std::string mControllerName = "Unknown";
     SDL_GameController* mController;
-    int32_t mPhysicalSlot;
     bool mSupportsGyro;
-    void NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t virtualSlot);
+    void NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t portIndex);
     bool Close();
 };
 } // namespace Ship

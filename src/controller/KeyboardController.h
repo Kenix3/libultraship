@@ -5,12 +5,11 @@
 namespace Ship {
 class KeyboardController : public Controller {
   public:
-    KeyboardController();
+    KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
 
-    void ReadFromSource(int32_t virtualSlot) override;
-    void WriteToSource(int32_t virtualSlot, ControllerCallback* controller) override;
-    const std::string GetControllerName() override;
-    const std::string GetButtonName(int32_t virtualSlot, int32_t n64Button) override;
+    void ReadFromSource(int32_t portIndex) override;
+    void WriteToSource(int32_t portIndex, ControllerCallback* controller) override;
+    const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
     bool PressButton(int32_t scancode);
     bool ReleaseButton(int32_t scancode);
     bool Connected() const override;
@@ -21,7 +20,7 @@ class KeyboardController : public Controller {
     void ReleaseAllButtons();
     void SetLastScancode(int32_t key);
     int32_t GetLastScancode();
-    void CreateDefaultBinding(int32_t virtualSlot) override;
+    void CreateDefaultBinding(int32_t portIndex) override;
 
   protected:
     int32_t mLastScancode;

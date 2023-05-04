@@ -595,7 +595,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
         if (Window::GetInstance()->IsFullscreen()) {
             setCursorVisibility(menuBar);
         }
-        Window::GetInstance()->GetControlDeck()->SaveControllerSettings();
+        Window::GetInstance()->GetControlDeck()->SaveSettings();
         if (CVarGetInteger("gControlNav", 0) && CVarGetInteger("gOpenMenuBar", 0)) {
             io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {

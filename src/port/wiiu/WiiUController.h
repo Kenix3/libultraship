@@ -10,37 +10,29 @@
 namespace Ship {
 class WiiUController : public Controller {
   public:
-    WiiUController(WPADChan chan);
+    WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan);
     bool Open();
     void Close();
 
-    void ReadFromSource(int32_t virtualSlot) override;
-    void WriteToSource(int32_t virtualSlot, ControllerCallback* controller) override;
-    bool Connected() const override {
-        return connected;
-    };
-    bool CanGyro() const override {
-        return false;
-    }
-    bool CanRumble() const override {
-        return true;
-    };
+    void ReadFromSource(int32_t portIndex) override;
+    void WriteToSource(int32_t portIndex, ControllerCallback* controller) override;
+    bool Connected() const;
+    bool CanGyro() const;
+    bool CanRumble() const;
 
     void ClearRawPress() override;
     int32_t ReadRawPress() override;
 
-    const std::string GetButtonName(int32_t virtualSlot, int n64Button) override;
-    const std::string GetControllerName() override;
+    const std::string GetButtonName(int32_t portIndex, int n64Button) override;
 
   protected:
-    void CreateDefaultBinding(int32_t virtualSlot) override;
+    void CreateDefaultBinding(int32_t portIndex) override;
 
   private:
     std::string GetControllerExtensionName();
-    std::string controllerName;
 
-    bool connected;
-    WPADChan chan;
-    WPADExtensionType extensionType;
+    bool mConnected;
+    WPADChan mChan;
+    WPADExtensionType mExtensionType;
 };
 } // namespace Ship

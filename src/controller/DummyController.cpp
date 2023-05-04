@@ -1,24 +1,21 @@
 #include "DummyController.h"
 
 namespace Ship {
-DummyController::DummyController(const std::string& guid, const std::string& keyName, bool connected) {
+DummyController::DummyController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, const std::string& guid, const std::string& keyName, bool connected) : Controller(controlDeck, deviceIndex) {
     mGuid = guid;
+    mControllerName = guid;
     mIsConnected = connected;
     mButtonName = keyName;
 }
 
-void DummyController::ReadFromSource(int32_t virtualSlot) {
+void DummyController::ReadFromSource(int32_t portIndex) {
 }
 
-const std::string DummyController::GetControllerName() {
-    return mGuid;
-}
-
-const std::string DummyController::GetButtonName(int32_t virtualSlot, int32_t n64Button) {
+const std::string DummyController::GetButtonName(int32_t portIndex, int32_t n64Button) {
     return mButtonName;
 }
 
-void DummyController::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
+void DummyController::WriteToSource(int32_t portIndex, ControllerCallback* controller) {
 }
 
 bool DummyController::Connected() const {
@@ -33,7 +30,7 @@ bool DummyController::CanGyro() const {
     return false;
 }
 
-void DummyController::CreateDefaultBinding(int32_t slot) {
+void DummyController::CreateDefaultBinding(int32_t portIndex) {
 }
 
 std::string DummyController::GetControllerType() {

@@ -18,69 +18,73 @@
 namespace Ship {
 
 void ControlDeck::Init(uint8_t* bits) {
-    ScanPhysicalDevices();
+    ScanDevices();
     mControllerBits = bits;
 }
 
-void ControlDeck::ScanPhysicalDevices() {
+void ControlDeck::ScanDevices() {
+    mPortList.clear();
+    mDevices.clear();
 
-    mVirtualDevices.clear();
-    mPhysicalDevices.clear();
+    auto controlDeck = Window::GetInstance()->GetControlDeck();
+
+    // Always load controllers that need their device indices zero based first because we add some other devices afterward.
+    int32_t i;
 
 #ifndef __WIIU__
-    for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
+    for (i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
-            auto sdl = std::make_shared<SDLController>(i);
+            auto sdl = std::make_shared<SDLController>(controlDeck, i);
             sdl->Open();
-            mPhysicalDevices.push_back(sdl);
+            mDevices.push_back(sdl);
         }
     }
 
-    mPhysicalDevices.push_back(std::make_shared<DummyController>("Auto", "Auto", true));
-    mPhysicalDevices.push_back(std::make_shared<KeyboardController>());
+    mDevices.push_back(std::make_shared<DummyController>(controlDeck, i++, "Auto", "Auto", true));
+    mDevices.push_back(std::make_shared<KeyboardController>(controlDeck, i++));
 #else
-    mPhysicalDevices.push_back(std::make_shared<DummyController>("Auto", "Auto", true));
-
-    auto gamepad = std::make_shared<Ship::WiiUGamepad>();
-    gamepad->Open();
-    mPhysicalDevices.push_back(gamepad);
-
-    for (int32_t i = 0; i < 4; i++) {
-        auto controller = std::make_shared<Ship::WiiUController>((WPADChan)i);
+    for (i = 0; i < 4; i++) {
+        auto controller = std::make_shared<Ship::WiiUController>(controlDeck, i, (WPADChan)i);
         controller->Open();
-        mPhysicalDevices.push_back(controller);
+        mDevices.push_back(controller);
     }
+
+    auto gamepad = std::make_shared<Ship::WiiUGamepad>(controlDeck, i++);
+    gamepad->Open();
+    mDevices.push_back(gamepad);
+
+    mDevices.push_back(std::make_shared<DummyController>(controlDeck, i++, "Auto", "Auto", true));
 #endif
 
-    mPhysicalDevices.push_back(std::make_shared<DummyController>("Disconnected", "None", false));
+    mDevices.push_back(std::make_shared<DummyController>(controlDeck, i++, "Disconnected", "None", false));
 
-    for (const auto& device : mPhysicalDevices) {
+    for (const auto& device : mDevices) {
         for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
             device->CreateDefaultBinding(i);
         }
     }
 
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mVirtualDevices.push_back(i == 0 ? 0 : static_cast<int>(mPhysicalDevices.size()) - 1);
+        mPortList.push_back(i == 0 ? 0 : static_cast<int>(mDevices.size()) - 1);
     }
 
-    LoadControllerSettings();
+    LoadSettings();
 }
 
-void ControlDeck::SetPhysicalDevice(int32_t virtualIndex, int32_t physicalIndex) {
-    const std::shared_ptr<Controller> backend = mPhysicalDevices[physicalIndex];
-    mVirtualDevices[virtualIndex] = physicalIndex;
-    *mControllerBits |= (backend->Connected()) << virtualIndex;
+void ControlDeck::SetDeviceToPort(int32_t portIndex, int32_t deviceIndex) {
+    const std::shared_ptr<Controller> backend = mDevices[deviceIndex];
+    mPortList[portIndex] = deviceIndex;
+    *mControllerBits |= (backend->Connected()) << portIndex;
 }
 
 void ControlDeck::WriteToPad(OSContPad* pad) const {
-    for (size_t i = 0; i < mVirtualDevices.size(); i++) {
-        const std::shared_ptr<Controller> backend = mPhysicalDevices[mVirtualDevices[i]];
+    for (size_t i = 0; i < mPortList.size(); i++) {
+        const std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
 
         // If the controller backend is "Auto" we need to get the real device
         // we search for the real device to read input from it
         if (backend->GetGuid() == "Auto") {
-            for (const auto& device : mPhysicalDevices) {
+            for (const auto& device : mDevices) {
                 if (ShouldBlockGameInput(device->GetGuid())) {
                     device->Read(nullptr, i);
                     continue;
@@ -103,28 +107,28 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
 #define NESTED(key, ...) \
     StringHelper::Sprintf("Controllers.%s.Slot_%d." key, device->GetGuid().c_str(), virtualSlot, __VA_ARGS__)
 
-void ControlDeck::LoadControllerSettings() {
+void ControlDeck::LoadSettings() {
     std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
 
     for (auto const& val : config->rjson["Controllers"]["Deck"].items()) {
         int32_t slot = std::stoi(val.key().substr(5));
 
-        for (size_t dev = 0; dev < mPhysicalDevices.size(); dev++) {
-            std::string guid = mPhysicalDevices[dev]->GetGuid();
+        for (size_t dev = 0; dev < mDevices.size(); dev++) {
+            std::string guid = mDevices[dev]->GetGuid();
             if (guid != val.value().get<std::string>()) {
                 continue;
             }
 
-            mVirtualDevices[slot] = dev;
+            mPortList[slot] = dev;
         }
     }
 
-    for (size_t i = 0; i < mVirtualDevices.size(); i++) {
-        std::shared_ptr<Controller> backend = mPhysicalDevices[mVirtualDevices[i]];
+    for (size_t i = 0; i < mPortList.size(); i++) {
+        std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
         config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
     }
 
-    for (const auto& device : mPhysicalDevices) {
+    for (const auto& device : mDevices) {
         std::string guid = device->GetGuid();
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
@@ -194,15 +198,15 @@ void ControlDeck::LoadControllerSettings() {
     }
 }
 
-void ControlDeck::SaveControllerSettings() {
+void ControlDeck::SaveSettings() {
     std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
 
-    for (size_t i = 0; i < mVirtualDevices.size(); i++) {
-        std::shared_ptr<Controller> backend = mPhysicalDevices[mVirtualDevices[i]];
+    for (size_t i = 0; i < mPortList.size(); i++) {
+        std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
         config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
     }
 
-    for (const auto& device : mPhysicalDevices) {
+    for (const auto& device : mDevices) {
         std::string guid = device->GetGuid();
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
@@ -246,24 +250,24 @@ void ControlDeck::SaveControllerSettings() {
     config->save();
 }
 
-std::shared_ptr<Controller> ControlDeck::GetPhysicalDevice(int32_t physicalIndex) {
-    return mPhysicalDevices[physicalIndex];
+std::shared_ptr<Controller> ControlDeck::GetDeviceFromDeviceIndex(int32_t deviceIndex) {
+    return mDevices[deviceIndex];
 }
 
-size_t ControlDeck::GetNumPhysicalDevices() {
-    return mPhysicalDevices.size();
+size_t ControlDeck::GetNumDevices() {
+    return mDevices.size();
 }
 
-int32_t ControlDeck::GetPhysicalIndexFromVirtualIndex(int32_t slot) {
-    return mVirtualDevices[slot];
+int32_t ControlDeck::GetDeviceIndexFromPortIndex(int32_t portIndex) {
+    return mPortList[portIndex];
 }
 
-size_t ControlDeck::GetNumVirtualDevices() {
-    return mVirtualDevices.size();
+size_t ControlDeck::GetNumConnectedPorts() {
+    return mPortList.size();
 }
 
-std::shared_ptr<Controller> ControlDeck::GetPhysicalDeviceFromVirtualIndex(int32_t virtualIndex) {
-    return GetPhysicalDevice(GetPhysicalIndexFromVirtualIndex(virtualIndex));
+std::shared_ptr<Controller> ControlDeck::GetDeviceFromPortIndex(int32_t portIndex) {
+    return GetDeviceFromDeviceIndex(GetDeviceIndexFromPortIndex(portIndex));
 }
 
 uint8_t* ControlDeck::GetControllerBits() {

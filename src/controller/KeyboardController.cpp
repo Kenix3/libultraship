@@ -11,18 +11,19 @@
 
 namespace Ship {
 
-KeyboardController::KeyboardController() : Controller(), mLastScancode(-1) {
+KeyboardController::KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex) : Controller(controlDeck, deviceIndex), mLastScancode(-1) {
     mGuid = "Keyboard";
+    mControllerName = "Keyboard";
 }
 
 bool KeyboardController::PressButton(int32_t scancode) {
     mLastKey = scancode;
     bool readSuccess = false;
 
-    for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
+    for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
 
-        if (getProfile(virtualSlot)->Mappings.contains(scancode)) {
-            getPressedButtons(virtualSlot) |= getProfile(virtualSlot)->Mappings[scancode];
+        if (getProfile(portIndex)->Mappings.contains(scancode)) {
+            getPressedButtons(portIndex) |= getProfile(portIndex)->Mappings[scancode];
             readSuccess = true;
         }
     }
@@ -33,9 +34,9 @@ bool KeyboardController::PressButton(int32_t scancode) {
 bool KeyboardController::ReleaseButton(int32_t scancode) {
     bool readSuccess = false;
 
-    for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-        if (getProfile(virtualSlot)->Mappings.contains(scancode)) {
-            getPressedButtons(virtualSlot) &= ~getProfile(virtualSlot)->Mappings[scancode];
+    for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
+        if (getProfile(portIndex)->Mappings.contains(scancode)) {
+            getPressedButtons(portIndex) &= ~getProfile(portIndex)->Mappings[scancode];
             readSuccess = true;
         }
     }
@@ -44,27 +45,27 @@ bool KeyboardController::ReleaseButton(int32_t scancode) {
 }
 
 void KeyboardController::ReleaseAllButtons() {
-    for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-        getPressedButtons(virtualSlot) = 0;
+    for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
+        getPressedButtons(portIndex) = 0;
     }
 }
 
-void KeyboardController::ReadFromSource(int32_t virtualSlot) {
-    getLeftStickX(virtualSlot) = 0;
-    getLeftStickY(virtualSlot) = 0;
-    getRightStickX(virtualSlot) = 0;
-    getRightStickY(virtualSlot) = 0;
+void KeyboardController::ReadFromSource(int32_t portIndex) {
+    getLeftStickX(portIndex) = 0;
+    getLeftStickY(portIndex) = 0;
+    getRightStickX(portIndex) = 0;
+    getRightStickY(portIndex) = 0;
 }
 
 int32_t KeyboardController::ReadRawPress() {
     return mLastKey;
 }
 
-void KeyboardController::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
+void KeyboardController::WriteToSource(int32_t portIndex, ControllerCallback* controller) {
 }
 
-const std::string KeyboardController::GetButtonName(int32_t virtualSlot, int32_t n64Button) {
-    std::map<int32_t, int32_t>& mappings = getProfile(virtualSlot)->Mappings;
+const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n64Button) {
+    std::map<int32_t, int32_t>& mappings = getProfile(portIndex)->Mappings;
     const auto find =
         std::find_if(mappings.begin(), mappings.end(),
                      [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
@@ -76,8 +77,8 @@ const std::string KeyboardController::GetButtonName(int32_t virtualSlot, int32_t
     return strlen(name) == 0 ? "Unknown" : name;
 }
 
-void KeyboardController::CreateDefaultBinding(int32_t virtualSlot) {
-    auto profile = getProfile(virtualSlot);
+void KeyboardController::CreateDefaultBinding(int32_t portIndex) {
+    auto profile = getProfile(portIndex);
     profile->Mappings[0x14D] = BTN_CRIGHT;
     profile->Mappings[0x14B] = BTN_CLEFT;
     profile->Mappings[0x150] = BTN_CDOWN;
@@ -98,10 +99,6 @@ void KeyboardController::CreateDefaultBinding(int32_t virtualSlot) {
     profile->Mappings[0x011] = BTN_STICKUP;
     profile->Mappings[0x02A] = BTN_MODIFIER1;
     profile->Mappings[0x036] = BTN_MODIFIER2;
-}
-
-const std::string KeyboardController::GetControllerName() {
-    return "Keyboard";
 }
 
 bool KeyboardController::Connected() const {
