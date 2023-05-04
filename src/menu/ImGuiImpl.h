@@ -88,6 +88,10 @@ void RenderImGui(void);
 void CancelFrame(void);
 void DrawSettings();
 
+// OTRTODO: Rename these two
+uint32_t GetMenuBar();
+void SetMenuBar(uint32_t menuBar);
+
 Backend WindowBackend();
 std::vector<std::pair<const char*, const char*>> GetAvailableRenderingBackends();
 std::pair<const char*, const char*> GetCurrentRenderingBackend();

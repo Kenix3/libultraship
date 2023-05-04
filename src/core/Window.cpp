@@ -277,7 +277,7 @@ void Window::OnFullscreenChanged(bool isNowFullscreen) {
     Window::GetInstance()->mIsFullscreen = isNowFullscreen;
     pConf->setBool("Window.Fullscreen.Enabled", isNowFullscreen);
     if (isNowFullscreen) {
-        bool menuBarOpen = Window::GetInstance()->GetMenuBar();
+        bool menuBarOpen = GetMenuBar();
         Window::GetInstance()->SetCursorVisibility(menuBarOpen);
     } else if (!isNowFullscreen) {
         Window::GetInstance()->SetCursorVisibility(true);
@@ -534,14 +534,6 @@ void Window::InitializeSpeechSynthesis() {
 
 bool Window::IsFullscreen() {
     return mIsFullscreen;
-}
-
-uint32_t Window::GetMenuBar() {
-    return mMenuBar;
-}
-
-void Window::SetMenuBar(uint32_t menuBar) {
-    this->mMenuBar = menuBar;
 }
 
 std::string Window::GetName() {
