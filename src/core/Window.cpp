@@ -164,14 +164,7 @@ std::string Window::GetAppBundlePath() {
 }
 
 std::string Window::GetAppDirectoryPath() {
-#ifdef __APPLE__
-    FolderManager folderManager;
-    std::string fpath = std::string(folderManager.pathForDirectory(NSApplicationSupportDirectory, NSUserDomainMask));
-    fpath.append("/com.libultraship." + Window::GetInstance()->GetShortName());
-    return fpath;
-#endif
-
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {
         return std::string(fpath);
