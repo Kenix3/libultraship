@@ -136,8 +136,8 @@ void Controller::ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadz
     y = copysign(uy, y);
 }
 
-void Controller::Read(OSContPad* pad, int32_t portIndex) {
-    ReadFromSource(portIndex);
+void Controller::ReadToPad(OSContPad* pad, int32_t portIndex) {
+    ReadDevice(portIndex);
 
     OSContPad padToBuffer = { 0 };
 

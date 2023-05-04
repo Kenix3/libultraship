@@ -50,7 +50,7 @@ void KeyboardController::ReleaseAllButtons() {
     }
 }
 
-void KeyboardController::ReadFromSource(int32_t portIndex) {
+void KeyboardController::ReadDevice(int32_t portIndex) {
     getLeftStickX(portIndex) = 0;
     getLeftStickY(portIndex) = 0;
     getRightStickX(portIndex) = 0;
@@ -59,9 +59,6 @@ void KeyboardController::ReadFromSource(int32_t portIndex) {
 
 int32_t KeyboardController::ReadRawPress() {
     return mLastKey;
-}
-
-void KeyboardController::WriteToSource(int32_t portIndex, ControllerCallback* controller) {
 }
 
 const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n64Button) {
@@ -123,5 +120,18 @@ void KeyboardController::SetLastScancode(int32_t key) {
 
 int32_t KeyboardController::GetLastScancode() {
     return mLastScancode;
+}
+
+bool KeyboardController::CanSetLed() const {
+    return false;
+}
+
+int32_t KeyboardController::SetRumble(int32_t portIndex, bool rumble) {
+    return -1001;
+}
+
+int32_t KeyboardController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+    // Not supported today, but theoretically we could tie into some of the keyboard APIs to set RGB lights.
+    return -1001;
 }
 } // namespace Ship

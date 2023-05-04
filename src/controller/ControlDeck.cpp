@@ -86,21 +86,21 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
         if (backend->GetGuid() == "Auto") {
             for (const auto& device : mDevices) {
                 if (ShouldBlockGameInput(device->GetGuid())) {
-                    device->Read(nullptr, i);
+                    device->ReadToPad(nullptr, i);
                     continue;
                 }
 
-                device->Read(&pad[i], i);
+                device->ReadToPad(&pad[i], i);
             }
             continue;
         }
 
         if (ShouldBlockGameInput(backend->GetGuid())) {
-            backend->Read(nullptr, i);
+            backend->ReadToPad(nullptr, i);
             continue;
         }
 
-        backend->Read(&pad[i], i);
+        backend->ReadToPad(&pad[i], i);
     }
 }
 

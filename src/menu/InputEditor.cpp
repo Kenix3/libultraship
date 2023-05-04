@@ -115,7 +115,7 @@ void InputEditor::DrawControllerSchema() {
     auto profile = backend->getProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
-    backend->Read(nullptr, mCurrentPort);
+    backend->ReadToPad(nullptr, mCurrentPort);
 
     DrawControllerSelect(mCurrentPort);
 

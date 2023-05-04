@@ -100,7 +100,7 @@ int32_t SDLController::ReadRawPress() {
     return -1;
 }
 
-void SDLController::ReadFromSource(int32_t portIndex) {
+void SDLController::ReadDevice(int32_t portIndex) {
     auto profile = getProfile(portIndex);
 
     SDL_GameControllerUpdate();
@@ -284,32 +284,29 @@ void SDLController::ReadFromSource(int32_t portIndex) {
     }
 }
 
-void SDLController::WriteToSource(int32_t portIndex, ControllerCallback* controller) {
-    if (CanRumble() && getProfile(portIndex)->UseRumble) {
-        if (controller->rumble > 0) {
-            float rumbleStrength = getProfile(portIndex)->RumbleStrength;
-            SDL_GameControllerRumble(mController, 0xFFFF * rumbleStrength, 0xFFFF * rumbleStrength, 0);
-        } else {
-            SDL_GameControllerRumble(mController, 0, 0, 0);
-        }
+int32_t SDLController::SetRumble(int32_t portIndex, bool rumble) {
+    if (!CanRumble()) {
+        return -1000;
     }
 
-    if (SDL_GameControllerHasLED(mController)) {
-        switch (controller->ledColor) {
-            case 0:
-                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), 255, 0, 0);
-                break;
-            case 1:
-                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), 0x1E, 0x69, 0x1B);
-                break;
-            case 2:
-                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), 0x64, 0x14, 0x00);
-                break;
-            case 3:
-                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), 0x00, 0x3C, 0x64);
-                break;
-        }
+    if (!getProfile(portIndex)->UseRumble) {
+        return -1001;
     }
+
+    if (rumble) {
+        float rumbleStrength = getProfile(portIndex)->RumbleStrength;
+        return SDL_GameControllerRumble(mController, 0xFFFF * rumbleStrength, 0xFFFF * rumbleStrength, 0);
+    } else {
+        return SDL_GameControllerRumble(mController, 0, 0, 0);
+    }
+}
+
+int32_t SDLController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+    if (!CanSetLed()) {
+        return -1000;
+    }
+
+    return SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), r, g, b);
 }
 
 const std::string SDLController::GetButtonName(int32_t portIndex, int32_t n64Button) {
@@ -393,6 +390,10 @@ bool SDLController::CanRumble() const {
     return SDL_GameControllerHasRumble(mController);
 #endif
     return false;
+}
+
+bool SDLController::CanSetLed() const {
+    return SDL_GameControllerHasLED(mController);
 }
 
 void SDLController::ClearRawPress() {

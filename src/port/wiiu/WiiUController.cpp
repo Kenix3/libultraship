@@ -48,7 +48,7 @@ void WiiUController::Close() {
     }
 }
 
-void WiiUController::ReadFromSource(int32_t portIndex) {
+void WiiUController::ReadDevice(int32_t portIndex) {
     auto profile = getProfile(portIndex);
 
     KPADError error;
@@ -172,10 +172,21 @@ void WiiUController::ReadFromSource(int32_t portIndex) {
     }
 }
 
-void WiiUController::WriteToSource(int32_t portIndex, ControllerCallback* controller) {
-    if (getProfile(portIndex)->UseRumble) {
-        WPADControlMotor(mChan, controller->rumble);
+int32_t WiiUController::SetRumble(int32_t portIndex, bool rumble) {
+    if (!CanRumble()) {
+        return -1000;
     }
+
+    if (getProfile(portIndex)->UseRumble) {
+        return -1001;
+    }
+
+    WPADControlMotor(mChan, rumble);
+    return 0;
+}
+
+int32_t WiiUController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+    return -1000;
 }
 
 void WiiUController::ClearRawPress() {
@@ -541,5 +552,9 @@ bool WiiUController::CanGyro() const override {
 bool WiiUController::CanRumble() const override {
     return true;
 };
+
+bool WiiUController::CanSetLed() const {
+    return false;
+}
 } // namespace Ship
 #endif

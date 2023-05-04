@@ -6,12 +6,14 @@ namespace Ship {
 class SDLController : public Controller {
   public:
     SDLController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
-    void ReadFromSource(int32_t portIndex) override;
+    void ReadDevice(int32_t portIndex) override;
     const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
-    void WriteToSource(int32_t portIndex, ControllerCallback* controller) override;
+    int32_t SetRumble(int32_t portIndex, bool rumble) override;
+    int32_t SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) override;
     bool Connected() const override;
     bool CanGyro() const override;
     bool CanRumble() const override;
+    bool CanSetLed() const override;
     bool Open();
     void ClearRawPress() override;
     int32_t ReadRawPress() override;

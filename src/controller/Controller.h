@@ -39,17 +39,20 @@ class Controller {
   public:
     virtual ~Controller() = default;
     Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
-    virtual void ReadFromSource(int32_t portIndex) = 0;
-    virtual void WriteToSource(int32_t portIndex, ControllerCallback* controller) = 0;
+    virtual void ReadDevice(int32_t portIndex) = 0;
     virtual bool Connected() const = 0;
     virtual bool CanRumble() const = 0;
+    virtual bool CanSetLed() const = 0;
     virtual bool CanGyro() const = 0;
     virtual void CreateDefaultBinding(int32_t portIndex) = 0;
     virtual void ClearRawPress() = 0;
     virtual int32_t ReadRawPress() = 0;
     virtual const std::string GetButtonName(int32_t portIndex, int32_t n64Button) = 0;
+    virtual int32_t SetRumble(int32_t portIndex, bool rumble) = 0;
+    virtual int32_t SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) = 0;
+
     std::string GetControllerName() ;
-    void Read(OSContPad* pad, int32_t portIndex);
+    void ReadToPad(OSContPad* pad, int32_t portIndex);
     void SetButtonMapping(int32_t portIndex, int32_t n64Button, int32_t scancode);
     std::shared_ptr<ControllerAttachment> GetAttachment();
     std::shared_ptr<DeviceProfile> getProfile(int32_t portIndex);

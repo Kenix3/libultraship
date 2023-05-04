@@ -19,6 +19,9 @@ bool WiiUGamepad::Open() {
         return false;
     }
 
+    mConnected = true;
+    mControllerName = "Wii U GamePad";
+
     return true;
 }
 
@@ -37,7 +40,7 @@ void WiiUGamepad::Close() {
     }
 }
 
-void WiiUGamepad::ReadFromSource(int32_t portIndex) {
+void WiiUGamepad::ReadDevice(int32_t portIndex) {
     auto profile = getProfile(portIndex);
 
     VPADReadError error;
@@ -129,34 +132,43 @@ void WiiUGamepad::ReadFromSource(int32_t portIndex) {
     }
 }
 
-void WiiUGamepad::WriteToSource(int32_t portIndex, ControllerCallback* controller) {
+int32_t WiiUGamepad::SetRumble(int32_t portIndex, bool rumble) {
+    if (!CanRumble()) {
+        return -1000;
+    }
+
+    if (!profile->UseRumble) {
+        return -1001;
+    }
+
     auto profile = getProfile(portIndex);
+    int32_t patternSize = sizeof(mRumblePattern) * 8;
 
-    if (profile->UseRumble) {
-        int patternSize = sizeof(mRumblePattern) * 8;
-
-        // update rumble pattern if strength changed
-        if (mRumblePatternStrength != profile->RumbleStrength) {
-            mRumblePatternStrength = profile->RumbleStrength;
-            if (mRumblePatternStrength > 1.0f) {
-                mRumblePatternStrength = 1.0f;
-            } else if (mRumblePatternStrength < 0.0f) {
-                mRumblePatternStrength = 0.0f;
-            }
-
-            memset(mRumblePattern, 0, sizeof(mRumblePattern));
-
-            // distribute wanted amount of bits equally in pattern
-            float scale = (mRumblePatternStrength * (1.0f - 0.3f)) + 0.3f;
-            int bitcnt = patternSize * scale;
-            for (int i = 0; i < bitcnt; i++) {
-                int bitpos = ((i * patternSize) / bitcnt) % patternSize;
-                mRumblePattern[bitpos / 8] |= 1 << (bitpos % 8);
-            }
+    // update rumble pattern if strength changed
+    if (mRumblePatternStrength != profile->RumbleStrength) {
+        mRumblePatternStrength = profile->RumbleStrength;
+        if (mRumblePatternStrength > 1.0f) {
+            mRumblePatternStrength = 1.0f;
+        } else if (mRumblePatternStrength < 0.0f) {
+            mRumblePatternStrength = 0.0f;
         }
 
-        VPADControlMotor(VPAD_CHAN_0, mRumblePattern, controller->rumble ? patternSize : 0);
+        memset(mRumblePattern, 0, sizeof(mRumblePattern));
+
+        // distribute wanted amount of bits equally in pattern
+        float scale = (mRumblePatternStrength * (1.0f - 0.3f)) + 0.3f;
+        int32_t bitcnt = patternSize * scale;
+        for (int32_t i = 0; i < bitcnt; i++) {
+            int32_t bitpos = ((i * patternSize) / bitcnt) % patternSize;
+            mRumblePattern[bitpos / 8] |= 1 << (bitpos % 8);
+        }
     }
+
+    return VPADControlMotor(VPAD_CHAN_0, mRumblePattern, rumble ? patternSize : 0);
+}
+
+int32_t WiiUGamepad::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+    return -1000;
 }
 
 void WiiUGamepad::ClearRawPress() {
@@ -323,5 +335,9 @@ bool WiiUGamePad::CanGyro() const override {
 bool WiiUGamePad::CanRumble() const override {
     return true;
 };
+
+bool DummyController::CanSetLed() const {
+    return false;
+}
 } // namespace Ship
 #endif
