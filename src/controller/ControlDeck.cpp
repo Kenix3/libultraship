@@ -203,8 +203,6 @@ void ControlDeck::SaveControllerSettings() {
     }
 
     for (const auto& device : mPhysicalDevices) {
-
-        int32_t virtualSlot = 0;
         std::string guid = device->GetGuid();
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {

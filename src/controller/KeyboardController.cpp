@@ -64,12 +64,12 @@ void KeyboardController::WriteToSource(int32_t virtualSlot, ControllerCallback* 
 }
 
 const std::string KeyboardController::GetButtonName(int32_t virtualSlot, int32_t n64Button) {
-    std::map<int32_t, int32_t>& Mappings = getProfile(virtualSlot)->Mappings;
+    std::map<int32_t, int32_t>& mappings = getProfile(virtualSlot)->Mappings;
     const auto find =
-        std::find_if(Mappings.begin(), Mappings.end(),
+        std::find_if(mappings.begin(), mappings.end(),
                      [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
 
-    if (find == Mappings.end()) {
+    if (find == mappings.end()) {
         return "Unknown";
     }
     const char* name = Window::GetInstance()->GetKeyName(find->first);

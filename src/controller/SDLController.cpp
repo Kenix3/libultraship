@@ -3,7 +3,6 @@
 #include "SDLController.h"
 
 #include <spdlog/spdlog.h>
-#include "core/Window.h"
 #include <Utils/StringHelper.h>
 
 #ifdef _MSC_VER
@@ -32,15 +31,15 @@ bool SDLController::Open() {
         mSupportsGyro = true;
     }
 
-    char GuidBuf[33];
-    SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(mPhysicalSlot), GuidBuf, sizeof(GuidBuf));
+    char guidBuf[33];
+    SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(mPhysicalSlot), guidBuf, sizeof(guidBuf));
     mController = newCont;
 
 #ifdef __SWITCH__
-    mGuid = StringHelper::Sprintf("%s:%d", GuidBuf, mPhysicalSlot);
+    mGuid = StringHelper::Sprintf("%s:%d", guidBuf, mPhysicalSlot);
     mControllerName = StringHelper::Sprintf("%s #%d", SDL_GameControllerNameForIndex(mPhysicalSlot), mPhysicalSlot + 1);
 #else
-    mGuid = std::string(GuidBuf);
+    mGuid = std::string(guidBuf);
     mControllerName = std::string(SDL_GameControllerNameForIndex(mPhysicalSlot));
 #endif
     return true;
@@ -126,7 +125,7 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 
         float gyroDriftX = profile->GyroData[DRIFT_X] / 100.0f;
         float gyroDriftY = profile->GyroData[DRIFT_Y] / 100.0f;
-        const float gyro_sensitivity = profile->GyroData[GYRO_SENSITIVITY];
+        const float gyroSensitivity = profile->GyroData[GYRO_SENSITIVITY];
 
         if (gyroDriftX == 0) {
             gyroDriftX = gyroData[0];
@@ -142,8 +141,8 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
         getGyroX(virtualSlot) = gyroData[0] - gyroDriftX;
         getGyroY(virtualSlot) = gyroData[1] - gyroDriftY;
 
-        getGyroX(virtualSlot) *= gyro_sensitivity;
-        getGyroY(virtualSlot) *= gyro_sensitivity;
+        getGyroX(virtualSlot) *= gyroSensitivity;
+        getGyroY(virtualSlot) *= gyroSensitivity;
     } else {
         getGyroX(virtualSlot) = 0;
         getGyroY(virtualSlot) = 0;
@@ -288,8 +287,8 @@ void SDLController::ReadFromSource(int32_t virtualSlot) {
 void SDLController::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
     if (CanRumble() && getProfile(virtualSlot)->UseRumble) {
         if (controller->rumble > 0) {
-            float rumble_strength = getProfile(virtualSlot)->RumbleStrength;
-            SDL_GameControllerRumble(mController, 0xFFFF * rumble_strength, 0xFFFF * rumble_strength, 0);
+            float rumbleStrength = getProfile(virtualSlot)->RumbleStrength;
+            SDL_GameControllerRumble(mController, 0xFFFF * rumbleStrength, 0xFFFF * rumbleStrength, 0);
         } else {
             SDL_GameControllerRumble(mController, 0, 0, 0);
         }
