@@ -301,6 +301,18 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[4096], size_t& num_floats
     if (cc_features.used_textures[1]) {
         append_str(buf, &len, ", texture2d<float> uTex1 [[texture(1)]], sampler uTex1Smplr [[sampler(1)]]");
     }
+    if (cc_features.used_masks[0]) {
+        append_str(buf, &len, ", texture2d<float> uTexMask0 [[texture(2)]]");
+    }
+    if (cc_features.used_masks[1]) {
+        append_str(buf, &len, ", texture2d<float> uTexMask1 [[texture(3)]]");
+    }
+    if (cc_features.used_blend[0]) {
+        append_str(buf, &len, ", texture2d<float> uTexBlend0 [[texture(4)]]");
+    }
+    if (cc_features.used_blend[1]) {
+        append_str(buf, &len, ", texture2d<float> uTexBlend1 [[texture(5)]]");
+    }
     append_line(buf, &len, ") {");
 
     for (int i = 0; i < 2; i++) {
@@ -311,35 +323,49 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[4096], size_t& num_floats
                            i);
 
             if (!s && !t) {
-                len += sprintf(buf + len,
-                               "    float4 texVal%d = hookTexture2D(uTex%d, uTex%dSmplr, in.texCoord%d, texSize%d);\n",
-                               i, i, i, i, i);
+                len += sprintf(buf + len, "    float2 vTexCoordAdj%d = in.texCoord%d;\n", i, i);
             } else {
                 if (s && t) {
                     len += sprintf(buf + len,
-                                   "    float2 uv%d = fast::clamp(in.texCoord%d, float2(0.5) / texSize%d, "
+                                   "    float2 vTexCoordAdj%d = fast::clamp(in.texCoord%d, float2(0.5) / texSize%d, "
                                    "float2(in.texClampS%d, in.texClampT%d));\n",
                                    i, i, i, i, i);
-                    len += sprintf(buf + len,
-                                   "    float4 texVal%d = hookTexture2D(uTex%d, uTex%dSmplr, uv%d, texSize%d);\n", i, i,
-                                   i, i, i);
                 } else if (s) {
                     len += sprintf(buf + len,
-                                   "    float2 uv%d = float2(fast::clamp(in.texCoord%d.x, 0.5 / texSize%d.x, "
+                                   "    float2 vTexCoordAdj%d = float2(fast::clamp(in.texCoord%d.x, 0.5 / texSize%d.x, "
                                    "in.texClampS%d), in.texCoord%d.y);\n",
                                    i, i, i, i, i);
-                    len += sprintf(buf + len,
-                                   "    float4 texVal%d = hookTexture2D(uTex%d, uTex%dSmplr, uv%d, texSize%d);\n", i, i,
-                                   i, i, i);
                 } else {
                     len += sprintf(buf + len,
-                                   "    float2 uv%d = float2(in.texCoord%d.x, fast::clamp(in.texCoord%d.y, 0.5 / "
-                                   "texSize%d.y, in.texClampT%d));\n",
+                                   "    float2 vTexCoordAdj%d = float2(in.texCoord%d.x, fast::clamp(in.texCoord%d.y, "
+                                   "0.5 / texSize%d.y, in.texClampT%d));\n",
                                    i, i, i, i, i);
-                    len += sprintf(buf + len,
-                                   "    float4 texVal%d = hookTexture2D(uTex%d, uTex%dSmplr, uv%d, texSize%d);\n", i, i,
-                                   i, i, i);
                 }
+            }
+
+            len += sprintf(buf + len,
+                           "    float4 texVal%d = hookTexture2D(uTex%d, uTex%dSmplr, vTexCoordAdj%d, texSize%d);\n", i,
+                           i, i, i, i);
+
+            if (cc_features.used_masks[i]) {
+                len +=
+                    sprintf(buf + len, "float2 maskSize%d = float2(uTexMask%d.get_width(), uTexMask%d.get_height());\n",
+                            i, i, i);
+
+                len +=
+                    sprintf(buf + len,
+                            "float4 maskVal%d = hookTexture2D(uTexMask%d, uTex%dSmplr, vTexCoordAdj%d, maskSize%d);\n",
+                            i, i, i, i);
+                if (cc_features.used_blend[i]) {
+                    len += sprintf(
+                        buf + len,
+                        "float4 blendVal%d = hookTexture2D(uTexBlend%d, uTex%dSmplr, vTexCoordAdj%d, texSize%d);\n", i,
+                        i, i, i);
+                } else {
+                    len += sprintf(buf + len, "float4 blendVal%d = float4(0, 0, 0, 0);\n", i);
+                }
+
+                len += sprintf(buf + len, "texVal%d = mix(texVal%d, blendVal%d, maskVal%d.w);\n", i, i, i, i);
             }
         }
     }
