@@ -94,6 +94,7 @@ static ImVector<ImRect> s_GroupPanelLabelStack;
 std::function<void(void)> clientDrawMenu;
 std::function<void(void)> clientSetupHooks;
 
+bool mMenuBar;
 bool needsSave = false;
 int lastRenderingBackendID = 0;
 int lastAudioBackendID = 0;
@@ -503,7 +504,7 @@ void InitGui(WindowImpl windowImpl) {
 
     Ship::RegisterHook<Ship::GfxInit>([] {
         bool menuBarOpen = CVarGetInteger("gOpenMenuBar", 0);
-        Window::GetInstance()->SetMenuBar(menuBarOpen);
+        SetMenuBar(menuBarOpen);
         if (Window::GetInstance()->IsFullscreen()) {
             setCursorVisibility(menuBarOpen);
         }
@@ -590,11 +591,11 @@ void DrawMainMenuAndCalculateGameSize(void) {
         bool menuBar = !CVarGetInteger("gOpenMenuBar", 0);
         CVarSetInteger("gOpenMenuBar", menuBar);
         needsSave = true;
-        Window::GetInstance()->SetMenuBar(menuBar);
+        SetMenuBar(menuBar);
         if (Window::GetInstance()->IsFullscreen()) {
             setCursorVisibility(menuBar);
         }
-        Window::GetInstance()->GetControlDeck()->SaveControllerSettings();
+        Window::GetInstance()->GetControlDeck()->SaveSettings();
         if (CVarGetInteger("gControlNav", 0) && CVarGetInteger("gOpenMenuBar", 0)) {
             io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
@@ -1179,5 +1180,13 @@ void EndGroupPanel(float minHeight) {
     ImGui::Dummy(ImVec2(0.0f, 0.0f));
 
     ImGui::EndGroup();
+}
+
+uint32_t GetMenuBar() {
+    return mMenuBar;
+}
+
+void SetMenuBar(uint32_t menuBar) {
+    mMenuBar = menuBar;
 }
 } // namespace Ship

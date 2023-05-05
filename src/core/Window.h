@@ -51,8 +51,6 @@ class Window {
     bool CanDisableVerticalSync();
     float GetCurrentAspectRatio();
     bool IsFullscreen();
-    uint32_t GetMenuBar();
-    void SetMenuBar(uint32_t menuBar);
     std::string GetName();
     std::string GetShortName();
     std::shared_ptr<ControlDeck> GetControlDeck();
@@ -107,7 +105,6 @@ class Window {
     uint32_t mRefreshRate;
     uint32_t mWidth;
     uint32_t mHeight;
-    bool mMenuBar;
     int32_t mLastScancode;
     std::string mName;
     std::string mShortName;

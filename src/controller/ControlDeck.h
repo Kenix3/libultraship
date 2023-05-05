@@ -9,24 +9,24 @@ namespace Ship {
 class ControlDeck {
   public:
     void Init(uint8_t* controllerBits);
-    void ScanPhysicalDevices();
+    void ScanDevices();
     void WriteToPad(OSContPad* pad) const;
-    void LoadControllerSettings();
-    void SaveControllerSettings();
-    void SetPhysicalDevice(int32_t slot, int32_t deviceSlot);
-    std::shared_ptr<Controller> GetPhysicalDevice(int32_t deviceSlot);
-    std::shared_ptr<Controller> GetPhysicalDeviceFromVirtualSlot(int32_t slot);
-    size_t GetNumPhysicalDevices();
-    int32_t GetVirtualDevice(int32_t slot);
-    size_t GetNumVirtualDevices();
+    void LoadSettings();
+    void SaveSettings();
+    void SetDeviceToPort(int32_t portIndex, int32_t deviceIndex);
+    std::shared_ptr<Controller> GetDeviceFromDeviceIndex(int32_t deviceIndex);
+    std::shared_ptr<Controller> GetDeviceFromPortIndex(int32_t portIndex);
+    int32_t GetDeviceIndexFromPortIndex(int32_t portIndex);
+    size_t GetNumDevices();
+    size_t GetNumConnectedPorts();
     uint8_t* GetControllerBits();
     void BlockGameInput();
     void UnblockGameInput();
     bool ShouldBlockGameInput(std::string inputDeviceGuid) const;
 
   private:
-    std::vector<int32_t> mVirtualDevices = {};
-    std::vector<std::shared_ptr<Controller>> mPhysicalDevices = {};
+    std::vector<int32_t> mPortList = {};
+    std::vector<std::shared_ptr<Controller>> mDevices = {};
     uint8_t* mControllerBits = nullptr;
     bool mShouldBlockGameInput = false;
 };

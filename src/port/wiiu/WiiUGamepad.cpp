@@ -5,10 +5,11 @@
 #include "WiiUImpl.h"
 
 namespace Ship {
-WiiUGamepad::WiiUGamepad() : Controller(), connected(true), rumblePatternStrength(1.0f) {
-    memset(rumblePattern, 0xff, sizeof(rumblePattern));
-
+WiiUGamepad::WiiUGamepad(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
+    : Controller(controlDeck, deviceIndex), mConnected(true), mRumblePatternStrength(1.0f) {
+    memset(mRumblePattern, 0xff, sizeof(mRumblePattern));
     mGuid = "WiiUGamepad";
+    mControllerName = "Wii U GamePad";
 }
 
 bool WiiUGamepad::Open() {
@@ -19,25 +20,29 @@ bool WiiUGamepad::Open() {
         return false;
     }
 
+    mConnected = true;
+    mControllerName = "Wii U GamePad";
+
     return true;
 }
 
 void WiiUGamepad::Close() {
-    connected = false;
+    mConnected = false;
+    mControllerName = "Wii U Gamepad (Disconnected)";
 
     for (int i = 0; i < MAXCONTROLLERS; i++) {
-        getPressedButtons(i) = 0;
-        getLeftStickX(i) = 0;
-        getLeftStickY(i) = 0;
-        getRightStickX(i) = 0;
-        getRightStickY(i) = 0;
-        getGyroX(i) = 0;
-        getGyroY(i) = 0;
+        GetPressedButtons(i) = 0;
+        GetLeftStickX(i) = 0;
+        GetLeftStickY(i) = 0;
+        GetRightStickX(i) = 0;
+        GetRightStickY(i) = 0;
+        GetGyroX(i) = 0;
+        GetGyroY(i) = 0;
     }
 }
 
-void WiiUGamepad::ReadFromSource(int32_t virtualSlot) {
-    auto profile = getProfile(virtualSlot);
+void WiiUGamepad::ReadDevice(int32_t portIndex) {
+    auto profile = GetProfile(portIndex);
 
     VPADReadError error;
     VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
@@ -46,13 +51,13 @@ void WiiUGamepad::ReadFromSource(int32_t virtualSlot) {
         return;
     }
 
-    getPressedButtons(virtualSlot) = 0;
-    getLeftStickX(virtualSlot) = 0;
-    getLeftStickY(virtualSlot) = 0;
-    getRightStickX(virtualSlot) = 0;
-    getRightStickY(virtualSlot) = 0;
-    getGyroX(virtualSlot) = 0;
-    getGyroY(virtualSlot) = 0;
+    GetPressedButtons(portIndex) = 0;
+    GetLeftStickX(portIndex) = 0;
+    GetLeftStickY(portIndex) = 0;
+    GetRightStickX(portIndex) = 0;
+    GetRightStickY(portIndex) = 0;
+    GetGyroX(portIndex) = 0;
+    GetGyroY(portIndex) = 0;
 
     if (error != VPAD_READ_SUCCESS) {
         return;
@@ -86,19 +91,19 @@ void WiiUGamepad::ReadFromSource(int32_t virtualSlot) {
             }
 
             if (status->hold & i) {
-                getPressedButtons(virtualSlot) |= profile->Mappings[i];
+                GetPressedButtons(portIndex) |= profile->Mappings[i];
             }
         }
     }
 
     if (stickX || stickY) {
-        getLeftStickX(virtualSlot) = stickX;
-        getLeftStickY(virtualSlot) = stickY;
+        GetLeftStickX(portIndex) = stickX;
+        GetLeftStickY(portIndex) = stickY;
     }
 
     if (camX || camY) {
-        getRightStickX(virtualSlot) = camX;
-        getRightStickY(virtualSlot) = camY;
+        GetRightStickX(portIndex) = camX;
+        GetRightStickY(portIndex) = camY;
     }
 
     if (profile->UseGyro) {
@@ -120,42 +125,51 @@ void WiiUGamepad::ReadFromSource(int32_t virtualSlot) {
         profile->GyroData[DRIFT_X] = gyro_drift_x * 100.0f;
         profile->GyroData[DRIFT_Y] = gyro_drift_y * 100.0f;
 
-        getGyroX(virtualSlot) = gyroX - gyro_drift_x;
-        getGyroY(virtualSlot) = gyroY - gyro_drift_y;
+        GetGyroX(portIndex) = gyroX - gyro_drift_x;
+        GetGyroY(portIndex) = gyroY - gyro_drift_y;
 
-        getGyroX(virtualSlot) *= gyro_sensitivity;
-        getGyroY(virtualSlot) *= gyro_sensitivity;
+        GetGyroX(portIndex) *= gyro_sensitivity;
+        GetGyroY(portIndex) *= gyro_sensitivity;
     }
 }
 
-void WiiUGamepad::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
-    auto profile = getProfile(virtualSlot);
+int32_t WiiUGamepad::SetRumble(int32_t portIndex, bool rumble) {
+    if (!CanRumble()) {
+        return -1000;
+    }
 
-    if (profile->UseRumble) {
-        int patternSize = sizeof(rumblePattern) * 8;
+    if (!profile->UseRumble) {
+        return -1001;
+    }
 
-        // update rumble pattern if strength changed
-        if (rumblePatternStrength != profile->RumbleStrength) {
-            rumblePatternStrength = profile->RumbleStrength;
-            if (rumblePatternStrength > 1.0f) {
-                rumblePatternStrength = 1.0f;
-            } else if (rumblePatternStrength < 0.0f) {
-                rumblePatternStrength = 0.0f;
-            }
+    auto profile = GetProfile(portIndex);
+    int32_t patternSize = sizeof(mRumblePattern) * 8;
 
-            memset(rumblePattern, 0, sizeof(rumblePattern));
-
-            // distribute wanted amount of bits equally in pattern
-            float scale = (rumblePatternStrength * (1.0f - 0.3f)) + 0.3f;
-            int bitcnt = patternSize * scale;
-            for (int i = 0; i < bitcnt; i++) {
-                int bitpos = ((i * patternSize) / bitcnt) % patternSize;
-                rumblePattern[bitpos / 8] |= 1 << (bitpos % 8);
-            }
+    // update rumble pattern if strength changed
+    if (mRumblePatternStrength != profile->RumbleStrength) {
+        mRumblePatternStrength = profile->RumbleStrength;
+        if (mRumblePatternStrength > 1.0f) {
+            mRumblePatternStrength = 1.0f;
+        } else if (mRumblePatternStrength < 0.0f) {
+            mRumblePatternStrength = 0.0f;
         }
 
-        VPADControlMotor(VPAD_CHAN_0, rumblePattern, controller->rumble ? patternSize : 0);
+        memset(mRumblePattern, 0, sizeof(mRumblePattern));
+
+        // distribute wanted amount of bits equally in pattern
+        float scale = (mRumblePatternStrength * (1.0f - 0.3f)) + 0.3f;
+        int32_t bitcnt = patternSize * scale;
+        for (int32_t i = 0; i < bitcnt; i++) {
+            int32_t bitpos = ((i * patternSize) / bitcnt) % patternSize;
+            mRumblePattern[bitpos / 8] |= 1 << (bitpos % 8);
+        }
     }
+
+    return VPADControlMotor(VPAD_CHAN_0, mRumblePattern, rumble ? patternSize : 0);
+}
+
+int32_t WiiUGamepad::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+    return -1000;
 }
 
 void WiiUGamepad::ClearRawPress() {
@@ -209,13 +223,13 @@ int32_t WiiUGamepad::ReadRawPress() {
     return -1;
 }
 
-const std::string WiiUGamepad::GetButtonName(int32_t virtualSlot, int n64Button) {
-    std::map<int32_t, int32_t>& Mappings = getProfile(virtualSlot)->Mappings;
+const std::string WiiUGamepad::GetButtonName(int32_t portIndex, int n64Button) {
+    std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
     const auto find =
-        std::find_if(Mappings.begin(), Mappings.end(),
+        std::find_if(mappings.begin(), mappings.end(),
                      [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
 
-    if (find == Mappings.end())
+    if (find == mappings.end())
         return "Unknown";
 
     uint32_t btn = find->first;
@@ -273,12 +287,8 @@ const std::string WiiUGamepad::GetButtonName(int32_t virtualSlot, int n64Button)
     return "Unknown";
 }
 
-const std::string WiiUGamepad::GetControllerName() {
-    return Connected() ? "Wii U GamePad" : "Wii U GamePad (Disconnected)";
-}
-
-void WiiUGamepad::CreateDefaultBinding(int32_t virtualSlot) {
-    auto profile = getProfile(virtualSlot);
+void WiiUGamepad::CreateDefaultBinding(int32_t portIndex) {
+    auto profile = GetProfile(portIndex);
     profile->Mappings.clear();
 
     profile->Version = DEVICE_PROFILE_CURRENT_VERSION;
@@ -313,6 +323,22 @@ void WiiUGamepad::CreateDefaultBinding(int32_t virtualSlot) {
     profile->GyroData[GYRO_SENSITIVITY] = 1.0f;
     profile->GyroData[DRIFT_X] = 0.0f;
     profile->GyroData[DRIFT_Y] = 0.0f;
+}
+
+bool WiiUGamePad::Connected() const override {
+    return mConnected;
+};
+
+bool WiiUGamePad::CanGyro() const override {
+    return true;
+}
+
+bool WiiUGamePad::CanRumble() const override {
+    return true;
+};
+
+bool DummyController::CanSetLed() const {
+    return false;
 }
 } // namespace Ship
 #endif

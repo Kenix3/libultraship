@@ -17,7 +17,7 @@ void InputEditor::Init() {
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
     auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
-    return controlDeck->GetPhysicalDeviceFromVirtualSlot(slot);
+    return controlDeck->GetDeviceFromPortIndex(slot);
 }
 
 void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentPort, int32_t* btnReading) {
@@ -67,16 +67,16 @@ void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentP
 
 void InputEditor::DrawControllerSelect(int32_t currentPort) {
     auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
-    std::string controllerName = controlDeck->GetPhysicalDeviceFromVirtualSlot(currentPort)->GetControllerName();
+    std::string controllerName = controlDeck->GetDeviceFromPortIndex(currentPort)->GetControllerName();
 
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
-        for (uint8_t i = 0; i < controlDeck->GetNumPhysicalDevices(); i++) {
-            std::string deviceName = controlDeck->GetPhysicalDevice(i)->GetControllerName();
+        for (uint8_t i = 0; i < controlDeck->GetNumDevices(); i++) {
+            std::string deviceName = controlDeck->GetDeviceFromDeviceIndex(i)->GetControllerName();
             if (deviceName != "Keyboard" && deviceName != "Auto") {
                 deviceName += "##" + std::to_string(i);
             }
-            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetVirtualDevice(currentPort))) {
-                controlDeck->SetPhysicalDevice(currentPort, i);
+            if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetDeviceIndexFromPortIndex(currentPort))) {
+                controlDeck->SetDeviceToPort(currentPort, i);
             }
         }
         ImGui::EndCombo();
@@ -85,7 +85,7 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
     ImGui::SameLine();
 
     if (ImGui::Button("Refresh")) {
-        controlDeck->ScanPhysicalDevices();
+        controlDeck->ScanDevices();
     }
 }
 
@@ -111,11 +111,11 @@ void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
 }
 
 void InputEditor::DrawControllerSchema() {
-    auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetPhysicalDeviceFromVirtualSlot(mCurrentPort);
-    auto profile = backend->getProfile(mCurrentPort);
+    auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
+    auto profile = backend->GetProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
-    backend->Read(nullptr, mCurrentPort);
+    backend->ReadToPad(nullptr, mCurrentPort);
 
     DrawControllerSelect(mCurrentPort);
 
@@ -154,7 +154,7 @@ void InputEditor::DrawControllerSchema() {
     if (!isKeyboard) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
         DrawVirtualStick("##MainVirtualStick",
-                         ImVec2(backend->getLeftStickX(mCurrentPort), backend->getLeftStickY(mCurrentPort)));
+                         ImVec2(backend->GetLeftStickX(mCurrentPort), backend->GetLeftStickY(mCurrentPort)));
         ImGui::SameLine();
 
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -200,7 +200,7 @@ void InputEditor::DrawControllerSchema() {
         // 2 is the SDL value for right stick X axis
         // 3 is the SDL value for right stick Y axis.
         DrawVirtualStick("##RightVirtualStick",
-                         ImVec2(backend->getRightStickX(mCurrentPort), backend->getRightStickY(mCurrentPort)));
+                         ImVec2(backend->GetRightStickX(mCurrentPort), backend->GetRightStickY(mCurrentPort)));
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -256,7 +256,7 @@ void InputEditor::DrawControllerSchema() {
         }
         ImGui::SetCursorPosX(cursorX);
         DrawVirtualStick("##GyroPreview",
-                         ImVec2(-10.0f * backend->getGyroY(mCurrentPort), 10.0f * backend->getGyroX(mCurrentPort)));
+                         ImVec2(-10.0f * backend->GetGyroY(mCurrentPort), 10.0f * backend->GetGyroX(mCurrentPort)));
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);

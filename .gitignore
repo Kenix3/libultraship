@@ -342,4 +342,7 @@ libultraship.a
 libultraship.lib
 ZAPDUtils.lib
 .DS_Store
-.vscode
+.vscode/
+.vs/
+.idea/
+cmake-build-**

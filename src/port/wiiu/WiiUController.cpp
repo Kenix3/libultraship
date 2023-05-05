@@ -6,70 +6,72 @@
 #include "WiiUImpl.h"
 
 namespace Ship {
-WiiUController::WiiUController(WPADChan chan) : Controller(), chan(chan) {
-    connected = false;
-    extensionType = (WPADExtensionType)-1;
-
-    controllerName = std::string("Wii U Controller ") + std::to_string((int)chan) + " (Disconnected)";
+WiiUController::WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan)
+    : Controller(controlDeck, deviceIndex), mChan(chan) {
+    mConnected = false;
+    mExtensionType = (WPADExtensionType)-1;
+    mControllerName = std::string("Wii U Controller ") + std::to_string((int)mChan) + " (Disconnected)";
 }
 
 bool WiiUController::Open() {
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(chan, &error);
+    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
     if (!status || error != KPAD_ERROR_OK) {
         Close();
         return false;
     }
 
-    connected = true;
-    extensionType = (WPADExtensionType)status->extensionType;
+    mConnected = true;
+    mControllerName = std::string("Wii U Controller ") + std::to_string((int)mChan);
+    mExtensionType = (WPADExtensionType)status->extensionType;
 
     // Create a GUID and name based on extension and channel
-    mGuid = std::string("WiiU") + GetControllerExtensionName() + std::to_string((int)chan);
-    controllerName =
-        std::string("Wii U ") + GetControllerExtensionName() + std::string(" ") + std::to_string((int)chan);
+    mGuid = std::string("WiiU") + GetControllerExtensionName() + std::to_string((int)mChan);
+    mControllerName =
+        std::string("Wii U ") + GetControllerExtensionName() + std::string(" ") + std::to_string((int)mChan);
 
     return true;
 }
 
 void WiiUController::Close() {
-    connected = false;
-    extensionType = (WPADExtensionType)-1;
+    mConnected = false;
+    mControllerName = std::string("Wii U Controller ") + std::to_string((int)mChan) + " (Disconnected)";
+    mExtensionType = (WPADExtensionType)-1;
 
     for (int i = 0; i < MAXCONTROLLERS; i++) {
-        getPressedButtons(i) = 0;
-        getLeftStickX(i) = 0;
-        getLeftStickY(i) = 0;
-        getRightStickX(i) = 0;
-        getRightStickY(i) = 0;
-        getGyroX(i) = 0;
-        getGyroY(i) = 0;
+        GetPressedButtons(i) = 0;
+        GetLeftStickX(i) = 0;
+        GetLeftStickY(i) = 0;
+        GetRightStickX(i) = 0;
+        GetRightStickY(i) = 0;
+        GetGyroX(i) = 0;
+        GetGyroY(i) = 0;
     }
 }
 
-void WiiUController::ReadFromSource(int32_t virtualSlot) {
-    auto profile = getProfile(virtualSlot);
+void WiiUController::ReadDevice(int32_t portIndex) {
+    auto profile = GetProfile(portIndex);
 
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(chan, &error);
+    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
     if (!status) {
         Close();
         return;
     }
 
     // Make sure the controller type doesn't change after opening
-    if (status->extensionType != extensionType) {
+    if (status->extensionType != mExtensionType) {
         Close();
         return;
     }
 
-    getPressedButtons(virtualSlot) = 0;
-    getLeftStickX(virtualSlot) = 0;
-    getLeftStickY(virtualSlot) = 0;
-    getRightStickX(virtualSlot) = 0;
-    getRightStickY(virtualSlot) = 0;
-    getGyroX(virtualSlot) = 0;
-    getGyroY(virtualSlot) = 0;
+    GetPressedButtons(portIndex) = 0;
+    GetLeftStickX(portIndex) = 0;
+    GetLeftStickY(portIndex) = 0;
+    GetRightStickX(portIndex) = 0;
+    GetRightStickY(portIndex) = 0;
+    GetGyroX(portIndex) = 0;
+    GetGyroY(portIndex) = 0;
 
     if (error != KPAD_ERROR_OK) {
         return;
@@ -80,7 +82,7 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
     int16_t camX = 0;
     int16_t camY = 0;
 
-    switch (extensionType) {
+    switch (mExtensionType) {
         case WPAD_EXT_PRO_CONTROLLER:
             for (uint32_t i = WPAD_PRO_BUTTON_UP; i <= WPAD_PRO_STICK_R_EMULATION_UP; i <<= 1) {
                 if (profile->Mappings.contains(i)) {
@@ -107,7 +109,7 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
                     }
 
                     if (status->pro.hold & i) {
-                        getPressedButtons(virtualSlot) |= profile->Mappings[i];
+                        GetPressedButtons(portIndex) |= profile->Mappings[i];
                     }
                 }
             }
@@ -139,7 +141,7 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
                     }
 
                     if (status->classic.hold & i) {
-                        getPressedButtons(virtualSlot) |= profile->Mappings[i];
+                        GetPressedButtons(portIndex) |= profile->Mappings[i];
                     }
                 }
             }
@@ -151,7 +153,7 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
             for (uint32_t i = WPAD_BUTTON_LEFT; i <= WPAD_BUTTON_HOME; i <<= 1) {
                 if (profile->Mappings.contains(i)) {
                     if (status->hold & i) {
-                        getPressedButtons(virtualSlot) |= profile->Mappings[i];
+                        GetPressedButtons(portIndex) |= profile->Mappings[i];
                     }
                 }
             }
@@ -161,28 +163,39 @@ void WiiUController::ReadFromSource(int32_t virtualSlot) {
     }
 
     if (stickX || stickY) {
-        getLeftStickX(virtualSlot) = stickX;
-        getLeftStickY(virtualSlot) = stickY;
+        GetLeftStickX(portIndex) = stickX;
+        GetLeftStickY(portIndex) = stickY;
     }
 
     if (camX || camY) {
-        getRightStickX(virtualSlot) = camX;
-        getRightStickY(virtualSlot) = camY;
+        GetRightStickX(portIndex) = camX;
+        GetRightStickY(portIndex) = camY;
     }
 }
 
-void WiiUController::WriteToSource(int32_t virtualSlot, ControllerCallback* controller) {
-    if (getProfile(virtualSlot)->UseRumble) {
-        WPADControlMotor(chan, controller->rumble);
+int32_t WiiUController::SetRumble(int32_t portIndex, bool rumble) {
+    if (!CanRumble()) {
+        return -1000;
     }
+
+    if (GetProfile(portIndex)->UseRumble) {
+        return -1001;
+    }
+
+    WPADControlMotor(mChan, rumble);
+    return 0;
+}
+
+int32_t WiiUController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+    return -1000;
 }
 
 void WiiUController::ClearRawPress() {
     // Clear already triggered buttons
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(chan, &error);
+    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
     if (status) {
-        switch (extensionType) {
+        switch (mExtensionType) {
             case WPAD_EXT_PRO_CONTROLLER:
                 status->pro.trigger = 0;
                 break;
@@ -202,12 +215,12 @@ void WiiUController::ClearRawPress() {
 
 int32_t WiiUController::ReadRawPress() {
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(chan, &error);
+    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
     if (!status || error != KPAD_ERROR_OK) {
         return -1;
     }
 
-    switch (extensionType) {
+    switch (mExtensionType) {
         case WPAD_EXT_PRO_CONTROLLER:
             for (uint32_t i = WPAD_PRO_BUTTON_UP; i <= WPAD_PRO_STICK_R_EMULATION_UP; i <<= 1) {
                 if (status->pro.trigger & i) {
@@ -290,8 +303,8 @@ int32_t WiiUController::ReadRawPress() {
     return -1;
 }
 
-const std::string WiiUController::GetButtonName(int32_t virtualSlot, int n64Button) {
-    std::map<int32_t, int32_t>& Mappings = getProfile(virtualSlot)->Mappings;
+const std::string WiiUController::GetButtonName(int32_t portIndex, int n64Button) {
+    std::map<int32_t, int32_t>& Mappings = GetProfile(portIndex)->Mappings;
     const auto find =
         std::find_if(Mappings.begin(), Mappings.end(),
                      [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
@@ -301,7 +314,7 @@ const std::string WiiUController::GetButtonName(int32_t virtualSlot, int n64Butt
 
     uint32_t btn = find->first;
 
-    switch (extensionType) {
+    switch (mExtensionType) {
         case WPAD_EXT_PRO_CONTROLLER:
             switch (btn) {
                 case WPAD_PRO_BUTTON_A:
@@ -439,19 +452,15 @@ const std::string WiiUController::GetButtonName(int32_t virtualSlot, int n64Butt
     return "Unknown";
 }
 
-const std::string WiiUController::GetControllerName() {
-    return controllerName;
-}
-
-void WiiUController::CreateDefaultBinding(int32_t virtualSlot) {
-    auto profile = getProfile(virtualSlot);
+void WiiUController::CreateDefaultBinding(int32_t portIndex) {
+    auto profile = GetProfile(portIndex);
     profile->Mappings.clear();
 
     profile->UseRumble = true;
     profile->RumbleStrength = 1.0f;
     profile->UseGyro = false;
 
-    switch (extensionType) {
+    switch (mExtensionType) {
         case WPAD_EXT_PRO_CONTROLLER:
             profile->Mappings[WPAD_PRO_STICK_R_EMULATION_RIGHT] = BTN_CRIGHT;
             profile->Mappings[WPAD_PRO_STICK_R_EMULATION_LEFT] = BTN_CLEFT;
@@ -517,7 +526,7 @@ void WiiUController::CreateDefaultBinding(int32_t virtualSlot) {
 }
 
 std::string WiiUController::GetControllerExtensionName() {
-    switch (extensionType) {
+    switch (mExtensionType) {
         case WPAD_EXT_PRO_CONTROLLER:
             return "ProController";
         case WPAD_EXT_CLASSIC:
@@ -531,6 +540,22 @@ std::string WiiUController::GetControllerExtensionName() {
     }
 
     return "Controller";
+}
+
+bool WiiUController::Connected() const override {
+    return mConnected;
+};
+
+bool WiiUController::CanGyro() const override {
+    return false;
+}
+
+bool WiiUController::CanRumble() const override {
+    return true;
+};
+
+bool WiiUController::CanSetLed() const {
+    return false;
 }
 } // namespace Ship
 #endif
