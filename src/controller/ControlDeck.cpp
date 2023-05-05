@@ -139,7 +139,7 @@ void ControlDeck::LoadSettings() {
                 continue;
             }
 
-            auto profile = device->getProfile(virtualSlot);
+            auto profile = device->GetProfile(virtualSlot);
             auto rawProfile = config->rjson["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
 
             profile->Mappings.clear();
@@ -211,7 +211,7 @@ void ControlDeck::SaveSettings() {
         std::string guid = device->GetGuid();
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-            auto profile = device->getProfile(virtualSlot);
+            auto profile = device->GetProfile(virtualSlot);
 
             if (!device->Connected()) {
                 continue;

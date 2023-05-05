@@ -39,18 +39,18 @@ void WiiUController::Close() {
     mExtensionType = (WPADExtensionType)-1;
 
     for (int i = 0; i < MAXCONTROLLERS; i++) {
-        getPressedButtons(i) = 0;
-        getLeftStickX(i) = 0;
-        getLeftStickY(i) = 0;
-        getRightStickX(i) = 0;
-        getRightStickY(i) = 0;
-        getGyroX(i) = 0;
-        getGyroY(i) = 0;
+        GetPressedButtons(i) = 0;
+        GetLeftStickX(i) = 0;
+        GetLeftStickY(i) = 0;
+        GetRightStickX(i) = 0;
+        GetRightStickY(i) = 0;
+        GetGyroX(i) = 0;
+        GetGyroY(i) = 0;
     }
 }
 
 void WiiUController::ReadDevice(int32_t portIndex) {
-    auto profile = getProfile(portIndex);
+    auto profile = GetProfile(portIndex);
 
     KPADError error;
     KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
@@ -65,13 +65,13 @@ void WiiUController::ReadDevice(int32_t portIndex) {
         return;
     }
 
-    getPressedButtons(portIndex) = 0;
-    getLeftStickX(portIndex) = 0;
-    getLeftStickY(portIndex) = 0;
-    getRightStickX(portIndex) = 0;
-    getRightStickY(portIndex) = 0;
-    getGyroX(portIndex) = 0;
-    getGyroY(portIndex) = 0;
+    GetPressedButtons(portIndex) = 0;
+    GetLeftStickX(portIndex) = 0;
+    GetLeftStickY(portIndex) = 0;
+    GetRightStickX(portIndex) = 0;
+    GetRightStickY(portIndex) = 0;
+    GetGyroX(portIndex) = 0;
+    GetGyroY(portIndex) = 0;
 
     if (error != KPAD_ERROR_OK) {
         return;
@@ -109,7 +109,7 @@ void WiiUController::ReadDevice(int32_t portIndex) {
                     }
 
                     if (status->pro.hold & i) {
-                        getPressedButtons(portIndex) |= profile->Mappings[i];
+                        GetPressedButtons(portIndex) |= profile->Mappings[i];
                     }
                 }
             }
@@ -141,7 +141,7 @@ void WiiUController::ReadDevice(int32_t portIndex) {
                     }
 
                     if (status->classic.hold & i) {
-                        getPressedButtons(portIndex) |= profile->Mappings[i];
+                        GetPressedButtons(portIndex) |= profile->Mappings[i];
                     }
                 }
             }
@@ -153,7 +153,7 @@ void WiiUController::ReadDevice(int32_t portIndex) {
             for (uint32_t i = WPAD_BUTTON_LEFT; i <= WPAD_BUTTON_HOME; i <<= 1) {
                 if (profile->Mappings.contains(i)) {
                     if (status->hold & i) {
-                        getPressedButtons(portIndex) |= profile->Mappings[i];
+                        GetPressedButtons(portIndex) |= profile->Mappings[i];
                     }
                 }
             }
@@ -163,13 +163,13 @@ void WiiUController::ReadDevice(int32_t portIndex) {
     }
 
     if (stickX || stickY) {
-        getLeftStickX(portIndex) = stickX;
-        getLeftStickY(portIndex) = stickY;
+        GetLeftStickX(portIndex) = stickX;
+        GetLeftStickY(portIndex) = stickY;
     }
 
     if (camX || camY) {
-        getRightStickX(portIndex) = camX;
-        getRightStickY(portIndex) = camY;
+        GetRightStickX(portIndex) = camX;
+        GetRightStickY(portIndex) = camY;
     }
 }
 
@@ -178,7 +178,7 @@ int32_t WiiUController::SetRumble(int32_t portIndex, bool rumble) {
         return -1000;
     }
 
-    if (getProfile(portIndex)->UseRumble) {
+    if (GetProfile(portIndex)->UseRumble) {
         return -1001;
     }
 
@@ -304,7 +304,7 @@ int32_t WiiUController::ReadRawPress() {
 }
 
 const std::string WiiUController::GetButtonName(int32_t portIndex, int n64Button) {
-    std::map<int32_t, int32_t>& Mappings = getProfile(portIndex)->Mappings;
+    std::map<int32_t, int32_t>& Mappings = GetProfile(portIndex)->Mappings;
     const auto find =
         std::find_if(Mappings.begin(), Mappings.end(),
                      [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
@@ -453,7 +453,7 @@ const std::string WiiUController::GetButtonName(int32_t portIndex, int n64Button
 }
 
 void WiiUController::CreateDefaultBinding(int32_t portIndex) {
-    auto profile = getProfile(portIndex);
+    auto profile = GetProfile(portIndex);
     profile->Mappings.clear();
 
     profile->UseRumble = true;

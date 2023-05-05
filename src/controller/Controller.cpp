@@ -27,26 +27,26 @@ int8_t Controller::ReadStick(int32_t portIndex, Stick stick, Axis axis) {
         case Stick::LEFT: {
             switch (axis) {
                 case Axis::X: {
-                    if (getLeftStickX(portIndex) == 0) {
-                        if (getPressedButtons(portIndex) & BTN_STICKLEFT) {
+                    if (GetLeftStickX(portIndex) == 0) {
+                        if (GetPressedButtons(portIndex) & BTN_STICKLEFT) {
                             return -MAX_AXIS_RANGE;
-                        } else if (getPressedButtons(portIndex) & BTN_STICKRIGHT) {
+                        } else if (GetPressedButtons(portIndex) & BTN_STICKRIGHT) {
                             return MAX_AXIS_RANGE;
                         }
                     } else {
-                        return getLeftStickX(portIndex);
+                        return GetLeftStickX(portIndex);
                     }
                     break;
                 }
                 case Axis::Y: {
-                    if (getLeftStickY(portIndex) == 0) {
-                        if (getPressedButtons(portIndex) & BTN_STICKDOWN) {
+                    if (GetLeftStickY(portIndex) == 0) {
+                        if (GetPressedButtons(portIndex) & BTN_STICKDOWN) {
                             return -MAX_AXIS_RANGE;
-                        } else if (getPressedButtons(portIndex) & BTN_STICKUP) {
+                        } else if (GetPressedButtons(portIndex) & BTN_STICKUP) {
                             return MAX_AXIS_RANGE;
                         }
                     } else {
-                        return getLeftStickY(portIndex);
+                        return GetLeftStickY(portIndex);
                     }
                     break;
                 }
@@ -56,26 +56,26 @@ int8_t Controller::ReadStick(int32_t portIndex, Stick stick, Axis axis) {
         case Stick::RIGHT: {
             switch (axis) {
                 case Axis::X: {
-                    if (getRightStickX(portIndex) == 0) {
-                        if (getPressedButtons(portIndex) & BTN_VSTICKLEFT) {
+                    if (GetRightStickX(portIndex) == 0) {
+                        if (GetPressedButtons(portIndex) & BTN_VSTICKLEFT) {
                             return -MAX_AXIS_RANGE;
-                        } else if (getPressedButtons(portIndex) & BTN_VSTICKRIGHT) {
+                        } else if (GetPressedButtons(portIndex) & BTN_VSTICKRIGHT) {
                             return MAX_AXIS_RANGE;
                         }
                     } else {
-                        return getRightStickX(portIndex);
+                        return GetRightStickX(portIndex);
                     }
                     break;
                 }
                 case Axis::Y: {
-                    if (getRightStickY(portIndex) == 0) {
-                        if (getPressedButtons(portIndex) & BTN_VSTICKDOWN) {
+                    if (GetRightStickY(portIndex) == 0) {
+                        if (GetPressedButtons(portIndex) & BTN_VSTICKDOWN) {
                             return -MAX_AXIS_RANGE;
-                        } else if (getPressedButtons(portIndex) & BTN_VSTICKUP) {
+                        } else if (GetPressedButtons(portIndex) & BTN_VSTICKUP) {
                             return MAX_AXIS_RANGE;
                         }
                     } else {
-                        return getRightStickY(portIndex);
+                        return GetRightStickY(portIndex);
                     }
                     break;
                 }
@@ -147,7 +147,7 @@ void Controller::ReadToPad(OSContPad* pad, int32_t portIndex) {
 #endif
 
     // Button Inputs
-    padToBuffer.button |= getPressedButtons(portIndex) & 0xFFFF;
+    padToBuffer.button |= GetPressedButtons(portIndex) & 0xFFFF;
 
     // Stick Inputs
     int8_t leftStickX = ReadStick(portIndex, LEFT, X);
@@ -155,7 +155,7 @@ void Controller::ReadToPad(OSContPad* pad, int32_t portIndex) {
     int8_t rightStickX = ReadStick(portIndex, RIGHT, X);
     int8_t rightStickY = ReadStick(portIndex, RIGHT, Y);
 
-    auto profile = getProfile(portIndex);
+    auto profile = GetProfile(portIndex);
     ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1],
                  profile->NotchProximityThreshold);
     ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3],
@@ -171,8 +171,8 @@ void Controller::ReadToPad(OSContPad* pad, int32_t portIndex) {
     padToBuffer.right_stick_y = rightStickY;
 
     // Gyro
-    padToBuffer.gyro_x = getGyroX(portIndex);
-    padToBuffer.gyro_y = getGyroY(portIndex);
+    padToBuffer.gyro_x = GetGyroX(portIndex);
+    padToBuffer.gyro_y = GetGyroY(portIndex);
 
     mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
@@ -205,40 +205,40 @@ void Controller::ReadToPad(OSContPad* pad, int32_t portIndex) {
 }
 
 void Controller::SetButtonMapping(int32_t portIndex, int32_t n64Button, int32_t scancode) {
-    std::map<int32_t, int32_t>& mappings = getProfile(portIndex)->Mappings;
+    std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
     std::erase_if(mappings, [n64Button](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Button; });
     mappings[scancode] = n64Button;
 }
 
-int8_t& Controller::getLeftStickX(int32_t portIndex) {
+int8_t& Controller::GetLeftStickX(int32_t portIndex) {
     return mButtonData[portIndex]->LeftStickX;
 }
 
-int8_t& Controller::getLeftStickY(int32_t portIndex) {
+int8_t& Controller::GetLeftStickY(int32_t portIndex) {
     return mButtonData[portIndex]->LeftStickY;
 }
 
-int8_t& Controller::getRightStickX(int32_t portIndex) {
+int8_t& Controller::GetRightStickX(int32_t portIndex) {
     return mButtonData[portIndex]->RightStickX;
 }
 
-int8_t& Controller::getRightStickY(int32_t portIndex) {
+int8_t& Controller::GetRightStickY(int32_t portIndex) {
     return mButtonData[portIndex]->RightStickY;
 }
 
-int32_t& Controller::getPressedButtons(int32_t portIndex) {
+int32_t& Controller::GetPressedButtons(int32_t portIndex) {
     return mButtonData[portIndex]->PressedButtons;
 }
 
-float& Controller::getGyroX(int32_t portIndex) {
+float& Controller::GetGyroX(int32_t portIndex) {
     return mButtonData[portIndex]->GyroX;
 }
 
-float& Controller::getGyroY(int32_t portIndex) {
+float& Controller::GetGyroY(int32_t portIndex) {
     return mButtonData[portIndex]->GyroY;
 }
 
-std::shared_ptr<DeviceProfile> Controller::getProfile(int32_t portIndex) {
+std::shared_ptr<DeviceProfile> Controller::GetProfile(int32_t portIndex) {
     return mProfiles[portIndex];
 }
 

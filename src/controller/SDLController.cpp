@@ -67,11 +67,11 @@ void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameCon
     auto ay = axisValueY * MAX_AXIS_RANGE / MAX_SDL_RANGE;
 
     if (axisX == SDL_CONTROLLER_AXIS_LEFTX) {
-        getLeftStickX(portIndex) = +ax;
-        getLeftStickY(portIndex) = -ay;
+        GetLeftStickX(portIndex) = +ax;
+        GetLeftStickY(portIndex) = -ay;
     } else if (axisX == SDL_CONTROLLER_AXIS_RIGHTX) {
-        getRightStickX(portIndex) = +ax;
-        getRightStickY(portIndex) = -ay;
+        GetRightStickX(portIndex) = +ax;
+        GetRightStickY(portIndex) = -ay;
     }
 }
 
@@ -101,7 +101,7 @@ int32_t SDLController::ReadRawPress() {
 }
 
 void SDLController::ReadDevice(int32_t portIndex) {
-    auto profile = getProfile(portIndex);
+    auto profile = GetProfile(portIndex);
 
     SDL_GameControllerUpdate();
 
@@ -138,24 +138,24 @@ void SDLController::ReadDevice(int32_t portIndex) {
         profile->GyroData[DRIFT_X] = gyroDriftX * 100.0f;
         profile->GyroData[DRIFT_Y] = gyroDriftY * 100.0f;
 
-        getGyroX(portIndex) = gyroData[0] - gyroDriftX;
-        getGyroY(portIndex) = gyroData[1] - gyroDriftY;
+        GetGyroX(portIndex) = gyroData[0] - gyroDriftX;
+        GetGyroY(portIndex) = gyroData[1] - gyroDriftY;
 
-        getGyroX(portIndex) *= gyroSensitivity;
-        getGyroY(portIndex) *= gyroSensitivity;
+        GetGyroX(portIndex) *= gyroSensitivity;
+        GetGyroY(portIndex) *= gyroSensitivity;
     } else {
-        getGyroX(portIndex) = 0;
-        getGyroY(portIndex) = 0;
+        GetGyroX(portIndex) = 0;
+        GetGyroY(portIndex) = 0;
     }
 
-    getPressedButtons(portIndex) = 0;
+    GetPressedButtons(portIndex) = 0;
 
     for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
         if (profile->Mappings.contains(i)) {
             if (SDL_GameControllerGetButton(mController, static_cast<SDL_GameControllerButton>(i))) {
-                getPressedButtons(portIndex) |= profile->Mappings[i];
+                GetPressedButtons(portIndex) |= profile->Mappings[i];
             } else {
-                getPressedButtons(portIndex) &= ~profile->Mappings[i];
+                GetPressedButtons(portIndex) &= ~profile->Mappings[i];
             }
         }
     }
@@ -195,14 +195,14 @@ void SDLController::ReadDevice(int32_t portIndex) {
 
             // The axis is being treated as a "button"
             if (axisValue > axisMinimumPress) {
-                getPressedButtons(portIndex) |= posButton;
-                getPressedButtons(portIndex) &= ~negButton;
+                GetPressedButtons(portIndex) |= posButton;
+                GetPressedButtons(portIndex) &= ~negButton;
             } else if (axisValue < -axisMinimumPress) {
-                getPressedButtons(portIndex) &= ~posButton;
-                getPressedButtons(portIndex) |= negButton;
+                GetPressedButtons(portIndex) &= ~posButton;
+                GetPressedButtons(portIndex) |= negButton;
             } else {
-                getPressedButtons(portIndex) &= ~posButton;
-                getPressedButtons(portIndex) &= ~negButton;
+                GetPressedButtons(portIndex) &= ~posButton;
+                GetPressedButtons(portIndex) &= ~negButton;
             }
         } else {
             // The axis is being treated as a "stick"
@@ -289,12 +289,12 @@ int32_t SDLController::SetRumble(int32_t portIndex, bool rumble) {
         return -1000;
     }
 
-    if (!getProfile(portIndex)->UseRumble) {
+    if (!GetProfile(portIndex)->UseRumble) {
         return -1001;
     }
 
     if (rumble) {
-        float rumbleStrength = getProfile(portIndex)->RumbleStrength;
+        float rumbleStrength = GetProfile(portIndex)->RumbleStrength;
         return SDL_GameControllerRumble(mController, 0xFFFF * rumbleStrength, 0xFFFF * rumbleStrength, 0);
     } else {
         return SDL_GameControllerRumble(mController, 0, 0, 0);
@@ -311,7 +311,7 @@ int32_t SDLController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
 
 const std::string SDLController::GetButtonName(int32_t portIndex, int32_t n64Button) {
     char buffer[50];
-    std::map<int32_t, int32_t>& mappings = getProfile(portIndex)->Mappings;
+    std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
 
     const auto find =
         std::find_if(mappings.begin(), mappings.end(),
@@ -335,7 +335,7 @@ const std::string SDLController::GetButtonName(int32_t portIndex, int32_t n64But
 }
 
 void SDLController::CreateDefaultBinding(int32_t portIndex) {
-    auto profile = getProfile(portIndex);
+    auto profile = GetProfile(portIndex);
     profile->Mappings.clear();
     profile->AxisDeadzones.clear();
     profile->AxisMinimumPress.clear();

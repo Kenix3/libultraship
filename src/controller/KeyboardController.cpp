@@ -23,8 +23,8 @@ bool KeyboardController::PressButton(int32_t scancode) {
 
     for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
 
-        if (getProfile(portIndex)->Mappings.contains(scancode)) {
-            getPressedButtons(portIndex) |= getProfile(portIndex)->Mappings[scancode];
+        if (GetProfile(portIndex)->Mappings.contains(scancode)) {
+            GetPressedButtons(portIndex) |= GetProfile(portIndex)->Mappings[scancode];
             readSuccess = true;
         }
     }
@@ -36,8 +36,8 @@ bool KeyboardController::ReleaseButton(int32_t scancode) {
     bool readSuccess = false;
 
     for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
-        if (getProfile(portIndex)->Mappings.contains(scancode)) {
-            getPressedButtons(portIndex) &= ~getProfile(portIndex)->Mappings[scancode];
+        if (GetProfile(portIndex)->Mappings.contains(scancode)) {
+            GetPressedButtons(portIndex) &= ~GetProfile(portIndex)->Mappings[scancode];
             readSuccess = true;
         }
     }
@@ -47,15 +47,15 @@ bool KeyboardController::ReleaseButton(int32_t scancode) {
 
 void KeyboardController::ReleaseAllButtons() {
     for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
-        getPressedButtons(portIndex) = 0;
+        GetPressedButtons(portIndex) = 0;
     }
 }
 
 void KeyboardController::ReadDevice(int32_t portIndex) {
-    getLeftStickX(portIndex) = 0;
-    getLeftStickY(portIndex) = 0;
-    getRightStickX(portIndex) = 0;
-    getRightStickY(portIndex) = 0;
+    GetLeftStickX(portIndex) = 0;
+    GetLeftStickY(portIndex) = 0;
+    GetRightStickX(portIndex) = 0;
+    GetRightStickY(portIndex) = 0;
 }
 
 int32_t KeyboardController::ReadRawPress() {
@@ -63,7 +63,7 @@ int32_t KeyboardController::ReadRawPress() {
 }
 
 const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n64Button) {
-    std::map<int32_t, int32_t>& mappings = getProfile(portIndex)->Mappings;
+    std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
     const auto find =
         std::find_if(mappings.begin(), mappings.end(),
                      [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
@@ -76,7 +76,7 @@ const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n
 }
 
 void KeyboardController::CreateDefaultBinding(int32_t portIndex) {
-    auto profile = getProfile(portIndex);
+    auto profile = GetProfile(portIndex);
     profile->Mappings[0x14D] = BTN_CRIGHT;
     profile->Mappings[0x14B] = BTN_CLEFT;
     profile->Mappings[0x150] = BTN_CDOWN;

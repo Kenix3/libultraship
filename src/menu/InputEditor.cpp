@@ -112,7 +112,7 @@ void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
 
 void InputEditor::DrawControllerSchema() {
     auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
-    auto profile = backend->getProfile(mCurrentPort);
+    auto profile = backend->GetProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
     backend->ReadToPad(nullptr, mCurrentPort);
@@ -154,7 +154,7 @@ void InputEditor::DrawControllerSchema() {
     if (!isKeyboard) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
         DrawVirtualStick("##MainVirtualStick",
-                         ImVec2(backend->getLeftStickX(mCurrentPort), backend->getLeftStickY(mCurrentPort)));
+                         ImVec2(backend->GetLeftStickX(mCurrentPort), backend->GetLeftStickY(mCurrentPort)));
         ImGui::SameLine();
 
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -200,7 +200,7 @@ void InputEditor::DrawControllerSchema() {
         // 2 is the SDL value for right stick X axis
         // 3 is the SDL value for right stick Y axis.
         DrawVirtualStick("##RightVirtualStick",
-                         ImVec2(backend->getRightStickX(mCurrentPort), backend->getRightStickY(mCurrentPort)));
+                         ImVec2(backend->GetRightStickX(mCurrentPort), backend->GetRightStickY(mCurrentPort)));
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -256,7 +256,7 @@ void InputEditor::DrawControllerSchema() {
         }
         ImGui::SetCursorPosX(cursorX);
         DrawVirtualStick("##GyroPreview",
-                         ImVec2(-10.0f * backend->getGyroY(mCurrentPort), 10.0f * backend->getGyroX(mCurrentPort)));
+                         ImVec2(-10.0f * backend->GetGyroY(mCurrentPort), 10.0f * backend->GetGyroX(mCurrentPort)));
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
