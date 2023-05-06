@@ -18,7 +18,7 @@ class WiiUGamepad : public Controller {
     void ClearRawPress() override;
     int32_t ReadRawPress() override;
     int32_t SetRumble(int32_t portIndex, bool rumble) override;
-    int32_t SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) override;
+    int32_t SetLedColor(int32_t portIndex, Color_RGB8 color) override;
     const std::string GetButtonName(int32_t portIndex, int n64Button) override;
 
   protected:

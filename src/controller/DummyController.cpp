@@ -25,7 +25,7 @@ int32_t DummyController::SetRumble(int32_t portIndex, bool rumble) {
     return -1000;
 }
 
-int32_t DummyController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+int32_t DummyController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     return -1000;
 }
 

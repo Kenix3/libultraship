@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <queue>
 #include "libultraship/libultra/controller.h"
+#include "libultraship/color.h"
 #include "attachment/ControllerAttachment.h"
 #include <unordered_map>
 
@@ -49,7 +50,7 @@ class Controller {
     virtual int32_t ReadRawPress() = 0;
     virtual const std::string GetButtonName(int32_t portIndex, int32_t n64Button) = 0;
     virtual int32_t SetRumble(int32_t portIndex, bool rumble) = 0;
-    virtual int32_t SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) = 0;
+    virtual int32_t SetLedColor(int32_t portIndex, Color_RGB8 color) = 0;
 
     std::string GetControllerName();
     void ReadToPad(OSContPad* pad, int32_t portIndex);
@@ -64,6 +65,7 @@ class Controller {
     float& GetGyroX(int32_t portIndex);
     float& GetGyroY(int32_t portIndex);
     bool IsRumbling();
+    Color_RGB8 GetLedColor();
     std::string GetGuid();
     std::shared_ptr<ControlDeck> GetControlDeck();
 
@@ -71,6 +73,7 @@ class Controller {
     std::shared_ptr<ControllerAttachment> mAttachment;
     std::string mGuid;
     bool mIsRumbling;
+    Color_RGB8 mLedColor;
     int32_t mDeviceIndex;
     std::string mControllerName = "Unknown";
 

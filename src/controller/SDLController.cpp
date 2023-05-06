@@ -293,7 +293,8 @@ int32_t SDLController::SetRumble(int32_t portIndex, bool rumble) {
         return -1001;
     }
 
-    if (rumble) {
+    mIsRumbling = rumble;
+    if (mIsRumbling) {
         float rumbleStrength = GetProfile(portIndex)->RumbleStrength;
         return SDL_GameControllerRumble(mController, 0xFFFF * rumbleStrength, 0xFFFF * rumbleStrength, 0);
     } else {
@@ -301,12 +302,13 @@ int32_t SDLController::SetRumble(int32_t portIndex, bool rumble) {
     }
 }
 
-int32_t SDLController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+int32_t SDLController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     if (!CanSetLed()) {
         return -1000;
     }
 
-    return SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), r, g, b);
+    mLedColor = color;
+    return SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), mLedColor.r, mLedColor.g, mLedColor.b);
 }
 
 const std::string SDLController::GetButtonName(int32_t portIndex, int32_t n64Button) {

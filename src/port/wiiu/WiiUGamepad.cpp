@@ -165,10 +165,11 @@ int32_t WiiUGamepad::SetRumble(int32_t portIndex, bool rumble) {
         }
     }
 
-    return VPADControlMotor(VPAD_CHAN_0, mRumblePattern, rumble ? patternSize : 0);
+    mIsRumbling = rumble;
+    return VPADControlMotor(VPAD_CHAN_0, mRumblePattern, mIsRumbling ? patternSize : 0);
 }
 
-int32_t WiiUGamepad::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+int32_t WiiUGamepad::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     return -1000;
 }
 

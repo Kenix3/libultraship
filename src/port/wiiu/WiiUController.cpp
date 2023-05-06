@@ -182,11 +182,12 @@ int32_t WiiUController::SetRumble(int32_t portIndex, bool rumble) {
         return -1001;
     }
 
-    WPADControlMotor(mChan, rumble);
+    mIsRumbling = rumble;
+    WPADControlMotor(mChan, mIsRumbling);
     return 0;
 }
 
-int32_t WiiUController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+int32_t WiiUController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     return -1000;
 }
 

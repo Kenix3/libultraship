@@ -15,7 +15,8 @@
 namespace Ship {
 
 Controller::Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
-    : mIsRumbling(false), mAttachment(nullptr), mDeviceIndex(deviceIndex), mControlDeck(controlDeck) {
+    : mIsRumbling(false), mLedColor({ 0, 0, 0 }), mAttachment(nullptr), mDeviceIndex(deviceIndex),
+      mControlDeck(controlDeck) {
     for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
         mProfiles[portIndex] = std::make_shared<DeviceProfile>();
         mButtonData[portIndex] = std::make_shared<Buttons>();
@@ -248,6 +249,10 @@ std::shared_ptr<ControllerAttachment> Controller::GetAttachment() {
 
 bool Controller::IsRumbling() {
     return mIsRumbling;
+}
+
+Color_RGB8 Controller::GetLedColor() {
+    return mLedColor;
 }
 
 std::string Controller::GetGuid() {
