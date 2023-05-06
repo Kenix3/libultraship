@@ -134,8 +134,6 @@ void Window::Initialize(const std::vector<std::string>& otrFiles, const std::uno
 
     InitializeAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
 
-    InitializeSpeechSynthesis();
-
     gfx_init(mWindowManagerApi, mRenderingApi, GetName().c_str(), mIsFullscreen, mWidth, mHeight);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
@@ -517,14 +515,6 @@ void Window::InitializeConfiguration() {
     mConfig = std::make_shared<Mercury>(GetPathRelativeToAppDirectory("shipofharkinian.json"));
 }
 
-void Window::InitializeSpeechSynthesis() {
-#ifdef __APPLE__
-    mSpeechSynthesizer = std::make_shared<DarwinSpeechSynthesizer>();
-#elif defined(_WIN32)
-    mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
-#endif
-}
-
 bool Window::IsFullscreen() {
     return mIsFullscreen;
 }
@@ -559,10 +549,6 @@ std::shared_ptr<Mercury> Window::GetConfig() {
 
 std::shared_ptr<spdlog::logger> Window::GetLogger() {
     return mLogger;
-}
-
-std::shared_ptr<SpeechSynthesizer> Window::GetSpeechSynthesizer() {
-    return mSpeechSynthesizer;
 }
 
 const char* Window::GetKeyName(int32_t scancode) {
