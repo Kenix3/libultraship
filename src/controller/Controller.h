@@ -7,7 +7,6 @@
 #include <queue>
 #include "libultraship/libultra/controller.h"
 #include "libultraship/color.h"
-#include "attachment/ControllerAttachment.h"
 #include <unordered_map>
 
 #define EXTENDED_SCANCODE_BIT (1 << 8)
@@ -55,7 +54,7 @@ class Controller {
     std::string GetControllerName();
     void ReadToPad(OSContPad* pad, int32_t portIndex);
     void SetButtonMapping(int32_t portIndex, int32_t n64Button, int32_t scancode);
-    std::shared_ptr<ControllerAttachment> GetAttachment();
+
     std::shared_ptr<DeviceProfile> GetProfile(int32_t portIndex);
     int8_t& GetLeftStickX(int32_t portIndex);
     int8_t& GetLeftStickY(int32_t portIndex);
@@ -70,7 +69,6 @@ class Controller {
     std::shared_ptr<ControlDeck> GetControlDeck();
 
   protected:
-    std::shared_ptr<ControllerAttachment> mAttachment;
     std::string mGuid;
     bool mIsRumbling;
     Color_RGB8 mLedColor;

@@ -70,18 +70,7 @@ endif()
 
 source_group("Controller" FILES ${Source_Files__Controller})
 
-set(Source_Files__Controller__Attachments
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/attachment/ControllerAttachment.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/attachment/ControllerAttachment.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/attachment/MemoryPack.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/attachment/MemoryPack.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/attachment/RumblePack.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/attachment/RumblePack.h
-)
-
-source_group("Controller\\Attachments" FILES ${Source_Files__Controller__Attachments})
-
-target_sources(libultraship PRIVATE ${Source_Files__Controller} ${Source_Files__Controller__Attachments})
+target_sources(libultraship PRIVATE ${Source_Files__Controller})
 
 #=================== Core ===================
 
