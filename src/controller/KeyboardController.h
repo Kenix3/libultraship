@@ -17,7 +17,7 @@ class KeyboardController : public Controller {
     bool CanGyro() const override;
     void ClearRawPress() override;
     int32_t SetRumble(int32_t portIndex, bool rumble) override;
-    int32_t SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) override;
+    int32_t SetLedColor(int32_t portIndex, Color_RGB8 color) override;
     void CreateDefaultBinding(int32_t portIndex) override;
     int32_t ReadRawPress() override;
     void ReleaseAllButtons();
