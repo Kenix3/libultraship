@@ -7,7 +7,7 @@
 namespace Ship {
 namespace WiiU {
 
-void Init(std::string& shortName);
+void Init(const std::string& shortName);
 
 void Exit();
 
