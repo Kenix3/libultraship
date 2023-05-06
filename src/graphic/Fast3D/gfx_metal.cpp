@@ -68,7 +68,7 @@ struct ShaderProgramMetal {
 
     uint8_t num_inputs;
     uint8_t num_floats;
-    bool used_textures[2];
+    bool used_textures[SHADER_MAX_TEXTURES];
 
     // hashed by msaa_level
     MTL::RenderPipelineState* pipeline_state_variants[9];
@@ -101,8 +101,8 @@ struct FramebufferMetal {
     bool has_bounded_fragment_buffer;
 
     struct ShaderProgramMetal* last_shader_program;
-    MTL::Texture* last_bound_textures[2];
-    MTL::SamplerState* last_bound_samplers[2];
+    MTL::Texture* last_bound_textures[SHADER_MAX_TEXTURES];
+    MTL::SamplerState* last_bound_samplers[SHADER_MAX_TEXTURES];
 
     int8_t last_depth_test = -1;
     int8_t last_depth_mask = -1;
@@ -151,7 +151,7 @@ static struct {
     NS::AutoreleasePool* frame_autorelease_pool;
 
     int current_tile;
-    uint32_t current_texture_ids[2];
+    uint32_t current_texture_ids[SHADER_MAX_TEXTURES];
 
     uint32_t render_target_height;
     int current_framebuffer;
@@ -307,7 +307,7 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
     size_t num_floats = 0;
-    char buf[4096];
+    char buf[8192];
 
     memset(buf, 0, sizeof(buf));
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
@@ -351,6 +351,10 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     prg->shader_id1 = shader_id1;
     prg->used_textures[0] = cc_features.used_textures[0];
     prg->used_textures[1] = cc_features.used_textures[1];
+    prg->used_textures[2] = cc_features.used_masks[0];
+    prg->used_textures[3] = cc_features.used_masks[1];
+    prg->used_textures[4] = cc_features.used_blend[0];
+    prg->used_textures[5] = cc_features.used_blend[1];
     prg->num_inputs = cc_features.num_inputs;
     prg->num_floats = num_floats;
 
@@ -564,7 +568,7 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         current_framebuffer.has_bounded_fragment_buffer = true;
     }
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
         if (mctx.shader_program->used_textures[i]) {
             if (current_framebuffer.last_bound_textures[i] != mctx.textures[mctx.current_texture_ids[i]].texture) {
                 current_framebuffer.last_bound_textures[i] = mctx.textures[mctx.current_texture_ids[i]].texture;
