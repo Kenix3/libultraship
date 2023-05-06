@@ -134,6 +134,8 @@ void WiiUGamepad::ReadDevice(int32_t portIndex) {
 }
 
 int32_t WiiUGamepad::SetRumble(int32_t portIndex, bool rumble) {
+    auto profile = GetProfile(portIndex);
+
     if (!CanRumble()) {
         return -1000;
     }
@@ -325,19 +327,19 @@ void WiiUGamepad::CreateDefaultBinding(int32_t portIndex) {
     profile->GyroData[DRIFT_Y] = 0.0f;
 }
 
-bool WiiUGamePad::Connected() const override {
+bool WiiUGamepad::Connected() const override {
     return mConnected;
 };
 
-bool WiiUGamePad::CanGyro() const override {
+bool WiiUGamepad::CanGyro() const override {
     return true;
 }
 
-bool WiiUGamePad::CanRumble() const override {
+bool WiiUGamepad::CanRumble() const override {
     return true;
 };
 
-bool DummyController::CanSetLed() const {
+bool WiiUGamepad::CanSetLed() const {
     return false;
 }
 } // namespace Ship
