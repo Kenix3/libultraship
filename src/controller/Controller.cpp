@@ -15,8 +15,7 @@
 namespace Ship {
 
 Controller::Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
-    : mIsRumbling(false), mLedColor({ 0, 0, 0 }), mAttachment(nullptr), mDeviceIndex(deviceIndex),
-      mControlDeck(controlDeck) {
+    : mIsRumbling(false), mLedColor({ 0, 0, 0 }), mDeviceIndex(deviceIndex), mControlDeck(controlDeck) {
     for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
         mProfiles[portIndex] = std::make_shared<DeviceProfile>();
         mButtonData[portIndex] = std::make_shared<Buttons>();
@@ -241,10 +240,6 @@ float& Controller::GetGyroY(int32_t portIndex) {
 
 std::shared_ptr<DeviceProfile> Controller::GetProfile(int32_t portIndex) {
     return mProfiles[portIndex];
-}
-
-std::shared_ptr<ControllerAttachment> Controller::GetAttachment() {
-    return mAttachment;
 }
 
 bool Controller::IsRumbling() {
