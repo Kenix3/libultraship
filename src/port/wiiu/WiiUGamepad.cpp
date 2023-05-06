@@ -327,15 +327,15 @@ void WiiUGamepad::CreateDefaultBinding(int32_t portIndex) {
     profile->GyroData[DRIFT_Y] = 0.0f;
 }
 
-bool WiiUGamepad::Connected() const override {
+bool WiiUGamepad::Connected() const {
     return mConnected;
 };
 
-bool WiiUGamepad::CanGyro() const override {
+bool WiiUGamepad::CanGyro() const {
     return true;
 }
 
-bool WiiUGamepad::CanRumble() const override {
+bool WiiUGamepad::CanRumble() const {
     return true;
 };
 
