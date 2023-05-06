@@ -144,7 +144,6 @@ int32_t WiiUGamepad::SetRumble(int32_t portIndex, bool rumble) {
         return -1001;
     }
 
-    auto profile = GetProfile(portIndex);
     int32_t patternSize = sizeof(mRumblePattern) * 8;
 
     // update rumble pattern if strength changed
