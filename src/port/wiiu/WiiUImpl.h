@@ -2,6 +2,7 @@
 
 #include <vpad/input.h>
 #include <padscore/kpad.h>
+#include <string>
 
 namespace Ship {
 namespace WiiU {
