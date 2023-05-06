@@ -114,8 +114,6 @@ set(Source_Files__Core__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/speechsynthesizerbridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/speechsynthesizerbridge.cpp
 )
  
 source_group("Core\\Bridge" FILES ${Source_Files__Core__Bridge})
@@ -319,25 +317,6 @@ endif()
 
 source_group("Graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
-
-#=================== Speech Synthesizer ===================
-
-set(Source_Files__SpeechSynthesizer
-    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.cpp
-)
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.h)
-    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.mm)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.h)
-    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.cpp)
-endif()
-
-source_group("SpeechSynthesizer" FILES ${Source_Files__SpeechSynthesizer})
-
-target_sources(libultraship PRIVATE ${Source_Files__SpeechSynthesizer})
 
 #=================== STB ===================
 

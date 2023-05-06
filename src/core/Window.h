@@ -8,7 +8,6 @@
 #include "core/ConsoleVariable.h"
 #include "debug/CrashHandler.h"
 #include "audio/AudioPlayer.h"
-#include "speechsynthesizer/SpeechSynthesizer.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "Mercury.h"
 
@@ -60,7 +59,6 @@ class Window {
     std::shared_ptr<Mercury> GetConfig();
     std::shared_ptr<spdlog::logger> GetLogger();
     std::shared_ptr<ConsoleVariable> GetConsoleVariables();
-    std::shared_ptr<SpeechSynthesizer> GetSpeechSynthesizer();
     const char* GetKeyName(int32_t scancode);
     int32_t GetLastScancode();
     void SetLastScancode(int32_t scanCode);
@@ -85,7 +83,6 @@ class Window {
     void InitializeLogging();
     void InitializeResourceManager(const std::vector<std::string>& otrFiles = {},
                                    const std::unordered_set<uint32_t>& validHashes = {});
-    void InitializeSpeechSynthesis();
 
     std::shared_ptr<spdlog::logger> mLogger;
     std::shared_ptr<Mercury> mConfig;
@@ -94,7 +91,6 @@ class Window {
     std::shared_ptr<ControlDeck> mControlDeck;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;
     std::shared_ptr<CrashHandler> mCrashHandler;
-    std::shared_ptr<SpeechSynthesizer> mSpeechSynthesizer;
 
     std::string mGfxBackend;
     std::string mGfxApi;
