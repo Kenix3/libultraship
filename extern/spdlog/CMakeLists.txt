@@ -61,6 +61,9 @@ option(SPDLOG_BUILD_SHARED "Build shared library" OFF)
 # precompiled headers option
 option(SPDLOG_ENABLE_PCH "Build static or shared library using precompiled header to speed up compilation time" OFF)
 
+# build position independent code
+option(SPDLOG_BUILD_PIC "Build position independent code (-fPIC)" OFF)
+
 # example options
 option(SPDLOG_BUILD_EXAMPLE "Build example" ${SPDLOG_MASTER_PROJECT})
 option(SPDLOG_BUILD_EXAMPLE_HO "Build header only example" OFF)
@@ -132,15 +135,19 @@ if(SPDLOG_TIDY)
     message(STATUS "Enabled clang-tidy")
 endif()
 
+if(SPDLOG_BUILD_PIC)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 find_package(Threads REQUIRED)
 message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 # ---------------------------------------------------------------------------------------
-# Static/Shared library (shared not supported in windows yet)
+# Static/Shared library
 # ---------------------------------------------------------------------------------------
 set(SPDLOG_SRCS src/spdlog.cpp src/stdout_sinks.cpp src/color_sinks.cpp src/file_sinks.cpp src/async.cpp src/cfg.cpp)
 
 if(NOT SPDLOG_USE_STD_FORMAT AND NOT SPDLOG_FMT_EXTERNAL AND NOT SPDLOG_FMT_EXTERNAL_HO)
-    list(APPEND SPDLOG_SRCS src/fmt.cpp)
+    list(APPEND SPDLOG_SRCS src/bundled_fmtlib_format.cpp)
 endif()
 
 if(SPDLOG_BUILD_SHARED OR BUILD_SHARED_LIBS)
@@ -169,7 +176,7 @@ target_include_directories(spdlog PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST
 target_link_libraries(spdlog PUBLIC Threads::Threads)
 spdlog_enable_warnings(spdlog)
 
-set_target_properties(spdlog PROPERTIES VERSION ${SPDLOG_VERSION} SOVERSION ${SPDLOG_VERSION_MAJOR})
+set_target_properties(spdlog PROPERTIES VERSION ${SPDLOG_VERSION} SOVERSION ${SPDLOG_VERSION_MAJOR}.${SPDLOG_VERSION_MINOR})
 set_target_properties(spdlog PROPERTIES DEBUG_POSTFIX d)
 
 if(COMMAND target_precompile_headers AND SPDLOG_ENABLE_PCH)
@@ -243,6 +250,11 @@ if(SPDLOG_NO_EXCEPTIONS AND NOT MSVC)
     target_compile_options(spdlog PRIVATE -fno-exceptions)
 endif()
 
+if(SPDLOG_USE_STD_FORMAT)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
 # ---------------------------------------------------------------------------------------
 # Build binaries
 # ---------------------------------------------------------------------------------------
@@ -298,6 +310,16 @@ if(SPDLOG_INSTALL)
     # ---------------------------------------------------------------------------------------
     # Install pkg-config file
     # ---------------------------------------------------------------------------------------
+    if (IS_ABSOLUTE "${CMAKE_INSTALL_INCLUDEDIR}")
+        set(PKG_CONFIG_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}")
+    else()
+        set(PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
+    endif()
+    if (IS_ABSOLUTE "${CMAKE_INSTALL_LIBDIR}")
+        set(PKG_CONFIG_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
+    else()
+        set(PKG_CONFIG_LIBDIR "\${exec_prefix}/${CMAKE_INSTALL_LIBDIR}")
+    endif()
     get_target_property(PKG_CONFIG_DEFINES spdlog INTERFACE_COMPILE_DEFINITIONS)
     string(REPLACE ";" " -D" PKG_CONFIG_DEFINES "${PKG_CONFIG_DEFINES}")
     string(CONCAT PKG_CONFIG_DEFINES "-D" "${PKG_CONFIG_DEFINES}")
@@ -307,6 +329,10 @@ if(SPDLOG_INSTALL)
     # ---------------------------------------------------------------------------------------
     # Install CMake config files
     # ---------------------------------------------------------------------------------------
+    export(
+      TARGETS spdlog
+      NAMESPACE spdlog::
+      FILE "${CMAKE_CURRENT_BINARY_DIR}/${config_targets_file}")
     install(EXPORT spdlog DESTINATION ${export_dest_dir} NAMESPACE spdlog:: FILE ${config_targets_file})
 
     include(CMakePackageConfigHelpers)

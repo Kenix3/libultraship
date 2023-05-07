@@ -11,8 +11,8 @@ std::shared_ptr<Resource> DisplayListFactory::ReadResource(std::shared_ptr<Resou
     auto resource = std::make_shared<DisplayList>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }
@@ -33,8 +33,8 @@ std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(std::shared_ptr<Re
     auto resource = std::make_shared<DisplayList>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }

@@ -11,6 +11,9 @@
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
+// NOLINTNEXTLINE
+auto format_as(SDL_GameControllerAxis a) { return fmt::underlying(a); }
+
 namespace Ship {
 
 SDLController::SDLController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)

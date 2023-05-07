@@ -1,6 +1,14 @@
 #pragma once
 
+#if defined(__GNUC__) && __GNUC__ == 12
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized" // Workaround for GCC 12
+#endif
 #include "catch.hpp"
+#if defined(__GNUC__) && __GNUC__ == 12
+#    pragma GCC diagnostic pop
+#endif
+
 #include "utils.h"
 #include <chrono>
 #include <cstdio>
@@ -17,6 +25,7 @@
 
 #include "spdlog/spdlog.h"
 #include "spdlog/async.h"
+#include "spdlog/details/fmt_helper.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/daily_file_sink.h"
 #include "spdlog/sinks/null_sink.h"
