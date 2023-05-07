@@ -119,7 +119,7 @@ void Update() {
 
     // rescan devices if connection state changed
     if (rescan) {
-        Window::GetInstance()->GetControlDeck()->ScanPhysicalDevices();
+        Window::GetInstance()->GetControlDeck()->ScanDevices();
     }
 }
 

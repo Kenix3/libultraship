@@ -543,15 +543,15 @@ std::string WiiUController::GetControllerExtensionName() {
     return "Controller";
 }
 
-bool WiiUController::Connected() const override {
+bool WiiUController::Connected() const {
     return mConnected;
 };
 
-bool WiiUController::CanGyro() const override {
+bool WiiUController::CanGyro() const {
     return false;
 }
 
-bool WiiUController::CanRumble() const override {
+bool WiiUController::CanRumble() const {
     return true;
 };
 
