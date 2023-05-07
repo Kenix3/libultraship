@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include "Resource.h"
 #include <StormLib.h>
+#include <mutex>
 
 namespace Ship {
 struct File;
