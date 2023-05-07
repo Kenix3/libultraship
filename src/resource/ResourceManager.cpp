@@ -91,13 +91,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     auto cacheLine = CheckCache(filePath, loadExact);
     auto cachedResource = GetCachedResource(cacheLine);
     if (cachedResource != nullptr) {
-        if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-            SPDLOG_DEBUG("cache check 1 hit");
-        }
         return cachedResource;
-    }
-    if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-        SPDLOG_DEBUG("cache check 1 miss");
     }
 
     // Check for resource load errors which can indicate an alternate asset.
@@ -109,9 +103,6 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
                 // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
                 auto loadError = std::get<ResourceLoadError>(cacheLine);
                 if (loadError != ResourceLoadError::NotCached) {
-                    if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-                        SPDLOG_DEBUG("alt asset thing");
-                    }
                     return nullptr;
                 }
             } catch (std::bad_variant_access const& e) {
@@ -136,17 +127,11 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
         const std::lock_guard<std::mutex> lock(mMutex);
 
         if (cachedResource != nullptr) {
-            if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-                SPDLOG_DEBUG("cache check 2 hit");
-            }
             // If another thread has already loaded this resource, discard the work we already did and return from
             // cache.
             resource = cachedResource;
         }
-        if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-            SPDLOG_DEBUG("cache check 2 miss");
-        }
-
+        
         // Set the cache to the loaded resource
         if (resource != nullptr) {
             if (filePath.ends_with("gForestTempleTitleCardFRATex")) {

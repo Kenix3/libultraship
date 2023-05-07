@@ -2751,7 +2751,6 @@ static void gfx_run_dl(Gfx* cmd) {
                         std::shared_ptr<Ship::Texture> tex =
                             std::static_pointer_cast<Ship::Texture>(LoadResource(imgData, true));
 
-                        auto blarg = tex->InitData->Path;
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
                         rawTexMetdata.width = tex->Width;

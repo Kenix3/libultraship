@@ -23,10 +23,6 @@ std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
 
 extern "C" {
 
-void GetResourceAsync(const char* name) {
-    Ship::Window::GetInstance()->GetResourceManager()->LoadResourceAsync(name);
-}
-
 uint64_t GetResourceCrcByName(const char* name) {
     return CRC64(name);
 }
