@@ -2383,7 +2383,8 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     RawTexMetadata rawTexMetadata = {};
 
     if ((bool)gfx_check_image_signature((char*)data)) {
-        std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(LoadResource((char*)data, true));
+        std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(
+            Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2495,7 +2496,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
-                int32_t* mtx = (int32_t*)GetResourceDataByCrc(hash, false);
+                int32_t* mtx = (int32_t*)GetResourceDataByCrc(hash);
 
 #ifdef F3DEX_GBI_2
                 if (mtx != NULL) {
@@ -2560,7 +2561,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (Vtx*)offset);
                     cmd++;
                 } else {
-                    Vtx* vtx = (Vtx*)GetResourceDataByCrc(hash, false);
+                    Vtx* vtx = (Vtx*)GetResourceDataByCrc(hash);
 
                     if (vtx != NULL) {
                         vtx = (Vtx*)((char*)vtx + offset);
@@ -2568,7 +2569,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd--;
 
                         if (ourHash != (uint64_t)-1) {
-                            auto res = LoadResource(ourHash, false);
+                            auto res = LoadResource(ourHash);
                         }
 
                         cmd->words.w1 = (uintptr_t)vtx;
@@ -2584,7 +2585,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 int vtxCnt = cmd->words.w0;
                 int vtxIdxOff = cmd->words.w1 >> 16;
                 int vtxDataOff = cmd->words.w1 & 0xFFFF;
-                Vtx* vtx = (Vtx*)GetResourceDataByName((const char*)fileName, false);
+                Vtx* vtx = (Vtx*)GetResourceDataByName((const char*)fileName);
                 vtx += vtxDataOff;
                 cmd--;
 
@@ -2592,7 +2593,7 @@ static void gfx_run_dl(Gfx* cmd) {
             } break;
             case G_DL_OTR_FILEPATH: {
                 fileName = (char*)cmd->words.w1;
-                Gfx* nDL = (Gfx*)GetResourceDataByName((const char*)fileName, false);
+                Gfx* nDL = (Gfx*)GetResourceDataByName((const char*)fileName);
 
                 if (C0(16, 1) == 0 && nDL != nullptr) {
                     // Push return address
@@ -2639,7 +2640,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_DL_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash, false);
+                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash);
 
                     if (gfx != 0) {
                         gfx_run_dl(gfx);
@@ -2670,7 +2671,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_BRANCH_Z_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash, false);
+                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash);
 
                     if (gfx != 0) {
                         cmd = gfx;
@@ -2748,8 +2749,8 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 if ((i & 1) != 1) {
                     if (gfx_check_image_signature(imgData) == 1) {
-                        std::shared_ptr<Ship::Texture> tex =
-                            std::static_pointer_cast<Ship::Texture>(LoadResource(imgData, true));
+                        std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(
+                            Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
@@ -2774,8 +2775,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetadata = {};
 
-                std::shared_ptr<Ship::Texture> texture =
-                    std::static_pointer_cast<Ship::Texture>(LoadResource(hash, true));
+                std::shared_ptr<Ship::Texture> texture = std::static_pointer_cast<Ship::Texture>(
+                    Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(GetResourceNameByCrc(hash)));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -2805,7 +2806,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd->words.w1 = (uintptr_t)tex;
 
                         if (ourHash != (uint64_t)-1) {
-                            auto res = LoadResource(ourHash, false);
+                            auto res = LoadResource(ourHash);
                         }
 
                         cmd++;
@@ -2833,8 +2834,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetadata = {};
 
-                std::shared_ptr<Ship::Texture> texture =
-                    std::static_pointer_cast<Ship::Texture>(LoadResource(fileName, true));
+                std::shared_ptr<Ship::Texture> texture = std::static_pointer_cast<Ship::Texture>(
+                    Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -3278,8 +3279,10 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
     }
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
-        Ship::Texture* tex =
-            std::static_pointer_cast<Ship::Texture>(LoadResource(reinterpret_cast<char*>(replacement), true)).get();
+        Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(
+                                 Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                     reinterpret_cast<char*>(replacement)))
+                                 .get();
 
         replacement = tex->ImageData;
     }

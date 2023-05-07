@@ -5,12 +5,11 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-std::shared_ptr<Ship::Resource> LoadResource(const char* name, bool now) {
-    return now ? Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(name)
-               : Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
+std::shared_ptr<Ship::Resource> LoadResource(const char* name) {
+    return Ship::Window::GetInstance()->GetResourceManager()->LoadResource(name);
 }
 
-std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
+std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc) {
     auto name = GetResourceNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
@@ -18,7 +17,7 @@ std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
         return nullptr;
     }
 
-    return LoadResource(name, now);
+    return LoadResource(name);
 }
 
 extern "C" {
@@ -32,8 +31,8 @@ const char* GetResourceNameByCrc(uint64_t crc) {
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 
-size_t GetResourceSizeByName(const char* name, bool now) {
-    auto resource = LoadResource(name, now);
+size_t GetResourceSizeByName(const char* name) {
+    auto resource = LoadResource(name);
 
     if (resource == nullptr) {
         return 0;
@@ -42,12 +41,12 @@ size_t GetResourceSizeByName(const char* name, bool now) {
     return resource->GetPointerSize();
 }
 
-size_t GetResourceSizeByCrc(uint64_t crc, bool now) {
-    return GetResourceSizeByName(GetResourceNameByCrc(crc), now);
+size_t GetResourceSizeByCrc(uint64_t crc) {
+    return GetResourceSizeByName(GetResourceNameByCrc(crc));
 }
 
-uint8_t GetResourceIsCustomByName(const char* name, bool now) {
-    auto resource = LoadResource(name, now);
+uint8_t GetResourceIsCustomByName(const char* name) {
+    auto resource = LoadResource(name);
 
     if (resource == nullptr) {
         return false;
@@ -56,12 +55,12 @@ uint8_t GetResourceIsCustomByName(const char* name, bool now) {
     return resource->InitData->IsCustom;
 }
 
-uint8_t GetResourceIsCustomByCrc(uint64_t crc, bool now) {
-    return GetResourceIsCustomByName(GetResourceNameByCrc(crc), now);
+uint8_t GetResourceIsCustomByCrc(uint64_t crc) {
+    return GetResourceIsCustomByName(GetResourceNameByCrc(crc));
 }
 
-void* GetResourceDataByName(const char* name, bool now) {
-    auto resource = LoadResource(name, now);
+void* GetResourceDataByName(const char* name) {
+    auto resource = LoadResource(name);
 
     if (resource == nullptr) {
         return nullptr;
@@ -70,7 +69,7 @@ void* GetResourceDataByName(const char* name, bool now) {
     return resource->GetPointer();
 }
 
-void* GetResourceDataByCrc(uint64_t crc, bool now) {
+void* GetResourceDataByCrc(uint64_t crc) {
     auto name = GetResourceNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
@@ -78,11 +77,11 @@ void* GetResourceDataByCrc(uint64_t crc, bool now) {
         return nullptr;
     }
 
-    return GetResourceDataByName(name, now);
+    return GetResourceDataByName(name);
 }
 
-uint16_t GetResourceTexWidthByName(const char* name, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
+uint16_t GetResourceTexWidthByName(const char* name) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
         return res->Width;
@@ -92,8 +91,8 @@ uint16_t GetResourceTexWidthByName(const char* name, bool now) {
     return -1;
 }
 
-uint16_t GetResourceTexWidthByCrc(uint64_t crc, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
+uint16_t GetResourceTexWidthByCrc(uint64_t crc) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
         return res->Width;
@@ -103,8 +102,8 @@ uint16_t GetResourceTexWidthByCrc(uint64_t crc, bool now) {
     return -1;
 }
 
-uint16_t GetResourceTexHeightByName(const char* name, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
+uint16_t GetResourceTexHeightByName(const char* name) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
         return res->Height;
@@ -114,8 +113,8 @@ uint16_t GetResourceTexHeightByName(const char* name, bool now) {
     return -1;
 }
 
-uint16_t GetResourceTexHeightByCrc(uint64_t crc, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
+uint16_t GetResourceTexHeightByCrc(uint64_t crc) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
         return res->Height;
@@ -125,8 +124,8 @@ uint16_t GetResourceTexHeightByCrc(uint64_t crc, bool now) {
     return -1;
 }
 
-size_t GetResourceTexSizeByName(const char* name, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name, now));
+size_t GetResourceTexSizeByName(const char* name) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
         return res->ImageDataSize;
@@ -136,8 +135,8 @@ size_t GetResourceTexSizeByName(const char* name, bool now) {
     return -1;
 }
 
-size_t GetResourceTexSizeByCrc(uint64_t crc, bool now) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc, now));
+size_t GetResourceTexSizeByCrc(uint64_t crc) {
+    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
         return res->ImageDataSize;
@@ -167,7 +166,7 @@ void DirtyResourceDirectory(const char* name) {
 }
 
 void DirtyResourceByName(const char* name) {
-    auto resource = LoadResource(name, false);
+    auto resource = LoadResource(name);
 
     if (resource != nullptr) {
         resource->IsDirty = true;
@@ -175,7 +174,7 @@ void DirtyResourceByName(const char* name) {
 }
 
 void DirtyResourceByCrc(uint64_t crc) {
-    auto resource = LoadResource(crc, false);
+    auto resource = LoadResource(crc);
 
     if (resource != nullptr) {
         resource->IsDirty = true;
