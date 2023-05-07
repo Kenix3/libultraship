@@ -131,12 +131,9 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
             // cache.
             resource = cachedResource;
         }
-        
+
         // Set the cache to the loaded resource
         if (resource != nullptr) {
-            if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-                SPDLOG_DEBUG("{}", resource->InitData->Path);
-            }
             mResourceCache[filePath] = resource;
         } else {
             mResourceCache[filePath] = ResourceLoadError::NotFound;
@@ -171,16 +168,9 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
     // Check the cache before queueing the job.
     auto cacheCheck = GetCachedResource(filePath, loadExact);
     if (cacheCheck) {
-        if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-            SPDLOG_DEBUG("cache check hit");
-        }
         auto promise = std::make_shared<std::promise<std::shared_ptr<Resource>>>();
         promise->set_value(cacheCheck);
         return promise->get_future().share();
-    }
-
-    if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
-        SPDLOG_DEBUG("cache check miss");
     }
 
     const auto newFilePath = std::string(filePath);
