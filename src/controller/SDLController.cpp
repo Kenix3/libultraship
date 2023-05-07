@@ -11,7 +11,9 @@
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
-auto format_as(SDL_GameControllerAxis a) { return fmt::underlying(a); }
+auto format_as(SDL_GameControllerAxis a) {
+    return fmt::underlying(a);
+}
 
 namespace Ship {
 
