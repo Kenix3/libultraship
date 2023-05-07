@@ -31,7 +31,7 @@ const char* GetResourceNameByCrc(uint64_t crc) {
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 
-size_t GetResourceSizeByName(const char *name) {
+size_t GetResourceSizeByName(const char* name) {
     auto resource = LoadResource(name);
 
     if (resource == nullptr) {
@@ -45,7 +45,7 @@ size_t GetResourceSizeByCrc(uint64_t crc) {
     return GetResourceSizeByName(GetResourceNameByCrc(crc));
 }
 
-uint8_t GetResourceIsCustomByName(const char *name) {
+uint8_t GetResourceIsCustomByName(const char* name) {
     auto resource = LoadResource(name);
 
     if (resource == nullptr) {
@@ -59,7 +59,7 @@ uint8_t GetResourceIsCustomByCrc(uint64_t crc) {
     return GetResourceIsCustomByName(GetResourceNameByCrc(crc));
 }
 
-void *GetResourceDataByName(const char *name) {
+void* GetResourceDataByName(const char* name) {
     auto resource = LoadResource(name);
 
     if (resource == nullptr) {
@@ -69,7 +69,7 @@ void *GetResourceDataByName(const char *name) {
     return resource->GetPointer();
 }
 
-void *GetResourceDataByCrc(uint64_t crc) {
+void* GetResourceDataByCrc(uint64_t crc) {
     auto name = GetResourceNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
@@ -80,7 +80,7 @@ void *GetResourceDataByCrc(uint64_t crc) {
     return GetResourceDataByName(name);
 }
 
-uint16_t GetResourceTexWidthByName(const char *name) {
+uint16_t GetResourceTexWidthByName(const char* name) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
@@ -102,7 +102,7 @@ uint16_t GetResourceTexWidthByCrc(uint64_t crc) {
     return -1;
 }
 
-uint16_t GetResourceTexHeightByName(const char *name) {
+uint16_t GetResourceTexHeightByName(const char* name) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
@@ -124,7 +124,7 @@ uint16_t GetResourceTexHeightByCrc(uint64_t crc) {
     return -1;
 }
 
-size_t GetResourceTexSizeByName(const char *name) {
+size_t GetResourceTexSizeByName(const char* name) {
     const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
 
     if (res != nullptr) {
@@ -157,7 +157,7 @@ uint32_t HasGameVersion(uint32_t hash) {
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 
-void LoadResourceDirectory(const char *name) {
+void LoadResourceDirectory(const char* name) {
     Ship::Window::GetInstance()->GetResourceManager()->LoadDirectory(name);
 }
 
