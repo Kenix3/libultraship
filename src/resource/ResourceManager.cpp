@@ -149,16 +149,20 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     return resource;
 }
 
-std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath) {
-    return mThreadPool->submit(&ResourceManager::LoadFileProcess, this, filePath).share();
+std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath, bool block) {
+    if (block) {
+        return mThreadPool->submit(true, &ResourceManager::LoadFileProcess, this, filePath).share();
+    } else {
+        return mThreadPool->submit(false, &ResourceManager::LoadFileProcess, this, filePath).share();
+    }
 }
 
 std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
-    return LoadFileAsync(filePath).get();
+    return LoadFileAsync(filePath, true).get();
 }
 
 std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
-                                                                                 bool loadExact) {
+                                                                                 bool loadExact, bool block) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
@@ -175,11 +179,15 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
 
     const auto newFilePath = std::string(filePath);
 
-    return mThreadPool->submit(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    if (block) {
+        return mThreadPool->submit(true, &ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    } else {
+        return mThreadPool->submit(false, &ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    }
 }
 
 std::shared_ptr<Resource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact) {
-    return LoadResourceAsync(filePath, loadExact).get();
+    return LoadResourceAsync(filePath, loadExact, true).get();
 }
 
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<Resource>>
