@@ -66,6 +66,7 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
 }
 
 std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent, HANDLE mpqHandle) {
+    const std::lock_guard<std::mutex> lock(mMutex);
     HANDLE fileHandle = NULL;
 
     std::shared_ptr<File> fileToLoad = std::make_shared<File>();

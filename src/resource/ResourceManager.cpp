@@ -22,7 +22,7 @@ ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::str
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::min(1U, std::thread::hardware_concurrency() - 1);
+    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -40,7 +40,7 @@ ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::vec
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::min(1U, std::thread::hardware_concurrency() - 1);
+    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -91,8 +91,15 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     auto cacheLine = CheckCache(filePath, loadExact);
     auto cachedResource = GetCachedResource(cacheLine);
     if (cachedResource != nullptr) {
+        if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+            SPDLOG_DEBUG("cache check 1 hit");
+        }
         return cachedResource;
     }
+    if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+        SPDLOG_DEBUG("cache check 1 miss");
+    }
+
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && filePath.starts_with(Resource::gAltAssetPrefix)) {
@@ -102,6 +109,9 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
                 // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
                 auto loadError = std::get<ResourceLoadError>(cacheLine);
                 if (loadError != ResourceLoadError::NotCached) {
+                    if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+                        SPDLOG_DEBUG("alt asset thing");
+                    }
                     return nullptr;
                 }
             } catch (std::bad_variant_access const& e) {
@@ -126,13 +136,22 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
         const std::lock_guard<std::mutex> lock(mMutex);
 
         if (cachedResource != nullptr) {
+            if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+                SPDLOG_DEBUG("cache check 2 hit");
+            }
             // If another thread has already loaded this resource, discard the work we already did and return from
             // cache.
             resource = cachedResource;
         }
+        if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+            SPDLOG_DEBUG("cache check 2 miss");
+        }
 
         // Set the cache to the loaded resource
         if (resource != nullptr) {
+            if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+                SPDLOG_DEBUG("{}", resource->InitData->Path);
+            }
             mResourceCache[filePath] = resource;
         } else {
             mResourceCache[filePath] = ResourceLoadError::NotFound;
@@ -167,9 +186,16 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
     // Check the cache before queueing the job.
     auto cacheCheck = GetCachedResource(filePath, loadExact);
     if (cacheCheck) {
+        if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+            SPDLOG_DEBUG("cache check hit");
+        }
         auto promise = std::make_shared<std::promise<std::shared_ptr<Resource>>>();
         promise->set_value(cacheCheck);
         return promise->get_future().share();
+    }
+
+    if (filePath.ends_with("gForestTempleTitleCardFRATex")) {
+        SPDLOG_DEBUG("cache check miss");
     }
 
     const auto newFilePath = std::string(filePath);

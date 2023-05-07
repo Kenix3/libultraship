@@ -23,6 +23,10 @@ std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc, bool now) {
 
 extern "C" {
 
+void GetResourceAsync(const char* name) {
+    Ship::Window::GetInstance()->GetResourceManager()->LoadResourceAsync(name);
+}
+
 uint64_t GetResourceCrcByName(const char* name) {
     return CRC64(name);
 }
@@ -151,6 +155,10 @@ void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCo
     auto list = Ship::Window::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
+}
+
+void LoadResourceDirectoryAsync(const char* name) {
+    Ship::Window::GetInstance()->GetResourceManager()->LoadDirectoryAsync(name);
 }
 
 uint32_t HasGameVersion(uint32_t hash) {

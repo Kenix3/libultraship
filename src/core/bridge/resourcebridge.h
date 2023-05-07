@@ -40,6 +40,7 @@ void UnloadResourceByName(const char* name);
 void UnloadResourceByCrc(uint64_t crc);
 void UnloadResourceDirectory(const char* name);
 void ClearResourceCache(void);
+void LoadResourceDirectoryAsync(const char* name);
 
 #ifdef __cplusplus
 };
