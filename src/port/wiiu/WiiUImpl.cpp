@@ -47,7 +47,7 @@ static const devoptab_t dotab_stdout = {
 };
 #endif
 
-void Init(const std::string& shortName) {
+void Init() {
 #ifdef _DEBUG
     WHBLogUdpInit();
     WHBLogPrint("Hello World!");
