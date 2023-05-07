@@ -22,7 +22,7 @@ ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::str
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::min(1U, std::thread::hardware_concurrency() - 1);
+    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -40,7 +40,7 @@ ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::vec
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::min(1U, std::thread::hardware_concurrency() - 1);
+    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
