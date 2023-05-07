@@ -7,6 +7,14 @@
 #include "log/spd/ConsoleSink.h"
 #include "misc/Hooks.h"
 
+#ifdef __APPLE__
+#include "misc/OSXFolderManager.h"
+#elif defined(__SWITCH__)
+#include "port/switch/SwitchImpl.h"
+#elif defined(__WIIU__)
+#include "port/wiiu/WiiUImpl.h"
+#endif
+
 namespace Ship {
 std::weak_ptr<Context> Context::mContext;
 
