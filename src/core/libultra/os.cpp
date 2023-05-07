@@ -1,6 +1,6 @@
 #include "libultraship/libultraship.h"
 
-#include "core/Window.h"
+#include "core/Context.h"
 
 #include <SDL2/SDL.h>
 #include <spdlog/spdlog.h>
@@ -31,7 +31,7 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
 #endif
 #endif
 
-    Ship::Window::GetInstance()->GetControlDeck()->Init(controllerBits);
+    Ship::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
 
     return 0;
 }
@@ -47,7 +47,7 @@ void osContGetReadData(OSContPad* pad) {
         return;
     }
 
-    Ship::Window::GetInstance()->GetControlDeck()->WriteToPad(pad);
+    Ship::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
     Ship::ExecuteHooks<Ship::ControllerRead>(pad);
 }
 

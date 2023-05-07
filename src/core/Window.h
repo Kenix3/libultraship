@@ -4,37 +4,18 @@
 #include <filesystem>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
-#include "controller/ControlDeck.h"
-#include "core/ConsoleVariable.h"
-#include "debug/CrashHandler.h"
-#include "audio/AudioPlayer.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
-#include "Mercury.h"
-
-struct GfxRenderingAPI;
-struct GfxWindowManagerAPI;
+#include "graphic/Fast3D/gfx_rendering_api.h"
 
 namespace Ship {
-class ResourceManager;
+class Context;
 
 class Window {
   public:
-    static std::shared_ptr<Window> GetInstance();
-    static std::shared_ptr<Window> CreateInstance(const std::string name, const std::string shortName,
-                                                  const std::vector<std::string>& otrFiles = {},
-                                                  const std::unordered_set<uint32_t>& validHashes = {});
-
-    static std::string GetAppBundlePath();
-    static std::string GetAppDirectoryPath();
-    static std::string GetPathRelativeToAppDirectory(const char* path);
-    static std::string GetPathRelativeToAppBundle(const char* path);
-
-    Window(std::string name, std::string shortName);
+    Window(std::shared_ptr<Context> context);
     ~Window();
-    void CreateDefaultSettings();
     void MainLoop(void (*MainFunction)(void));
-    void Initialize(const std::vector<std::string>& otrFiles = {},
-                    const std::unordered_set<uint32_t>& validHashes = {});
+    void Init();
     void Close();
     void StartFrame();
     void SetTargetFps(int32_t fps);
@@ -50,51 +31,21 @@ class Window {
     bool CanDisableVerticalSync();
     float GetCurrentAspectRatio();
     bool IsFullscreen();
-    std::string GetName();
-    std::string GetShortName();
-    std::shared_ptr<ControlDeck> GetControlDeck();
-    std::shared_ptr<AudioPlayer> GetAudioPlayer();
-    std::shared_ptr<ResourceManager> GetResourceManager();
-    std::shared_ptr<CrashHandler> GetCrashHandler();
-    std::shared_ptr<Mercury> GetConfig();
-    std::shared_ptr<spdlog::logger> GetLogger();
-    std::shared_ptr<ConsoleVariable> GetConsoleVariables();
     const char* GetKeyName(int32_t scancode);
     int32_t GetLastScancode();
     void SetLastScancode(int32_t scanCode);
-    void InitializeAudioPlayer(std::string_view audioBackend);
-    void InitializeWindowManager(std::string_view gfxBackend, std::string_view gfxApi);
-    bool DoesOtrFileExist();
-
-  protected:
-    Window() = default;
+    void InitWindowManager(std::string windowManagerBackend, std::string gfxApiBackend);
+    std::shared_ptr<Context> GetContext();
 
   private:
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp(void);
     static void OnFullscreenChanged(bool isNowFullscreen);
-    static std::weak_ptr<Window> mContext;
 
-    void InitializeConsoleVariables();
-    void InitializeConfiguration();
-    void InitializeControlDeck();
-    void InitializeCrashHandler();
-    void InitializeLogging();
-    void InitializeResourceManager(const std::vector<std::string>& otrFiles = {},
-                                   const std::unordered_set<uint32_t>& validHashes = {});
-
-    std::shared_ptr<spdlog::logger> mLogger;
-    std::shared_ptr<Mercury> mConfig;
-    std::shared_ptr<ResourceManager> mResourceManager;
-    std::shared_ptr<AudioPlayer> mAudioPlayer;
-    std::shared_ptr<ControlDeck> mControlDeck;
-    std::shared_ptr<ConsoleVariable> mConsoleVariables;
-    std::shared_ptr<CrashHandler> mCrashHandler;
-
+    std::shared_ptr<Context> mContext;
     std::string mGfxBackend;
     std::string mGfxApi;
-    std::string mAudioBackend;
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
     bool mIsFullscreen;
@@ -102,11 +53,5 @@ class Window {
     uint32_t mWidth;
     uint32_t mHeight;
     int32_t mLastScancode;
-    std::string mName;
-    std::string mShortName;
-    std::string mMainPath;
-    std::string mBasePath;
-    std::string mPatchesPath;
-    bool mOtrFileExists;
 };
 } // namespace Ship

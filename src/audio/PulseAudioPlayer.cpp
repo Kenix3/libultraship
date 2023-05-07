@@ -39,7 +39,7 @@ static void PasWriteComplete(void* userData) {
     *(bool*)userData = true;
 }
 
-PulseAudioPlayer::PulseAudioPlayer() {
+PulseAudioPlayer::PulseAudioPlayer(std::string backend) : AudioPlayer(backend) {
 }
 
 bool PulseAudioPlayer::DoInit() {

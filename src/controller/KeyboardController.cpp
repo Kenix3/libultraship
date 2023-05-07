@@ -1,4 +1,5 @@
 #include "controller/KeyboardController.h"
+#include "core/Context.h"
 
 #if __APPLE__
 #include <SDL_keyboard.h>
@@ -71,7 +72,7 @@ const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n
     if (find == mappings.end()) {
         return "Unknown";
     }
-    const char* name = Window::GetInstance()->GetKeyName(find->first);
+    const char* name = Context::GetInstance()->GetWindow()->GetKeyName(find->first);
     return strlen(name) == 0 ? "Unknown" : name;
 }
 

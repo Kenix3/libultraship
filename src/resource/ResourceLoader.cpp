@@ -3,6 +3,7 @@
 #include "ResourceManager.h"
 #include "Resource.h"
 #include "File.h"
+#include "core/Context.h"
 #include "binarytools/MemoryStream.h"
 #include "binarytools/BinaryReader.h"
 #include "factory/TextureFactory.h"
@@ -13,7 +14,7 @@
 #include "factory/MatrixFactory.h"
 
 namespace Ship {
-ResourceLoader::ResourceLoader(std::shared_ptr<Window> context) : mContext(context) {
+ResourceLoader::ResourceLoader(std::shared_ptr<Context> context) : mContext(context) {
     RegisterGlobalResourceFactories();
 }
 
@@ -38,7 +39,7 @@ bool ResourceLoader::RegisterResourceFactory(ResourceType resourceType, std::str
     return true;
 }
 
-std::shared_ptr<Window> ResourceLoader::GetContext() {
+std::shared_ptr<Context> ResourceLoader::GetContext() {
     return mContext;
 }
 

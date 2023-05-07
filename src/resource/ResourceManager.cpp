@@ -8,13 +8,14 @@
 #include <Utils/StringHelper.h>
 #include <StormLib.h>
 #include "core/bridge/consolevariablebridge.h"
+#include "core/Context.h"
 
 // Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace Ship {
 
-ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::string& mainPath,
+ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath,
                                  const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
@@ -32,7 +33,7 @@ ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::str
     }
 }
 
-ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
+ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::vector<std::string>& otrFiles,
                                  const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
@@ -304,7 +305,7 @@ std::shared_ptr<ResourceLoader> ResourceManager::GetResourceLoader() {
     return mResourceLoader;
 }
 
-std::shared_ptr<Window> ResourceManager::GetContext() {
+std::shared_ptr<Context> ResourceManager::GetContext() {
     return mContext;
 }
 

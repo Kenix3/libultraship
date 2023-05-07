@@ -1,12 +1,13 @@
 #pragma once
 #include "stdint.h"
 #include "stddef.h"
+#include <string>
 
 namespace Ship {
 class AudioPlayer {
 
   public:
-    AudioPlayer();
+    AudioPlayer(std::string backend);
 
     bool Init(void);
     virtual int Buffered(void) = 0;
@@ -19,10 +20,13 @@ class AudioPlayer {
         return 44100;
     }
 
+    std::string GetBackend();
+
   protected:
     virtual bool DoInit(void) = 0;
 
   private:
+    std::string mBackend;
     bool mInitialized;
 };
 } // namespace Ship

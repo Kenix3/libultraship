@@ -12,7 +12,7 @@ using namespace Microsoft::WRL;
 namespace Ship {
 class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
   public:
-    WasapiAudioPlayer();
+    WasapiAudioPlayer(std::string backend);
 
     int Buffered(void);
     int GetDesiredBuffered(void);
