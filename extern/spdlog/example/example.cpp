@@ -262,15 +262,26 @@ struct my_type
         : i(i){};
 };
 
-namespace fmt_lib = spdlog::fmt_lib;
+#ifndef SPDLOG_USE_STD_FORMAT // when using fmtlib
 template<>
-struct fmt_lib::formatter<my_type> : fmt_lib::formatter<std::string>
+struct fmt::formatter<my_type> : fmt::formatter<std::string>
 {
     auto format(my_type my, format_context &ctx) -> decltype(ctx.out())
     {
-        return fmt_lib::format_to(ctx.out(), "[my_type i={}]", my.i);
+        return format_to(ctx.out(), "[my_type i={}]", my.i);
     }
 };
+
+#else // when using std::format
+template<>
+struct std::formatter<my_type> : std::formatter<std::string>
+{
+    auto format(my_type my, format_context &ctx) -> decltype(ctx.out())
+    {
+        return format_to(ctx.out(), "[my_type i={}]", my.i);
+    }
+};
+#endif
 
 void user_defined_example()
 {

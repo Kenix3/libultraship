@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 #include "ResourceType.h"
-#include "libultraship/version.h"
 #include "binarytools/BinaryWriter.h"
 
 namespace Ship {
@@ -12,7 +11,7 @@ struct ResourceInitData {
     std::string Path;
     Endianness ByteOrder;
     ResourceType Type;
-    uint32_t ResourceVersion;
+    int32_t ResourceVersion;
     uint64_t Id;
     bool IsCustom;
 };

@@ -9,8 +9,8 @@ std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<ResourceMa
     auto resource = std::make_shared<Vertex>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
@@ -31,8 +31,8 @@ std::shared_ptr<Resource> VertexFactory::ReadResourceXML(std::shared_ptr<Resourc
     auto resource = std::make_shared<Vertex>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
