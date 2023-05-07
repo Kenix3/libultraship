@@ -166,7 +166,7 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
-        return LoadResourceAsync(newFilePath, loadExact);
+        return LoadResourceAsync(newFilePath, loadExact, block);
     }
 
     // Check the cache before queueing the job.
@@ -243,14 +243,14 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-ResourceManager::LoadDirectoryAsync(const std::string& searchMask) {
+ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool front) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Resource>>>>();
     auto fileList = GetArchive()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync(fileName);
+        auto future = LoadResourceAsync(fileName, false, front);
         loadedList->push_back(future);
     }
 
@@ -258,7 +258,7 @@ ResourceManager::LoadDirectoryAsync(const std::string& searchMask) {
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
-    auto futureList = LoadDirectoryAsync(searchMask);
+    auto futureList = LoadDirectoryAsync(searchMask, true);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
 
     for (size_t i = 0; i < futureList->size(); i++) {

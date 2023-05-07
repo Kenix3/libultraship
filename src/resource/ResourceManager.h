@@ -43,7 +43,7 @@ class ResourceManager {
                                                                     bool loadExact = false, bool block = false);
     std::shared_ptr<std::vector<std::shared_ptr<Resource>>> LoadDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-    LoadDirectoryAsync(const std::string& searchMask);
+    LoadDirectoryAsync(const std::string& searchMask, bool front = false);
     std::shared_ptr<std::vector<std::string>> FindLoadedFiles(const std::string& searchMask);
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectory(const std::string& searchMask);
