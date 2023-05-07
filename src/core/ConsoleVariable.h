@@ -9,9 +9,6 @@
 
 namespace Ship {
 typedef enum class ConsoleVariableType { Integer, Float, String, Color, Color24 } ConsoleVariableType;
-typedef union CVarValue {
-
-} CVarValue;
 
 typedef struct CVar {
     const char* Name;

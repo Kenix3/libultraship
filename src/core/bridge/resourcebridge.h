@@ -40,6 +40,7 @@ void UnloadResourceByName(const char* name);
 void UnloadResourceByCrc(uint64_t crc);
 void UnloadResourceDirectory(const char* name);
 void ClearResourceCache(void);
+uint32_t DoesOtrFileExist();
 
 #ifdef __cplusplus
 };

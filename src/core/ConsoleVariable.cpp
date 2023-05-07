@@ -1,10 +1,10 @@
 #include "ConsoleVariable.h"
 
 #include <functional>
-#include <Utils/File.h>
+#include <Utils/DiskFile.h>
 #include <misc/Utils.h>
 #include "Mercury.h"
-#include "core/Window.h"
+#include "core/Context.h"
 
 namespace Ship {
 
@@ -161,13 +161,13 @@ void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue)
 }
 
 void ConsoleVariable::ClearVariable(const char* name) {
-    std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<Mercury> conf = Ship::Context::GetInstance()->GetConfig();
     mVariables.erase(name);
     conf->erase(StringHelper::Sprintf("CVars.%s", name));
 }
 
 void ConsoleVariable::Save() {
-    std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<Mercury> conf = Ship::Context::GetInstance()->GetConfig();
 
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
@@ -199,7 +199,7 @@ void ConsoleVariable::Save() {
 }
 
 void ConsoleVariable::Load() {
-    std::shared_ptr<Mercury> conf = Ship::Window::GetInstance()->GetConfig();
+    std::shared_ptr<Mercury> conf = Ship::Context::GetInstance()->GetConfig();
     conf->reload();
 
     LoadFromPath("", conf->rjson["CVars"].items());
@@ -256,9 +256,9 @@ void ConsoleVariable::LoadFromPath(
     }
 }
 void ConsoleVariable::LoadLegacy() {
-    auto conf = Ship::Window::GetPathRelativeToAppDirectory("cvars.cfg");
-    if (File::Exists(conf)) {
-        const auto lines = File::ReadAllLines(conf);
+    auto conf = Ship::Context::GetPathRelativeToAppDirectory("cvars.cfg");
+    if (DiskFile::Exists(conf)) {
+        const auto lines = DiskFile::ReadAllLines(conf);
 
         for (const std::string& line : lines) {
             std::vector<std::string> cfg = StringHelper::Split(line, " = ");

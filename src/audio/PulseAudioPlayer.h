@@ -8,7 +8,7 @@
 namespace Ship {
 class PulseAudioPlayer : public AudioPlayer {
   public:
-    PulseAudioPlayer();
+    PulseAudioPlayer(std::string backend);
     int Buffered() override;
     int GetDesiredBuffered() override;
     void Play(const uint8_t* buff, size_t len) override;

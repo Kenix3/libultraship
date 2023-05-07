@@ -5,7 +5,7 @@
 namespace Ship {
 class SDLAudioPlayer : public AudioPlayer {
   public:
-    SDLAudioPlayer();
+    SDLAudioPlayer(std::string backend);
 
     int Buffered(void);
     int GetDesiredBuffered(void);

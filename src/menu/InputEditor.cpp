@@ -1,6 +1,6 @@
 #include "InputEditor.h"
 #include "controller/Controller.h"
-#include "core/Window.h"
+#include "core/Context.h"
 #include <ImGui/imgui.h>
 #include "ImGuiImpl.h"
 #include <Utils/StringHelper.h>
@@ -16,7 +16,7 @@ void InputEditor::Init() {
 }
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
-    auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
+    auto controlDeck = Ship::Context::GetInstance()->GetControlDeck();
     return controlDeck->GetDeviceFromPortIndex(slot);
 }
 
@@ -66,7 +66,7 @@ void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentP
 }
 
 void InputEditor::DrawControllerSelect(int32_t currentPort) {
-    auto controlDeck = Ship::Window::GetInstance()->GetControlDeck();
+    auto controlDeck = Ship::Context::GetInstance()->GetControlDeck();
     std::string controllerName = controlDeck->GetDeviceFromPortIndex(currentPort)->GetControllerName();
 
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
@@ -111,7 +111,7 @@ void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
 }
 
 void InputEditor::DrawControllerSchema() {
-    auto backend = Ship::Window::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
+    auto backend = Ship::Context::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
     auto profile = backend->GetProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 

@@ -6,6 +6,7 @@
 
 #include "resource/Archive.h"
 #include "resource/ResourceManager.h"
+#include "core/Context.h"
 #include "core/Window.h"
 #include "debug/CrashHandler.h"
 #include "menu/Console.h"

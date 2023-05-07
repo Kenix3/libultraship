@@ -1,6 +1,6 @@
 #include "ControlDeck.h"
 
-#include "core/Window.h"
+#include "core/Context.h"
 #include "Controller.h"
 #include "DummyController.h"
 #include <Utils/StringHelper.h>
@@ -26,7 +26,7 @@ void ControlDeck::ScanDevices() {
     mPortList.clear();
     mDevices.clear();
 
-    auto controlDeck = Window::GetInstance()->GetControlDeck();
+    auto controlDeck = Context::GetInstance()->GetControlDeck();
 
     // Always load controllers that need their device indices zero based first because we add some other devices
     // afterward.
@@ -109,7 +109,7 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
     StringHelper::Sprintf("Controllers.%s.Slot_%d." key, device->GetGuid().c_str(), virtualSlot, __VA_ARGS__)
 
 void ControlDeck::LoadSettings() {
-    std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
+    std::shared_ptr<Mercury> config = Context::GetInstance()->GetConfig();
 
     for (auto const& val : config->rjson["Controllers"]["Deck"].items()) {
         int32_t slot = std::stoi(val.key().substr(5));
@@ -200,7 +200,7 @@ void ControlDeck::LoadSettings() {
 }
 
 void ControlDeck::SaveSettings() {
-    std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
+    std::shared_ptr<Mercury> config = Context::GetInstance()->GetConfig();
 
     for (size_t i = 0; i < mPortList.size(); i++) {
         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];

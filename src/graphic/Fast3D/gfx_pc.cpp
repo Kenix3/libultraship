@@ -24,8 +24,6 @@
 #include <string>
 #include <iostream>
 
-#include "core/bridge/consolevariablebridge.h"
-
 #include "gfx_pc.h"
 #include "gfx_cc.h"
 #include "gfx_window_manager_api.h"
@@ -2384,7 +2382,7 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(
-            Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2750,7 +2748,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 if ((i & 1) != 1) {
                     if (gfx_check_image_signature(imgData) == 1) {
                         std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(
-                            Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+                            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
@@ -2776,7 +2774,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 RawTexMetadata rawTexMetadata = {};
 
                 std::shared_ptr<Ship::Texture> texture = std::static_pointer_cast<Ship::Texture>(
-                    Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(GetResourceNameByCrc(hash)));
+                    Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                        GetResourceNameByCrc(hash)));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -2835,7 +2834,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 RawTexMetadata rawTexMetadata = {};
 
                 std::shared_ptr<Ship::Texture> texture = std::static_pointer_cast<Ship::Texture>(
-                    Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
+                    Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -3267,7 +3266,7 @@ int32_t gfx_check_image_signature(const char* imgData) {
     }
 
     if (i != 0) {
-        return Ship::Window::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+        return Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
     }
 
     return 0;
@@ -3280,7 +3279,7 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
         Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(
-                                 Ship::Window::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
                                      reinterpret_cast<char*>(replacement)))
                                  .get();
 

@@ -16,7 +16,8 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioRenderClient = __uuidof(IAudioRenderClient);
 
 namespace Ship {
-WasapiAudioPlayer::WasapiAudioPlayer() : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false){};
+WasapiAudioPlayer::WasapiAudioPlayer(std::string backend)
+    : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false), AudioPlayer(backend){};
 
 void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
     if (FAILED(res)) {

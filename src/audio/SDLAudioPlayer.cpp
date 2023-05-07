@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 
 namespace Ship {
-SDLAudioPlayer::SDLAudioPlayer() {
+SDLAudioPlayer::SDLAudioPlayer(std::string backend) : AudioPlayer(backend) {
 }
 
 bool SDLAudioPlayer::DoInit(void) {
