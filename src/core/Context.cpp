@@ -111,9 +111,9 @@ void Context::InitLogging() {
         std::wcerr.clear();
         std::wcin.clear();
 #endif
-        auto ConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        // ConsoleSink->set_level(spdlog::level::trace);
-        sinks.push_back(ConsoleSink);
+        auto systemConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        // systemConsoleSink->set_level(spdlog::level::trace);
+        sinks.push_back(systemConsoleSink);
 #endif
 
 #ifndef __WIIU__
