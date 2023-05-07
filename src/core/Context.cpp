@@ -4,7 +4,6 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include "tchar.h"
 #include "log/spd/ConsoleSink.h"
 #include "misc/Hooks.h"
 
