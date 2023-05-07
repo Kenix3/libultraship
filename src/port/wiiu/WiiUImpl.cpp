@@ -59,9 +59,9 @@ void Init(const std::string& shortName) {
     // make sure the required folders exist
     mkdir("/vol/external01/wiiu/", 0755);
     mkdir("/vol/external01/wiiu/apps/", 0755);
-    mkdir(("/vol/external01/wiiu/apps/" + shortName + "/").c_str(), 0755);
+    mkdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetShortName()).c_str(), 0755);
 
-    chdir(("/vol/external01/wiiu/apps/" + shortName + "/").c_str());
+    chdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetShortName()).c_str());
 
     KPADInit();
     WPADEnableURCC(true);

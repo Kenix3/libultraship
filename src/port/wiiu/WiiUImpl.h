@@ -2,12 +2,11 @@
 
 #include <vpad/input.h>
 #include <padscore/kpad.h>
-#include <string>
 
 namespace Ship {
 namespace WiiU {
 
-void Init(const std::string& shortName);
+void Init();
 
 void Exit();
 
