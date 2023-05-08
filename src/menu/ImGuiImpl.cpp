@@ -524,7 +524,7 @@ void InitGui(WindowImpl windowImpl) {
         LoadTexture("C-Down", "textures/buttons/CDown.png");
     });
 
-    LUS::RegisterHook<LUS::ControllerRead>([](OSContPad* cont_pad) { pads = cont_pad; });
+    LUS::RegisterHook<LUS::ControllerRead>([](OSContPad* contPads) { pads = contPads; });
 
     InitSettings();
 
