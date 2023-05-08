@@ -2,7 +2,7 @@
 #include "controller/Controller.h"
 #include <string>
 
-namespace Ship {
+namespace LUS {
 class WiiUGamepad : public Controller {
   public:
     WiiUGamepad(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
@@ -29,4 +29,4 @@ class WiiUGamepad : public Controller {
     float mRumblePatternStrength;
     uint8_t mRumblePattern[15];
 };
-} // namespace Ship
+} // namespace LUS

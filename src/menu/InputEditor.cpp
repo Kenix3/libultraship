@@ -7,7 +7,7 @@
 #include <ImGui/imgui_internal.h>
 #include "core/bridge/consolevariablebridge.h"
 
-namespace Ship {
+namespace LUS {
 
 #define SEPARATION() ImGui::Dummy(ImVec2(0, 5))
 
@@ -16,7 +16,7 @@ void InputEditor::Init() {
 }
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
-    auto controlDeck = Ship::Context::GetInstance()->GetControlDeck();
+    auto controlDeck = LUS::Context::GetInstance()->GetControlDeck();
     return controlDeck->GetDeviceFromPortIndex(slot);
 }
 
@@ -66,7 +66,7 @@ void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentP
 }
 
 void InputEditor::DrawControllerSelect(int32_t currentPort) {
-    auto controlDeck = Ship::Context::GetInstance()->GetControlDeck();
+    auto controlDeck = LUS::Context::GetInstance()->GetControlDeck();
     std::string controllerName = controlDeck->GetDeviceFromPortIndex(currentPort)->GetControllerName();
 
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
@@ -111,7 +111,7 @@ void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
 }
 
 void InputEditor::DrawControllerSchema() {
-    auto backend = Ship::Context::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
+    auto backend = LUS::Context::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
     auto profile = backend->GetProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
@@ -128,9 +128,9 @@ void InputEditor::DrawControllerSchema() {
     DrawButton("START", BTN_START, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    Ship::EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
+    LUS::EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
 #else
-    Ship::EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
+    LUS::EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
 #endif
     ImGui::SameLine();
     BeginGroupPanel("Digital Pad", ImVec2(150, 20));
@@ -140,7 +140,7 @@ void InputEditor::DrawControllerSchema() {
     DrawButton("Right", BTN_DRIGHT, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    Ship::EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
+    LUS::EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
 #else
     EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
 #endif
@@ -182,7 +182,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::Dummy(ImVec2(0, 6));
     }
 #ifdef __SWITCH__
-    Ship::EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
+    LUS::EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
 #else
     EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
 #endif
@@ -224,7 +224,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        Ship::EndGroupPanel(43.0f);
+        LUS::EndGroupPanel(43.0f);
 #else
         EndGroupPanel(14.0f);
 #endif
@@ -283,7 +283,7 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        Ship::EndGroupPanel(46.0f);
+        LUS::EndGroupPanel(46.0f);
 #else
         EndGroupPanel(14.0f);
 #endif
@@ -402,4 +402,4 @@ void InputEditor::Open() {
 void InputEditor::Close() {
     mOpened = false;
 }
-} // namespace Ship
+} // namespace LUS

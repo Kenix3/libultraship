@@ -4,7 +4,7 @@
 #include "resource/Resource.h"
 #include "libultraship/libultra/gbi.h"
 
-namespace Ship {
+namespace LUS {
 class DisplayList : public Resource {
   public:
     using Resource::Resource;
@@ -14,4 +14,4 @@ class DisplayList : public Resource {
 
     std::vector<Gfx> Instructions;
 };
-} // namespace Ship
+} // namespace LUS

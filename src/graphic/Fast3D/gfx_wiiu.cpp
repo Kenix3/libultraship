@@ -305,11 +305,11 @@ static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool 
     gfx_current_dimensions.width = gfx_current_game_window_viewport.width = WIIU_DEFAULT_FB_WIDTH;
     gfx_current_dimensions.height = gfx_current_game_window_viewport.height = WIIU_DEFAULT_FB_HEIGHT;
 
-    Ship::WindowImpl window_impl;
-    window_impl.backend = Ship::Backend::GX2;
+    LUS::WindowImpl window_impl;
+    window_impl.backend = LUS::Backend::GX2;
     window_impl.Gx2.Width = WIIU_DEFAULT_FB_WIDTH;
     window_impl.Gx2.Height = WIIU_DEFAULT_FB_HEIGHT;
-    Ship::InitGui(window_impl);
+    LUS::InitGui(window_impl);
 }
 
 static void gfx_wiiu_shutdown(void) {
@@ -360,8 +360,8 @@ static void gfx_wiiu_main_loop(void (*run_one_game_iter)(void)) {
         run_one_game_iter();
     }
 
-    Ship::ExecuteHooks<Ship::ExitGame>();
-    Ship::WiiU::Exit();
+    LUS::ExecuteHooks<LUS::ExitGame>();
+    LUS::WiiU::Exit();
 
     gfx_gx2_shutdown();
     gfx_wiiu_shutdown();
@@ -374,27 +374,27 @@ static void gfx_wiiu_get_dimensions(uint32_t* width, uint32_t* height) {
 }
 
 static void gfx_wiiu_handle_events(void) {
-    Ship::WiiU::Update();
+    LUS::WiiU::Update();
 
     ImGui_ImplWiiU_ControllerInput input{};
 
     VPADReadError vpad_error;
-    input.vpad = Ship::WiiU::GetVPADStatus(&vpad_error);
+    input.vpad = LUS::WiiU::GetVPADStatus(&vpad_error);
     if (vpad_error != VPAD_READ_SUCCESS) {
         input.vpad = nullptr;
     }
 
     KPADError kpad_error;
     for (int i = 0; i < 4; i++) {
-        input.kpad[i] = Ship::WiiU::GetKPADStatus((WPADChan)i, &kpad_error);
+        input.kpad[i] = LUS::WiiU::GetKPADStatus((WPADChan)i, &kpad_error);
         if (kpad_error != KPAD_ERROR_OK) {
             input.kpad[i] = nullptr;
         }
     }
 
-    Ship::EventImpl event_impl;
+    LUS::EventImpl event_impl;
     event_impl.Gx2.Input = &input;
-    Ship::UpdateGui(event_impl);
+    LUS::UpdateGui(event_impl);
 }
 
 static bool gfx_wiiu_start_frame(void) {

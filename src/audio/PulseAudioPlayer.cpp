@@ -3,7 +3,7 @@
 #include "PulseAudioPlayer.h"
 #include <spdlog/spdlog.h>
 
-namespace Ship {
+namespace LUS {
 static void PasContextStateCb(pa_context* c, void* userData) {
     switch (pa_context_get_state(c)) {
         case PA_CONTEXT_READY:
@@ -184,6 +184,6 @@ void PulseAudioPlayer::Play(const uint8_t* buff, size_t len) {
     }
     mWriteComplete = false;
 }
-} // namespace Ship
+} // namespace LUS
 
 #endif

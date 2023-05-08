@@ -4,7 +4,7 @@
 
 #include "WiiUImpl.h"
 
-namespace Ship {
+namespace LUS {
 WiiUGamepad::WiiUGamepad(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
     : Controller(controlDeck, deviceIndex), mConnected(true), mRumblePatternStrength(1.0f) {
     memset(mRumblePattern, 0xff, sizeof(mRumblePattern));
@@ -14,7 +14,7 @@ WiiUGamepad::WiiUGamepad(std::shared_ptr<ControlDeck> controlDeck, int32_t devic
 
 bool WiiUGamepad::Open() {
     VPADReadError error;
-    VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
+    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
     if (!status || error == VPAD_READ_INVALID_CONTROLLER) {
         Close();
         return false;
@@ -45,7 +45,7 @@ void WiiUGamepad::ReadDevice(int32_t portIndex) {
     auto profile = GetProfile(portIndex);
 
     VPADReadError error;
-    VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
+    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
     if (!status) {
         Close();
         return;
@@ -177,7 +177,7 @@ int32_t WiiUGamepad::SetLedColor(int32_t portIndex, Color_RGB8 color) {
 void WiiUGamepad::ClearRawPress() {
     // Clear already triggered buttons
     VPADReadError error;
-    VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
+    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
     if (status) {
         status->trigger = 0;
     }
@@ -185,7 +185,7 @@ void WiiUGamepad::ClearRawPress() {
 
 int32_t WiiUGamepad::ReadRawPress() {
     VPADReadError error;
-    VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
+    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
     if (!status || error != VPAD_READ_SUCCESS) {
         return -1;
     }
@@ -342,5 +342,5 @@ bool WiiUGamepad::CanRumble() const {
 bool WiiUGamepad::CanSetLed() const {
     return false;
 }
-} // namespace Ship
+} // namespace LUS
 #endif

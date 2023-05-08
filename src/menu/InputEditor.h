@@ -3,7 +3,7 @@
 #include "stdint.h"
 #include <imgui.h>
 
-namespace Ship {
+namespace LUS {
 
 class InputEditor {
     int32_t mCurrentPort = 0;
@@ -21,4 +21,4 @@ class InputEditor {
     void Open();
     void Close();
 };
-} // namespace Ship
+} // namespace LUS

@@ -6,7 +6,7 @@
 #include "ResourceFactory.h"
 #include "Resource.h"
 
-namespace Ship {
+namespace LUS {
 class Context;
 struct File;
 
@@ -28,4 +28,4 @@ class ResourceLoader {
     std::unordered_map<std::string, std::shared_ptr<ResourceFactory>> mFactoriesStr;
     std::unordered_map<std::string, ResourceType> mFactoriesTypes;
 };
-} // namespace Ship
+} // namespace LUS

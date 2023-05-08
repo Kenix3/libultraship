@@ -3,7 +3,7 @@
 #include "stddef.h"
 #include <string>
 
-namespace Ship {
+namespace LUS {
 class AudioPlayer {
 
   public:
@@ -29,7 +29,7 @@ class AudioPlayer {
     std::string mBackend;
     bool mInitialized;
 };
-} // namespace Ship
+} // namespace LUS
 
 #ifdef _WIN32
 #include "WasapiAudioPlayer.h"

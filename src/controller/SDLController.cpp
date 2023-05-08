@@ -16,7 +16,7 @@ auto format_as(SDL_GameControllerAxis a) {
     return fmt::underlying(a);
 }
 
-namespace Ship {
+namespace LUS {
 
 SDLController::SDLController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
     : Controller(controlDeck, deviceIndex), mController(nullptr) {
@@ -405,4 +405,4 @@ bool SDLController::CanSetLed() const {
 
 void SDLController::ClearRawPress() {
 }
-} // namespace Ship
+} // namespace LUS

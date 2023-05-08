@@ -27,7 +27,7 @@
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace Ship {
+namespace LUS {
 
 Window::Window(std::shared_ptr<Context> context) {
     mContext = context;
@@ -283,4 +283,4 @@ std::shared_ptr<Context> Window::GetContext() {
     return mContext;
 }
 
-} // namespace Ship
+} // namespace LUS

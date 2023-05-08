@@ -12,7 +12,7 @@
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
-namespace Ship {
+namespace LUS {
 
 Controller::Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
     : mIsRumbling(false), mLedColor({ 0, 0, 0 }), mDeviceIndex(deviceIndex), mControlDeck(controlDeck) {
@@ -268,4 +268,4 @@ double Controller::GetClosestNotch(double angle, double approximationThreshold) 
 std::shared_ptr<ControlDeck> Controller::GetControlDeck() {
     return mControlDeck;
 }
-} // namespace Ship
+} // namespace LUS

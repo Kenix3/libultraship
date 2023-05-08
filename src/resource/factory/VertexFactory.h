@@ -3,7 +3,7 @@
 #include "resource/Resource.h"
 #include "resource/ResourceFactory.h"
 
-namespace Ship {
+namespace LUS {
 
 class VertexFactory : public ResourceFactory {
   public:
@@ -19,4 +19,4 @@ class VertexFactoryV0 : public ResourceVersionFactory {
     void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) override;
     void ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) override;
 };
-} // namespace Ship
+} // namespace LUS

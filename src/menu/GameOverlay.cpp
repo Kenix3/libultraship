@@ -9,7 +9,7 @@
 #include <ImGui/imgui_internal.h>
 #include <Utils/StringHelper.h>
 
-namespace Ship {
+namespace LUS {
 bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args) {
     if (args.size() < 3) {
         return CMD_FAILED;
@@ -252,4 +252,4 @@ void GameOverlay::Draw() {
 
     ImGui::End();
 }
-} // namespace Ship
+} // namespace LUS

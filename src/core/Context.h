@@ -13,7 +13,7 @@
 #include "core/Window.h"
 #include "core/ConsoleVariable.h"
 
-namespace Ship {
+namespace LUS {
 class Context {
   public:
     static std::shared_ptr<Context> GetInstance();
@@ -77,4 +77,4 @@ class Context {
     std::string mName;
     std::string mShortName;
 };
-} // namespace Ship
+} // namespace LUS

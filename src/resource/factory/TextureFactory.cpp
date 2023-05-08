@@ -2,7 +2,7 @@
 #include "resource/type/Texture.h"
 #include "spdlog/spdlog.h"
 
-namespace Ship {
+namespace LUS {
 
 std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                        std::shared_ptr<ResourceInitData> initData,
@@ -63,4 +63,4 @@ void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
 
     reader->Read((char*)texture->ImageData, dataSize);
 }
-} // namespace Ship
+} // namespace LUS

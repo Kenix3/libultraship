@@ -128,8 +128,8 @@ static struct RSP {
 struct RawTexMetadata {
     uint16_t width, height;
     float h_byte_scale = 1, v_pixel_scale = 1;
-    std::shared_ptr<Ship::Texture> resource;
-    Ship::TextureType type;
+    std::shared_ptr<LUS::Texture> resource;
+    LUS::TextureType type;
 };
 
 static struct RDP {
@@ -560,8 +560,8 @@ static bool gfx_texture_cache_lookup(int i, const TextureCacheKey& key) {
 }
 
 static std::string gfx_get_base_texture_path(const std::string& path) {
-    if (path.starts_with(Ship::Resource::gAltAssetPrefix)) {
-        return path.substr(Ship::Resource::gAltAssetPrefix.length());
+    if (path.starts_with(LUS::Resource::gAltAssetPrefix)) {
+        return path.substr(LUS::Resource::gAltAssetPrefix.length());
     }
 
     return path;
@@ -882,15 +882,15 @@ static void import_texture_raw(int tile, bool importReplacement) {
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
-    Ship::TextureType type = metadata->type;
-    std::shared_ptr<Ship::Texture> resource = metadata->resource;
+    LUS::TextureType type = metadata->type;
+    std::shared_ptr<LUS::Texture> resource = metadata->resource;
 
     // if texture type is CI4 or CI8 we need to apply tlut to it
     switch (type) {
-        case Ship::TextureType::Palette4bpp:
+        case LUS::TextureType::Palette4bpp:
             import_texture_ci4(tile, false);
             return;
-        case Ship::TextureType::Palette8bpp:
+        case LUS::TextureType::Palette8bpp:
             import_texture_ci8(tile, false);
             return;
         default:
@@ -1262,8 +1262,8 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
                 dotx /= 127.0f;
                 doty /= 127.0f;
 
-                dotx = Ship::Math::clamp(dotx, -1.0f, 1.0f);
-                doty = Ship::Math::clamp(doty, -1.0f, 1.0f);
+                dotx = LUS::Math::clamp(dotx, -1.0f, 1.0f);
+                doty = LUS::Math::clamp(doty, -1.0f, 1.0f);
 
                 if (rsp.geometry_mode & G_TEXTURE_GEN_LINEAR) {
                     // Not sure exactly what formula we should use to get accurate values
@@ -1326,7 +1326,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
             }
 
             float fog_z = z * winv * rsp.fog_mul + rsp.fog_offset;
-            fog_z = Ship::Math::clamp(fog_z, 0.0f, 255.0f);
+            fog_z = LUS::Math::clamp(fog_z, 0.0f, 255.0f);
             d->color.a = fog_z; // Use alpha variable to store fog factor
         } else {
             d->color.a = v->cn[3];
@@ -2381,8 +2381,8 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
     RawTexMetadata rawTexMetadata = {};
 
     if ((bool)gfx_check_image_signature((char*)data)) {
-        std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(
-            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+        std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
+            LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2747,8 +2747,8 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 if ((i & 1) != 1) {
                     if (gfx_check_image_signature(imgData) == 1) {
-                        std::shared_ptr<Ship::Texture> tex = std::static_pointer_cast<Ship::Texture>(
-                            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+                        std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
+                            LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
@@ -2773,9 +2773,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetadata = {};
 
-                std::shared_ptr<Ship::Texture> texture = std::static_pointer_cast<Ship::Texture>(
-                    Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-                        GetResourceNameByCrc(hash)));
+                std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
+                    LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(GetResourceNameByCrc(hash)));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -2833,8 +2832,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetadata = {};
 
-                std::shared_ptr<Ship::Texture> texture = std::static_pointer_cast<Ship::Texture>(
-                    Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
+                std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
+                    LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -3063,7 +3062,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
         tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
 
-    Ship::ExecuteHooks<Ship::GfxInit>();
+    LUS::ExecuteHooks<LUS::GfxInit>();
 }
 
 struct GfxRenderingAPI* gfx_get_current_rendering_api(void) {
@@ -3073,7 +3072,7 @@ struct GfxRenderingAPI* gfx_get_current_rendering_api(void) {
 void gfx_start_frame(void) {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height);
-    Ship::DrawMainMenuAndCalculateGameSize();
+    LUS::DrawMainMenuAndCalculateGameSize();
     has_drawn_imgui_menu = true;
     if (gfx_current_dimensions.height == 0) {
         // Avoid division by zero
@@ -3130,8 +3129,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
         if (has_drawn_imgui_menu) {
-            Ship::DrawFramebufferAndGameInput();
-            Ship::CancelFrame();
+            LUS::DrawFramebufferAndGameInput();
+            LUS::CancelFrame();
             has_drawn_imgui_menu = false;
         }
         return;
@@ -3139,7 +3138,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     dropped_frame = false;
 
     if (!has_drawn_imgui_menu) {
-        Ship::DrawMainMenuAndCalculateGameSize();
+        LUS::DrawMainMenuAndCalculateGameSize();
     }
 
     current_mtx_replacements = &mtx_replacements;
@@ -3177,8 +3176,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
             gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
     }
-    Ship::DrawFramebufferAndGameInput();
-    Ship::RenderImGui();
+    LUS::DrawFramebufferAndGameInput();
+    LUS::RenderImGui();
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
     has_drawn_imgui_menu = false;
@@ -3266,7 +3265,7 @@ int32_t gfx_check_image_signature(const char* imgData) {
     }
 
     if (i != 0) {
-        return Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+        return LUS::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
     }
 
     return 0;
@@ -3278,10 +3277,10 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
     }
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
-        Ship::Texture* tex = std::static_pointer_cast<Ship::Texture>(
-                                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-                                     reinterpret_cast<char*>(replacement)))
-                                 .get();
+        LUS::Texture* tex = std::static_pointer_cast<LUS::Texture>(
+                                LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                    reinterpret_cast<char*>(replacement)))
+                                .get();
 
         replacement = tex->ImageData;
     }

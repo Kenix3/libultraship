@@ -3,7 +3,7 @@
 #include "resource/Resource.h"
 #include "resource/ResourceFactory.h"
 
-namespace Ship {
+namespace LUS {
 class DisplayListFactory : public ResourceFactory {
   public:
     std::shared_ptr<Resource> ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
@@ -21,4 +21,4 @@ class DisplayListFactoryV0 : public ResourceVersionFactory {
 
     uint32_t GetCombineLERPValue(std::string valStr);
 };
-} // namespace Ship
+} // namespace LUS

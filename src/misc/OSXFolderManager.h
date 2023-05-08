@@ -9,7 +9,7 @@
 #define OSXFolderManager_h
 
 #include <stdio.h>
-namespace Ship {
+namespace LUS {
 enum {
     NSApplicationDirectory = 1,
     NSDemoApplicationDirectory,
@@ -65,6 +65,6 @@ class FolderManager {
   private:
     void* m_autoreleasePool;
 };
-}; // namespace Ship
+}; // namespace LUS
 
 #endif /* OSXFolderManager_h */

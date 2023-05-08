@@ -1,6 +1,6 @@
 #include "Blob.h"
 
-namespace Ship {
+namespace LUS {
 void* Blob::GetPointer() {
     return Data.data();
 }
@@ -8,4 +8,4 @@ void* Blob::GetPointer() {
 size_t Blob::GetPointerSize() {
     return Data.size() * sizeof(uint8_t);
 }
-} // namespace Ship
+} // namespace LUS

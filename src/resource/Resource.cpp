@@ -4,12 +4,12 @@
 #include <spdlog/spdlog.h>
 #include "libultraship/libultra/gbi.h"
 
-namespace Ship {
-Resource::Resource(std::shared_ptr<Ship::ResourceManager> resourceManager, std::shared_ptr<ResourceInitData> initData)
+namespace LUS {
+Resource::Resource(std::shared_ptr<LUS::ResourceManager> resourceManager, std::shared_ptr<ResourceInitData> initData)
     : ResourceManager(resourceManager), InitData(initData) {
 }
 
 Resource::~Resource() {
     SPDLOG_TRACE("Resource Unloaded: {}\n", InitData->Path);
 }
-} // namespace Ship
+} // namespace LUS

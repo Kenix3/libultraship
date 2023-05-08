@@ -5,7 +5,7 @@
 #include "AudioPlayer.h"
 #include <pulse/pulseaudio.h>
 
-namespace Ship {
+namespace LUS {
 class PulseAudioPlayer : public AudioPlayer {
   public:
     PulseAudioPlayer(std::string backend);
@@ -23,5 +23,5 @@ class PulseAudioPlayer : public AudioPlayer {
     bool mWriteComplete = false;
     pa_buffer_attr mAttr = { 0 };
 };
-} // namespace Ship
+} // namespace LUS
 #endif

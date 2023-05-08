@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Ship {
+namespace LUS {
 
 enum class ResourceType {
     // Not set
@@ -15,7 +15,7 @@ enum class ResourceType {
     Blob = 0x4F424C42,        // OBLB
     Texture = 0x4F544558,     // OTEX
 
-    // Ship of Harkinian
+    // LUS of Harkinian
     SOH_Animation = 0x4F414E4D,       // OANM
     SOH_PlayerAnimation = 0x4F50414D, // OPAM
     SOH_Room = 0x4F524F4D,            // OROM
@@ -32,4 +32,4 @@ enum class ResourceType {
     SOH_Background = 0x4F424749,      // OBGI
     SOH_SceneCommand = 0x4F52434D,    // ORCM
 };
-} // namespace Ship
+} // namespace LUS

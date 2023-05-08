@@ -5,7 +5,7 @@
 #include <tinyxml2.h>
 #include "Resource.h"
 
-namespace Ship {
+namespace LUS {
 class ResourceManager;
 class ResourceFactory {
   public:
@@ -24,4 +24,4 @@ class ResourceVersionFactory {
     virtual void WriteFileBinary(std::shared_ptr<BinaryWriter> writer, std::shared_ptr<Resource> resource);
     virtual void WriteFileXML(tinyxml2::XMLElement* writer, std::shared_ptr<Resource> resource);
 };
-} // namespace Ship
+} // namespace LUS

@@ -82,10 +82,10 @@ bool oldCursorState = true;
         needsSave = true;
 OSContPad* pads;
 
-std::map<std::string, GameAsset*> DefaultAssets;
+std::map<std::string, LUS::GameAsset*> DefaultAssets;
 std::vector<std::string> emptyArgs;
 
-namespace Ship {
+namespace LUS {
 WindowImpl impl;
 ImGuiIO* io;
 std::shared_ptr<Console> console = std::make_shared<Console>();
@@ -138,7 +138,7 @@ std::map<std::string, CustomWindow> customWindows;
 
 void InitSettings() {
     clientSetupHooks();
-    Ship::RegisterHook<Ship::GfxInit>([] {
+    LUS::RegisterHook<LUS::GfxInit>([] {
         gfx_get_current_rendering_api()->set_texture_filter(
             (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
         if (CVarGetInteger("gConsoleEnabled", 0)) {
@@ -271,7 +271,7 @@ void ImGuiProcessEvent(EventImpl event) {
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
-            Ship::Switch::ImGuiProcessEvent(io->WantTextInput);
+            LUS::Switch::ImGuiProcessEvent(io->WantTextInput);
 #endif
             break;
 #endif
@@ -451,7 +451,7 @@ void InitGui(WindowImpl windowImpl) {
     CVarRegisterInteger("gRandoMatchKeyColors", 1);
     CVarRegisterInteger("gEnableMultiViewports", 1);
 #ifdef __SWITCH__
-    Ship::Switch::ImGuiSetupFont(io->Fonts);
+    LUS::Switch::ImGuiSetupFont(io->Fonts);
 #endif
 
 #ifdef __APPLE__
@@ -480,8 +480,8 @@ void InitGui(WindowImpl windowImpl) {
 #endif
     }
 
-    auto imguiIniPath = Ship::Context::GetPathRelativeToAppDirectory("imgui.ini");
-    auto imguiLogPath = Ship::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
+    auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
+    auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     io->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     io->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
@@ -504,7 +504,7 @@ void InitGui(WindowImpl windowImpl) {
     ImGui::GetStyle().ScaleAllSizes(2);
 #endif
 
-    Ship::RegisterHook<Ship::GfxInit>([] {
+    LUS::RegisterHook<LUS::GfxInit>([] {
         bool menuBarOpen = CVarGetInteger("gOpenMenuBar", 0);
         SetMenuBar(menuBarOpen);
         if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
@@ -524,7 +524,7 @@ void InitGui(WindowImpl windowImpl) {
         LoadTexture("C-Down", "textures/buttons/CDown.png");
     });
 
-    Ship::RegisterHook<Ship::ControllerRead>([](OSContPad* cont_pad) { pads = cont_pad; });
+    LUS::RegisterHook<LUS::ControllerRead>([](OSContPad* contPads) { pads = contPads; });
 
     InitSettings();
 
@@ -946,11 +946,11 @@ void EnableWindow(const std::string& name, bool isEnabled) {
     customWindows[name].Enabled = isEnabled;
 }
 
-Ship::GameOverlay* GetGameOverlay() {
+LUS::GameOverlay* GetGameOverlay() {
     return overlay;
 }
 
-Ship::InputEditor* GetInputEditor() {
+LUS::InputEditor* GetInputEditor() {
     return controller;
 }
 
@@ -966,7 +966,7 @@ void ToggleStatisticsWindow(bool isOpen) {
     statsWindowOpen = isOpen;
 }
 
-std::shared_ptr<Ship::Console> GetConsole() {
+std::shared_ptr<LUS::Console> GetConsole() {
     return console;
 }
 
@@ -1013,16 +1013,16 @@ ImTextureID GetTextureByID(int id) {
 void LoadResource(const std::string& name, const std::string& path, const ImVec4& tint) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res =
-        static_cast<Ship::Texture*>(Context::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
+        static_cast<LUS::Texture*>(Context::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
 
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res->Width * res->Height * 4);
 
     switch (res->Type) {
-        case Ship::TextureType::RGBA32bpp:
+        case LUS::TextureType::RGBA32bpp:
             texBuffer.assign(res->ImageData, res->ImageData + (res->Width * res->Height * 4));
             break;
-        case Ship::TextureType::GrayscaleAlpha8bpp:
+        case LUS::TextureType::GrayscaleAlpha8bpp:
             for (int32_t i = 0; i < res->Width * res->Height; i++) {
                 uint8_t ia = res->ImageData[i];
                 uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
@@ -1191,4 +1191,4 @@ uint32_t GetMenuBar() {
 void SetMenuBar(uint32_t menuBar) {
     mMenuBar = menuBar;
 }
-} // namespace Ship
+} // namespace LUS

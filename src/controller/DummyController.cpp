@@ -1,6 +1,6 @@
 #include "DummyController.h"
 
-namespace Ship {
+namespace LUS {
 DummyController::DummyController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, const std::string& guid,
                                  const std::string& keyName, bool connected)
     : Controller(controlDeck, deviceIndex) {
@@ -50,4 +50,4 @@ void DummyController::ClearRawPress() {
 int32_t DummyController::ReadRawPress() {
     return -1;
 }
-} // namespace Ship
+} // namespace LUS

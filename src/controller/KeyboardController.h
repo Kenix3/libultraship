@@ -2,7 +2,7 @@
 #include "Controller.h"
 #include <string>
 
-namespace Ship {
+namespace LUS {
 class KeyboardController : public Controller {
   public:
     KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
@@ -28,4 +28,4 @@ class KeyboardController : public Controller {
     int32_t mLastScancode;
     int32_t mLastKey = -1;
 };
-} // namespace Ship
+} // namespace LUS

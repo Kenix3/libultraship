@@ -15,7 +15,7 @@
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace Ship {
+namespace LUS {
 std::weak_ptr<Context> Context::mContext;
 
 std::shared_ptr<Context> Context::GetInstance() {
@@ -74,7 +74,7 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
     InitWindow();
 
-    Ship::RegisterHook<ExitGame>([this]() { mControlDeck->SaveSettings(); });
+    LUS::RegisterHook<ExitGame>([this]() { mControlDeck->SaveSettings(); });
 }
 
 void Context::InitLogging() {
@@ -180,7 +180,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 #if defined(__SWITCH__)
         printf("Main OTR file not found!\n");
 #elif defined(__WIIU__)
-        Ship::WiiU::ThrowMissingOTR(mMainPath.c_str());
+        LUS::WiiU::ThrowMissingOTR(mMainPath.c_str());
 #else
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
@@ -191,7 +191,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     }
     mOtrFileExists = true;
 #ifdef __SWITCH__
-    Ship::Switch::Init(PostInitPhase);
+    LUS::Switch::Init(PostInitPhase);
 #endif
 }
 
@@ -315,4 +315,4 @@ std::string Context::GetPathRelativeToAppDirectory(const char* path) {
 bool Context::DoesOtrFileExist() {
     return mOtrFileExists;
 }
-} // namespace Ship
+} // namespace LUS

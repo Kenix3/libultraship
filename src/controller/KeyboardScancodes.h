@@ -1,5 +1,5 @@
 #ifdef __cplusplus
-namespace Ship {
+namespace LUS {
 #endif
 typedef enum KbScancode {
     LUS_KB_UNKNOWN = 0,
@@ -105,5 +105,5 @@ typedef enum KbScancode {
 
 };
 #ifdef __cplusplus
-} // namespace Ship
+} // namespace LUS
 #endif
