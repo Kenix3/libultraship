@@ -2774,8 +2774,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 RawTexMetadata rawTexMetadata = {};
 
                 std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-                    LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-                        GetResourceNameByCrc(hash)));
+                    LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(GetResourceNameByCrc(hash)));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -3279,9 +3278,9 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
         LUS::Texture* tex = std::static_pointer_cast<LUS::Texture>(
-                                 LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-                                     reinterpret_cast<char*>(replacement)))
-                                 .get();
+                                LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                    reinterpret_cast<char*>(replacement)))
+                                .get();
 
         replacement = tex->ImageData;
     }
