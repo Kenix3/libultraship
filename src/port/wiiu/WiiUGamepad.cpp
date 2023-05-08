@@ -4,7 +4,7 @@
 
 #include "WiiUImpl.h"
 
-namespace Ship {
+namespace LUS {
 WiiUGamepad::WiiUGamepad(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
     : Controller(controlDeck, deviceIndex), mConnected(true), mRumblePatternStrength(1.0f) {
     memset(mRumblePattern, 0xff, sizeof(mRumblePattern));
@@ -342,5 +342,5 @@ bool WiiUGamepad::CanRumble() const {
 bool WiiUGamepad::CanSetLed() const {
     return false;
 }
-} // namespace Ship
+} // namespace LUS
 #endif

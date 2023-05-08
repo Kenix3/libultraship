@@ -5,7 +5,7 @@
 
 #include "WiiUImpl.h"
 
-namespace Ship {
+namespace LUS {
 WiiUController::WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan)
     : Controller(controlDeck, deviceIndex), mChan(chan) {
     mConnected = false;
@@ -558,5 +558,5 @@ bool WiiUController::CanRumble() const {
 bool WiiUController::CanSetLed() const {
     return false;
 }
-} // namespace Ship
+} // namespace LUS
 #endif

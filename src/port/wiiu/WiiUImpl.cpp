@@ -11,7 +11,7 @@
 
 #include "core/Window.h"
 
-namespace Ship {
+namespace LUS {
 namespace WiiU {
 
 static bool hasVpad = false;
@@ -134,6 +134,6 @@ KPADStatus* GetKPADStatus(WPADChan chan, KPADError* error) {
 }
 
 }; // namespace WiiU
-}; // namespace Ship
+}; // namespace LUS
 
 #endif

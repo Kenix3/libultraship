@@ -3,7 +3,7 @@
 #include <vpad/input.h>
 #include <padscore/kpad.h>
 
-namespace Ship {
+namespace LUS {
 namespace WiiU {
 
 void Init();
@@ -21,4 +21,4 @@ VPADStatus* GetVPADStatus(VPADReadError* error);
 KPADStatus* GetKPADStatus(WPADChan chan, KPADError* error);
 
 }; // namespace WiiU
-}; // namespace Ship
+}; // namespace LUS

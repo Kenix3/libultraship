@@ -7,7 +7,7 @@
 // NOLINTNEXTLINE
 #include <padscore/wpad.h>
 
-namespace Ship {
+namespace LUS {
 class WiiUController : public Controller {
   public:
     WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan);
@@ -34,4 +34,4 @@ class WiiUController : public Controller {
     WPADChan mChan;
     WPADExtensionType mExtensionType;
 };
-} // namespace Ship
+} // namespace LUS
