@@ -1,6 +1,6 @@
 #include "resource/type/Matrix.h"
 
-namespace Ship {
+namespace LUS {
 void* Matrix::GetPointer() {
     return &Matrx;
 }
@@ -8,4 +8,4 @@ void* Matrix::GetPointer() {
 size_t Matrix::GetPointerSize() {
     return sizeof(Mtx);
 }
-} // namespace Ship
+} // namespace LUS

@@ -10,7 +10,7 @@
 #include "misc/Hooks.h"
 #include "core/Window.h"
 
-namespace Ship {
+namespace LUS {
 
 KeyboardController::KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
     : Controller(controlDeck, deviceIndex), mLastScancode(-1) {
@@ -136,4 +136,4 @@ int32_t KeyboardController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     // Not supported today, but theoretically we could tie into some of the keyboard APIs to set RGB lights.
     return -1001;
 }
-} // namespace Ship
+} // namespace LUS

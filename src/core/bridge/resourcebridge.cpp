@@ -5,11 +5,11 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-std::shared_ptr<Ship::Resource> LoadResource(const char* name) {
-    return Ship::Context::GetInstance()->GetResourceManager()->LoadResource(name);
+std::shared_ptr<LUS::Resource> LoadResource(const char* name) {
+    return LUS::Context::GetInstance()->GetResourceManager()->LoadResource(name);
 }
 
-std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc) {
+std::shared_ptr<LUS::Resource> LoadResource(uint64_t crc) {
     auto name = GetResourceNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
@@ -27,7 +27,7 @@ uint64_t GetResourceCrcByName(const char* name) {
 }
 
 const char* GetResourceNameByCrc(uint64_t crc) {
-    const std::string* hashStr = Ship::Context::GetInstance()->GetResourceManager()->GetArchive()->HashToString(crc);
+    const std::string* hashStr = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->HashToString(crc);
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 
@@ -81,7 +81,7 @@ void* GetResourceDataByCrc(uint64_t crc) {
 }
 
 uint16_t GetResourceTexWidthByName(const char* name) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
+    const auto res = static_pointer_cast<LUS::Texture>(LoadResource(name));
 
     if (res != nullptr) {
         return res->Width;
@@ -92,7 +92,7 @@ uint16_t GetResourceTexWidthByName(const char* name) {
 }
 
 uint16_t GetResourceTexWidthByCrc(uint64_t crc) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
+    const auto res = static_pointer_cast<LUS::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
         return res->Width;
@@ -103,7 +103,7 @@ uint16_t GetResourceTexWidthByCrc(uint64_t crc) {
 }
 
 uint16_t GetResourceTexHeightByName(const char* name) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
+    const auto res = static_pointer_cast<LUS::Texture>(LoadResource(name));
 
     if (res != nullptr) {
         return res->Height;
@@ -114,7 +114,7 @@ uint16_t GetResourceTexHeightByName(const char* name) {
 }
 
 uint16_t GetResourceTexHeightByCrc(uint64_t crc) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
+    const auto res = static_pointer_cast<LUS::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
         return res->Height;
@@ -125,7 +125,7 @@ uint16_t GetResourceTexHeightByCrc(uint64_t crc) {
 }
 
 size_t GetResourceTexSizeByName(const char* name) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(name));
+    const auto res = static_pointer_cast<LUS::Texture>(LoadResource(name));
 
     if (res != nullptr) {
         return res->ImageDataSize;
@@ -136,7 +136,7 @@ size_t GetResourceTexSizeByName(const char* name) {
 }
 
 size_t GetResourceTexSizeByCrc(uint64_t crc) {
-    const auto res = static_pointer_cast<Ship::Texture>(LoadResource(crc));
+    const auto res = static_pointer_cast<LUS::Texture>(LoadResource(crc));
 
     if (res != nullptr) {
         return res->ImageDataSize;
@@ -147,22 +147,22 @@ size_t GetResourceTexSizeByCrc(uint64_t crc) {
 }
 
 void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
-    auto list = Ship::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
+    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
 
 uint32_t HasGameVersion(uint32_t hash) {
-    auto list = Ship::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
+    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 
 void LoadResourceDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->LoadDirectory(name);
+    LUS::Context::GetInstance()->GetResourceManager()->LoadDirectory(name);
 }
 
 void DirtyResourceDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->DirtyDirectory(name);
+    LUS::Context::GetInstance()->GetResourceManager()->DirtyDirectory(name);
 }
 
 void DirtyResourceByName(const char* name) {
@@ -182,7 +182,7 @@ void DirtyResourceByCrc(uint64_t crc) {
 }
 
 void UnloadResourceByName(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->UnloadResource(name);
+    LUS::Context::GetInstance()->GetResourceManager()->UnloadResource(name);
 }
 
 void UnloadResourceByCrc(uint64_t crc) {
@@ -190,10 +190,10 @@ void UnloadResourceByCrc(uint64_t crc) {
 }
 
 void UnloadResourceDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->UnloadDirectory(name);
+    LUS::Context::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
 
 uint32_t DoesOtrFileExist() {
-    return Ship::Context::GetInstance()->DoesOtrFileExist();
+    return LUS::Context::GetInstance()->DoesOtrFileExist();
 }
 }

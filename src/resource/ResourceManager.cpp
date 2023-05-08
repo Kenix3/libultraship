@@ -13,7 +13,7 @@
 // Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
-namespace Ship {
+namespace LUS {
 
 ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath,
                                  const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes)
@@ -329,4 +329,4 @@ bool ResourceManager::OtrSignatureCheck(const char* fileName) {
     return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
 }
 
-} // namespace Ship
+} // namespace LUS

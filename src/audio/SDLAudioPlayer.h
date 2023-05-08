@@ -2,7 +2,7 @@
 #include "AudioPlayer.h"
 #include <SDL2/SDL.h>
 
-namespace Ship {
+namespace LUS {
 class SDLAudioPlayer : public AudioPlayer {
   public:
     SDLAudioPlayer(std::string backend);
@@ -17,4 +17,4 @@ class SDLAudioPlayer : public AudioPlayer {
   private:
     SDL_AudioDeviceID mDevice;
 };
-} // namespace Ship
+} // namespace LUS

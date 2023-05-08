@@ -3,7 +3,7 @@
 #include "resource/Resource.h"
 #include "Vertex.h"
 
-namespace Ship {
+namespace LUS {
 typedef union ScalarData {
     uint8_t u8;
     int8_t s8;
@@ -80,4 +80,4 @@ class Array : public Resource {
     std::vector<ScalarData> Scalars;
     std::vector<Vtx> Vertices;
 };
-} // namespace Ship
+} // namespace LUS

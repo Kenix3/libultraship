@@ -5,7 +5,7 @@
 
 #define TEX_FLAG_LOAD_AS_RAW (1 << 0)
 
-namespace Ship {
+namespace LUS {
 enum class TextureType {
     Error = 0,
     RGBA32bpp = 1,
@@ -36,4 +36,4 @@ class Texture : public Resource {
 
     ~Texture();
 };
-} // namespace Ship
+} // namespace LUS

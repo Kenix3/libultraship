@@ -1,3 +1,3 @@
 #include "misc/Hooks.h"
 
-namespace Ship {}
+namespace LUS {}

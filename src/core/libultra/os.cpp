@@ -31,7 +31,7 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
 #endif
 #endif
 
-    Ship::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
+    LUS::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
 
     return 0;
 }
@@ -43,12 +43,12 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
-    if (Ship::GetInputEditor()->IsOpened()) {
+    if (LUS::GetInputEditor()->IsOpened()) {
         return;
     }
 
-    Ship::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
-    Ship::ExecuteHooks<Ship::ControllerRead>(pad);
+    LUS::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
+    LUS::ExecuteHooks<LUS::ControllerRead>(pad);
 }
 
 uint64_t osGetTime(void) {

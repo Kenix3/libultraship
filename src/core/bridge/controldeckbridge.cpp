@@ -4,10 +4,10 @@
 extern "C" {
 
 void BlockGameInput(void) {
-    Ship::Context::GetInstance()->GetControlDeck()->BlockGameInput();
+    LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
 }
 
 void UnblockGameInput(void) {
-    Ship::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
+    LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
 }
 }

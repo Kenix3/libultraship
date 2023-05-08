@@ -2,7 +2,7 @@
 #include "resource/type/Array.h"
 #include "spdlog/spdlog.h"
 
-namespace Ship {
+namespace LUS {
 std::shared_ptr<Resource> ArrayFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                      std::shared_ptr<ResourceInitData> initData,
                                                      std::shared_ptr<BinaryReader> reader) {
@@ -76,4 +76,4 @@ void ArrayFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::
         }
     }
 }
-} // namespace Ship
+} // namespace LUS

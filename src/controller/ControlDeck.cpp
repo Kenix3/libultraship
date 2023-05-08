@@ -15,7 +15,7 @@
 #include "port/wiiu/WiiUController.h"
 #endif
 
-namespace Ship {
+namespace LUS {
 
 void ControlDeck::Init(uint8_t* bits) {
     ScanDevices();
@@ -45,12 +45,12 @@ void ControlDeck::ScanDevices() {
     mDevices.push_back(std::make_shared<KeyboardController>(controlDeck, i++));
 #else
     for (i = 0; i < 4; i++) {
-        auto controller = std::make_shared<Ship::WiiUController>(controlDeck, i, (WPADChan)i);
+        auto controller = std::make_shared<LUS::WiiUController>(controlDeck, i, (WPADChan)i);
         controller->Open();
         mDevices.push_back(controller);
     }
 
-    auto gamepad = std::make_shared<Ship::WiiUGamepad>(controlDeck, i++);
+    auto gamepad = std::make_shared<LUS::WiiUGamepad>(controlDeck, i++);
     gamepad->Open();
     mDevices.push_back(gamepad);
 
@@ -296,4 +296,4 @@ bool ControlDeck::ShouldBlockGameInput(std::string inputDeviceGuid) const {
     bool inputDeviceIsKeyboard = inputDeviceGuid == "Keyboard";
     return mShouldBlockGameInput || (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
 }
-} // namespace Ship
+} // namespace LUS

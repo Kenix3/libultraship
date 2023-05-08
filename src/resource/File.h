@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-namespace Ship {
+namespace LUS {
 class Archive;
 
 struct File {
@@ -13,4 +13,4 @@ struct File {
     std::vector<char> Buffer;
     bool IsLoaded = false;
 };
-} // namespace Ship
+} // namespace LUS

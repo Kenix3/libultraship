@@ -13,7 +13,7 @@
 #include "factory/DisplayListFactory.h"
 #include "factory/MatrixFactory.h"
 
-namespace Ship {
+namespace LUS {
 ResourceLoader::ResourceLoader(std::shared_ptr<Context> context) : mContext(context) {
     RegisterGlobalResourceFactories();
 }
@@ -127,4 +127,4 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fil
 
     return result;
 }
-} // namespace Ship
+} // namespace LUS

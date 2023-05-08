@@ -1,6 +1,6 @@
 #include "ResourceFactory.h"
 
-namespace Ship {
+namespace LUS {
 void ResourceVersionFactory::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) {
 }
 
@@ -18,4 +18,4 @@ std::shared_ptr<Resource> ResourceFactory::ReadResourceXML(std::shared_ptr<Resou
                                                            tinyxml2::XMLElement* reader) {
     return nullptr;
 }
-} // namespace Ship
+} // namespace LUS

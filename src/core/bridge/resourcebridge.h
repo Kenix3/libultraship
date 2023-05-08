@@ -10,8 +10,8 @@
 #include "resource/type/Texture.h"
 #include "resource/Resource.h"
 
-std::shared_ptr<Ship::Resource> LoadResource(const char* name);
-std::shared_ptr<Ship::Resource> LoadResource(uint64_t crc);
+std::shared_ptr<LUS::Resource> LoadResource(const char* name);
+std::shared_ptr<LUS::Resource> LoadResource(uint64_t crc);
 
 extern "C" {
 #endif

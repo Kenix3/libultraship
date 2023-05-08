@@ -15,7 +15,7 @@ WiiUController::WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t
 
 bool WiiUController::Open() {
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (!status || error != KPAD_ERROR_OK) {
         Close();
         return false;
@@ -53,7 +53,7 @@ void WiiUController::ReadDevice(int32_t portIndex) {
     auto profile = GetProfile(portIndex);
 
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (!status) {
         Close();
         return;
@@ -194,7 +194,7 @@ int32_t WiiUController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
 void WiiUController::ClearRawPress() {
     // Clear already triggered buttons
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (status) {
         switch (mExtensionType) {
             case WPAD_EXT_PRO_CONTROLLER:
@@ -216,7 +216,7 @@ void WiiUController::ClearRawPress() {
 
 int32_t WiiUController::ReadRawPress() {
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (!status || error != KPAD_ERROR_OK) {
         return -1;
     }

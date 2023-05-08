@@ -8,7 +8,7 @@
 #include "misc/Utils.h"
 #include <sstream>
 
-namespace Ship {
+namespace LUS {
 std::string BuildUsage(const CommandEntry& entry) {
     std::string usage;
     for (const auto& arg : entry.arguments) {
@@ -462,4 +462,4 @@ void Console::Close() {
 void Console::Open() {
     mOpened = true;
 }
-} // namespace Ship
+} // namespace LUS

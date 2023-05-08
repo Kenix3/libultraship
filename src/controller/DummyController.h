@@ -4,7 +4,7 @@
 
 #include "Controller.h"
 
-namespace Ship {
+namespace LUS {
 class DummyController final : public Controller {
   public:
     DummyController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, const std::string& guid,
@@ -25,4 +25,4 @@ class DummyController final : public Controller {
     std::string mButtonName;
     bool mIsConnected = false;
 };
-} // namespace Ship
+} // namespace LUS

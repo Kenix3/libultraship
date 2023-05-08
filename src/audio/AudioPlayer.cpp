@@ -1,6 +1,6 @@
 #include "AudioPlayer.h"
 
-namespace Ship {
+namespace LUS {
 AudioPlayer::AudioPlayer(std::string backend) : mInitialized(false), mBackend(backend){};
 
 bool AudioPlayer::Init(void) {
@@ -15,4 +15,4 @@ bool AudioPlayer::IsInitialized(void) {
 std::string AudioPlayer::GetBackend() {
     return mBackend;
 }
-} // namespace Ship
+} // namespace LUS

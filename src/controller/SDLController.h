@@ -2,7 +2,7 @@
 #include "Controller.h"
 #include <SDL2/SDL.h>
 
-namespace Ship {
+namespace LUS {
 class SDLController : public Controller {
   public:
     SDLController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
@@ -30,4 +30,4 @@ class SDLController : public Controller {
     void NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t portIndex);
     bool Close();
 };
-} // namespace Ship
+} // namespace LUS

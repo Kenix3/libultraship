@@ -13,7 +13,7 @@
 #define AXIS_SCANCODE_BIT (1 << 9)
 #define MAX_AXIS_RANGE 85.0f
 
-namespace Ship {
+namespace LUS {
 enum GyroData { DRIFT_X, DRIFT_Y, GYRO_SENSITIVITY };
 enum Stick { LEFT, RIGHT };
 enum Axis { X, Y };
@@ -97,4 +97,4 @@ class Controller {
 
     double GetClosestNotch(double angle, double approximationThreshold);
 };
-} // namespace Ship
+} // namespace LUS

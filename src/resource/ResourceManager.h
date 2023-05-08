@@ -10,7 +10,7 @@
 #include "Archive.h"
 #include "thread-pool/BS_thread_pool.hpp"
 
-namespace Ship {
+namespace LUS {
 struct File;
 class Context;
 
@@ -62,4 +62,4 @@ class ResourceManager {
     std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
 };
-} // namespace Ship
+} // namespace LUS

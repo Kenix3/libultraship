@@ -7,7 +7,7 @@
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 
-namespace Ship {
+namespace LUS {
 class Context;
 
 class Window {
@@ -54,4 +54,4 @@ class Window {
     uint32_t mHeight;
     int32_t mLastScancode;
 };
-} // namespace Ship
+} // namespace LUS

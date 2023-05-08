@@ -2,5 +2,5 @@
 #include "core/Context.h"
 
 void CrashHandlerRegisterCallback(CrashHandlerCallback callback) {
-    Ship::Context::GetInstance()->GetCrashHandler()->RegisterCallback(callback);
+    LUS::Context::GetInstance()->GetCrashHandler()->RegisterCallback(callback);
 }

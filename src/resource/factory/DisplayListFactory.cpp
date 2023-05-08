@@ -4,7 +4,7 @@
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
-namespace Ship {
+namespace LUS {
 std::shared_ptr<Resource> DisplayListFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                            std::shared_ptr<ResourceInitData> initData,
                                                            std::shared_ptr<BinaryReader> reader) {
@@ -1103,4 +1103,4 @@ uint32_t DisplayListFactoryV0::GetCombineLERPValue(std::string valStr) {
     return G_CCMUX_1;
 }
 
-} // namespace Ship
+} // namespace LUS
