@@ -91,7 +91,7 @@ std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, b
         bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
 
         if (!attempt) {
-            SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
+            SPDLOG_TRACE("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
             return nullptr;
         }
 
