@@ -446,10 +446,6 @@ void InitGui(WindowImpl windowImpl) {
                                                     sIconsRanges);
 
     statsWindowOpen = CVarGetInteger("gStatsEnabled", 0);
-    CVarRegisterInteger("gRandomizeRupeeNames", 1);
-    CVarRegisterInteger("gRandoRelevantNavi", 1);
-    CVarRegisterInteger("gRandoMatchKeyColors", 1);
-    CVarRegisterInteger("gEnableMultiViewports", 1);
 #ifdef __SWITCH__
     LUS::Switch::ImGuiSetupFont(io->Fonts);
 #endif
@@ -528,10 +524,8 @@ void InitGui(WindowImpl windowImpl) {
 
     InitSettings();
 
-    CVarSetInteger("gRandoGenerating", 0);
-    CVarSetInteger("gNewSeedGenerated", 0);
-    CVarSetInteger("gNewFileDropped", 0);
-    CVarSetString("gDroppedFile", "None");
+    CVarClear("gNewFileDropped");
+    CVarClear("gDroppedFile");
 
 #ifdef __SWITCH__
     Switch::ApplyOverclock();
@@ -685,7 +679,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
 
     if (CVarGetInteger("gStatsEnabled", 0)) {
         if (!statsWindowOpen) {
-            CVarSetInteger("gStatsEnabled", 0);
+            CVarClear("gStatsEnabled");
         }
         const float framerate = ImGui::GetIO().Framerate;
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
