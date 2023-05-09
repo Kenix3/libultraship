@@ -64,7 +64,7 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->Path);
     } else {
-        SPDLOG_WARN("Could not load File {} in ResourceManager", filePath);
+        SPDLOG_TRACE("Could not load File {} in ResourceManager", filePath);
     }
     return file;
 }
@@ -114,7 +114,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     // Get the file from the OTR
     auto file = LoadFileProcess(filePath);
     if (file == nullptr) {
-        SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
+        SPDLOG_TRACE("Failed to load resource file at path {}", filePath);
     }
 
     // Transform the raw data into a resource
@@ -143,7 +143,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     if (resource != nullptr) {
         SPDLOG_TRACE("Loaded Resource {} on ResourceManager", filePath);
     } else {
-        SPDLOG_WARN("Resource load FAILED {} on ResourceManager", filePath);
+        SPDLOG_TRACE("Resource load FAILED {} on ResourceManager", filePath);
     }
 
     return resource;
