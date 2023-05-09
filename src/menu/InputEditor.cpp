@@ -352,7 +352,9 @@ void InputEditor::DrawControllerSchema() {
 void InputEditor::DrawHud() {
     if (!this->mOpened) {
         mBtnReading = -1;
-        CVarSetInteger("gControllerConfigurationEnabled", 0);
+        if (CVarGetInteger("gControllerConfigurationEnabled", 0)) {
+            CVarClear("gControllerConfigurationEnabled");
+        }
         return;
     }
 

@@ -96,7 +96,9 @@ void Console::Update() {
 
 void Console::Draw() {
     if (!this->mOpened) {
-        CVarSetInteger("gConsoleEnabled", 0);
+        if (CVarGetInteger("gConsoleEnabled", 0)) {
+            CVarClear("gConsoleEnabled");
+        }
         return;
     }
 
