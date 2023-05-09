@@ -179,7 +179,11 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
 }
 
 std::shared_ptr<Resource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact) {
-    return LoadResourceAsync(filePath, loadExact).get();
+    auto resource = LoadResourceAsync(filePath, loadExact).get();
+    if (resource == nullptr) {
+        SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
+    }
+    return resource;
 }
 
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<Resource>>
