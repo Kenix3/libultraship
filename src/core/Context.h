@@ -29,7 +29,8 @@ class Context {
 
     Context(std::string name, std::string shortName);
 
-    void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount);
+    void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
+              uint32_t reservedThreadCount);
 
     bool DoesOtrFileExist();
 
@@ -50,8 +51,7 @@ class Context {
     void InitConfiguration();
     void InitConsoleVariables();
     void InitResourceManager(const std::vector<std::string>& otrFiles = {},
-                             const std::unordered_set<uint32_t>& validHashes = {},
-                             uint32_t reservedThreadCount = 0);
+                             const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 0);
     void InitControlDeck();
     void InitCrashHandler();
     void InitAudioPlayer(std::string backend);
