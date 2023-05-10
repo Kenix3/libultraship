@@ -150,11 +150,11 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     return resource;
 }
 
-std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath, bool block) {
-    if (block) {
-        return mThreadPool->submit(true, &ResourceManager::LoadFileProcess, this, filePath).share();
+std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath, bool priority) {
+    if (priority) {
+        return mThreadPool->submit_front(&ResourceManager::LoadFileProcess, this, filePath).share();
     } else {
-        return mThreadPool->submit(false, &ResourceManager::LoadFileProcess, this, filePath).share();
+        return mThreadPool->submit_back(&ResourceManager::LoadFileProcess, this, filePath).share();
     }
 }
 
@@ -163,11 +163,11 @@ std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
 }
 
 std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
-                                                                                 bool loadExact, bool block) {
+                                                                                 bool loadExact, bool priority) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
-        return LoadResourceAsync(newFilePath, loadExact, block);
+        return LoadResourceAsync(newFilePath, loadExact, priority);
     }
 
     // Check the cache before queueing the job.
@@ -180,10 +180,10 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
 
     const auto newFilePath = std::string(filePath);
 
-    if (block) {
-        return mThreadPool->submit(true, &ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    if (priority) {
+        return mThreadPool->submit_front(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
     } else {
-        return mThreadPool->submit(false, &ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+        return mThreadPool->submit_back(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
     }
 }
 
