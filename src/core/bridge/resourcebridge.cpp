@@ -153,7 +153,7 @@ void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCo
 }
 
 void LoadResourceDirectoryAsync(const char* name) {
-    Ship::Window::GetInstance()->GetResourceManager()->LoadDirectoryAsync(name);
+    LUS::Context::GetInstance()->GetResourceManager()->LoadDirectoryAsync(name);
 }
 
 uint32_t HasGameVersion(uint32_t hash) {
