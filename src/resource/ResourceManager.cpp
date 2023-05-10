@@ -16,14 +16,14 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 namespace LUS {
 
 ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath,
-                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes)
+                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
+    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -34,14 +34,14 @@ ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::st
 }
 
 ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::vector<std::string>& otrFiles,
-                                 const std::unordered_set<uint32_t>& validHashes)
+                                 const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
+    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
