@@ -50,8 +50,12 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
     fileName[archivePath.size()] = 0;
     std::copy(archivePath.begin(), archivePath.end(), fileName);
 
-    bool success = SFileCreateArchive(fileName, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2,
-                                      fileCapacity, &archive->mMainMpq);
+    bool success;
+    {
+        const std::lock_guard<std::mutex> lock(archive->mMutex);
+        success = SFileCreateArchive(fileName, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2,
+                                     fileCapacity, &archive->mMainMpq);
+    }
     int32_t error = GetLastError();
 
     delete[] fileName;
@@ -66,7 +70,6 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
 }
 
 std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, bool includeParent, HANDLE mpqHandle) {
-    const std::lock_guard<std::mutex> lock(mMutex);
     HANDLE fileHandle = NULL;
 
     std::shared_ptr<File> fileToLoad = std::make_shared<File>();
@@ -89,7 +92,11 @@ std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, b
         fileToLoad->IsLoaded = true;
     } else {
 #endif
-        bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
+        bool attempt;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
+        }
 
         if (!attempt) {
             SPDLOG_TRACE("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
