@@ -339,12 +339,12 @@ bool Archive::Load(bool enableWriting, bool generateCrcMap) {
 bool Archive::Unload() {
     bool success = true;
     for (const auto& mpqHandle : mMpqHandles) {
-        bool fileCloseArchiveSuccess;
+        bool closeArchiveSuccess;
         {
             const std::lock_guard<std::mutex> lock(mMutex);
-            fileCloseArchiveSuccess = SFileCloseArchive(mpqHandle.second); 
+            closeArchiveSuccess = SFileCloseArchive(mpqHandle.second); 
         }
-        if (!fileCloseArchiveSuccess) {
+        if (!closeArchiveSuccess) {
             SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mpqHandle.first);
             success = false;
         }
