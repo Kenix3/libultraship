@@ -32,17 +32,17 @@ class ResourceManager {
     std::shared_ptr<Archive> GetArchive();
     std::shared_ptr<Context> GetContext();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
-    std::shared_future<std::shared_ptr<File>> LoadFileAsync(const std::string& filePath, bool block = false);
+    std::shared_future<std::shared_ptr<File>> LoadFileAsync(const std::string& filePath, bool priority = false);
     std::shared_ptr<File> LoadFile(const std::string& filePath);
     std::shared_ptr<Resource> GetCachedResource(const std::string& filePath, bool loadExact = false);
     std::shared_ptr<Resource> LoadResource(const std::string& filePath, bool loadExact = false);
     std::shared_ptr<Resource> LoadResourceProcess(const std::string& filePath, bool loadExact = false);
     size_t UnloadResource(const std::string& filePath);
     std::shared_future<std::shared_ptr<Resource>> LoadResourceAsync(const std::string& filePath,
-                                                                    bool loadExact = false, bool block = false);
+                                                                    bool loadExact = false, bool priority = false);
     std::shared_ptr<std::vector<std::shared_ptr<Resource>>> LoadDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-    LoadDirectoryAsync(const std::string& searchMask, bool front = false);
+    LoadDirectoryAsync(const std::string& searchMask, bool priority = false);
     std::shared_ptr<std::vector<std::string>> FindLoadedFiles(const std::string& searchMask);
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectory(const std::string& searchMask);

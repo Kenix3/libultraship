@@ -248,14 +248,14 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool front) {
+ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Resource>>>>();
     auto fileList = GetArchive()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync(fileName, false, front);
+        auto future = LoadResourceAsync(fileName, false, priority);
         loadedList->push_back(future);
     }
 
