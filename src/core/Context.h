@@ -19,7 +19,8 @@ class Context {
     static std::shared_ptr<Context> GetInstance();
     static std::shared_ptr<Context> CreateInstance(const std::string name, const std::string shortName,
                                                    const std::vector<std::string>& otrFiles = {},
-                                                   const std::unordered_set<uint32_t>& validHashes = {});
+                                                   const std::unordered_set<uint32_t>& validHashes = {},
+                                                   uint32_t reservedThreadCount = 0);
 
     static std::string GetAppBundlePath();
     static std::string GetAppDirectoryPath();
@@ -28,7 +29,7 @@ class Context {
 
     Context(std::string name, std::string shortName);
 
-    void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes);
+    void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount);
 
     bool DoesOtrFileExist();
 
@@ -49,7 +50,8 @@ class Context {
     void InitConfiguration();
     void InitConsoleVariables();
     void InitResourceManager(const std::vector<std::string>& otrFiles = {},
-                             const std::unordered_set<uint32_t>& validHashes = {});
+                             const std::unordered_set<uint32_t>& validHashes = {},
+                             uint32_t reservedThreadCount = 0);
     void InitControlDeck();
     void InitCrashHandler();
     void InitAudioPlayer(std::string backend);
