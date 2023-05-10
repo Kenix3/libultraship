@@ -448,7 +448,7 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         {
             const std::lock_guard<std::mutex> lock(mMutex);
             openArchiveSuccess =
-                SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle); 
+                SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle);
         }
         if (openArchiveSuccess) {
             SPDLOG_INFO("Opened mpq file {}.", fullPath);
