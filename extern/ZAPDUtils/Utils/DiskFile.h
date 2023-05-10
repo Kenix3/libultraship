@@ -10,7 +10,7 @@
 #include "Utils/Directory.h"
 
 
-class File
+class DiskFile
 {
 public:
 	static bool Exists(const fs::path& filePath)

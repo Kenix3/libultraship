@@ -4,7 +4,7 @@
 #include <vector>
 #include "Stream.h"
 
-namespace Ship {
+namespace LUS {
 class MemoryStream : public Stream {
   public:
     MemoryStream();
@@ -31,4 +31,4 @@ class MemoryStream : public Stream {
     std::vector<char> mBuffer;
     std::size_t mBufferSize;
 };
-} // namespace Ship
+} // namespace LUS

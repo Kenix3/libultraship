@@ -2,7 +2,7 @@
 #include "resource/type/Matrix.h"
 #include "spdlog/spdlog.h"
 
-namespace Ship {
+namespace LUS {
 std::shared_ptr<Resource> MatrixFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                       std::shared_ptr<ResourceInitData> initData,
                                                       std::shared_ptr<BinaryReader> reader) {
@@ -35,4 +35,4 @@ void MatrixFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
         }
     }
 }
-} // namespace Ship
+} // namespace LUS

@@ -19,7 +19,7 @@ void DetectAppletMode();
 
 static void on_applet_hook(AppletHookType hook, void* param);
 
-void Ship::Switch::Init(SwitchPhase phase) {
+void LUS::Switch::Init(SwitchPhase phase) {
     switch (phase) {
         case PreInitPhase:
             DetectAppletMode();
@@ -40,7 +40,7 @@ void Ship::Switch::Init(SwitchPhase phase) {
     }
 }
 
-void Ship::Switch::Exit() {
+void LUS::Switch::Exit() {
 #ifdef DEBUG
     socketExit();
 #endif
@@ -48,7 +48,7 @@ void Ship::Switch::Exit() {
     appletSetGamePlayRecordingState(false);
 }
 
-void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
+void LUS::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plInitialize(PlServiceType_User);
     static PlFontData stdFontData, extFontData;
 
@@ -76,7 +76,7 @@ void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plExit();
 }
 
-void Ship::Switch::ImGuiProcessEvent(bool wantsTextInput) {
+void LUS::Switch::ImGuiProcessEvent(bool wantsTextInput) {
     ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
 
     if (wantsTextInput) {
@@ -94,11 +94,11 @@ void Ship::Switch::ImGuiProcessEvent(bool wantsTextInput) {
     }
 }
 
-bool Ship::Switch::IsRunning() {
+bool LUS::Switch::IsRunning() {
     return isRunning;
 }
 
-void Ship::Switch::GetDisplaySize(int* width, int* height) {
+void LUS::Switch::GetDisplaySize(int* width, int* height) {
     switch (appletGetOperationMode()) {
         case DOCKED_MODE:
             *width = 1920;
@@ -111,10 +111,10 @@ void Ship::Switch::GetDisplaySize(int* width, int* height) {
     }
 }
 
-void Ship::Switch::ApplyOverclock(void) {
-    SwitchProfiles perfMode = (SwitchProfiles)CVarGetInteger("gSwitchPerfMode", (int)Ship::MAXIMUM);
+void LUS::Switch::ApplyOverclock(void) {
+    SwitchProfiles perfMode = (SwitchProfiles)CVarGetInteger("gSwitchPerfMode", (int)LUS::MAXIMUM);
 
-    if (perfMode >= 0 && perfMode <= Ship::POWERSAVINGM3) {
+    if (perfMode >= 0 && perfMode <= LUS::POWERSAVINGM3) {
         if (hosversionBefore(8, 0, 0)) {
             pcvSetClockRate(PcvModule_CpuBus, SWITCH_CPU_SPEEDS_VALUES[perfMode]);
         } else {
@@ -126,7 +126,7 @@ void Ship::Switch::ApplyOverclock(void) {
     }
 }
 
-void Ship::Switch::PrintErrorMessageToScreen(const char* str, ...) {
+void LUS::Switch::PrintErrorMessageToScreen(const char* str, ...) {
     consoleInit(NULL);
     srand(time(0));
 
@@ -158,20 +158,20 @@ static void on_applet_hook(AppletHookType hook, void* param) {
 
             if (!hasFocus) {
                 if (hosversionBefore(8, 0, 0)) {
-                    pcvSetClockRate(PcvModule_CpuBus, SWITCH_CPU_SPEEDS_VALUES[Ship::STOCK]);
+                    pcvSetClockRate(PcvModule_CpuBus, SWITCH_CPU_SPEEDS_VALUES[LUS::STOCK]);
                 } else {
                     ClkrstSession session = { 0 };
                     clkrstOpenSession(&session, PcvModuleId_CpuBus, 3);
-                    clkrstSetClockRate(&session, SWITCH_CPU_SPEEDS_VALUES[Ship::STOCK]);
+                    clkrstSetClockRate(&session, SWITCH_CPU_SPEEDS_VALUES[LUS::STOCK]);
                     clkrstCloseSession(&session);
                 }
             } else
-                Ship::Switch::ApplyOverclock();
+                LUS::Switch::ApplyOverclock();
             break;
 
             /* Performance mode */
         case AppletHookType_OnPerformanceMode:
-            Ship::Switch::ApplyOverclock();
+            LUS::Switch::ApplyOverclock();
             break;
         default:
             break;
@@ -203,17 +203,17 @@ void DetectAppletMode() {
     if (at == AppletType_Application || at == AppletType_SystemApplication)
         return;
 
-    Ship::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship while in Applet mode."
-                                            "\x1b[4;2HPlease relaunch while in full-memory mode."
-                                            "\x1b[5;2HHold R when opening any game to enter HBMenu."
-                                            "\x1b[44;2H%s.",
-                                            RandomTexts[rand() % 25]);
+    LUS::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship while in Applet mode."
+                                           "\x1b[4;2HPlease relaunch while in full-memory mode."
+                                           "\x1b[5;2HHold R when opening any game to enter HBMenu."
+                                           "\x1b[44;2H%s.",
+                                           RandomTexts[rand() % 25]);
 }
 
-void Ship::Switch::ThrowMissingOTR(std::string OTRPath) {
-    Ship::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship without the OTR file."
-                                            "\x1b[4;2HPlease relaunch making sure %s exists."
-                                            "\x1b[44;2H%s.",
-                                            OTRPath.c_str(), RandomTexts[rand() % 25]);
+void LUS::Switch::ThrowMissingOTR(std::string OTRPath) {
+    LUS::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship without the OTR file."
+                                           "\x1b[4;2HPlease relaunch making sure %s exists."
+                                           "\x1b[44;2H%s.",
+                                           OTRPath.c_str(), RandomTexts[rand() % 25]);
 }
 #endif

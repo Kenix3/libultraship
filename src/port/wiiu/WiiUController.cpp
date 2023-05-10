@@ -5,7 +5,7 @@
 
 #include "WiiUImpl.h"
 
-namespace Ship {
+namespace LUS {
 WiiUController::WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan)
     : Controller(controlDeck, deviceIndex), mChan(chan) {
     mConnected = false;
@@ -15,7 +15,7 @@ WiiUController::WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t
 
 bool WiiUController::Open() {
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (!status || error != KPAD_ERROR_OK) {
         Close();
         return false;
@@ -53,7 +53,7 @@ void WiiUController::ReadDevice(int32_t portIndex) {
     auto profile = GetProfile(portIndex);
 
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (!status) {
         Close();
         return;
@@ -182,18 +182,19 @@ int32_t WiiUController::SetRumble(int32_t portIndex, bool rumble) {
         return -1001;
     }
 
-    WPADControlMotor(mChan, rumble);
+    mIsRumbling = rumble;
+    WPADControlMotor(mChan, mIsRumbling);
     return 0;
 }
 
-int32_t WiiUController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+int32_t WiiUController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     return -1000;
 }
 
 void WiiUController::ClearRawPress() {
     // Clear already triggered buttons
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (status) {
         switch (mExtensionType) {
             case WPAD_EXT_PRO_CONTROLLER:
@@ -215,7 +216,7 @@ void WiiUController::ClearRawPress() {
 
 int32_t WiiUController::ReadRawPress() {
     KPADError error;
-    KPADStatus* status = Ship::WiiU::GetKPADStatus(mChan, &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(mChan, &error);
     if (!status || error != KPAD_ERROR_OK) {
         return -1;
     }
@@ -542,20 +543,20 @@ std::string WiiUController::GetControllerExtensionName() {
     return "Controller";
 }
 
-bool WiiUController::Connected() const override {
+bool WiiUController::Connected() const {
     return mConnected;
 };
 
-bool WiiUController::CanGyro() const override {
+bool WiiUController::CanGyro() const {
     return false;
 }
 
-bool WiiUController::CanRumble() const override {
+bool WiiUController::CanRumble() const {
     return true;
 };
 
 bool WiiUController::CanSetLed() const {
     return false;
 }
-} // namespace Ship
+} // namespace LUS
 #endif

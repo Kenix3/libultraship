@@ -15,7 +15,7 @@
 #include "port/switch/SwitchImpl.h"
 #endif
 
-namespace Ship {
+namespace LUS {
 Archive::Archive(const std::string& mainPath, bool enableWriting)
     : Archive(mainPath, "", std::unordered_set<uint32_t>(), enableWriting) {
     mMainMpq = nullptr;
@@ -92,7 +92,7 @@ std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, b
         bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
 
         if (!attempt) {
-            SPDLOG_ERROR("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
+            SPDLOG_TRACE("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
             return nullptr;
         }
 
@@ -322,7 +322,7 @@ bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
     if (t != nullptr && t->IsLoaded) {
         auto stream = std::make_shared<MemoryStream>(t->Buffer.data(), t->Buffer.size());
         auto reader = std::make_shared<BinaryReader>(stream);
-        Ship::Endianness endianness = (Ship::Endianness)reader->ReadUByte();
+        LUS::Endianness endianness = (LUS::Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
         uint32_t version = reader->ReadUInt32();
         if (mValidHashes.empty() || mValidHashes.contains(version)) {
@@ -447,4 +447,4 @@ std::vector<uint32_t> Archive::GetGameVersions() {
 void Archive::PushGameVersion(uint32_t newGameVersion) {
     mGameVersions.push_back(newGameVersion);
 }
-} // namespace Ship
+} // namespace LUS

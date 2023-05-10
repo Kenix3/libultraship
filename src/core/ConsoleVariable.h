@@ -7,11 +7,8 @@
 #include <map>
 #include <string>
 
-namespace Ship {
+namespace LUS {
 typedef enum class ConsoleVariableType { Integer, Float, String, Color, Color24 } ConsoleVariableType;
-typedef union CVarValue {
-
-} CVarValue;
 
 typedef struct CVar {
     const char* Name;
@@ -60,4 +57,4 @@ class ConsoleVariable {
   private:
     std::map<std::string, std::shared_ptr<CVar>, std::less<>> mVariables;
 };
-} // namespace Ship
+} // namespace LUS

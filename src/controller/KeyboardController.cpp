@@ -1,4 +1,5 @@
 #include "controller/KeyboardController.h"
+#include "core/Context.h"
 
 #if __APPLE__
 #include <SDL_keyboard.h>
@@ -9,7 +10,7 @@
 #include "misc/Hooks.h"
 #include "core/Window.h"
 
-namespace Ship {
+namespace LUS {
 
 KeyboardController::KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
     : Controller(controlDeck, deviceIndex), mLastScancode(-1) {
@@ -71,7 +72,7 @@ const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n
     if (find == mappings.end()) {
         return "Unknown";
     }
-    const char* name = Window::GetInstance()->GetKeyName(find->first);
+    const char* name = Context::GetInstance()->GetWindow()->GetKeyName(find->first);
     return strlen(name) == 0 ? "Unknown" : name;
 }
 
@@ -131,8 +132,8 @@ int32_t KeyboardController::SetRumble(int32_t portIndex, bool rumble) {
     return -1001;
 }
 
-int32_t KeyboardController::SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) {
+int32_t KeyboardController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     // Not supported today, but theoretically we could tie into some of the keyboard APIs to set RGB lights.
     return -1001;
 }
-} // namespace Ship
+} // namespace LUS

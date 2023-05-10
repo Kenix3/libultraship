@@ -1,7 +1,7 @@
 #include <spdlog/spdlog.h>
 #include "Utils/StringHelper.h"
 #include "CrashHandler.h"
-#include "core/Window.h"
+#include "core/Context.h"
 #include "resource/ResourceManager.h"
 #include "resource/GameVersions.h"
 
@@ -140,7 +140,7 @@ void CrashHandler::PrintRegisters(ucontext_t* ctx) {
 }
 
 static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
-    std::shared_ptr<CrashHandler> crashHandler = Ship::Window::GetInstance()->GetCrashHandler();
+    std::shared_ptr<CrashHandler> crashHandler = LUS::Context::GetInstance()->GetCrashHandler();
     char intToCharBuffer[16];
 
     std::array<void*, 4096> arr;
@@ -191,8 +191,8 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
         snprintf(intToCharBuffer, sizeof(intToCharBuffer), "%i ", (int)i);
         WRITE_VAR_LINE(crashHandler, intToCharBuffer, functionName.c_str());
     }
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, (Ship::Window::GetInstance()->GetName() + " has crashed").c_str(),
-                             (Ship::Window::GetInstance()->GetName() +
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, (LUS::Context::GetInstance()->GetName() + " has crashed").c_str(),
+                             (LUS::Context::GetInstance()->GetName() +
                               " has crashed. Please upload the logs to the support channel in discord.")
                                  .c_str(),
                              nullptr);
@@ -200,7 +200,7 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     crashHandler->PrintCommon();
 
     DeinitOTR();
-    Ship::Window::GetInstance()->GetLogger()->flush();
+    LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
     exit(1);
 }
@@ -389,21 +389,21 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
         }
     }
     PrintCommon();
-    Ship::Window::GetInstance()->GetLogger()->flush();
+    LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
     DeinitOTR();
 }
 
 extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
     char exceptionString[20];
-    std::shared_ptr<CrashHandler> crashHandler = Ship::Window::GetInstance()->GetCrashHandler();
+    std::shared_ptr<CrashHandler> crashHandler = LUS::Context::GetInstance()->GetCrashHandler();
 
     snprintf(exceptionString, std::size(exceptionString), "0x%x", ex->ExceptionRecord->ExceptionCode);
 
     WRITE_VAR_LINE(crashHandler, "Exception: ", exceptionString);
     crashHandler->PrintStack(ex->ContextRecord);
     MessageBoxA(nullptr,
-                (Ship::Window::GetInstance()->GetName() +
+                (LUS::Context::GetInstance()->GetName() +
                  " has crashed. Please upload the logs to the support channel in discord.")
                     .c_str(),
                 "Crash", MB_OK | MB_ICONERROR);

@@ -5,10 +5,10 @@
 #include "AudioPlayer.h"
 #include <pulse/pulseaudio.h>
 
-namespace Ship {
+namespace LUS {
 class PulseAudioPlayer : public AudioPlayer {
   public:
-    PulseAudioPlayer();
+    PulseAudioPlayer(std::string backend);
     int Buffered() override;
     int GetDesiredBuffered() override;
     void Play(const uint8_t* buff, size_t len) override;
@@ -23,5 +23,5 @@ class PulseAudioPlayer : public AudioPlayer {
     bool mWriteComplete = false;
     pa_buffer_attr mAttr = { 0 };
 };
-} // namespace Ship
+} // namespace LUS
 #endif

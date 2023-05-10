@@ -12,10 +12,10 @@
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
-namespace Ship {
+namespace LUS {
 
 Controller::Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
-    : mIsRumbling(false), mAttachment(nullptr), mDeviceIndex(deviceIndex), mControlDeck(controlDeck) {
+    : mIsRumbling(false), mLedColor({ 0, 0, 0 }), mDeviceIndex(deviceIndex), mControlDeck(controlDeck) {
     for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
         mProfiles[portIndex] = std::make_shared<DeviceProfile>();
         mButtonData[portIndex] = std::make_shared<Buttons>();
@@ -242,12 +242,12 @@ std::shared_ptr<DeviceProfile> Controller::GetProfile(int32_t portIndex) {
     return mProfiles[portIndex];
 }
 
-std::shared_ptr<ControllerAttachment> Controller::GetAttachment() {
-    return mAttachment;
-}
-
 bool Controller::IsRumbling() {
     return mIsRumbling;
+}
+
+Color_RGB8 Controller::GetLedColor() {
+    return mLedColor;
 }
 
 std::string Controller::GetGuid() {
@@ -268,4 +268,4 @@ double Controller::GetClosestNotch(double angle, double approximationThreshold) 
 std::shared_ptr<ControlDeck> Controller::GetControlDeck() {
     return mControlDeck;
 }
-} // namespace Ship
+} // namespace LUS

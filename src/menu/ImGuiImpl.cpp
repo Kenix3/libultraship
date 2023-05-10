@@ -10,8 +10,10 @@
 #include <algorithm>
 #include <vector>
 
+#include "Mercury.h"
 #include "menu/Console.h"
 #include "misc/Hooks.h"
+#include "core/Context.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <ImGui/imgui_internal.h>
 #include "resource/ResourceManager.h"
@@ -80,10 +82,10 @@ bool oldCursorState = true;
         needsSave = true;
 OSContPad* pads;
 
-std::map<std::string, GameAsset*> DefaultAssets;
+std::map<std::string, LUS::GameAsset*> DefaultAssets;
 std::vector<std::string> emptyArgs;
 
-namespace Ship {
+namespace LUS {
 WindowImpl impl;
 ImGuiIO* io;
 std::shared_ptr<Console> console = std::make_shared<Console>();
@@ -136,7 +138,7 @@ std::map<std::string, CustomWindow> customWindows;
 
 void InitSettings() {
     clientSetupHooks();
-    Ship::RegisterHook<Ship::GfxInit>([] {
+    LUS::RegisterHook<LUS::GfxInit>([] {
         gfx_get_current_rendering_api()->set_texture_filter(
             (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
         if (CVarGetInteger("gConsoleEnabled", 0)) {
@@ -269,7 +271,7 @@ void ImGuiProcessEvent(EventImpl event) {
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
-            Ship::Switch::ImGuiProcessEvent(io->WantTextInput);
+            LUS::Switch::ImGuiProcessEvent(io->WantTextInput);
 #endif
             break;
 #endif
@@ -401,7 +403,7 @@ bool useViewports() {
 void LoadTexture(const std::string& name, const std::string& path) {
     // TODO: Nothing ever unloads the texture from Fast3D here.
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
-    const auto res = Window::GetInstance()->GetResourceManager()->LoadFile(path);
+    const auto res = Context::GetInstance()->GetResourceManager()->LoadFile(path);
 
     const auto asset = new GameAsset{ api->new_texture() };
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
@@ -444,12 +446,8 @@ void InitGui(WindowImpl windowImpl) {
                                                     sIconsRanges);
 
     statsWindowOpen = CVarGetInteger("gStatsEnabled", 0);
-    CVarRegisterInteger("gRandomizeRupeeNames", 1);
-    CVarRegisterInteger("gRandoRelevantNavi", 1);
-    CVarRegisterInteger("gRandoMatchKeyColors", 1);
-    CVarRegisterInteger("gEnableMultiViewports", 1);
 #ifdef __SWITCH__
-    Ship::Switch::ImGuiSetupFont(io->Fonts);
+    LUS::Switch::ImGuiSetupFont(io->Fonts);
 #endif
 
 #ifdef __APPLE__
@@ -468,7 +466,7 @@ void InitGui(WindowImpl windowImpl) {
     io->DisplaySize.y = windowImpl.Gx2.Height;
 #endif
 
-    PopulateBackendIds(Window::GetInstance()->GetConfig());
+    PopulateBackendIds(Context::GetInstance()->GetConfig());
 
     if (CVarGetInteger("gOpenMenuBar", 0) != 1) {
 #if defined(__SWITCH__) || defined(__WIIU__)
@@ -478,8 +476,8 @@ void InitGui(WindowImpl windowImpl) {
 #endif
     }
 
-    auto imguiIniPath = Ship::Window::GetPathRelativeToAppDirectory("imgui.ini");
-    auto imguiLogPath = Ship::Window::GetPathRelativeToAppDirectory("imgui_log.txt");
+    auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
+    auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     io->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     io->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
@@ -502,10 +500,10 @@ void InitGui(WindowImpl windowImpl) {
     ImGui::GetStyle().ScaleAllSizes(2);
 #endif
 
-    Ship::RegisterHook<Ship::GfxInit>([] {
+    LUS::RegisterHook<LUS::GfxInit>([] {
         bool menuBarOpen = CVarGetInteger("gOpenMenuBar", 0);
         SetMenuBar(menuBarOpen);
-        if (Window::GetInstance()->IsFullscreen()) {
+        if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
             setCursorVisibility(menuBarOpen);
         }
 
@@ -522,14 +520,12 @@ void InitGui(WindowImpl windowImpl) {
         LoadTexture("C-Down", "textures/buttons/CDown.png");
     });
 
-    Ship::RegisterHook<Ship::ControllerRead>([](OSContPad* cont_pad) { pads = cont_pad; });
+    LUS::RegisterHook<LUS::ControllerRead>([](OSContPad* contPads) { pads = contPads; });
 
     InitSettings();
 
-    CVarSetInteger("gRandoGenerating", 0);
-    CVarSetInteger("gNewSeedGenerated", 0);
-    CVarSetInteger("gNewFileDropped", 0);
-    CVarSetString("gDroppedFile", "None");
+    CVarClear("gNewFileDropped");
+    CVarClear("gDroppedFile");
 
 #ifdef __SWITCH__
     Switch::ApplyOverclock();
@@ -551,8 +547,8 @@ void DrawMainMenuAndCalculateGameSize(void) {
     ImGuiWMNewFrame();
     ImGui::NewFrame();
 
-    const std::shared_ptr<Window> wnd = Window::GetInstance();
-    const std::shared_ptr<Mercury> conf = Window::GetInstance()->GetConfig();
+    const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
+    const std::shared_ptr<Mercury> conf = Context::GetInstance()->GetConfig();
 
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
@@ -592,10 +588,10 @@ void DrawMainMenuAndCalculateGameSize(void) {
         CVarSetInteger("gOpenMenuBar", menuBar);
         needsSave = true;
         SetMenuBar(menuBar);
-        if (Window::GetInstance()->IsFullscreen()) {
+        if (wnd->IsFullscreen()) {
             setCursorVisibility(menuBar);
         }
-        Window::GetInstance()->GetControlDeck()->SaveSettings();
+        Context::GetInstance()->GetControlDeck()->SaveSettings();
         if (CVarGetInteger("gControlNav", 0) && CVarGetInteger("gOpenMenuBar", 0)) {
             io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
@@ -649,10 +645,10 @@ void DrawMainMenuAndCalculateGameSize(void) {
 #if !defined(__SWITCH__) && !defined(__WIIU__)
             const char* keyboardShortcut = strcmp(GetCurrentRenderingBackend().first, "sdl") == 0 ? "F10" : "ALT+Enter";
             if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
-                Window::GetInstance()->ToggleFullscreen();
+                wnd->ToggleFullscreen();
             }
             if (ImGui::MenuItem("Quit")) {
-                Window::GetInstance()->Close();
+                wnd->Close();
             }
 #endif
             ImGui::EndMenu();
@@ -683,7 +679,7 @@ void DrawMainMenuAndCalculateGameSize(void) {
 
     if (CVarGetInteger("gStatsEnabled", 0)) {
         if (!statsWindowOpen) {
-            CVarSetInteger("gStatsEnabled", 0);
+            CVarClear("gStatsEnabled");
         }
         const float framerate = ImGui::GetIO().Framerate;
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
@@ -902,13 +898,13 @@ std::pair<const char*, const char*> GetCurrentAudioBackend() {
 }
 
 void SetCurrentRenderingBackend(uint8_t index, std::pair<const char*, const char*> backend) {
-    Window::GetInstance()->GetConfig()->setString("Window.GfxBackend", backend.first);
-    Window::GetInstance()->GetConfig()->setString("Window.GfxApi", backend.second);
+    Context::GetInstance()->GetConfig()->setString("Window.GfxBackend", backend.first);
+    Context::GetInstance()->GetConfig()->setString("Window.GfxApi", backend.second);
     lastRenderingBackendID = index;
 }
 
 void SetCurrentAudioBackend(uint8_t index, std::pair<const char*, const char*> backend) {
-    Window::GetInstance()->GetConfig()->setString("Window.AudioBackend", backend.first);
+    Context::GetInstance()->GetConfig()->setString("Window.AudioBackend", backend.first);
     lastAudioBackendID = index;
 }
 
@@ -944,11 +940,11 @@ void EnableWindow(const std::string& name, bool isEnabled) {
     customWindows[name].Enabled = isEnabled;
 }
 
-Ship::GameOverlay* GetGameOverlay() {
+LUS::GameOverlay* GetGameOverlay() {
     return overlay;
 }
 
-Ship::InputEditor* GetInputEditor() {
+LUS::InputEditor* GetInputEditor() {
     return controller;
 }
 
@@ -964,7 +960,7 @@ void ToggleStatisticsWindow(bool isOpen) {
     statsWindowOpen = isOpen;
 }
 
-std::shared_ptr<Ship::Console> GetConsole() {
+std::shared_ptr<LUS::Console> GetConsole() {
     return console;
 }
 
@@ -1011,16 +1007,16 @@ ImTextureID GetTextureByID(int id) {
 void LoadResource(const std::string& name, const std::string& path, const ImVec4& tint) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res =
-        static_cast<Ship::Texture*>(Window::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
+        static_cast<LUS::Texture*>(Context::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
 
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res->Width * res->Height * 4);
 
     switch (res->Type) {
-        case Ship::TextureType::RGBA32bpp:
+        case LUS::TextureType::RGBA32bpp:
             texBuffer.assign(res->ImageData, res->ImageData + (res->Width * res->Height * 4));
             break;
-        case Ship::TextureType::GrayscaleAlpha8bpp:
+        case LUS::TextureType::GrayscaleAlpha8bpp:
             for (int32_t i = 0; i < res->Width * res->Height; i++) {
                 uint8_t ia = res->ImageData[i];
                 uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
@@ -1054,7 +1050,7 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
 }
 
 void setCursorVisibility(bool visible) {
-    Window::GetInstance()->SetCursorVisibility(visible);
+    Context::GetInstance()->GetWindow()->SetCursorVisibility(visible);
 }
 
 void BeginGroupPanel(const char* name, const ImVec2& size) {
@@ -1189,4 +1185,4 @@ uint32_t GetMenuBar() {
 void SetMenuBar(uint32_t menuBar) {
     mMenuBar = menuBar;
 }
-} // namespace Ship
+} // namespace LUS

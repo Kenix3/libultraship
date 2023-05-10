@@ -6,7 +6,7 @@
 #include <ImGui/imgui.h>
 #include "SwitchPerformanceProfiles.h"
 
-namespace Ship {
+namespace LUS {
 enum SwitchProfiles { MAXIMUM, HIGH, BOOST, STOCK, POWERSAVINGM1, POWERSAVINGM2, POWERSAVINGM3 };
 
 enum SwitchPhase { PreInitPhase, PostInitPhase };
@@ -23,4 +23,4 @@ class Switch {
     static void ThrowMissingOTR(std::string OTRPath);
     static void PrintErrorMessageToScreen(const char* str, ...);
 };
-}; // namespace Ship
+}; // namespace LUS

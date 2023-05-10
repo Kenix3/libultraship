@@ -7,7 +7,7 @@
 // NOLINTNEXTLINE
 #include <padscore/wpad.h>
 
-namespace Ship {
+namespace LUS {
 class WiiUController : public Controller {
   public:
     WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan);
@@ -21,7 +21,7 @@ class WiiUController : public Controller {
     void ClearRawPress() override;
     int32_t ReadRawPress() override;
     int32_t SetRumble(int32_t portIndex, bool rumble) override;
-    int32_t SetLed(int32_t portIndex, int8_t r, int8_t g, int8_t b) override;
+    int32_t SetLedColor(int32_t portIndex, Color_RGB8 color) override;
     const std::string GetButtonName(int32_t portIndex, int n64Button) override;
 
   protected:
@@ -34,4 +34,4 @@ class WiiUController : public Controller {
     WPADChan mChan;
     WPADExtensionType mExtensionType;
 };
-} // namespace Ship
+} // namespace LUS

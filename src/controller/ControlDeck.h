@@ -4,7 +4,7 @@
 #include <vector>
 #include <Mercury.h>
 
-namespace Ship {
+namespace LUS {
 
 class ControlDeck {
   public:
@@ -30,4 +30,4 @@ class ControlDeck {
     uint8_t* mControllerBits = nullptr;
     bool mShouldBlockGameInput = false;
 };
-} // namespace Ship
+} // namespace LUS

@@ -1,11 +1,11 @@
 #include "core/bridge/audioplayerbridge.h"
-#include "core/Window.h"
+#include "core/Context.h"
 #include "menu/ImGuiImpl.h"
 
 extern "C" {
 
 bool AudioPlayerInit(void) {
-    auto audio = Ship::Window::GetInstance()->GetAudioPlayer();
+    auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
     if (audio == nullptr) {
         return false;
     }
@@ -14,10 +14,10 @@ bool AudioPlayerInit(void) {
     }
 
     // loop over available audio apis if current fails
-    auto audioBackends = Ship::GetAvailableAudioBackends();
+    auto audioBackends = LUS::GetAvailableAudioBackends();
     for (uint8_t i = 0; i < audioBackends.size(); i++) {
-        Ship::SetCurrentAudioBackend(i, audioBackends[i]);
-        Ship::Window::GetInstance()->InitializeAudioPlayer(audioBackends[i].first);
+        LUS::SetCurrentAudioBackend(i, audioBackends[i]);
+        LUS::Context::GetInstance()->InitAudioPlayer(audioBackends[i].first);
         if (audio->Init()) {
             return true;
         }
@@ -27,7 +27,7 @@ bool AudioPlayerInit(void) {
 }
 
 int32_t AudioPlayerBuffered(void) {
-    auto audio = Ship::Window::GetInstance()->GetAudioPlayer();
+    auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
     if (audio == nullptr) {
         return 0;
     }
@@ -36,7 +36,7 @@ int32_t AudioPlayerBuffered(void) {
 }
 
 int32_t AudioPlayerGetDesiredBuffered(void) {
-    auto audio = Ship::Window::GetInstance()->GetAudioPlayer();
+    auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
     if (audio == nullptr) {
         return 0;
     }
@@ -45,7 +45,7 @@ int32_t AudioPlayerGetDesiredBuffered(void) {
 }
 
 void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
-    auto audio = Ship::Window::GetInstance()->GetAudioPlayer();
+    auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
     if (audio == nullptr) {
         return;
     }

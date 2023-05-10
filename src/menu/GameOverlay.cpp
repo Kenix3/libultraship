@@ -4,11 +4,12 @@
 #include "resource/File.h"
 #include "resource/Archive.h"
 #include "resource/ResourceManager.h"
+#include "core/Context.h"
 #include "menu/ImGuiImpl.h"
 #include <ImGui/imgui_internal.h>
 #include <Utils/StringHelper.h>
 
-namespace Ship {
+namespace LUS {
 bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args) {
     if (args.size() < 3) {
         return CMD_FAILED;
@@ -41,7 +42,7 @@ bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::ve
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
-    std::shared_ptr<Archive> base = Window::GetInstance()->GetResourceManager()->GetArchive();
+    std::shared_ptr<Archive> base = Context::GetInstance()->GetResourceManager()->GetArchive();
     std::shared_ptr<File> font = base->LoadFile(path, false);
     if (font->IsLoaded) {
         // TODO: Nothing is ever unloading the font or this fontData array.
@@ -251,4 +252,4 @@ void GameOverlay::Draw() {
 
     ImGui::End();
 }
-} // namespace Ship
+} // namespace LUS

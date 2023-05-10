@@ -1,12 +1,12 @@
 # spdlog
 
-Very fast, header-only/compiled, C++ logging library. [![Build Status](https://app.travis-ci.com/gabime/spdlog.svg?branch=v1.x)](https://app.travis-ci.com/gabime/spdlog)&nbsp; [![Build status](https://ci.appveyor.com/api/projects/status/d2jnxclg20vd0o50?svg=true&branch=v1.x)](https://ci.appveyor.com/project/gabime/spdlog) [![Release](https://img.shields.io/github/release/gabime/spdlog.svg)](https://github.com/gabime/spdlog/releases/latest)
+Very fast, header-only/compiled, C++ logging library. [![ci](https://github.com/gabime/spdlog/actions/workflows/ci.yml/badge.svg)](https://github.com/gabime/spdlog/actions/workflows/ci.yml)&nbsp; [![Build status](https://ci.appveyor.com/api/projects/status/d2jnxclg20vd0o50?svg=true&branch=v1.x)](https://ci.appveyor.com/project/gabime/spdlog) [![Release](https://img.shields.io/github/release/gabime/spdlog.svg)](https://github.com/gabime/spdlog/releases/latest)
 
 ## Install 
 #### Header only version
 Copy the include [folder](https://github.com/gabime/spdlog/tree/v1.x/include/spdlog) to your build tree and use a C++11 compiler.
 
-#### Static lib version (recommended - much faster compile times)
+#### Compiled version (recommended - much faster compile times)
 ```console
 $ git clone https://github.com/gabime/spdlog.git
 $ cd spdlog && mkdir build && cd build
@@ -29,6 +29,7 @@ $ cmake .. && make -j
 * Fedora: `dnf install spdlog`
 * Gentoo: `emerge dev-libs/spdlog`
 * Arch Linux: `pacman -S spdlog`
+* openSUSE: `sudo zypper in spdlog-devel`
 * vcpkg: `vcpkg install spdlog`
 * conan: `spdlog/[>=1.4.1]`
 * conda: `conda install -c conda-forge spdlog`
@@ -268,21 +269,18 @@ void multi_sink_example2()
 ---
 #### User defined types
 ```c++
-// user defined types logging by implementing operator<<
-#include "spdlog/fmt/ostr.h" // must be included
-struct my_type
+template<>
+struct fmt::formatter<my_type> : fmt::formatter<std::string>
 {
-    int i;
-    template<typename OStream>
-    friend OStream &operator<<(OStream &os, const my_type &c)
+    auto format(my_type my, format_context &ctx) -> decltype(ctx.out())
     {
-        return os << "[my_type i=" << c.i << "]";
+        return format_to(ctx.out(), "[my_type i={}]", my.i);
     }
 };
 
 void user_defined_example()
 {
-    spdlog::get("console")->info("user defined type: {}", my_type{14});
+    spdlog::info("user defined type: {}", my_type(14));
 }
 
 ```

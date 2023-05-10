@@ -8,7 +8,7 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
-namespace Ship {
+namespace LUS {
 #define CMD_SUCCESS true
 #define CMD_FAILED false
 #define NULLSTR "None"
@@ -100,4 +100,4 @@ class Console : public std::enable_shared_from_this<Console> {
     void Close();
     void Open();
 };
-} // namespace Ship
+} // namespace LUS

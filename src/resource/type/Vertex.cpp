@@ -1,6 +1,6 @@
 #include "resource/type/Vertex.h"
 
-namespace Ship {
+namespace LUS {
 void* Vertex::GetPointer() {
     return VertexList.data();
 }
@@ -8,4 +8,4 @@ void* Vertex::GetPointer() {
 size_t Vertex::GetPointerSize() {
     return VertexList.size() * sizeof(Vtx);
 }
-} // namespace Ship
+} // namespace LUS

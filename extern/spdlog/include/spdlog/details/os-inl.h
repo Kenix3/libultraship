@@ -286,7 +286,7 @@ SPDLOG_INLINE int utc_minutes_offset(const std::tm &tm)
     return offset;
 #else
 
-#    if defined(sun) || defined(__sun) || defined(_AIX) || (!defined(_BSD_SOURCE) && !defined(_GNU_SOURCE)) || defined(__WIIU__)
+#    if defined(sun) || defined(__sun) || defined(_AIX) || (!defined(_BSD_SOURCE) && !defined(_GNU_SOURCE))
     // 'tm_gmtoff' field is BSD extension and it's missing on SunOS/Solaris
     struct helper
     {
@@ -388,11 +388,7 @@ SPDLOG_INLINE std::string filename_to_str(const filename_t &filename)
 {
     memory_buf_t buf;
     wstr_to_utf8buf(filename, buf);
-#    ifdef SPDLOG_USE_STD_FORMAT
-    return buf;
-#    else
-    return fmt::to_string(buf);
-#    endif
+    return SPDLOG_BUF_TO_STRING(buf);
 }
 #else
 SPDLOG_INLINE std::string filename_to_str(const filename_t &filename)

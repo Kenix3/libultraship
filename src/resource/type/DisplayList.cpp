@@ -1,6 +1,6 @@
 #include "resource/type/DisplayList.h"
 
-namespace Ship {
+namespace LUS {
 void* DisplayList::GetPointer() {
     return Instructions.data();
 }
@@ -8,4 +8,4 @@ void* DisplayList::GetPointer() {
 size_t DisplayList::GetPointerSize() {
     return Instructions.size() * sizeof(Gfx);
 }
-} // namespace Ship
+} // namespace LUS

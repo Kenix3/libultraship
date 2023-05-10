@@ -7,7 +7,7 @@
 #include <imgui.h>
 #include <unordered_map>
 
-namespace Ship {
+namespace LUS {
 
 enum class OverlayType { TEXT, IMAGE, NOTIFICATION };
 
@@ -45,4 +45,4 @@ class GameOverlay {
     void CleanupNotifications();
     void LoadFont(const std::string& name, const std::string& path, float fontSize);
 };
-} // namespace Ship
+} // namespace LUS

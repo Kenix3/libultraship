@@ -2,15 +2,15 @@
 #include "resource/type/Vertex.h"
 #include "spdlog/spdlog.h"
 
-namespace Ship {
+namespace LUS {
 std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                       std::shared_ptr<ResourceInitData> initData,
                                                       std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Vertex>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
@@ -31,8 +31,8 @@ std::shared_ptr<Resource> VertexFactory::ReadResourceXML(std::shared_ptr<Resourc
     auto resource = std::make_shared<Vertex>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
@@ -69,7 +69,7 @@ void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
         vertex->VertexList.push_back(data);
     }
 }
-void Ship::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) {
+void LUS::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) {
     std::shared_ptr<Vertex> vertex = std::static_pointer_cast<Vertex>(resource);
     auto child = reader->FirstChildElement();
 
@@ -95,4 +95,4 @@ void Ship::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shar
         child = child->NextSiblingElement();
     }
 }
-} // namespace Ship
+} // namespace LUS

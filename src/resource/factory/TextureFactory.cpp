@@ -2,7 +2,7 @@
 #include "resource/type/Texture.h"
 #include "spdlog/spdlog.h"
 
-namespace Ship {
+namespace LUS {
 
 std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                        std::shared_ptr<ResourceInitData> initData,
@@ -10,11 +10,11 @@ std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceM
     auto resource = std::make_shared<Texture>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<TextureFactoryV0>();
             break;
-        case Version::Roy:
+        case 1:
             factory = std::make_shared<TextureFactoryV1>();
             break;
     }
@@ -63,4 +63,4 @@ void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
 
     reader->Read((char*)texture->ImageData, dataSize);
 }
-} // namespace Ship
+} // namespace LUS

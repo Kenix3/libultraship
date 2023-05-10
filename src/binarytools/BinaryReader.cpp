@@ -3,55 +3,55 @@
 #include <cmath>
 #include <stdexcept>
 
-Ship::BinaryReader::BinaryReader(char* nBuffer, size_t nBufferSize) {
+LUS::BinaryReader::BinaryReader(char* nBuffer, size_t nBufferSize) {
     mStream = std::make_shared<MemoryStream>(nBuffer, nBufferSize);
 }
 
-Ship::BinaryReader::BinaryReader(Stream* nStream) {
+LUS::BinaryReader::BinaryReader(Stream* nStream) {
     mStream.reset(nStream);
 }
 
-Ship::BinaryReader::BinaryReader(std::shared_ptr<Stream> nStream) {
+LUS::BinaryReader::BinaryReader(std::shared_ptr<Stream> nStream) {
     mStream = nStream;
 }
 
-void Ship::BinaryReader::Close() {
+void LUS::BinaryReader::Close() {
     mStream->Close();
 }
 
-void Ship::BinaryReader::SetEndianness(Endianness endianness) {
+void LUS::BinaryReader::SetEndianness(Endianness endianness) {
     this->mEndianness = endianness;
 }
 
-Ship::Endianness Ship::BinaryReader::GetEndianness() const {
+LUS::Endianness LUS::BinaryReader::GetEndianness() const {
     return mEndianness;
 }
 
-void Ship::BinaryReader::Seek(int32_t offset, SeekOffsetType seekType) {
+void LUS::BinaryReader::Seek(int32_t offset, SeekOffsetType seekType) {
     mStream->Seek(offset, seekType);
 }
 
-uint32_t Ship::BinaryReader::GetBaseAddress() {
+uint32_t LUS::BinaryReader::GetBaseAddress() {
     return mStream->GetBaseAddress();
 }
 
-void Ship::BinaryReader::Read(int32_t length) {
+void LUS::BinaryReader::Read(int32_t length) {
     mStream->Read(length);
 }
 
-void Ship::BinaryReader::Read(char* buffer, int32_t length) {
+void LUS::BinaryReader::Read(char* buffer, int32_t length) {
     mStream->Read(buffer, length);
 }
 
-char Ship::BinaryReader::ReadChar() {
+char LUS::BinaryReader::ReadChar() {
     return (char)mStream->ReadByte();
 }
 
-int8_t Ship::BinaryReader::ReadInt8() {
+int8_t LUS::BinaryReader::ReadInt8() {
     return mStream->ReadByte();
 }
 
-int16_t Ship::BinaryReader::ReadInt16() {
+int16_t LUS::BinaryReader::ReadInt16() {
     int16_t result = 0;
     mStream->Read((char*)&result, sizeof(int16_t));
     if (mEndianness != Endianness::Native) {
@@ -61,7 +61,7 @@ int16_t Ship::BinaryReader::ReadInt16() {
     return result;
 }
 
-int32_t Ship::BinaryReader::ReadInt32() {
+int32_t LUS::BinaryReader::ReadInt32() {
     int32_t result = 0;
 
     mStream->Read((char*)&result, sizeof(int32_t));
@@ -73,11 +73,11 @@ int32_t Ship::BinaryReader::ReadInt32() {
     return result;
 }
 
-uint8_t Ship::BinaryReader::ReadUByte() {
+uint8_t LUS::BinaryReader::ReadUByte() {
     return (uint8_t)mStream->ReadByte();
 }
 
-uint16_t Ship::BinaryReader::ReadUInt16() {
+uint16_t LUS::BinaryReader::ReadUInt16() {
     uint16_t result = 0;
 
     mStream->Read((char*)&result, sizeof(uint16_t));
@@ -89,7 +89,7 @@ uint16_t Ship::BinaryReader::ReadUInt16() {
     return result;
 }
 
-uint32_t Ship::BinaryReader::ReadUInt32() {
+uint32_t LUS::BinaryReader::ReadUInt32() {
     uint32_t result = 0;
 
     mStream->Read((char*)&result, sizeof(uint32_t));
@@ -101,7 +101,7 @@ uint32_t Ship::BinaryReader::ReadUInt32() {
     return result;
 }
 
-uint64_t Ship::BinaryReader::ReadUInt64() {
+uint64_t LUS::BinaryReader::ReadUInt64() {
     uint64_t result = 0;
 
     mStream->Read((char*)&result, sizeof(uint64_t));
@@ -113,7 +113,7 @@ uint64_t Ship::BinaryReader::ReadUInt64() {
     return result;
 }
 
-float Ship::BinaryReader::ReadFloat() {
+float LUS::BinaryReader::ReadFloat() {
     float result = NAN;
 
     mStream->Read((char*)&result, sizeof(float));
@@ -136,7 +136,7 @@ float Ship::BinaryReader::ReadFloat() {
     return result;
 }
 
-double Ship::BinaryReader::ReadDouble() {
+double LUS::BinaryReader::ReadDouble() {
     double result = NAN;
 
     mStream->Read((char*)&result, sizeof(double));
@@ -163,27 +163,27 @@ double Ship::BinaryReader::ReadDouble() {
     return result;
 }
 
-ZAPDUtils::Vec3f Ship::BinaryReader::ReadVec3f() {
+ZAPDUtils::Vec3f LUS::BinaryReader::ReadVec3f() {
     return ZAPDUtils::Vec3f();
 }
 
-ZAPDUtils::Vec3s Ship::BinaryReader::ReadVec3s() {
+ZAPDUtils::Vec3s LUS::BinaryReader::ReadVec3s() {
     return ZAPDUtils::Vec3s(0, 0, 0);
 }
 
-ZAPDUtils::Vec3s Ship::BinaryReader::ReadVec3b() {
+ZAPDUtils::Vec3s LUS::BinaryReader::ReadVec3b() {
     return ZAPDUtils::Vec3s(0, 0, 0);
 }
 
-ZAPDUtils::Vec2f Ship::BinaryReader::ReadVec2f() {
+ZAPDUtils::Vec2f LUS::BinaryReader::ReadVec2f() {
     return ZAPDUtils::Vec2f();
 }
 
-Color3b Ship::BinaryReader::ReadColor3b() {
+Color3b LUS::BinaryReader::ReadColor3b() {
     return Color3b();
 }
 
-std::string Ship::BinaryReader::ReadString() {
+std::string LUS::BinaryReader::ReadString() {
     std::string res;
     int numChars = ReadInt32();
     for (int i = 0; i < numChars; i++) {
@@ -192,7 +192,7 @@ std::string Ship::BinaryReader::ReadString() {
     return res;
 }
 
-std::string Ship::BinaryReader::ReadCString() {
+std::string LUS::BinaryReader::ReadCString() {
     std::string res;
 
     unsigned char c = 0;
@@ -208,6 +208,6 @@ std::string Ship::BinaryReader::ReadCString() {
     return res;
 }
 
-std::vector<char> Ship::BinaryReader::ToVector() {
+std::vector<char> LUS::BinaryReader::ToVector() {
     return mStream->ToVector();
 }

@@ -8,13 +8,13 @@
 #include "InputEditor.h"
 #include "menu/IconsFontAwesome4.h"
 
+namespace LUS {
 struct GameAsset {
     uint32_t textureId;
     int width;
     int height;
 };
 
-namespace Ship {
 enum class Backend {
     DX11,
     SDL_OPENGL,
@@ -108,13 +108,13 @@ void AddWindow(const std::string& category, const std::string& name, WindowDrawF
                bool isHidden = false);
 void EnableWindow(const std::string& name, bool isEnabled = true);
 
-Ship::GameOverlay* GetGameOverlay();
+LUS::GameOverlay* GetGameOverlay();
 
-Ship::InputEditor* GetInputEditor();
+LUS::InputEditor* GetInputEditor();
 void ToggleInputEditorWindow(bool isOpen = true);
 void ToggleStatisticsWindow(bool isOpen = true);
 
-std::shared_ptr<Ship::Console> GetConsole();
+std::shared_ptr<LUS::Console> GetConsole();
 void ToggleConsoleWindow(bool isOpen = true);
 void DispatchConsoleCommand(const std::string& line);
 
@@ -127,6 +127,6 @@ void LoadResource(const std::string& name, const std::string& path, const ImVec4
 void setCursorVisibility(bool visible);
 void BeginGroupPanel(const char* name, const ImVec2& size = ImVec2(0.0f, 0.0f));
 void EndGroupPanel(float minHeight = 0.0f);
-} // namespace Ship
+} // namespace LUS
 
 #endif

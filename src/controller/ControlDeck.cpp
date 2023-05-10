@@ -1,6 +1,6 @@
 #include "ControlDeck.h"
 
-#include "core/Window.h"
+#include "core/Context.h"
 #include "Controller.h"
 #include "DummyController.h"
 #include <Utils/StringHelper.h>
@@ -15,7 +15,7 @@
 #include "port/wiiu/WiiUController.h"
 #endif
 
-namespace Ship {
+namespace LUS {
 
 void ControlDeck::Init(uint8_t* bits) {
     ScanDevices();
@@ -26,7 +26,7 @@ void ControlDeck::ScanDevices() {
     mPortList.clear();
     mDevices.clear();
 
-    auto controlDeck = Window::GetInstance()->GetControlDeck();
+    auto controlDeck = Context::GetInstance()->GetControlDeck();
 
     // Always load controllers that need their device indices zero based first because we add some other devices
     // afterward.
@@ -45,12 +45,12 @@ void ControlDeck::ScanDevices() {
     mDevices.push_back(std::make_shared<KeyboardController>(controlDeck, i++));
 #else
     for (i = 0; i < 4; i++) {
-        auto controller = std::make_shared<Ship::WiiUController>(controlDeck, i, (WPADChan)i);
+        auto controller = std::make_shared<LUS::WiiUController>(controlDeck, i, (WPADChan)i);
         controller->Open();
         mDevices.push_back(controller);
     }
 
-    auto gamepad = std::make_shared<Ship::WiiUGamepad>(controlDeck, i++);
+    auto gamepad = std::make_shared<LUS::WiiUGamepad>(controlDeck, i++);
     gamepad->Open();
     mDevices.push_back(gamepad);
 
@@ -109,7 +109,7 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
     StringHelper::Sprintf("Controllers.%s.Slot_%d." key, device->GetGuid().c_str(), virtualSlot, __VA_ARGS__)
 
 void ControlDeck::LoadSettings() {
-    std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
+    std::shared_ptr<Mercury> config = Context::GetInstance()->GetConfig();
 
     for (auto const& val : config->rjson["Controllers"]["Deck"].items()) {
         int32_t slot = std::stoi(val.key().substr(5));
@@ -200,7 +200,7 @@ void ControlDeck::LoadSettings() {
 }
 
 void ControlDeck::SaveSettings() {
-    std::shared_ptr<Mercury> config = Window::GetInstance()->GetConfig();
+    std::shared_ptr<Mercury> config = Context::GetInstance()->GetConfig();
 
     for (size_t i = 0; i < mPortList.size(); i++) {
         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
@@ -296,4 +296,4 @@ bool ControlDeck::ShouldBlockGameInput(std::string inputDeviceGuid) const {
     bool inputDeviceIsKeyboard = inputDeviceGuid == "Keyboard";
     return mShouldBlockGameInput || (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
 }
-} // namespace Ship
+} // namespace LUS

@@ -1,6 +1,6 @@
 #include "resource/type/Texture.h"
 
-namespace Ship {
+namespace LUS {
 void* Texture::GetPointer() {
     return ImageData;
 }
@@ -14,4 +14,4 @@ Texture::~Texture() {
         delete ImageData;
     }
 }
-} // namespace Ship
+} // namespace LUS

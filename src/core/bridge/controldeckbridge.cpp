@@ -1,13 +1,13 @@
 #include "core/bridge/controldeckbridge.h"
-#include "core/Window.h"
+#include "core/Context.h"
 
 extern "C" {
 
 void BlockGameInput(void) {
-    Ship::Window::GetInstance()->GetControlDeck()->BlockGameInput();
+    LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
 }
 
 void UnblockGameInput(void) {
-    Ship::Window::GetInstance()->GetControlDeck()->UnblockGameInput();
+    LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
 }
 }

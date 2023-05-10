@@ -11,7 +11,7 @@
 
 #include "core/Window.h"
 
-namespace Ship {
+namespace LUS {
 namespace WiiU {
 
 static bool hasVpad = false;
@@ -119,7 +119,7 @@ void Update() {
 
     // rescan devices if connection state changed
     if (rescan) {
-        Window::GetInstance()->GetControlDeck()->ScanPhysicalDevices();
+        Window::GetInstance()->GetControlDeck()->ScanDevices();
     }
 }
 
@@ -134,6 +134,6 @@ KPADStatus* GetKPADStatus(WPADChan chan, KPADError* error) {
 }
 
 }; // namespace WiiU
-}; // namespace Ship
+}; // namespace LUS
 
 #endif

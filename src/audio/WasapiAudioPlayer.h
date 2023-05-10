@@ -9,10 +9,10 @@
 
 using namespace Microsoft::WRL;
 
-namespace Ship {
+namespace LUS {
 class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
   public:
-    WasapiAudioPlayer();
+    WasapiAudioPlayer(std::string backend);
 
     int Buffered(void);
     int GetDesiredBuffered(void);
@@ -41,5 +41,5 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     bool mInitialized;
     bool mStarted;
 };
-} // namespace Ship
+} // namespace LUS
 #endif

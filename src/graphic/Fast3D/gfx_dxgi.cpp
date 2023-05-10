@@ -233,9 +233,9 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
-    Ship::EventImpl event_impl;
+    LUS::EventImpl event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    Ship::UpdateGui(event_impl);
+    LUS::UpdateGui(event_impl);
     switch (message) {
         case WM_SIZE:
             dxgi.current_width = (uint32_t)(l_param & 0xffff);
@@ -400,7 +400,7 @@ static void gfx_dxgi_main_loop(void (*run_one_game_iter)(void)) {
         DispatchMessage(&msg);
     }
 
-    Ship::ExecuteHooks<Ship::ExitGame>();
+    LUS::ExecuteHooks<LUS::ExitGame>();
 }
 
 static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height) {

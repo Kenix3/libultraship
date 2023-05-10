@@ -4,7 +4,7 @@
 #include "libultraship/libultra/gbi.h"
 #include <vector>
 
-namespace Ship {
+namespace LUS {
 class Vertex : public Resource {
   public:
     using Resource::Resource;
@@ -14,4 +14,4 @@ class Vertex : public Resource {
 
     std::vector<Vtx> VertexList;
 };
-} // namespace Ship
+} // namespace LUS

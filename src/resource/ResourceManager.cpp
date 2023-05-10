@@ -8,13 +8,14 @@
 #include <Utils/StringHelper.h>
 #include <StormLib.h>
 #include "core/bridge/consolevariablebridge.h"
+#include "core/Context.h"
 
 // Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
-namespace Ship {
+namespace LUS {
 
-ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::string& mainPath,
+ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath,
                                  const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
@@ -32,7 +33,7 @@ ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::str
     }
 }
 
-ResourceManager::ResourceManager(std::shared_ptr<Window> context, const std::vector<std::string>& otrFiles,
+ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::vector<std::string>& otrFiles,
                                  const std::unordered_set<uint32_t>& validHashes)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
@@ -63,7 +64,7 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->Path);
     } else {
-        SPDLOG_WARN("Could not load File {} in ResourceManager", filePath);
+        SPDLOG_TRACE("Could not load File {} in ResourceManager", filePath);
     }
     return file;
 }
@@ -114,7 +115,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     // Get the file from the OTR
     auto file = LoadFileProcess(filePath);
     if (file == nullptr) {
-        SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
+        SPDLOG_TRACE("Failed to load resource file at path {}", filePath);
     }
 
     // Transform the raw data into a resource
@@ -143,7 +144,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     if (resource != nullptr) {
         SPDLOG_TRACE("Loaded Resource {} on ResourceManager", filePath);
     } else {
-        SPDLOG_WARN("Resource load FAILED {} on ResourceManager", filePath);
+        SPDLOG_TRACE("Resource load FAILED {} on ResourceManager", filePath);
     }
 
     return resource;
@@ -187,7 +188,11 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
 }
 
 std::shared_ptr<Resource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact) {
-    return LoadResourceAsync(filePath, loadExact, true).get();
+    auto resource = LoadResourceAsync(filePath, loadExact, true).get();
+    if (resource == nullptr) {
+        SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
+    }
+    return resource;
 }
 
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<Resource>>
@@ -313,7 +318,7 @@ std::shared_ptr<ResourceLoader> ResourceManager::GetResourceLoader() {
     return mResourceLoader;
 }
 
-std::shared_ptr<Window> ResourceManager::GetContext() {
+std::shared_ptr<Context> ResourceManager::GetContext() {
     return mContext;
 }
 
@@ -337,4 +342,4 @@ bool ResourceManager::OtrSignatureCheck(const char* fileName) {
     return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
 }
 
-} // namespace Ship
+} // namespace LUS

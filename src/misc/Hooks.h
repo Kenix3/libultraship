@@ -8,7 +8,7 @@
         typedef std::function<type> fn; \
     }
 
-namespace Ship {
+namespace LUS {
 class Controller;
 
 template <typename H> struct RegisteredHooks { inline static std::vector<typename H::fn> functions; };
@@ -30,4 +30,4 @@ DEFINE_HOOK(GfxInit, void());
 DEFINE_HOOK(ExitGame, void());
 DEFINE_HOOK(LoadFile, void(uint32_t fileNum));
 DEFINE_HOOK(DeleteFile, void(uint32_t fileNum));
-} // namespace Ship
+} // namespace LUS

@@ -295,7 +295,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
 #ifdef __SWITCH__
     // For Switch we need to set the window width before creating the window
-    Ship::Switch::GetDisplaySize(&window_width, &window_height);
+    LUS::Switch::GetDisplaySize(&window_width, &window_height);
     width = window_width;
     height = window_height;
 #endif
@@ -309,7 +309,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     wnd = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
-    Ship::WindowImpl window_impl;
+    LUS::WindowImpl window_impl;
 
     if (use_opengl) {
 #ifndef __SWITCH__
@@ -332,7 +332,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
 
         window_impl.Opengl = { wnd, ctx };
-        window_impl.backend = Ship::Backend::SDL_OPENGL;
+        window_impl.backend = LUS::Backend::SDL_OPENGL;
     } else {
         uint32_t flags = SDL_RENDERER_ACCELERATED;
         if (vsync_enabled) {
@@ -346,10 +346,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
         window_impl.Metal = { wnd, renderer };
-        window_impl.backend = Ship::Backend::SDL_METAL;
+        window_impl.backend = LUS::Backend::SDL_METAL;
     }
 
-    Ship::InitGui(window_impl);
+    LUS::InitGui(window_impl);
 
     for (size_t i = 0; i < sizeof(lus_to_sdl_table) / sizeof(SDL_Scancode); i++) {
         sdl_to_lus_table[lus_to_sdl_table[i]] = i;
@@ -394,16 +394,16 @@ static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bo
 
 static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
 #ifdef __SWITCH__
-    while (Ship::Switch::IsRunning()) {
+    while (LUS::Switch::IsRunning()) {
 #else
     while (is_running) {
 #endif
         run_one_game_iter();
     }
 #ifdef __SWITCH__
-    Ship::Switch::Exit();
+    LUS::Switch::Exit();
 #endif
-    Ship::ExecuteHooks<Ship::ExitGame>();
+    LUS::ExecuteHooks<LUS::ExitGame>();
 
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
@@ -448,9 +448,9 @@ static void gfx_sdl_onkeyup(int scancode) {
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        Ship::EventImpl event_impl;
+        LUS::EventImpl event_impl;
         event_impl.Sdl = { &event };
-        Ship::UpdateGui(event_impl);
+        LUS::UpdateGui(event_impl);
         switch (event.type) {
 #ifndef TARGET_WEB
             // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
@@ -464,7 +464,7 @@ static void gfx_sdl_handle_events(void) {
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
 #ifdef __SWITCH__
-                    Ship::Switch::GetDisplaySize(&window_width, &window_height);
+                    LUS::Switch::GetDisplaySize(&window_width, &window_height);
 #else
                     SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
 #endif

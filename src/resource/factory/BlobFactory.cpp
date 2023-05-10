@@ -2,7 +2,7 @@
 #include "resource/type/Blob.h"
 #include "spdlog/spdlog.h"
 
-namespace Ship {
+namespace LUS {
 std::shared_ptr<Resource> BlobFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                     std::shared_ptr<ResourceInitData> initData,
                                                     std::shared_ptr<BinaryReader> reader) {
@@ -37,4 +37,4 @@ void BlobFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::s
         blob->Data.push_back(reader->ReadUByte());
     }
 }
-} // namespace Ship
+} // namespace LUS

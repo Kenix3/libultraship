@@ -14,7 +14,7 @@
 #include <StormLib.h>
 #include <mutex>
 
-namespace Ship {
+namespace LUS {
 struct File;
 
 class Archive : public std::enable_shared_from_this<Archive> {
@@ -64,4 +64,4 @@ class Archive : public std::enable_shared_from_this<Archive> {
     std::shared_ptr<File> LoadFileFromHandle(const std::string& filePath, bool includeParent = true,
                                              HANDLE mpqHandle = nullptr);
 };
-} // namespace Ship
+} // namespace LUS

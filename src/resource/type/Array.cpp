@@ -1,6 +1,6 @@
 #include "Array.h"
 
-namespace Ship {
+namespace LUS {
 void* Array::GetPointer() {
     void* dataPointer = nullptr;
     switch (ArrayType) {
@@ -39,4 +39,4 @@ size_t Array::GetPointerSize() {
     }
     return ArrayCount * typeSize;
 }
-} // namespace Ship
+} // namespace LUS

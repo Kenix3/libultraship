@@ -34,8 +34,8 @@ template <typename Mutex> class ConsoleSink final : public base_sink<Mutex> {
         }
         formatted.push_back('\0');
         const char* msg_output = formatted.data();
-        if (CVarGetInteger("gSinkEnabled", 0) && Ship::GetConsole()->IsOpened()) {
-            Ship::GetConsole()->Append("Logs", msg.level, "%s", msg_output);
+        if (CVarGetInteger("gSinkEnabled", 0) && LUS::GetConsole()->IsOpened()) {
+            LUS::GetConsole()->Append("Logs", msg.level, "%s", msg_output);
         }
     }
 

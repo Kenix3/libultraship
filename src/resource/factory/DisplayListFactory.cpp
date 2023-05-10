@@ -4,15 +4,15 @@
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
-namespace Ship {
+namespace LUS {
 std::shared_ptr<Resource> DisplayListFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
                                                            std::shared_ptr<ResourceInitData> initData,
                                                            std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<DisplayList>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }
@@ -33,8 +33,8 @@ std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(std::shared_ptr<Re
     auto resource = std::make_shared<DisplayList>(resourceMgr, initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch ((Version)resource->InitData->ResourceVersion) {
-        case Version::Deckard:
+    switch (resource->InitData->ResourceVersion) {
+        case 0:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }
@@ -1103,4 +1103,4 @@ uint32_t DisplayListFactoryV0::GetCombineLERPValue(std::string valStr) {
     return G_CCMUX_1;
 }
 
-} // namespace Ship
+} // namespace LUS
