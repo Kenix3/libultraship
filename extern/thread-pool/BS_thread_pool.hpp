@@ -414,7 +414,7 @@ public:
     }
 
     /**
-     * @brief Push a function with zero or more arguments, but no return value, into the task queue. Does not return a future, so the user must use wait_for_tasks() or some other method to ensure that the task finishes executing, otherwise bad things will happen.
+     * @brief Push a function with zero or more arguments, but no return value,  to the back of the task queue. Does not return a future, so the user must use wait_for_tasks() or some other method to ensure that the task finishes executing, otherwise bad things will happen.
      *
      * @tparam F The type of the function.
      * @tparam A The types of the arguments.
@@ -422,16 +422,32 @@ public:
      * @param args The zero or more arguments to pass to the function. Note that if the task is a class member function, the first argument must be a pointer to the object, i.e. &object (or this), followed by the actual arguments.
      */
     template <typename F, typename... A>
-    void push_task(bool front, F&& task, A&&... args)
+    void push_task_back(F&& task, A&&... args)
     {
         std::function<void()> task_function = std::bind(std::forward<F>(task), std::forward<A>(args)...);
         {
             const std::scoped_lock tasks_lock(tasks_mutex);
-            if (front) {
-                tasks.push_front(task_function);
-            } else {
-                tasks.push_back(task_function);
-            }
+            tasks.push_back(task_function);
+        }
+        ++tasks_total;
+        task_available_cv.notify_one();
+    }
+
+    /**
+     * @brief Push a function with zero or more arguments, but no return value, to the front of the task queue. Does not return a future, so the user must use wait_for_tasks() or some other method to ensure that the task finishes executing, otherwise bad things will happen.
+     *
+     * @tparam F The type of the function.
+     * @tparam A The types of the arguments.
+     * @param task The function to push.
+     * @param args The zero or more arguments to pass to the function. Note that if the task is a class member function, the first argument must be a pointer to the object, i.e. &object (or this), followed by the actual arguments.
+     */
+    template <typename F, typename... A>
+    void push_task_front(F&& task, A&&... args)
+    {
+        std::function<void()> task_function = std::bind(std::forward<F>(task), std::forward<A>(args)...);
+        {
+            const std::scoped_lock tasks_lock(tasks_mutex);
+            tasks.push_front(task_function);
         }
         ++tasks_total;
         task_available_cv.notify_one();
@@ -455,7 +471,7 @@ public:
     }
 
     /**
-     * @brief Submit a function with zero or more arguments into the task queue. If the function has a return value, get a future for the eventual returned value. If the function has no return value, get an std::future<void> which can be used to wait until the task finishes.
+     * @brief Submit a function with zero or more arguments to the back of the task queue. If the function has a return value, get a future for the eventual returned value. If the function has no return value, get an std::future<void> which can be used to wait until the task finishes.
      *
      * @tparam F The type of the function.
      * @tparam A The types of the zero or more arguments to pass to the function.
@@ -465,12 +481,55 @@ public:
      * @return A future to be used later to wait for the function to finish executing and/or obtain its returned value if it has one.
      */
     template <typename F, typename... A, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<A>...>>
-    [[nodiscard]] std::future<R> submit(bool front, F&& task, A&&... args)
+    [[nodiscard]] std::future<R> submit_back(F&& task, A&&... args)
     {
         std::function<R()> task_function = std::bind(std::forward<F>(task), std::forward<A>(args)...);
         std::shared_ptr<std::promise<R>> task_promise = std::make_shared<std::promise<R>>();
-        push_task(
-            front,
+        push_task_back(
+            [task_function, task_promise]
+            {
+                try
+                {
+                    if constexpr (std::is_void_v<R>)
+                    {
+                        std::invoke(task_function);
+                        task_promise->set_value();
+                    }
+                    else
+                    {
+                        task_promise->set_value(std::invoke(task_function));
+                    }
+                }
+                catch (...)
+                {
+                    try
+                    {
+                        task_promise->set_exception(std::current_exception());
+                    }
+                    catch (...)
+                    {
+                    }
+                }
+            });
+        return task_promise->get_future();
+    }
+
+    /**
+     * @brief Submit a function with zero or more arguments to the front of the task queue. If the function has a return value, get a future for the eventual returned value. If the function has no return value, get an std::future<void> which can be used to wait until the task finishes.
+     *
+     * @tparam F The type of the function.
+     * @tparam A The types of the zero or more arguments to pass to the function.
+     * @tparam R The return type of the function (can be void).
+     * @param task The function to submit.
+     * @param args The zero or more arguments to pass to the function. Note that if the task is a class member function, the first argument must be a pointer to the object, i.e. &object (or this), followed by the actual arguments.
+     * @return A future to be used later to wait for the function to finish executing and/or obtain its returned value if it has one.
+     */
+    template <typename F, typename... A, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<A>...>>
+    [[nodiscard]] std::future<R> submit_front(F&& task, A&&... args)
+    {
+        std::function<R()> task_function = std::bind(std::forward<F>(task), std::forward<A>(args)...);
+        std::shared_ptr<std::promise<R>> task_promise = std::make_shared<std::promise<R>>();
+        push_task_front(
             [task_function, task_promise]
             {
                 try
