@@ -50,8 +50,12 @@ std::shared_ptr<Archive> Archive::CreateArchive(const std::string& archivePath, 
     fileName[archivePath.size()] = 0;
     std::copy(archivePath.begin(), archivePath.end(), fileName);
 
-    bool success = SFileCreateArchive(fileName, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2,
-                                      fileCapacity, &archive->mMainMpq);
+    bool success;
+    {
+        const std::lock_guard<std::mutex> lock(archive->mMutex);
+        success = SFileCreateArchive(fileName, MPQ_CREATE_LISTFILE | MPQ_CREATE_ATTRIBUTES | MPQ_CREATE_ARCHIVE_V2,
+                                     fileCapacity, &archive->mMainMpq);
+    }
     int32_t error = GetLastError();
 
     delete[] fileName;
@@ -88,27 +92,50 @@ std::shared_ptr<File> Archive::LoadFileFromHandle(const std::string& filePath, b
         fileToLoad->IsLoaded = true;
     } else {
 #endif
-        bool attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
+        bool attempt;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            attempt = SFileOpenFileEx(mpqHandle, filePath.c_str(), 0, &fileHandle);
+        }
 
         if (!attempt) {
             SPDLOG_TRACE("({}) Failed to open file {} from mpq archive  {}.", GetLastError(), filePath, mMainPath);
             return nullptr;
         }
 
-        DWORD fileSize = SFileGetFileSize(fileHandle, 0);
+        DWORD fileSize;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            fileSize = SFileGetFileSize(fileHandle, 0);
+        }
         fileToLoad->Buffer.resize(fileSize);
         DWORD countBytes;
 
-        if (!SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL)) {
+        bool readFileSuccess;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            readFileSuccess = SFileReadFile(fileHandle, fileToLoad->Buffer.data(), fileSize, &countBytes, NULL);
+        }
+        if (!readFileSuccess) {
             SPDLOG_ERROR("({}) Failed to read file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
-            if (!SFileCloseFile(fileHandle)) {
+            bool closeFileSuccess;
+            {
+                const std::lock_guard<std::mutex> lock(mMutex);
+                closeFileSuccess = SFileCloseFile(fileHandle);
+            }
+            if (!closeFileSuccess) {
                 SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
                              filePath, mMainPath);
             }
             return nullptr;
         }
 
-        if (!SFileCloseFile(fileHandle)) {
+        bool closeFileSuccess;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            closeFileSuccess = SFileCloseFile(fileHandle);
+        }
+        if (!closeFileSuccess) {
             SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, mMainPath);
         }
 
@@ -142,25 +169,51 @@ bool Archive::AddFile(const std::string& filePath, uintptr_t fileData, DWORD fil
 
     StringHelper::ReplaceOriginal(updatedPath, "\\", "/");
 
-    if (!SFileCreateFile(mMainMpq, updatedPath.c_str(), theTime, fileSize, 0, MPQ_FILE_COMPRESS, &hFile)) {
+    bool createFileSuccess;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        createFileSuccess =
+            SFileCreateFile(mMainMpq, updatedPath.c_str(), theTime, fileSize, 0, MPQ_FILE_COMPRESS, &hFile);
+    }
+    if (!createFileSuccess) {
         SPDLOG_ERROR("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), fileSize, updatedPath,
                      mMainPath);
         return false;
     }
 
-    if (!SFileWriteFile(hFile, (void*)fileData, fileSize, MPQ_COMPRESSION_ZLIB)) {
+    bool writeFileSuccess;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        writeFileSuccess = SFileWriteFile(hFile, (void*)fileData, fileSize, MPQ_COMPRESSION_ZLIB);
+    }
+    if (!writeFileSuccess) {
         SPDLOG_ERROR("({}) Failed to write {} bytes to {} in archive {}", GetLastError(), fileSize, updatedPath,
                      mMainPath);
-        if (!SFileCloseFile(hFile)) {
+        bool closeFileSuccess;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            closeFileSuccess = SFileCloseFile(hFile);
+        }
+        if (!closeFileSuccess) {
             SPDLOG_ERROR("({}) Failed to close file {} after write failure in archive {}", GetLastError(), updatedPath,
                          mMainPath);
         }
         return false;
     }
 
-    if (!SFileFinishFile(hFile)) {
+    bool finishFileSuccess;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        finishFileSuccess = SFileFinishFile(hFile);
+    }
+    if (!finishFileSuccess) {
         SPDLOG_ERROR("({}) Failed to finish file {} in archive {}", GetLastError(), updatedPath, mMainPath);
-        if (!SFileCloseFile(hFile)) {
+        bool closeFileSuccess;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            closeFileSuccess = SFileCloseFile(hFile);
+        }
+        if (!closeFileSuccess) {
             SPDLOG_ERROR("({}) Failed to close file {} after finish failure in archive {}", GetLastError(), updatedPath,
                          mMainPath);
         }
@@ -177,7 +230,12 @@ bool Archive::AddFile(const std::string& filePath, uintptr_t fileData, DWORD fil
 bool Archive::RemoveFile(const std::string& filePath) {
     // TODO: Notify the resource manager and child Files
 
-    if (!SFileRemoveFile(mMainMpq, filePath.c_str(), 0)) {
+    bool removeFileSuccess;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        removeFileSuccess = SFileRemoveFile(mMainMpq, filePath.c_str(), 0);
+    }
+    if (!removeFileSuccess) {
         SPDLOG_ERROR("({}) Failed to remove file {} in archive {}", GetLastError(), filePath, mMainPath);
         return false;
     }
@@ -188,7 +246,12 @@ bool Archive::RemoveFile(const std::string& filePath) {
 bool Archive::RenameFile(const std::string& oldFilePath, const std::string& newFilePath) {
     // TODO: Notify the resource manager and child Files
 
-    if (!SFileRenameFile(mMainMpq, oldFilePath.c_str(), newFilePath.c_str())) {
+    bool renameFileSuccess;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        renameFileSuccess = SFileRenameFile(mMainMpq, oldFilePath.c_str(), newFilePath.c_str());
+    }
+    if (!renameFileSuccess) {
         SPDLOG_ERROR("({}) Failed to rename file {} to {} in archive {}", GetLastError(), oldFilePath, newFilePath,
                      mMainPath);
         return false;
@@ -202,14 +265,19 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::stri
     SFILE_FIND_DATA findContext;
     HANDLE hFind;
 
-    hFind = SFileFindFirstFile(mMainMpq, fileSearchMask.c_str(), &findContext, nullptr);
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        hFind = SFileFindFirstFile(mMainMpq, fileSearchMask.c_str(), &findContext, nullptr);
+    }
     if (hFind != nullptr) {
         fileList->push_back(findContext);
 
         bool fileFound;
         do {
-            fileFound = SFileFindNextFile(hFind, &findContext);
-
+            {
+                const std::lock_guard<std::mutex> lock(mMutex);
+                fileFound = SFileFindNextFile(hFind, &findContext);
+            }
             if (fileFound) {
                 fileList->push_back(findContext);
             } else if (!fileFound && GetLastError() != ERROR_NO_MORE_FILES) {
@@ -228,7 +296,12 @@ std::shared_ptr<std::vector<SFILE_FIND_DATA>> Archive::FindFiles(const std::stri
     }
 
     if (hFind != nullptr) {
-        if (!SFileFindClose(hFind)) {
+        bool fileFindCloseSuccess;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            fileFindCloseSuccess = SFileFindClose(hFind);
+        }
+        if (!fileFindCloseSuccess) {
             SPDLOG_ERROR("({}) Failed to close file search {} in archive {}", GetLastError(), fileSearchMask,
                          mMainPath);
         }
@@ -267,7 +340,12 @@ bool Archive::Load(bool enableWriting, bool generateCrcMap) {
 bool Archive::Unload() {
     bool success = true;
     for (const auto& mpqHandle : mMpqHandles) {
-        if (!SFileCloseArchive(mpqHandle.second)) {
+        bool closeArchiveSuccess;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            closeArchiveSuccess = SFileCloseArchive(mpqHandle.second);
+        }
+        if (!closeArchiveSuccess) {
             SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mpqHandle.first);
             success = false;
         }
@@ -366,13 +444,22 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
 #else
         std::string fullPath = std::filesystem::absolute(mOtrArchives[i]).string();
 #endif
-        if (SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle)) {
+        bool openArchiveSuccess;
+        {
+            const std::lock_guard<std::mutex> lock(mMutex);
+            openArchiveSuccess =
+                SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle);
+        }
+        if (openArchiveSuccess) {
             SPDLOG_INFO("Opened mpq file {}.", fullPath);
             mMainMpq = mpqHandle;
             mMainPath = fullPath;
             if (!ProcessOtrVersion(mMainMpq)) {
                 SPDLOG_WARN("Attempted to load invalid OTR file {}", mOtrArchives[i]);
-                SFileCloseArchive(mpqHandle);
+                {
+                    const std::lock_guard<std::mutex> lock(mMutex);
+                    SFileCloseArchive(mpqHandle);
+                }
                 mMainMpq = nullptr;
             } else {
                 mMpqHandles[fullPath] = mpqHandle;
@@ -417,7 +504,12 @@ bool Archive::LoadPatchMPQ(const std::string& otrPath, bool validateVersion) {
     if (mMpqHandles.contains(fullPath)) {
         return true;
     }
-    if (!SFileOpenArchive(fullPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle)) {
+    bool openArchiveSuccess;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        openArchiveSuccess = SFileOpenArchive(fullPath.c_str(), 0, MPQ_OPEN_READ_ONLY, &patchHandle);
+    }
+    if (!openArchiveSuccess) {
         SPDLOG_ERROR("({}) Failed to open patch mpq file {} while applying to {}.", GetLastError(), otrPath, mMainPath);
         return false;
     } else {
@@ -429,7 +521,12 @@ bool Archive::LoadPatchMPQ(const std::string& otrPath, bool validateVersion) {
             }
         }
     }
-    if (!SFileOpenPatchArchive(mMainMpq, fullPath.c_str(), "", 0)) {
+    bool openPatchArchiveSuccess;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        openPatchArchiveSuccess = SFileOpenPatchArchive(mMainMpq, fullPath.c_str(), "", 0);
+    }
+    if (!openPatchArchiveSuccess) {
         SPDLOG_ERROR("({}) Failed to apply patch mpq file {} to main mpq {}.", GetLastError(), otrPath, mMainPath);
         return false;
     }

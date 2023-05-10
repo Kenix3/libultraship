@@ -94,6 +94,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     if (cachedResource != nullptr) {
         return cachedResource;
     }
+
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && filePath.starts_with(Resource::gAltAssetPrefix)) {
@@ -149,20 +150,24 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     return resource;
 }
 
-std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath) {
-    return mThreadPool->submit(&ResourceManager::LoadFileProcess, this, filePath).share();
+std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath, bool priority) {
+    if (priority) {
+        return mThreadPool->submit_front(&ResourceManager::LoadFileProcess, this, filePath).share();
+    } else {
+        return mThreadPool->submit_back(&ResourceManager::LoadFileProcess, this, filePath).share();
+    }
 }
 
 std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
-    return LoadFileAsync(filePath).get();
+    return LoadFileAsync(filePath, true).get();
 }
 
 std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
-                                                                                 bool loadExact) {
+                                                                                 bool loadExact, bool priority) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
-        return LoadResourceAsync(newFilePath, loadExact);
+        return LoadResourceAsync(newFilePath, loadExact, priority);
     }
 
     // Check the cache before queueing the job.
@@ -175,11 +180,15 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
 
     const auto newFilePath = std::string(filePath);
 
-    return mThreadPool->submit(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    if (priority) {
+        return mThreadPool->submit_front(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    } else {
+        return mThreadPool->submit_back(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    }
 }
 
 std::shared_ptr<Resource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact) {
-    auto resource = LoadResourceAsync(filePath, loadExact).get();
+    auto resource = LoadResourceAsync(filePath, loadExact, true).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
     }
@@ -239,14 +248,14 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-ResourceManager::LoadDirectoryAsync(const std::string& searchMask) {
+ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Resource>>>>();
     auto fileList = GetArchive()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync(fileName);
+        auto future = LoadResourceAsync(fileName, false, priority);
         loadedList->push_back(future);
     }
 
@@ -254,7 +263,7 @@ ResourceManager::LoadDirectoryAsync(const std::string& searchMask) {
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
-    auto futureList = LoadDirectoryAsync(searchMask);
+    auto futureList = LoadDirectoryAsync(searchMask, true);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
 
     for (size_t i = 0; i < futureList->size(); i++) {

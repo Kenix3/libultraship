@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include "Resource.h"
 #include <StormLib.h>
+#include <mutex>
 
 namespace LUS {
 struct File;
@@ -53,6 +54,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
     std::vector<uint32_t> mGameVersions;
     std::unordered_map<uint64_t, std::string> mHashes;
     HANDLE mMainMpq;
+    std::mutex mMutex;
 
     bool LoadMainMPQ(bool enableWriting, bool generateCrcMap);
     bool LoadPatchMPQs();
