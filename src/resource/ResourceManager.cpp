@@ -16,7 +16,8 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 namespace LUS {
 
 ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath,
-                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount)
+                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes,
+                                 uint32_t reservedThreadCount)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
