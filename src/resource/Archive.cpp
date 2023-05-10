@@ -172,7 +172,8 @@ bool Archive::AddFile(const std::string& filePath, uintptr_t fileData, DWORD fil
     bool createFileSuccess;
     {
         const std::lock_guard<std::mutex> lock(mMutex);
-        createFileSuccess = SFileCreateFile(mMainMpq, updatedPath.c_str(), theTime, fileSize, 0, MPQ_FILE_COMPRESS, &hFile);
+        createFileSuccess =
+            SFileCreateFile(mMainMpq, updatedPath.c_str(), theTime, fileSize, 0, MPQ_FILE_COMPRESS, &hFile);
     }
     if (!createFileSuccess) {
         SPDLOG_ERROR("({}) Failed to create file of {} bytes {} in archive {}", GetLastError(), fileSize, updatedPath,
@@ -342,7 +343,7 @@ bool Archive::Unload() {
         bool closeArchiveSuccess;
         {
             const std::lock_guard<std::mutex> lock(mMutex);
-            closeArchiveSuccess = SFileCloseArchive(mpqHandle.second); 
+            closeArchiveSuccess = SFileCloseArchive(mpqHandle.second);
         }
         if (!closeArchiveSuccess) {
             SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mpqHandle.first);
@@ -446,7 +447,8 @@ bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {
         bool openArchiveSuccess;
         {
             const std::lock_guard<std::mutex> lock(mMutex);
-            openArchiveSuccess = SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle); 
+            openArchiveSuccess =
+                SFileOpenArchive(fullPath.c_str(), 0, enableWriting ? 0 : MPQ_OPEN_READ_ONLY, &mpqHandle); 
         }
         if (openArchiveSuccess) {
             SPDLOG_INFO("Opened mpq file {}.", fullPath);
