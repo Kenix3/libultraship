@@ -255,7 +255,10 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res = Context::GetInstance()->GetResourceManager()->LoadFile(path);
 
-    auto asset = GuiTexture(api->new_texture(), 0, 0);
+    GuiTexture asset;
+    asset.TextureId = api->new_texture();
+    asset.Width = 0;
+    asset.Height = 0;
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
                                              &asset.Width, &asset.Height, nullptr, 4);
 
@@ -754,7 +757,10 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
         texBuffer[pixel * 4 + 3] *= tint.w;
     }
 
-    auto asset = GuiTexture(api->new_texture(), res->Width, res->Height);
+    GuiTexture asset;
+    asset.TextureId = api->new_texture();
+    asset.Width = res->Width;
+    asset.Height = res->Height;
 
     api->select_texture(0, asset.TextureId);
     api->set_sampler_parameters(0, false, 0, 0);
