@@ -24,11 +24,12 @@ std::shared_ptr<Context> Context::GetInstance() {
 
 std::shared_ptr<Context> Context::CreateInstance(const std::string name, const std::string shortName,
                                                  const std::vector<std::string>& otrFiles,
-                                                 const std::unordered_set<uint32_t>& validHashes) {
+                                                 const std::unordered_set<uint32_t>& validHashes,
+                                                 uint32_t reservedThreadCount) {
     if (mContext.expired()) {
         auto shared = std::make_shared<Context>(name, shortName);
         mContext = shared;
-        shared->Init(otrFiles, validHashes);
+        shared->Init(otrFiles, validHashes, reservedThreadCount);
         return shared;
     }
 
@@ -63,11 +64,12 @@ void Context::CreateDefaultSettings() {
     }
 }
 
-void Context::Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes) {
+void Context::Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
+                   uint32_t reservedThreadCount) {
     InitLogging();
     InitConfiguration();
     InitConsoleVariables();
-    InitResourceManager(otrFiles, validHashes);
+    InitResourceManager(otrFiles, validHashes, reservedThreadCount);
     CreateDefaultSettings();
     InitControlDeck();
     InitCrashHandler();
@@ -167,13 +169,14 @@ void Context::InitConsoleVariables() {
 }
 
 void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
-                                  const std::unordered_set<uint32_t>& validHashes) {
+                                  const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
     mMainPath = GetConfig()->getString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = mConfig->getString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
-        mResourceManager = std::make_shared<ResourceManager>(GetInstance(), mMainPath, mPatchesPath, validHashes);
+        mResourceManager =
+            std::make_shared<ResourceManager>(GetInstance(), mMainPath, mPatchesPath, validHashes, reservedThreadCount);
     } else {
-        mResourceManager = std::make_shared<ResourceManager>(GetInstance(), otrFiles, validHashes);
+        mResourceManager = std::make_shared<ResourceManager>(GetInstance(), otrFiles, validHashes, reservedThreadCount);
     }
 
     if (!mResourceManager->DidLoadSuccessfully()) {
