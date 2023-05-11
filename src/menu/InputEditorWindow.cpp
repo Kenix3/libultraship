@@ -350,7 +350,6 @@ void InputEditorWindow::DrawControllerSchema() {
 }
 
 void InputEditorWindow::Update() {
-
 }
 
 void InputEditorWindow::Draw() {
@@ -376,8 +375,7 @@ void InputEditorWindow::Draw() {
     ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
     // OTRTODO: Disable this stupid workaround ( ReadRawPress() only works when the window is on the main viewport )
     ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-    ImGui::Begin("Controller Configuration", &mIsOpen,
-                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin("Controller Configuration", &mIsOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
 
     ImGui::BeginTabBar("##Controllers");
 

@@ -4,7 +4,7 @@
 
 namespace LUS {
 class StatsWindow : public GuiWindow {
-public:
+  public:
     using GuiWindow::GuiWindow;
 
     void Init() override;

@@ -1,7 +1,7 @@
 #include "menu/GuiWindow.h"
 
 namespace LUS {
- GuiWindow::GuiWindow(const std::string& name, bool isOpen) : mName(name), mIsOpen(isOpen) {
+GuiWindow::GuiWindow(const std::string& name, bool isOpen) : mName(name), mIsOpen(isOpen) {
 }
 
 GuiWindow::GuiWindow(const std::string& name) : GuiWindow(name, false) {

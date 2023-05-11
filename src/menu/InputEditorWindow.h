@@ -19,7 +19,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawVirtualStick(const char* label, ImVec2 stick);
     void DrawControllerSchema();
 
-private:
+  private:
     int32_t mCurrentPort;
     int32_t mBtnReading;
 };

@@ -96,8 +96,8 @@ void Gui::Init(WindowImpl windowImpl) {
     iconsConfig.MergeMode = true;
     iconsConfig.PixelSnapH = true;
     iconsConfig.GlyphMinAdvanceX = iconFontSize;
-    mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize, &iconsConfig,
-                                                    sIconsRanges);
+    mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize,
+                                                          &iconsConfig, sIconsRanges);
 
 #ifdef __SWITCH__
     LUS::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
@@ -180,8 +180,8 @@ void Gui::ImGuiWMInit() {
     switch (mImpl.backend) {
 #ifdef __WIIU__
         case Backend::GX2:
-        ImGui_ImplWiiU_Init();
-        break;
+            ImGui_ImplWiiU_Init();
+            break;
 #else
         case Backend::SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
@@ -242,7 +242,7 @@ void Gui::ImGuiBackendInit() {
 void Gui::InitSettings() {
     LUS::RegisterHook<LUS::GfxInit>([this] {
         gfx_get_current_rendering_api()->set_texture_filter(
-                (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
+            (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
 
         GetConsoleWindow()->Init();
         GetInputEditorWindow()->Init();
@@ -377,9 +377,9 @@ void Gui::DrawMenu(void) {
 
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
-    ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-    GetConsole()->Dispatch("reset");
-}
+        ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+        GetConsole()->Dispatch("reset");
+    }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
@@ -411,15 +411,17 @@ void Gui::DrawMenu(void) {
         if (ImGui::BeginMenu("Shipwright")) {
             if (ImGui::MenuItem("Reset",
 #ifdef __APPLE__
-                    "Command-R"
+                                "Command-R"
 #else
-                    "Ctrl+R"
+                                "Ctrl+R"
 #endif
-            )) {
+                                )) {
                 GetConsoleWindow()->Dispatch("reset");
             }
 #if !defined(__SWITCH__) && !defined(__WIIU__)
-            const char* keyboardShortcut = strcmp(Context::GetInstance()->GetWindow()->GetWindowManagerName().c_str(), "sdl") == 0 ? "F10" : "ALT+Enter";
+            const char* keyboardShortcut =
+                strcmp(Context::GetInstance()->GetWindow()->GetWindowManagerName().c_str(), "sdl") == 0 ? "F10"
+                                                                                                        : "ALT+Enter";
             if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
                 wnd->ToggleFullscreen();
             }
@@ -501,9 +503,9 @@ void Gui::ImGuiBackendNewFrame() {
     switch (mImpl.backend) {
 #ifdef __WIIU__
         case Backend::GX2:
-        mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
-        ImGui_ImplGX2_NewFrame();
-        break;
+            mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
+            ImGui_ImplGX2_NewFrame();
+            break;
 #else
         case Backend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
@@ -574,8 +576,8 @@ void Gui::StartFrame() {
         ImGui::SetNextWindowPos(ImVec2(mainPos.x + size.x - btnPos.x - 20, mainPos.y + size.y - btnPos.y - 20));
 
         if (mPads != nullptr && ImGui::Begin("Game Buttons", nullptr,
-                                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
-                                            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground)) {
+                                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
+                                                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground)) {
             ImGui::SetCursorPosY(32 * scale);
 
             ImGui::BeginGroup();
@@ -719,7 +721,7 @@ std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
 void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res =
-            static_cast<LUS::Texture*>(Context::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
+        static_cast<LUS::Texture*>(Context::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
 
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res->Width * res->Height * 4);

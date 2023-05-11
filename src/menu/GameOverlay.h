@@ -27,7 +27,7 @@ class GameOverlay {
     void DrawSettings();
     float GetStringWidth(const char* text);
     ImVec2 CalculateTextSize(const char* text, const char* textEnd = NULL, bool shortenText = false,
-                                    float wrapWidth = -1.0f);
+                             float wrapWidth = -1.0f);
     void TextDraw(float x, float y, bool shadow, ImVec4 color, const char* text, ...);
     void TextDrawNotification(float duration, bool shadow, const char* fmt, ...);
     void ClearNotifications();

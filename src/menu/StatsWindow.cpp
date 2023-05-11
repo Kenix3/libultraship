@@ -17,13 +17,13 @@ void StatsWindow::Draw() {
 #elif defined(__APPLE__)
     ImGui::Text("Platform: macOS");
 #elif defined(__SWITCH__)
-        ImGui::Text("Platform: Nintendo Switch");
+    ImGui::Text("Platform: Nintendo Switch");
 #elif defined(__WIIU__)
-        ImGui::Text("Platform: Nintendo Wii U");
+    ImGui::Text("Platform: Nintendo Wii U");
 #elif defined(__linux__)
-        ImGui::Text("Platform: Linux");
+    ImGui::Text("Platform: Linux");
 #else
-        ImGui::Text("Platform: Unknown");
+    ImGui::Text("Platform: Unknown");
 #endif
     ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", 1000.0f / framerate, framerate);
     ImGui::End();
@@ -31,6 +31,5 @@ void StatsWindow::Draw() {
 }
 
 void StatsWindow::Update() {
-
 }
 } // namespace LUS

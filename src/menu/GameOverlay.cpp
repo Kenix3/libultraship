@@ -20,21 +20,26 @@ bool GameOverlay::OverlayCommand(std::shared_ptr<ConsoleWindow> console, const s
         auto overlay = Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay();
         if (args[1] == "add") {
             if (!overlay->mRegisteredOverlays.contains(key)) {
-                overlay->mRegisteredOverlays[key] = Overlay({OverlayType::TEXT, key, -1.0f });
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage("Added overlay: %s", key);
+                overlay->mRegisteredOverlays[key] = Overlay({ OverlayType::TEXT, key, -1.0f });
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage("Added overlay: %s",
+                                                                                                   key);
             } else {
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("Overlay already exists: %s", key);
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage(
+                    "Overlay already exists: %s", key);
             }
         } else if (args[1] == "remove") {
             if (overlay->mRegisteredOverlays.contains(key)) {
                 overlay->mRegisteredOverlays.erase(key);
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage("Removed overlay: %s", key);
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage(
+                    "Removed overlay: %s", key);
             } else {
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("Overlay not found: %s", key);
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage(
+                    "Overlay not found: %s", key);
             }
         }
     } else {
-        Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("CVar {} does not exist", args[2].c_str());
+        Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("CVar {} does not exist",
+                                                                                            args[2].c_str());
     }
 
     return CMD_SUCCESS;
@@ -165,7 +170,8 @@ void GameOverlay::Init() {
         }
     }
 
-    Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->AddCommand("overlay", {OverlayCommand, "Draw an overlay using a cvar value" });
+    Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->AddCommand(
+        "overlay", { OverlayCommand, "Draw an overlay using a cvar value" });
 }
 
 void GameOverlay::DrawSettings() {
@@ -217,11 +223,11 @@ void GameOverlay::Draw() {
                     break;
                 case ConsoleVariableType::Color:
                     TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text, var->Color.r, var->Color.g,
-                                   var->Color.b, var->Color.a);
+                             var->Color.b, var->Color.a);
                     break;
                 case ConsoleVariableType::Color24:
                     TextDraw(30, textY, true, color, "%s (%u, %u, %u)", text, var->Color24.r, var->Color24.g,
-                                   var->Color24.b);
+                             var->Color24.b);
                     break;
             }
 
@@ -242,8 +248,8 @@ void GameOverlay::Draw() {
             const float textOffset = 40.0f;
 #endif
 
-            TextDraw(GetScreenWidth() - textWidth - textOffset, GetScreenHeight() - textOffset - notY, true,
-                           color, text);
+            TextDraw(GetScreenWidth() - textWidth - textOffset, GetScreenHeight() - textOffset - notY, true, color,
+                     text);
             notY += 30;
             overlay.duration -= .05f;
         }

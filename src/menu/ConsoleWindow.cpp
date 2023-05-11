@@ -232,9 +232,8 @@ void ConsoleWindow::Draw() {
             std::string id = line.text + "##" + std::to_string(i);
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            const bool isSelected = (mSelectedId == i) ||
-                                    std::find(mSelectedEntries.begin(), mSelectedEntries.end(), i) !=
-                                        mSelectedEntries.end();
+            const bool isSelected = (mSelectedId == i) || std::find(mSelectedEntries.begin(), mSelectedEntries.end(),
+                                                                    i) != mSelectedEntries.end();
             ImGui::PushStyleColor(ImGuiCol_Text, mPriorityColours[line.priority]);
             if (ImGui::Selectable(id.c_str(), isSelected)) {
                 if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftCtrl)) && !isSelected) {
@@ -386,7 +385,8 @@ int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
     return 0;
 }
 
-void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args) {
+void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt,
+                           va_list args) {
     char buf[2048];
     vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
     buf[IM_ARRAYSIZE(buf) - 1] = 0;

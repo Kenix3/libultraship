@@ -4,7 +4,7 @@
 
 namespace LUS {
 class GuiWindow {
-public:
+  public:
     GuiWindow(const std::string& name, bool isOpen);
     GuiWindow(const std::string& name);
 
@@ -16,9 +16,11 @@ public:
     void Open();
     void Close();
     bool IsOpen();
-protected:
+
+  protected:
     bool mIsOpen;
-protected:
+
+  protected:
     std::string mName;
 };
 } // namespace LUS

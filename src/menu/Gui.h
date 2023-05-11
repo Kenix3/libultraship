@@ -69,7 +69,7 @@ typedef union {
 class Window;
 
 class Gui {
-public:
+  public:
     Gui(std::shared_ptr<Window> window);
     void Init(WindowImpl windowImpl);
     void StartFrame();
@@ -91,7 +91,7 @@ public:
     void Open();
     void Close();
 
-protected:
+  protected:
     void InitSettings();
     void ImGuiWMInit();
     void ImGuiBackendInit();
@@ -105,7 +105,7 @@ protected:
     std::shared_ptr<InputEditorWindow> GetInputEditorWindow();
     std::shared_ptr<StatsWindow> GetStatsWindow();
 
-private:
+  private:
     std::shared_ptr<Window> mWindow;
     OSContPad* mPads;
     WindowImpl mImpl;

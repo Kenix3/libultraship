@@ -172,7 +172,8 @@ void Window::OnFullscreenChanged(bool isNowFullscreen) {
     Context::GetInstance()->GetWindow()->mIsFullscreen = isNowFullscreen;
     pConf->setBool("Window.Fullscreen.Enabled", isNowFullscreen);
     if (isNowFullscreen) {
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(Context::GetInstance()->GetWindow()->GetGui()->IsOpen());
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(
+            Context::GetInstance()->GetWindow()->GetGui()->IsOpen());
     } else {
         Context::GetInstance()->GetWindow()->SetCursorVisibility(true);
     }
