@@ -71,7 +71,7 @@ namespace LUS {
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
 Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariableSave(false) {
-    mIsOpen = CVarGetInteger("gOpenMenuBar", 0);
+    mIsMenuOpen = CVarGetInteger("gOpenMenuBar", 0);
     mGameOverlay = std::make_shared<GameOverlay>();
     mConsoleWindow = std::make_shared<ConsoleWindow>("Console");
     mInputEditorWindow = std::make_shared<InputEditorWindow>("Input Editor");
@@ -113,7 +113,7 @@ void Gui::Init(WindowImpl windowImpl) {
     mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
 #endif
 
-    if (!IsOpen()) {
+    if (!IsMenuOpen()) {
 #if defined(__SWITCH__) || defined(__WIIU__)
         mGameOverlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
 #else
@@ -130,7 +130,7 @@ void Gui::Init(WindowImpl windowImpl) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVarGetInteger("gControlNav", 0) && IsOpen()) {
+    if (CVarGetInteger("gControlNav", 0) && IsMenuOpen()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -148,7 +148,7 @@ void Gui::Init(WindowImpl windowImpl) {
 
     LUS::RegisterHook<LUS::GfxInit>([this] {
         if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsOpen());
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuOpen());
         }
 
         LoadTexture("Game_Icon", "textures/icons/gIcon.png");
@@ -333,7 +333,7 @@ void Gui::DrawMenu(void) {
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
                                    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
                                    ImGuiWindowFlags_NoResize;
-    if (IsOpen()) {
+    if (IsMenuOpen()) {
         windowFlags |= ImGuiWindowFlags_MenuBar;
     }
 
@@ -365,10 +365,10 @@ void Gui::DrawMenu(void) {
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
         mNeedsConsoleVariableSave = true;
         if (wnd->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsOpen());
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuOpen());
         }
         Context::GetInstance()->GetControlDeck()->SaveSettings();
-        if (CVarGetInteger("gControlNav", 0) && IsOpen()) {
+        if (CVarGetInteger("gControlNav", 0) && IsMenuOpen()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -905,17 +905,17 @@ std::shared_ptr<StatsWindow> Gui::GetStatsWindow() {
     return mStatsWindow;
 }
 
-bool Gui::IsOpen() {
-    return mIsOpen;
+bool Gui::IsMenuOpen() {
+    return mIsMenuOpen;
 }
 
-void Gui::Open() {
-    mIsOpen = true;
-    CVarSetInteger("gOpenMenuBar", mIsOpen);
+void Gui::OpenMenu() {
+    mIsMenuOpen = true;
+    CVarSetInteger("gOpenMenuBar", mIsMenuOpen);
 }
 
-void Gui::Close() {
-    mIsOpen = false;
-    CVarSetInteger("gOpenMenuBar", mIsOpen);
+void Gui::CloseMenu() {
+    mIsMenuOpen = false;
+    CVarSetInteger("gOpenMenuBar", mIsMenuOpen);
 }
 } // namespace LUS

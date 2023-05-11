@@ -87,9 +87,9 @@ class Gui {
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<ConsoleWindow> GetConsoleWindow();
     std::shared_ptr<GameOverlay> GetGameOverlay();
-    bool IsOpen();
-    void Open();
-    void Close();
+    bool IsMenuOpen();
+    void OpenMenu();
+    void CloseMenu();
 
   protected:
     void InitSettings();
@@ -111,7 +111,7 @@ class Gui {
     WindowImpl mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;
-    bool mIsOpen;
+    bool mIsMenuOpen;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<ConsoleWindow> mConsoleWindow;
     std::shared_ptr<InputEditorWindow> mInputEditorWindow;
