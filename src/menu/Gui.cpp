@@ -646,12 +646,12 @@ ImTextureID Gui::GetTextureById(int32_t id) {
     }
 #endif
 #ifdef __APPLE__
-    if (mImpl.Backend == Backend::SDL_METAL) {
+    if (mImpl.RenderBackend == Backend::SDL_METAL) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif
 #ifdef __WIIU__
-    if (mImpl.Backend == Backend::GX2) {
+    if (mImpl.RenderBackend == Backend::GX2) {
         return gfx_gx2_texture_for_imgui(id);
     }
 #endif
