@@ -1,12 +1,13 @@
 #pragma once
 
+#include <string>
 #include <vpad/input.h>
 #include <padscore/kpad.h>
 
 namespace LUS {
 namespace WiiU {
 
-void Init();
+void Init(const std::string& shortName);
 
 void Exit();
 

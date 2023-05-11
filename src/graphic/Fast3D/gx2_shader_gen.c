@@ -770,11 +770,8 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
     psh->regs.sq_pgm_exports_ps = 2; // export_mode
     psh->regs.spi_ps_in_control_0 = (num_ps_inputs + 1) // num_interp
         | (1 << 26) // persp_gradient_ena
-        | (1 << 28); // baryc_sample_cntl
-
-    if (needs_noise) {
-        psh->regs.spi_ps_in_control_0 |= (1 << 8); // position_ena
-    }
+        | (1 << 28) // baryc_sample_cntl
+        | (1 << 8); // position_ena
 
     psh->regs.num_spi_ps_input_cntl = num_ps_inputs + 1;
 
@@ -830,6 +827,7 @@ static int generateVertexShader(GX2VertexShader *vsh, struct CCFeatures *cc_feat
         return -1;
     }
 
+    const uint32_t num_vs_inputs = 5 + cc_features->num_inputs;
     const uint32_t num_ps_inputs = 4 + cc_features->num_inputs;
 
     uint64_t *cur_buf = program_buf;
@@ -863,14 +861,14 @@ static int generateVertexShader(GX2VertexShader *vsh, struct CCFeatures *cc_feat
     // num outputs minus 1
     vsh->regs.spi_vs_out_config = ((num_ps_inputs - 1) << 1);
 
-    vsh->regs.num_spi_vs_out_id = 3;
+    vsh->regs.num_spi_vs_out_id = (num_ps_inputs + 3) / 4;
     memset(vsh->regs.spi_vs_out_id, 0xff, sizeof(vsh->regs.spi_vs_out_id));
     vsh->regs.spi_vs_out_id[0] = (0) | (1 << 8) | (2 << 16) | (3 << 24);
     vsh->regs.spi_vs_out_id[1] = (4) | (5 << 8) | (6 << 16) | (7 << 24);
-    vsh->regs.spi_vs_out_id[2] = (8) | (9 << 8) | (10 << 16) | (0xff << 24);
+    vsh->regs.spi_vs_out_id[2] = (8) | (9 << 8) | (10 << 16) | (11 << 24);
 
-    vsh->regs.sq_vtx_semantic_clear = ~((1 << 12) - 1);
-    vsh->regs.num_sq_vtx_semantic = 12;
+    vsh->regs.sq_vtx_semantic_clear = ~((1 << num_vs_inputs) - 1);
+    vsh->regs.num_sq_vtx_semantic = num_vs_inputs;
     memset(vsh->regs.sq_vtx_semantic, 0xff, sizeof(vsh->regs.sq_vtx_semantic));
     // aVtxPos
     vsh->regs.sq_vtx_semantic[0] = 0;
@@ -882,20 +880,10 @@ static int generateVertexShader(GX2VertexShader *vsh, struct CCFeatures *cc_feat
     vsh->regs.sq_vtx_semantic[3] = 3;
     // aGrayscaleColor
     vsh->regs.sq_vtx_semantic[4] = 4;
-    // aInput1
-    vsh->regs.sq_vtx_semantic[5] = 5;
-    // aInput2
-    vsh->regs.sq_vtx_semantic[6] = 6;
-    // aInput3
-    vsh->regs.sq_vtx_semantic[7] = 7;
-    // aInput4
-    vsh->regs.sq_vtx_semantic[8] = 8;
-    // aInput5
-    vsh->regs.sq_vtx_semantic[9] = 9;
-    // aInput6
-    vsh->regs.sq_vtx_semantic[10] = 10;
-    // aInput7
-    vsh->regs.sq_vtx_semantic[11] = 11;
+    // aInput 1 - 7
+    for (int i = 0; i < cc_features->num_inputs; i++) {
+        vsh->regs.sq_vtx_semantic[5 + i] = 5 + i;
+    }
 
     vsh->regs.vgt_vertex_reuse_block_cntl = 14; // vtx_reuse_depth
     vsh->regs.vgt_hos_reuse_depth = 16; // reuse_depth
@@ -907,7 +895,7 @@ static int generateVertexShader(GX2VertexShader *vsh, struct CCFeatures *cc_feat
     vsh->mode = GX2_SHADER_MODE_UNIFORM_REGISTER;
 
     // attribs
-    vsh->attribVarCount = num_ps_inputs + 5;
+    vsh->attribVarCount = num_vs_inputs;
     vsh->attribVars = attribVars;
 
     return 0;
@@ -989,7 +977,6 @@ int gx2GenerateShaderGroup(struct ShaderGroup *group, struct CCFeatures *cc_feat
 void gx2FreeShaderGroup(struct ShaderGroup *group) {
     free(group->vertexShader.program);
     free(group->pixelShader.program);
-    free(group->pixelShader.samplerVars);
     free(group->fetchShader.program);
 }
 
