@@ -1,10 +1,10 @@
 #include "core/bridge/audioplayerbridge.h"
 #include "core/Context.h"
-#include "menu/ImGuiImpl.h"
+#include "menu/Gui.h"
 
 extern "C" {
 
-bool AudioPlayerInit(void) {
+bool AudioPlayerInit(const char* backend) {
     auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
     if (audio == nullptr) {
         return false;
@@ -13,14 +13,9 @@ bool AudioPlayerInit(void) {
         return true;
     }
 
-    // loop over available audio apis if current fails
-    auto audioBackends = LUS::GetAvailableAudioBackends();
-    for (uint8_t i = 0; i < audioBackends.size(); i++) {
-        LUS::SetCurrentAudioBackend(i, audioBackends[i]);
-        LUS::Context::GetInstance()->InitAudioPlayer(audioBackends[i].first);
-        if (audio->Init()) {
-            return true;
-        }
+    LUS::Context::GetInstance()->InitAudioPlayer(backend);
+    if (audio->Init()) {
+        return true;
     }
 
     return false;

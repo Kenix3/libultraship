@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "libultraship/libultraship.h"
+
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
 #ifdef __MINGW32__
@@ -27,7 +29,7 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
-#include "menu/ImGuiImpl.h"
+#include "menu/Gui.h"
 #include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
 
@@ -349,7 +351,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         window_impl.backend = LUS::Backend::SDL_METAL;
     }
 
-    LUS::InitGui(window_impl);
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 
     for (size_t i = 0; i < sizeof(lus_to_sdl_table) / sizeof(SDL_Scancode); i++) {
         sdl_to_lus_table[lus_to_sdl_table[i]] = i;
@@ -450,7 +452,7 @@ static void gfx_sdl_handle_events(void) {
     while (SDL_PollEvent(&event)) {
         LUS::EventImpl event_impl;
         event_impl.Sdl = { &event };
-        LUS::UpdateGui(event_impl);
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
         switch (event.type) {
 #ifndef TARGET_WEB
             // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

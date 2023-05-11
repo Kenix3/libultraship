@@ -19,16 +19,14 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultraship/libultra/gbi.h"
+#include "libultraship/libultraship.h"
+#include "misc/Hooks.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
 #include "gfx_direct3d_common.h"
 #include "gfx_screen_config.h"
 #include "gfx_pc.h"
-#include "menu/ImGuiImpl.h"
-#include "core/bridge/consolevariablebridge.h"
-#include "misc/Hooks.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"
@@ -235,7 +233,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     char fileName[256];
     LUS::EventImpl event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    LUS::UpdateGui(event_impl);
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
     switch (message) {
         case WM_SIZE:
             dxgi.current_width = (uint32_t)(l_param & 0xffff);

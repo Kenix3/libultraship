@@ -31,7 +31,6 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultraship/libultra/gbi.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_pc.h"
@@ -40,8 +39,7 @@
 
 #include <ImGui/backends/wiiu/imgui_impl_wiiu.h>
 #include "port/wiiu/WiiUImpl.h"
-#include "menu/ImGuiImpl.h"
-#include "misc/Hooks.h"
+#include "libultraship/libultraship.h"
 
 static MEMHeapHandle heap_MEM1 = nullptr;
 static MEMHeapHandle heap_foreground = nullptr;
@@ -309,7 +307,7 @@ static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool 
     window_impl.backend = LUS::Backend::GX2;
     window_impl.Gx2.Width = WIIU_DEFAULT_FB_WIDTH;
     window_impl.Gx2.Height = WIIU_DEFAULT_FB_HEIGHT;
-    LUS::InitGui(window_impl);
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 }
 
 static void gfx_wiiu_shutdown(void) {

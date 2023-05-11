@@ -5,36 +5,36 @@
 #include "resource/Archive.h"
 #include "resource/ResourceManager.h"
 #include "core/Context.h"
-#include "menu/ImGuiImpl.h"
+#include "menu/Gui.h"
 #include <ImGui/imgui_internal.h>
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args) {
+bool GameOverlay::OverlayCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args) {
     if (args.size() < 3) {
         return CMD_FAILED;
     }
 
     if (CVarGet(args[2].c_str()) != nullptr) {
         const char* key = args[2].c_str();
-        GameOverlay* overlay = GetGameOverlay();
+        auto overlay = Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay();
         if (args[1] == "add") {
-            if (!overlay->RegisteredOverlays.contains(key)) {
-                overlay->RegisteredOverlays[key] = new Overlay({ OverlayType::TEXT, ImStrdup(key), -1.0f });
-                GetConsole()->SendInfoMessage("Added overlay: %s", key);
+            if (!overlay->mRegisteredOverlays.contains(key)) {
+                overlay->mRegisteredOverlays[key] = Overlay({OverlayType::TEXT, key, -1.0f });
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage("Added overlay: %s", key);
             } else {
-                GetConsole()->SendErrorMessage("Overlay already exists: %s", key);
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("Overlay already exists: %s", key);
             }
         } else if (args[1] == "remove") {
-            if (overlay->RegisteredOverlays.contains(key)) {
-                overlay->RegisteredOverlays.erase(key);
-                GetConsole()->SendInfoMessage("Removed overlay: %s", key);
+            if (overlay->mRegisteredOverlays.contains(key)) {
+                overlay->mRegisteredOverlays.erase(key);
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage("Removed overlay: %s", key);
             } else {
-                GetConsole()->SendErrorMessage("Overlay not found: %s", key);
+                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("Overlay not found: %s", key);
             }
         }
     } else {
-        GetConsole()->SendErrorMessage("CVar {} does not exist", args[2].c_str());
+        Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("CVar {} does not exist", args[2].c_str());
     }
 
     return CMD_SUCCESS;
@@ -48,7 +48,7 @@ void GameOverlay::LoadFont(const std::string& name, const std::string& path, flo
         // TODO: Nothing is ever unloading the font or this fontData array.
         char* fontData = new char[font->Buffer.size()];
         memcpy(fontData, font->Buffer.data(), font->Buffer.size());
-        Fonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer.size(), fontSize);
+        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer.size(), fontSize);
     }
 }
 
@@ -61,7 +61,7 @@ void GameOverlay::TextDraw(float x, float y, bool shadow, ImVec4 color, const ch
     va_end(args);
 
     ImGui::PushStyleColor(ImGuiCol_Text, color);
-    ImGui::PushFont(Fonts[this->CurrentFont]);
+    ImGui::PushFont(mFonts[mCurrentFont]);
     if (shadow) {
         ImGui::SetCursorPos(ImVec2(x + 1, y + 1));
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(.0f, .0f, .0f, color.w));
@@ -81,15 +81,15 @@ void GameOverlay::TextDrawNotification(float duration, bool shadow, const char* 
     vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
     buf[IM_ARRAYSIZE(buf) - 1] = 0;
     va_end(args);
-    this->RegisteredOverlays[StringHelper::Sprintf("NotificationID:%d%d", rand(), this->RegisteredOverlays.size())] =
-        new Overlay({ OverlayType::NOTIFICATION, ImStrdup(buf), duration, duration });
-    NeedsCleanup = true;
+    mRegisteredOverlays[StringHelper::Sprintf("NotificationID:%d%d", rand(), mRegisteredOverlays.size())] =
+        Overlay({ OverlayType::NOTIFICATION, buf, duration, duration });
+    mNeedsCleanup = true;
 }
 
 void GameOverlay::ClearNotifications() {
-    for (auto it = this->RegisteredOverlays.begin(); it != this->RegisteredOverlays.end();) {
-        if (it->second->type == OverlayType::NOTIFICATION) {
-            it = this->RegisteredOverlays.erase(it);
+    for (auto it = mRegisteredOverlays.begin(); it != mRegisteredOverlays.end();) {
+        if (it->second.type == OverlayType::NOTIFICATION) {
+            it = mRegisteredOverlays.erase(it);
         } else {
             ++it;
         }
@@ -97,16 +97,16 @@ void GameOverlay::ClearNotifications() {
 }
 
 void GameOverlay::CleanupNotifications() {
-    if (!NeedsCleanup)
+    if (!mNeedsCleanup)
         return;
-    for (auto it = this->RegisteredOverlays.begin(); it != this->RegisteredOverlays.end();) {
-        if (it->second->type == OverlayType::NOTIFICATION && it->second->duration <= 0.0f) {
-            it = this->RegisteredOverlays.erase(it);
+    for (auto it = mRegisteredOverlays.begin(); it != mRegisteredOverlays.end();) {
+        if (it->second.type == OverlayType::NOTIFICATION && it->second.duration <= 0.0f) {
+            it = mRegisteredOverlays.erase(it);
         } else {
             ++it;
         }
     }
-    NeedsCleanup = false;
+    mNeedsCleanup = false;
 }
 
 float GameOverlay::GetScreenWidth() {
@@ -133,9 +133,7 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
         textDisplayEnd = textEnd;
     }
 
-    GameOverlay* overlay = GetGameOverlay();
-
-    ImFont* font = overlay->CurrentFont == "Default" ? g.Font : overlay->Fonts[overlay->CurrentFont];
+    ImFont* font = mCurrentFont == "Default" ? g.Font : mFonts[mCurrentFont];
     const float fontSize = font->FontSize;
     if (text == textDisplayEnd) {
         return ImVec2(0.0f, fontSize);
@@ -153,31 +151,31 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
 }
 
 void GameOverlay::Init() {
-    this->LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
-    this->LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);
-    const std::string DefaultFont = this->Fonts.begin()->first;
-    if (!this->Fonts.empty()) {
-        const std::string font = CVarGetString("gOverlayFont", ImStrdup(DefaultFont.c_str()));
-        for (auto& [name, _] : this->Fonts) {
+    LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
+    LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);
+    const std::string DefaultFont = mFonts.begin()->first;
+    if (!mFonts.empty()) {
+        const std::string font = CVarGetString("gOverlayFont", DefaultFont.c_str());
+        for (auto& [name, _] : mFonts) {
             if (font.starts_with(name)) {
-                this->CurrentFont = name;
+                mCurrentFont = name;
                 break;
             }
-            this->CurrentFont = DefaultFont;
+            mCurrentFont = DefaultFont;
         }
     }
 
-    GetConsole()->AddCommand("overlay", { OverlayCommand, "Draw an overlay using a cvar value" });
+    Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->AddCommand("overlay", {OverlayCommand, "Draw an overlay using a cvar value" });
 }
 
 void GameOverlay::DrawSettings() {
     ImGui::Text("Overlays Text Font");
-    if (ImGui::BeginCombo("##TextFont", this->CurrentFont.c_str())) {
-        for (auto& [name, font] : this->Fonts) {
-            if (ImGui::Selectable(name.c_str(), name == this->CurrentFont)) {
-                this->CurrentFont = name;
-                CVarSetString("gOverlayFont", ImStrdup(name.c_str()));
-                RequestCvarSaveOnNextTick();
+    if (ImGui::BeginCombo("##TextFont", mCurrentFont.c_str())) {
+        for (auto& [name, font] : mFonts) {
+            if (ImGui::Selectable(name.c_str(), name == mCurrentFont)) {
+                mCurrentFont = name;
+                CVarSetString("gOverlayFont", name.c_str());
+                LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
             }
         }
         ImGui::EndCombo();
@@ -194,34 +192,35 @@ void GameOverlay::Draw() {
                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_NoInputs);
 
-    this->CleanupNotifications();
+    CleanupNotifications();
 
     float textY = 50;
     float notY = 0;
 
-    for (auto& [key, overlay] : this->RegisteredOverlays) {
+    for (auto& [key, overlay] : mRegisteredOverlays) {
 
-        if (overlay->type == OverlayType::TEXT) {
-            const char* text = ImStrdup(overlay->value);
+        if (overlay.type == OverlayType::TEXT) {
+            const char* text = overlay.value.c_str();
             const auto var = CVarGet(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
             switch (var->Type) {
                 case ConsoleVariableType::Float:
-                    this->TextDraw(30, textY, true, color, "%s %.2f", text, var->Float);
+
+                    TextDraw(30, textY, true, color, "%s %.2f", text, var->Float);
                     break;
                 case ConsoleVariableType::Integer:
-                    this->TextDraw(30, textY, true, color, "%s %d", text, var->Integer);
+                    TextDraw(30, textY, true, color, "%s %d", text, var->Integer);
                     break;
                 case ConsoleVariableType::String:
-                    this->TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
+                    TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
                     break;
                 case ConsoleVariableType::Color:
-                    this->TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text, var->Color.r, var->Color.g,
+                    TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text, var->Color.r, var->Color.g,
                                    var->Color.b, var->Color.a);
                     break;
                 case ConsoleVariableType::Color24:
-                    this->TextDraw(30, textY, true, color, "%s (%u, %u, %u)", text, var->Color24.r, var->Color24.g,
+                    TextDraw(30, textY, true, color, "%s (%u, %u, %u)", text, var->Color24.r, var->Color24.g,
                                    var->Color24.b);
                     break;
             }
@@ -230,23 +229,23 @@ void GameOverlay::Draw() {
             textY += 30;
         }
 
-        if (overlay->type == OverlayType::NOTIFICATION && overlay->duration > 0) {
-            const char* text = overlay->value;
-            const float duration = overlay->duration / overlay->fadeTime;
+        if (overlay.type == OverlayType::NOTIFICATION && overlay.duration > 0) {
+            const char* text = overlay.value.c_str();
+            const float duration = overlay.duration / overlay.fadeTime;
 
             const ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, duration);
 #ifdef __WIIU__
-            const float textWidth = this->GetStringWidth(overlay->value) * 2.0f;
+            const float textWidth = GetStringWidth(overlay->value.c_str()) * 2.0f;
             const float textOffset = 40.0f * 2.0f;
 #else
-            const float textWidth = this->GetStringWidth(overlay->value);
+            const float textWidth = GetStringWidth(overlay.value.c_str());
             const float textOffset = 40.0f;
 #endif
 
-            this->TextDraw(GetScreenWidth() - textWidth - textOffset, GetScreenHeight() - textOffset - notY, true,
+            TextDraw(GetScreenWidth() - textWidth - textOffset, GetScreenHeight() - textOffset - notY, true,
                            color, text);
             notY += 30;
-            overlay->duration -= .05f;
+            overlay.duration -= .05f;
         }
     }
 

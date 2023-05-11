@@ -11,6 +11,7 @@
 #include "core/Context.h"
 
 // Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
+// NOLINTNEXTLINE
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {

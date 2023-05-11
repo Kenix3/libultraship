@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
+#include "menu/Gui.h"
 
 namespace LUS {
 class Context;
@@ -14,7 +15,8 @@ class Window {
   public:
     Window(std::shared_ptr<Context> context);
     ~Window();
-    void MainLoop(void (*MainFunction)(void));
+
+    void MainLoop(void (*mainFunction)(void));
     void Init();
     void Close();
     void StartFrame();
@@ -35,7 +37,11 @@ class Window {
     int32_t GetLastScancode();
     void SetLastScancode(int32_t scanCode);
     void InitWindowManager(std::string windowManagerBackend, std::string gfxApiBackend);
+    bool SupportsWindowedFullscreen();
     std::shared_ptr<Context> GetContext();
+    std::shared_ptr<Gui> GetGui();
+    std::string GetWindowManagerName();
+    std::string GetRenderingApiName();
 
   private:
     static bool KeyDown(int32_t scancode);
@@ -44,8 +50,9 @@ class Window {
     static void OnFullscreenChanged(bool isNowFullscreen);
 
     std::shared_ptr<Context> mContext;
-    std::string mGfxBackend;
-    std::string mGfxApi;
+    std::shared_ptr<Gui> mGui;
+    std::string mWindowManagerName;
+    std::string mRenderingApiName;
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
     bool mIsFullscreen;

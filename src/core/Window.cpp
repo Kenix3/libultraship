@@ -16,7 +16,7 @@
 #include "graphic/Fast3D/gfx_gx2.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
-#include "menu/ImGuiImpl.h"
+#include "menu/Gui.h"
 #include "core/Context.h"
 
 #ifdef __APPLE__
@@ -117,8 +117,8 @@ void Window::SetCursorVisibility(bool visible) {
     mWindowManagerApi->set_cursor_visibility(visible);
 }
 
-void Window::MainLoop(void (*MainFunction)(void)) {
-    mWindowManagerApi->main_loop(MainFunction);
+void Window::MainLoop(void (*mainFunction)(void)) {
+    mWindowManagerApi->main_loop(mainFunction);
 }
 
 bool Window::KeyUp(int32_t scancode) {
@@ -172,9 +172,8 @@ void Window::OnFullscreenChanged(bool isNowFullscreen) {
     Context::GetInstance()->GetWindow()->mIsFullscreen = isNowFullscreen;
     pConf->setBool("Window.Fullscreen.Enabled", isNowFullscreen);
     if (isNowFullscreen) {
-        bool menuBarOpen = GetMenuBar();
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(menuBarOpen);
-    } else if (!isNowFullscreen) {
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(Context::GetInstance()->GetWindow()->GetGui()->IsOpen());
+    } else {
         Context::GetInstance()->GetWindow()->SetCursorVisibility(true);
     }
 }
@@ -204,28 +203,28 @@ float Window::GetCurrentAspectRatio() {
 
 void Window::InitWindowManager(std::string windowManagerBackend, std::string gfxApiBackend) {
     // Param can override
-    mGfxBackend = windowManagerBackend;
-    mGfxApi = gfxApiBackend;
+    mWindowManagerName = windowManagerBackend;
+    mRenderingApiName = gfxApiBackend;
 #ifdef ENABLE_DX11
-    if (mGfxBackend == "dx11") {
+    if (mWindowManagerName == "dx11") {
         mRenderingApi = &gfx_direct3d11_api;
         mWindowManagerApi = &gfx_dxgi_api;
         return;
     }
 #endif
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
-    if (mGfxBackend == "sdl") {
+    if (mWindowManagerName == "sdl") {
         mRenderingApi = &gfx_opengl_api;
         mWindowManagerApi = &gfx_sdl;
 #ifdef __APPLE__
-        if (mGfxApi == "Metal" && Metal_IsSupported()) {
+        if (mRenderingApiName == "Metal" && Metal_IsSupported()) {
             mRenderingApi = &gfx_metal_api;
         }
 #endif
         return;
     }
 #if defined(__linux__) && defined(X11_SUPPORTED)
-    if (mGfxBackend == "glx") {
+    if (mWindowManagerName == "glx") {
         mRenderingApi = &gfx_opengl_api;
         mWindowManagerApi = &gfx_glx;
         return;
@@ -283,4 +282,27 @@ std::shared_ptr<Context> Window::GetContext() {
     return mContext;
 }
 
+std::shared_ptr<Gui> Window::GetGui() {
+    return mGui;
+}
+
+std::string Window::GetWindowManagerName() {
+    return mWindowManagerName;
+}
+
+std::string Window::GetRenderingApiName() {
+    return mRenderingApiName;
+}
+
+bool Window::SupportsWindowedFullscreen() {
+#ifdef __SWITCH__
+    return false;
+#endif
+
+    if (mWindowManagerName == "sdl") {
+        return true;
+    }
+
+    return false;
+}
 } // namespace LUS

@@ -15,10 +15,11 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
+#include "libultraship/libultraship.h"
+
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultraship/libultra/gbi.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_direct3d_common.h"
@@ -27,12 +28,11 @@
 #include "gfx_dxgi.h"
 
 #include "gfx_screen_config.h"
-#include "menu/ImGuiImpl.h"
+#include "menu/Gui.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 #include "gfx_pc.h"
-#include <core/bridge/consolevariablebridge.h>
 #define DEBUG_D3D 0
 
 using namespace Microsoft::WRL; // For ComPtr
@@ -388,7 +388,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     LUS::WindowImpl window_impl;
     window_impl.backend = LUS::Backend::DX11;
     window_impl.Dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
-    LUS::InitGui(window_impl);
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 }
 
 static int gfx_d3d11_get_max_texture_size() {

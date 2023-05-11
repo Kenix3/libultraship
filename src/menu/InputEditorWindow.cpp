@@ -1,26 +1,26 @@
-#include "InputEditor.h"
+#include "InputEditorWindow.h"
 #include "controller/Controller.h"
 #include "core/Context.h"
-#include <ImGui/imgui.h>
-#include "ImGuiImpl.h"
+#include "Gui.h"
 #include <Utils/StringHelper.h>
-#include <ImGui/imgui_internal.h>
 #include "core/bridge/consolevariablebridge.h"
 
 namespace LUS {
 
 #define SEPARATION() ImGui::Dummy(ImVec2(0, 5))
 
-void InputEditor::Init() {
+void InputEditorWindow::Init() {
+    mIsOpen = CVarGetInteger("gControllerConfigurationEnabled", 0);
+    mCurrentPort = 0;
     mBtnReading = -1;
 }
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
-    auto controlDeck = LUS::Context::GetInstance()->GetControlDeck();
+    auto controlDeck = Context::GetInstance()->GetControlDeck();
     return controlDeck->GetDeviceFromPortIndex(slot);
 }
 
-void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentPort, int32_t* btnReading) {
+void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t currentPort, int32_t* btnReading) {
     const std::shared_ptr<Controller> backend = GetControllerPerSlot(currentPort);
 
     float size = 40;
@@ -65,8 +65,8 @@ void InputEditor::DrawButton(const char* label, int32_t n64Btn, int32_t currentP
     }
 }
 
-void InputEditor::DrawControllerSelect(int32_t currentPort) {
-    auto controlDeck = LUS::Context::GetInstance()->GetControlDeck();
+void InputEditorWindow::DrawControllerSelect(int32_t currentPort) {
+    auto controlDeck = Context::GetInstance()->GetControlDeck();
     std::string controllerName = controlDeck->GetDeviceFromPortIndex(currentPort)->GetControllerName();
 
     if (ImGui::BeginCombo("##ControllerEntries", controllerName.c_str())) {
@@ -89,7 +89,7 @@ void InputEditor::DrawControllerSelect(int32_t currentPort) {
     }
 }
 
-void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
+void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick) {
     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 5, ImGui::GetCursorPos().y));
     ImGui::BeginChild(label, ImVec2(68, 75), false);
     ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -110,8 +110,8 @@ void InputEditor::DrawVirtualStick(const char* label, ImVec2 stick) {
     ImGui::EndChild();
 }
 
-void InputEditor::DrawControllerSchema() {
-    auto backend = LUS::Context::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
+void InputEditorWindow::DrawControllerSchema() {
+    auto backend = Context::GetInstance()->GetControlDeck()->GetDeviceFromPortIndex(mCurrentPort);
     auto profile = backend->GetProfile(mCurrentPort);
     bool isKeyboard = backend->GetGuid() == "Keyboard" || backend->GetGuid() == "Auto" || !backend->Connected();
 
@@ -119,7 +119,7 @@ void InputEditor::DrawControllerSchema() {
 
     DrawControllerSelect(mCurrentPort);
 
-    BeginGroupPanel("Buttons", ImVec2(150, 20));
+    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Buttons", ImVec2(150, 20));
     DrawButton("A", BTN_A, mCurrentPort, &mBtnReading);
     DrawButton("B", BTN_B, mCurrentPort, &mBtnReading);
     DrawButton("L", BTN_L, mCurrentPort, &mBtnReading);
@@ -128,24 +128,24 @@ void InputEditor::DrawControllerSchema() {
     DrawButton("START", BTN_START, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    LUS::EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
 #else
-    LUS::EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
 #endif
     ImGui::SameLine();
-    BeginGroupPanel("Digital Pad", ImVec2(150, 20));
+    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Digital Pad", ImVec2(150, 20));
     DrawButton("Up", BTN_DUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_DDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_DLEFT, mCurrentPort, &mBtnReading);
     DrawButton("Right", BTN_DRIGHT, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    LUS::EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
 #else
-    EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
 #endif
     ImGui::SameLine();
-    BeginGroupPanel("Analog Stick", ImVec2(150, 20));
+    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Analog Stick", ImVec2(150, 20));
     DrawButton("Up", BTN_STICKUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_STICKDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_STICKLEFT, mCurrentPort, &mBtnReading);
@@ -182,15 +182,15 @@ void InputEditor::DrawControllerSchema() {
         ImGui::Dummy(ImVec2(0, 6));
     }
 #ifdef __SWITCH__
-    LUS::EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
 #else
-    EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
 #endif
     ImGui::SameLine();
 
     if (!isKeyboard) {
         ImGui::SameLine();
-        BeginGroupPanel("Right Stick", ImVec2(150, 20));
+        Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Right Stick", ImVec2(150, 20));
         DrawButton("Up", BTN_VSTICKUP, mCurrentPort, &mBtnReading);
         DrawButton("Down", BTN_VSTICKDOWN, mCurrentPort, &mBtnReading);
         DrawButton("Left", BTN_VSTICKLEFT, mCurrentPort, &mBtnReading);
@@ -224,9 +224,9 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        LUS::EndGroupPanel(43.0f);
+        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(43.0f);
 #else
-        EndGroupPanel(14.0f);
+        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(14.0f);
 #endif
     }
 
@@ -234,7 +234,7 @@ void InputEditor::DrawControllerSchema() {
 #ifndef __WIIU__
         ImGui::SameLine();
 #endif
-        BeginGroupPanel("Gyro Options", ImVec2(175, 20));
+        Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Gyro Options", ImVec2(175, 20));
         float cursorX = ImGui::GetCursorPosX() + 5;
         ImGui::SetCursorPosX(cursorX);
         ImGui::Checkbox("Enable Gyro", &profile->UseGyro);
@@ -283,9 +283,9 @@ void InputEditor::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        LUS::EndGroupPanel(46.0f);
+        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(46.0f);
 #else
-        EndGroupPanel(14.0f);
+        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(14.0f);
 #endif
     }
 
@@ -293,13 +293,13 @@ void InputEditor::DrawControllerSchema() {
 
     const ImVec2 cursor = ImGui::GetCursorPos();
 
-    BeginGroupPanel("C-Buttons", ImVec2(158, 20));
+    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("C-Buttons", ImVec2(158, 20));
     DrawButton("Up", BTN_CUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_CDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_CLEFT, mCurrentPort, &mBtnReading);
     DrawButton("Right", BTN_CRIGHT, mCurrentPort, &mBtnReading);
     ImGui::Dummy(ImVec2(0, 5));
-    EndGroupPanel();
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(0.0f);
 
     ImGui::SetCursorPosX(cursor.x);
 #ifdef __SWITCH__
@@ -309,13 +309,13 @@ void InputEditor::DrawControllerSchema() {
 #else
     ImGui::SetCursorPosY(cursor.y + 120);
 #endif
-    BeginGroupPanel("Options", ImVec2(158, 20));
+    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Options", ImVec2(158, 20));
     float cursorX = ImGui::GetCursorPosX() + 5;
     ImGui::SetCursorPosX(cursorX);
     ImGui::Checkbox("Rumble Enabled", &profile->UseRumble);
     if (backend->CanRumble()) {
         ImGui::SetCursorPosX(cursorX);
-        ImGui::Text("Rumble Force: %d%%", static_cast<int>(100.0f * profile->RumbleStrength));
+        ImGui::Text("Rumble Force: %d%%", static_cast<int32_t>(100.0f * profile->RumbleStrength));
         ImGui::SetCursorPosX(cursorX);
 #ifdef __WIIU__
         ImGui::PushItemWidth(135.0f * 2);
@@ -346,13 +346,19 @@ void InputEditor::DrawControllerSchema() {
     }
 
     ImGui::Dummy(ImVec2(0, 5));
-    EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
+    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 }
 
-void InputEditor::DrawHud() {
-    if (!this->mOpened) {
+void InputEditorWindow::Update() {
+
+}
+
+void InputEditorWindow::Draw() {
+    if (!IsOpen()) {
         mBtnReading = -1;
-        CVarSetInteger("gControllerConfigurationEnabled", 0);
+        if (CVarGetInteger("gControllerConfigurationEnabled", 0)) {
+            CVarClear("gControllerConfigurationEnabled");
+        }
         return;
     }
 
@@ -370,7 +376,7 @@ void InputEditor::DrawHud() {
     ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
     // OTRTODO: Disable this stupid workaround ( ReadRawPress() only works when the window is on the main viewport )
     ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-    ImGui::Begin("Controller Configuration", &this->mOpened,
+    ImGui::Begin("Controller Configuration", &mIsOpen,
                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
 
     ImGui::BeginTabBar("##Controllers");
@@ -385,21 +391,8 @@ void InputEditor::DrawHud() {
     ImGui::EndTabBar();
 
     // Draw current cfg
-
     DrawControllerSchema();
 
     ImGui::End();
-}
-
-bool InputEditor::IsOpened() {
-    return mOpened;
-}
-
-void InputEditor::Open() {
-    mOpened = true;
-}
-
-void InputEditor::Close() {
-    mOpened = false;
 }
 } // namespace LUS

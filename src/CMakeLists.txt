@@ -141,16 +141,20 @@ target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SP
 #=================== Menu ===================
 
 set(Source_Files__Menu
-    ${CMAKE_CURRENT_SOURCE_DIR}/menu/Console.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/menu/Console.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/menu/ImGuiImpl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/menu/ImGuiImpl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditor.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/ConsoleWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/ConsoleWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/Gui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/Gui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditorWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/InputEditorWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/GameOverlay.h
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/Fonts.h
     ${CMAKE_CURRENT_SOURCE_DIR}/menu/IconsFontAwesome4.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/StatsWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/StatsWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/GuiWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/menu/GuiWindow.cpp
 )
 
 source_group("Menu" FILES ${Source_Files__Menu})
