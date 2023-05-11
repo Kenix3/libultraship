@@ -617,6 +617,10 @@ ImTextureID Gui::GetTextureByName(const std::string& name) {
     return GetTextureById(mGuiTextures[name].TextureId);
 }
 
+std::map<std::string, GuiTexture> GetGuiTextures() {
+    return mGuiTextures;
+};
+
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
     switch (mImpl.RenderBackend) {
 #ifdef __WIIU__
