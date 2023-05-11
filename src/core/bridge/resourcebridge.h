@@ -33,6 +33,7 @@ size_t GetResourceTexSizeByCrc(uint64_t crc);
 void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount);
 uint32_t HasGameVersion(uint32_t hash);
 void LoadResourceDirectory(const char* name);
+void LoadResourceDirectoryAsync(const char* name);
 void DirtyResourceDirectory(const char* name);
 void DirtyResourceByName(const char* name);
 void DirtyResourceByCrc(uint64_t crc);

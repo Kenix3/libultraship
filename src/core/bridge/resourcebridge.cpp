@@ -152,6 +152,10 @@ void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCo
     *versionsCount = list.size();
 }
 
+void LoadResourceDirectoryAsync(const char* name) {
+    LUS::Context::GetInstance()->GetResourceManager()->LoadDirectoryAsync(name);
+}
+
 uint32_t HasGameVersion(uint32_t hash) {
     auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();

@@ -17,14 +17,16 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 namespace LUS {
 
 ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath,
-                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes)
+                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes,
+                                 uint32_t reservedThreadCount)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
+    // the extra `- 1` is because we reserve an extra thread for spdlog
+    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount - 1));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -35,14 +37,15 @@ ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::st
 }
 
 ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::vector<std::string>& otrFiles,
-                                 const std::unordered_set<uint32_t>& validHashes)
+                                 const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount)
     : mContext(context) {
     mResourceLoader = std::make_shared<ResourceLoader>(context);
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
+    // the extra `- 1` is because we reserve an extra thread for spdlog
+    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount - 1));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -65,7 +68,7 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->Path);
     } else {
-        SPDLOG_WARN("Could not load File {} in ResourceManager", filePath);
+        SPDLOG_TRACE("Could not load File {} in ResourceManager", filePath);
     }
     return file;
 }
@@ -95,6 +98,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     if (cachedResource != nullptr) {
         return cachedResource;
     }
+
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && filePath.starts_with(Resource::gAltAssetPrefix)) {
@@ -115,7 +119,7 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     // Get the file from the OTR
     auto file = LoadFileProcess(filePath);
     if (file == nullptr) {
-        SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
+        SPDLOG_TRACE("Failed to load resource file at path {}", filePath);
     }
 
     // Transform the raw data into a resource
@@ -144,26 +148,30 @@ std::shared_ptr<Resource> ResourceManager::LoadResourceProcess(const std::string
     if (resource != nullptr) {
         SPDLOG_TRACE("Loaded Resource {} on ResourceManager", filePath);
     } else {
-        SPDLOG_WARN("Resource load FAILED {} on ResourceManager", filePath);
+        SPDLOG_TRACE("Resource load FAILED {} on ResourceManager", filePath);
     }
 
     return resource;
 }
 
-std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath) {
-    return mThreadPool->submit(&ResourceManager::LoadFileProcess, this, filePath).share();
+std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath, bool priority) {
+    if (priority) {
+        return mThreadPool->submit_front(&ResourceManager::LoadFileProcess, this, filePath).share();
+    } else {
+        return mThreadPool->submit_back(&ResourceManager::LoadFileProcess, this, filePath).share();
+    }
 }
 
 std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
-    return LoadFileAsync(filePath).get();
+    return LoadFileAsync(filePath, true).get();
 }
 
 std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
-                                                                                 bool loadExact) {
+                                                                                 bool loadExact, bool priority) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
-        return LoadResourceAsync(newFilePath, loadExact);
+        return LoadResourceAsync(newFilePath, loadExact, priority);
     }
 
     // Check the cache before queueing the job.
@@ -176,11 +184,19 @@ std::shared_future<std::shared_ptr<Resource>> ResourceManager::LoadResourceAsync
 
     const auto newFilePath = std::string(filePath);
 
-    return mThreadPool->submit(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    if (priority) {
+        return mThreadPool->submit_front(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    } else {
+        return mThreadPool->submit_back(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact);
+    }
 }
 
 std::shared_ptr<Resource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact) {
-    return LoadResourceAsync(filePath, loadExact).get();
+    auto resource = LoadResourceAsync(filePath, loadExact, true).get();
+    if (resource == nullptr) {
+        SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
+    }
+    return resource;
 }
 
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<Resource>>
@@ -236,14 +252,14 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Resource>>>>
-ResourceManager::LoadDirectoryAsync(const std::string& searchMask) {
+ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Resource>>>>();
     auto fileList = GetArchive()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync(fileName);
+        auto future = LoadResourceAsync(fileName, false, priority);
         loadedList->push_back(future);
     }
 
@@ -251,7 +267,7 @@ ResourceManager::LoadDirectoryAsync(const std::string& searchMask) {
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Resource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
-    auto futureList = LoadDirectoryAsync(searchMask);
+    auto futureList = LoadDirectoryAsync(searchMask, true);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<Resource>>>();
 
     for (size_t i = 0; i < futureList->size(); i++) {
