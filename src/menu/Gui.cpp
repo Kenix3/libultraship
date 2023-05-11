@@ -255,7 +255,7 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res = Context::GetInstance()->GetResourceManager()->LoadFile(path);
 
-    const auto asset = std::make_shared<GuiTexture>(api->new_texture());
+    const auto asset = std::make_shared<GuiTexture>(api->new_texture(), 0, 0);
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
                                              &asset->Width, &asset->Height, nullptr, 4);
 

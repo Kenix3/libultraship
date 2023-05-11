@@ -14,7 +14,6 @@
 #include "libultraship/libultra/controller.h"
 
 namespace LUS {
-// TODO: Deal with the Backend enum.
 enum class Backend {
     DX11,
     SDL_OPENGL,
