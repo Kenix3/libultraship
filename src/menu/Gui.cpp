@@ -887,4 +887,9 @@ void Gui::HideMenu() {
     mIsMenuShown = false;
     CVarSetInteger("gOpenMenuBar", mIsMenuShown);
 }
+
+Backend Gui::GetRenderBackend() {
+    return mImpl.RenderBackend;
+}
+
 } // namespace LUS

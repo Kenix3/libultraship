@@ -95,6 +95,8 @@ class Gui {
     bool IsMenuShown();
     void ShowMenu();
     void HideMenu();
+    Backend GetRenderBackend();
+    std::shared_ptr<InputEditorWindow> GetInputEditorWindow();
 
   protected:
     void InitSettings();
@@ -105,7 +107,6 @@ class Gui {
     void ImGuiWMNewFrame();
     void ImGuiRenderDrawData(ImDrawData* data);
 
-    std::shared_ptr<InputEditorWindow> GetInputEditorWindow();
     std::shared_ptr<StatsWindow> GetStatsWindow();
 
   private:
