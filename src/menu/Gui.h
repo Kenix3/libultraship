@@ -11,6 +11,7 @@
 #include "menu/IconsFontAwesome4.h"
 #include "menu/GameOverlay.h"
 #include "menu/StatsWindow.h"
+#include "menu/GuiMenuBar.h"
 #include "libultraship/libultra/controller.h"
 
 namespace LUS {
@@ -86,6 +87,8 @@ class Gui {
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<ConsoleWindow> GetConsoleWindow();
     std::shared_ptr<GameOverlay> GetGameOverlay();
+    void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
+    std::shared_ptr<GuiMenuBar> GetMenuBar();
     bool IsMenuShown();
     void ShowMenu();
     void HideMenu();
@@ -115,6 +118,7 @@ class Gui {
     std::shared_ptr<ConsoleWindow> mConsoleWindow;
     std::shared_ptr<InputEditorWindow> mInputEditorWindow;
     std::shared_ptr<StatsWindow> mStatsWindow;
+    std::shared_ptr<GuiMenuBar> mMenuBar;
     std::map<std::string, GuiTexture> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     ImVector<ImRect> mGroupPanelLabelStack;
