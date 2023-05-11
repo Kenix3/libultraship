@@ -24,7 +24,8 @@ ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::st
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount));
+    // the extra `- 1` is because we reserve an extra thread for spdlog
+    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount - 1));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -42,7 +43,8 @@ ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::ve
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
-    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount));
+    // the extra `- 1` is because we reserve an extra thread for spdlog
+    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount - 1));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
