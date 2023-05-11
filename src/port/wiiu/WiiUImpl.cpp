@@ -9,7 +9,7 @@
 #include <whb/log_udp.h>
 #include <coreinit/debug.h>
 
-#include "core/Window.h"
+#include "core/Context.h"
 
 namespace LUS {
 namespace WiiU {
@@ -47,7 +47,7 @@ static const devoptab_t dotab_stdout = {
 };
 #endif
 
-void Init() {
+void Init(const std::string& shortName) {
 #ifdef _DEBUG
     WHBLogUdpInit();
     WHBLogPrint("Hello World!");
@@ -59,9 +59,9 @@ void Init() {
     // make sure the required folders exist
     mkdir("/vol/external01/wiiu/", 0755);
     mkdir("/vol/external01/wiiu/apps/", 0755);
-    mkdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetShortName()).c_str(), 0755);
+    mkdir(("/vol/external01/wiiu/apps/" + shortName + "/").c_str(), 0755);
 
-    chdir(("/vol/external01/wiiu/apps/" + Window::GetInstance()->GetShortName()).c_str());
+    chdir(("/vol/external01/wiiu/apps/" + shortName + "/").c_str());
 
     KPADInit();
     WPADEnableURCC(true);
@@ -119,7 +119,7 @@ void Update() {
 
     // rescan devices if connection state changed
     if (rescan) {
-        Window::GetInstance()->GetControlDeck()->ScanDevices();
+        Context::GetInstance()->GetControlDeck()->ScanDevices();
     }
 }
 
