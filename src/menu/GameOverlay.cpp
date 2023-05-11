@@ -21,24 +21,24 @@ bool GameOverlay::OverlayCommand(std::shared_ptr<ConsoleWindow> console, const s
         if (args[1] == "add") {
             if (!overlay->mRegisteredOverlays.contains(key)) {
                 overlay->mRegisteredOverlays[key] = Overlay({ OverlayType::TEXT, key, -1.0f });
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage("Added overlay: %s",
+                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->SendInfoMessage("Added overlay: %s",
                                                                                                    key);
             } else {
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage(
+                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->SendErrorMessage(
                     "Overlay already exists: %s", key);
             }
         } else if (args[1] == "remove") {
             if (overlay->mRegisteredOverlays.contains(key)) {
                 overlay->mRegisteredOverlays.erase(key);
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendInfoMessage(
+                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->SendInfoMessage(
                     "Removed overlay: %s", key);
             } else {
-                Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage(
+                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->SendErrorMessage(
                     "Overlay not found: %s", key);
             }
         }
     } else {
-        Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->SendErrorMessage("CVar {} does not exist",
+        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->SendErrorMessage("CVar {} does not exist",
                                                                                             args[2].c_str());
     }
 
@@ -172,7 +172,7 @@ void GameOverlay::Init() {
         }
     }
 
-    Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->AddCommand(
+    std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->AddCommand(
         "overlay", { OverlayCommand, "Draw an overlay using a cvar value" });
 }
 

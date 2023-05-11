@@ -73,13 +73,10 @@ namespace LUS {
 Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariableSave(false) {
     mIsMenuShown = CVarGetInteger("gOpenMenuBar", 0);
     mGameOverlay = std::make_shared<GameOverlay>();
-    mConsoleWindow = std::make_shared<ConsoleWindow>("Console");
-    mInputEditorWindow = std::make_shared<InputEditorWindow>("Input Editor");
-    mStatsWindow = std::make_shared<StatsWindow>("Stats");
 
-    AddWindow(mStatsWindow);
-    AddWindow(mInputEditorWindow);
-    AddWindow(mConsoleWindow);
+    AddWindow(std::make_shared<StatsWindow>("Stats"));
+    AddWindow(std::make_shared<InputEditorWindow>("Input Editor"));
+    AddWindow(std::make_shared<ConsoleWindow>("Console"));
 }
 
 void Gui::Init(WindowImpl windowImpl) {
@@ -140,9 +137,9 @@ void Gui::Init(WindowImpl windowImpl) {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
     }
 
-    GetConsoleWindow()->Init();
+    GetGuiWindow("Console")->Init();
     GetGameOverlay()->Init();
-    GetInputEditorWindow()->Init();
+    GetGuiWindow("Input Editor")->Init();
 
     ImGuiWMInit();
     ImGuiBackendInit();
@@ -248,9 +245,9 @@ void Gui::InitSettings() {
         gfx_get_current_rendering_api()->set_texture_filter(
             (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
 
-        GetConsoleWindow()->Init();
-        GetInputEditorWindow()->Init();
-        GetStatsWindow()->Init();
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Init();
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Init();
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Stats")->Init();
     });
 }
 
@@ -328,7 +325,7 @@ void Gui::Update(EventImpl event) {
 }
 
 void Gui::DrawMenu(void) {
-    GetConsoleWindow()->Update();
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
@@ -385,12 +382,12 @@ void Gui::DrawMenu(void) {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        GetConsoleWindow()->Dispatch("reset");
+        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        GetConsoleWindow()->Dispatch("reset");
+        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->Dispatch("reset");
     }
 #endif
 
@@ -848,18 +845,6 @@ std::shared_ptr<Window> Gui::GetWindow() {
 
 std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
-}
-
-std::shared_ptr<ConsoleWindow> Gui::GetConsoleWindow() {
-    return mConsoleWindow;
-}
-
-std::shared_ptr<InputEditorWindow> Gui::GetInputEditorWindow() {
-    return mInputEditorWindow;
-}
-
-std::shared_ptr<StatsWindow> Gui::GetStatsWindow() {
-    return mStatsWindow;
 }
 
 bool Gui::IsMenuShown() {
