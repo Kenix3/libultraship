@@ -255,18 +255,18 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res = Context::GetInstance()->GetResourceManager()->LoadFile(path);
 
-    const auto asset = std::make_shared<GuiTexture>(api->new_texture(), 0, 0);
+    auto asset = GuiTexture(api->new_texture());
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
-                                             &asset->Width, &asset->Height, nullptr, 4);
+                                             &asset.Width, &asset.Height, nullptr, 4);
 
     if (imgData == nullptr) {
         SPDLOG_ERROR("Error loading imgui texture {}", stbi_failure_reason());
         return;
     }
 
-    api->select_texture(0, asset->TextureId);
+    api->select_texture(0, asset.TextureId);
     api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(imgData, asset->Width, asset->Height);
+    api->upload_texture(imgData, asset.Width, asset.Height);
 
     mGuiTextures[name] = asset;
     stbi_image_free(imgData);
@@ -754,9 +754,9 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
         texBuffer[pixel * 4 + 3] *= tint.w;
     }
 
-    const auto asset = std::make_shared<GuiTexture>(api->new_texture());
+    auto asset = GuiTexture(api->new_texture());
 
-    api->select_texture(0, asset->TextureId);
+    api->select_texture(0, asset.TextureId);
     api->set_sampler_parameters(0, false, 0, 0);
     api->upload_texture(texBuffer.data(), res->Width, res->Height);
 

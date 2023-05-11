@@ -115,7 +115,7 @@ class Gui {
     std::shared_ptr<ConsoleWindow> mConsoleWindow;
     std::shared_ptr<InputEditorWindow> mInputEditorWindow;
     std::shared_ptr<StatsWindow> mStatsWindow;
-    std::map<std::string, std::shared_ptr<GuiTexture>> mGuiTextures;
+    std::map<std::string, GuiTexture> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     ImVector<ImRect> mGroupPanelLabelStack;
 };
