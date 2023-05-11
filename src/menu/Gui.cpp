@@ -65,7 +65,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 
 namespace LUS {
 #define BindButton(btn, status)                                                                                    \
-    ImGui::Image(GetTextureById(mGuiTextures[btn]->TextureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), \
+    ImGui::Image(GetTextureById(mGuiTextures[btn].TextureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), \
                  ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
@@ -255,7 +255,7 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
     const auto res = Context::GetInstance()->GetResourceManager()->LoadFile(path);
 
-    auto asset = GuiTexture(api->new_texture());
+    auto asset = GuiTexture(api->new_texture(), 0, 0);
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
                                              &asset.Width, &asset.Height, nullptr, 4);
 
@@ -400,7 +400,7 @@ void Gui::DrawMenu(void) {
             float posScale = 1.0f;
 #endif
             ImGui::SetCursorPos(ImVec2(5, 2.5f) * posScale);
-            ImGui::Image(GetTextureById(mGuiTextures["Game_Icon"]->TextureId), iconSize);
+            ImGui::Image(GetTextureById(mGuiTextures["Game_Icon"].TextureId), iconSize);
             ImGui::SameLine();
             ImGui::SetCursorPos(ImVec2(25, 0) * posScale);
         }
@@ -660,7 +660,7 @@ ImTextureID Gui::GetTextureById(int32_t id) {
 }
 
 ImTextureID Gui::GetTextureByName(const std::string& name) {
-    return GetTextureById(mGuiTextures[name]->TextureId);
+    return GetTextureById(mGuiTextures[name].TextureId);
 }
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
