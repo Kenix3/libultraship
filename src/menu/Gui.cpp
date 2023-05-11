@@ -64,9 +64,9 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 #endif
 
 namespace LUS {
-#define BindButton(btn, status)                                                                                   \
-    ImGui::Image(GetTextureById(mGuiTextures[btn].RendererTextureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), \
-                 ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
+#define BindButton(btn, status)                                                                             \
+    ImGui::Image(GetTextureById(mGuiTextures[btn].RendererTextureId), ImVec2(16.0f * scale, 16.0f * scale), \
+                 ImVec2(0, 0), ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
