@@ -20,7 +20,7 @@ class GuiWindow {
   protected:
     bool mIsOpen;
 
-  protected:
+  private:
     std::string mName;
 };
 } // namespace LUS
