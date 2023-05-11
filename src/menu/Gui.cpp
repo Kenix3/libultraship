@@ -73,13 +73,10 @@ namespace LUS {
 Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariableSave(false) {
     mIsMenuShown = CVarGetInteger("gOpenMenuBar", 0);
     mGameOverlay = std::make_shared<GameOverlay>();
-    mConsoleWindow = std::make_shared<ConsoleWindow>("Console");
-    mInputEditorWindow = std::make_shared<InputEditorWindow>("Input Editor");
-    mStatsWindow = std::make_shared<StatsWindow>("Stats");
 
-    AddWindow(mStatsWindow);
-    AddWindow(mInputEditorWindow);
-    AddWindow(mConsoleWindow);
+    AddWindow(std::make_shared<StatsWindow>("Stats"));
+    AddWindow(std::make_shared<InputEditorWindow>("Input Editor"));
+    AddWindow(std::make_shared<ConsoleWindow>("Console"));
 }
 
 void Gui::Init(WindowImpl windowImpl) {
@@ -140,9 +137,9 @@ void Gui::Init(WindowImpl windowImpl) {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
     }
 
-    GetConsoleWindow()->Init();
+    GetGuiWindow("Console")->Init();
     GetGameOverlay()->Init();
-    GetInputEditorWindow()->Init();
+    GetGuiWindow("Input Editor")->Init();
 
     ImGuiWMInit();
     ImGuiBackendInit();
@@ -248,9 +245,9 @@ void Gui::InitSettings() {
         gfx_get_current_rendering_api()->set_texture_filter(
             (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
 
-        GetConsoleWindow()->Init();
-        GetInputEditorWindow()->Init();
-        GetStatsWindow()->Init();
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Init();
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Init();
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Stats")->Init();
     });
 }
 
@@ -328,7 +325,7 @@ void Gui::Update(EventImpl event) {
 }
 
 void Gui::DrawMenu(void) {
-    GetConsoleWindow()->Update();
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
@@ -385,65 +382,20 @@ void Gui::DrawMenu(void) {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        GetConsoleWindow()->Dispatch("reset");
+        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
+            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+            ->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        GetConsoleWindow()->Dispatch("reset");
+        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
+            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+            ->Dispatch("reset");
     }
 #endif
 
-    if (ImGui::BeginMenuBar()) {
-        if (mGuiTextures.contains("Game_Icon")) {
-#ifdef __SWITCH__
-            ImVec2 iconSize = ImVec2(20.0f, 20.0f);
-            float posScale = 1.0f;
-#elif defined(__WIIU__)
-            ImVec2 iconSize = ImVec2(16.0f * 2, 16.0f * 2);
-            float posScale = 2.0f;
-#else
-            ImVec2 iconSize = ImVec2(16.0f, 16.0f);
-            float posScale = 1.0f;
-#endif
-            ImGui::SetCursorPos(ImVec2(5, 2.5f) * posScale);
-            ImGui::Image(GetTextureById(mGuiTextures["Game_Icon"].TextureId), iconSize);
-            ImGui::SameLine();
-            ImGui::SetCursorPos(ImVec2(25, 0) * posScale);
-        }
-
-        static ImVec2 sWindowPadding(8.0f, 8.0f);
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, sWindowPadding);
-        if (ImGui::BeginMenu("Shipwright")) {
-            if (ImGui::MenuItem("Reset",
-#ifdef __APPLE__
-                                "Command-R"
-#else
-                                "Ctrl+R"
-#endif
-                                )) {
-                GetConsoleWindow()->Dispatch("reset");
-            }
-#if !defined(__SWITCH__) && !defined(__WIIU__)
-            const char* keyboardShortcut =
-                strcmp(Context::GetInstance()->GetWindow()->GetWindowManagerName().c_str(), "sdl") == 0 ? "F10"
-                                                                                                        : "ALT+Enter";
-            if (ImGui::MenuItem("Toggle Fullscreen", keyboardShortcut)) {
-                wnd->ToggleFullscreen();
-            }
-            if (ImGui::MenuItem("Quit")) {
-                wnd->Close();
-            }
-#endif
-            ImGui::EndMenu();
-        }
-
-        ImGui::SetCursorPosY(0.0f);
-
-        ImGui::PopStyleVar(1);
-        ImGui::EndMenuBar();
-    }
+    mMenuBar->Draw();
 
     ImGui::End();
 
@@ -899,20 +851,16 @@ std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
 }
 
-std::shared_ptr<ConsoleWindow> Gui::GetConsoleWindow() {
-    return mConsoleWindow;
-}
-
-std::shared_ptr<InputEditorWindow> Gui::GetInputEditorWindow() {
-    return mInputEditorWindow;
-}
-
-std::shared_ptr<StatsWindow> Gui::GetStatsWindow() {
-    return mStatsWindow;
-}
-
 bool Gui::IsMenuShown() {
     return mIsMenuShown;
+}
+
+void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
+    mMenuBar = menuBar;
+}
+
+std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
+    return mMenuBar;
 }
 
 void Gui::ShowMenu() {
@@ -924,4 +872,9 @@ void Gui::HideMenu() {
     mIsMenuShown = false;
     CVarSetInteger("gOpenMenuBar", mIsMenuShown);
 }
+
+Backend Gui::GetRenderBackend() {
+    return mImpl.RenderBackend;
+}
+
 } // namespace LUS

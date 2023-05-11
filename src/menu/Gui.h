@@ -11,6 +11,7 @@
 #include "menu/IconsFontAwesome4.h"
 #include "menu/GameOverlay.h"
 #include "menu/StatsWindow.h"
+#include "menu/GuiMenuBar.h"
 #include "libultraship/libultra/controller.h"
 
 namespace LUS {
@@ -79,16 +80,19 @@ class Gui {
     void Update(EventImpl event);
     void AddWindow(std::shared_ptr<GuiWindow> guiWindow);
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
+    ImTextureID GetTextureByName(const std::string& name);
     bool SupportsViewports();
     void BeginGroupPanel(const char* name, const ImVec2& size);
     void EndGroupPanel(float minHeight);
     std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
     std::shared_ptr<Window> GetWindow();
-    std::shared_ptr<ConsoleWindow> GetConsoleWindow();
     std::shared_ptr<GameOverlay> GetGameOverlay();
+    void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
+    std::shared_ptr<GuiMenuBar> GetMenuBar();
     bool IsMenuShown();
     void ShowMenu();
     void HideMenu();
+    Backend GetRenderBackend();
 
   protected:
     void InitSettings();
@@ -99,10 +103,6 @@ class Gui {
     void ImGuiWMNewFrame();
     void ImGuiRenderDrawData(ImDrawData* data);
     ImTextureID GetTextureById(int32_t id);
-    ImTextureID GetTextureByName(const std::string& name);
-
-    std::shared_ptr<InputEditorWindow> GetInputEditorWindow();
-    std::shared_ptr<StatsWindow> GetStatsWindow();
 
   private:
     std::shared_ptr<Window> mWindow;
@@ -112,9 +112,7 @@ class Gui {
     bool mNeedsConsoleVariableSave;
     bool mIsMenuShown;
     std::shared_ptr<GameOverlay> mGameOverlay;
-    std::shared_ptr<ConsoleWindow> mConsoleWindow;
-    std::shared_ptr<InputEditorWindow> mInputEditorWindow;
-    std::shared_ptr<StatsWindow> mStatsWindow;
+    std::shared_ptr<GuiMenuBar> mMenuBar;
     std::map<std::string, GuiTexture> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     ImVector<ImRect> mGroupPanelLabelStack;
