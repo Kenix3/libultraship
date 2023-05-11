@@ -80,9 +80,7 @@ class Gui {
     void Update(EventImpl event);
     void AddWindow(std::shared_ptr<GuiWindow> guiWindow);
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
-    ImTextureID GetTextureById(int32_t id);
     ImTextureID GetTextureByName(const std::string& name);
-    std::map<std::string, GuiTexture> GetGuiTextures();
     bool SupportsViewports();
     void BeginGroupPanel(const char* name, const ImVec2& size);
     void EndGroupPanel(float minHeight);
@@ -106,6 +104,7 @@ class Gui {
     void ImGuiBackendNewFrame();
     void ImGuiWMNewFrame();
     void ImGuiRenderDrawData(ImDrawData* data);
+    ImTextureID GetTextureById(int32_t id);
 
     std::shared_ptr<StatsWindow> GetStatsWindow();
 
