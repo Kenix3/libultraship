@@ -76,6 +76,10 @@ Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariabl
     mConsoleWindow = std::make_shared<ConsoleWindow>("Console");
     mInputEditorWindow = std::make_shared<InputEditorWindow>("Input Editor");
     mStatsWindow = std::make_shared<StatsWindow>("Stats");
+
+    AddWindow(mStatsWindow);
+    AddWindow(mInputEditorWindow);
+    AddWindow(mConsoleWindow);
 }
 
 void Gui::Init(WindowImpl windowImpl) {
@@ -442,10 +446,6 @@ void Gui::DrawMenu(void) {
     }
 
     ImGui::End();
-
-    GetStatsWindow()->Draw();
-    GetConsoleWindow()->Draw();
-    GetInputEditorWindow()->Draw();
 
     for (auto& windowIter : mGuiWindows) {
         windowIter.second->Update();
