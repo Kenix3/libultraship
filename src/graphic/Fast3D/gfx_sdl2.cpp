@@ -334,7 +334,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
 
         window_impl.Opengl = { wnd, ctx };
-        window_impl.Backend = LUS::Backend::SDL_OPENGL;
+        window_impl.RenderBackend = LUS::Backend::SDL_OPENGL;
     } else {
         uint32_t flags = SDL_RENDERER_ACCELERATED;
         if (vsync_enabled) {
@@ -348,7 +348,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
         window_impl.Metal = { wnd, renderer };
-        window_impl.Backend = LUS::Backend::SDL_METAL;
+        window_impl.RenderBackend = LUS::Backend::SDL_METAL;
     }
 
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);

@@ -177,7 +177,7 @@ void Gui::Init(WindowImpl windowImpl) {
 }
 
 void Gui::ImGuiWMInit() {
-    switch (mImpl.Backend) {
+    switch (mImpl.RenderBackend) {
 #ifdef __WIIU__
         case Backend::GX2:
             ImGui_ImplWiiU_Init();
@@ -207,7 +207,7 @@ void Gui::ImGuiWMInit() {
 }
 
 void Gui::ImGuiBackendInit() {
-    switch (mImpl.Backend) {
+    switch (mImpl.RenderBackend) {
 #ifdef __WIIU__
         case Backend::GX2:
             ImGui_ImplGX2_Init();
@@ -277,7 +277,7 @@ bool Gui::SupportsViewports() {
     return false;
 #endif
 
-    switch (mImpl.Backend) {
+    switch (mImpl.RenderBackend) {
         case Backend::DX11:
             return true;
         case Backend::SDL_OPENGL:
@@ -294,7 +294,7 @@ void Gui::Update(EventImpl event) {
         mNeedsConsoleVariableSave = false;
     }
 
-    switch (mImpl.Backend) {
+    switch (mImpl.RenderBackend) {
 #ifdef __WIIU__
         case Backend::GX2:
             if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
@@ -500,7 +500,7 @@ void Gui::DrawMenu(void) {
 }
 
 void Gui::ImGuiBackendNewFrame() {
-    switch (mImpl.Backend) {
+    switch (mImpl.RenderBackend) {
 #ifdef __WIIU__
         case Backend::GX2:
             mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
@@ -527,7 +527,7 @@ void Gui::ImGuiBackendNewFrame() {
 }
 
 void Gui::ImGuiWMNewFrame() {
-    switch (mImpl.Backend) {
+    switch (mImpl.RenderBackend) {
 #ifdef __WIIU__
         case Backend::GX2:
             break;
@@ -623,7 +623,7 @@ void Gui::StartFrame() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        if ((mImpl.Backend == Backend::SDL_OPENGL || mImpl.Backend == Backend::SDL_METAL) &&
+        if ((mImpl.RenderBackend == Backend::SDL_OPENGL || mImpl.RenderBackend == Backend::SDL_METAL) &&
             mImpl.Opengl.Context != nullptr) {
             SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
             SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
@@ -641,7 +641,7 @@ void Gui::StartFrame() {
 
 ImTextureID Gui::GetTextureById(int32_t id) {
 #ifdef ENABLE_DX11
-    if (mImpl.Backend == Backend::DX11) {
+    if (mImpl.RenderBackend == Backend::DX11) {
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif
@@ -664,7 +664,7 @@ ImTextureID Gui::GetTextureByName(const std::string& name) {
 }
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
-    switch (mImpl.Backend) {
+    switch (mImpl.RenderBackend) {
 #ifdef __WIIU__
         case Backend::GX2:
             ImGui_ImplGX2_RenderDrawData(data);

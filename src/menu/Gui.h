@@ -23,7 +23,7 @@ enum class Backend {
 };
 
 typedef struct {
-    Backend Backend;
+    Backend RenderBackend;
     union {
         struct {
             void* Window;
