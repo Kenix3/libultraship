@@ -45,12 +45,6 @@ typedef struct {
     };
 } WindowImpl;
 
-struct GuiTexture {
-    uint32_t TextureId;
-    int32_t Width;
-    int32_t Height;
-};
-
 typedef union {
     struct {
         void* Handle;
@@ -105,6 +99,12 @@ class Gui {
     ImTextureID GetTextureById(int32_t id);
 
   private:
+    struct GuiTexture {
+        uint32_t RendererTextureId;
+        int32_t Width;
+        int32_t Height;
+    };
+
     std::shared_ptr<Window> mWindow;
     OSContPad* mPads;
     WindowImpl mImpl;
