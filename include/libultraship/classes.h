@@ -12,6 +12,7 @@
 #include "menu/ConsoleWindow.h"
 #include "menu/GameOverlay.h"
 #include "menu/Gui.h"
+#include "menu/GuiMenuBar.h"
 #include "menu/InputEditorWindow.h"
 #include "menu/GuiWindow.h"
 #include "menu/StatsWindow.h"
