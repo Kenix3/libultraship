@@ -754,7 +754,7 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
         texBuffer[pixel * 4 + 3] *= tint.w;
     }
 
-    auto asset = GuiTexture(api->new_texture());
+    auto asset = GuiTexture(api->new_texture(), res->Width, res->Height);
 
     api->select_texture(0, asset.TextureId);
     api->set_sampler_parameters(0, false, 0, 0);
