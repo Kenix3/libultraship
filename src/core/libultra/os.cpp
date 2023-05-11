@@ -5,7 +5,7 @@
 #include <SDL2/SDL.h>
 #include <spdlog/spdlog.h>
 
-#include "menu/ImGuiImpl.h"
+#include "menu/Gui.h"
 #include "misc/Hooks.h"
 
 extern "C" {
@@ -43,7 +43,8 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
-    if (LUS::GetInputEditor()->IsOpened()) {
+    auto inputEditor = LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Input Editor");
+    if (!inputEditor || !inputEditor->IsOpen()) {
         return;
     }
 

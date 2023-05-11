@@ -8,7 +8,9 @@
 #include <spdlog/details/os.h>
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/details/synchronous_factory.h>
-#include "menu/ImGuiImpl.h"
+#include "core/Context.h"
+#include "menu/Gui.h"
+#include "menu/ConsoleWindow.h"
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -34,8 +36,10 @@ template <typename Mutex> class ConsoleSink final : public base_sink<Mutex> {
         }
         formatted.push_back('\0');
         const char* msg_output = formatted.data();
-        if (CVarGetInteger("gSinkEnabled", 0) && LUS::GetConsole()->IsOpened()) {
-            LUS::GetConsole()->Append("Logs", msg.level, "%s", msg_output);
+        if (CVarGetInteger("gSinkEnabled", 0) &&
+            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->IsOpen()) {
+            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetConsoleWindow()->Append("Logs", msg.level, "%s",
+                                                                                           msg_output);
         }
     }
 

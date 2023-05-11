@@ -5,7 +5,8 @@
 #include <string>
 #include <functional>
 
-#include <imgui.h>
+#include "GuiWindow.h"
+#include <ImGui/imgui.h>
 #include <spdlog/spdlog.h>
 
 namespace LUS {
@@ -13,8 +14,8 @@ namespace LUS {
 #define CMD_FAILED false
 #define NULLSTR "None"
 
-class Console;
-typedef std::function<bool(std::shared_ptr<Console> console, std::vector<std::string> args)> CommandHandler;
+class ConsoleWindow;
+typedef std::function<bool(std::shared_ptr<ConsoleWindow> console, std::vector<std::string> args)> CommandHandler;
 
 enum class ArgumentType { TEXT, NUMBER, PLAYER_POS, PLAYER_ROT };
 
@@ -36,15 +37,16 @@ struct ConsoleLine {
     std::string channel = "Console";
 };
 
-class Console : public std::enable_shared_from_this<Console> {
+class ConsoleWindow : public GuiWindow, public std::enable_shared_from_this<ConsoleWindow> {
   private:
     static int CallbackStub(ImGuiInputTextCallbackData* data);
-    static bool ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
-    static bool HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
-    static bool BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
-    static bool BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args);
+    static bool ClearCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
+    static bool HelpCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
+    static bool BindCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
+    static bool BindToggleCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
 
-    bool mOpened = false;
+    using GuiWindow::GuiWindow;
+
     int mSelectedId = -1;
     int mHistoryIndex = -1;
     std::vector<int> mSelectedEntries;
@@ -84,9 +86,9 @@ class Console : public std::enable_shared_from_this<Console> {
   public:
     void ClearLogs(std::string channel);
     void ClearLogs();
-    void Init();
-    void Update();
-    void Draw();
+    void Init() override;
+    void Update() override;
+    void Draw() override;
     void Dispatch(const std::string& line);
     void SendInfoMessage(const char* fmt, ...);
     void SendErrorMessage(const char* fmt, ...);
@@ -96,8 +98,5 @@ class Console : public std::enable_shared_from_this<Console> {
     bool HasCommand(const std::string& command);
     void AddCommand(const std::string& command, CommandEntry entry);
     std::string GetCurrentChannel();
-    bool IsOpened();
-    void Close();
-    void Open();
 };
 } // namespace LUS

@@ -43,7 +43,7 @@
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
-#include "menu/ImGuiImpl.h"
+#include "menu/Gui.h"
 #include "core/Window.h"
 #include "gfx_pc.h"
 #include <core/bridge/consolevariablebridge.h>
