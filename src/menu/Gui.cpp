@@ -382,12 +382,16 @@ void Gui::DrawMenu(void) {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->Dispatch("reset");
+        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
+            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+            ->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->Dispatch("reset");
+        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
+            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+            ->Dispatch("reset");
     }
 #endif
 

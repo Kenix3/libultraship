@@ -38,8 +38,9 @@ template <typename Mutex> class ConsoleSink final : public base_sink<Mutex> {
         const char* msg_output = formatted.data();
         if (CVarGetInteger("gSinkEnabled", 0) &&
             LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->IsOpen()) {
-            std::reinterpret_pointer_cast<LUS::ConsoleWindow>(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))->Append("Logs", msg.level, "%s",
-                                                                                                                                                   msg_output);
+            std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
+                LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+                ->Append("Logs", msg.level, "%s", msg_output);
         }
     }
 
