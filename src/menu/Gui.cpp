@@ -64,14 +64,14 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 #endif
 
 namespace LUS {
-#define BindButton(btn, status)                                                                                     \
-    ImGui::Image(GetTextureById(mGameTextures[btn]->textureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), \
+#define BindButton(btn, status)                                                                                    \
+    ImGui::Image(GetTextureById(mGuiTextures[btn]->TextureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), \
                  ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
 Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariableSave(false) {
-    mIsMenuOpen = CVarGetInteger("gOpenMenuBar", 0);
+    mIsMenuShown = CVarGetInteger("gOpenMenuBar", 0);
     mGameOverlay = std::make_shared<GameOverlay>();
     mConsoleWindow = std::make_shared<ConsoleWindow>("Console");
     mInputEditorWindow = std::make_shared<InputEditorWindow>("Input Editor");
@@ -113,7 +113,7 @@ void Gui::Init(WindowImpl windowImpl) {
     mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
 #endif
 
-    if (!IsMenuOpen()) {
+    if (!IsMenuShown()) {
 #if defined(__SWITCH__) || defined(__WIIU__)
         mGameOverlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
 #else
@@ -130,7 +130,7 @@ void Gui::Init(WindowImpl windowImpl) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVarGetInteger("gControlNav", 0) && IsMenuOpen()) {
+    if (CVarGetInteger("gControlNav", 0) && IsMenuShown()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -148,7 +148,7 @@ void Gui::Init(WindowImpl windowImpl) {
 
     LUS::RegisterHook<LUS::GfxInit>([this] {
         if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuOpen());
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuShown());
         }
 
         LoadTexture("Game_Icon", "textures/icons/gIcon.png");
@@ -177,7 +177,7 @@ void Gui::Init(WindowImpl windowImpl) {
 }
 
 void Gui::ImGuiWMInit() {
-    switch (mImpl.backend) {
+    switch (mImpl.Backend) {
 #ifdef __WIIU__
         case Backend::GX2:
             ImGui_ImplWiiU_Init();
@@ -207,7 +207,7 @@ void Gui::ImGuiWMInit() {
 }
 
 void Gui::ImGuiBackendInit() {
-    switch (mImpl.backend) {
+    switch (mImpl.Backend) {
 #ifdef __WIIU__
         case Backend::GX2:
             ImGui_ImplGX2_Init();
@@ -257,18 +257,18 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
 
     const auto asset = std::make_shared<GuiTexture>(api->new_texture());
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
-                                             &asset->width, &asset->height, nullptr, 4);
+                                             &asset->Width, &asset->Height, nullptr, 4);
 
     if (imgData == nullptr) {
         SPDLOG_ERROR("Error loading imgui texture {}", stbi_failure_reason());
         return;
     }
 
-    api->select_texture(0, asset->textureId);
+    api->select_texture(0, asset->TextureId);
     api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(imgData, asset->width, asset->height);
+    api->upload_texture(imgData, asset->Width, asset->Height);
 
-    mGameTextures[name] = asset;
+    mGuiTextures[name] = asset;
     stbi_image_free(imgData);
 }
 
@@ -277,7 +277,7 @@ bool Gui::SupportsViewports() {
     return false;
 #endif
 
-    switch (mImpl.backend) {
+    switch (mImpl.Backend) {
         case Backend::DX11:
             return true;
         case Backend::SDL_OPENGL:
@@ -294,7 +294,7 @@ void Gui::Update(EventImpl event) {
         mNeedsConsoleVariableSave = false;
     }
 
-    switch (mImpl.backend) {
+    switch (mImpl.Backend) {
 #ifdef __WIIU__
         case Backend::GX2:
             if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
@@ -333,7 +333,7 @@ void Gui::DrawMenu(void) {
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
                                    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
                                    ImGuiWindowFlags_NoResize;
-    if (IsMenuOpen()) {
+    if (IsMenuShown()) {
         windowFlags |= ImGuiWindowFlags_MenuBar;
     }
 
@@ -365,10 +365,10 @@ void Gui::DrawMenu(void) {
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
         mNeedsConsoleVariableSave = true;
         if (wnd->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuOpen());
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuShown());
         }
         Context::GetInstance()->GetControlDeck()->SaveSettings();
-        if (CVarGetInteger("gControlNav", 0) && IsMenuOpen()) {
+        if (CVarGetInteger("gControlNav", 0) && IsMenuShown()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -378,7 +378,7 @@ void Gui::DrawMenu(void) {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        GetConsole()->Dispatch("reset");
+        GetConsoleWindow()->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
@@ -388,7 +388,7 @@ void Gui::DrawMenu(void) {
 #endif
 
     if (ImGui::BeginMenuBar()) {
-        if (mGameTextures.contains("Game_Icon")) {
+        if (mGuiTextures.contains("Game_Icon")) {
 #ifdef __SWITCH__
             ImVec2 iconSize = ImVec2(20.0f, 20.0f);
             float posScale = 1.0f;
@@ -400,7 +400,7 @@ void Gui::DrawMenu(void) {
             float posScale = 1.0f;
 #endif
             ImGui::SetCursorPos(ImVec2(5, 2.5f) * posScale);
-            ImGui::Image(GetTextureById(mGameTextures["Game_Icon"]->textureId), iconSize);
+            ImGui::Image(GetTextureById(mGuiTextures["Game_Icon"]->TextureId), iconSize);
             ImGui::SameLine();
             ImGui::SetCursorPos(ImVec2(25, 0) * posScale);
         }
@@ -500,7 +500,7 @@ void Gui::DrawMenu(void) {
 }
 
 void Gui::ImGuiBackendNewFrame() {
-    switch (mImpl.backend) {
+    switch (mImpl.Backend) {
 #ifdef __WIIU__
         case Backend::GX2:
             mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
@@ -527,7 +527,7 @@ void Gui::ImGuiBackendNewFrame() {
 }
 
 void Gui::ImGuiWMNewFrame() {
-    switch (mImpl.backend) {
+    switch (mImpl.Backend) {
 #ifdef __WIIU__
         case Backend::GX2:
             break;
@@ -623,7 +623,7 @@ void Gui::StartFrame() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        if ((mImpl.backend == Backend::SDL_OPENGL || mImpl.backend == Backend::SDL_METAL) &&
+        if ((mImpl.Backend == Backend::SDL_OPENGL || mImpl.Backend == Backend::SDL_METAL) &&
             mImpl.Opengl.Context != nullptr) {
             SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
             SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
@@ -641,17 +641,17 @@ void Gui::StartFrame() {
 
 ImTextureID Gui::GetTextureById(int32_t id) {
 #ifdef ENABLE_DX11
-    if (mImpl.backend == Backend::DX11) {
+    if (mImpl.Backend == Backend::DX11) {
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif
 #ifdef __APPLE__
-    if (mImpl.backend == Backend::SDL_METAL) {
+    if (mImpl.Backend == Backend::SDL_METAL) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif
 #ifdef __WIIU__
-    if (mImpl.backend == Backend::GX2) {
+    if (mImpl.Backend == Backend::GX2) {
         return gfx_gx2_texture_for_imgui(id);
     }
 #endif
@@ -660,11 +660,11 @@ ImTextureID Gui::GetTextureById(int32_t id) {
 }
 
 ImTextureID Gui::GetTextureByName(const std::string& name) {
-    return GetTextureById(mGameTextures[name]->textureId);
+    return GetTextureById(mGuiTextures[name]->TextureId);
 }
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
-    switch (mImpl.backend) {
+    switch (mImpl.Backend) {
 #ifdef __WIIU__
         case Backend::GX2:
             ImGui_ImplGX2_RenderDrawData(data);
@@ -756,11 +756,11 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
 
     const auto asset = std::make_shared<GuiTexture>(api->new_texture());
 
-    api->select_texture(0, asset->textureId);
+    api->select_texture(0, asset->TextureId);
     api->set_sampler_parameters(0, false, 0, 0);
     api->upload_texture(texBuffer.data(), res->Width, res->Height);
 
-    mGameTextures[name] = asset;
+    mGuiTextures[name] = asset;
 }
 
 void Gui::BeginGroupPanel(const char* name, const ImVec2& size) {
@@ -905,17 +905,17 @@ std::shared_ptr<StatsWindow> Gui::GetStatsWindow() {
     return mStatsWindow;
 }
 
-bool Gui::IsMenuOpen() {
-    return mIsMenuOpen;
+bool Gui::IsMenuShown() {
+    return mIsMenuShown;
 }
 
-void Gui::OpenMenu() {
-    mIsMenuOpen = true;
-    CVarSetInteger("gOpenMenuBar", mIsMenuOpen);
+void Gui::ShowMenu() {
+    mIsMenuShown = true;
+    CVarSetInteger("gOpenMenuBar", mIsMenuShown);
 }
 
-void Gui::CloseMenu() {
-    mIsMenuOpen = false;
-    CVarSetInteger("gOpenMenuBar", mIsMenuOpen);
+void Gui::HideMenu() {
+    mIsMenuShown = false;
+    CVarSetInteger("gOpenMenuBar", mIsMenuShown);
 }
 } // namespace LUS

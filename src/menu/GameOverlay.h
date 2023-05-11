@@ -12,8 +12,8 @@ namespace LUS {
 enum class OverlayType { TEXT, IMAGE, NOTIFICATION };
 
 struct Overlay {
-    OverlayType type;
-    std::string value;
+    OverlayType Type;
+    std::string Value;
     float fadeTime;
     float duration;
 };

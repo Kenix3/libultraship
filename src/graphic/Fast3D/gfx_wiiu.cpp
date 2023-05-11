@@ -392,7 +392,7 @@ static void gfx_wiiu_handle_events(void) {
 
     LUS::EventImpl event_impl;
     event_impl.Gx2.Input = &input;
-    LUS::UpdateGui(event_impl);
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
 }
 
 static bool gfx_wiiu_start_frame(void) {

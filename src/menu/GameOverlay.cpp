@@ -93,7 +93,7 @@ void GameOverlay::TextDrawNotification(float duration, bool shadow, const char* 
 
 void GameOverlay::ClearNotifications() {
     for (auto it = mRegisteredOverlays.begin(); it != mRegisteredOverlays.end();) {
-        if (it->second.type == OverlayType::NOTIFICATION) {
+        if (it->second.Type == OverlayType::NOTIFICATION) {
             it = mRegisteredOverlays.erase(it);
         } else {
             ++it;
@@ -102,10 +102,12 @@ void GameOverlay::ClearNotifications() {
 }
 
 void GameOverlay::CleanupNotifications() {
-    if (!mNeedsCleanup)
+    if (!mNeedsCleanup) {
         return;
+    }
+
     for (auto it = mRegisteredOverlays.begin(); it != mRegisteredOverlays.end();) {
-        if (it->second.type == OverlayType::NOTIFICATION && it->second.duration <= 0.0f) {
+        if (it->second.Type == OverlayType::NOTIFICATION && it->second.duration <= 0.0f) {
             it = mRegisteredOverlays.erase(it);
         } else {
             ++it;
@@ -158,15 +160,15 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
 void GameOverlay::Init() {
     LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
     LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);
-    const std::string DefaultFont = mFonts.begin()->first;
+    const std::string defaultFont = mFonts.begin()->first;
     if (!mFonts.empty()) {
-        const std::string font = CVarGetString("gOverlayFont", DefaultFont.c_str());
+        const std::string font = CVarGetString("gOverlayFont", defaultFont.c_str());
         for (auto& [name, _] : mFonts) {
             if (font.starts_with(name)) {
                 mCurrentFont = name;
                 break;
             }
-            mCurrentFont = DefaultFont;
+            mCurrentFont = defaultFont;
         }
     }
 
@@ -205,8 +207,8 @@ void GameOverlay::Draw() {
 
     for (auto& [key, overlay] : mRegisteredOverlays) {
 
-        if (overlay.type == OverlayType::TEXT) {
-            const char* text = overlay.value.c_str();
+        if (overlay.Type == OverlayType::TEXT) {
+            const char* text = overlay.Value.c_str();
             const auto var = CVarGet(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -235,8 +237,8 @@ void GameOverlay::Draw() {
             textY += 30;
         }
 
-        if (overlay.type == OverlayType::NOTIFICATION && overlay.duration > 0) {
-            const char* text = overlay.value.c_str();
+        if (overlay.Type == OverlayType::NOTIFICATION && overlay.duration > 0) {
+            const char* text = overlay.Value.c_str();
             const float duration = overlay.duration / overlay.fadeTime;
 
             const ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, duration);
@@ -244,7 +246,7 @@ void GameOverlay::Draw() {
             const float textWidth = GetStringWidth(overlay->value.c_str()) * 2.0f;
             const float textOffset = 40.0f * 2.0f;
 #else
-            const float textWidth = GetStringWidth(overlay.value.c_str());
+            const float textWidth = GetStringWidth(overlay.Value.c_str());
             const float textOffset = 40.0f;
 #endif
 

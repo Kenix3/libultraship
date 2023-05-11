@@ -23,7 +23,7 @@ enum class Backend {
 };
 
 typedef struct {
-    Backend backend;
+    Backend Backend;
     union {
         struct {
             void* Window;
@@ -46,9 +46,9 @@ typedef struct {
 } WindowImpl;
 
 struct GuiTexture {
-    uint32_t textureId;
-    int32_t width;
-    int32_t height;
+    uint32_t TextureId;
+    int32_t Width;
+    int32_t Height;
 };
 
 typedef union {
@@ -87,9 +87,9 @@ class Gui {
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<ConsoleWindow> GetConsoleWindow();
     std::shared_ptr<GameOverlay> GetGameOverlay();
-    bool IsMenuOpen();
-    void OpenMenu();
-    void CloseMenu();
+    bool IsMenuShown();
+    void ShowMenu();
+    void HideMenu();
 
   protected:
     void InitSettings();
@@ -111,12 +111,12 @@ class Gui {
     WindowImpl mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;
-    bool mIsMenuOpen;
+    bool mIsMenuShown;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<ConsoleWindow> mConsoleWindow;
     std::shared_ptr<InputEditorWindow> mInputEditorWindow;
     std::shared_ptr<StatsWindow> mStatsWindow;
-    std::map<std::string, std::shared_ptr<GuiTexture>> mGameTextures;
+    std::map<std::string, std::shared_ptr<GuiTexture>> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     ImVector<ImRect> mGroupPanelLabelStack;
 };
