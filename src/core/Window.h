@@ -39,7 +39,7 @@ class Window {
     void InitWindowManager(std::string windowManagerBackend, std::string gfxApiBackend);
     bool SupportsWindowedFullscreen();
     void SetResolutionMultiplier(float multiplier);
-    void Window::SetMsaaLevel(uint32_t value);
+    void SetMsaaLevel(uint32_t value);
     std::shared_ptr<Context> GetContext();
     std::shared_ptr<Gui> GetGui();
     std::string GetWindowManagerName();
