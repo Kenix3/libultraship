@@ -81,6 +81,8 @@ set(Source_Files__Core
     ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Context.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Context.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/Console.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/Console.cpp
 )
 
 source_group("Core" FILES ${Source_Files__Core})

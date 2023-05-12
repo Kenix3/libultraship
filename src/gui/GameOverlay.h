@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 
-#include "gui/ConsoleWindow.h"
+#include "core/Console.h"
 #include <imgui.h>
 #include <unordered_map>
 
@@ -20,7 +20,7 @@ struct Overlay {
 
 class GameOverlay {
   public:
-    static bool OverlayCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
+    static bool OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
 
     void Init();
     void Draw();
