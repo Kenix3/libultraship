@@ -5,7 +5,6 @@
 
 namespace LUS {
 void Console::Init() {
-
 }
 
 std::string Console::BuildUsage(const CommandEntry& entry) {

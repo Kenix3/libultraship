@@ -38,10 +38,14 @@ class ConsoleWindow : public GuiWindow {
 
   private:
     static int CallbackStub(ImGuiInputTextCallbackData* data);
-    static bool ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
-    static bool HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
-    static bool BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
-    static bool BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
+    static bool ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                             std::string* output);
+    static bool HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                            std::string* output);
+    static bool BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                            std::string* output);
+    static bool BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                  std::string* output);
 
     using GuiWindow::GuiWindow;
 

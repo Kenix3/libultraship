@@ -8,10 +8,11 @@
 
 namespace LUS {
 
-bool ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output) {
+bool ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                std::string* output) {
     if (output) {
         *output += "Commands:\n";
-        for (const auto &cmd: console->GetCommands()) {
+        for (const auto& cmd : console->GetCommands()) {
             *output += " - " + cmd.first;
         }
 
@@ -21,8 +22,10 @@ bool ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vec
     return false;
 }
 
-bool ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output) {
-    auto window = std::static_pointer_cast<LUS::ConsoleWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+bool ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                 std::string* output) {
+    auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
+        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
     if (!window) {
         return false;
     }
@@ -31,9 +34,11 @@ bool ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::ve
     return true;
 }
 
-bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output) {
+bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<LUS::ConsoleWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+        auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
+            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
             return false;
         }
@@ -59,9 +64,11 @@ bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vec
     return true;
 }
 
-bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output) {
+bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                      std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<LUS::ConsoleWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+        auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
+            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
             return false;
         }
@@ -220,7 +227,7 @@ void ConsoleWindow::DrawElement() {
     if (ImGui::BeginTable("History", 1)) {
 
         if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {
-            if (mSelectedId <  (int32_t)mLog.size() - 1) {
+            if (mSelectedId < (int32_t)mLog.size() - 1) {
                 ++mSelectedId;
             }
         }

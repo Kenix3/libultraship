@@ -10,7 +10,8 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output) {
+bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                 std::string* output) {
     if (args.size() < 3) {
         return false;
     }
@@ -187,7 +188,8 @@ void GameOverlay::Init() {
         }
     }
 
-    LUS::Context::GetInstance()->GetConsole()->AddCommand("overlay", { OverlayCommand, "Draw an overlay using a cvar value" });
+    LUS::Context::GetInstance()->GetConsole()->AddCommand("overlay",
+                                                          { OverlayCommand, "Draw an overlay using a cvar value" });
 }
 
 void GameOverlay::DrawSettings() {

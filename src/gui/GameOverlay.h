@@ -20,7 +20,8 @@ struct Overlay {
 
 class GameOverlay {
   public:
-    static bool OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
+    static bool OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                               std::string* output);
 
     void Init();
     void Draw();
