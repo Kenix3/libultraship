@@ -5,8 +5,8 @@
 namespace LUS {
 class GuiElement {
   public:
-    GuiElement(const std::string& consoleVariable, bool isVisible);
-    GuiElement(const std::string& consoleVariable);
+    GuiElement(const std::string& visibilityConsoleVariable, bool isVisible);
+    GuiElement(const std::string& visibilityConsoleVariable);
     GuiElement(bool isVisible);
     GuiElement();
 
@@ -24,12 +24,12 @@ class GuiElement {
     virtual void DrawElement() = 0;
     virtual void UpdateElement() = 0;
 
-    void SetConsoleVariable();
-
     bool mIsVisible;
-    std::string mConsoleVariable;
 
   private:
+    void SyncVisibilityConsoleVariable();
+    std::string mVisibilityConsoleVariable;
+
     bool mIsInitialized;
 };
 

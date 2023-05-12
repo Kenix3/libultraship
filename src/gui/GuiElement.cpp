@@ -3,11 +3,11 @@
 #include "libultraship/libultraship.h"
 
 namespace LUS {
-GuiElement::GuiElement(const std::string& consoleVariable, bool isVisible)
-    : mIsInitialized(false), mIsVisible(isVisible), mConsoleVariable(consoleVariable) {
-    if (!mConsoleVariable.empty()) {
-        mIsVisible = CVarGetInteger(mConsoleVariable.c_str(), mIsVisible);
-        SetConsoleVariable();
+GuiElement::GuiElement(const std::string& visibilityConsoleVariable, bool isVisible)
+    : mIsInitialized(false), mIsVisible(isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable) {
+    if (!mVisibilityConsoleVariable.empty()) {
+        mIsVisible = CVarGetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
+        SyncVisibilityConsoleVariable();
     }
 }
 
@@ -27,33 +27,33 @@ void GuiElement::Draw() {
 
     DrawElement();
     // Sync up the IsVisible flag if it was changed by ImGui
-    SetConsoleVariable();
+    SyncVisibilityConsoleVariable();
 }
 
 void GuiElement::Update() {
     UpdateElement();
 }
 
-void GuiElement::SetConsoleVariable() {
-    if (mConsoleVariable.empty()) {
+void GuiElement::SyncVisibilityConsoleVariable() {
+    if (mVisibilityConsoleVariable.empty()) {
         return;
     }
 
     if (IsVisible()) {
-        CVarSetInteger(mConsoleVariable.c_str(), IsVisible());
+        CVarSetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
     } else {
-        CVarClear(mConsoleVariable.c_str());
+        CVarClear(mVisibilityConsoleVariable.c_str());
     }
 }
 
 void GuiElement::Show() {
     mIsVisible = true;
-    SetConsoleVariable();
+    SyncVisibilityConsoleVariable();
 }
 
 void GuiElement::Hide() {
     mIsVisible = false;
-    SetConsoleVariable();
+    SyncVisibilityConsoleVariable();
 }
 
 bool GuiElement::IsVisible() {
