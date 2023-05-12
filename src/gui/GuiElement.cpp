@@ -12,7 +12,7 @@ GuiElement::GuiElement(const std::string& consoleVariable, bool isVisible)
 }
 
 void GuiElement::Init() {
-    if (mIsInitialized) {
+    if (IsInitialized()) {
         return;
     }
 
@@ -21,11 +21,13 @@ void GuiElement::Init() {
 }
 
 void GuiElement::Draw() {
-    if (!mIsVisible) {
+    if (!IsVisible()) {
         return;
     }
 
     DrawElement();
+    // Sync up the IsVisible flag if it was changed by ImGui
+    SetConsoleVariable();
 }
 
 void GuiElement::Update() {
@@ -37,7 +39,11 @@ void GuiElement::SetConsoleVariable() {
         return;
     }
 
-    CVarSetInteger(mConsoleVariable.c_str(), mIsVisible);
+    if (IsVisible()) {
+        CVarSetInteger(mConsoleVariable.c_str(), IsVisible());
+    } else {
+        CVarClear(mConsoleVariable.c_str());
+    }
 }
 
 void GuiElement::Show() {

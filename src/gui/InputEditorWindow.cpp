@@ -352,14 +352,6 @@ void InputEditorWindow::UpdateElement() {
 }
 
 void InputEditorWindow::DrawElement() {
-    if (!IsVisible()) {
-        mBtnReading = -1;
-        if (CVarGetInteger("gControllerConfigurationEnabled", 0)) {
-            CVarClear("gControllerConfigurationEnabled");
-        }
-        return;
-    }
-
 #ifdef __SWITCH__
     ImVec2 minSize = ImVec2(641, 250);
     ImVec2 maxSize = ImVec2(2200, 505);

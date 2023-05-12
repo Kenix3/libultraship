@@ -93,13 +93,6 @@ void ConsoleWindow::UpdateElement() {
 }
 
 void ConsoleWindow::DrawElement() {
-    if (!IsVisible()) {
-        if (CVarGetInteger("gConsoleEnabled", 0)) {
-            CVarClear("gConsoleEnabled");
-        }
-        return;
-    }
-
     bool inputFocus = false;
 
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
