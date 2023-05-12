@@ -338,7 +338,9 @@ void ConsoleWindow::Dispatch(const std::string& line) {
         if (!console->Run(line, &output)) {
             SendErrorMessage(std::string("[LUS] Command Failed"));
             SendErrorMessage("[LUS] Usage: " + cmdArgs[0] + " " + console->BuildUsage(entry));
-            SendInfoMessage(output);
+            if (!output.empty()) {
+                SendErrorMessage(output);
+            }
         } else {
             if (!output.empty()) {
                 SendInfoMessage(output);
