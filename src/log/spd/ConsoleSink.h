@@ -9,8 +9,8 @@
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/details/synchronous_factory.h>
 #include "core/Context.h"
-#include "menu/Gui.h"
-#include "menu/ConsoleWindow.h"
+#include "gui/Gui.h"
+#include "gui/ConsoleWindow.h"
 #include <chrono>
 #include <mutex>
 #include <string>

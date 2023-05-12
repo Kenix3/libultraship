@@ -1,7 +1,7 @@
-#include "menu/ConsoleWindow.h"
+#include "gui/ConsoleWindow.h"
 
 #include "core/bridge/consolevariablebridge.h"
-#include "menu/Gui.h"
+#include "gui/Gui.h"
 #include <Utils/StringHelper.h>
 #include "misc/Utils.h"
 #include <sstream>

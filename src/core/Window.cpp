@@ -16,7 +16,7 @@
 #include "graphic/Fast3D/gfx_gx2.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
-#include "menu/Gui.h"
+#include "gui/Gui.h"
 #include "core/Context.h"
 
 #ifdef __APPLE__

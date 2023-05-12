@@ -29,7 +29,7 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
-#include "menu/Gui.h"
+#include "gui/Gui.h"
 #include "core/bridge/consolevariablebridge.h"
 #include "misc/Hooks.h"
 
