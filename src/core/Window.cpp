@@ -172,8 +172,8 @@ void Window::OnFullscreenChanged(bool isNowFullscreen) {
     Context::GetInstance()->GetWindow()->mIsFullscreen = isNowFullscreen;
     pConf->setBool("Window.Fullscreen.Enabled", isNowFullscreen);
     if (isNowFullscreen) {
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(
-            Context::GetInstance()->GetWindow()->GetGui()->IsMenuShown());
+        auto menuBar = Context::GetInstance()->GetWindow()->GetGui()->GetMenuBar();
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(menuBar && menuBar->IsVisible());
     } else {
         Context::GetInstance()->GetWindow()->SetCursorVisibility(true);
     }

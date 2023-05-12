@@ -3,14 +3,13 @@
 #include "core/bridge/consolevariablebridge.h"
 
 namespace LUS {
-void StatsWindow::Init() {
-    mIsOpen = CVarGetInteger("gStatsEnabled", 0);
+void StatsWindow::InitElement() {
 }
 
-void StatsWindow::Draw() {
+void StatsWindow::DrawElement() {
     const float framerate = ImGui::GetIO().Framerate;
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-    ImGui::Begin("Debug Stats", &mIsOpen, ImGuiWindowFlags_NoFocusOnAppearing);
+    ImGui::Begin("Debug Stats", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
 
 #if defined(_WIN32)
     ImGui::Text("Platform: Windows");
@@ -30,6 +29,6 @@ void StatsWindow::Draw() {
     ImGui::PopStyleColor();
 }
 
-void StatsWindow::Update() {
+void StatsWindow::UpdateElement() {
 }
 } // namespace LUS

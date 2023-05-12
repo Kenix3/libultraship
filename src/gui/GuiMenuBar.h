@@ -1,12 +1,11 @@
 #pragma once
 
 #include <string>
+#include "gui/GuiElement.h"
 
 namespace LUS {
-class GuiMenuBar {
+class GuiMenuBar : public GuiElement {
   public:
-    virtual void Init() = 0;
-    virtual void Draw() = 0;
-    virtual void Update() = 0;
+    using GuiElement::GuiElement;
 };
 } // namespace LUS

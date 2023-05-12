@@ -7,8 +7,9 @@ class StatsWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
 
-    void Init() override;
-    void Draw() override;
-    void Update() override;
+  private:
+    void InitElement() override;
+    void DrawElement() override;
+    void UpdateElement() override;
 };
 } // namespace LUS

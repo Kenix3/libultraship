@@ -71,12 +71,11 @@ namespace LUS {
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
 Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariableSave(false) {
-    mIsMenuShown = CVarGetInteger("gOpenMenuBar", 0);
     mGameOverlay = std::make_shared<GameOverlay>();
 
-    AddWindow(std::make_shared<StatsWindow>("Stats"));
-    AddWindow(std::make_shared<InputEditorWindow>("Input Editor"));
-    AddWindow(std::make_shared<ConsoleWindow>("Console"));
+    AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
+    AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
+    AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
 }
 
 void Gui::Init(WindowImpl windowImpl) {
@@ -114,7 +113,7 @@ void Gui::Init(WindowImpl windowImpl) {
     mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
 #endif
 
-    if (!IsMenuShown()) {
+    if (GetMenuBar() && !GetMenuBar()->IsVisible()) {
 #if defined(__SWITCH__) || defined(__WIIU__)
         mGameOverlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
 #else
@@ -131,7 +130,7 @@ void Gui::Init(WindowImpl windowImpl) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVarGetInteger("gControlNav", 0) && IsMenuShown()) {
+    if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -149,7 +148,7 @@ void Gui::Init(WindowImpl windowImpl) {
 
     LUS::RegisterHook<LUS::GfxInit>([this] {
         if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuShown());
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
         }
 
         LoadTexture("Game_Icon", "textures/icons/gIcon.png");
@@ -337,7 +336,8 @@ void Gui::DrawMenu(void) {
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
                                    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
                                    ImGuiWindowFlags_NoResize;
-    if (IsMenuShown()) {
+
+    if (GetMenuBar() && GetMenuBar()->IsVisible()) {
         windowFlags |= ImGuiWindowFlags_MenuBar;
     }
 
@@ -369,10 +369,10 @@ void Gui::DrawMenu(void) {
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
         mNeedsConsoleVariableSave = true;
         if (wnd->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(IsMenuShown());
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
         }
         Context::GetInstance()->GetControlDeck()->SaveSettings();
-        if (CVarGetInteger("gControlNav", 0) && IsMenuShown()) {
+        if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -395,16 +395,15 @@ void Gui::DrawMenu(void) {
     }
 #endif
 
-    mMenuBar->Draw();
+    if (GetMenuBar()) {
+        GetMenuBar()->Draw();
+    }
 
     ImGui::End();
 
     for (auto& windowIter : mGuiWindows) {
         windowIter.second->Update();
-
-        if (windowIter.second->IsOpen()) {
-            windowIter.second->Draw();
-        }
+        windowIter.second->Draw();
     }
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -660,13 +659,14 @@ void Gui::SaveConsoleVariablesOnNextTick() {
     mNeedsConsoleVariableSave = true;
 }
 
-void Gui::AddWindow(std::shared_ptr<GuiWindow> guiWindow) {
+void Gui::AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow) {
     if (mGuiWindows.contains(guiWindow->GetName())) {
-        SPDLOG_ERROR("ImGui::AddWindow: Attempting to add duplicate window name {}", guiWindow->GetName());
+        SPDLOG_ERROR("ImGui::AddGuiWindow: Attempting to add duplicate window name {}", guiWindow->GetName());
         return;
     }
 
     mGuiWindows[guiWindow->GetName()] = guiWindow;
+    guiWindow->Init();
 }
 
 std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
@@ -851,26 +851,16 @@ std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
 }
 
-bool Gui::IsMenuShown() {
-    return mIsMenuShown;
-}
-
 void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
     mMenuBar = menuBar;
+
+    if (GetMenuBar()) {
+        GetMenuBar()->Init();
+    }
 }
 
 std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
     return mMenuBar;
-}
-
-void Gui::ShowMenu() {
-    mIsMenuShown = true;
-    CVarSetInteger("gOpenMenuBar", mIsMenuShown);
-}
-
-void Gui::HideMenu() {
-    mIsMenuShown = false;
-    CVarSetInteger("gOpenMenuBar", mIsMenuShown);
 }
 
 Backend Gui::GetRenderBackend() {

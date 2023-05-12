@@ -44,7 +44,7 @@ void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
     auto inputEditor = LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Input Editor");
-    if (!inputEditor || !inputEditor->IsOpen()) {
+    if (!inputEditor || !inputEditor->IsVisible()) {
         return;
     }
 

@@ -9,8 +9,7 @@ namespace LUS {
 
 #define SEPARATION() ImGui::Dummy(ImVec2(0, 5))
 
-void InputEditorWindow::Init() {
-    mIsOpen = CVarGetInteger("gControllerConfigurationEnabled", 0);
+void InputEditorWindow::InitElement() {
     mCurrentPort = 0;
     mBtnReading = -1;
 }
@@ -349,18 +348,10 @@ void InputEditorWindow::DrawControllerSchema() {
     Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 }
 
-void InputEditorWindow::Update() {
+void InputEditorWindow::UpdateElement() {
 }
 
-void InputEditorWindow::Draw() {
-    if (!IsOpen()) {
-        mBtnReading = -1;
-        if (CVarGetInteger("gControllerConfigurationEnabled", 0)) {
-            CVarClear("gControllerConfigurationEnabled");
-        }
-        return;
-    }
-
+void InputEditorWindow::DrawElement() {
 #ifdef __SWITCH__
     ImVec2 minSize = ImVec2(641, 250);
     ImVec2 maxSize = ImVec2(2200, 505);
@@ -375,7 +366,8 @@ void InputEditorWindow::Draw() {
     ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
     // OTRTODO: Disable this stupid workaround ( ReadRawPress() only works when the window is on the main viewport )
     ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-    ImGui::Begin("Controller Configuration", &mIsOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin("Controller Configuration", &mIsVisible,
+                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
 
     ImGui::BeginTabBar("##Controllers");
 
