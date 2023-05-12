@@ -64,9 +64,9 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 #endif
 
 namespace LUS {
-#define BindButton(btn, status)                                                                                   \
-    ImGui::Image(GetTextureById(mGuiTextures[btn].TextureId), ImVec2(16.0f * scale, 16.0f * scale), ImVec2(0, 0), \
-                 ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
+#define BindButton(btn, status)                                                                             \
+    ImGui::Image(GetTextureById(mGuiTextures[btn].RendererTextureId), ImVec2(16.0f * scale, 16.0f * scale), \
+                 ImVec2(0, 0), ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
@@ -257,7 +257,7 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
     const auto res = Context::GetInstance()->GetResourceManager()->LoadFile(path);
 
     GuiTexture asset;
-    asset.TextureId = api->new_texture();
+    asset.RendererTextureId = api->new_texture();
     asset.Width = 0;
     asset.Height = 0;
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
@@ -268,7 +268,7 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
         return;
     }
 
-    api->select_texture(0, asset.TextureId);
+    api->select_texture(0, asset.RendererTextureId);
     api->set_sampler_parameters(0, false, 0, 0);
     api->upload_texture(imgData, asset.Width, asset.Height);
 
@@ -615,7 +615,7 @@ ImTextureID Gui::GetTextureById(int32_t id) {
 }
 
 ImTextureID Gui::GetTextureByName(const std::string& name) {
-    return GetTextureById(mGuiTextures[name].TextureId);
+    return GetTextureById(mGuiTextures[name].RendererTextureId);
 }
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
@@ -710,11 +710,11 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
     }
 
     GuiTexture asset;
-    asset.TextureId = api->new_texture();
+    asset.RendererTextureId = api->new_texture();
     asset.Width = res->Width;
     asset.Height = res->Height;
 
-    api->select_texture(0, asset.TextureId);
+    api->select_texture(0, asset.RendererTextureId);
     api->set_sampler_parameters(0, false, 0, 0);
     api->upload_texture(texBuffer.data(), res->Width, res->Height);
 
