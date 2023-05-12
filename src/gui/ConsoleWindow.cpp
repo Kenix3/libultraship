@@ -137,7 +137,7 @@ void ConsoleWindow::DrawElement() {
         if (ImGui::BeginTable("AC_History", 1)) {
             for (const auto& cmd : mAutoComplete) {
                 std::string usage = console->BuildUsage(cmd);
-                std::string preview = cmd + " - " + console->GetCommand(cmd).description;
+                std::string preview = cmd + " - " + console->GetCommand(cmd).Description;
                 std::string autoComplete = (usage == "None" ? cmd : usage);
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);

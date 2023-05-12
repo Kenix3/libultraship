@@ -16,15 +16,15 @@ typedef std::function<bool(std::shared_ptr<Console> console, std::vector<std::st
 enum class ArgumentType { TEXT, NUMBER, PLAYER_POS, PLAYER_ROT };
 
 struct CommandArgument {
-    std::string info;
-    ArgumentType type = ArgumentType::NUMBER;
-    bool optional = false;
+    std::string Info;
+    ArgumentType Type = ArgumentType::NUMBER;
+    bool Optional = false;
 };
 
 struct CommandEntry {
-    CommandHandler handler;
-    std::string description;
-    std::vector<CommandArgument> arguments;
+    CommandHandler Handler;
+    std::string Description;
+    std::vector<CommandArgument> Arguments;
 };
 
 class Console {

@@ -9,8 +9,8 @@ void Console::Init() {
 
 std::string Console::BuildUsage(const CommandEntry& entry) {
     std::string usage;
-    for (const auto& arg : entry.arguments) {
-        usage += StringHelper::Sprintf(arg.optional ? "[%s] " : "<%s> ", arg.info.c_str());
+    for (const auto& arg : entry.Arguments) {
+        usage += StringHelper::Sprintf(arg.Optional ? "[%s] " : "<%s> ", arg.Info.c_str());
     }
     return usage;
 }
@@ -23,7 +23,7 @@ bool Console::Run(const std::string& command, std::string* output) {
     const std::vector<std::string> cmdArgs = StringHelper::Split(command, " ");
     if (mCommands.contains(cmdArgs[0])) {
         const CommandEntry entry = mCommands[cmdArgs[0]];
-        return entry.handler(Context::GetInstance()->GetConsole(), cmdArgs, output);
+        return entry.Handler(Context::GetInstance()->GetConsole(), cmdArgs, output);
     }
 
     return false;
