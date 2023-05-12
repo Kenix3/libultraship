@@ -306,4 +306,12 @@ bool Window::SupportsWindowedFullscreen() {
 
     return false;
 }
+
+void Window::SetResolutionMultiplier(float multiplier) {
+    gfx_current_dimensions.internal_mul = multiplier;
+}
+
+void Window::SetMsaaLevel(uint32_t value) {
+    gfx_msaa_level = value;
+}
 } // namespace LUS
