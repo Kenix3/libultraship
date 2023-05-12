@@ -1,22 +1,12 @@
 #include "gui/GuiWindow.h"
 
 namespace LUS {
-GuiWindow::GuiWindow(const std::string& name, bool isOpen) : mName(name), mIsOpen(isOpen) {
+GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name)
+    : mName(name), GuiElement(consoleVariable, isVisible) {
 }
 
-GuiWindow::GuiWindow(const std::string& name) : GuiWindow(name, false) {
-}
-
-void GuiWindow::Open() {
-    mIsOpen = true;
-}
-
-void GuiWindow::Close() {
-    mIsOpen = false;
-}
-
-bool GuiWindow::IsOpen() {
-    return mIsOpen;
+GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name)
+    : GuiWindow(consoleVariable, false, name) {
 }
 
 std::string GuiWindow::GetName() {

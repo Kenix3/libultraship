@@ -138,7 +138,7 @@ source_group("Log\\SPDLog" FILES ${Source_Files__Log__SPDLog})
 
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
-#=================== Menu ===================
+#=================== Gui ===================
 
 set(Source_Files__Gui
         ${CMAKE_CURRENT_SOURCE_DIR}/gui/ConsoleWindow.h
@@ -155,6 +155,10 @@ set(Source_Files__Gui
         ${CMAKE_CURRENT_SOURCE_DIR}/gui/StatsWindow.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiWindow.h
         ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiWindow.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiElement.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiElement.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiMenuBar.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiMenuBar.cpp
 )
 
 source_group("gui" FILES ${Source_Files__Gui})

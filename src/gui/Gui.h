@@ -72,7 +72,7 @@ class Gui {
     void SaveConsoleVariablesOnNextTick();
     void DrawMenu(void);
     void Update(EventImpl event);
-    void AddWindow(std::shared_ptr<GuiWindow> guiWindow);
+    void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
     ImTextureID GetTextureByName(const std::string& name);
     bool SupportsViewports();
@@ -83,9 +83,6 @@ class Gui {
     std::shared_ptr<GameOverlay> GetGameOverlay();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
-    bool IsMenuShown();
-    void ShowMenu();
-    void HideMenu();
     Backend GetRenderBackend();
 
   protected:
@@ -110,7 +107,6 @@ class Gui {
     WindowImpl mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;
-    bool mIsMenuShown;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::map<std::string, GuiTexture> mGuiTextures;

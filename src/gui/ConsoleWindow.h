@@ -82,13 +82,13 @@ class ConsoleWindow : public GuiWindow, public std::enable_shared_from_this<Cons
 
   protected:
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
+    void InitElement() override;
+    void UpdateElement() override;
+    void DrawElement() override;
 
   public:
     void ClearLogs(std::string channel);
     void ClearLogs();
-    void Init() override;
-    void Update() override;
-    void Draw() override;
     void Dispatch(const std::string& line);
     void SendInfoMessage(const char* fmt, ...);
     void SendErrorMessage(const char* fmt, ...);

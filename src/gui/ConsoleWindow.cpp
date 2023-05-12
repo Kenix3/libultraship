@@ -68,8 +68,7 @@ bool ConsoleWindow::BindToggleCommand(std::shared_ptr<ConsoleWindow> console, co
     return CMD_SUCCESS;
 }
 
-void ConsoleWindow::Init() {
-    mIsOpen = CVarGetInteger("gConsoleEnabled", 0);
+void ConsoleWindow::InitElement() {
     mInputBuffer = new char[gMaxBufferSize];
     strcpy(mInputBuffer, "");
     mFilterBuffer = new char[gMaxBufferSize];
@@ -80,7 +79,7 @@ void ConsoleWindow::Init() {
     AddCommand("bind-toggle", { BindToggleCommand, "Bind key as a bool toggle" });
 }
 
-void ConsoleWindow::Update() {
+void ConsoleWindow::UpdateElement() {
     for (auto [key, cmd] : mBindings) {
         if (ImGui::IsKeyPressed(key)) {
             Dispatch(cmd);
@@ -93,8 +92,8 @@ void ConsoleWindow::Update() {
     }
 }
 
-void ConsoleWindow::Draw() {
-    if (!IsOpen()) {
+void ConsoleWindow::DrawElement() {
+    if (!IsVisible()) {
         if (CVarGetInteger("gConsoleEnabled", 0)) {
             CVarClear("gConsoleEnabled");
         }
@@ -104,7 +103,7 @@ void ConsoleWindow::Draw() {
     bool inputFocus = false;
 
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Console", &mIsOpen, ImGuiWindowFlags_NoFocusOnAppearing);
+    ImGui::Begin("Console", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
     const ImVec2 pos = ImGui::GetWindowPos();
     const ImVec2 size = ImGui::GetWindowSize();
 
