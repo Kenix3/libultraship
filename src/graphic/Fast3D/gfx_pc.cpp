@@ -32,7 +32,7 @@
 #include "misc/Hooks.h"
 
 #include "log/luslog.h"
-#include "menu/Gui.h"
+#include "gui/Gui.h"
 #include "resource/GameVersions.h"
 #include "resource/Resource.h"
 #include "resource/ResourceManager.h"

@@ -9,7 +9,7 @@
 
 #include "Mercury.h"
 #include "core/Window.h"
-#include "menu/ConsoleWindow.h"
+#include "gui/ConsoleWindow.h"
 #include "misc/Hooks.h"
 #include "core/Context.h"
 #include "resource/ResourceManager.h"
@@ -19,7 +19,7 @@
 #include "resource/File.h"
 #include <stb/stb_image.h>
 #include "graphic/Fast3D/gfx_rendering_api.h"
-#include "menu/Fonts.h"
+#include "gui/Fonts.h"
 
 #ifdef __WIIU__
 #include <gx2/registers.h> // GX2SetViewport / GX2SetScissor

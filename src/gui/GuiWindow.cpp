@@ -1,4 +1,4 @@
-#include "menu/GuiWindow.h"
+#include "gui/GuiWindow.h"
 
 namespace LUS {
 GuiWindow::GuiWindow(const std::string& name, bool isOpen) : mName(name), mIsOpen(isOpen) {

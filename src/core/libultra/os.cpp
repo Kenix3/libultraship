@@ -5,7 +5,7 @@
 #include <SDL2/SDL.h>
 #include <spdlog/spdlog.h>
 
-#include "menu/Gui.h"
+#include "gui/Gui.h"
 #include "misc/Hooks.h"
 
 extern "C" {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "menu/GuiWindow.h"
+#include "gui/GuiWindow.h"
 
 namespace LUS {
 class StatsWindow : public GuiWindow {
