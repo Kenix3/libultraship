@@ -5,31 +5,12 @@
 #include <string>
 #include <functional>
 
-#include "GuiWindow.h"
+#include "gui/GuiWindow.h"
+#include "core/Console.h"
 #include <ImGui/imgui.h>
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-#define CMD_SUCCESS true
-#define CMD_FAILED false
-#define NULLSTR "None"
-
-class ConsoleWindow;
-typedef std::function<bool(std::shared_ptr<ConsoleWindow> console, std::vector<std::string> args)> CommandHandler;
-
-enum class ArgumentType { TEXT, NUMBER, PLAYER_POS, PLAYER_ROT };
-
-struct CommandArgument {
-    std::string info;
-    ArgumentType type = ArgumentType::NUMBER;
-    bool optional = false;
-};
-
-struct CommandEntry {
-    CommandHandler handler;
-    std::string description;
-    std::vector<CommandArgument> arguments;
-};
 
 struct ConsoleLine {
     std::string text;
@@ -37,32 +18,51 @@ struct ConsoleLine {
     std::string channel = "Console";
 };
 
-class ConsoleWindow : public GuiWindow, public std::enable_shared_from_this<ConsoleWindow> {
+class ConsoleWindow : public GuiWindow {
+  public:
+    void ClearLogs(std::string channel);
+    void ClearLogs();
+    void Dispatch(const std::string& line);
+    void SendInfoMessage(const char* fmt, ...);
+    void SendErrorMessage(const char* fmt, ...);
+    void SendInfoMessage(const std::string& str);
+    void SendErrorMessage(const std::string& str);
+    void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, ...);
+    std::string GetCurrentChannel();
+
+  protected:
+    void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
+    void InitElement() override;
+    void UpdateElement() override;
+    void DrawElement() override;
+
   private:
     static int CallbackStub(ImGuiInputTextCallbackData* data);
-    static bool ClearCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
-    static bool HelpCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
-    static bool BindCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
-    static bool BindToggleCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args);
+    static bool ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                             std::string* output);
+    static bool HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                            std::string* output);
+    static bool BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                            std::string* output);
+    static bool BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                  std::string* output);
 
     using GuiWindow::GuiWindow;
 
-    int mSelectedId = -1;
-    int mHistoryIndex = -1;
+    int32_t mSelectedId = -1;
+    int32_t mHistoryIndex = -1;
     std::vector<int> mSelectedEntries;
     std::string mFilter;
     std::string mCurrentChannel = "Console";
     bool mOpenAutocomplete = false;
     char* mInputBuffer = nullptr;
     char* mFilterBuffer = nullptr;
-    std::string mCmdHint = NULLSTR;
+    std::string mCmdHint = "Null";
     spdlog::level::level_enum mLevelFilter = spdlog::level::trace;
-
-    std::vector<std::string> mHistory;
-    std::vector<std::string> mAutoComplete;
     std::map<ImGuiKey, std::string> mBindings;
     std::map<ImGuiKey, std::string> mBindingToggle;
-    std::map<std::string, CommandEntry> mCommands;
+    std::vector<std::string> mHistory;
+    std::vector<std::string> mAutoComplete;
     std::map<std::string, std::vector<ConsoleLine>> mLog;
     const std::vector<std::string> mLogChannels = { "Console", "Logs" };
     const std::vector<spdlog::level::level_enum> mPriorityFilters = { spdlog::level::off,  spdlog::level::critical,
@@ -79,24 +79,5 @@ class ConsoleWindow : public GuiWindow, public std::enable_shared_from_this<Cons
         ImVec4(0.0f, 0.0f, 0.0f, 0.0f)      // OFF
     };
     static constexpr size_t gMaxBufferSize = 255;
-
-  protected:
-    void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
-    void InitElement() override;
-    void UpdateElement() override;
-    void DrawElement() override;
-
-  public:
-    void ClearLogs(std::string channel);
-    void ClearLogs();
-    void Dispatch(const std::string& line);
-    void SendInfoMessage(const char* fmt, ...);
-    void SendErrorMessage(const char* fmt, ...);
-    void SendInfoMessage(const std::string& str);
-    void SendErrorMessage(const std::string& str);
-    void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, ...);
-    bool HasCommand(const std::string& command);
-    void AddCommand(const std::string& command, CommandEntry entry);
-    std::string GetCurrentChannel();
 };
 } // namespace LUS

@@ -8,6 +8,7 @@
 #include "resource/ResourceManager.h"
 #include "core/Context.h"
 #include "core/Window.h"
+#include "core/Console.h"
 #include "debug/CrashHandler.h"
 #include "gui/ConsoleWindow.h"
 #include "gui/GameOverlay.h"

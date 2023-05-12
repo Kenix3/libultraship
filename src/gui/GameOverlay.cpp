@@ -10,44 +10,55 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-bool GameOverlay::OverlayCommand(std::shared_ptr<ConsoleWindow> console, const std::vector<std::string>& args) {
+bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                 std::string* output) {
     if (args.size() < 3) {
-        return CMD_FAILED;
+        return false;
     }
 
     if (CVarGet(args[2].c_str()) != nullptr) {
         const char* key = args[2].c_str();
         auto overlay = Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay();
+        if (!overlay) {
+            return false;
+        }
+
         if (args[1] == "add") {
             if (!overlay->mRegisteredOverlays.contains(key)) {
                 overlay->mRegisteredOverlays[key] = Overlay({ OverlayType::TEXT, key, -1.0f });
-                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-                    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
-                    ->SendInfoMessage("Added overlay: %s", key);
+
+                if (output) {
+                    *output += "Added overlay: " + args[2];
+                }
             } else {
-                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-                    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
-                    ->SendErrorMessage("Overlay already exists: %s", key);
+                if (output) {
+                    *output += "Overlay already exists: " + args[2];
+                }
             }
         } else if (args[1] == "remove") {
             if (overlay->mRegisteredOverlays.contains(key)) {
                 overlay->mRegisteredOverlays.erase(key);
-                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-                    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
-                    ->SendInfoMessage("Removed overlay: %s", key);
+
+                if (output) {
+                    *output += "Removed overlay: " + args[2];
+                }
             } else {
-                std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-                    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
-                    ->SendErrorMessage("Overlay not found: %s", key);
+                if (output) {
+                    *output += "Overlay not found: " + args[2];
+                }
+            }
+        } else {
+            if (output) {
+                *output += "Bad action supplied: " + args[1];
             }
         }
     } else {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
-            ->SendErrorMessage("CVar {} does not exist", args[2].c_str());
+        if (output) {
+            *output += "CVar " + args[2] + " does not exist";
+        }
     }
 
-    return CMD_SUCCESS;
+    return true;
 }
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
@@ -177,9 +188,8 @@ void GameOverlay::Init() {
         }
     }
 
-    std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
-        ->AddCommand("overlay", { OverlayCommand, "Draw an overlay using a cvar value" });
+    LUS::Context::GetInstance()->GetConsole()->AddCommand("overlay",
+                                                          { OverlayCommand, "Draw an overlay using a cvar value" });
 }
 
 void GameOverlay::DrawSettings() {

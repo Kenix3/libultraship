@@ -74,6 +74,7 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitControlDeck();
     InitCrashHandler();
     InitAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
+    InitConsole();
     InitWindow();
 
     LUS::RegisterHook<ExitGame>([this]() { mControlDeck->SaveSettings(); });
@@ -245,6 +246,11 @@ void Context::InitAudioPlayer(std::string backend) {
     }
 }
 
+void Context::InitConsole() {
+    mConsole = std::make_shared<Console>();
+    GetConsole()->Init();
+}
+
 void Context::InitWindow() {
     mWindow = std::make_shared<Window>(GetInstance());
     GetWindow()->Init();
@@ -280,6 +286,10 @@ std::shared_ptr<AudioPlayer> Context::GetAudioPlayer() {
 
 std::shared_ptr<Window> Context::GetWindow() {
     return mWindow;
+}
+
+std::shared_ptr<Console> Context::GetConsole() {
+    return mConsole;
 }
 
 std::string Context::GetName() {

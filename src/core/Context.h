@@ -12,6 +12,7 @@
 #include "audio/AudioPlayer.h"
 #include "core/Window.h"
 #include "core/ConsoleVariable.h"
+#include "core/Console.h"
 
 namespace LUS {
 class Context {
@@ -42,6 +43,7 @@ class Context {
     std::shared_ptr<CrashHandler> GetCrashHandler();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     std::shared_ptr<Window> GetWindow();
+    std::shared_ptr<Console> GetConsole();
 
     std::string GetName();
     std::string GetShortName();
@@ -55,6 +57,7 @@ class Context {
     void InitControlDeck();
     void InitCrashHandler();
     void InitAudioPlayer(std::string backend);
+    void InitConsole();
     void InitWindow();
 
   protected:
@@ -71,6 +74,7 @@ class Context {
     std::shared_ptr<CrashHandler> mCrashHandler;
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     std::shared_ptr<Window> mWindow;
+    std::shared_ptr<Console> mConsole;
 
     std::string mMainPath;
     std::string mPatchesPath;
