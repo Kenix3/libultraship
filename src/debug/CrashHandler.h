@@ -17,38 +17,38 @@ namespace LUS {
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
 class CrashHandler {
-public:
+  public:
     CrashHandler();
 
     CrashHandler(CrashHandlerCallback callback);
 
     void RegisterCallback(CrashHandlerCallback callback);
 
-    void AppendLine(const char *str);
+    void AppendLine(const char* str);
 
-    void AppendStr(const char *str);
+    void AppendStr(const char* str);
 
 #ifdef __linux__
     void PrintRegisters(ucontext_t* ctx);
 #elif _WIN32
 
-    void PrintRegisters(CONTEXT *ctx);
+    void PrintRegisters(CONTEXT* ctx);
 
-    void PrintStack(CONTEXT *ctx);
+    void PrintStack(CONTEXT* ctx);
 
 #endif
 
     void PrintCommon();
 
-private:
+  private:
     CrashHandlerCallback mCallback = nullptr;
-    char *mOutBuffer = nullptr;
+    char* mOutBuffer = nullptr;
     static constexpr size_t gMaxBufferSize = 32768;
     size_t mOutBuffersize = 0;
 
-    void AppendStrTrunc(const char *str);
+    void AppendStrTrunc(const char* str);
 
-    bool CheckStrLen(const char *str);
+    bool CheckStrLen(const char* str);
 };
 } // namespace LUS
 
