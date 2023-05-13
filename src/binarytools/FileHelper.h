@@ -9,6 +9,7 @@
 #include "Utils/StringHelper.h"
 #include "Utils/Directory.h"
 
+namespace LUS {
 class FileHelper {
   public:
     static bool Exists(const fs::path& filePath) {
@@ -95,3 +96,4 @@ class FileHelper {
         file.write(text.c_str(), text.size());
     }
 };
+} // namespace LUS
