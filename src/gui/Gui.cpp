@@ -669,6 +669,14 @@ void Gui::AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow) {
     guiWindow->Init();
 }
 
+void Gui::RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow) {
+    RemoveGuiWindow(guiWindow->GetName());
+}
+
+void Gui::RemoveGuiWindow(const std::string& name) {
+    mGuiWindows.erase(name);
+}
+
 std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
     return mGuiWindows[name];
 }
