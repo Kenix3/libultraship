@@ -13,7 +13,7 @@ class Console;
 typedef std::function<bool(std::shared_ptr<Console> console, std::vector<std::string> args, std::string* output)>
     CommandHandler;
 
-enum class ArgumentType { TEXT, NUMBER, PLAYER_POS, PLAYER_ROT };
+enum class ArgumentType { TEXT, NUMBER };
 
 struct CommandArgument {
     std::string Info;

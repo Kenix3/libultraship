@@ -27,6 +27,10 @@ bool ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::ve
     auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
     if (!window) {
+        if (output) {
+            *output += "A console window is necessary for Clear";
+        }
+
         return false;
     }
 
@@ -40,6 +44,10 @@ bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vec
         auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
+            if (output) {
+                *output += "A console window is necessary for Bind";
+            }
+
             return false;
         }
 
@@ -60,6 +68,11 @@ bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vec
                 break;
             }
         }
+    } else {
+        if (output) {
+            *output += "Not enough arguments";
+        }
+        return false;
     }
     return true;
 }
@@ -70,6 +83,10 @@ bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const st
         auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
+            if (output) {
+                *output += "A console window is necessary for BindToggle";
+            }
+
             return false;
         }
 
@@ -85,8 +102,117 @@ bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const st
                 break;
             }
         }
+    } else {
+        if (output) {
+            *output += "Missing arguments";
+        }
+        return false;
     }
     return true;
+}
+
+#define VARTYPE_INTEGER 0
+#define VARTYPE_FLOAT 1
+#define VARTYPE_STRING 2
+#define VARTYPE_RGBA 3
+
+bool ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                               std::string* output) {
+    if (args.size() < 3) {
+        if (output) {
+            *output += "Not enough arguments.";
+        }
+
+        return false;
+    }
+
+    int vType = CheckVarType(args[2]);
+
+    if (vType == VARTYPE_STRING) {
+        CVarSetString(args[1].c_str(), args[2].c_str());
+    } else if (vType == VARTYPE_FLOAT) {
+        CVarSetFloat((char*)args[1].c_str(), std::stof(args[2]));
+    } else if (vType == VARTYPE_RGBA) {
+        uint32_t val = std::stoul(&args[2].c_str()[1], nullptr, 16);
+        Color_RGBA8 clr;
+        clr.r = val >> 24;
+        clr.g = val >> 16;
+        clr.b = val >> 8;
+        clr.a = val & 0xFF;
+        CVarSetColor((char*)args[1].c_str(), clr);
+    } else {
+        CVarSetInteger(args[1].c_str(), std::stoi(args[2]));
+    }
+
+    CVarSave();
+
+    return true;
+}
+
+bool ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                               std::string* output) {
+    if (args.size() < 2) {
+        if (output) {
+            *output += "Not enough arguments.";
+        }
+
+        return false;
+    }
+
+    auto cvar = CVarGet(args[1].c_str());
+
+    if (cvar != nullptr) {
+        if (cvar->Type == LUS::ConsoleVariableType::Integer) {
+            if (output) {
+                *output += StringHelper::Sprintf("[LUS] Variable %s is %i", args[1].c_str(), cvar->Integer);
+            }
+        } else if (cvar->Type == LUS::ConsoleVariableType::Float) {
+            if (output) {
+                *output += StringHelper::Sprintf("[LUS] Variable %s is %f", args[1].c_str(), cvar->Float);
+            }
+        } else if (cvar->Type == LUS::ConsoleVariableType::String) {
+            if (output) {
+                *output += StringHelper::Sprintf("[LUS] Variable %s is %s", args[1].c_str(), cvar->String.c_str());
+            }
+        } else if (cvar->Type == LUS::ConsoleVariableType::Color) {
+            if (output) {
+                *output += StringHelper::Sprintf("[LUS] Variable %s is %08X", args[1].c_str(), cvar->Color);
+            }
+        } else {
+            if (output) {
+                *output += StringHelper::Sprintf("[LUS] Loaded CVar with unsupported type: %s", cvar->Type);
+            }
+            return false;
+        }
+    } else {
+        if (output) {
+            *output += StringHelper::Sprintf("[LUS] Could not find variable %s", args[1].c_str());
+        }
+    }
+
+    return true;
+}
+
+int32_t ConsoleWindow::CheckVarType(const std::string& input) {
+    int32_t result = VARTYPE_STRING;
+
+    if (input[0] == '#') {
+        return VARTYPE_RGBA;
+    }
+
+    for (size_t i = 0; i < input.size(); i++) {
+        if (!(std::isdigit(input[i]) || input[i] == '.')) {
+            break;
+        } else {
+            if (input[i] == '.') {
+                result = VARTYPE_FLOAT;
+            } else if (std::isdigit(input[i]) && result != VARTYPE_FLOAT) {
+                result = VARTYPE_INTEGER;
+            }
+        }
+    }
+
+    return result;
 }
 
 void ConsoleWindow::InitElement() {
@@ -96,10 +222,22 @@ void ConsoleWindow::InitElement() {
     mFilterBuffer = new char[gMaxBufferSize];
     strcpy(mFilterBuffer, "");
 
+    Context::GetInstance()->GetConsole()->AddCommand(
+        "set", { SetCommand,
+                 "Sets a console variable.",
+                 { { "varName", LUS::ArgumentType::TEXT }, { "varValue", LUS::ArgumentType::TEXT } } });
+    Context::GetInstance()->GetConsole()->AddCommand(
+        "get", { GetCommand, "Bind key as a bool toggle", { { "varName", LUS::ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand("help", { HelpCommand, "Shows all the commands" });
     Context::GetInstance()->GetConsole()->AddCommand("clear", { ClearCommand, "Clear the console history" });
-    Context::GetInstance()->GetConsole()->AddCommand("bind", { BindCommand, "Binds key to commands" });
-    Context::GetInstance()->GetConsole()->AddCommand("bind-toggle", { BindToggleCommand, "Bind key as a bool toggle" });
+    Context::GetInstance()->GetConsole()->AddCommand(
+        "bind", { BindCommand,
+                  "Binds key to commands",
+                  { { "key", LUS::ArgumentType::TEXT }, { "cmd", LUS::ArgumentType::TEXT } } });
+    Context::GetInstance()->GetConsole()->AddCommand(
+        "bind-toggle", { BindToggleCommand,
+                         "Bind key as a bool toggle",
+                         { { "key", LUS::ArgumentType::TEXT }, { "cmd", LUS::ArgumentType::TEXT } } });
 }
 
 void ConsoleWindow::UpdateElement() {

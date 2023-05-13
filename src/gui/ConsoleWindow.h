@@ -46,6 +46,9 @@ class ConsoleWindow : public GuiWindow {
                             std::string* output);
     static bool BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                   std::string* output);
+    static bool SetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
+    static bool GetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args, std::string* output);
+    static int32_t CheckVarType(const std::string& input);
 
     using GuiWindow::GuiWindow;
 
