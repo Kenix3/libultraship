@@ -10,17 +10,17 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+int32_t GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                  std::string* output) {
     if (args.size() < 3) {
-        return false;
+        return 1;
     }
 
     if (CVarGet(args[2].c_str()) != nullptr) {
         const char* key = args[2].c_str();
         auto overlay = Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay();
         if (!overlay) {
-            return false;
+            return 1;
         }
 
         if (args[1] == "add") {
@@ -58,7 +58,7 @@ bool GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::ve
         }
     }
 
-    return true;
+    return 0;
 }
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
