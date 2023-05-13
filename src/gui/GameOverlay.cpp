@@ -11,7 +11,7 @@
 
 namespace LUS {
 int32_t GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                 std::string* output) {
+                                    std::string* output) {
     if (args.size() < 3) {
         return 1;
     }

@@ -9,7 +9,7 @@
 namespace LUS {
 
 int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                std::string* output) {
+                                   std::string* output) {
     if (output) {
         *output += "Commands:\n";
         for (const auto& cmd : console->GetCommands()) {
@@ -23,7 +23,7 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
 }
 
 int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                 std::string* output) {
+                                    std::string* output) {
     auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
     if (!window) {
@@ -39,7 +39,7 @@ int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std:
 }
 
 int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                std::string* output) {
+                                   std::string* output) {
     if (args.size() > 2) {
         auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
@@ -79,7 +79,7 @@ int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::
 }
 
 int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                      std::string* output) {
+                                         std::string* output) {
     if (args.size() > 2) {
         auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
@@ -119,7 +119,7 @@ int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const
 #define VARTYPE_RGBA 3
 
 int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                               std::string* output) {
+                                  std::string* output) {
     if (args.size() < 3) {
         if (output) {
             *output += "Not enough arguments.";
@@ -152,7 +152,7 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
 }
 
 int32_t ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                               std::string* output) {
+                                  std::string* output) {
     if (args.size() < 2) {
         if (output) {
             *output += "Not enough arguments.";
