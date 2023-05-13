@@ -42,6 +42,8 @@ bool Console::HasCommand(const std::string& command) {
 void Console::AddCommand(const std::string& command, CommandEntry entry) {
     if (!HasCommand(command)) {
         mCommands[command] = entry;
+    } else {
+        SPDLOG_WARN("Attempting to add command {} that already exists", command);
     }
 }
 
