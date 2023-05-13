@@ -12,6 +12,7 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
+namespace LUS {
 class PathHelper {
   public:
     static std::string GetFileName(const fs::path& input) {
@@ -45,3 +46,4 @@ class PathHelper {
         return path.parent_path();
     };
 };
+} // namespace LUS
