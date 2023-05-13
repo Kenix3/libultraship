@@ -311,7 +311,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     wnd = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
-    LUS::WindowImpl window_impl;
+    LUS::GuiWindowInitData window_impl;
 
     if (use_opengl) {
 #ifndef __SWITCH__
