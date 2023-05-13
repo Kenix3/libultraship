@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -10,7 +11,7 @@
 namespace LUS {
 
 class Console;
-typedef std::function<bool(std::shared_ptr<Console> console, std::vector<std::string> args, std::string* output)>
+typedef std::function<int32_t(std::shared_ptr<Console> console, std::vector<std::string> args, std::string* output)>
     CommandHandler;
 
 enum class ArgumentType { TEXT, NUMBER };
@@ -30,7 +31,7 @@ struct CommandEntry {
 class Console {
   public:
     void Init();
-    bool Run(const std::string& command, std::string* output);
+    int32_t Run(const std::string& command, std::string* output);
     bool HasCommand(const std::string& command);
     void AddCommand(const std::string& command, CommandEntry entry);
     std::string BuildUsage(const std::string& command);

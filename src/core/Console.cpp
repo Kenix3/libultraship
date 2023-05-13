@@ -19,14 +19,27 @@ std::string Console::BuildUsage(const std::string& command) {
     return BuildUsage(GetCommand(command));
 }
 
-bool Console::Run(const std::string& command, std::string* output) {
+int32_t Console::Run(const std::string& command, std::string* output) {
     const std::vector<std::string> cmdArgs = StringHelper::Split(command, " ");
-    if (mCommands.contains(cmdArgs[0])) {
-        const CommandEntry entry = mCommands[cmdArgs[0]];
-        return entry.Handler(Context::GetInstance()->GetConsole(), cmdArgs, output);
+    if (cmdArgs.empty()) {
+        SPDLOG_INFO("Could not parse command: {}", command);
+        return false;
     }
 
-    return false;
+    const std::string& commandName = cmdArgs[0];
+    if (!mCommands.contains(commandName)) {
+        SPDLOG_INFO("Command handler not found: {}", commandName);
+        return false;
+    }
+
+    const CommandEntry entry = mCommands[commandName];
+    int32_t commandResult = entry.Handler(Context::GetInstance()->GetConsole(), cmdArgs, output);
+    if (output) {
+        SPDLOG_INFO("Command \"{}\" returned {} with output: {}", command, commandResult, *output);
+    } else {
+        SPDLOG_INFO("Command \"{}\" returned {}", command, commandResult);
+    }
+    return commandResult;
 }
 
 bool Console::HasCommand(const std::string& command) {

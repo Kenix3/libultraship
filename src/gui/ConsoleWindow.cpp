@@ -8,22 +8,22 @@
 
 namespace LUS {
 
-bool ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                std::string* output) {
+int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                   std::string* output) {
     if (output) {
         *output += "Commands:\n";
         for (const auto& cmd : console->GetCommands()) {
             *output += " - " + cmd.first;
         }
 
-        return true;
+        return 0;
     }
 
-    return false;
+    return 1;
 }
 
-bool ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                 std::string* output) {
+int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                    std::string* output) {
     auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
     if (!window) {
@@ -31,15 +31,15 @@ bool ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::ve
             *output += "A console window is necessary for Clear";
         }
 
-        return false;
+        return 0;
     }
 
     window->ClearLogs(window->GetCurrentChannel());
-    return true;
+    return 1;
 }
 
-bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                std::string* output) {
+int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                   std::string* output) {
     if (args.size() > 2) {
         auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
@@ -48,7 +48,7 @@ bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vec
                 *output += "A console window is necessary for Bind";
             }
 
-            return false;
+            return 1;
         }
 
         const ImGuiIO* io = &ImGui::GetIO();
@@ -72,13 +72,14 @@ bool ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vec
         if (output) {
             *output += "Not enough arguments";
         }
-        return false;
+        return 1;
     }
-    return true;
+
+    return 0;
 }
 
-bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                      std::string* output) {
+int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                         std::string* output) {
     if (args.size() > 2) {
         auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
@@ -87,7 +88,7 @@ bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const st
                 *output += "A console window is necessary for BindToggle";
             }
 
-            return false;
+            return 1;
         }
 
         const ImGuiIO* io = &ImGui::GetIO();
@@ -106,9 +107,10 @@ bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const st
         if (output) {
             *output += "Missing arguments";
         }
-        return false;
+        return 1;
     }
-    return true;
+
+    return 0;
 }
 
 #define VARTYPE_INTEGER 0
@@ -116,14 +118,14 @@ bool ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const st
 #define VARTYPE_STRING 2
 #define VARTYPE_RGBA 3
 
-bool ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                               std::string* output) {
+int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                  std::string* output) {
     if (args.size() < 3) {
         if (output) {
             *output += "Not enough arguments.";
         }
 
-        return false;
+        return 1;
     }
 
     int vType = CheckVarType(args[2]);
@@ -146,17 +148,17 @@ bool ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::vect
 
     CVarSave();
 
-    return true;
+    return 0;
 }
 
-bool ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                               std::string* output) {
+int32_t ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                  std::string* output) {
     if (args.size() < 2) {
         if (output) {
             *output += "Not enough arguments.";
         }
 
-        return false;
+        return 1;
     }
 
     auto cvar = CVarGet(args[1].c_str());
@@ -182,7 +184,7 @@ bool ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::vect
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Loaded CVar with unsupported type: %s", cvar->Type);
             }
-            return false;
+            return 1;
         }
     } else {
         if (output) {
@@ -190,7 +192,7 @@ bool ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::vect
         }
     }
 
-    return true;
+    return 0;
 }
 
 int32_t ConsoleWindow::CheckVarType(const std::string& input) {
@@ -472,9 +474,10 @@ void ConsoleWindow::Dispatch(const std::string& line) {
     if (console->HasCommand(cmdArgs[0])) {
         const CommandEntry entry = console->GetCommand(cmdArgs[0]);
         std::string output = "";
+        int32_t commandResult = console->Run(line, &output);
 
-        if (!console->Run(line, &output)) {
-            SendErrorMessage(std::string("[LUS] Command Failed"));
+        if (commandResult != 0) {
+            SendErrorMessage(std::string("[LUS] Command Failed with code %d", commandResult));
             SendErrorMessage("[LUS] Usage: " + cmdArgs[0] + " " + console->BuildUsage(entry));
             if (!output.empty()) {
                 SendErrorMessage(output);
