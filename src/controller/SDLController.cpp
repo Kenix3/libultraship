@@ -333,7 +333,7 @@ const std::string SDLController::GetButtonName(int32_t portIndex, int32_t n64But
     if (btn >= AXIS_SCANCODE_BIT) {
         btn -= AXIS_SCANCODE_BIT;
 
-        snprintf(buffer, sizeof(buffer), "%s%s", AxisNames[btn], find->first > 0 ? "+" : "-");
+        snprintf(buffer, sizeof(buffer), "%s%s", sAxisNames[btn], find->first > 0 ? "+" : "-");
         return buffer;
     }
 

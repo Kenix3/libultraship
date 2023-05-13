@@ -8,7 +8,6 @@
 #endif
 
 #include "misc/Hooks.h"
-#include "core/Window.h"
 
 namespace LUS {
 

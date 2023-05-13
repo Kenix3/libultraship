@@ -1,6 +1,5 @@
 #include "Resource.h"
 #include "resource/ResourceManager.h"
-#include "resource/type/DisplayList.h"
 #include <spdlog/spdlog.h>
 #include "libultraship/libultra/gbi.h"
 

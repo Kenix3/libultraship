@@ -1,6 +1,5 @@
 #include "core/bridge/resourcebridge.h"
 #include "core/Context.h"
-#include "resource/ResourceManager.h"
 #include <string>
 #include <algorithm>
 #include <StrHash64.h>

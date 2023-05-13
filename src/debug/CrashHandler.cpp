@@ -2,8 +2,6 @@
 #include "Utils/StringHelper.h"
 #include "CrashHandler.h"
 #include "core/Context.h"
-#include "resource/ResourceManager.h"
-#include "resource/GameVersions.h"
 #include "misc/Hooks.h"
 
 #ifdef _WIN32

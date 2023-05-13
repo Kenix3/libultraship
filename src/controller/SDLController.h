@@ -19,8 +19,8 @@ class SDLController : public Controller {
     int32_t ReadRawPress() override;
 
   protected:
-    inline static const char* AxisNames[] = { "Left Stick X", "Left Stick Y",  "Right Stick X", "Right Stick Y",
-                                              "Left Trigger", "Right Trigger", "Start Button" };
+    inline static const char* sAxisNames[] = { "Left Stick X", "Left Stick Y",  "Right Stick X", "Right Stick Y",
+                                               "Left Trigger", "Right Trigger", "Start Button" };
 
     void CreateDefaultBinding(int32_t portIndex) override;
 

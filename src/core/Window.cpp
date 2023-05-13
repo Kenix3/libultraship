@@ -1,22 +1,14 @@
 #include <string>
-#include <chrono>
-#include <fstream>
-#include <iostream>
 #include "core/Window.h"
 #include "controller/KeyboardController.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
 #include "graphic/Fast3D/gfx_dxgi.h"
-#include "graphic/Fast3D/gfx_glx.h"
 #include "graphic/Fast3D/gfx_opengl.h"
 #include "graphic/Fast3D/gfx_metal.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
-#include "graphic/Fast3D/gfx_wiiu.h"
-#include "graphic/Fast3D/gfx_gx2.h"
-#include "graphic/Fast3D/gfx_rendering_api.h"
-#include "graphic/Fast3D/gfx_window_manager_api.h"
-#include "gui/Gui.h"
+
 #include "core/Context.h"
 
 #ifdef __APPLE__
