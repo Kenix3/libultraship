@@ -1,5 +1,7 @@
-#include <string>
 #include "core/Window.h"
+#include <string>
+#include <fstream>
+#include <iostream>
 #include "controller/KeyboardController.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
