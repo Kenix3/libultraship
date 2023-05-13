@@ -43,7 +43,7 @@ typedef struct {
             uint32_t Height;
         } Gx2;
     };
-} WindowImpl;
+} GuiWindowInitData;
 
 typedef union {
     struct {
@@ -65,7 +65,7 @@ class Window;
 class Gui {
   public:
     Gui(std::shared_ptr<Window> window);
-    void Init(WindowImpl windowImpl);
+    void Init(GuiWindowInitData windowImpl);
     void StartFrame();
     void EndFrame();
 
@@ -106,7 +106,7 @@ class Gui {
 
     std::shared_ptr<Window> mWindow;
     OSContPad* mPads;
-    WindowImpl mImpl;
+    GuiWindowInitData mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;
     std::shared_ptr<GameOverlay> mGameOverlay;

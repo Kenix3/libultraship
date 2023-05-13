@@ -78,7 +78,7 @@ Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariabl
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
 }
 
-void Gui::Init(WindowImpl windowImpl) {
+void Gui::Init(GuiWindowInitData windowImpl) {
     mImpl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
