@@ -1,11 +1,5 @@
 #include "libultraship/libultraship.h"
-
-#include "core/Context.h"
-
 #include <SDL2/SDL.h>
-#include <spdlog/spdlog.h>
-
-#include "gui/Gui.h"
 #include "misc/Hooks.h"
 
 extern "C" {

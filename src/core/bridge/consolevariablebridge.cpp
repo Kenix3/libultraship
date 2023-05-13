@@ -1,5 +1,4 @@
 #include "core/bridge/consolevariablebridge.h"
-#include "core/ConsoleVariable.h"
 #include "core/Context.h"
 
 std::shared_ptr<LUS::CVar> CVarGet(const char* name) {

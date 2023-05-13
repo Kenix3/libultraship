@@ -3,11 +3,9 @@
 #include "File.h"
 #include "core/Window.h"
 #include "resource/ResourceManager.h"
-#include <spdlog/spdlog.h>
 #include "Utils/StringHelper.h"
 #include <StrHash64.h>
 #include <filesystem>
-#include "binarytools/BinaryReader.h"
 #include "binarytools/MemoryStream.h"
 #include "binarytools/FileHelper.h"
 

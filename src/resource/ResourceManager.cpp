@@ -2,11 +2,9 @@
 #include <spdlog/spdlog.h>
 #include "File.h"
 #include "Archive.h"
-#include "GameVersions.h"
 #include <algorithm>
 #include <thread>
 #include <Utils/StringHelper.h>
-#include <StormLib.h>
 #include "core/bridge/consolevariablebridge.h"
 #include "core/Context.h"
 
@@ -327,7 +325,7 @@ std::shared_ptr<Context> ResourceManager::GetContext() {
 }
 
 size_t ResourceManager::UnloadResource(const std::string& filePath) {
-    // Store a shared pointer here so that the erase doesn't destruct the resource.
+    // Store a shared pointer here so that erase doesn't destruct the resource.
     // The resource will attempt to load other resources on the destructor, and this will fail because we already hold
     // the mutex.
     std::variant<ResourceLoadError, std::shared_ptr<Resource>> value = nullptr;

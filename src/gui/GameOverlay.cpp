@@ -5,8 +5,6 @@
 #include "resource/Archive.h"
 #include "resource/ResourceManager.h"
 #include "core/Context.h"
-#include "gui/Gui.h"
-#include <ImGui/imgui_internal.h>
 #include <Utils/StringHelper.h>
 
 namespace LUS {
