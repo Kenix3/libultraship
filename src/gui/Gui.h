@@ -73,6 +73,8 @@ class Gui {
     void DrawMenu(void);
     void Update(EventImpl event);
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
+    void RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
+    void RemoveGuiWindow(const std::string& name);
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
     ImTextureID GetTextureByName(const std::string& name);
     bool SupportsViewports();

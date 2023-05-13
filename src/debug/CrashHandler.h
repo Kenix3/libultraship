@@ -3,8 +3,6 @@
 
 #include <stddef.h>
 
-typedef void (*CrashHandlerCallback)(char*, size_t*);
-
 #if (__linux__)
 #include <csignal>
 #include <cstdio>
@@ -15,20 +13,31 @@ typedef void (*CrashHandlerCallback)(char*, size_t*);
 #include <SDL.h>
 #endif
 
+namespace LUS {
+typedef void (*CrashHandlerCallback)(char*, size_t*);
+
 class CrashHandler {
   public:
     CrashHandler();
+
     CrashHandler(CrashHandlerCallback callback);
 
     void RegisterCallback(CrashHandlerCallback callback);
+
     void AppendLine(const char* str);
+
     void AppendStr(const char* str);
+
 #ifdef __linux__
     void PrintRegisters(ucontext_t* ctx);
 #elif _WIN32
+
     void PrintRegisters(CONTEXT* ctx);
+
     void PrintStack(CONTEXT* ctx);
+
 #endif
+
     void PrintCommon();
 
   private:
@@ -38,7 +47,9 @@ class CrashHandler {
     size_t mOutBuffersize = 0;
 
     void AppendStrTrunc(const char* str);
+
     bool CheckStrLen(const char* str);
 };
+} // namespace LUS
 
 #endif // CRASH_HANDLER_H

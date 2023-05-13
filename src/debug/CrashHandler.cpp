@@ -4,6 +4,7 @@
 #include "core/Context.h"
 #include "resource/ResourceManager.h"
 #include "resource/GameVersions.h"
+#include "misc/Hooks.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -14,6 +15,8 @@
 
 #pragma comment(lib, "Dbghelp.lib")
 #endif
+
+namespace LUS {
 
 #define WRITE_VAR_LINE(handler, varName, varValue) \
     handler->AppendStr(varName);                   \
@@ -28,8 +31,6 @@
 #define WRITE_VAR_M(varName, varValue) \
     AppendStr(varName);                \
     AppendStr(varValue);
-
-extern "C" void DeinitOTR(void);
 
 bool CrashHandler::CheckStrLen(const char* str) {
     if (strlen(str) + mOutBuffersize >= gMaxBufferSize) {
@@ -199,14 +200,14 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     free(symbols);
     crashHandler->PrintCommon();
 
-    DeinitOTR();
+    LUS::ExecuteHooks<LUS::CrashGame>();
     LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
     exit(1);
 }
 
 static void ShutdownHandler(int sig, siginfo_t* sigInfo, void* data) {
-    DeinitOTR();
+    LUS::ExecuteHooks<LUS::CrashGame>();
     exit(1);
 }
 
@@ -391,7 +392,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     PrintCommon();
     LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
-    DeinitOTR();
+    LUS::ExecuteHooks<LUS::CrashGame>();
 }
 
 extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
@@ -446,3 +447,4 @@ CrashHandler::CrashHandler(CrashHandlerCallback callback) {
 void CrashHandler::RegisterCallback(CrashHandlerCallback callback) {
     mCallback = callback;
 }
+} // namespace LUS
