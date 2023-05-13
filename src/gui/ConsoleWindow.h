@@ -12,12 +12,6 @@
 
 namespace LUS {
 
-struct ConsoleLine {
-    std::string text;
-    spdlog::level::level_enum priority = spdlog::level::info;
-    std::string channel = "Console";
-};
-
 class ConsoleWindow : public GuiWindow {
   public:
     void ClearLogs(std::string channel);
@@ -37,6 +31,12 @@ class ConsoleWindow : public GuiWindow {
     void DrawElement() override;
 
   private:
+    struct ConsoleLine {
+        std::string Text;
+        spdlog::level::level_enum Priority = spdlog::level::info;
+        std::string Channel = "Console";
+    };
+
     static int CallbackStub(ImGuiInputTextCallbackData* data);
     static bool ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                              std::string* output);

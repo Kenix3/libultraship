@@ -299,7 +299,7 @@ void ConsoleWindow::DrawElement() {
 
     if (ImGui::BeginPopupContextWindow("Context Menu")) {
         if (ImGui::MenuItem("Copy Text")) {
-            ImGui::SetClipboardText(mLog[mCurrentChannel][mSelectedId].text.c_str());
+            ImGui::SetClipboardText(mLog[mCurrentChannel][mSelectedId].Text.c_str());
             mSelectedId = -1;
         }
         ImGui::EndPopup();
@@ -378,18 +378,18 @@ void ConsoleWindow::DrawElement() {
         const std::vector<ConsoleLine> channel = mLog[mCurrentChannel];
         for (size_t i = 0; i < static_cast<int32_t>(channel.size()); i++) {
             ConsoleLine line = channel[i];
-            if (!mFilter.empty() && line.text.find(mFilter) == std::string::npos) {
+            if (!mFilter.empty() && line.Text.find(mFilter) == std::string::npos) {
                 continue;
             }
-            if (mLevelFilter > line.priority) {
+            if (mLevelFilter > line.Priority) {
                 continue;
             }
-            std::string id = line.text + "##" + std::to_string(i);
+            std::string id = line.Text + "##" + std::to_string(i);
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             const bool isSelected = (mSelectedId == i) || std::find(mSelectedEntries.begin(), mSelectedEntries.end(),
                                                                     i) != mSelectedEntries.end();
-            ImGui::PushStyleColor(ImGuiCol_Text, mPriorityColours[line.priority]);
+            ImGui::PushStyleColor(ImGuiCol_Text, mPriorityColours[line.Priority]);
             if (ImGui::Selectable(id.c_str(), isSelected)) {
                 if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftCtrl)) && !isSelected) {
                     mSelectedEntries.push_back(i);
