@@ -66,8 +66,7 @@ void Window::Init() {
         mHeight = GetContext()->GetConfig()->getInt("Window.Height", 480);
     }
 
-    WindowBackend backend = DetermineBackendFromConfig(GetContext()->GetConfig()->getString("Window.GfxBackend"),
-                                                       GetContext()->GetConfig()->getString("Window.GfxApi"));
+    WindowBackend backend = DetermineBackendFromConfig();
     InitWindowManager(backend);
 
     gfx_init(mWindowManagerApi, mRenderingApi, GetContext()->GetName().c_str(), mIsFullscreen, mWidth, mHeight);
@@ -197,7 +196,9 @@ float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
 
-WindowBackend Window::DetermineBackendFromConfig(std::string windowManagerName, std::string gfxApiName) {
+WindowBackend Window::DetermineBackendFromConfig() {
+    std::string windowManagerName = Context::GetInstance()->GetConfig()->getString("Window.GfxBackend");
+    std::string gfxApiName = Context::GetInstance()->GetConfig()->getString("Window.GfxApi");
     if (windowManagerName == "dx11") {
         return WindowBackend::DX11;
     } else if (windowManagerName == "dx12") {

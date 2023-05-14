@@ -55,7 +55,7 @@ class Window {
     WindowBackend GetWindowBackend();
 
   protected:
-    static WindowBackend DetermineBackendFromConfig(std::string windowManagerName, std::string gfxApiName);
+    static WindowBackend DetermineBackendFromConfig();
     static std::string DetermineWindowManagerFromBackend(WindowBackend backend);
     static std::string DetermineGraphicsApiFromBackend(WindowBackend backend);
 
