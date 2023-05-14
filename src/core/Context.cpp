@@ -72,7 +72,7 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     CreateDefaultSettings();
     InitControlDeck();
     InitCrashHandler();
-    InitAudioPlayer(GetConfig()->getString("Window.AudioBackend"));
+    InitAudioPlayer(DetermineAudioBackendFromConfig());
     InitConsole();
     InitWindow();
 
@@ -206,40 +206,29 @@ void Context::InitCrashHandler() {
     mCrashHandler = std::make_shared<CrashHandler>();
 }
 
-void Context::InitAudioPlayer(std::string backend) {
-    // Param can override
+void Context::InitAudioPlayer(AudioBackend backend) {
+    SetAudioBackend(backend);
+    switch (GetAudioBackend()) {
 #ifdef _WIN32
-    if (backend == "wasapi") {
-        mAudioPlayer = std::make_shared<WasapiAudioPlayer>(backend);
-    }
+        case AudioBackend::WASAPI:
+            mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
+            break;
 #endif
 #if defined(__linux)
-    if (backend == "pulse") {
-        mAudioPlayer = std::make_shared<PulseAudioPlayer>(backend);
-    }
+        case AudioBackend::PULSE:
+            mAudioPlayer = std::make_shared<PulseAudioPlayer>();
+            break;
 #endif
-    if (backend == "sdl") {
-        mAudioPlayer = std::make_shared<SDLAudioPlayer>(backend);
-    }
-
-    // No backend was set. Defaults if not on list above
-    if (!mAudioPlayer) {
-#ifdef _WIN32
-        mAudioPlayer = std::make_shared<WasapiAudioPlayer>(backend);
-#elif defined(__linux)
-        mAudioPlayer = std::make_shared<PulseAudioPlayer>(backend);
-#else
-        mAudioPlayer = std::make_shared<SDLAudioPlayer>(backend);
-#endif
+        default:
+            mAudioPlayer = std::make_shared<SDLAudioPlayer>();
     }
 
     if (mAudioPlayer) {
         if (!mAudioPlayer->Init()) {
             // Failed to initialize system audio player.
             // Fallback to SDL if the native system player does not work.
-            const std::string fallbackBackend = "sdl";
-            GetConfig()->setString("Window.AudioBackend", fallbackBackend);
-            mAudioPlayer = std::make_shared<SDLAudioPlayer>(fallbackBackend);
+            SetAudioBackend(AudioBackend::SDL);
+            mAudioPlayer = std::make_shared<SDLAudioPlayer>();
             mAudioPlayer->Init();
         }
     }
@@ -297,6 +286,48 @@ std::string Context::GetName() {
 
 std::string Context::GetShortName() {
     return mShortName;
+}
+
+AudioBackend Context::DetermineAudioBackendFromConfig() {
+    std::string backendName = Context::GetInstance()->GetConfig()->getString("Window.AudioBackend");
+    if (backendName == "wasapi") {
+        return AudioBackend::WASAPI;
+    } else if (backendName == "pulse") {
+        return AudioBackend::PULSE;
+    } else if (backendName == "sdl") {
+        return AudioBackend::SDL;
+    } else {
+#ifdef _WIN32
+        return AudioBackend::WASAPI;
+#elif defined(__linux)
+        return AudioBackend::PULSE;
+#else
+        return AudioBackend::SDL;
+#endif
+    }
+}
+
+std::string Context::DetermineAudioBackendNameFromBackend(AudioBackend backend) {
+    switch (backend) {
+        case AudioBackend::WASAPI:
+            return "wasapi";
+        case AudioBackend::PULSE:
+            return "pulse";
+        case AudioBackend::SDL:
+            return "sdl";
+        default:
+            return "";
+    }
+}
+
+AudioBackend Context::GetAudioBackend() {
+    return mAudioBackend;
+}
+
+void Context::SetAudioBackend(AudioBackend backend) {
+    std::string audioBackendName = DetermineAudioBackendNameFromBackend(backend);
+    Context::GetInstance()->GetConfig()->setString("Window.AudioBackend", audioBackendName);
+    mAudioBackend = backend;
 }
 
 std::string Context::GetAppBundlePath() {

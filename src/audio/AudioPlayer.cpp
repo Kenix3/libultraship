@@ -1,7 +1,10 @@
 #include "AudioPlayer.h"
 
 namespace LUS {
-AudioPlayer::AudioPlayer(std::string backend) : mInitialized(false), mBackend(backend){};
+AudioPlayer::AudioPlayer()
+    : mInitialized(false){
+
+      };
 
 bool AudioPlayer::Init(void) {
     mInitialized = DoInit();
@@ -10,9 +13,5 @@ bool AudioPlayer::Init(void) {
 
 bool AudioPlayer::IsInitialized(void) {
     return mInitialized;
-}
-
-std::string AudioPlayer::GetBackend() {
-    return mBackend;
 }
 } // namespace LUS

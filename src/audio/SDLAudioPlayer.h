@@ -5,7 +5,7 @@
 namespace LUS {
 class SDLAudioPlayer : public AudioPlayer {
   public:
-    SDLAudioPlayer(std::string backend);
+    SDLAudioPlayer();
 
     int Buffered(void);
     int GetDesiredBuffered(void);

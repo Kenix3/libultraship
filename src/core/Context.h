@@ -15,6 +15,8 @@
 #include "core/Console.h"
 
 namespace LUS {
+enum class AudioBackend { WASAPI, PULSE, SDL };
+
 class Context {
   public:
     static std::shared_ptr<Context> GetInstance();
@@ -48,6 +50,9 @@ class Context {
     std::string GetName();
     std::string GetShortName();
 
+    AudioBackend GetAudioBackend();
+    void SetAudioBackend(AudioBackend backend);
+
     void CreateDefaultSettings();
     void InitLogging();
     void InitConfiguration();
@@ -56,11 +61,14 @@ class Context {
                              const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
     void InitControlDeck();
     void InitCrashHandler();
-    void InitAudioPlayer(std::string backend);
+    void InitAudioPlayer(AudioBackend backend);
     void InitConsole();
     void InitWindow();
 
   protected:
+    static AudioBackend DetermineAudioBackendFromConfig();
+    static std::string DetermineAudioBackendNameFromBackend(AudioBackend backend);
+
     Context() = default;
 
   private:
@@ -79,6 +87,7 @@ class Context {
     std::string mMainPath;
     std::string mPatchesPath;
     bool mOtrFileExists;
+    AudioBackend mAudioBackend;
 
     std::string mName;
     std::string mShortName;

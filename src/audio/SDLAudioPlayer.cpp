@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-SDLAudioPlayer::SDLAudioPlayer(std::string backend) : AudioPlayer(backend) {
+SDLAudioPlayer::SDLAudioPlayer() : AudioPlayer() {
 }
 
 bool SDLAudioPlayer::DoInit(void) {

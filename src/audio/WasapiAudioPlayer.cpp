@@ -16,8 +16,8 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioRenderClient = __uuidof(IAudioRenderClient);
 
 namespace LUS {
-WasapiAudioPlayer::WasapiAudioPlayer(std::string backend)
-    : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false), AudioPlayer(backend){};
+WasapiAudioPlayer::WasapiAudioPlayer()
+    : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false), AudioPlayer(){};
 
 void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
     if (FAILED(res)) {
