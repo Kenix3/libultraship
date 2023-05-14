@@ -320,7 +320,6 @@ std::string Context::DetermineAudioBackendNameFromBackend(AudioBackend backend) 
     }
 }
 
-
 AudioBackend Context::GetAudioBackend() {
     return mAudioBackend;
 }

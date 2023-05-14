@@ -1,9 +1,10 @@
 #include "AudioPlayer.h"
 
 namespace LUS {
-AudioPlayer::AudioPlayer() : mInitialized(false) {
+AudioPlayer::AudioPlayer()
+    : mInitialized(false){
 
-};
+      };
 
 bool AudioPlayer::Init(void) {
     mInitialized = DoInit();

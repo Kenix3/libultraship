@@ -15,11 +15,7 @@
 #include "core/Console.h"
 
 namespace LUS {
-enum class AudioBackend {
-    WASAPI,
-    PULSE,
-    SDL
-};
+enum class AudioBackend { WASAPI, PULSE, SDL };
 
 class Context {
   public:
