@@ -209,7 +209,7 @@ WindowBackend Window::DetermineBackendFromConfig(std::string windowManagerName, 
         }
 #endif
         return WindowBackend::SDL_OPENGL;
-    } else if (windowManagerName == "glx"){
+    } else if (windowManagerName == "glx") {
         return WindowBackend::GLX_OPENGL;
     } else {
         // Defaults if not on list above
@@ -237,7 +237,8 @@ WindowBackend Window::DetermineBackendFromConfig(std::string windowManagerName, 
         return WindowBackend::SDL_OPENGL;
 #endif
 #endif
-        SPDLOG_ERROR("Could not determine rendering backend from window manager {} and gfx api {}", windowManagerName, gfxApiName);
+        SPDLOG_ERROR("Could not determine rendering backend from window manager {} and gfx api {}", windowManagerName,
+                     gfxApiName);
     }
 }
 
