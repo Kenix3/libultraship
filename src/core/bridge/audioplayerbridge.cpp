@@ -4,7 +4,7 @@
 extern "C" {
 
 int32_t AudioPlayerBuffered(void) {
-    auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
+    auto audio = LUS::Context::GetInstance()->GetAudio()->GetAudioPlayer();
     if (audio == nullptr) {
         return 0;
     }
@@ -17,7 +17,7 @@ int32_t AudioPlayerBuffered(void) {
 }
 
 int32_t AudioPlayerGetDesiredBuffered(void) {
-    auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
+    auto audio = LUS::Context::GetInstance()->GetAudio()->GetAudioPlayer();
     if (audio == nullptr) {
         return 0;
     }
@@ -30,7 +30,7 @@ int32_t AudioPlayerGetDesiredBuffered(void) {
 }
 
 void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
-    auto audio = LUS::Context::GetInstance()->GetAudioPlayer();
+    auto audio = LUS::Context::GetInstance()->GetAudio()->GetAudioPlayer();
     if (audio == nullptr) {
         return;
     }

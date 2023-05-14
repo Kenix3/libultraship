@@ -9,13 +9,12 @@
 #include "resource/ResourceManager.h"
 #include "controller/ControlDeck.h"
 #include "debug/CrashHandler.h"
-#include "audio/AudioPlayer.h"
+#include "audio/Audio.h"
 #include "core/Window.h"
 #include "core/ConsoleVariable.h"
 #include "core/Console.h"
 
 namespace LUS {
-enum class AudioBackend { WASAPI, PULSE, SDL };
 
 class Context {
   public:
@@ -42,16 +41,13 @@ class Context {
     std::shared_ptr<ResourceManager> GetResourceManager();
     std::shared_ptr<ControlDeck> GetControlDeck();
     std::shared_ptr<CrashHandler> GetCrashHandler();
-    std::shared_ptr<AudioPlayer> GetAudioPlayer();
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
+    std::shared_ptr<Audio> GetAudio();
 
     std::string GetConfigFilePath();
     std::string GetName();
     std::string GetShortName();
-
-    AudioBackend GetAudioBackend();
-    void SetAudioBackend(AudioBackend backend);
 
     void CreateDefaultSettings();
     void InitLogging();
@@ -61,14 +57,11 @@ class Context {
                              const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
     void InitControlDeck();
     void InitCrashHandler();
-    void InitAudioPlayer(AudioBackend backend);
+    void InitAudio();
     void InitConsole();
     void InitWindow();
 
   protected:
-    static AudioBackend DetermineAudioBackendFromConfig();
-    static std::string DetermineAudioBackendNameFromBackend(AudioBackend backend);
-
     Context() = default;
 
   private:
@@ -80,14 +73,13 @@ class Context {
     std::shared_ptr<ResourceManager> mResourceManager;
     std::shared_ptr<ControlDeck> mControlDeck;
     std::shared_ptr<CrashHandler> mCrashHandler;
-    std::shared_ptr<AudioPlayer> mAudioPlayer;
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
+    std::shared_ptr<Audio> mAudio;
 
     std::string mConfigFilePath;
     std::string mMainPath;
     std::string mPatchesPath;
-    AudioBackend mAudioBackend;
 
     std::string mName;
     std::string mShortName;
