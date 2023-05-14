@@ -21,16 +21,17 @@ class Context {
   public:
     static std::shared_ptr<Context> GetInstance();
     static std::shared_ptr<Context> CreateInstance(const std::string name, const std::string shortName,
+                                                   const std::string configFilePath,
                                                    const std::vector<std::string>& otrFiles = {},
                                                    const std::unordered_set<uint32_t>& validHashes = {},
                                                    uint32_t reservedThreadCount = 1);
 
     static std::string GetAppBundlePath();
     static std::string GetAppDirectoryPath();
-    static std::string GetPathRelativeToAppDirectory(const char* path);
-    static std::string GetPathRelativeToAppBundle(const char* path);
+    static std::string GetPathRelativeToAppDirectory(const std::string path);
+    static std::string GetPathRelativeToAppBundle(const std::string path);
 
-    Context(std::string name, std::string shortName);
+    Context(std::string name, std::string shortName, std::string configFilePath);
 
     void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
               uint32_t reservedThreadCount);
@@ -47,6 +48,7 @@ class Context {
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
 
+    std::string GetConfigFilePath();
     std::string GetName();
     std::string GetShortName();
 
@@ -84,6 +86,7 @@ class Context {
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
 
+    std::string mConfigFilePath;
     std::string mMainPath;
     std::string mPatchesPath;
     bool mOtrFileExists;

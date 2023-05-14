@@ -22,11 +22,12 @@ std::shared_ptr<Context> Context::GetInstance() {
 }
 
 std::shared_ptr<Context> Context::CreateInstance(const std::string name, const std::string shortName,
+                                                 const std::string configFilePath,
                                                  const std::vector<std::string>& otrFiles,
                                                  const std::unordered_set<uint32_t>& validHashes,
                                                  uint32_t reservedThreadCount) {
     if (mContext.expired()) {
-        auto shared = std::make_shared<Context>(name, shortName);
+        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
         mContext = shared;
         shared->Init(otrFiles, validHashes, reservedThreadCount);
         return shared;
@@ -37,7 +38,8 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string name, const s
     return GetInstance();
 }
 
-Context::Context(std::string name, std::string shortName) : mName(std::move(name)), mShortName(std::move(shortName)) {
+Context::Context(std::string name, std::string shortName, std::string configFilePath)
+    : mName(std::move(name)), mShortName(std::move(shortName)), mConfigFilePath(std::move(configFilePath)) {
 }
 
 void Context::CreateDefaultSettings() {
@@ -127,7 +129,7 @@ void Context::InitLogging() {
 #endif
 
 #ifndef __WIIU__
-        auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log").c_str());
+        auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
         fileSink->set_level(spdlog::level::trace);
@@ -161,7 +163,7 @@ void Context::InitLogging() {
 }
 
 void Context::InitConfiguration() {
-    mConfig = std::make_shared<Mercury>(GetPathRelativeToAppDirectory("shipofharkinian.json"));
+    mConfig = std::make_shared<Mercury>(GetPathRelativeToAppDirectory(GetConfigFilePath()));
 }
 
 void Context::InitConsoleVariables() {
@@ -280,6 +282,10 @@ std::shared_ptr<Console> Context::GetConsole() {
     return mConsole;
 }
 
+std::string Context::GetConfigFilePath() {
+    return mConfigFilePath;
+}
+
 std::string Context::GetName() {
     return mName;
 }
@@ -357,11 +363,11 @@ std::string Context::GetAppDirectoryPath() {
     return ".";
 }
 
-std::string Context::GetPathRelativeToAppBundle(const char* path) {
+std::string Context::GetPathRelativeToAppBundle(const std::string path) {
     return GetAppBundlePath() + "/" + path;
 }
 
-std::string Context::GetPathRelativeToAppDirectory(const char* path) {
+std::string Context::GetPathRelativeToAppDirectory(const std::string path) {
     return GetAppDirectoryPath() + "/" + path;
 }
 
