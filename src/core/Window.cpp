@@ -282,7 +282,7 @@ std::string Window::DetermineGraphicsApiFromBackend(WindowBackend backend) {
 
 void Window::InitWindowManager(WindowBackend backend) {
     SetWindowBackend(backend);
-    switch (backend) {
+    switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
         case WindowBackend::DX11:
             mRenderingApi = &gfx_direct3d11_api;
