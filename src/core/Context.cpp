@@ -216,7 +216,7 @@ void Context::InitAudioPlayer(AudioBackend backend) {
 #endif
 #if defined(__linux)
         case AudioBackend::PULSE:
-            AudioPlayer = std::make_shared<PulseAudioPlayer>();
+            mAudioPlayer = std::make_shared<PulseAudioPlayer>();
             break;
 #endif
         default:
