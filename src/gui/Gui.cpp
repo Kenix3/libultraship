@@ -9,16 +9,13 @@
 
 #include "Mercury.h"
 #include "core/Window.h"
-#include "gui/ConsoleWindow.h"
 #include "misc/Hooks.h"
 #include "core/Context.h"
-#include "resource/ResourceManager.h"
 #include "core/bridge/consolevariablebridge.h"
 #include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "resource/File.h"
 #include <stb/stb_image.h>
-#include "graphic/Fast3D/gfx_rendering_api.h"
 #include "gui/Fonts.h"
 
 #ifdef __WIIU__
@@ -177,27 +174,27 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 }
 
 void Gui::ImGuiWMInit() {
-    switch (mImpl.RenderBackend) {
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
-        case Backend::GX2:
+        case WindowBackend::GX2:
             ImGui_ImplWiiU_Init();
             break;
 #else
-        case Backend::SDL_OPENGL:
+        case WindowBackend::SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
 #endif
 #if __APPLE__
-        case Backend::SDL_METAL:
+        case WindowBackend::SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case Backend::DX11:
+        case WindowBackend::DX11:
             ImGui_ImplWin32_Init(mImpl.Dx11.Window);
             break;
 #endif
@@ -207,13 +204,13 @@ void Gui::ImGuiWMInit() {
 }
 
 void Gui::ImGuiBackendInit() {
-    switch (mImpl.RenderBackend) {
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
-        case Backend::GX2:
+        case WindowBackend::GX2:
             ImGui_ImplGX2_Init();
             break;
 #else
-        case Backend::SDL_OPENGL:
+        case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
 #else
@@ -223,13 +220,13 @@ void Gui::ImGuiBackendInit() {
 #endif
 
 #ifdef __APPLE__
-        case Backend::SDL_METAL:
+        case WindowBackend::SDL_METAL:
             Metal_Init(mImpl.Metal.Renderer);
             break;
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case Backend::DX11:
+        case WindowBackend::DX11:
             ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(mImpl.Dx11.Device),
                                 static_cast<ID3D11DeviceContext*>(mImpl.Dx11.DeviceContext));
             break;
@@ -280,11 +277,11 @@ bool Gui::SupportsViewports() {
     return false;
 #endif
 
-    switch (mImpl.RenderBackend) {
-        case Backend::DX11:
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
+        case WindowBackend::DX11:
             return true;
-        case Backend::SDL_OPENGL:
-        case Backend::SDL_METAL:
+        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::SDL_METAL:
             return true;
         default:
             return false;
@@ -297,14 +294,14 @@ void Gui::Update(WindowEvent event) {
         mNeedsConsoleVariableSave = false;
     }
 
-    switch (mImpl.RenderBackend) {
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
-        case Backend::GX2:
+        case WindowBackend::GX2:
             if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
             break;
 #else
-        case Backend::SDL_OPENGL:
-        case Backend::SDL_METAL:
+        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
@@ -313,7 +310,7 @@ void Gui::Update(WindowEvent event) {
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case Backend::DX11:
+        case WindowBackend::DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
                                            event.Win32.Param2);
             break;
@@ -454,24 +451,24 @@ void Gui::DrawMenu(void) {
 }
 
 void Gui::ImGuiBackendNewFrame() {
-    switch (mImpl.RenderBackend) {
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
-        case Backend::GX2:
+        case WindowBackend::GX2:
             mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
             ImGui_ImplGX2_NewFrame();
             break;
 #else
-        case Backend::SDL_OPENGL:
+        case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
 #ifdef __APPLE__
-        case Backend::SDL_METAL:
+        case WindowBackend::SDL_METAL:
             Metal_NewFrame(mImpl.Metal.Renderer);
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case Backend::DX11:
+        case WindowBackend::DX11:
             ImGui_ImplDX11_NewFrame();
             break;
 #endif
@@ -481,18 +478,18 @@ void Gui::ImGuiBackendNewFrame() {
 }
 
 void Gui::ImGuiWMNewFrame() {
-    switch (mImpl.RenderBackend) {
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
-        case Backend::GX2:
+        case WindowBackend::GX2:
             break;
 #else
-        case Backend::SDL_OPENGL:
-        case Backend::SDL_METAL:
+        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_NewFrame();
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case Backend::DX11:
+        case WindowBackend::DX11:
             ImGui_ImplWin32_NewFrame();
             break;
 #endif
@@ -577,7 +574,8 @@ void Gui::StartFrame() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        if ((mImpl.RenderBackend == Backend::SDL_OPENGL || mImpl.RenderBackend == Backend::SDL_METAL) &&
+        WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
+        if ((backend == WindowBackend::SDL_OPENGL || backend == WindowBackend::SDL_METAL) &&
             mImpl.Opengl.Context != nullptr) {
             SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
             SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
@@ -595,17 +593,17 @@ void Gui::StartFrame() {
 
 ImTextureID Gui::GetTextureById(int32_t id) {
 #ifdef ENABLE_DX11
-    if (mImpl.RenderBackend == Backend::DX11) {
+    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::DX11) {
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif
 #ifdef __APPLE__
-    if (mImpl.RenderBackend == Backend::SDL_METAL) {
+    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::SDL_METAL) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif
 #ifdef __WIIU__
-    if (mImpl.RenderBackend == Backend::GX2) {
+    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::GX2) {
         return gfx_gx2_texture_for_imgui(id);
     }
 #endif
@@ -618,9 +616,9 @@ ImTextureID Gui::GetTextureByName(const std::string& name) {
 }
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
-    switch (mImpl.RenderBackend) {
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
-        case Backend::GX2:
+        case WindowBackend::GX2:
             ImGui_ImplGX2_RenderDrawData(data);
 
             // Reset viewport and scissor for drawing the keyboard
@@ -629,17 +627,17 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             ImGui_ImplWiiU_DrawKeyboardOverlay();
             break;
 #else
-        case Backend::SDL_OPENGL:
+        case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
 #ifdef __APPLE__
-        case Backend::SDL_METAL:
+        case WindowBackend::SDL_METAL:
             Metal_RenderDrawData(data);
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case Backend::DX11:
+        case WindowBackend::DX11:
             ImGui_ImplDX11_RenderDrawData(data);
             break;
 #endif
@@ -870,9 +868,4 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
 std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
     return mMenuBar;
 }
-
-Backend Gui::GetRenderBackend() {
-    return mImpl.RenderBackend;
-}
-
 } // namespace LUS

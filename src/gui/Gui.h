@@ -15,15 +15,8 @@
 #include "libultraship/libultra/controller.h"
 
 namespace LUS {
-enum class Backend {
-    DX11,
-    SDL_OPENGL,
-    SDL_METAL,
-    GX2,
-};
 
 typedef struct {
-    Backend RenderBackend;
     union {
         struct {
             void* Window;
@@ -85,7 +78,6 @@ class Gui {
     std::shared_ptr<GameOverlay> GetGameOverlay();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
-    Backend GetRenderBackend();
 
   protected:
     void InitSettings();
