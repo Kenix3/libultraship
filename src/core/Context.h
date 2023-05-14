@@ -35,8 +35,6 @@ class Context {
     void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
               uint32_t reservedThreadCount);
 
-    bool DoesOtrFileExist();
-
     std::shared_ptr<spdlog::logger> GetLogger();
     std::shared_ptr<Mercury> GetConfig();
     std::shared_ptr<ConsoleVariable> GetConsoleVariables();
@@ -82,7 +80,6 @@ class Context {
     std::string mConfigFilePath;
     std::string mMainPath;
     std::string mPatchesPath;
-    bool mOtrFileExists;
 
     std::string mName;
     std::string mShortName;

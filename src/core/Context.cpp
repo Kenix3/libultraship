@@ -191,10 +191,8 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
 #endif
-        mOtrFileExists = false;
         return;
     }
-    mOtrFileExists = true;
 #ifdef __SWITCH__
     LUS::Switch::Init(PostInitPhase);
 #endif
@@ -300,9 +298,5 @@ std::string Context::GetPathRelativeToAppBundle(const std::string path) {
 
 std::string Context::GetPathRelativeToAppDirectory(const std::string path) {
     return GetAppDirectoryPath() + "/" + path;
-}
-
-bool Context::DoesOtrFileExist() {
-    return mOtrFileExists;
 }
 } // namespace LUS
