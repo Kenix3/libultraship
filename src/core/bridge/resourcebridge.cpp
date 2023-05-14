@@ -197,6 +197,6 @@ void UnloadResourceDirectory(const char* name) {
 }
 
 uint32_t DoesOtrFileExist() {
-    return LUS::Context::GetInstance()->DoesOtrFileExist();
+    return LUS::Context::GetInstance()->GetResourceManager()->DidLoadSuccessfully();
 }
 }
