@@ -291,7 +291,7 @@ bool Gui::SupportsViewports() {
     }
 }
 
-void Gui::Update(EventImpl event) {
+void Gui::Update(WindowEvent event) {
     if (mNeedsConsoleVariableSave) {
         CVarSave();
         mNeedsConsoleVariableSave = false;

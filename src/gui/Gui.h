@@ -58,7 +58,7 @@ typedef union {
     struct {
         void* Input;
     } Gx2;
-} EventImpl;
+} WindowEvent;
 
 class Window;
 
@@ -71,7 +71,7 @@ class Gui {
 
     void SaveConsoleVariablesOnNextTick();
     void DrawMenu(void);
-    void Update(EventImpl event);
+    void Update(WindowEvent event);
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     void RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     void RemoveGuiWindow(const std::string& name);

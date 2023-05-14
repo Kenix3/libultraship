@@ -450,7 +450,7 @@ static void gfx_sdl_onkeyup(int scancode) {
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        LUS::EventImpl event_impl;
+        LUS::WindowEvent event_impl;
         event_impl.Sdl = { &event };
         LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
         switch (event.type) {
