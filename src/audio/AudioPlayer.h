@@ -7,7 +7,7 @@ namespace LUS {
 class AudioPlayer {
 
   public:
-    AudioPlayer(std::string backend);
+    AudioPlayer();
 
     bool Init(void);
     virtual int Buffered(void) = 0;
@@ -20,13 +20,10 @@ class AudioPlayer {
         return 44100;
     }
 
-    std::string GetBackend();
-
   protected:
     virtual bool DoInit(void) = 0;
 
   private:
-    std::string mBackend;
     bool mInitialized;
 };
 } // namespace LUS
