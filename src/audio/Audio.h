@@ -7,17 +7,18 @@
 namespace LUS {
 enum class AudioBackend { WASAPI, PULSE, SDL };
 
-
 class Audio {
-public:
+  public:
     void Init();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     AudioBackend GetAudioBackend();
     void SetAudioBackend(AudioBackend backend);
-protected:
+
+  protected:
     static AudioBackend DetermineAudioBackendFromConfig();
     static std::string DetermineAudioBackendNameFromBackend(AudioBackend backend);
-private:
+
+  private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     AudioBackend mAudioBackend;
 };

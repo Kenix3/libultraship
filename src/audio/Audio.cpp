@@ -12,7 +12,7 @@ void Audio::Init() {
             break;
 #endif
 #if defined(__linux)
-            case AudioBackend::PULSE:
+        case AudioBackend::PULSE:
             mAudioPlayer = std::make_shared<PulseAudioPlayer>();
             break;
 #endif
@@ -59,7 +59,7 @@ AudioBackend Audio::DetermineAudioBackendFromConfig() {
 #elif defined(__linux)
         return AudioBackend::PULSE;
 #else
-    return AudioBackend::SDL;
+        return AudioBackend::SDL;
 #endif
     }
 }
