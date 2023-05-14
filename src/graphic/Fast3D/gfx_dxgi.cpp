@@ -231,7 +231,7 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
-    LUS::EventImpl event_impl;
+    LUS::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
     switch (message) {
