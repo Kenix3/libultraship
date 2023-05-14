@@ -66,8 +66,9 @@ void Window::Init() {
         mHeight = GetContext()->GetConfig()->getInt("Window.Height", 480);
     }
 
-    InitWindowManager(GetContext()->GetConfig()->getString("Window.GfxBackend"),
-                      GetContext()->GetConfig()->getString("Window.GfxApi"));
+    WindowBackend backend = DetermineBackendFromConfig(GetContext()->GetConfig()->getString("Window.GfxBackend"),
+                                                       GetContext()->GetConfig()->getString("Window.GfxApi"));
+    InitWindowManager(backend);
 
     gfx_init(mWindowManagerApi, mRenderingApi, GetContext()->GetName().c_str(), mIsFullscreen, mWidth, mHeight);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
@@ -196,65 +197,131 @@ float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
 
-void Window::InitWindowManager(std::string windowManagerBackend, std::string gfxApiBackend) {
-    // Param can override
-    mWindowManagerName = windowManagerBackend;
-    mRenderingApiName = gfxApiBackend;
-#ifdef ENABLE_DX11
-    if (mWindowManagerName == "dx11") {
-        mRenderingApi = &gfx_direct3d11_api;
-        mWindowManagerApi = &gfx_dxgi_api;
-        return;
-    }
-#endif
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
-    if (mWindowManagerName == "sdl") {
-        mRenderingApi = &gfx_opengl_api;
-        mWindowManagerApi = &gfx_sdl;
+WindowBackend Window::DetermineBackendFromConfig(std::string windowManagerName, std::string gfxApiName) {
+    if (windowManagerName == "dx11") {
+        return WindowBackend::DX11;
+    } else if (windowManagerName == "dx12") {
+        return WindowBackend::DX12;
+    } else if (windowManagerName == "sdl") {
 #ifdef __APPLE__
-        if (mRenderingApiName == "Metal" && Metal_IsSupported()) {
-            mRenderingApi = &gfx_metal_api;
+        if (gfxApiName == "Metal" && Metal_IsSupported()) {
+            return WindowBackend::SDL_METAL;
         }
 #endif
-        return;
-    }
-#if defined(__linux__) && defined(X11_SUPPORTED)
-    if (mWindowManagerName == "glx") {
-        mRenderingApi = &gfx_opengl_api;
-        mWindowManagerApi = &gfx_glx;
-        return;
-    }
-#endif
-#endif
-
-    // Defaults if not on list above
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
-    mRenderingApi = &gfx_opengl_api;
-#ifdef __APPLE__
-    if (Metal_IsSupported()) {
-        mRenderingApi = &gfx_metal_api;
-    }
-#endif
-#if defined(__linux__) && defined(X11_SUPPORTED)
-    // LINUX_TODO:
-    // *mWindowManagerApi = &gfx_glx;
-    mWindowManagerApi = &gfx_sdl;
-#else
-    mWindowManagerApi = &gfx_sdl;
-#endif
-#endif
+        return WindowBackend::SDL_OPENGL;
+    } else if (windowManagerName == "glx"){
+        return WindowBackend::GLX_OPENGL;
+    } else {
+        // Defaults if not on list above
 #ifdef ENABLE_DX12
-    mRenderingApi = &gfx_direct3d12_api;
-    mWindowManagerApi = &gfx_dxgi_api;
+        return WindowBackend::DX12;
 #endif
 #ifdef ENABLE_DX11
-    mRenderingApi = &gfx_direct3d11_api;
-    mWindowManagerApi = &gfx_dxgi_api;
+        return WindowBackend::DX11;
 #endif
 #ifdef __WIIU__
-    mRenderingApi = &gfx_gx2_api;
-    mWindowManagerApi = &gfx_wiiu;
+        return WindowBackend::GX2;
 #endif
+#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#ifdef __APPLE__
+        if (Metal_IsSupported()) {
+            return WindowBackend::SDL_METAL;
+        } else {
+            return WindowBackend::SDL_OPENGL;
+        }
+#endif
+#if defined(__linux__) && defined(X11_SUPPORTED)
+        // return Window::Backend::GLX_OPENGL;
+        return WindowBackend::SDL_OPENGL;
+#else
+        return WindowBackend::SDL_OPENGL;
+#endif
+#endif
+        SPDLOG_ERROR("Could not determine rendering backend from window manager {} and gfx api {}", windowManagerName, gfxApiName);
+    }
+}
+
+std::string Window::DetermineWindowManagerFromBackend(WindowBackend backend) {
+    switch (backend) {
+        case WindowBackend::DX11:
+            return "dx11";
+        case WindowBackend::DX12:
+            return "dx12";
+        case WindowBackend::GLX_OPENGL:
+            return "glx";
+        case WindowBackend::SDL_OPENGL:
+            return "sdl";
+        case WindowBackend::SDL_METAL:
+            return "sdl";
+        case WindowBackend::GX2:
+            return "gx2";
+        default:
+            return "";
+    }
+}
+
+std::string Window::DetermineGraphicsApiFromBackend(WindowBackend backend) {
+    switch (backend) {
+        case WindowBackend::DX11:
+            return "DirectX 11";
+        case WindowBackend::DX12:
+            return "DirectX 12";
+        case WindowBackend::GLX_OPENGL:
+            return "OpenGL";
+        case WindowBackend::SDL_OPENGL:
+            return "OpenGL";
+        case WindowBackend::SDL_METAL:
+            return "Metal";
+        case WindowBackend::GX2:
+            return "GX2";
+        default:
+            return "";
+    }
+}
+
+void Window::InitWindowManager(WindowBackend backend) {
+    SetWindowBackend(backend);
+    switch (backend) {
+#ifdef ENABLE_DX11
+        case WindowBackend::DX11:
+            mRenderingApi = &gfx_direct3d11_api;
+            mWindowManagerApi = &gfx_dxgi_api;
+            break;
+#endif
+#ifdef ENABLE_DX12
+        case WindowBackend::DX12:
+            mRenderingApi = &gfx_direct3d12_api;
+            mWindowManagerApi = &gfx_dxgi_api;
+            break;
+#endif
+#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#if defined(__linux__) && defined(X11_SUPPORTED)
+        case WindowBackend::GLX_OPENGL:
+            mRenderingApi = &gfx_opengl_api;
+            mWindowManagerApi = &gfx_glx;
+            break;
+#endif
+        case WindowBackend::SDL_OPENGL:
+            mRenderingApi = &gfx_opengl_api;
+            mWindowManagerApi = &gfx_sdl;
+            break;
+#ifdef __APPLE__
+        case WindowBackend::SDL_METAL:
+            mRenderingApi = &gfx_metal_api;
+            mWindowManagerApi = &gfx_sdl;
+            break;
+#endif
+#endif
+#ifdef __WIIU__
+        case WindowBackend::GX2:
+            mRenderingApi = &gfx_gx2_api;
+            mWindowManagerApi = &gfx_wiiu;
+            break;
+#endif
+        default:
+            SPDLOG_ERROR("Could not load the correct rendering backend");
+            break;
+    }
 }
 
 bool Window::IsFullscreen() {
@@ -281,20 +348,12 @@ std::shared_ptr<Gui> Window::GetGui() {
     return mGui;
 }
 
-std::string Window::GetWindowManagerName() {
-    return mWindowManagerName;
-}
-
-std::string Window::GetRenderingApiName() {
-    return mRenderingApiName;
-}
-
 bool Window::SupportsWindowedFullscreen() {
 #ifdef __SWITCH__
     return false;
 #endif
 
-    if (mWindowManagerName == "sdl") {
+    if (GetWindowBackend() == WindowBackend::SDL_OPENGL || GetWindowBackend() == WindowBackend::SDL_METAL) {
         return true;
     }
 
@@ -307,5 +366,17 @@ void Window::SetResolutionMultiplier(float multiplier) {
 
 void Window::SetMsaaLevel(uint32_t value) {
     gfx_msaa_level = value;
+}
+
+WindowBackend Window::GetWindowBackend() {
+    return mWindowBackend;
+}
+
+void Window::SetWindowBackend(WindowBackend backend) {
+    std::string gfxBackend = DetermineWindowManagerFromBackend(backend);
+    std::string gfxApi = DetermineGraphicsApiFromBackend(backend);
+    Context::GetInstance()->GetConfig()->setString("Window.GfxBackend", gfxBackend);
+    Context::GetInstance()->GetConfig()->setString("Window.GfxApi", gfxApi);
+    mWindowBackend = backend;
 }
 } // namespace LUS
