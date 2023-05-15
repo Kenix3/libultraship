@@ -38,6 +38,8 @@ Window::~Window() {
 }
 
 void Window::Init() {
+    mGui = std::make_shared<Gui>(Context::GetInstance()->GetWindow());
+
     bool steamDeckGameMode = false;
 
 #ifdef __linux__
