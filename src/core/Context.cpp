@@ -253,6 +253,10 @@ std::shared_ptr<Console> Context::GetConsole() {
     return mConsole;
 }
 
+std::shared_ptr<Audio> Context::GetAudio() {
+    return mAudio;
+}
+
 std::string Context::GetConfigFilePath() {
     return mConfigFilePath;
 }

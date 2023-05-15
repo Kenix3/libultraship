@@ -1,5 +1,6 @@
 #include "core/bridge/audioplayerbridge.h"
 #include "core/Context.h"
+#include "audio/Audio.h"
 
 extern "C" {
 
