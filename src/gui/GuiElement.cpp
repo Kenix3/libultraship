@@ -11,6 +11,15 @@ GuiElement::GuiElement(const std::string& visibilityConsoleVariable, bool isVisi
     }
 }
 
+GuiElement::GuiElement(const std::string& visibilityConsoleVariable) : GuiElement(visibilityConsoleVariable, false) {
+}
+
+GuiElement::GuiElement(bool isVisible) : GuiElement("", isVisible) {
+}
+
+GuiElement::GuiElement() : GuiElement("", false) {
+}
+
 void GuiElement::Init() {
     if (IsInitialized()) {
         return;
