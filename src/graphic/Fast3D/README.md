@@ -28,6 +28,3 @@ When you are ready to start the main loop, call `wapi->main_loop(one_iteration_f
 
 For the best experience, please change the Vtx and Mtx structures to use floats instead of fixed point arithmetic (`GBI_FLOATS`).
 
-# License
-
-See LICENSE.txt. Redistributions are allowed only in source form, not in binary form.
