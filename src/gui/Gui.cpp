@@ -676,7 +676,11 @@ void Gui::RemoveGuiWindow(const std::string& name) {
 }
 
 std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
-    return mGuiWindows[name];
+    if (mGuiWindows.contains(name)) {
+        return mGuiWindows[name];
+    } else {
+        return nullptr;
+    }
 }
 
 void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
