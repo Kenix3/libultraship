@@ -357,7 +357,6 @@ void InputEditorWindow::DrawControllerSchema() {
 void InputEditorWindow::UpdateElement() {
     if (mGameInputBlockTimer != INT32_MAX) {
         mGameInputBlockTimer--;
-        SPDLOG_ERROR(mGameInputBlockTimer);
         if (mGameInputBlockTimer <= 0) {
             mBlockGameInput = false;
             mGameInputBlockTimer = INT32_MAX;
