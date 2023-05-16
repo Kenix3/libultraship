@@ -55,14 +55,22 @@ void GuiElement::SyncVisibilityConsoleVariable() {
     }
 }
 
-void GuiElement::Show() {
-    mIsVisible = true;
+void GuiElement::SetVisiblity(bool visible) {
+    mIsVisible = visible;
     SyncVisibilityConsoleVariable();
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+}
+
+void GuiElement::Show() {
+    SetVisiblity(true);
 }
 
 void GuiElement::Hide() {
-    mIsVisible = false;
-    SyncVisibilityConsoleVariable();
+    SetVisiblity(false);
+}
+
+void GuiElement::ToggleVisibilty() {
+    SetVisiblity(!IsVisible());
 }
 
 bool GuiElement::IsVisible() {
