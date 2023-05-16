@@ -14,6 +14,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawControllerSelect(int32_t currentPort);
     void DrawVirtualStick(const char* label, ImVec2 stick);
     void DrawControllerSchema();
+    bool ShouldBlockGameInput();
 
   protected:
     void InitElement() override;
@@ -23,5 +24,7 @@ class InputEditorWindow : public GuiWindow {
   private:
     int32_t mCurrentPort;
     int32_t mBtnReading;
+    bool mBlockGameInput;
+    int32_t mGameInputBlockTimer;
 };
 } // namespace LUS
