@@ -69,7 +69,7 @@ void GuiElement::Hide() {
     SetVisiblity(false);
 }
 
-void GuiElement::ToggleVisibilty() {
+void GuiElement::ToggleVisibility() {
     SetVisiblity(!IsVisible());
 }
 
