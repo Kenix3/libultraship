@@ -16,6 +16,7 @@ class GuiElement {
 
     void Show();
     void Hide();
+    void ToggleVisibilty();
     bool IsVisible();
     bool IsInitialized();
 
@@ -24,6 +25,7 @@ class GuiElement {
     virtual void DrawElement() = 0;
     virtual void UpdateElement() = 0;
 
+    void SetVisiblity(bool visible);
     bool mIsVisible;
 
   private:
