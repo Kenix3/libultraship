@@ -48,17 +48,22 @@ void GuiElement::SyncVisibilityConsoleVariable() {
         return;
     }
 
+    bool shouldSave = CVarGetInteger(mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
+
     if (IsVisible()) {
         CVarSetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
     } else {
         CVarClear(mVisibilityConsoleVariable.c_str());
+    }
+
+    if (shouldSave) {
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
     }
 }
 
 void GuiElement::SetVisiblity(bool visible) {
     mIsVisible = visible;
     SyncVisibilityConsoleVariable();
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
 }
 
 void GuiElement::Show() {
