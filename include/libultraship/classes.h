@@ -25,6 +25,7 @@
 #include "controller/KeyboardScancodes.h"
 #include "controller/DummyController.h"
 #include "binarytools/BinaryReader.h"
+#include "binarytools/MemoryStream.h"
 #include "audio/Audio.h"
 #if defined(__linux__) || defined(__BSD__)
 #include "audio/PulseAudioPlayer.h"
