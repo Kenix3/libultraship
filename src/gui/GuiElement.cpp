@@ -57,7 +57,7 @@ void GuiElement::SyncVisibilityConsoleVariable() {
     }
 
     if (shouldSave) {
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();    
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
     }
 }
 
