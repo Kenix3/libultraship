@@ -1,6 +1,13 @@
 #include <stdio.h>
 
+#ifndef __SWITCH__
 #include "libultraship/libultraship.h"
+#else
+// including libultraship.h on switch leads to conflicting typedefs for u64 and s64
+// so we need to just include classes.h instead here
+#include "libultraship/classes.h"
+#endif
+
 
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
