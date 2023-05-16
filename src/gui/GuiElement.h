@@ -16,7 +16,7 @@ class GuiElement {
 
     void Show();
     void Hide();
-    void ToggleVisibilty();
+    void ToggleVisibility();
     bool IsVisible();
     bool IsInitialized();
 
