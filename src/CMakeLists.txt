@@ -101,8 +101,8 @@ set(Source_Files__Core__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/resourcebridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/windowbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/windowbridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audioplayerbridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audioplayerbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audiobridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audiobridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.h
