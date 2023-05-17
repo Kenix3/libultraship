@@ -1,4 +1,4 @@
-#include "core/bridge/audioplayerbridge.h"
+#include "core/bridge/audiobridge.h"
 #include "core/Context.h"
 #include "audio/Audio.h"
 
