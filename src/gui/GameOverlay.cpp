@@ -8,57 +8,6 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-int32_t GameOverlay::OverlayCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                    std::string* output) {
-    if (args.size() < 3) {
-        return 1;
-    }
-
-    if (CVarGet(args[2].c_str()) != nullptr) {
-        const char* key = args[2].c_str();
-        auto overlay = Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay();
-        if (!overlay) {
-            return 1;
-        }
-
-        if (args[1] == "add") {
-            if (!overlay->mRegisteredOverlays.contains(key)) {
-                overlay->mRegisteredOverlays[key] = Overlay({ OverlayType::TEXT, key, -1.0f });
-
-                if (output) {
-                    *output += "Added overlay: " + args[2];
-                }
-            } else {
-                if (output) {
-                    *output += "Overlay already exists: " + args[2];
-                }
-            }
-        } else if (args[1] == "remove") {
-            if (overlay->mRegisteredOverlays.contains(key)) {
-                overlay->mRegisteredOverlays.erase(key);
-
-                if (output) {
-                    *output += "Removed overlay: " + args[2];
-                }
-            } else {
-                if (output) {
-                    *output += "Overlay not found: " + args[2];
-                }
-            }
-        } else {
-            if (output) {
-                *output += "Bad action supplied: " + args[1];
-            }
-        }
-    } else {
-        if (output) {
-            *output += "CVar " + args[2] + " does not exist";
-        }
-    }
-
-    return 0;
-}
-
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
     std::shared_ptr<Archive> base = Context::GetInstance()->GetResourceManager()->GetArchive();
@@ -185,9 +134,6 @@ void GameOverlay::Init() {
             mCurrentFont = defaultFont;
         }
     }
-
-    LUS::Context::GetInstance()->GetConsole()->AddCommand("overlay",
-                                                          { OverlayCommand, "Draw an overlay using a cvar value" });
 }
 
 void GameOverlay::DrawSettings() {
