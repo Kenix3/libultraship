@@ -24,6 +24,6 @@ class InputEditorWindow : public GuiWindow {
     int32_t mCurrentPort;
     int32_t mBtnReading;
     int32_t mGameInputBlockTimer;
-    static const inline int32_t mGameInputBlockId = -1;
+    const int32_t mGameInputBlockId = -1;
 };
 } // namespace LUS
