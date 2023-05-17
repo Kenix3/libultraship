@@ -320,7 +320,7 @@ void Gui::Update(WindowEvent event) {
     }
 }
 
-void Gui::DrawMenu(void) {
+void Gui::DrawMenu() {
     LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
@@ -570,7 +570,9 @@ void Gui::StartFrame() {
             ImGui::End();
         }
     }
+}
 
+void Gui::RenderViewports() {
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {

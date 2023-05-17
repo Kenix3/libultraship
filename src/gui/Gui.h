@@ -61,9 +61,10 @@ class Gui {
     void Init(GuiWindowInitData windowImpl);
     void StartFrame();
     void EndFrame();
+    void RenderViewports();
+    void DrawMenu();
 
     void SaveConsoleVariablesOnNextTick();
-    void DrawMenu(void);
     void Update(WindowEvent event);
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     void RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
