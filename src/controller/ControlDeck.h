@@ -28,6 +28,6 @@ class ControlDeck {
     std::vector<int32_t> mPortList = {};
     std::vector<std::shared_ptr<Controller>> mDevices = {};
     uint8_t* mControllerBits = nullptr;
-    std::map<int32_t, bool> mShouldBlockGameInput;
+    std::unordered_map<int32_t, bool> mShouldBlockGameInput;
 };
 } // namespace LUS
