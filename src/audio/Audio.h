@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include "audio/AudioPlayer.h"
 
 namespace LUS {
@@ -12,6 +13,7 @@ class Audio {
     void Init();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     AudioBackend GetAudioBackend();
+    std::shared_ptr<std::vector<AudioBackend>> GetAvailableAudioBackends();
     void SetAudioBackend(AudioBackend backend);
 
   protected:
@@ -21,5 +23,6 @@ class Audio {
   private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     AudioBackend mAudioBackend;
+    std::shared_ptr<std::vector<AudioBackend>> mAvailableAudioBackends;
 };
 } // namespace LUS
