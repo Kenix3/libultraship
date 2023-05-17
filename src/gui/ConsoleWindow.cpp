@@ -13,7 +13,7 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
     if (output) {
         *output += "Commands:\n";
         for (const auto& cmd : console->GetCommands()) {
-            *output += " - " + cmd.first;
+            *output += " - " + cmd.first + "\n";
         }
 
         return 0;
@@ -31,11 +31,11 @@ int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std:
             *output += "A console window is necessary for Clear";
         }
 
-        return 0;
+        return 1;
     }
 
     window->ClearLogs(window->GetCurrentChannel());
-    return 1;
+    return 0;
 }
 
 int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
@@ -477,16 +477,18 @@ void ConsoleWindow::Dispatch(const std::string& line) {
         int32_t commandResult = console->Run(line, &output);
 
         if (commandResult != 0) {
-            SendErrorMessage(std::string("[LUS] Command Failed with code %d", commandResult));
-            SendErrorMessage("[LUS] Usage: " + cmdArgs[0] + " " + console->BuildUsage(entry));
+            SendErrorMessage(StringHelper::Sprintf("[LUS] Command Failed with code %d", commandResult));
             if (!output.empty()) {
                 SendErrorMessage(output);
             }
+            SendErrorMessage("[LUS] Usage: " + cmdArgs[0] + " " + console->BuildUsage(entry));
         } else {
             if (!output.empty()) {
                 SendInfoMessage(output);
             } else {
-                SendInfoMessage(std::string("[LUS] Command Success!"));
+                if (line != "clear") {
+                    SendInfoMessage(std::string("[LUS] Command Success!"));
+                }
             }
         }
 
