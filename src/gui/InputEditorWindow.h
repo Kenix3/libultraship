@@ -23,5 +23,7 @@ class InputEditorWindow : public GuiWindow {
   private:
     int32_t mCurrentPort;
     int32_t mBtnReading;
+    int32_t mGameInputBlockTimer;
+    const int32_t mGameInputBlockId = -1;
 };
 } // namespace LUS

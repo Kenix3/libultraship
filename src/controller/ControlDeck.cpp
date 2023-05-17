@@ -86,7 +86,7 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
         // we search for the real device to read input from it
         if (backend->GetGuid() == "Auto") {
             for (const auto& device : mDevices) {
-                if (ShouldBlockGameInput(device->GetGuid())) {
+                if (IsBlockingGameInput(device->GetGuid())) {
                     device->ReadToPad(nullptr, i);
                     continue;
                 }
@@ -96,7 +96,7 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
             continue;
         }
 
-        if (ShouldBlockGameInput(backend->GetGuid())) {
+        if (IsBlockingGameInput(backend->GetGuid())) {
             backend->ReadToPad(nullptr, i);
             continue;
         }
@@ -275,15 +275,15 @@ uint8_t* ControlDeck::GetControllerBits() {
     return mControllerBits;
 }
 
-void ControlDeck::BlockGameInput() {
-    mShouldBlockGameInput = true;
+void ControlDeck::BlockGameInput(int32_t inputBlockId) {
+    mGameInputBlockers[inputBlockId] = true;
 }
 
-void ControlDeck::UnblockGameInput() {
-    mShouldBlockGameInput = false;
+void ControlDeck::UnblockGameInput(int32_t inputBlockId) {
+    mGameInputBlockers.erase(inputBlockId);
 }
 
-bool ControlDeck::ShouldBlockGameInput(std::string inputDeviceGuid) const {
+bool ControlDeck::IsBlockingGameInput(const std::string& inputDeviceGuid) const {
     // We block controller input if F1 menu is open and control navigation is on.
     // This is because we don't want controller inputs to affect the game
     bool shouldBlockControllerInput = CVarGetInteger("gOpenMenuBar", 0) && CVarGetInteger("gControlNav", 0);
@@ -294,6 +294,7 @@ bool ControlDeck::ShouldBlockGameInput(std::string inputDeviceGuid) const {
     bool shouldBlockKeyboardInput = io.WantCaptureKeyboard;
 
     bool inputDeviceIsKeyboard = inputDeviceGuid == "Keyboard";
-    return mShouldBlockGameInput || (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
+    return (!mGameInputBlockers.empty()) ||
+           (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
 }
 } // namespace LUS
