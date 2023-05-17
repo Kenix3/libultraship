@@ -294,6 +294,7 @@ bool ControlDeck::IsBlockingGameInput(const std::string& inputDeviceGuid) const 
     bool shouldBlockKeyboardInput = io.WantCaptureKeyboard;
 
     bool inputDeviceIsKeyboard = inputDeviceGuid == "Keyboard";
-    return (!mGameInputBlockers.empty()) || (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
+    return (!mGameInputBlockers.empty()) ||
+        (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
 }
 } // namespace LUS
