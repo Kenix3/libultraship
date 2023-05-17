@@ -22,12 +22,12 @@ class ControlDeck {
     uint8_t* GetControllerBits();
     void BlockGameInput(int32_t inputBlockId);
     void UnblockGameInput(int32_t inputBlockId);
-    bool ShouldBlockGameInput(const std::string& inputDeviceGuid) const;
+    bool IsBlockingGameInput(const std::string& inputDeviceGuid) const;
 
   private:
     std::vector<int32_t> mPortList = {};
     std::vector<std::shared_ptr<Controller>> mDevices = {};
     uint8_t* mControllerBits = nullptr;
-    std::unordered_map<int32_t, bool> mShouldBlockGameInput;
+    std::unordered_map<int32_t, bool> mGameInputBlockers;
 };
 } // namespace LUS
