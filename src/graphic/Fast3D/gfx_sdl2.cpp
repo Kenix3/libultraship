@@ -8,7 +8,6 @@
 #include "libultraship/classes.h"
 #endif
 
-
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
 #ifdef __MINGW32__
