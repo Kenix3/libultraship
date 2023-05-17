@@ -110,14 +110,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
 #endif
 
-    if (GetMenuBar() && !GetMenuBar()->IsVisible()) {
-#if defined(__SWITCH__) || defined(__WIIU__)
-        mGameOverlay->TextDrawNotification(30.0f, true, "Press - to access enhancements menu");
-#else
-        mGameOverlay->TextDrawNotification(30.0f, true, "Press F1 to access enhancements menu");
-#endif
-    }
-
     auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
     auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
@@ -133,9 +125,10 @@ void Gui::Init(GuiWindowInitData windowImpl) {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
     }
 
+    GetGuiWindow("Stats")->Init();
+    GetGuiWindow("Input Editor")->Init();
     GetGuiWindow("Console")->Init();
     GetGameOverlay()->Init();
-    GetGuiWindow("Input Editor")->Init();
 
     ImGuiWMInit();
     ImGuiBackendInit();
@@ -240,10 +233,6 @@ void Gui::InitSettings() {
     LUS::RegisterHook<LUS::GfxInit>([this] {
         gfx_get_current_rendering_api()->set_texture_filter(
             (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
-
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Init();
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Init();
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Stats")->Init();
     });
 }
 
