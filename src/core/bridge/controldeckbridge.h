@@ -3,12 +3,14 @@
 #ifndef CONTROLDECKBRIDGE_H
 #define CONTROLDECKBRIDGE_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void BlockGameInput(void);
-void UnblockGameInput(void);
+void BlockGameInput(uint16_t inputBlockId);
+void UnblockGameInput(uint16_t inputBlockId);
 
 #ifdef __cplusplus
 };

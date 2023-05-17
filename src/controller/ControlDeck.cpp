@@ -275,15 +275,15 @@ uint8_t* ControlDeck::GetControllerBits() {
     return mControllerBits;
 }
 
-void ControlDeck::BlockGameInput() {
-    mShouldBlockGameInput = true;
+void ControlDeck::BlockGameInput(int32_t inputBlockId) {
+    mShouldBlockGameInput[inputBlockId] = true;
 }
 
-void ControlDeck::UnblockGameInput() {
-    mShouldBlockGameInput = false;
+void ControlDeck::UnblockGameInput(int32_t inputBlockId) {
+    mShouldBlockGameInput.erase(inputBlockId);
 }
 
-bool ControlDeck::ShouldBlockGameInput(std::string inputDeviceGuid) const {
+bool ControlDeck::ShouldBlockGameInput(const std::string& inputDeviceGuid) const {
     // We block controller input if F1 menu is open and control navigation is on.
     // This is because we don't want controller inputs to affect the game
     bool shouldBlockControllerInput = CVarGetInteger("gOpenMenuBar", 0) && CVarGetInteger("gControlNav", 0);
@@ -294,6 +294,6 @@ bool ControlDeck::ShouldBlockGameInput(std::string inputDeviceGuid) const {
     bool shouldBlockKeyboardInput = io.WantCaptureKeyboard;
 
     bool inputDeviceIsKeyboard = inputDeviceGuid == "Keyboard";
-    return mShouldBlockGameInput || (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
+    return (!mShouldBlockGameInput.empty()) || (inputDeviceIsKeyboard ? shouldBlockKeyboardInput : shouldBlockControllerInput);
 }
 } // namespace LUS

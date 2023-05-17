@@ -12,6 +12,7 @@ namespace LUS {
 void InputEditorWindow::InitElement() {
     mCurrentPort = 0;
     mBtnReading = -1;
+    mGameInputBlockTimer = INT32_MAX;
 }
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
@@ -40,6 +41,7 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
 
     if (readingMode) {
         const int32_t btn = backend->ReadRawPress();
+        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput(mGameInputBlockId);
 
         if (btn != -1) {
             backend->SetButtonMapping(currentPort, n64Btn, btn);
@@ -47,6 +49,9 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
 
             // avoid immediately triggering another button during gamepad nav
             ImGui::SetKeyboardFocusHere(0);
+
+            // don't send input to the game for a third of a second after getting the mapping
+            mGameInputBlockTimer = ImGui::GetIO().Framerate / 3;
         }
     }
 
@@ -349,6 +354,13 @@ void InputEditorWindow::DrawControllerSchema() {
 }
 
 void InputEditorWindow::UpdateElement() {
+    if (mGameInputBlockTimer != INT32_MAX) {
+        mGameInputBlockTimer--;
+        if (mGameInputBlockTimer <= 0) {
+            LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(mGameInputBlockId);
+            mGameInputBlockTimer = INT32_MAX;
+        }
+    }
 }
 
 void InputEditorWindow::DrawElement() {
