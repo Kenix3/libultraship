@@ -68,6 +68,21 @@ void Window::Init() {
         mHeight = GetContext()->GetConfig()->getInt("Window.Height", 480);
     }
 
+    mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
+#ifdef _WIN32
+    mAvailableWindowBackends->push_back(WindowBackend::DX11);
+#endif
+#ifdef __APPLE__
+    if (Metal_IsSupported()) {
+        mAvailableWindowBackends->push_back(WindowBackend::SDL_METAL);
+    }
+#endif
+#ifdef __WIIU__
+    mAvailableWindowBackends->push_back(WindowBackend::GX2);
+#else
+    mAvailableWindowBackends->push_back(WindowBackend::SDL_OPENGL);
+#endif
+
     WindowBackend backend = DetermineBackendFromConfig();
     InitWindowManager(backend);
 
@@ -374,6 +389,10 @@ void Window::SetMsaaLevel(uint32_t value) {
 
 WindowBackend Window::GetWindowBackend() {
     return mWindowBackend;
+}
+
+std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends() {
+    return mAvailableWindowBackends;
 }
 
 void Window::SetWindowBackend(WindowBackend backend) {

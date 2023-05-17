@@ -53,6 +53,7 @@ class Window {
     std::shared_ptr<Gui> GetGui();
     void SetWindowBackend(WindowBackend backend);
     WindowBackend GetWindowBackend();
+    std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
     static WindowBackend DetermineBackendFromConfig();
@@ -68,6 +69,7 @@ class Window {
     std::shared_ptr<Context> mContext;
     std::shared_ptr<Gui> mGui;
     WindowBackend mWindowBackend;
+    std::shared_ptr<std::vector<WindowBackend>> mAvailableWindowBackends;
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
     bool mIsFullscreen;
