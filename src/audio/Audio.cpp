@@ -4,6 +4,15 @@
 
 namespace LUS {
 void Audio::Init() {
+    mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
+#ifdef _WIN32
+    mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
+#endif
+#ifdef __linux
+    mAvailableAudioBackends->push_back(AudioBackend::PULSE);
+#endif
+    mAvailableAudioBackends->push_back(AudioBackend::SDL);
+
     SetAudioBackend(DetermineAudioBackendFromConfig());
     switch (GetAudioBackend()) {
 #ifdef _WIN32
@@ -75,6 +84,10 @@ std::string Audio::DetermineAudioBackendNameFromBackend(AudioBackend backend) {
         default:
             return "";
     }
+}
+
+std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {
+    return mAvailableAudioBackends;
 }
 
 } // namespace LUS
