@@ -3177,6 +3177,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
         }
     }
     LUS::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
     has_drawn_imgui_menu = false;
