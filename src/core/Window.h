@@ -9,15 +9,7 @@
 #include "gui/Gui.h"
 
 namespace LUS {
-enum class WindowBackend {
-    DX11,
-    DX12,
-    GLX_OPENGL,
-    SDL_OPENGL,
-    SDL_METAL,
-    GX2,
-    BACKEND_COUNT
-};
+enum class WindowBackend { DX11, DX12, GLX_OPENGL, SDL_OPENGL, SDL_METAL, GX2, BACKEND_COUNT };
 
 class Context;
 
