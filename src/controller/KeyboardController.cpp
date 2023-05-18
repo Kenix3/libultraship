@@ -7,7 +7,7 @@
 #include <SDL2/SDL_keyboard.h>
 #endif
 
-#include "misc/Hooks.h"
+#include "utils/Hooks.h"
 
 namespace LUS {
 

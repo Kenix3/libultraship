@@ -6,8 +6,8 @@
 #include "Utils/StringHelper.h"
 #include <StrHash64.h>
 #include <filesystem>
-#include "binarytools/MemoryStream.h"
-#include "binarytools/FileHelper.h"
+#include "utils/binarytools/MemoryStream.h"
+#include "utils/binarytools/FileHelper.h"
 
 #ifdef __SWITCH__
 #include "port/switch/SwitchImpl.h"

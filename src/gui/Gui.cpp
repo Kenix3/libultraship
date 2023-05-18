@@ -9,7 +9,7 @@
 
 #include "Mercury.h"
 #include "core/Window.h"
-#include "misc/Hooks.h"
+#include "utils/Hooks.h"
 #include "core/Context.h"
 #include "core/bridge/consolevariablebridge.h"
 #include "resource/type/Texture.h"

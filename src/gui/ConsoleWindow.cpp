@@ -3,7 +3,7 @@
 #include "core/bridge/consolevariablebridge.h"
 #include "core/Context.h"
 #include <Utils/StringHelper.h>
-#include "misc/Utils.h"
+#include "utils/Utils.h"
 #include <sstream>
 
 namespace LUS {

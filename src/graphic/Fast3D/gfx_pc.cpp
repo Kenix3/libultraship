@@ -29,7 +29,7 @@
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
 #include "gfx_screen_config.h"
-#include "misc/Hooks.h"
+#include "utils/Hooks.h"
 
 #include "log/luslog.h"
 #include "gui/Gui.h"
@@ -37,7 +37,7 @@
 #include "resource/Resource.h"
 #include "resource/ResourceManager.h"
 #include "resource/type/Texture.h"
-#include "misc/Utils.h"
+#include "utils/Utils.h"
 #include "libultraship/libultraship.h"
 
 uintptr_t gfxFramebuffer;

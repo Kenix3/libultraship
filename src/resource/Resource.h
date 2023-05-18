@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include "ResourceType.h"
-#include "binarytools/BinaryWriter.h"
+#include "utils/binarytools/BinaryWriter.h"
 
 namespace LUS {
 class ResourceManager;

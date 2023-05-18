@@ -32,24 +32,6 @@ source_group("Audio" FILES ${Source_Files__Audio})
 
 target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
-#=================== BinaryTools ==================
-
-set(Source_Files__BinaryTools
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/BinaryReader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/BinaryReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/BinaryWriter.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/BinaryWriter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/endianness.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/MemoryStream.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/MemoryStream.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/Stream.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/binarytools/Stream.cpp
-)
-
-source_group("BinaryTools" FILES ${Source_Files__BinaryTools})
-
-target_sources(libultraship PRIVATE ${Source_Files__BinaryTools})
-
 #=================== Controller ===================
 
 set(Source_Files__Controller
@@ -168,29 +150,47 @@ set(Source_Files__Gui
 source_group("gui" FILES ${Source_Files__Gui})
 target_sources(libultraship PRIVATE ${Source_Files__Gui})
 
-#=================== Misc ===================
+#=================== Utils ===================
 
-set(Source_Files__Misc
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Hooks.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Hooks.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/LUSMacros.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/stox.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/stox.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Utils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc/Utils.cpp
+set(Source_Files__Utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/Hooks.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/Hooks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/LUSMacros.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/stox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/stox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/Utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/Utils.cpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    list(APPEND Source_Files__Misc
-        ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm
+    list(APPEND Source_Files__Utils
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm
     )
 
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/misc/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 endif()
 
-source_group("Misc" FILES ${Source_Files__Misc})
-target_sources(libultraship PRIVATE ${Source_Files__Misc})
+source_group("utils" FILES ${Source_Files__Utils})
+target_sources(libultraship PRIVATE ${Source_Files__Utils})
+
+#=================== BinaryTools ==================
+
+set(Source_Files__Utils__BinaryTools
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/BinaryReader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/BinaryReader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/BinaryWriter.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/BinaryWriter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/endianness.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/MemoryStream.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/MemoryStream.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/Stream.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/binarytools/Stream.cpp
+)
+
+source_group("utils/binarytools" FILES ${Source_Files__Utils__BinaryTools})
+
+target_sources(libultraship PRIVATE ${Source_Files__Utils__BinaryTools})
 
 #=================== Port ===================
 
