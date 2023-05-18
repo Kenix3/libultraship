@@ -20,6 +20,8 @@ class Audio {
     static AudioBackend DetermineAudioBackendFromConfig();
     static std::string DetermineAudioBackendNameFromBackend(AudioBackend backend);
 
+    void InitAudioPlayer();
+
   private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     AudioBackend mAudioBackend;

@@ -3,17 +3,7 @@
 #include "core/Context.h"
 
 namespace LUS {
-void Audio::Init() {
-    mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
-#ifdef _WIN32
-    mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
-#endif
-#ifdef __linux
-    mAvailableAudioBackends->push_back(AudioBackend::PULSE);
-#endif
-    mAvailableAudioBackends->push_back(AudioBackend::SDL);
-
-    SetAudioBackend(DetermineAudioBackendFromConfig());
+void Audio::InitAudioPlayer() {
     switch (GetAudioBackend()) {
 #ifdef _WIN32
         case AudioBackend::WASAPI:
@@ -40,6 +30,19 @@ void Audio::Init() {
     }
 }
 
+void Audio::Init() {
+    mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
+#ifdef _WIN32
+    mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
+#endif
+#ifdef __linux
+    mAvailableAudioBackends->push_back(AudioBackend::PULSE);
+#endif
+    mAvailableAudioBackends->push_back(AudioBackend::SDL);
+
+    SetAudioBackend(DetermineAudioBackendFromConfig());
+}
+
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
     return mAudioPlayer;
 }
@@ -52,6 +55,7 @@ void Audio::SetAudioBackend(AudioBackend backend) {
     std::string audioBackendName = DetermineAudioBackendNameFromBackend(backend);
     Context::GetInstance()->GetConfig()->setString("Window.AudioBackend", audioBackendName);
     mAudioBackend = backend;
+    InitAudioPlayer();
 }
 
 AudioBackend Audio::DetermineAudioBackendFromConfig() {
