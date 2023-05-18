@@ -35,7 +35,7 @@
 #endif
 #include "audio/SDLAudioPlayer.h"
 #ifdef __APPLE__
-#include "misc/OSXFolderManager.h"
+#include "utils/OSXFolderManager.h"
 #endif
 #ifdef __SWITCH__
 #include "port/switch/SwitchImpl.h"

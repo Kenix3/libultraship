@@ -161,7 +161,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
 set(Source_Files__Utils
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/Hooks.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/Hooks.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/LUSMacros.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/stox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/stox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/Utils.h
