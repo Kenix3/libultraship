@@ -54,11 +54,12 @@ class Window {
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
     WindowBackend GetDefaultWindowBackend();
-    static std::string GetBackendNameFromBackend(WindowBackend backend);
     void SaveBackendSettingToConfig(WindowBackend backend);
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
+    static std::string GetBackendNameFromBackend(WindowBackend backend);
+
     void SetWindowBackend(WindowBackend backend);
 
   private:
