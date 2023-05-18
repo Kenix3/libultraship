@@ -16,6 +16,7 @@ enum class WindowBackend {
     SDL_OPENGL,
     SDL_METAL,
     GX2,
+    BACKEND_COUNT
 };
 
 class Context;
@@ -52,14 +53,12 @@ class Window {
     std::shared_ptr<Context> GetContext();
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
-    void SetConfigWindowBackend(WindowBackend backend);
-    WindowBackend GetConfigWindowBackend();
+    WindowBackend GetDefaultWindowBackend();
+    static std::string GetBackendNameFromBackend(WindowBackend backend);
+    void SaveBackendSettingToConfig(WindowBackend backend);
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
-    static std::string DetermineWindowManagerFromBackend(WindowBackend backend);
-    static std::string DetermineGraphicsApiFromBackend(WindowBackend backend);
-
     void SetWindowBackend(WindowBackend backend);
 
   private:

@@ -212,73 +212,7 @@ float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
 
-WindowBackend Window::GetConfigWindowBackend() {
-    std::string windowManagerName = Context::GetInstance()->GetConfig()->getString("Window.GfxBackend");
-    std::string gfxApiName = Context::GetInstance()->GetConfig()->getString("Window.GfxApi");
-    if (windowManagerName == "dx11") {
-        return WindowBackend::DX11;
-    } else if (windowManagerName == "dx12") {
-        return WindowBackend::DX12;
-    } else if (windowManagerName == "sdl") {
-#ifdef __APPLE__
-        if (gfxApiName == "Metal" && Metal_IsSupported()) {
-            return WindowBackend::SDL_METAL;
-        }
-#endif
-        return WindowBackend::SDL_OPENGL;
-    } else if (windowManagerName == "glx") {
-        return WindowBackend::GLX_OPENGL;
-    } else {
-        // Defaults if not on list above
-#ifdef ENABLE_DX12
-        return WindowBackend::DX12;
-#endif
-#ifdef ENABLE_DX11
-        return WindowBackend::DX11;
-#endif
-#ifdef __WIIU__
-        return WindowBackend::GX2;
-#endif
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
-#ifdef __APPLE__
-        if (Metal_IsSupported()) {
-            return WindowBackend::SDL_METAL;
-        } else {
-            return WindowBackend::SDL_OPENGL;
-        }
-#endif
-#if defined(__linux__) && defined(X11_SUPPORTED)
-        // return Window::Backend::GLX_OPENGL;
-        return WindowBackend::SDL_OPENGL;
-#else
-        return WindowBackend::SDL_OPENGL;
-#endif
-#endif
-        SPDLOG_ERROR("Could not determine rendering backend from window manager {} and gfx api {}", windowManagerName,
-                     gfxApiName);
-    }
-}
-
-std::string Window::DetermineWindowManagerFromBackend(WindowBackend backend) {
-    switch (backend) {
-        case WindowBackend::DX11:
-            return "dx11";
-        case WindowBackend::DX12:
-            return "dx12";
-        case WindowBackend::GLX_OPENGL:
-            return "glx";
-        case WindowBackend::SDL_OPENGL:
-            return "sdl";
-        case WindowBackend::SDL_METAL:
-            return "sdl";
-        case WindowBackend::GX2:
-            return "gx2";
-        default:
-            return "";
-    }
-}
-
-std::string Window::DetermineGraphicsApiFromBackend(WindowBackend backend) {
+std::string Window::GetBackendNameFromBackend(WindowBackend backend) {
     switch (backend) {
         case WindowBackend::DX11:
             return "DirectX 11";
@@ -298,7 +232,14 @@ std::string Window::DetermineGraphicsApiFromBackend(WindowBackend backend) {
 }
 
 void Window::InitWindowManager() {
-    SetWindowBackend(GetConfigWindowBackend());
+    WindowBackend backend;
+    int backendId = Context::GetInstance()->GetConfig()->getInt("Window.Backend.Id", -1);
+    if (backendId != -1 && backendId < static_cast<int>(WindowBackend::BACKEND_COUNT)) {
+        backend = static_cast<WindowBackend>(backendId);
+    } else {
+        backend = GetDefaultWindowBackend();
+    }
+    SetWindowBackend(backend);
 
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
@@ -391,19 +332,41 @@ WindowBackend Window::GetWindowBackend() {
     return mWindowBackend;
 }
 
+WindowBackend Window::GetDefaultWindowBackend() {
+#ifdef ENABLE_DX12
+    return WindowBackend::DX12;
+#endif
+#ifdef ENABLE_DX11
+    return WindowBackend::DX11;
+#endif
+#ifdef __WIIU__
+    return WindowBackend::GX2;
+#endif
+#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#ifdef __APPLE__
+    if (Metal_IsSupported()) {
+        return WindowBackend::SDL_METAL;
+    } else {
+        return WindowBackend::SDL_OPENGL;
+    }
+#endif
+#if defined(__linux__) && defined(X11_SUPPORTED)
+    // return Window::Backend::GLX_OPENGL;
+    return WindowBackend::SDL_OPENGL;
+#else
+    return WindowBackend::SDL_OPENGL;
+#endif
+#endif
+}
+
 std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends() {
     return mAvailableWindowBackends;
 }
 
-void Window::SetConfigWindowBackend(WindowBackend backend) {
-    std::string gfxBackend = DetermineWindowManagerFromBackend(backend);
-    std::string gfxApi = DetermineGraphicsApiFromBackend(backend);
-    Context::GetInstance()->GetConfig()->setString("Window.GfxBackend", gfxBackend);
-    Context::GetInstance()->GetConfig()->setString("Window.GfxApi", gfxApi);
-}
-
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
-    SetConfigWindowBackend(GetWindowBackend());
+    Context::GetInstance()->GetConfig()->setInt("Window.Backend.Id", static_cast<int>(backend));
+    Context::GetInstance()->GetConfig()->setString("Window.Backend.Name", GetBackendNameFromBackend(backend));
+    Context::GetInstance()->GetConfig()->save();
 }
 } // namespace LUS
