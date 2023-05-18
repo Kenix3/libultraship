@@ -45,20 +45,22 @@ class Window {
     const char* GetKeyName(int32_t scancode);
     int32_t GetLastScancode();
     void SetLastScancode(int32_t scanCode);
-    void InitWindowManager(WindowBackend backend);
+    void InitWindowManager();
     bool SupportsWindowedFullscreen();
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t value);
     std::shared_ptr<Context> GetContext();
     std::shared_ptr<Gui> GetGui();
-    void SetWindowBackend(WindowBackend backend);
     WindowBackend GetWindowBackend();
+    void SetConfigWindowBackend(WindowBackend backend);
+    WindowBackend GetConfigWindowBackend();
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
-    static WindowBackend DetermineBackendFromConfig();
     static std::string DetermineWindowManagerFromBackend(WindowBackend backend);
     static std::string DetermineGraphicsApiFromBackend(WindowBackend backend);
+
+    void SetWindowBackend(WindowBackend backend);
 
   private:
     static bool KeyDown(int32_t scancode);

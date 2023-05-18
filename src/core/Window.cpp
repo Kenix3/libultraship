@@ -83,8 +83,7 @@ void Window::Init() {
     mAvailableWindowBackends->push_back(WindowBackend::SDL_OPENGL);
 #endif
 
-    WindowBackend backend = DetermineBackendFromConfig();
-    InitWindowManager(backend);
+    InitWindowManager();
 
     gfx_init(mWindowManagerApi, mRenderingApi, GetContext()->GetName().c_str(), mIsFullscreen, mWidth, mHeight);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
@@ -213,7 +212,7 @@ float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
 
-WindowBackend Window::DetermineBackendFromConfig() {
+WindowBackend Window::GetConfigWindowBackend() {
     std::string windowManagerName = Context::GetInstance()->GetConfig()->getString("Window.GfxBackend");
     std::string gfxApiName = Context::GetInstance()->GetConfig()->getString("Window.GfxApi");
     if (windowManagerName == "dx11") {
@@ -298,8 +297,9 @@ std::string Window::DetermineGraphicsApiFromBackend(WindowBackend backend) {
     }
 }
 
-void Window::InitWindowManager(WindowBackend backend) {
-    SetWindowBackend(backend);
+void Window::InitWindowManager() {
+    SetWindowBackend(GetConfigWindowBackend());
+
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
         case WindowBackend::DX11:
@@ -395,11 +395,15 @@ std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends()
     return mAvailableWindowBackends;
 }
 
-void Window::SetWindowBackend(WindowBackend backend) {
+void Window::SetConfigWindowBackend(WindowBackend backend) {
     std::string gfxBackend = DetermineWindowManagerFromBackend(backend);
     std::string gfxApi = DetermineGraphicsApiFromBackend(backend);
     Context::GetInstance()->GetConfig()->setString("Window.GfxBackend", gfxBackend);
     Context::GetInstance()->GetConfig()->setString("Window.GfxApi", gfxApi);
+}
+
+void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
+    SetConfigWindowBackend(GetWindowBackend());
 }
 } // namespace LUS

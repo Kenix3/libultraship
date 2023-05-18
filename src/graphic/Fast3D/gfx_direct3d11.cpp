@@ -386,7 +386,6 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     // Create ImGui
 
     LUS::GuiWindowInitData window_impl;
-    LUS::Context::GetInstance()->GetWindow()->SetWindowBackend(LUS::WindowBackend::DX11);
     window_impl.Dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 }
