@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "Mercury.h"
-#include "core/Window.h"
+#include "window/Window.h"
 #include "utils/Hooks.h"
 #include "core/Context.h"
 #include "core/bridge/consolevariablebridge.h"
@@ -16,7 +16,7 @@
 #include "graphic/Fast3D/gfx_pc.h"
 #include "resource/File.h"
 #include <stb/stb_image.h>
-#include "gui/Fonts.h"
+#include "window/gui/Fonts.h"
 
 #ifdef __WIIU__
 #include <gx2/registers.h> // GX2SetViewport / GX2SetScissor

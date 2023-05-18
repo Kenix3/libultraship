@@ -6,12 +6,12 @@
 #include <ImGui/imgui_internal.h>
 #include <memory>
 #include <SDL2/SDL.h>
-#include "gui/ConsoleWindow.h"
-#include "gui/InputEditorWindow.h"
-#include "gui/IconsFontAwesome4.h"
-#include "gui/GameOverlay.h"
-#include "gui/StatsWindow.h"
-#include "gui/GuiMenuBar.h"
+#include "window/gui/ConsoleWindow.h"
+#include "window/gui/InputEditorWindow.h"
+#include "window/gui/IconsFontAwesome4.h"
+#include "window/gui/GameOverlay.h"
+#include "window/gui/StatsWindow.h"
+#include "window/gui/GuiMenuBar.h"
 #include "libultraship/libultra/controller.h"
 
 namespace LUS {

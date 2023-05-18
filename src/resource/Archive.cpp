@@ -1,7 +1,7 @@
 #include "Archive.h"
 #include "Resource.h"
 #include "File.h"
-#include "core/Window.h"
+#include "window/Window.h"
 #include "resource/ResourceManager.h"
 #include "Utils/StringHelper.h"
 #include <StrHash64.h>

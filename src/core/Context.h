@@ -10,7 +10,7 @@
 #include "controller/ControlDeck.h"
 #include "debug/CrashHandler.h"
 #include "audio/Audio.h"
-#include "core/Window.h"
+#include "window/Window.h"
 #include "core/ConsoleVariable.h"
 #include "core/Console.h"
 

@@ -1,4 +1,4 @@
-#include "gui/GuiWindow.h"
+#include "window/gui/GuiWindow.h"
 
 namespace LUS {
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name)

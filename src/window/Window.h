@@ -6,7 +6,7 @@
 #include <spdlog/spdlog.h>
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
-#include "gui/Gui.h"
+#include "window/gui/Gui.h"
 
 namespace LUS {
 enum class WindowBackend {

@@ -59,8 +59,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Controller})
 #=================== Core ===================
 
 set(Source_Files__Core
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/Window.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Context.h
@@ -124,31 +122,39 @@ source_group("Log\\SPDLog" FILES ${Source_Files__Log__SPDLog})
 
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
-#=================== Gui ===================
-
-set(Source_Files__Gui
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/ConsoleWindow.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/ConsoleWindow.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/Gui.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/Gui.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/InputEditorWindow.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/InputEditorWindow.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GameOverlay.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GameOverlay.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/Fonts.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/IconsFontAwesome4.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/StatsWindow.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/StatsWindow.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiWindow.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiWindow.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiElement.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiElement.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiMenuBar.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/GuiMenuBar.cpp
+#=================== Window ===================
+set(Source_Files__Window
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/Window.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/Window.cpp
 )
 
-source_group("gui" FILES ${Source_Files__Gui})
-target_sources(libultraship PRIVATE ${Source_Files__Gui})
+source_group("window" FILES ${Source_Files__Window})
+target_sources(libultraship PRIVATE ${Source_Files__Window})
+#=================== Gui ===================
+
+set(Source_Files__Window__Gui
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/ConsoleWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/ConsoleWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/Gui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/Gui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/InputEditorWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/InputEditorWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GameOverlay.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GameOverlay.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/Fonts.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/IconsFontAwesome4.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/StatsWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/StatsWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiElement.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiElement.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.cpp
+)
+
+source_group("window/gui" FILES ${Source_Files__Window__Gui})
+target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
 
 #=================== Utils ===================
 

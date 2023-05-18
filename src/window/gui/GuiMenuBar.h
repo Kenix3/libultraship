@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "gui/GuiElement.h"
+#include "window/gui/GuiElement.h"
 
 namespace LUS {
 class GuiMenuBar : public GuiElement {

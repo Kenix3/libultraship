@@ -5,7 +5,7 @@
 #include <string>
 #include <functional>
 
-#include "gui/GuiWindow.h"
+#include "window/gui/GuiWindow.h"
 #include "core/Console.h"
 #include <ImGui/imgui.h>
 #include <spdlog/spdlog.h>

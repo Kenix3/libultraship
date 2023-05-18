@@ -1,4 +1,4 @@
-#include "gui/ConsoleWindow.h"
+#include "ConsoleWindow.h"
 
 #include "core/bridge/consolevariablebridge.h"
 #include "core/Context.h"

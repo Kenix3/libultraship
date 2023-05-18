@@ -4,7 +4,7 @@
 */
 #ifdef __WIIU__
 
-#include "core/Window.h"
+#include "window/Window.h"
 
 #include <stdint.h>
 #include <stdbool.h>

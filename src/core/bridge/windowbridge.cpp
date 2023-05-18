@@ -1,5 +1,5 @@
 #include "core/bridge/windowbridge.h"
-#include "core/Window.h"
+#include "window/Window.h"
 #include "core/Context.h"
 
 extern "C" {

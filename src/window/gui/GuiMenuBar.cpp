@@ -1,3 +1,3 @@
-#include "gui/GuiMenuBar.h"
+#include "window/gui/GuiMenuBar.h"
 
 namespace LUS {} // namespace LUS

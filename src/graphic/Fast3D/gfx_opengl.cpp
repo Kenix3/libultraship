@@ -1,4 +1,4 @@
-#include "core/Window.h"
+#include "window/Window.h"
 #ifdef ENABLE_OPENGL
 
 #include <stdint.h>
@@ -43,8 +43,8 @@
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
-#include "gui/Gui.h"
-#include "core/Window.h"
+#include "window/gui/Gui.h"
+#include "window/Window.h"
 #include "gfx_pc.h"
 #include <core/bridge/consolevariablebridge.h>
 
