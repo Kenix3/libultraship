@@ -11,7 +11,7 @@ void Audio::InitAudioPlayer() {
             break;
 #endif
 #if defined(__linux)
-            case AudioBackend::PULSE:
+        case AudioBackend::PULSE:
             mAudioPlayer = std::make_shared<PulseAudioPlayer>();
             break;
 #endif
