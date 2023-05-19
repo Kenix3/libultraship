@@ -127,7 +127,7 @@ void ControlDeck::LoadSettings() {
 
     for (size_t i = 0; i < mPortList.size(); i++) {
         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
-        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int32_t) i), backend->GetGuid());
+        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int32_t)i), backend->GetGuid());
     }
 
     for (const auto& device : mDevices) {
@@ -136,12 +136,14 @@ void ControlDeck::LoadSettings() {
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
 
             if (!(config->GetNestedJson()["Controllers"].contains(guid) &&
-                  config->GetNestedJson()["Controllers"][guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
+                  config->GetNestedJson()["Controllers"][guid].contains(
+                      StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
                 continue;
             }
 
             auto profile = device->GetProfile(virtualSlot);
-            auto rawProfile = config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            auto rawProfile =
+                config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
 
             profile->Mappings.clear();
             profile->AxisDeadzones.clear();
@@ -205,7 +207,7 @@ void ControlDeck::SaveSettings() {
 
     for (size_t i = 0; i < mPortList.size(); i++) {
         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
-        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int) i), backend->GetGuid());
+        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
     }
 
     for (const auto& device : mDevices) {
@@ -218,7 +220,8 @@ void ControlDeck::SaveSettings() {
                 continue;
             }
 
-            auto rawProfile = config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            auto rawProfile =
+                config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
             config->SetInt(NESTED("Version", ""), profile->Version);
             config->SetBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
             config->SetFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);

@@ -19,7 +19,7 @@ std::string Config::FormatNestedKey(const std::string& key) {
 
     std::string tmp;
     if (dots.size() > 1) {
-        for (const auto &dot: dots) {
+        for (const auto& dot : dots) {
             tmp += "/" + dot;
         }
     } else {
@@ -128,10 +128,7 @@ void Config::Reload() {
     try {
         mNestedJson = nlohmann::json::parse(ifs);
         mFlattenedJson = mNestedJson.flatten();
-    }
-    catch (...) {
-        mFlattenedJson = nlohmann::json::object();
-    }
+    } catch (...) { mFlattenedJson = nlohmann::json::object(); }
 }
 
 void Config::Save() {
@@ -139,15 +136,13 @@ void Config::Save() {
     file << mFlattenedJson.unflatten().dump(4);
 }
 
-template< typename T >
-std::vector<T> Config::GetArray(const std::string& key) {
+template <typename T> std::vector<T> Config::GetArray(const std::string& key) {
     if (nlohmann::json tmp = Nested(key); tmp.is_array())
         return tmp.get<std::vector<T>>();
     return std::vector<T>();
 };
 
-template <typename T>
-void Config::SetArray(const std::string& key, std::vector<T> array) {
+template <typename T> void Config::SetArray(const std::string& key, std::vector<T> array) {
     mFlattenedJson[FormatNestedKey(key)] = nlohmann::json(array);
 }
 
