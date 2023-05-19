@@ -9,14 +9,7 @@
 #include "window/gui/Gui.h"
 
 namespace LUS {
-enum class WindowBackend {
-    DX11,
-    DX12,
-    GLX_OPENGL,
-    SDL_OPENGL,
-    SDL_METAL,
-    GX2,
-};
+enum class WindowBackend { DX11, DX12, GLX_OPENGL, SDL_OPENGL, SDL_METAL, GX2, BACKEND_COUNT };
 
 class Context;
 
@@ -52,14 +45,13 @@ class Window {
     std::shared_ptr<Context> GetContext();
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
-    void SetConfigWindowBackend(WindowBackend backend);
-    WindowBackend GetConfigWindowBackend();
+    void SaveBackendSettingToConfig(WindowBackend backend);
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
-    static std::string DetermineWindowManagerFromBackend(WindowBackend backend);
-    static std::string DetermineGraphicsApiFromBackend(WindowBackend backend);
+    static std::string GetBackendNameFromBackend(WindowBackend backend);
 
+    WindowBackend GetDefaultWindowBackend();
     void SetWindowBackend(WindowBackend backend);
 
   private:
