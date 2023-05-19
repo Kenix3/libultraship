@@ -35,9 +35,9 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
-#include "gui/Gui.h"
-#include "core/bridge/consolevariablebridge.h"
-#include "misc/Hooks.h"
+#include "window/gui/Gui.h"
+#include "public/bridge/consolevariablebridge.h"
+#include "utils/Hooks.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_screen_config.h"

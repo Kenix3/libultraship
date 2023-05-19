@@ -1,11 +1,11 @@
 #ifndef _BRIDGE_H_
 #define _BRIDGE_H_
 
-#include "core/bridge/resourcebridge.h"
-#include "core/bridge/audiobridge.h"
-#include "core/bridge/controldeckbridge.h"
-#include "core/bridge/windowbridge.h"
-#include "core/bridge/consolevariablebridge.h"
-#include "core/bridge/crashhandlerbridge.h"
+#include "public/bridge/resourcebridge.h"
+#include "public/bridge/audiobridge.h"
+#include "public/bridge/controldeckbridge.h"
+#include "public/bridge/windowbridge.h"
+#include "public/bridge/consolevariablebridge.h"
+#include "public/bridge/crashhandlerbridge.h"
 
 #endif

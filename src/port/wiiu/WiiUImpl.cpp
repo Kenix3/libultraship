@@ -9,7 +9,7 @@
 #include <whb/log_udp.h>
 #include <coreinit/debug.h>
 
-#include "core/Context.h"
+#include "Context.h"
 
 namespace LUS {
 namespace WiiU {

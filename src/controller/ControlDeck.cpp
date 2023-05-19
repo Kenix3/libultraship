@@ -1,10 +1,10 @@
 #include "ControlDeck.h"
 
-#include "core/Context.h"
+#include "Context.h"
 #include "Controller.h"
 #include "DummyController.h"
 #include <Utils/StringHelper.h>
-#include "core/bridge/consolevariablebridge.h"
+#include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>
 
 #ifndef __WIIU__

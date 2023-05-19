@@ -28,7 +28,7 @@
 #include "gfx_dxgi.h"
 
 #include "gfx_screen_config.h"
-#include "gui/Gui.h"
+#include "window/gui/Gui.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
