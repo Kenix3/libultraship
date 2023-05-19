@@ -1,6 +1,6 @@
 #include "Audio.h"
 
-#include "core/Context.h"
+#include "Context.h"
 
 namespace LUS {
 void Audio::InitAudioPlayer() {
@@ -53,13 +53,13 @@ AudioBackend Audio::GetAudioBackend() {
 
 void Audio::SetAudioBackend(AudioBackend backend) {
     std::string audioBackendName = DetermineAudioBackendNameFromBackend(backend);
-    Context::GetInstance()->GetConfig()->setString("Window.AudioBackend", audioBackendName);
+    Context::GetInstance()->GetConfig()->SetString("Window.AudioBackend", audioBackendName);
     mAudioBackend = backend;
     InitAudioPlayer();
 }
 
 AudioBackend Audio::DetermineAudioBackendFromConfig() {
-    std::string backendName = Context::GetInstance()->GetConfig()->getString("Window.AudioBackend");
+    std::string backendName = Context::GetInstance()->GetConfig()->GetString("Window.AudioBackend");
     if (backendName == "wasapi") {
         return AudioBackend::WASAPI;
     } else if (backendName == "pulse") {

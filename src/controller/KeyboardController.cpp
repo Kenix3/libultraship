@@ -1,5 +1,5 @@
 #include "controller/KeyboardController.h"
-#include "core/Context.h"
+#include "Context.h"
 
 #if __APPLE__
 #include <SDL_keyboard.h>
@@ -7,7 +7,7 @@
 #include <SDL2/SDL_keyboard.h>
 #endif
 
-#include "misc/Hooks.h"
+#include "utils/Hooks.h"
 
 namespace LUS {
 

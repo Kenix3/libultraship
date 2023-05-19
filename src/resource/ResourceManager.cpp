@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <thread>
 #include <Utils/StringHelper.h>
-#include "core/bridge/consolevariablebridge.h"
-#include "core/Context.h"
+#include "public/bridge/consolevariablebridge.h"
+#include "Context.h"
 
 // Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
 // NOLINTNEXTLINE
