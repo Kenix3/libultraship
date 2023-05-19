@@ -10,6 +10,8 @@
 #include "window/Window.h"
 #include "debug/Console.h"
 #include "debug/CrashHandler.h"
+#include "config/ConsoleVariable.h"
+#include "config/Config.h"
 #include "window/gui/ConsoleWindow.h"
 #include "window/gui/GameOverlay.h"
 #include "window/gui/Gui.h"

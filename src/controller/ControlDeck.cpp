@@ -109,9 +109,10 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
     StringHelper::Sprintf("Controllers.%s.Slot_%d." key, device->GetGuid().c_str(), virtualSlot, __VA_ARGS__)
 
 void ControlDeck::LoadSettings() {
-    std::shared_ptr<Mercury> config = Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> config = Context::GetInstance()->GetConfig();
 
-    for (auto const& val : config->rjson["Controllers"]["Deck"].items()) {
+    auto json = config->GetNestedJson();
+    for (auto const& val : json["Controllers"]["Deck"].items()) {
         int32_t slot = std::stoi(val.key().substr(5));
 
         for (size_t dev = 0; dev < mDevices.size(); dev++) {
@@ -126,7 +127,7 @@ void ControlDeck::LoadSettings() {
 
     for (size_t i = 0; i < mPortList.size(); i++) {
         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
-        config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
+        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int32_t) i), backend->GetGuid());
     }
 
     for (const auto& device : mDevices) {
@@ -134,20 +135,20 @@ void ControlDeck::LoadSettings() {
 
         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
 
-            if (!(config->rjson["Controllers"].contains(guid) &&
-                  config->rjson["Controllers"][guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
+            if (!(config->GetNestedJson()["Controllers"].contains(guid) &&
+                  config->GetNestedJson()["Controllers"][guid].contains(StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
                 continue;
             }
 
             auto profile = device->GetProfile(virtualSlot);
-            auto rawProfile = config->rjson["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            auto rawProfile = config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
 
             profile->Mappings.clear();
             profile->AxisDeadzones.clear();
             profile->AxisMinimumPress.clear();
             profile->GyroData.clear();
 
-            profile->Version = config->getInt(NESTED("Version", ""), DEVICE_PROFILE_VERSION_V0);
+            profile->Version = config->GetInt(NESTED("Version", ""), DEVICE_PROFILE_VERSION_V0);
 
             switch (profile->Version) {
 
@@ -156,9 +157,9 @@ void ControlDeck::LoadSettings() {
                     // Load up defaults for the things we can't load.
                     device->CreateDefaultBinding(virtualSlot);
 
-                    profile->UseRumble = config->getBool(NESTED("Rumble.Enabled", ""));
-                    profile->RumbleStrength = config->getFloat(NESTED("Rumble.Strength", ""));
-                    profile->UseGyro = config->getBool(NESTED("Gyro.Enabled", ""));
+                    profile->UseRumble = config->GetBool(NESTED("Rumble.Enabled", ""));
+                    profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
+                    profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
 
                     for (auto const& val : rawProfile["Mappings"].items()) {
                         device->SetButtonMapping(virtualSlot, std::stoi(val.key().substr(4)), val.value());
@@ -167,10 +168,10 @@ void ControlDeck::LoadSettings() {
                     break;
 
                 case DEVICE_PROFILE_VERSION_V1:
-                    profile->UseRumble = config->getBool(NESTED("Rumble.Enabled", ""));
-                    profile->RumbleStrength = config->getFloat(NESTED("Rumble.Strength", ""));
-                    profile->UseGyro = config->getBool(NESTED("Gyro.Enabled", ""));
-                    profile->NotchProximityThreshold = config->getInt(NESTED("Notches.ProximityThreshold", ""));
+                    profile->UseRumble = config->GetBool(NESTED("Rumble.Enabled", ""));
+                    profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
+                    profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
+                    profile->NotchProximityThreshold = config->GetInt(NESTED("Notches.ProximityThreshold", ""));
 
                     for (auto const& val : rawProfile["AxisDeadzones"].items()) {
                         profile->AxisDeadzones[std::stoi(val.key())] = val.value();
@@ -200,11 +201,11 @@ void ControlDeck::LoadSettings() {
 }
 
 void ControlDeck::SaveSettings() {
-    std::shared_ptr<Mercury> config = Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> config = Context::GetInstance()->GetConfig();
 
     for (size_t i = 0; i < mPortList.size(); i++) {
         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
-        config->setString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
+        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int) i), backend->GetGuid());
     }
 
     for (const auto& device : mDevices) {
@@ -217,38 +218,38 @@ void ControlDeck::SaveSettings() {
                 continue;
             }
 
-            auto rawProfile = config->rjson["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
-            config->setInt(NESTED("Version", ""), profile->Version);
-            config->setBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
-            config->setFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
-            config->setBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
-            config->setInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
+            auto rawProfile = config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            config->SetInt(NESTED("Version", ""), profile->Version);
+            config->SetBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
+            config->SetFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
+            config->SetBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
+            config->SetInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
 
             for (auto const& val : rawProfile["Mappings"].items()) {
-                config->setInt(NESTED("Mappings.%s", val.key().c_str()), -1);
+                config->SetInt(NESTED("Mappings.%s", val.key().c_str()), -1);
             }
 
             for (auto const& [key, val] : profile->AxisDeadzones) {
-                config->setFloat(NESTED("AxisDeadzones.%d", key), val);
+                config->SetFloat(NESTED("AxisDeadzones.%d", key), val);
             }
 
             for (auto const& [key, val] : profile->AxisMinimumPress) {
-                config->setFloat(NESTED("AxisMinimumPress.%d", key), val);
+                config->SetFloat(NESTED("AxisMinimumPress.%d", key), val);
             }
 
             for (auto const& [key, val] : profile->GyroData) {
-                config->setFloat(NESTED("GyroData.%d", key), val);
+                config->SetFloat(NESTED("GyroData.%d", key), val);
             }
 
             for (auto const& [key, val] : profile->Mappings) {
-                config->setInt(NESTED("Mappings.BTN_%d", val), key);
+                config->SetInt(NESTED("Mappings.BTN_%d", val), key);
             }
 
             virtualSlot++;
         }
     }
 
-    config->save();
+    config->Save();
 }
 
 std::shared_ptr<Controller> ControlDeck::GetDeviceFromDeviceIndex(int32_t deviceIndex) {

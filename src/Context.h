@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <vector>
 #include <spdlog/spdlog.h>
-#include "Mercury.h"
+#include "config/Config.h"
 #include "resource/ResourceManager.h"
 #include "controller/ControlDeck.h"
 #include "debug/CrashHandler.h"
@@ -36,7 +36,7 @@ class Context {
               uint32_t reservedThreadCount);
 
     std::shared_ptr<spdlog::logger> GetLogger();
-    std::shared_ptr<Mercury> GetConfig();
+    std::shared_ptr<Config> GetConfig();
     std::shared_ptr<ConsoleVariable> GetConsoleVariables();
     std::shared_ptr<ResourceManager> GetResourceManager();
     std::shared_ptr<ControlDeck> GetControlDeck();
@@ -68,7 +68,7 @@ class Context {
     static std::weak_ptr<Context> mContext;
 
     std::shared_ptr<spdlog::logger> mLogger;
-    std::shared_ptr<Mercury> mConfig;
+    std::shared_ptr<Config> mConfig;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;
     std::shared_ptr<ResourceManager> mResourceManager;
     std::shared_ptr<ControlDeck> mControlDeck;

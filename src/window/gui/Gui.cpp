@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "Mercury.h"
+#include "config/Config.h"
 #include "window/Window.h"
 #include "utils/Hooks.h"
 #include "Context.h"
@@ -316,7 +316,7 @@ void Gui::DrawMenu() {
     ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
-    const std::shared_ptr<Mercury> conf = Context::GetInstance()->GetConfig();
+    const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
 
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |

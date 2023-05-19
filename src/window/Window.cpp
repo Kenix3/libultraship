@@ -58,14 +58,14 @@ void Window::Init() {
     }
 #endif
 
-    mIsFullscreen = GetContext()->GetConfig()->getBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
+    mIsFullscreen = GetContext()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
 
     if (mIsFullscreen) {
-        mWidth = GetContext()->GetConfig()->getInt("Window.Fullscreen.Width", steamDeckGameMode ? 1280 : 1920);
-        mHeight = GetContext()->GetConfig()->getInt("Window.Fullscreen.Height", steamDeckGameMode ? 800 : 1080);
+        mWidth = GetContext()->GetConfig()->GetInt("Window.Fullscreen.Width", steamDeckGameMode ? 1280 : 1920);
+        mHeight = GetContext()->GetConfig()->GetInt("Window.Fullscreen.Height", steamDeckGameMode ? 800 : 1080);
     } else {
-        mWidth = GetContext()->GetConfig()->getInt("Window.Width", 640);
-        mHeight = GetContext()->GetConfig()->getInt("Window.Height", 480);
+        mWidth = GetContext()->GetConfig()->GetInt("Window.Width", 640);
+        mHeight = GetContext()->GetConfig()->GetInt("Window.Height", 480);
     }
 
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
@@ -132,7 +132,7 @@ void Window::MainLoop(void (*mainFunction)(void)) {
 }
 
 bool Window::KeyUp(int32_t scancode) {
-    if (scancode == Context::GetInstance()->GetConfig()->getInt("Shortcuts.Fullscreen", 0x044)) {
+    if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", 0x044)) {
         Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
@@ -177,10 +177,10 @@ void Window::AllKeysUp(void) {
 }
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
-    std::shared_ptr<Mercury> pConf = Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> pConf = Context::GetInstance()->GetConfig();
 
     Context::GetInstance()->GetWindow()->mIsFullscreen = isNowFullscreen;
-    pConf->setBool("Window.Fullscreen.Enabled", isNowFullscreen);
+    pConf->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
     if (isNowFullscreen) {
         auto menuBar = Context::GetInstance()->GetWindow()->GetGui()->GetMenuBar();
         Context::GetInstance()->GetWindow()->SetCursorVisibility(menuBar && menuBar->IsVisible());
@@ -233,7 +233,7 @@ std::string Window::GetBackendNameFromBackend(WindowBackend backend) {
 
 void Window::InitWindowManager() {
     WindowBackend backend;
-    int backendId = Context::GetInstance()->GetConfig()->getInt("Window.Backend.Id", -1);
+    int backendId = Context::GetInstance()->GetConfig()->GetInt("Window.Backend.Id", -1);
     if (backendId != -1 && backendId < static_cast<int>(WindowBackend::BACKEND_COUNT)) {
         backend = static_cast<WindowBackend>(backendId);
     } else {
@@ -365,8 +365,8 @@ std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends()
 
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
-    Context::GetInstance()->GetConfig()->setInt("Window.Backend.Id", static_cast<int>(backend));
-    Context::GetInstance()->GetConfig()->setString("Window.Backend.Name", GetBackendNameFromBackend(backend));
-    Context::GetInstance()->GetConfig()->save();
+    Context::GetInstance()->GetConfig()->SetInt("Window.Backend.Id", static_cast<int>(backend));
+    Context::GetInstance()->GetConfig()->SetString("Window.Backend.Name", GetBackendNameFromBackend(backend));
+    Context::GetInstance()->GetConfig()->Save();
 }
 } // namespace LUS

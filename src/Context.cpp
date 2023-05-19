@@ -43,25 +43,25 @@ Context::Context(std::string name, std::string shortName, std::string configFile
 }
 
 void Context::CreateDefaultSettings() {
-    if (GetConfig()->isNewInstance) {
-        GetConfig()->setInt("Window.Width", 640);
-        GetConfig()->setInt("Window.Height", 480);
+    if (GetConfig()->IsNewInstance()) {
+        GetConfig()->SetInt("Window.Width", 640);
+        GetConfig()->SetInt("Window.Height", 480);
 
-        GetConfig()->setString("Window.GfxBackend", "");
-        GetConfig()->setString("Window.GfxApi", "");
-        GetConfig()->setString("Window.AudioBackend", "");
+        GetConfig()->SetString("Window.GfxBackend", "");
+        GetConfig()->SetString("Window.GfxApi", "");
+        GetConfig()->SetString("Window.AudioBackend", "");
 
-        GetConfig()->setBool("Window.Fullscreen.Enabled", false);
-        GetConfig()->setInt("Window.Fullscreen.Width", 1920);
-        GetConfig()->setInt("Window.Fullscreen.Height", 1080);
+        GetConfig()->SetBool("Window.Fullscreen.Enabled", false);
+        GetConfig()->SetInt("Window.Fullscreen.Width", 1920);
+        GetConfig()->SetInt("Window.Fullscreen.Height", 1080);
 
-        GetConfig()->setString("Game.SaveName", "");
-        GetConfig()->setString("Game.Main Archive", "");
-        GetConfig()->setString("Game.Patches Archive", "");
+        GetConfig()->SetString("Game.SaveName", "");
+        GetConfig()->SetString("Game.Main Archive", "");
+        GetConfig()->SetString("Game.Patches Archive", "");
 
-        GetConfig()->setInt("Shortcuts.Fullscreen", 0x044);
-        GetConfig()->setInt("Shortcuts.Console", 0x029);
-        GetConfig()->save();
+        GetConfig()->SetInt("Shortcuts.Fullscreen", 0x044);
+        GetConfig()->SetInt("Shortcuts.Console", 0x029);
+        GetConfig()->Save();
     }
 }
 
@@ -163,7 +163,7 @@ void Context::InitLogging() {
 }
 
 void Context::InitConfiguration() {
-    mConfig = std::make_shared<Mercury>(GetPathRelativeToAppDirectory(GetConfigFilePath()));
+    mConfig = std::make_shared<Config>(GetPathRelativeToAppDirectory(GetConfigFilePath()));
 }
 
 void Context::InitConsoleVariables() {
@@ -172,8 +172,8 @@ void Context::InitConsoleVariables() {
 
 void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
                                   const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
-    mMainPath = GetConfig()->getString("Game.Main Archive", GetAppDirectoryPath());
-    mPatchesPath = mConfig->getString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+    mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
+    mPatchesPath = mConfig->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
         mResourceManager =
             std::make_shared<ResourceManager>(GetInstance(), mMainPath, mPatchesPath, validHashes, reservedThreadCount);
@@ -229,7 +229,7 @@ std::shared_ptr<spdlog::logger> Context::GetLogger() {
     return mLogger;
 }
 
-std::shared_ptr<Mercury> Context::GetConfig() {
+std::shared_ptr<Config> Context::GetConfig() {
     return mConfig;
 }
 

@@ -15,6 +15,7 @@ set(Source_Files__TopLevel
 )
 
 source_group("" FILES ${Source_Files__TopLevel})
+target_sources(libultraship PRIVATE ${Source_Files__TopLevel})
 
 #=================== Audio ===================
 
@@ -38,7 +39,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 source_group("audio" FILES ${Source_Files__Audio})
-
 target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
 #=================== Controller ===================
@@ -62,7 +62,6 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
 endif()
 
 source_group("controller" FILES ${Source_Files__Controller})
-
 target_sources(libultraship PRIVATE ${Source_Files__Controller})
 
 #=================== Config ===================
@@ -70,9 +69,12 @@ target_sources(libultraship PRIVATE ${Source_Files__Controller})
 set(Source_Files__Config
     ${CMAKE_CURRENT_SOURCE_DIR}/config/ConsoleVariable.h
     ${CMAKE_CURRENT_SOURCE_DIR}/config/ConsoleVariable.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/Config.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/Config.cpp
 )
 
 source_group("config" FILES ${Source_Files__Config})
+target_sources(libultraship PRIVATE ${Source_Files__Config})
 
 #=================== Public ===================
 
@@ -101,7 +103,6 @@ set(Source_Files__Public__Bridge
 )
  
 source_group("public/bridge" FILES ${Source_Files__Public__Bridge})
-
 target_sources(libultraship PRIVATE ${Source_Files__Public__Libultra} ${Source_Files__Public__Bridge})
 
 #=================== Debug ===================
@@ -130,7 +131,6 @@ set(Source_Files__Log__SPDLog
 )
 
 source_group("log/spdLog" FILES ${Source_Files__Log__SPDLog})
-
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
 #=================== Window ===================
@@ -206,7 +206,6 @@ set(Source_Files__Utils__BinaryTools
 )
 
 source_group("utils/binarytools" FILES ${Source_Files__Utils__BinaryTools})
-
 target_sources(libultraship PRIVATE ${Source_Files__Utils__BinaryTools})
 
 #=================== Port ===================
@@ -280,7 +279,6 @@ set(Source_Files__Resource__Factories
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.h
 )
 source_group("resource/factory" FILES ${Source_Files__Resource__Factories})
-
 target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories})
 
 #=================== Graphic ===================
@@ -372,7 +370,7 @@ endif()
 
 target_link_libraries(libultraship
     PRIVATE ZAPDUtils StrHash64
-    PUBLIC ImGui Mercury storm tinyxml2
+    PUBLIC ImGui storm tinyxml2 nlohmann_json::nlohmann_json
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
