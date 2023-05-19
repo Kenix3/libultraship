@@ -50,7 +50,7 @@ class Window {
 
   protected:
     static std::string GetBackendNameFromBackend(WindowBackend backend);
-    
+
     WindowBackend GetDefaultWindowBackend();
     void SetWindowBackend(WindowBackend backend);
 
