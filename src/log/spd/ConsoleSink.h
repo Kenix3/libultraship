@@ -8,14 +8,14 @@
 #include <spdlog/details/os.h>
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/details/synchronous_factory.h>
-#include "core/Context.h"
+#include "Context.h"
 #include "window/gui/Gui.h"
 #include "window/gui/ConsoleWindow.h"
 #include <chrono>
 #include <mutex>
 #include <string>
 #include <thread>
-#include "core/bridge/consolevariablebridge.h"
+#include "public/bridge/consolevariablebridge.h"
 
 namespace spdlog {
 namespace sinks {

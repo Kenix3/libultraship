@@ -11,8 +11,8 @@
 #include "debug/CrashHandler.h"
 #include "audio/Audio.h"
 #include "window/Window.h"
-#include "core/ConsoleVariable.h"
-#include "core/Console.h"
+#include "config/ConsoleVariable.h"
+#include "debug/Console.h"
 
 namespace LUS {
 

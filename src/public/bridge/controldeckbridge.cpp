@@ -1,5 +1,5 @@
-#include "core/bridge/controldeckbridge.h"
-#include "core/Context.h"
+#include "public/bridge/controldeckbridge.h"
+#include "Context.h"
 
 extern "C" {
 

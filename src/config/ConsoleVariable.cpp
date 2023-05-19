@@ -4,7 +4,7 @@
 #include <Utils/DiskFile.h>
 #include <utils/Utils.h>
 #include "Mercury.h"
-#include "core/Context.h"
+#include "Context.h"
 
 namespace LUS {
 

@@ -8,7 +8,7 @@
 
 #ifdef __cplusplus
 #include <memory>
-#include <core/ConsoleVariable.h>
+#include <config/ConsoleVariable.h>
 std::shared_ptr<LUS::CVar> CVarGet(const char* name);
 
 extern "C" {

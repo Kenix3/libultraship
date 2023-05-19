@@ -6,9 +6,9 @@
 
 #include "resource/Archive.h"
 #include "resource/ResourceManager.h"
-#include "core/Context.h"
+#include "Context.h"
 #include "window/Window.h"
-#include "core/Console.h"
+#include "debug/Console.h"
 #include "debug/CrashHandler.h"
 #include "window/gui/ConsoleWindow.h"
 #include "window/gui/GameOverlay.h"

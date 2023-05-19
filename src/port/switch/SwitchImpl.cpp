@@ -3,7 +3,7 @@
 #include <switch.h>
 #include <SDL2/SDL.h>
 #include "SwitchPerformanceProfiles.h"
-#include "core/bridge/consolevariablebridge.h"
+#include "public/bridge/consolevariablebridge.h"
 #include "utils/Hooks.h"
 #include <ImGui/imgui_internal.h>
 

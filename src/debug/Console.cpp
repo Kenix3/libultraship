@@ -1,6 +1,6 @@
 #include "Console.h"
 #include "Utils/StringHelper.h"
-#include "core/Context.h"
+#include "Context.h"
 
 namespace LUS {
 void Console::Init() {

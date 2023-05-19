@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 
-#include "core/Console.h"
+#include "debug/Console.h"
 #include <imgui.h>
 #include <unordered_map>
 

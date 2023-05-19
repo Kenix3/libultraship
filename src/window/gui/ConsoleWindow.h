@@ -6,7 +6,7 @@
 #include <functional>
 
 #include "window/gui/GuiWindow.h"
-#include "core/Console.h"
+#include "debug/Console.h"
 #include <ImGui/imgui.h>
 #include <spdlog/spdlog.h>
 

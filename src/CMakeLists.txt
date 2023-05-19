@@ -7,6 +7,15 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
 endif()
 
+#=================== Top-Level ===================
+
+set(Source_Files__TopLevel
+    ${CMAKE_CURRENT_SOURCE_DIR}/Context.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Context.cpp
+)
+
+source_group("" FILES ${Source_Files__TopLevel})
+
 #=================== Audio ===================
 
 set(Source_Files__Audio
@@ -28,7 +37,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.cpp)
 endif()
 
-source_group("Audio" FILES ${Source_Files__Audio})
+source_group("audio" FILES ${Source_Files__Audio})
 
 target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
@@ -52,57 +61,59 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     )
 endif()
 
-source_group("Controller" FILES ${Source_Files__Controller})
+source_group("controller" FILES ${Source_Files__Controller})
 
 target_sources(libultraship PRIVATE ${Source_Files__Controller})
 
-#=================== Core ===================
+#=================== Config ===================
 
-set(Source_Files__Core
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/ConsoleVariable.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/Context.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/Context.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/Console.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/Console.cpp
+set(Source_Files__Config
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/ConsoleVariable.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/ConsoleVariable.cpp
 )
 
-source_group("Core" FILES ${Source_Files__Core})
+source_group("config" FILES ${Source_Files__Config})
 
-set(Source_Files__Core__Libultra
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/libultra/os.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/libultra/os.cpp
-)
- 
-source_group("Core\\libultra" FILES ${Source_Files__Core__Libultra})
+#=================== Public ===================
 
-set(Source_Files__Core__Bridge
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/resourcebridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/resourcebridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/windowbridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/windowbridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audiobridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/audiobridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/controldeckbridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/consolevariablebridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/bridge/crashhandlerbridge.cpp
+source_group("public")
+
+set(Source_Files__Public__Libultra
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/libultra/os.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/libultra/os.cpp
 )
  
-source_group("Core\\Bridge" FILES ${Source_Files__Core__Bridge})
+source_group("public/libultra" FILES ${Source_Files__Public__Libultra})
 
-target_sources(libultraship PRIVATE ${Source_Files__Core} ${Source_Files__Core__Libultra} ${Source_Files__Core__Bridge})
+set(Source_Files__Public__Bridge
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/resourcebridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/resourcebridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/windowbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/windowbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controldeckbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controldeckbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/consolevariablebridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/consolevariablebridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/crashhandlerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/crashhandlerbridge.cpp
+)
+ 
+source_group("public/bridge" FILES ${Source_Files__Public__Bridge})
+
+target_sources(libultraship PRIVATE ${Source_Files__Public__Libultra} ${Source_Files__Public__Bridge})
 
 #=================== Debug ===================
 
 set(Source_Files__Debug
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/CrashHandler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/CrashHandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/Console.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/Console.cpp
 )
 
-source_group("Debug" FILES ${Source_Files__Debug})
+source_group("debug" FILES ${Source_Files__Debug})
 target_sources(libultraship PRIVATE ${Source_Files__Debug})
 
 #=================== Log ===================
@@ -118,7 +129,7 @@ set(Source_Files__Log__SPDLog
     ${CMAKE_CURRENT_SOURCE_DIR}/log/spd/ConsoleSink.h
 )
 
-source_group("Log\\SPDLog" FILES ${Source_Files__Log__SPDLog})
+source_group("log/spdLog" FILES ${Source_Files__Log__SPDLog})
 
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
@@ -130,6 +141,7 @@ set(Source_Files__Window
 
 source_group("window" FILES ${Source_Files__Window})
 target_sources(libultraship PRIVATE ${Source_Files__Window})
+
 #=================== Gui ===================
 
 set(Source_Files__Window__Gui
@@ -216,7 +228,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
     )
 endif()
 
-source_group("Port" FILES ${Source_Files__Port})
+source_group("port" FILES ${Source_Files__Port})
 target_sources(libultraship PRIVATE ${Source_Files__Port})
 
 #=================== Resource ===================
@@ -235,7 +247,7 @@ set(Source_Files__Resource
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.cpp
 )
-source_group("Resource" FILES ${Source_Files__Resource})
+source_group("resource" FILES ${Source_Files__Resource})
 
 set(Source_Files__Resource__Types
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Array.cpp
@@ -251,7 +263,7 @@ set(Source_Files__Resource__Types
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.h
 )
-source_group("Resource\\Type" FILES ${Source_Files__Resource__Types})
+source_group("resource/type" FILES ${Source_Files__Resource__Types})
 
 set(Source_Files__Resource__Factories
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/ArrayFactory.cpp
@@ -267,7 +279,7 @@ set(Source_Files__Resource__Factories
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.h
 )
-source_group("Resource\\Factory" FILES ${Source_Files__Resource__Factories})
+source_group("resource/factory" FILES ${Source_Files__Resource__Factories})
 
 target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories})
 
@@ -323,7 +335,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     )
 endif()
 
-source_group("Graphic" FILES ${Source_Files__Graphic})
+source_group("graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
 #=================== STB ===================
@@ -333,7 +345,7 @@ set(Source_Files__Lib__stb
     "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image_write.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_impl.c"
 )
-source_group("Extern\\stb" FILES ${Source_Files__Lib__stb})
+source_group("extern/stb" FILES ${Source_Files__Lib__stb})
 target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
 
 #=================== metal-cpp ===================

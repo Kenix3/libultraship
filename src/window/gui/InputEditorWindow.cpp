@@ -1,9 +1,9 @@
 #include "InputEditorWindow.h"
 #include "controller/Controller.h"
-#include "core/Context.h"
+#include "Context.h"
 #include "Gui.h"
 #include <Utils/StringHelper.h>
-#include "core/bridge/consolevariablebridge.h"
+#include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
 

@@ -1,7 +1,7 @@
 #include "ConsoleWindow.h"
 
-#include "core/bridge/consolevariablebridge.h"
-#include "core/Context.h"
+#include "public/bridge/consolevariablebridge.h"
+#include "Context.h"
 #include <Utils/StringHelper.h>
 #include "utils/Utils.h"
 #include <sstream>

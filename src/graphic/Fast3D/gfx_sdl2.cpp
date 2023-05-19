@@ -36,7 +36,7 @@
 #endif
 
 #include "window/gui/Gui.h"
-#include "core/bridge/consolevariablebridge.h"
+#include "public/bridge/consolevariablebridge.h"
 #include "utils/Hooks.h"
 
 #include "gfx_window_manager_api.h"

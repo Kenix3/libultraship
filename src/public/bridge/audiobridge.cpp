@@ -1,5 +1,5 @@
-#include "core/bridge/audiobridge.h"
-#include "core/Context.h"
+#include "public/bridge/audiobridge.h"
+#include "Context.h"
 #include "audio/Audio.h"
 
 extern "C" {

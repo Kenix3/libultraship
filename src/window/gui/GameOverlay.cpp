@@ -1,10 +1,10 @@
 #include "GameOverlay.h"
 
-#include "core/bridge/consolevariablebridge.h"
+#include "public/bridge/consolevariablebridge.h"
 #include "resource/File.h"
 #include "resource/Archive.h"
 #include "resource/ResourceManager.h"
-#include "core/Context.h"
+#include "Context.h"
 #include <Utils/StringHelper.h>
 
 namespace LUS {

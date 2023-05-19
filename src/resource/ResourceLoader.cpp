@@ -3,7 +3,7 @@
 #include "ResourceManager.h"
 #include "Resource.h"
 #include "File.h"
-#include "core/Context.h"
+#include "Context.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/binarytools/BinaryReader.h"
 #include "factory/TextureFactory.h"

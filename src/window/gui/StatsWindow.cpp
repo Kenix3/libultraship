@@ -1,6 +1,6 @@
 #include "StatsWindow.h"
 #include "ImGui/imgui.h"
-#include "core/bridge/consolevariablebridge.h"
+#include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
 void StatsWindow::InitElement() {

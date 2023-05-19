@@ -1,5 +1,5 @@
 #include "controller/KeyboardController.h"
-#include "core/Context.h"
+#include "Context.h"
 
 #if __APPLE__
 #include <SDL_keyboard.h>

@@ -17,7 +17,7 @@
 #define _LANGUAGE_C
 #endif
 #include "libultraship/libultra/gbi.h"
-#include <core/bridge/consolevariablebridge.h>
+#include <public/bridge/consolevariablebridge.h>
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
