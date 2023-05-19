@@ -49,9 +49,6 @@ class Window {
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
-    static std::string GetBackendNameFromBackend(WindowBackend backend);
-
-    WindowBackend GetDefaultWindowBackend();
     void SetWindowBackend(WindowBackend backend);
 
   private:

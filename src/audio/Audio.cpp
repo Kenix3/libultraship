@@ -40,7 +40,7 @@ void Audio::Init() {
 #endif
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
 
-    SetAudioBackend(DetermineAudioBackendFromConfig());
+    SetAudioBackend(Context::GetInstance()->GetConfig()->GetAudioBackend());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
@@ -52,42 +52,11 @@ AudioBackend Audio::GetAudioBackend() {
 }
 
 void Audio::SetAudioBackend(AudioBackend backend) {
-    std::string audioBackendName = DetermineAudioBackendNameFromBackend(backend);
-    Context::GetInstance()->GetConfig()->SetString("Window.AudioBackend", audioBackendName);
     mAudioBackend = backend;
+    Context::GetInstance()->GetConfig()->SetAudioBackend(GetAudioBackend());
+    Context::GetInstance()->GetConfig()->Save();
+
     InitAudioPlayer();
-}
-
-AudioBackend Audio::DetermineAudioBackendFromConfig() {
-    std::string backendName = Context::GetInstance()->GetConfig()->GetString("Window.AudioBackend");
-    if (backendName == "wasapi") {
-        return AudioBackend::WASAPI;
-    } else if (backendName == "pulse") {
-        return AudioBackend::PULSE;
-    } else if (backendName == "sdl") {
-        return AudioBackend::SDL;
-    } else {
-#ifdef _WIN32
-        return AudioBackend::WASAPI;
-#elif defined(__linux)
-        return AudioBackend::PULSE;
-#else
-        return AudioBackend::SDL;
-#endif
-    }
-}
-
-std::string Audio::DetermineAudioBackendNameFromBackend(AudioBackend backend) {
-    switch (backend) {
-        case AudioBackend::WASAPI:
-            return "wasapi";
-        case AudioBackend::PULSE:
-            return "pulse";
-        case AudioBackend::SDL:
-            return "sdl";
-        default:
-            return "";
-    }
 }
 
 std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {

@@ -4,6 +4,9 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
+#include "audio/Audio.h"
+#include "window/Window.h"
+
 namespace LUS {
 class Config {
   public:
@@ -26,6 +29,11 @@ class Config {
     nlohmann::json GetNestedJson();
     nlohmann::json GetFlattenedJson();
     bool IsNewInstance();
+
+    AudioBackend GetAudioBackend();
+    void SetAudioBackend(AudioBackend backend);
+    WindowBackend GetWindowBackend();
+    void SetWindowBackend(WindowBackend backend);
 
   protected:
     nlohmann::json Nested(const std::string& key);

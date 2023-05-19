@@ -212,34 +212,8 @@ float Window::GetCurrentAspectRatio() {
     return (float)GetCurrentWidth() / (float)GetCurrentHeight();
 }
 
-std::string Window::GetBackendNameFromBackend(WindowBackend backend) {
-    switch (backend) {
-        case WindowBackend::DX11:
-            return "DirectX 11";
-        case WindowBackend::DX12:
-            return "DirectX 12";
-        case WindowBackend::GLX_OPENGL:
-            return "OpenGL";
-        case WindowBackend::SDL_OPENGL:
-            return "OpenGL";
-        case WindowBackend::SDL_METAL:
-            return "Metal";
-        case WindowBackend::GX2:
-            return "GX2";
-        default:
-            return "";
-    }
-}
-
 void Window::InitWindowManager() {
-    WindowBackend backend;
-    int backendId = Context::GetInstance()->GetConfig()->GetInt("Window.Backend.Id", -1);
-    if (backendId != -1 && backendId < static_cast<int>(WindowBackend::BACKEND_COUNT)) {
-        backend = static_cast<WindowBackend>(backendId);
-    } else {
-        backend = GetDefaultWindowBackend();
-    }
-    SetWindowBackend(backend);
+    SetWindowBackend(Context::GetInstance()->GetConfig()->GetWindowBackend());
 
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
@@ -332,41 +306,13 @@ WindowBackend Window::GetWindowBackend() {
     return mWindowBackend;
 }
 
-WindowBackend Window::GetDefaultWindowBackend() {
-#ifdef ENABLE_DX12
-    return WindowBackend::DX12;
-#endif
-#ifdef ENABLE_DX11
-    return WindowBackend::DX11;
-#endif
-#ifdef __WIIU__
-    return WindowBackend::GX2;
-#endif
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
-#ifdef __APPLE__
-    if (Metal_IsSupported()) {
-        return WindowBackend::SDL_METAL;
-    } else {
-        return WindowBackend::SDL_OPENGL;
-    }
-#endif
-#if defined(__linux__) && defined(X11_SUPPORTED)
-    // return Window::Backend::GLX_OPENGL;
-    return WindowBackend::SDL_OPENGL;
-#else
-    return WindowBackend::SDL_OPENGL;
-#endif
-#endif
-}
-
 std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends() {
     return mAvailableWindowBackends;
 }
 
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
-    Context::GetInstance()->GetConfig()->SetInt("Window.Backend.Id", static_cast<int>(backend));
-    Context::GetInstance()->GetConfig()->SetString("Window.Backend.Name", GetBackendNameFromBackend(backend));
+    Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
     Context::GetInstance()->GetConfig()->Save();
 }
 } // namespace LUS

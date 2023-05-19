@@ -17,9 +17,6 @@ class Audio {
     void SetAudioBackend(AudioBackend backend);
 
   protected:
-    static AudioBackend DetermineAudioBackendFromConfig();
-    static std::string DetermineAudioBackendNameFromBackend(AudioBackend backend);
-
     void InitAudioPlayer();
 
   private:
