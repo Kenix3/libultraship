@@ -137,8 +137,9 @@ void Config::Save() {
 }
 
 template <typename T> std::vector<T> Config::GetArray(const std::string& key) {
-    if (nlohmann::json tmp = Nested(key); tmp.is_array())
+    if (nlohmann::json tmp = Nested(key); tmp.is_array()) {
         return tmp.get<std::vector<T>>();
+    }
     return std::vector<T>();
 };
 
