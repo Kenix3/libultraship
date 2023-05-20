@@ -140,25 +140,21 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     ImGui::GetStyle().ScaleAllSizes(2);
 #endif
 
-    LUS::RegisterHook<LUS::GfxInit>([this] {
-        if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
-        }
+    if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
+    }
 
-        LoadTexture("Game_Icon", "textures/icons/gIcon.png");
-        LoadTexture("A-Btn", "textures/buttons/ABtn.png");
-        LoadTexture("B-Btn", "textures/buttons/BBtn.png");
-        LoadTexture("L-Btn", "textures/buttons/LBtn.png");
-        LoadTexture("R-Btn", "textures/buttons/RBtn.png");
-        LoadTexture("Z-Btn", "textures/buttons/ZBtn.png");
-        LoadTexture("Start-Btn", "textures/buttons/StartBtn.png");
-        LoadTexture("C-Left", "textures/buttons/CLeft.png");
-        LoadTexture("C-Right", "textures/buttons/CRight.png");
-        LoadTexture("C-Up", "textures/buttons/CUp.png");
-        LoadTexture("C-Down", "textures/buttons/CDown.png");
-    });
-
-    InitSettings();
+    LoadTexture("Game_Icon", "textures/icons/gIcon.png");
+    LoadTexture("A-Btn", "textures/buttons/ABtn.png");
+    LoadTexture("B-Btn", "textures/buttons/BBtn.png");
+    LoadTexture("L-Btn", "textures/buttons/LBtn.png");
+    LoadTexture("R-Btn", "textures/buttons/RBtn.png");
+    LoadTexture("Z-Btn", "textures/buttons/ZBtn.png");
+    LoadTexture("Start-Btn", "textures/buttons/StartBtn.png");
+    LoadTexture("C-Left", "textures/buttons/CLeft.png");
+    LoadTexture("C-Right", "textures/buttons/CRight.png");
+    LoadTexture("C-Up", "textures/buttons/CUp.png");
+    LoadTexture("C-Down", "textures/buttons/CDown.png");
 
     CVarClear("gNewFileDropped");
     CVarClear("gDroppedFile");
@@ -229,13 +225,6 @@ void Gui::ImGuiBackendInit() {
         default:
             break;
     }
-}
-
-void Gui::InitSettings() {
-    LUS::RegisterHook<LUS::GfxInit>([this] {
-        gfx_get_current_rendering_api()->set_texture_filter(
-            (FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
-    });
 }
 
 void Gui::LoadTexture(const std::string& name, const std::string& path) {

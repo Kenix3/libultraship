@@ -3061,8 +3061,6 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
         int max_tex_size = min(8192, gfx_rapi->get_max_texture_size());
         tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
-
-    LUS::ExecuteHooks<LUS::GfxInit>();
 }
 
 struct GfxRenderingAPI* gfx_get_current_rendering_api(void) {

@@ -83,7 +83,6 @@ class Gui {
     std::shared_ptr<GuiMenuBar> GetMenuBar();
 
   protected:
-    void InitSettings();
     void ImGuiWMInit();
     void ImGuiBackendInit();
     void LoadTexture(const std::string& name, const std::string& path);

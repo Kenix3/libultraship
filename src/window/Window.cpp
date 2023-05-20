@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include "public/bridge/consolevariablebridge.h"
 #include "controller/KeyboardController.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
@@ -90,6 +91,7 @@ void Window::Init() {
              mHeight);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
+    SetTextureFilter((FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
 }
 
 void Window::Close() {
@@ -298,6 +300,10 @@ void Window::SetResolutionMultiplier(float multiplier) {
 
 void Window::SetMsaaLevel(uint32_t value) {
     gfx_msaa_level = value;
+}
+
+void Window::SetTextureFilter(FilteringMode filteringMode) {
+    gfx_get_current_rendering_api()->set_texture_filter(filteringMode);
 }
 
 WindowBackend Window::GetWindowBackend() {
