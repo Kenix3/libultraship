@@ -14,7 +14,7 @@
 #include "factory/MatrixFactory.h"
 
 namespace LUS {
-ResourceLoader::ResourceLoader(std::shared_ptr<Context> context) : mContext(context) {
+ResourceLoader::ResourceLoader() {
     RegisterGlobalResourceFactories();
 }
 
@@ -37,10 +37,6 @@ bool ResourceLoader::RegisterResourceFactory(ResourceType resourceType, std::str
     mFactoriesStr[resourceTypeXML] = factory;
     mFactoriesTypes[resourceTypeXML] = resourceType;
     return true;
-}
-
-std::shared_ptr<Context> ResourceLoader::GetContext() {
-    return mContext;
 }
 
 std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
@@ -83,7 +79,8 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fil
             resourceInitData->Type = mFactoriesTypes[nodeName];
 
             if (factory != nullptr) {
-                result = factory->ReadResourceXML(GetContext()->GetResourceManager(), resourceInitData, root);
+                result =
+                    factory->ReadResourceXML(LUS::Context::GetInstance()->GetResourceManager(), resourceInitData, root);
             }
         } else {
             // OTR HEADER BEGIN
@@ -115,7 +112,8 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fil
             auto factory = mFactories[resourceInitData->Type];
 
             if (factory != nullptr) {
-                result = factory->ReadResource(GetContext()->GetResourceManager(), resourceInitData, reader);
+                result =
+                    factory->ReadResource(LUS::Context::GetInstance()->GetResourceManager(), resourceInitData, reader);
             }
         }
 

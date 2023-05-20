@@ -175,10 +175,9 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = mConfig->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
-        mResourceManager =
-            std::make_shared<ResourceManager>(GetInstance(), mMainPath, mPatchesPath, validHashes, reservedThreadCount);
+        mResourceManager = std::make_shared<ResourceManager>(mMainPath, mPatchesPath, validHashes, reservedThreadCount);
     } else {
-        mResourceManager = std::make_shared<ResourceManager>(GetInstance(), otrFiles, validHashes, reservedThreadCount);
+        mResourceManager = std::make_shared<ResourceManager>(otrFiles, validHashes, reservedThreadCount);
     }
 
     if (!mResourceManager->DidLoadSuccessfully()) {
@@ -217,7 +216,7 @@ void Context::InitConsole() {
 }
 
 void Context::InitWindow() {
-    mWindow = std::make_shared<Window>(GetInstance());
+    mWindow = std::make_shared<Window>();
     GetWindow()->Init();
 }
 

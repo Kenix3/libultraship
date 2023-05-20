@@ -12,7 +12,6 @@
 
 namespace LUS {
 struct File;
-class Context;
 
 // Resource manager caches any and all files it comes across into memory. This will be unoptimal in the future when
 // modifications have gigabytes of assets. It works with the original game's assets because the entire ROM is 64MB and
@@ -22,15 +21,14 @@ class ResourceManager {
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 
   public:
-    ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath, const std::string& patchesPath,
+    ResourceManager(const std::string& mainPath, const std::string& patchesPath,
                     const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount = 1);
-    ResourceManager(std::shared_ptr<Context> context, const std::vector<std::string>& otrFiles,
-                    const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount = 1);
+    ResourceManager(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
+                    uint32_t reservedThreadCount = 1);
     ~ResourceManager();
 
     bool DidLoadSuccessfully();
     std::shared_ptr<Archive> GetArchive();
-    std::shared_ptr<Context> GetContext();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
     std::shared_future<std::shared_ptr<File>> LoadFileAsync(const std::string& filePath, bool priority = false);
     std::shared_ptr<File> LoadFile(const std::string& filePath);
@@ -55,7 +53,6 @@ class ResourceManager {
                                                                           bool loadExact = false);
 
   private:
-    std::shared_ptr<Context> mContext;
     std::unordered_map<std::string, std::variant<ResourceLoadError, std::shared_ptr<Resource>>> mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<Archive> mArchive;
