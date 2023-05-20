@@ -266,9 +266,9 @@ void InputEditorWindow::DrawControllerSchema() {
         ImGui::Dummy(ImVec2(0, 1));
         ImGui::SetCursorPosX(cursorX);
         if (ImGui::Button("Recalibrate Gyro##RGyro")) {
-            Context::GetInstance()->GetControlDeck()->SaveSettings();
             profile->GyroData[DRIFT_X] = 0.0f;
             profile->GyroData[DRIFT_Y] = 0.0f;
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
         }
         ImGui::SetCursorPosX(cursorX);
         DrawVirtualStick("##GyroPreview",
