@@ -11,6 +11,7 @@ namespace LUS {
 class Config {
   public:
     Config(std::string path);
+    ~Config();
 
     std::string GetString(const std::string& key, const std::string& defaultValue = "");
     float GetFloat(const std::string& key, float defaultValue = 0.0f);

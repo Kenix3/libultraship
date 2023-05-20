@@ -18,6 +18,10 @@ ResourceLoader::ResourceLoader() {
     RegisterGlobalResourceFactories();
 }
 
+ResourceLoader::~ResourceLoader() {
+    SPDLOG_TRACE("destruct resource loader");
+}
+
 void ResourceLoader::RegisterGlobalResourceFactories() {
     RegisterResourceFactory(ResourceType::Texture, "Texture", std::make_shared<TextureFactory>());
     RegisterResourceFactory(ResourceType::Vertex, "Vertex", std::make_shared<VertexFactory>());

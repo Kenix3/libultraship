@@ -10,6 +10,9 @@ enum class AudioBackend { WASAPI, PULSE, SDL };
 
 class Audio {
   public:
+    Audio();
+    ~Audio();
+
     void Init();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
     AudioBackend GetAudioBackend();

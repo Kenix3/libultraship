@@ -8,6 +8,7 @@ class AudioPlayer {
 
   public:
     AudioPlayer();
+    ~AudioPlayer();
 
     bool Init(void);
     virtual int Buffered(void) = 0;

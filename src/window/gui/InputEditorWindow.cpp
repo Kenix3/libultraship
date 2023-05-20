@@ -9,6 +9,10 @@ namespace LUS {
 
 #define SEPARATION() ImGui::Dummy(ImVec2(0, 5))
 
+InputEditorWindow::~InputEditorWindow() {
+    SPDLOG_TRACE("destruct input editor window");
+}
+
 void InputEditorWindow::InitElement() {
     mCurrentPort = 0;
     mBtnReading = -1;

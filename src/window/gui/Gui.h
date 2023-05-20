@@ -58,6 +58,8 @@ class Window;
 class Gui {
   public:
     Gui(std::shared_ptr<Window> window);
+    ~Gui();
+
     void Init(GuiWindowInitData windowImpl);
     void StartFrame();
     void EndFrame();

@@ -18,6 +18,10 @@ Config::Config(std::string path) : mPath(std::move(path)), mIsNewInstance(false)
     Reload();
 }
 
+Config::~Config() {
+    SPDLOG_TRACE("destruct config");
+}
+
 std::string Config::FormatNestedKey(const std::string& key) {
     std::vector<std::string> dots = StringHelper::Split(key, ".");
 

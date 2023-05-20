@@ -14,6 +14,9 @@ namespace LUS {
 
 class ConsoleWindow : public GuiWindow {
   public:
+    using GuiWindow::GuiWindow;
+    ~ConsoleWindow();
+
     void ClearLogs(std::string channel);
     void ClearLogs();
     void Dispatch(const std::string& line);
@@ -51,8 +54,6 @@ class ConsoleWindow : public GuiWindow {
     static int32_t GetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                               std::string* output);
     static int32_t CheckVarType(const std::string& input);
-
-    using GuiWindow::GuiWindow;
 
     int32_t mSelectedId = -1;
     int32_t mHistoryIndex = -1;

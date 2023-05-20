@@ -9,6 +9,7 @@ class GuiElement {
     GuiElement(const std::string& visibilityConsoleVariable);
     GuiElement(bool isVisible);
     GuiElement();
+    ~GuiElement();
 
     void Init();
     void Draw();

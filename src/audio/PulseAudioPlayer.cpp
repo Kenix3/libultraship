@@ -1,6 +1,7 @@
 #if defined(__linux__) || defined(__BSD__)
 
 #include "PulseAudioPlayer.h"
+#include "Context.h"
 #include <spdlog/spdlog.h>
 
 namespace LUS {
@@ -53,7 +54,8 @@ bool PulseAudioPlayer::DoInit() {
     }
 
     // Create context and connect
-    mContext = pa_context_new(pa_mainloop_get_api(mMainLoop), "Ocarina of Time");
+    mContext =
+        pa_context_new(pa_mainloop_get_api(mMainLoop), ("libultraship - " + Context::GetInstance()->GetName()).c_str());
     if (mContext == NULL) {
         goto fail;
     }

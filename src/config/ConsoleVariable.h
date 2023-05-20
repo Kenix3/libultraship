@@ -23,6 +23,7 @@ typedef struct CVar {
 class ConsoleVariable {
   public:
     ConsoleVariable();
+    ~ConsoleVariable();
 
     std::shared_ptr<CVar> Get(const char* name);
 
