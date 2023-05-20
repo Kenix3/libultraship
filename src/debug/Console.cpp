@@ -3,6 +3,12 @@
 #include "Context.h"
 
 namespace LUS {
+Console::Console() {
+}
+Console::~Console() {
+    SPDLOG_TRACE("destruct console");
+}
+
 void Console::Init() {
 }
 

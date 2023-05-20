@@ -8,6 +8,13 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
+GameOverlay::GameOverlay() {
+}
+
+GameOverlay::~GameOverlay() {
+    SPDLOG_TRACE("destruct game overlay");
+}
+
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
     std::shared_ptr<Archive> base = Context::GetInstance()->GetResourceManager()->GetArchive();

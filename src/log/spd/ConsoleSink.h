@@ -28,6 +28,10 @@ template <typename Mutex> class ConsoleSink final : public base_sink<Mutex> {
 
   protected:
     void sink_it_(const details::log_msg& msg) override {
+        if (LUS::Context::GetInstance() == nullptr) {
+            return;
+        }
+
         memory_buf_t formatted;
         if (use_raw_msg_) {
             details::fmt_helper::append_string_view(msg.payload, formatted);

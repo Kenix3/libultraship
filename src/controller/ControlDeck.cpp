@@ -20,6 +20,9 @@ namespace LUS {
 ControlDeck::ControlDeck() : mPads(nullptr) {
 }
 
+ControlDeck::~ControlDeck() {
+    SPDLOG_TRACE("destruct control deck");
+}
 void ControlDeck::Init(uint8_t* bits) {
     ScanDevices();
     mControllerBits = bits;

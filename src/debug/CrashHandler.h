@@ -19,26 +19,20 @@ typedef void (*CrashHandlerCallback)(char*, size_t*);
 class CrashHandler {
   public:
     CrashHandler();
-
+    ~CrashHandler();
     CrashHandler(CrashHandlerCallback callback);
 
     void RegisterCallback(CrashHandlerCallback callback);
-
     void AppendLine(const char* str);
-
     void AppendStr(const char* str);
+    void PrintCommon();
 
 #ifdef __linux__
     void PrintRegisters(ucontext_t* ctx);
 #elif _WIN32
-
     void PrintRegisters(CONTEXT* ctx);
-
     void PrintStack(CONTEXT* ctx);
-
 #endif
-
-    void PrintCommon();
 
   private:
     CrashHandlerCallback mCallback = nullptr;

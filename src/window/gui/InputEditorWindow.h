@@ -9,6 +9,7 @@ namespace LUS {
 class InputEditorWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
+    ~InputEditorWindow();
 
     void DrawButton(const char* label, int32_t n64Btn, int32_t currentPort, int32_t* btnReading);
     void DrawControllerSelect(int32_t currentPort);

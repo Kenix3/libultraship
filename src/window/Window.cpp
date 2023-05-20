@@ -33,7 +33,6 @@ Window::Window() {
 
 Window::~Window() {
     SPDLOG_DEBUG("destruct window");
-    spdlog::shutdown();
 }
 
 void Window::Init() {

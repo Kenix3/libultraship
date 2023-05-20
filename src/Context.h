@@ -31,6 +31,7 @@ class Context {
     static std::string GetPathRelativeToAppBundle(const std::string path);
 
     Context(std::string name, std::string shortName, std::string configFilePath);
+    ~Context();
 
     void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
               uint32_t reservedThreadCount);

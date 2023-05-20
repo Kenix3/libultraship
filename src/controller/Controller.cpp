@@ -22,6 +22,10 @@ Controller::Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceI
     }
 }
 
+Controller::~Controller() {
+    SPDLOG_TRACE("destruct controller");
+}
+
 int8_t Controller::ReadStick(int32_t portIndex, Stick stick, Axis axis) {
     switch (stick) {
         case Stick::LEFT: {

@@ -30,6 +30,9 @@ struct CommandEntry {
 
 class Console {
   public:
+    Console();
+    ~Console();
+
     void Init();
     int32_t Run(const std::string& command, std::string* output);
     bool HasCommand(const std::string& command);
