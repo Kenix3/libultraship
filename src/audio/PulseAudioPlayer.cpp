@@ -54,8 +54,8 @@ bool PulseAudioPlayer::DoInit() {
     }
 
     // Create context and connect
-    mContext = pa_context_new(pa_mainloop_get_api(mMainLoop),
-                              ("libultraship - " + Context::GetInstance()->GetName()).c_str());
+    mContext =
+        pa_context_new(pa_mainloop_get_api(mMainLoop), ("libultraship - " + Context::GetInstance()->GetName()).c_str());
     if (mContext == NULL) {
         goto fail;
     }
