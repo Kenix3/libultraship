@@ -9,6 +9,7 @@ namespace LUS {
 class PulseAudioPlayer : public AudioPlayer {
   public:
     PulseAudioPlayer();
+
     int Buffered() override;
     int GetDesiredBuffered() override;
     void Play(const uint8_t* buff, size_t len) override;

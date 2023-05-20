@@ -20,6 +20,9 @@ GuiElement::GuiElement(bool isVisible) : GuiElement("", isVisible) {
 GuiElement::GuiElement() : GuiElement("", false) {
 }
 
+GuiElement::~GuiElement() {
+}
+
 void GuiElement::Init() {
     if (IsInitialized()) {
         return;

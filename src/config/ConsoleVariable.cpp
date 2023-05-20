@@ -12,6 +12,10 @@ ConsoleVariable::ConsoleVariable() {
     Load();
 }
 
+ConsoleVariable::~ConsoleVariable() {
+    SPDLOG_TRACE("destruct console variables");
+}
+
 std::shared_ptr<CVar> ConsoleVariable::Get(const char* name) {
     auto it = mVariables.find(name);
     return it != mVariables.end() ? it->second : nullptr;

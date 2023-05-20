@@ -75,6 +75,10 @@ Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariabl
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
 }
 
+Gui::~Gui() {
+    SPDLOG_TRACE("destruct gui");
+}
+
 void Gui::Init(GuiWindowInitData windowImpl) {
     mImpl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();

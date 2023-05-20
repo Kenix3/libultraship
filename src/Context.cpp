@@ -21,6 +21,20 @@ std::shared_ptr<Context> Context::GetInstance() {
     return mContext.lock();
 }
 
+Context::~Context() {
+    SPDLOG_TRACE("destruct context");
+    // Explicitly destructing everything so that logging is done last.
+    mAudio = nullptr;
+    mWindow = nullptr;
+    mConsole = nullptr;
+    mCrashHandler = nullptr;
+    mControlDeck = nullptr;
+    mResourceManager = nullptr;
+    mConsoleVariables = nullptr;
+    mConfig = nullptr;
+    spdlog::shutdown();
+}
+
 std::shared_ptr<Context> Context::CreateInstance(const std::string name, const std::string shortName,
                                                  const std::string configFilePath,
                                                  const std::vector<std::string>& otrFiles,

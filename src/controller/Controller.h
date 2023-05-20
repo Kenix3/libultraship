@@ -37,8 +37,8 @@ class ControlDeck;
 
 class Controller {
   public:
-    virtual ~Controller() = default;
     Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
+    ~Controller();
     virtual void ReadDevice(int32_t portIndex) = 0;
     virtual bool Connected() const = 0;
     virtual bool CanRumble() const = 0;

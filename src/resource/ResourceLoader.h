@@ -12,6 +12,7 @@ struct File;
 class ResourceLoader {
   public:
     ResourceLoader();
+    ~ResourceLoader();
 
     std::shared_ptr<Resource> LoadResource(std::shared_ptr<File> fileToLoad);
     bool RegisterResourceFactory(ResourceType resourceType, std::string resourceTypeXML,

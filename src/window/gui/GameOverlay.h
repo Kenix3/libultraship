@@ -20,6 +20,9 @@ struct Overlay {
 
 class GameOverlay {
   public:
+    GameOverlay();
+    ~GameOverlay();
+
     void Init();
     void Draw();
     void DrawSettings();

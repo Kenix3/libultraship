@@ -3,6 +3,13 @@
 #include "Context.h"
 
 namespace LUS {
+Audio::Audio() {
+}
+
+Audio::~Audio() {
+    SPDLOG_TRACE("destruct audio");
+}
+
 void Audio::InitAudioPlayer() {
     switch (GetAudioBackend()) {
 #ifdef _WIN32

@@ -53,7 +53,8 @@ bool PulseAudioPlayer::DoInit() {
     }
 
     // Create context and connect
-    mContext = pa_context_new(pa_mainloop_get_api(mMainLoop), "Ocarina of Time");
+    mContext = pa_context_new(pa_mainloop_get_api(mMainLoop),
+                              ("libultraship - " + LUS::Context::GetInstance()->GetName()).c_str());
     if (mContext == NULL) {
         goto fail;
     }

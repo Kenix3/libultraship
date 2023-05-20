@@ -1,8 +1,13 @@
 #include "StatsWindow.h"
 #include "ImGui/imgui.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "spdlog/spdlog.h"
 
 namespace LUS {
+StatsWindow::~StatsWindow() {
+    SPDLOG_TRACE("destruct stats window");
+}
+
 void StatsWindow::InitElement() {
 }
 
