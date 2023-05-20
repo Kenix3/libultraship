@@ -41,10 +41,12 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
 
     if (readingMode) {
         const int32_t btn = backend->ReadRawPress();
-        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput(mGameInputBlockId);
+        Context::GetInstance()->GetControlDeck()->BlockGameInput(mGameInputBlockId);
 
         if (btn != -1) {
             backend->SetButtonMapping(currentPort, n64Btn, btn);
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+
             *btnReading = -1;
 
             // avoid immediately triggering another button during gamepad nav
@@ -81,6 +83,7 @@ void InputEditorWindow::DrawControllerSelect(int32_t currentPort) {
             }
             if (ImGui::Selectable(deviceName.c_str(), i == controlDeck->GetDeviceIndexFromPortIndex(currentPort))) {
                 controlDeck->SetDeviceToPort(currentPort, i);
+                Context::GetInstance()->GetControlDeck()->SaveSettings();
             }
         }
         ImGui::EndCombo();
@@ -178,8 +181,10 @@ void InputEditorWindow::DrawControllerSchema() {
         // set the deadzone for both left stick axes here
         // SDL_CONTROLLER_AXIS_LEFTX: 0
         // SDL_CONTROLLER_AXIS_LEFTY: 1
-        ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[0], 1.0f, 0.0f, "%.0f");
-        profile->AxisDeadzones[1] = profile->AxisDeadzones[0];
+        if (ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[0], 1.0f, 0.0f, "%.0f")) {
+            profile->AxisDeadzones[1] = profile->AxisDeadzones[0];
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+        }
         ImGui::PopItemWidth();
         ImGui::EndChild();
     } else {
@@ -223,8 +228,10 @@ void InputEditorWindow::DrawControllerSchema() {
         // set the deadzone for both right stick axes here
         // SDL_CONTROLLER_AXIS_RIGHTX: 2
         // SDL_CONTROLLER_AXIS_RIGHTY: 3
-        ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[2], 1.0f, 0.0f, "%.0f");
-        profile->AxisDeadzones[3] = profile->AxisDeadzones[2];
+        if (ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[2], 1.0f, 0.0f, "%.0f")) {
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+            profile->AxisDeadzones[3] = profile->AxisDeadzones[2];
+        }
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
@@ -241,7 +248,9 @@ void InputEditorWindow::DrawControllerSchema() {
         Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Gyro Options", ImVec2(175, 20));
         float cursorX = ImGui::GetCursorPosX() + 5;
         ImGui::SetCursorPosX(cursorX);
-        ImGui::Checkbox("Enable Gyro", &profile->UseGyro);
+        if (ImGui::Checkbox("Enable Gyro", &profile->UseGyro)) {
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+        }
         ImGui::SetCursorPosX(cursorX);
         ImGui::Text("Gyro Sensitivity: %d%%", static_cast<int>(100.0f * profile->GyroData[GYRO_SENSITIVITY]));
 #ifdef __WIIU__
@@ -250,13 +259,16 @@ void InputEditorWindow::DrawControllerSchema() {
         ImGui::PushItemWidth(135.0f);
 #endif
         ImGui::SetCursorPosX(cursorX);
-        ImGui::SliderFloat("##GSensitivity", &profile->GyroData[GYRO_SENSITIVITY], 0.0f, 1.0f, "");
+        if (ImGui::SliderFloat("##GSensitivity", &profile->GyroData[GYRO_SENSITIVITY], 0.0f, 1.0f, "")) {
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+        }
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0, 1));
         ImGui::SetCursorPosX(cursorX);
         if (ImGui::Button("Recalibrate Gyro##RGyro")) {
             profile->GyroData[DRIFT_X] = 0.0f;
             profile->GyroData[DRIFT_Y] = 0.0f;
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
         }
         ImGui::SetCursorPosX(cursorX);
         DrawVirtualStick("##GyroPreview",
@@ -275,7 +287,9 @@ void InputEditorWindow::DrawControllerSchema() {
 #else
         ImGui::PushItemWidth(80);
 #endif
-        ImGui::InputFloat("##GDriftX", &profile->GyroData[DRIFT_X], 1.0f, 0.0f, "%.1f");
+        if (ImGui::InputFloat("##GDriftX", &profile->GyroData[DRIFT_X], 1.0f, 0.0f, "%.1f")) {
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+        }
         ImGui::PopItemWidth();
         ImGui::Text("Drift Y");
 #ifdef __WIIU__
@@ -283,7 +297,9 @@ void InputEditorWindow::DrawControllerSchema() {
 #else
         ImGui::PushItemWidth(80);
 #endif
-        ImGui::InputFloat("##GDriftY", &profile->GyroData[DRIFT_Y], 1.0f, 0.0f, "%.1f");
+        if (ImGui::InputFloat("##GDriftY", &profile->GyroData[DRIFT_Y], 1.0f, 0.0f, "%.1f")) {
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+        }
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
@@ -316,7 +332,9 @@ void InputEditorWindow::DrawControllerSchema() {
     Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Options", ImVec2(158, 20));
     float cursorX = ImGui::GetCursorPosX() + 5;
     ImGui::SetCursorPosX(cursorX);
-    ImGui::Checkbox("Rumble Enabled", &profile->UseRumble);
+    if (ImGui::Checkbox("Rumble Enabled", &profile->UseRumble)) {
+        Context::GetInstance()->GetControlDeck()->SaveSettings();
+    }
     if (backend->CanRumble()) {
         ImGui::SetCursorPosX(cursorX);
         ImGui::Text("Rumble Force: %d%%", static_cast<int32_t>(100.0f * profile->RumbleStrength));
@@ -326,7 +344,9 @@ void InputEditorWindow::DrawControllerSchema() {
 #else
         ImGui::PushItemWidth(135.0f);
 #endif
-        ImGui::SliderFloat("##RStrength", &profile->RumbleStrength, 0.0f, 1.0f, "");
+        if (ImGui::SliderFloat("##RStrength", &profile->RumbleStrength, 0.0f, 1.0f, "")) {
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+        }
         ImGui::PopItemWidth();
     }
 
@@ -340,8 +360,10 @@ void InputEditorWindow::DrawControllerSchema() {
 #else
         ImGui::PushItemWidth(135.0f);
 #endif
-        ImGui::SliderInt("##NotchProximityThreshold", &profile->NotchProximityThreshold, 0, 45, "",
-                         ImGuiSliderFlags_AlwaysClamp);
+        if (ImGui::SliderInt("##NotchProximityThreshold", &profile->NotchProximityThreshold, 0, 45, "",
+                             ImGuiSliderFlags_AlwaysClamp)) {
+            Context::GetInstance()->GetControlDeck()->SaveSettings();
+        }
         ImGui::PopItemWidth();
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip(
