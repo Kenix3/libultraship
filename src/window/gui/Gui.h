@@ -98,7 +98,6 @@ class Gui {
     };
 
     std::shared_ptr<Window> mWindow;
-    OSContPad* mPads;
     GuiWindowInitData mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;

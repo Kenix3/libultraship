@@ -17,6 +17,9 @@
 
 namespace LUS {
 
+
+ControlDeck::ControlDeck() : mPads(nullptr) {
+}
 void ControlDeck::Init(uint8_t* bits) {
     ScanDevices();
     mControllerBits = bits;
@@ -78,7 +81,9 @@ void ControlDeck::SetDeviceToPort(int32_t portIndex, int32_t deviceIndex) {
     *mControllerBits |= (backend->Connected()) << portIndex;
 }
 
-void ControlDeck::WriteToPad(OSContPad* pad) const {
+void ControlDeck::WriteToPad(OSContPad* pad) {
+    mPads = pad;
+
     for (size_t i = 0; i < mPortList.size(); i++) {
         const std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
 
@@ -103,6 +108,10 @@ void ControlDeck::WriteToPad(OSContPad* pad) const {
 
         backend->ReadToPad(&pad[i], i);
     }
+}
+
+OSContPad* ControlDeck::GetPads() {
+    return mPads;
 }
 
 #define NESTED(key, ...) \
