@@ -361,7 +361,7 @@ void InputEditorWindow::DrawControllerSchema() {
         ImGui::PushItemWidth(135.0f);
 #endif
         if (ImGui::SliderInt("##NotchProximityThreshold", &profile->NotchProximityThreshold, 0, 45, "",
-                         ImGuiSliderFlags_AlwaysClamp)) {
+                             ImGuiSliderFlags_AlwaysClamp)) {
             Context::GetInstance()->GetControlDeck()->SaveSettings();
         }
         ImGui::PopItemWidth();
