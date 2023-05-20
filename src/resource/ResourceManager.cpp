@@ -14,11 +14,9 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
 
-ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::string& mainPath,
-                                 const std::string& patchesPath, const std::unordered_set<uint32_t>& validHashes,
-                                 uint32_t reservedThreadCount)
-    : mContext(context) {
-    mResourceLoader = std::make_shared<ResourceLoader>(context);
+ResourceManager::ResourceManager(const std::string& mainPath, const std::string& patchesPath,
+                                 const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
+    mResourceLoader = std::make_shared<ResourceLoader>();
     mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
@@ -34,10 +32,9 @@ ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::st
     }
 }
 
-ResourceManager::ResourceManager(std::shared_ptr<Context> context, const std::vector<std::string>& otrFiles,
-                                 const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount)
-    : mContext(context) {
-    mResourceLoader = std::make_shared<ResourceLoader>(context);
+ResourceManager::ResourceManager(const std::vector<std::string>& otrFiles,
+                                 const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
+    mResourceLoader = std::make_shared<ResourceLoader>();
     mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
@@ -318,10 +315,6 @@ std::shared_ptr<Archive> ResourceManager::GetArchive() {
 
 std::shared_ptr<ResourceLoader> ResourceManager::GetResourceLoader() {
     return mResourceLoader;
-}
-
-std::shared_ptr<Context> ResourceManager::GetContext() {
-    return mContext;
 }
 
 size_t ResourceManager::UnloadResource(const std::string& filePath) {

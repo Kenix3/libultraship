@@ -23,8 +23,7 @@
 
 namespace LUS {
 
-Window::Window(std::shared_ptr<Context> context) {
-    mContext = context;
+Window::Window() {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mIsFullscreen = false;
@@ -58,14 +57,17 @@ void Window::Init() {
     }
 #endif
 
-    mIsFullscreen = GetContext()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
+    mIsFullscreen =
+        LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
 
     if (mIsFullscreen) {
-        mWidth = GetContext()->GetConfig()->GetInt("Window.Fullscreen.Width", steamDeckGameMode ? 1280 : 1920);
-        mHeight = GetContext()->GetConfig()->GetInt("Window.Fullscreen.Height", steamDeckGameMode ? 800 : 1080);
+        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width",
+                                                                  steamDeckGameMode ? 1280 : 1920);
+        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height",
+                                                                   steamDeckGameMode ? 800 : 1080);
     } else {
-        mWidth = GetContext()->GetConfig()->GetInt("Window.Width", 640);
-        mHeight = GetContext()->GetConfig()->GetInt("Window.Height", 480);
+        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
+        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
 
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
@@ -85,7 +87,8 @@ void Window::Init() {
 
     InitWindowManager();
 
-    gfx_init(mWindowManagerApi, mRenderingApi, GetContext()->GetName().c_str(), mIsFullscreen, mWidth, mHeight);
+    gfx_init(mWindowManagerApi, mRenderingApi, LUS::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
+             mHeight);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
 }
@@ -272,10 +275,6 @@ int32_t Window::GetLastScancode() {
 
 void Window::SetLastScancode(int32_t scanCode) {
     mLastScancode = scanCode;
-}
-
-std::shared_ptr<Context> Window::GetContext() {
-    return mContext;
 }
 
 std::shared_ptr<Gui> Window::GetGui() {

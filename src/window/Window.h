@@ -15,7 +15,7 @@ class Context;
 
 class Window {
   public:
-    Window(std::shared_ptr<Context> context);
+    Window();
     ~Window();
 
     void MainLoop(void (*mainFunction)(void));
@@ -42,7 +42,6 @@ class Window {
     bool SupportsWindowedFullscreen();
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t value);
-    std::shared_ptr<Context> GetContext();
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
     void SaveBackendSettingToConfig(WindowBackend backend);
@@ -57,7 +56,6 @@ class Window {
     static void AllKeysUp(void);
     static void OnFullscreenChanged(bool isNowFullscreen);
 
-    std::shared_ptr<Context> mContext;
     std::shared_ptr<Gui> mGui;
     WindowBackend mWindowBackend;
     std::shared_ptr<std::vector<WindowBackend>> mAvailableWindowBackends;
