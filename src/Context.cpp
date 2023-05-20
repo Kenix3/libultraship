@@ -77,8 +77,6 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConsole();
     InitWindow();
     InitAudio();
-
-    LUS::RegisterHook<ExitGame>([this]() { mControlDeck->SaveSettings(); });
 }
 
 void Context::InitLogging() {

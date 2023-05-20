@@ -24,11 +24,12 @@ template <typename H, typename... Args> void ExecuteHooks(Args&&... args) {
 }
 
 DEFINE_HOOK(ControllerRead, void(OSContPad* pad));
-DEFINE_HOOK(ControllerRawInput, void(Controller* backend, uint32_t raw));
-DEFINE_HOOK(AudioInit, void());
 DEFINE_HOOK(GfxInit, void());
 DEFINE_HOOK(ExitGame, void());
 DEFINE_HOOK(CrashGame, void());
+
+// SoH specific
+DEFINE_HOOK(AudioInit, void());
 DEFINE_HOOK(LoadFile, void(uint32_t fileNum));
 DEFINE_HOOK(DeleteFile, void(uint32_t fileNum));
 } // namespace LUS
