@@ -13,7 +13,8 @@ class ControlDeck {
 
     void Init(uint8_t* controllerBits);
     void ScanDevices();
-    void WriteToPad(OSContPad* pad) const;
+    void WriteToPad(OSContPad* pad);
+    OSContPad* GetPads();
     void LoadSettings();
     void SaveSettings();
     void SetDeviceToPort(int32_t portIndex, int32_t deviceIndex);
@@ -32,5 +33,6 @@ class ControlDeck {
     std::vector<std::shared_ptr<Controller>> mDevices = {};
     uint8_t* mControllerBits = nullptr;
     std::unordered_map<int32_t, bool> mGameInputBlockers;
+    OSContPad* mPads;
 };
 } // namespace LUS

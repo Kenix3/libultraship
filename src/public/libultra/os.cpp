@@ -38,7 +38,6 @@ void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
     LUS::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
-    LUS::ExecuteHooks<LUS::ControllerRead>(pad);
 }
 
 uint64_t osGetTime(void) {
