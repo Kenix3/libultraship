@@ -94,8 +94,8 @@ set(Source_Files__Public__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/windowbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controldeckbridge.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controldeckbridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controllerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controllerbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/consolevariablebridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/consolevariablebridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/crashhandlerbridge.h
