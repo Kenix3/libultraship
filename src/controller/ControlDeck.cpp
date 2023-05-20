@@ -19,6 +19,7 @@ namespace LUS {
 
 ControlDeck::ControlDeck() : mPads(nullptr) {
 }
+
 void ControlDeck::Init(uint8_t* bits) {
     ScanDevices();
     mControllerBits = bits;
