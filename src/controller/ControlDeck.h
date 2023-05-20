@@ -9,7 +9,7 @@ namespace LUS {
 class ControlDeck {
   public:
     ControlDeck();
-    
+
     void Init(uint8_t* controllerBits);
     void ScanDevices();
     void WriteToPad(OSContPad* pad);
