@@ -58,6 +58,8 @@ std::string Config::GetString(const std::string& key, const std::string& default
     if (n.is_string() && !n.get<std::string>().empty()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve string with key ({}) from config. Returning default value ({})", key,
+                 defaultValue);
     return defaultValue;
 }
 
@@ -66,6 +68,7 @@ float Config::GetFloat(const std::string& key, float defaultValue) {
     if (n.is_number_float()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve float with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -74,6 +77,7 @@ bool Config::GetBool(const std::string& key, bool defaultValue) {
     if (n.is_boolean()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve bool with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -82,6 +86,7 @@ int32_t Config::GetInt(const std::string& key, int32_t defaultValue) {
     if (n.is_number_integer()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve int with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -90,6 +95,7 @@ uint32_t Config::GetUInt(const std::string& key, uint32_t defaultValue) {
     if (n.is_number_unsigned()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve uint with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -177,7 +183,8 @@ AudioBackend Config::GetAudioBackend() {
         return AudioBackend::SDL;
     }
 
-    // we didn't get a valid backend string, return a default
+    SPDLOG_TRACE("Could not find AudioBackend matching value from config file ({}). Returning default AudioBackend.",
+                 backendName);
 #ifdef _WIN32
     return AudioBackend::WASAPI;
 #elif defined(__linux)
@@ -210,7 +217,8 @@ WindowBackend Config::GetWindowBackend() {
         return static_cast<WindowBackend>(backendId);
     }
 
-    // we didn't get a valid backend id, return a default
+    SPDLOG_TRACE("Could not find WindowBackend matching id from config file ({}). Returning default WindowBackend.",
+                 backendId);
 #ifdef ENABLE_DX12
     return WindowBackend::DX12;
 #endif
