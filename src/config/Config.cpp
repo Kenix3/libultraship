@@ -7,6 +7,10 @@
 #include <any>
 #include <Utils/StringHelper.h>
 
+#ifdef __APPLE__
+#include "graphic/Fast3D/gfx_metal.h"
+#endif
+
 namespace fs = std::filesystem;
 
 namespace LUS {
@@ -54,6 +58,8 @@ std::string Config::GetString(const std::string& key, const std::string& default
     if (n.is_string() && !n.get<std::string>().empty()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve string with key ({}) from config. Returning default value ({})", key,
+                 defaultValue);
     return defaultValue;
 }
 
@@ -62,6 +68,7 @@ float Config::GetFloat(const std::string& key, float defaultValue) {
     if (n.is_number_float()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve float with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -70,6 +77,7 @@ bool Config::GetBool(const std::string& key, bool defaultValue) {
     if (n.is_boolean()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve bool with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -78,6 +86,7 @@ int32_t Config::GetInt(const std::string& key, int32_t defaultValue) {
     if (n.is_number_integer()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve int with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -86,6 +95,7 @@ uint32_t Config::GetUInt(const std::string& key, uint32_t defaultValue) {
     if (n.is_number_unsigned()) {
         return n;
     }
+    SPDLOG_TRACE("Failed to retrieve uint with key ({}) from config. Returning default value ({})", key, defaultValue);
     return defaultValue;
 }
 
@@ -158,4 +168,97 @@ nlohmann::json Config::GetFlattenedJson() {
 bool Config::IsNewInstance() {
     return mIsNewInstance;
 }
+
+AudioBackend Config::GetAudioBackend() {
+    std::string backendName = GetString("Window.AudioBackend");
+    if (backendName == "wasapi") {
+        return AudioBackend::WASAPI;
+    }
+
+    if (backendName == "pulse") {
+        return AudioBackend::PULSE;
+    }
+
+    if (backendName == "sdl") {
+        return AudioBackend::SDL;
+    }
+
+    SPDLOG_TRACE("Could not find AudioBackend matching value from config file ({}). Returning default AudioBackend.",
+                 backendName);
+#ifdef _WIN32
+    return AudioBackend::WASAPI;
+#elif defined(__linux)
+    return AudioBackend::PULSE;
+#endif
+
+    return AudioBackend::SDL;
+}
+
+void Config::SetAudioBackend(AudioBackend backend) {
+    switch (backend) {
+        case AudioBackend::WASAPI:
+            SetString("Window.AudioBackend", "wasapi");
+            break;
+        case AudioBackend::PULSE:
+            SetString("Window.AudioBackend", "pulse");
+            break;
+        case AudioBackend::SDL:
+            SetString("Window.AudioBackend", "sdl");
+            break;
+        default:
+            SetString("Window.AudioBackend", "");
+    }
+}
+
+WindowBackend Config::GetWindowBackend() {
+    WindowBackend backend;
+    int backendId = GetInt("Window.Backend.Id", -1);
+    if (backendId != -1 && backendId < static_cast<int>(WindowBackend::BACKEND_COUNT)) {
+        return static_cast<WindowBackend>(backendId);
+    }
+
+    SPDLOG_TRACE("Could not find WindowBackend matching id from config file ({}). Returning default WindowBackend.",
+                 backendId);
+#ifdef ENABLE_DX12
+    return WindowBackend::DX12;
+#endif
+#ifdef ENABLE_DX11
+    return WindowBackend::DX11;
+#endif
+#ifdef __WIIU__
+    return WindowBackend::GX2;
+#endif
+#ifdef __APPLE__
+    if (Metal_IsSupported()) {
+        return WindowBackend::SDL_METAL;
+    }
+#endif
+    return WindowBackend::SDL_OPENGL;
+}
+
+void Config::SetWindowBackend(WindowBackend backend) {
+    SetInt("Window.Backend.Id", static_cast<int>(backend));
+
+    switch (backend) {
+        case WindowBackend::DX11:
+            SetString("Window.Backend.Name", "DirectX 11");
+            break;
+        case WindowBackend::DX12:
+            SetString("Window.Backend.Name", "DirectX 12");
+            break;
+        case WindowBackend::GLX_OPENGL:
+        case WindowBackend::SDL_OPENGL:
+            SetString("Window.Backend.Name", "OpenGL");
+            break;
+        case WindowBackend::SDL_METAL:
+            SetString("Window.Backend.Name", "Metal");
+            break;
+        case WindowBackend::GX2:
+            SetString("Window.Backend.Name", "GX2");
+            break;
+        default:
+            SetString("Window.Backend.Name", "");
+    }
+}
+
 } // namespace LUS
