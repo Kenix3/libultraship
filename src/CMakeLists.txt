@@ -151,6 +151,8 @@ set(Source_Files__Window__Gui
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/Gui.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/InputEditorWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/InputEditorWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/InputViewer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/InputViewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GameOverlay.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GameOverlay.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/Fonts.h

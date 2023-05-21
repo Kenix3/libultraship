@@ -42,6 +42,7 @@ class Window {
     bool SupportsWindowedFullscreen();
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t value);
+    void SetTextureFilter(FilteringMode filteringMode);
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
     void SaveBackendSettingToConfig(WindowBackend backend);
