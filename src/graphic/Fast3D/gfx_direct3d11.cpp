@@ -712,7 +712,7 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2;
-        switch (CVarGetInteger("gDirtPathFix", 0)) {
+        switch (CVarGetInteger("gZFightingMode", 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)d3d.render_target_height / n64modeFactor;
                 break;

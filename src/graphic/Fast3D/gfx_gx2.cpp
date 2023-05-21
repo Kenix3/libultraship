@@ -377,7 +377,7 @@ static void gfx_gx2_set_zmode_decal(bool zmode_decal) {
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2.0f;
-        switch (CVarGetInteger("gDirtPathFix", 0)) {
+        switch (CVarGetInteger("gZFightingMode", 0)) {
             // scaled z-fighting (N64 mode like)
             case 1:
                 if (current_framebuffer) {
