@@ -81,12 +81,12 @@ class Gui {
     std::shared_ptr<GameOverlay> GetGameOverlay();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
+    void LoadTexture(const std::string& name, const std::string& path);
 
   protected:
     void InitSettings();
     void ImGuiWMInit();
     void ImGuiBackendInit();
-    void LoadTexture(const std::string& name, const std::string& path);
     void ImGuiBackendNewFrame();
     void ImGuiWMNewFrame();
     void ImGuiRenderDrawData(ImDrawData* data);
