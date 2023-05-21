@@ -144,18 +144,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
         Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
     }
 
-    LoadTexture("Game_Icon", "textures/icons/gIcon.png");
-    LoadTexture("A-Btn", "textures/buttons/ABtn.png");
-    LoadTexture("B-Btn", "textures/buttons/BBtn.png");
-    LoadTexture("L-Btn", "textures/buttons/LBtn.png");
-    LoadTexture("R-Btn", "textures/buttons/RBtn.png");
-    LoadTexture("Z-Btn", "textures/buttons/ZBtn.png");
-    LoadTexture("Start-Btn", "textures/buttons/StartBtn.png");
-    LoadTexture("C-Left", "textures/buttons/CLeft.png");
-    LoadTexture("C-Right", "textures/buttons/CRight.png");
-    LoadTexture("C-Up", "textures/buttons/CUp.png");
-    LoadTexture("C-Down", "textures/buttons/CDown.png");
-
     CVarClear("gNewFileDropped");
     CVarClear("gDroppedFile");
 
@@ -225,6 +213,21 @@ void Gui::ImGuiBackendInit() {
         default:
             break;
     }
+}
+
+// otrtodo: not sure if i like this name
+void Gui::LoadDefaultGuiTextures() {
+    LoadTexture("Game_Icon", "textures/icons/gIcon.png");
+    LoadTexture("A-Btn", "textures/buttons/ABtn.png");
+    LoadTexture("B-Btn", "textures/buttons/BBtn.png");
+    LoadTexture("L-Btn", "textures/buttons/LBtn.png");
+    LoadTexture("R-Btn", "textures/buttons/RBtn.png");
+    LoadTexture("Z-Btn", "textures/buttons/ZBtn.png");
+    LoadTexture("Start-Btn", "textures/buttons/StartBtn.png");
+    LoadTexture("C-Left", "textures/buttons/CLeft.png");
+    LoadTexture("C-Right", "textures/buttons/CRight.png");
+    LoadTexture("C-Up", "textures/buttons/CUp.png");
+    LoadTexture("C-Down", "textures/buttons/CDown.png");
 }
 
 void Gui::LoadTexture(const std::string& name, const std::string& path) {

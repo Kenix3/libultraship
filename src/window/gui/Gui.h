@@ -81,6 +81,7 @@ class Gui {
     std::shared_ptr<GameOverlay> GetGameOverlay();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
+    void LoadDefaultGuiTextures();
 
   protected:
     void ImGuiWMInit();
