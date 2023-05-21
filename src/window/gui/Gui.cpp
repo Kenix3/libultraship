@@ -217,7 +217,6 @@ void Gui::ImGuiBackendInit() {
 
 // otrtodo: not sure if i like this name
 void Gui::LoadDefaultGuiTextures() {
-    LoadTexture("Game_Icon", "textures/icons/gIcon.png");
     LoadTexture("A-Btn", "textures/buttons/ABtn.png");
     LoadTexture("B-Btn", "textures/buttons/BBtn.png");
     LoadTexture("L-Btn", "textures/buttons/LBtn.png");
