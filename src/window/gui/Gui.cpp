@@ -61,14 +61,12 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 #endif
 
 namespace LUS {
-#define BindButton(btn, status)                                                                             \
-    ImGui::Image(GetTextureById(mGuiTextures[btn].RendererTextureId), ImVec2(16.0f * scale, 16.0f * scale), \
-                 ImVec2(0, 0), ImVec2(1.0f, 1.0f), ImVec4(255, 255, 255, (status) ? 255 : 0));
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
 Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
+    mInputViewer = std::make_shared<InputViewer>();
 
     AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
     AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
@@ -213,21 +211,6 @@ void Gui::ImGuiBackendInit() {
         default:
             break;
     }
-}
-
-// otrtodo: not sure if i like this name
-void Gui::LoadDefaultGuiTextures() {
-    LoadTexture("Game_Icon", "textures/icons/gIcon.png");
-    LoadTexture("A-Btn", "textures/buttons/ABtn.png");
-    LoadTexture("B-Btn", "textures/buttons/BBtn.png");
-    LoadTexture("L-Btn", "textures/buttons/LBtn.png");
-    LoadTexture("R-Btn", "textures/buttons/RBtn.png");
-    LoadTexture("Z-Btn", "textures/buttons/ZBtn.png");
-    LoadTexture("Start-Btn", "textures/buttons/StartBtn.png");
-    LoadTexture("C-Left", "textures/buttons/CLeft.png");
-    LoadTexture("C-Right", "textures/buttons/CRight.png");
-    LoadTexture("C-Up", "textures/buttons/CUp.png");
-    LoadTexture("C-Down", "textures/buttons/CDown.png");
 }
 
 void Gui::LoadTexture(const std::string& name, const std::string& path) {
@@ -431,6 +414,7 @@ void Gui::DrawMenu() {
     }
 
     GetGameOverlay()->Draw();
+    GetInputViewer()->Draw();
 }
 
 void Gui::ImGuiBackendNewFrame() {
@@ -496,65 +480,6 @@ void Gui::StartFrame() {
     }
 
     ImGui::End();
-
-#ifdef __WIIU__
-    const float scale = CVarGetFloat("gInputScale", 1.0f) * 2.0f;
-#else
-    const float scale = CVarGetFloat("gInputScale", 1.0f);
-#endif
-
-    ImVec2 btnPos = ImVec2(160 * scale, 85 * scale);
-
-    if (CVarGetInteger("gInputEnabled", 0)) {
-        ImGui::SetNextWindowSize(btnPos);
-        ImGui::SetNextWindowPos(ImVec2(mainPos.x + size.x - btnPos.x - 20, mainPos.y + size.y - btnPos.y - 20));
-
-        OSContPad* pads = LUS::Context::GetInstance()->GetControlDeck()->GetPads();
-
-        if (pads != nullptr && ImGui::Begin("Game Buttons", nullptr,
-                                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
-                                                ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground)) {
-            ImGui::SetCursorPosY(32 * scale);
-
-            ImGui::BeginGroup();
-            const ImVec2 cPos = ImGui::GetCursorPos();
-            ImGui::SetCursorPos(ImVec2(cPos.x + 10 * scale, cPos.y - 20 * scale));
-            BindButton("L-Btn", pads[0].button & BTN_L);
-            ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y));
-            BindButton("C-Up", pads[0].button & BTN_CUP);
-            ImGui::SetCursorPos(ImVec2(cPos.x, cPos.y + 16 * scale));
-            BindButton("C-Left", pads[0].button & BTN_CLEFT);
-            ImGui::SetCursorPos(ImVec2(cPos.x + 32 * scale, cPos.y + 16 * scale));
-            BindButton("C-Right", pads[0].button & BTN_CRIGHT);
-            ImGui::SetCursorPos(ImVec2(cPos.x + 16 * scale, cPos.y + 32 * scale));
-            BindButton("C-Down", pads[0].button & BTN_CDOWN);
-            ImGui::EndGroup();
-
-            ImGui::SameLine();
-
-            ImGui::BeginGroup();
-            const ImVec2 sPos = ImGui::GetCursorPos();
-            ImGui::SetCursorPos(ImVec2(sPos.x + 21, sPos.y - 20 * scale));
-            BindButton("Z-Btn", pads[0].button & BTN_Z);
-            ImGui::SetCursorPos(ImVec2(sPos.x + 22, sPos.y + 16 * scale));
-            BindButton("Start-Btn", pads[0].button & BTN_START);
-            ImGui::EndGroup();
-
-            ImGui::SameLine();
-
-            ImGui::BeginGroup();
-            const ImVec2 bPos = ImGui::GetCursorPos();
-            ImGui::SetCursorPos(ImVec2(bPos.x + 20 * scale, bPos.y - 20 * scale));
-            BindButton("R-Btn", pads[0].button & BTN_R);
-            ImGui::SetCursorPos(ImVec2(bPos.x + 12 * scale, bPos.y + 8 * scale));
-            BindButton("B-Btn", pads[0].button & BTN_B);
-            ImGui::SetCursorPos(ImVec2(bPos.x + 28 * scale, bPos.y + 24 * scale));
-            BindButton("A-Btn", pads[0].button & BTN_A);
-            ImGui::EndGroup();
-
-            ImGui::End();
-        }
-    }
 }
 
 void Gui::RenderViewports() {
@@ -846,6 +771,10 @@ std::shared_ptr<Window> Gui::GetWindow() {
 
 std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
+}
+
+std::shared_ptr<InputViewer> Gui::GetInputViewer() {
+    return mInputViewer;
 }
 
 void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
