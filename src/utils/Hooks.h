@@ -27,7 +27,6 @@ DEFINE_HOOK(ExitGame, void());
 DEFINE_HOOK(CrashGame, void());
 
 // SoH specific
-DEFINE_HOOK(AudioInit, void());
 DEFINE_HOOK(LoadFile, void(uint32_t fileNum));
 DEFINE_HOOK(DeleteFile, void(uint32_t fileNum));
 } // namespace LUS
