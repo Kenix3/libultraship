@@ -4,10 +4,9 @@
 
 namespace LUS {
 
-std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceManager> resourceMgr,
-                                                       std::shared_ptr<ResourceInitData> initData,
+std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
                                                        std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Texture>(resourceMgr, initData);
+    auto resource = std::make_shared<Texture>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
     switch (resource->InitData->ResourceVersion) {

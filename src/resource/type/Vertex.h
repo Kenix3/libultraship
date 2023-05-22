@@ -9,6 +9,9 @@ class Vertex : public Resource {
   public:
     using Resource::Resource;
 
+    Vertex() : Resource(std::shared_ptr<ResourceInitData>()) {
+    }
+
     void* GetPointer();
     size_t GetPointerSize();
 

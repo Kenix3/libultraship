@@ -6,8 +6,7 @@
 #include "WiiUImpl.h"
 
 namespace LUS {
-WiiUController::WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan)
-    : Controller(controlDeck, deviceIndex), mChan(chan) {
+WiiUController::WiiUController(int32_t deviceIndex, WPADChan chan) : Controller(deviceIndex), mChan(chan) {
     mConnected = false;
     mExtensionType = (WPADExtensionType)-1;
     mControllerName = std::string("Wii U Controller ") + std::to_string((int)mChan) + " (Disconnected)";

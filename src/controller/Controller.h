@@ -37,7 +37,7 @@ class ControlDeck;
 
 class Controller {
   public:
-    Controller(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
+    Controller(int32_t deviceIndex);
     ~Controller();
     virtual void ReadDevice(int32_t portIndex) = 0;
     virtual bool Connected() const = 0;
@@ -66,7 +66,6 @@ class Controller {
     bool IsRumbling();
     Color_RGB8 GetLedColor();
     std::string GetGuid();
-    std::shared_ptr<ControlDeck> GetControlDeck();
 
   protected:
     std::string mGuid;
@@ -93,7 +92,6 @@ class Controller {
     std::unordered_map<int32_t, std::shared_ptr<DeviceProfile>> mProfiles;
     std::unordered_map<int32_t, std::shared_ptr<Buttons>> mButtonData = {};
     std::deque<OSContPad> mPadBuffer;
-    std::shared_ptr<ControlDeck> mControlDeck;
 
     double GetClosestNotch(double angle, double approximationThreshold);
 };

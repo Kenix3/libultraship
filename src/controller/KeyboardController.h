@@ -5,7 +5,7 @@
 namespace LUS {
 class KeyboardController : public Controller {
   public:
-    KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
+    KeyboardController(int32_t deviceIndex);
 
     void ReadDevice(int32_t portIndex) override;
     const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;

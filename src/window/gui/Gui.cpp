@@ -8,8 +8,6 @@
 #include <vector>
 
 #include "config/Config.h"
-#include "window/Window.h"
-
 #include "Context.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "resource/type/Texture.h"
@@ -64,7 +62,7 @@ namespace LUS {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
-Gui::Gui(std::shared_ptr<Window> window) : mWindow(window), mNeedsConsoleVariableSave(false) {
+Gui::Gui() : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
     mInputViewer = std::make_shared<InputViewer>();
 
@@ -763,10 +761,6 @@ void Gui::EndGroupPanel(float minHeight) {
     ImGui::Dummy(ImVec2(0.0f, 0.0f));
 
     ImGui::EndGroup();
-}
-
-std::shared_ptr<Window> Gui::GetWindow() {
-    return mWindow;
 }
 
 std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {

@@ -4,8 +4,7 @@
 #include "libultraship/libultra/gbi.h"
 
 namespace LUS {
-Resource::Resource(std::shared_ptr<LUS::ResourceManager> resourceManager, std::shared_ptr<ResourceInitData> initData)
-    : ResourceManager(resourceManager), InitData(initData) {
+Resource::Resource(std::shared_ptr<ResourceInitData> initData) : InitData(initData) {
 }
 
 Resource::~Resource() {

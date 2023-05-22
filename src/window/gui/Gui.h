@@ -54,11 +54,9 @@ typedef union {
     } Gx2;
 } WindowEvent;
 
-class Window;
-
 class Gui {
   public:
-    Gui(std::shared_ptr<Window> window);
+    Gui();
     ~Gui();
 
     void Init(GuiWindowInitData windowImpl);
@@ -78,7 +76,6 @@ class Gui {
     void BeginGroupPanel(const char* name, const ImVec2& size);
     void EndGroupPanel(float minHeight);
     std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
-    std::shared_ptr<Window> GetWindow();
     std::shared_ptr<GameOverlay> GetGameOverlay();
     std::shared_ptr<InputViewer> GetInputViewer();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
@@ -100,7 +97,6 @@ class Gui {
         int32_t Height;
     };
 
-    std::shared_ptr<Window> mWindow;
     GuiWindowInitData mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;

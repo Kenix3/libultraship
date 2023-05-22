@@ -7,8 +7,7 @@
 namespace LUS {
 class DummyController final : public Controller {
   public:
-    DummyController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, const std::string& guid,
-                    const std::string& keyName, bool connected);
+    DummyController(int32_t deviceIndex, const std::string& guid, const std::string& keyName, bool connected);
     void ReadDevice(int32_t portIndex) override;
     const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
     bool Connected() const override;

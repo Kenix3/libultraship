@@ -10,7 +10,7 @@
 namespace LUS {
 class WiiUController : public Controller {
   public:
-    WiiUController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, WPADChan chan);
+    WiiUController(int32_t deviceIndex, WPADChan chan);
     bool Open();
     void Close();
     void ReadDevice(int32_t portIndex) override;
