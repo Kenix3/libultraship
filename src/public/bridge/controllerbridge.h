@@ -9,8 +9,8 @@
 extern "C" {
 #endif
 
-void BlockGameInput(uint16_t inputBlockId);
-void UnblockGameInput(uint16_t inputBlockId);
+void ControllerBlockGameInput(uint16_t inputBlockId);
+void ControllerUnblockGameInput(uint16_t inputBlockId);
 
 #ifdef __cplusplus
 };
