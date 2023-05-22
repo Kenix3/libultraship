@@ -34,7 +34,7 @@ Window::Window() {
 }
 
 Window::~Window() {
-    gfx_texture_cache_clear();
+    gfx_destroy();
     SPDLOG_DEBUG("destruct window");
 }
 

@@ -33,8 +33,6 @@ void ControlDeck::ScanDevices() {
     mPortList.clear();
     mDevices.clear();
 
-    auto controlDeck = Context::GetInstance()->GetControlDeck();
-
     // Always load controllers that need their device indices zero based first because we add some other devices
     // afterward.
     int32_t i;
@@ -42,29 +40,29 @@ void ControlDeck::ScanDevices() {
 #ifndef __WIIU__
     for (i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
-            auto sdl = std::make_shared<SDLController>(controlDeck, i);
+            auto sdl = std::make_shared<SDLController>(i);
             sdl->Open();
             mDevices.push_back(sdl);
         }
     }
 
-    mDevices.push_back(std::make_shared<DummyController>(controlDeck, i++, "Auto", "Auto", true));
-    mDevices.push_back(std::make_shared<KeyboardController>(controlDeck, i++));
+    mDevices.push_back(std::make_shared<DummyController>(i++, "Auto", "Auto", true));
+    mDevices.push_back(std::make_shared<KeyboardController>(i++));
 #else
     for (i = 0; i < 4; i++) {
-        auto controller = std::make_shared<LUS::WiiUController>(controlDeck, i, (WPADChan)i);
+        auto controller = std::make_shared<LUS::WiiUController>(i, (WPADChan)i);
         controller->Open();
         mDevices.push_back(controller);
     }
 
-    auto gamepad = std::make_shared<LUS::WiiUGamepad>(controlDeck, i++);
+    auto gamepad = std::make_shared<LUS::WiiUGamepad>(i++);
     gamepad->Open();
     mDevices.push_back(gamepad);
 
-    mDevices.push_back(std::make_shared<DummyController>(controlDeck, i++, "Auto", "Auto", true));
+    mDevices.push_back(std::make_shared<DummyController>(i++, "Auto", "Auto", true));
 #endif
 
-    mDevices.push_back(std::make_shared<DummyController>(controlDeck, i++, "Disconnected", "None", false));
+    mDevices.push_back(std::make_shared<DummyController>(i++, "Disconnected", "None", false));
 
     for (const auto& device : mDevices) {
         for (int32_t i = 0; i < MAXCONTROLLERS; i++) {

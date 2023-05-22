@@ -18,8 +18,7 @@ auto format_as(SDL_GameControllerAxis a) {
 
 namespace LUS {
 
-SDLController::SDLController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)
-    : Controller(controlDeck, deviceIndex), mController(nullptr) {
+SDLController::SDLController(int32_t deviceIndex) : Controller(deviceIndex), mController(nullptr) {
 }
 
 bool SDLController::Open() {

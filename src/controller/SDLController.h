@@ -5,7 +5,7 @@
 namespace LUS {
 class SDLController : public Controller {
   public:
-    SDLController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
+    SDLController(int32_t deviceIndex);
     void ReadDevice(int32_t portIndex) override;
     const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
     int32_t SetRumble(int32_t portIndex, bool rumble) override;

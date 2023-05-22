@@ -1,9 +1,7 @@
 #include "DummyController.h"
 
 namespace LUS {
-DummyController::DummyController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex, const std::string& guid,
-                                 const std::string& keyName, bool connected)
-    : Controller(controlDeck, deviceIndex) {
+DummyController::DummyController(int32_t deviceIndex, const std::string& guid, const std::string& keyName, bool connected) : Controller(deviceIndex) {
     mGuid = guid;
     mControllerName = guid;
     mIsConnected = connected;

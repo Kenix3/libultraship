@@ -5,7 +5,7 @@
 namespace LUS {
 class WiiUGamepad : public Controller {
   public:
-    WiiUGamepad(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex);
+    WiiUGamepad(int32_t deviceIndex);
 
     bool Open();
     void Close();

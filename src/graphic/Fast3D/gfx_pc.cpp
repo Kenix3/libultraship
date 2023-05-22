@@ -3062,6 +3062,15 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     }
 }
 
+void gfx_destroy(void) {
+    // TODO: should also destroy rapi and wapi
+
+    gfx_texture_cache_clear();
+    rdp.texture_to_load.raw_tex_metadata.resource = nullptr;
+    rdp.loaded_texture[0].raw_tex_metadata.resource = nullptr;
+    rdp.loaded_texture[1].raw_tex_metadata.resource = nullptr;
+}
+
 struct GfxRenderingAPI* gfx_get_current_rendering_api(void) {
     return gfx_rapi;
 }
