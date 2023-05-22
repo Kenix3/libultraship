@@ -23,7 +23,6 @@ template <typename H, typename... Args> void ExecuteHooks(Args&&... args) {
     }
 }
 
-DEFINE_HOOK(ExitGame, void());
 DEFINE_HOOK(CrashGame, void());
 
 // SoH specific

@@ -358,7 +358,6 @@ static void gfx_wiiu_main_loop(void (*run_one_game_iter)(void)) {
         run_one_game_iter();
     }
 
-    LUS::ExecuteHooks<LUS::ExitGame>();
     LUS::WiiU::Exit();
 
     gfx_gx2_shutdown();
