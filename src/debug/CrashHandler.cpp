@@ -198,14 +198,12 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     free(symbols);
     crashHandler->PrintCommon();
 
-    LUS::ExecuteHooks<LUS::CrashGame>();
     LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
     exit(1);
 }
 
 static void ShutdownHandler(int sig, siginfo_t* sigInfo, void* data) {
-    LUS::ExecuteHooks<LUS::CrashGame>();
     exit(1);
 }
 
@@ -390,7 +388,6 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     PrintCommon();
     LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
-    LUS::ExecuteHooks<LUS::CrashGame>();
 }
 
 extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
