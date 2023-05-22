@@ -23,8 +23,6 @@ template <typename H, typename... Args> void ExecuteHooks(Args&&... args) {
     }
 }
 
-DEFINE_HOOK(CrashGame, void());
-
 // SoH specific
 DEFINE_HOOK(LoadFile, void(uint32_t fileNum));
 DEFINE_HOOK(DeleteFile, void(uint32_t fileNum));
