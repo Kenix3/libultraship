@@ -618,7 +618,7 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
             break;
         default:
             // TODO convert other image types
-            SPDLOG_WARN("ImGui::LoadResource: Attempting to load unsupporting image type %s", path.c_str());
+            SPDLOG_WARN("ImGui::ResourceLoad: Attempting to load unsupporting image type %s", path.c_str());
             return;
     }
 

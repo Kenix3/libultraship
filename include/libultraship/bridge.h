@@ -1,5 +1,5 @@
-#ifndef _BRIDGE_H_
-#define _BRIDGE_H_
+#ifndef _LIBULTRASHIP_BRIDGE_H_
+#define _LIBULTRASHIP_BRIDGE_H_
 
 #include "public/bridge/resourcebridge.h"
 #include "public/bridge/audiobridge.h"
