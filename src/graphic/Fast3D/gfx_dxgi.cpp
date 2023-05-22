@@ -397,8 +397,6 @@ static void gfx_dxgi_main_loop(void (*run_one_game_iter)(void)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
-    LUS::ExecuteHooks<LUS::ExitGame>();
 }
 
 static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height) {

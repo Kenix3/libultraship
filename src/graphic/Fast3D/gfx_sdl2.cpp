@@ -409,7 +409,6 @@ static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
 #ifdef __SWITCH__
     LUS::Switch::Exit();
 #endif
-    LUS::ExecuteHooks<LUS::ExitGame>();
 
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
