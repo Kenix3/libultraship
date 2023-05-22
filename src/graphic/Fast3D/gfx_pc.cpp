@@ -2493,7 +2493,7 @@ static void gfx_run_dl(Gfx* cmd) {
 
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
-                int32_t* mtx = (int32_t*)GetResourceDataByCrc(hash);
+                int32_t* mtx = (int32_t*) ResourceGetDataByCrc(hash);
 
 #ifdef F3DEX_GBI_2
                 if (mtx != NULL) {
@@ -2558,7 +2558,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (Vtx*)offset);
                     cmd++;
                 } else {
-                    Vtx* vtx = (Vtx*)GetResourceDataByCrc(hash);
+                    Vtx* vtx = (Vtx*) ResourceGetDataByCrc(hash);
 
                     if (vtx != NULL) {
                         vtx = (Vtx*)((char*)vtx + offset);
@@ -2566,7 +2566,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd--;
 
                         if (ourHash != (uint64_t)-1) {
-                            auto res = LoadResource(ourHash);
+                            auto res = ResourceLoad(ourHash);
                         }
 
                         cmd->words.w1 = (uintptr_t)vtx;
@@ -2582,7 +2582,7 @@ static void gfx_run_dl(Gfx* cmd) {
                 int vtxCnt = cmd->words.w0;
                 int vtxIdxOff = cmd->words.w1 >> 16;
                 int vtxDataOff = cmd->words.w1 & 0xFFFF;
-                Vtx* vtx = (Vtx*)GetResourceDataByName((const char*)fileName);
+                Vtx* vtx = (Vtx*) ResourceGetDataByName((const char *) fileName);
                 vtx += vtxDataOff;
                 cmd--;
 
@@ -2590,7 +2590,7 @@ static void gfx_run_dl(Gfx* cmd) {
             } break;
             case G_DL_OTR_FILEPATH: {
                 fileName = (char*)cmd->words.w1;
-                Gfx* nDL = (Gfx*)GetResourceDataByName((const char*)fileName);
+                Gfx* nDL = (Gfx*) ResourceGetDataByName((const char *) fileName);
 
                 if (C0(16, 1) == 0 && nDL != nullptr) {
                     // Push return address
@@ -2637,7 +2637,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_DL_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash);
+                    Gfx* gfx = (Gfx*) ResourceGetDataByCrc(hash);
 
                     if (gfx != 0) {
                         gfx_run_dl(gfx);
@@ -2668,7 +2668,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     // printf("G_BRANCH_Z_OTR: %s\n", fileName);
 #endif
 
-                    Gfx* gfx = (Gfx*)GetResourceDataByCrc(hash);
+                    Gfx* gfx = (Gfx*) ResourceGetDataByCrc(hash);
 
                     if (gfx != 0) {
                         cmd = gfx;
@@ -2768,12 +2768,12 @@ static void gfx_run_dl(Gfx* cmd) {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + (uint64_t)cmd->words.w1;
 
-                fileName = GetResourceNameByCrc(hash);
+                fileName = ResourceGetNameByCrc(hash);
                 uint32_t texFlags = 0;
                 RawTexMetadata rawTexMetadata = {};
 
                 std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-                    LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(GetResourceNameByCrc(hash)));
+                    LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
                 if (texture != nullptr) {
                     texFlags = texture->Flags;
                     rawTexMetadata.width = texture->Width;
@@ -2803,7 +2803,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd->words.w1 = (uintptr_t)tex;
 
                         if (ourHash != (uint64_t)-1) {
-                            auto res = LoadResource(ourHash);
+                            auto res = ResourceLoad(ourHash);
                         }
 
                         cmd++;

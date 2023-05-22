@@ -4,23 +4,23 @@
 
 extern "C" {
 
-uint32_t GetWindowWidth() {
+uint32_t WindowGetWidth() {
     return LUS::Context::GetInstance()->GetWindow()->GetCurrentWidth();
 }
 
-uint32_t GetWindowHeight() {
+uint32_t WindowGetHeight() {
     return LUS::Context::GetInstance()->GetWindow()->GetCurrentHeight();
 }
 
-float GetWindowAspectRatio() {
+float WindowGetAspectRatio() {
     return LUS::Context::GetInstance()->GetWindow()->GetCurrentAspectRatio();
 }
 
-void GetPixelDepthPrepare(float x, float y) {
+void WindowGetPixelDepthPrepare(float x, float y) {
     return LUS::Context::GetInstance()->GetWindow()->GetPixelDepthPrepare(x, y);
 }
 
-uint16_t GetPixelDepth(float x, float y) {
+uint16_t WindowGetPixelDepth(float x, float y) {
     return LUS::Context::GetInstance()->GetWindow()->GetPixelDepth(x, y);
 }
 }

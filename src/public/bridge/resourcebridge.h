@@ -10,38 +10,38 @@
 #include "resource/type/Texture.h"
 #include "resource/Resource.h"
 
-std::shared_ptr<LUS::Resource> LoadResource(const char* name);
-std::shared_ptr<LUS::Resource> LoadResource(uint64_t crc);
+std::shared_ptr<LUS::Resource> ResourceLoad(const char* name);
+std::shared_ptr<LUS::Resource> ResourceLoad(uint64_t crc);
 
 extern "C" {
 #endif
 
-uint64_t GetResourceCrcByName(const char* name);
-const char* GetResourceNameByCrc(uint64_t crc);
-size_t GetResourceSizeByName(const char* name);
-size_t GetResourceSizeByCrc(uint64_t crc);
-uint8_t GetResourceIsCustomByName(const char* name);
-uint8_t GetResourceIsCustomByCrc(uint64_t crc);
-void* GetResourceDataByName(const char* name);
-void* GetResourceDataByCrc(uint64_t crc);
-uint16_t GetResourceTexWidthByName(const char* name);
-uint16_t GetResourceTexWidthByCrc(uint64_t crc);
-uint16_t GetResourceTexHeightByName(const char* name);
-uint16_t GetResourceTexHeightByCrc(uint64_t crc);
-size_t GetResourceTexSizeByName(const char* name);
-size_t GetResourceTexSizeByCrc(uint64_t crc);
-void GetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount);
-uint32_t HasGameVersion(uint32_t hash);
-void LoadResourceDirectory(const char* name);
-void LoadResourceDirectoryAsync(const char* name);
-void DirtyResourceDirectory(const char* name);
-void DirtyResourceByName(const char* name);
-void DirtyResourceByCrc(uint64_t crc);
-void UnloadResourceByName(const char* name);
-void UnloadResourceByCrc(uint64_t crc);
-void UnloadResourceDirectory(const char* name);
-void ClearResourceCache(void);
-uint32_t DoesOtrFileExist();
+uint64_t ResourceGetCrcByName(const char* name);
+const char* ResourceGetNameByCrc(uint64_t crc);
+size_t ResourceGetSizeByName(const char* name);
+size_t ResourceGetSizeByCrc(uint64_t crc);
+uint8_t ResourceGetIsCustomByName(const char* name);
+uint8_t ResourceGetIsCustomByCrc(uint64_t crc);
+void* ResourceGetDataByName(const char* name);
+void* ResourceGetDataByCrc(uint64_t crc);
+uint16_t ResourceGetTexWidthByName(const char* name);
+uint16_t ResourceGetTexWidthByCrc(uint64_t crc);
+uint16_t ResourceGetTexHeightByName(const char* name);
+uint16_t ResourceGetTexHeightByCrc(uint64_t crc);
+size_t ResourceGetTexSizeByName(const char* name);
+size_t ResourceGetTexSizeByCrc(uint64_t crc);
+void ResourceLoadDirectory(const char* name);
+void ResourceLoadDirectoryAsync(const char* name);
+void ResourceDirtyDirectory(const char* name);
+void ResourceDirtyByName(const char* name);
+void ResourceDirtyByCrc(uint64_t crc);
+void ResourceUnloadByName(const char* name);
+void ResourceUnloadByCrc(uint64_t crc);
+void ResourceUnloadDirectory(const char* name);
+void ResourceClearCache(void);
+void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount);
+uint32_t ResourceHasGameVersion(uint32_t hash);
+uint32_t ResourceDoesOtrFileExist();
 
 #ifdef __cplusplus
 };
