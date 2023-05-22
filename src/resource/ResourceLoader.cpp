@@ -83,8 +83,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fil
             resourceInitData->Type = mFactoriesTypes[nodeName];
 
             if (factory != nullptr) {
-                result =
-                        factory->ReadResourceXML(resourceInitData, root);
+                result = factory->ReadResourceXML(resourceInitData, root);
             }
         } else {
             // OTR HEADER BEGIN
@@ -116,8 +115,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fil
             auto factory = mFactories[resourceInitData->Type];
 
             if (factory != nullptr) {
-                result =
-                        factory->ReadResource(resourceInitData, reader);
+                result = factory->ReadResource(resourceInitData, reader);
             }
         }
 

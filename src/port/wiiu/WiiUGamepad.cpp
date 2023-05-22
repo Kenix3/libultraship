@@ -5,7 +5,8 @@
 #include "WiiUImpl.h"
 
 namespace LUS {
-WiiUGamepad::WiiUGamepad(int32_t deviceIndex) : Controller(deviceIndex), mConnected(true), mRumblePatternStrength(1.0f) {
+WiiUGamepad::WiiUGamepad(int32_t deviceIndex)
+    : Controller(deviceIndex), mConnected(true), mRumblePatternStrength(1.0f) {
     memset(mRumblePattern, 0xff, sizeof(mRumblePattern));
     mGuid = "WiiUGamepad";
     mControllerName = "Wii U GamePad";

@@ -5,8 +5,8 @@
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
 namespace LUS {
-std::shared_ptr<Resource>
-DisplayListFactory::ReadResource(std::shared_ptr<ResourceInitData> initData, std::shared_ptr<BinaryReader> reader) {
+std::shared_ptr<Resource> DisplayListFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                           std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<DisplayList>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
@@ -26,8 +26,8 @@ DisplayListFactory::ReadResource(std::shared_ptr<ResourceInitData> initData, std
     return resource;
 }
 
-std::shared_ptr<Resource>
-DisplayListFactory::ReadResourceXML(std::shared_ptr<ResourceInitData> initData, tinyxml2::XMLElement *reader) {
+std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
+                                                              tinyxml2::XMLElement* reader) {
     auto resource = std::make_shared<DisplayList>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 

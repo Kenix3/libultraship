@@ -9,8 +9,7 @@
 
 namespace LUS {
 
-KeyboardController::KeyboardController(int32_t deviceIndex)
-    : Controller(deviceIndex), mLastScancode(-1) {
+KeyboardController::KeyboardController(int32_t deviceIndex) : Controller(deviceIndex), mLastScancode(-1) {
     mGuid = "Keyboard";
     mControllerName = "Keyboard";
 }

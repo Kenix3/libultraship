@@ -23,7 +23,8 @@ class Texture : public Resource {
   public:
     using Resource::Resource;
 
-    Texture() : Resource(std::shared_ptr<ResourceInitData>()) {}
+    Texture() : Resource(std::shared_ptr<ResourceInitData>()) {
+    }
 
     void* GetPointer();
     size_t GetPointerSize();

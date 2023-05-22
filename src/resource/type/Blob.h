@@ -7,7 +7,8 @@ class Blob : public Resource {
   public:
     using Resource::Resource;
 
-    Blob() : Resource(std::shared_ptr<ResourceInitData>()) {}
+    Blob() : Resource(std::shared_ptr<ResourceInitData>()) {
+    }
 
     void* GetPointer();
     size_t GetPointerSize();

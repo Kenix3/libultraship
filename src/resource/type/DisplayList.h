@@ -9,7 +9,8 @@ class DisplayList : public Resource {
   public:
     using Resource::Resource;
 
-    DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {}
+    DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {
+    }
 
     void* GetPointer();
     size_t GetPointerSize();
