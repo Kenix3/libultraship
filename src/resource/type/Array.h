@@ -70,6 +70,8 @@ class Array : public Resource {
   public:
     using Resource::Resource;
 
+    Array() : Resource(std::shared_ptr<ResourceInitData>()) {}
+
     void* GetPointer();
     size_t GetPointerSize();
 

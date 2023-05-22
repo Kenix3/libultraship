@@ -84,7 +84,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fil
 
             if (factory != nullptr) {
                 result =
-                    factory->ReadResourceXML(LUS::Context::GetInstance()->GetResourceManager(), resourceInitData, root);
+                        factory->ReadResourceXML(resourceInitData, root);
             }
         } else {
             // OTR HEADER BEGIN
@@ -117,7 +117,7 @@ std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fil
 
             if (factory != nullptr) {
                 result =
-                    factory->ReadResource(LUS::Context::GetInstance()->GetResourceManager(), resourceInitData, reader);
+                        factory->ReadResource(resourceInitData, reader);
             }
         }
 

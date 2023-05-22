@@ -25,7 +25,7 @@ class Resource {
     bool IsDirty = false;
     virtual void* GetPointer() = 0;
     virtual size_t GetPointerSize() = 0;
-    Resource(std::shared_ptr<LUS::ResourceManager> resourceManager, std::shared_ptr<ResourceInitData> initData);
+    Resource(std::shared_ptr<ResourceInitData> initData);
     virtual ~Resource();
 };
 } // namespace LUS

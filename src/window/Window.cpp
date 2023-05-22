@@ -30,15 +30,15 @@ Window::Window() {
     mIsFullscreen = false;
     mWidth = 320;
     mHeight = 240;
+    mGui = std::make_shared<Gui>();
 }
 
 Window::~Window() {
+    gfx_texture_cache_clear();
     SPDLOG_DEBUG("destruct window");
 }
 
 void Window::Init() {
-    mGui = std::make_shared<Gui>(Context::GetInstance()->GetWindow());
-
     bool steamDeckGameMode = false;
 
 #ifdef __linux__

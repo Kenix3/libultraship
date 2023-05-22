@@ -8,6 +8,8 @@ class Matrix : public Resource {
   public:
     using Resource::Resource;
 
+    Matrix() : Resource(std::shared_ptr<ResourceInitData>()) {}
+
     void* GetPointer();
     size_t GetPointerSize();
 
