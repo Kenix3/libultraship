@@ -7,8 +7,6 @@
 #include <SDL2/SDL_keyboard.h>
 #endif
 
-
-
 namespace LUS {
 
 KeyboardController::KeyboardController(std::shared_ptr<ControlDeck> controlDeck, int32_t deviceIndex)

@@ -1,7 +1,6 @@
 #include "libultraship/libultraship.h"
 #include <SDL2/SDL.h>
 
-
 extern "C" {
 uint8_t __osMaxControllers = MAXCONTROLLERS;
 

@@ -21,7 +21,6 @@
 #endif
 #include "libultraship/libultraship.h"
 
-
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
 #include "gfx_direct3d_common.h"
