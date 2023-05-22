@@ -2,7 +2,6 @@
 #include "Utils/StringHelper.h"
 #include "CrashHandler.h"
 #include "Context.h"
-#include "utils/Hooks.h"
 
 #ifdef _WIN32
 #include <windows.h>

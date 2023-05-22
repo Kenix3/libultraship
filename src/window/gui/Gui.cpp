@@ -9,7 +9,7 @@
 
 #include "config/Config.h"
 #include "window/Window.h"
-#include "utils/Hooks.h"
+
 #include "Context.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "resource/type/Texture.h"
