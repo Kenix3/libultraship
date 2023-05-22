@@ -29,7 +29,6 @@
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
 #include "gfx_screen_config.h"
-#include "utils/Hooks.h"
 
 #include "log/luslog.h"
 #include "window/gui/Gui.h"

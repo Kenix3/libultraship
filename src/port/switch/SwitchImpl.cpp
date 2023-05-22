@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include "SwitchPerformanceProfiles.h"
 #include "public/bridge/consolevariablebridge.h"
-#include "utils/Hooks.h"
+
 #include <ImGui/imgui_internal.h>
 
 #define DOCKED_MODE 1
