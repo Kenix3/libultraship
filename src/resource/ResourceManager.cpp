@@ -22,7 +22,7 @@ ResourceManager::ResourceManager(const std::string& mainPath, const std::string&
     size_t threadCount = 1;
 #else
     // the extra `- 1` is because we reserve an extra thread for spdlog
-    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount - 1));
+    size_t threadCount = std::max(1, (int)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
@@ -40,7 +40,7 @@ ResourceManager::ResourceManager(const std::vector<std::string>& otrFiles,
     size_t threadCount = 1;
 #else
     // the extra `- 1` is because we reserve an extra thread for spdlog
-    size_t threadCount = std::max(1U, (std::thread::hardware_concurrency() - reservedThreadCount - 1));
+    size_t threadCount = std::max(1, (int)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
 #endif
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
