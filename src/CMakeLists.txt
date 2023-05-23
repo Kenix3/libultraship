@@ -126,11 +126,6 @@ set(Source_Files__Log
 
 source_group("Log" FILES ${Source_Files__Log})
 
-set(Source_Files__Log__SPDLog
-    ${CMAKE_CURRENT_SOURCE_DIR}/log/spd/ConsoleSink.h
-)
-
-source_group("log/spdLog" FILES ${Source_Files__Log__SPDLog})
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
 #=================== Window ===================
