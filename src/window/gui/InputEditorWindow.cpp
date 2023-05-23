@@ -130,7 +130,7 @@ void InputEditorWindow::DrawControllerSchema() {
 
     DrawControllerSelect(mCurrentPort);
 
-    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Buttons", ImVec2(150, 20));
+    BeginGroupPanel("Buttons", ImVec2(150, 20));
     DrawButton("A", BTN_A, mCurrentPort, &mBtnReading);
     DrawButton("B", BTN_B, mCurrentPort, &mBtnReading);
     DrawButton("L", BTN_L, mCurrentPort, &mBtnReading);
@@ -139,24 +139,24 @@ void InputEditorWindow::DrawControllerSchema() {
     DrawButton("START", BTN_START, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
+    EndGroupPanel(isKeyboard ? 7.0f : 56.0f);
 #else
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
+    EndGroupPanel(isKeyboard ? 7.0f : 48.0f);
 #endif
     ImGui::SameLine();
-    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Digital Pad", ImVec2(150, 20));
+    BeginGroupPanel("Digital Pad", ImVec2(150, 20));
     DrawButton("Up", BTN_DUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_DDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_DLEFT, mCurrentPort, &mBtnReading);
     DrawButton("Right", BTN_DRIGHT, mCurrentPort, &mBtnReading);
     SEPARATION();
 #ifdef __SWITCH__
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
+    EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
 #else
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
+    EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
 #endif
     ImGui::SameLine();
-    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Analog Stick", ImVec2(150, 20));
+    BeginGroupPanel("Analog Stick", ImVec2(150, 20));
     DrawButton("Up", BTN_STICKUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_STICKDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_STICKLEFT, mCurrentPort, &mBtnReading);
@@ -195,15 +195,15 @@ void InputEditorWindow::DrawControllerSchema() {
         ImGui::Dummy(ImVec2(0, 6));
     }
 #ifdef __SWITCH__
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
+    EndGroupPanel(isKeyboard ? 52.0f : 52.0f);
 #else
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
+    EndGroupPanel(isKeyboard ? 52.0f : 24.0f);
 #endif
     ImGui::SameLine();
 
     if (!isKeyboard) {
         ImGui::SameLine();
-        Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Right Stick", ImVec2(150, 20));
+        BeginGroupPanel("Right Stick", ImVec2(150, 20));
         DrawButton("Up", BTN_VSTICKUP, mCurrentPort, &mBtnReading);
         DrawButton("Down", BTN_VSTICKDOWN, mCurrentPort, &mBtnReading);
         DrawButton("Left", BTN_VSTICKLEFT, mCurrentPort, &mBtnReading);
@@ -239,9 +239,9 @@ void InputEditorWindow::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(43.0f);
+        EndGroupPanel(43.0f);
 #else
-        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(14.0f);
+        EndGroupPanel(14.0f);
 #endif
     }
 
@@ -249,7 +249,7 @@ void InputEditorWindow::DrawControllerSchema() {
 #ifndef __WIIU__
         ImGui::SameLine();
 #endif
-        Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Gyro Options", ImVec2(175, 20));
+        BeginGroupPanel("Gyro Options", ImVec2(175, 20));
         float cursorX = ImGui::GetCursorPosX() + 5;
         ImGui::SetCursorPosX(cursorX);
         if (ImGui::Checkbox("Enable Gyro", &profile->UseGyro)) {
@@ -307,9 +307,9 @@ void InputEditorWindow::DrawControllerSchema() {
         ImGui::PopItemWidth();
         ImGui::EndChild();
 #ifdef __SWITCH__
-        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(46.0f);
+        EndGroupPanel(46.0f);
 #else
-        Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(14.0f);
+        EndGroupPanel(14.0f);
 #endif
     }
 
@@ -317,13 +317,13 @@ void InputEditorWindow::DrawControllerSchema() {
 
     const ImVec2 cursor = ImGui::GetCursorPos();
 
-    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("C-Buttons", ImVec2(158, 20));
+    BeginGroupPanel("C-Buttons", ImVec2(158, 20));
     DrawButton("Up", BTN_CUP, mCurrentPort, &mBtnReading);
     DrawButton("Down", BTN_CDOWN, mCurrentPort, &mBtnReading);
     DrawButton("Left", BTN_CLEFT, mCurrentPort, &mBtnReading);
     DrawButton("Right", BTN_CRIGHT, mCurrentPort, &mBtnReading);
     ImGui::Dummy(ImVec2(0, 5));
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(0.0f);
+    EndGroupPanel(0.0f);
 
     ImGui::SetCursorPosX(cursor.x);
 #ifdef __SWITCH__
@@ -333,7 +333,7 @@ void InputEditorWindow::DrawControllerSchema() {
 #else
     ImGui::SetCursorPosY(cursor.y + 120);
 #endif
-    Context::GetInstance()->GetWindow()->GetGui()->BeginGroupPanel("Options", ImVec2(158, 20));
+    BeginGroupPanel("Options", ImVec2(158, 20));
     float cursorX = ImGui::GetCursorPosX() + 5;
     ImGui::SetCursorPosX(cursorX);
     if (ImGui::Checkbox("Rumble Enabled", &profile->UseRumble)) {
@@ -376,7 +376,7 @@ void InputEditorWindow::DrawControllerSchema() {
     }
 
     ImGui::Dummy(ImVec2(0, 5));
-    Context::GetInstance()->GetWindow()->GetGui()->EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
+    EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 }
 
 void InputEditorWindow::UpdateElement() {
