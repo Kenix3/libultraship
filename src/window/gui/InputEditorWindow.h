@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stdint.h"
-#include "GuiWindow.h"
+#include "window/gui/GuiWindow.h"
 #include <ImGui/imgui.h>
 
 namespace LUS {

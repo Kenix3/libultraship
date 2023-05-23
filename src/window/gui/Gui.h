@@ -1,7 +1,9 @@
 #pragma once
 
 #ifdef __cplusplus
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 #include <memory>
@@ -12,6 +14,7 @@
 #include "window/gui/GameOverlay.h"
 #include "window/gui/InputViewer.h"
 #include "window/gui/StatsWindow.h"
+#include "window/gui/GuiWindow.h"
 #include "window/gui/GuiMenuBar.h"
 #include "libultraship/libultra/controller.h"
 
@@ -73,8 +76,6 @@ class Gui {
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
     ImTextureID GetTextureByName(const std::string& name);
     bool SupportsViewports();
-    void BeginGroupPanel(const char* name, const ImVec2& size);
-    void EndGroupPanel(float minHeight);
     std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
     std::shared_ptr<GameOverlay> GetGameOverlay();
     std::shared_ptr<InputViewer> GetInputViewer();
@@ -105,7 +106,6 @@ class Gui {
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::map<std::string, GuiTexture> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
-    ImVector<ImRect> mGroupPanelLabelStack;
 };
 } // namespace LUS
 
