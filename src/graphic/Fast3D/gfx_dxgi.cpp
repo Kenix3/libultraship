@@ -304,7 +304,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     char title[512];
     wchar_t w_title[512];
-    int len = sprintf(title, "%s (%s - %s)", game_name, GFX_BACKEND_NAME, gfx_api_name);
+    int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
     mbstowcs(w_title, title, len + 1);
     dxgi.game_name = game_name;
 
@@ -691,12 +691,6 @@ void gfx_dxgi_create_factory_and_device(bool debug, int d3d_version,
         }
     }
     create_device_fn(adapter.Get(), false);
-
-    char title[512];
-    wchar_t w_title[512];
-    int len = sprintf(title, "%s (Direct3D %d)", dxgi.game_name.c_str(), d3d_version);
-    mbstowcs(w_title, title, len + 1);
-    SetWindowTextW(dxgi.h_wnd, w_title);
 }
 
 void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before_destroy_fn) {
