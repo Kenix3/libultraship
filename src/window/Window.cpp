@@ -119,11 +119,11 @@ uint16_t Window::GetPixelDepth(float x, float y) {
 }
 
 void Window::ToggleFullscreen() {
-    SetFullscreen(!mIsFullscreen);
+    SetFullscreen(!IsFullscreen());
 }
 
 void Window::SetFullscreen(bool isFullscreen) {
-    this->mIsFullscreen = isFullscreen;
+    SaveWindowSizeToConfig(LUS::Context::GetInstance()->GetConfig());
     mWindowManagerApi->set_fullscreen(isFullscreen);
 }
 
@@ -181,15 +181,15 @@ void Window::AllKeysUp(void) {
 }
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
-    std::shared_ptr<Config> pConf = Context::GetInstance()->GetConfig();
+    std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
 
-    Context::GetInstance()->GetWindow()->mIsFullscreen = isNowFullscreen;
-    pConf->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
+    wnd->mIsFullscreen = isNowFullscreen;
     if (isNowFullscreen) {
-        auto menuBar = Context::GetInstance()->GetWindow()->GetGui()->GetMenuBar();
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(menuBar && menuBar->IsVisible());
+        auto menuBar = wnd->GetGui()->GetMenuBar();
+        wnd->SetCursorVisibility(menuBar && menuBar->IsVisible());
     } else {
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(true);
+        wnd->SetCursorVisibility(true);
     }
 }
 
@@ -318,5 +318,17 @@ void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
     Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
     Context::GetInstance()->GetConfig()->Save();
+}
+
+void Window::SaveWindowSizeToConfig(std::shared_ptr<Config> conf) {
+    // This accepts conf in because it can be run in the destruction of LUS.
+    conf->SetBool("Window.Fullscreen.Enabled", IsFullscreen());
+    if (IsFullscreen()) {
+        conf->SetInt("Window.Fullscreen.Width", (int32_t)GetCurrentWidth());
+        conf->SetInt("Window.Fullscreen.Height", (int32_t)GetCurrentHeight());
+    } else {
+        conf->SetInt("Window.Width", (int32_t)GetCurrentWidth());
+        conf->SetInt("Window.Height", (int32_t)GetCurrentHeight());
+    }
 }
 } // namespace LUS

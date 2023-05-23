@@ -23,12 +23,14 @@ Context::~Context() {
     SPDLOG_TRACE("destruct context");
     // Explicitly destructing everything so that logging is done last.
     mAudio = nullptr;
+    GetWindow()->SaveWindowSizeToConfig(GetConfig());
     mWindow = nullptr;
     mConsole = nullptr;
     mCrashHandler = nullptr;
     mControlDeck = nullptr;
     mResourceManager = nullptr;
     mConsoleVariables = nullptr;
+    GetConfig()->Save();
     mConfig = nullptr;
     spdlog::shutdown();
 }

@@ -11,9 +11,11 @@
 namespace LUS {
 enum class WindowBackend { DX11, DX12, GLX_OPENGL, SDL_OPENGL, SDL_METAL, GX2, BACKEND_COUNT };
 
-class Context;
+class Config;
 
 class Window {
+friend class Context;
+
   public:
     Window();
     ~Window();
@@ -45,11 +47,11 @@ class Window {
     void SetTextureFilter(FilteringMode filteringMode);
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
-    void SaveBackendSettingToConfig(WindowBackend backend);
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
     void SetWindowBackend(WindowBackend backend);
+    void SaveWindowSizeToConfig(std::shared_ptr<Config> conf);
 
   private:
     static bool KeyDown(int32_t scancode);
