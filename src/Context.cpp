@@ -3,7 +3,6 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include "log/spd/ConsoleSink.h"
 
 #ifdef __APPLE__
 #include "utils/OSXFolderManager.h"
@@ -97,10 +96,6 @@ void Context::InitLogging() {
         // Setup Logging
         spdlog::init_thread_pool(8192, 1);
         std::vector<spdlog::sink_ptr> sinks;
-
-        auto consoleSink = std::make_shared<spdlog::sinks::lus_sink_mt>();
-        // consoleSink->set_level(spdlog::level::trace);
-        sinks.push_back(consoleSink);
 
 #if (!defined(_WIN32) && !defined(__WIIU__)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
