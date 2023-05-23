@@ -298,7 +298,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
     char title[512];
-    int len = sprintf(title, "%s (%s - %s)", game_name, GFX_BACKEND_NAME, gfx_api_name);
+    int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
 
 #ifdef __SWITCH__
     // For Switch we need to set the window width before creating the window
