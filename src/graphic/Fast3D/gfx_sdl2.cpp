@@ -50,7 +50,7 @@ static SDL_Window* wnd;
 static SDL_GLContext ctx;
 static SDL_Renderer* renderer;
 static int sdl_to_lus_table[512];
-static bool vsync_enabled = false;
+static bool vsync_enabled = true;
 // OTRTODO: These are redundant. Info can be queried from SDL.
 static int window_width = DESIRED_SCREEN_WIDTH;
 static int window_height = DESIRED_SCREEN_HEIGHT;
