@@ -73,7 +73,7 @@ extern uint32_t gfx_msaa_level;
 }
 
 void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
-              bool start_in_fullscreen, uint32_t width = SCREEN_WIDTH, uint32_t height = SCREEN_HEIGHT);
+              bool start_in_fullscreen, uint32_t width = SCREEN_WIDTH, uint32_t height = SCREEN_HEIGHT, uint32_t posX = 100, uint32_t posY = 100);
 void gfx_destroy(void);
 struct GfxRenderingAPI* gfx_get_current_rendering_api(void);
 void gfx_start_frame(void);

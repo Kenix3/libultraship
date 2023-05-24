@@ -188,6 +188,8 @@ static struct RenderingState {
 } rendering_state;
 
 struct GfxDimensions gfx_current_window_dimensions;
+int32_t gfx_current_window_position_x;
+int32_t gfx_current_window_position_y;
 struct GfxDimensions gfx_current_dimensions;
 static struct GfxDimensions gfx_prev_dimensions;
 struct XYWidthHeight gfx_current_game_window_viewport;
@@ -3027,15 +3029,15 @@ static void gfx_sp_reset() {
     rsp.lights_changed = true;
 }
 
-void gfx_get_dimensions(uint32_t* width, uint32_t* height) {
-    gfx_wapi->get_dimensions(width, height);
+void gfx_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+    gfx_wapi->get_dimensions(width, height, posX, posY);
 }
 
 void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
-              bool start_in_fullscreen, uint32_t width, uint32_t height) {
+              bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY) {
     gfx_wapi = wapi;
     gfx_rapi = rapi;
-    gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height);
+    gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     gfx_rapi->init();
     gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
 #ifdef __APPLE__
@@ -3078,7 +3080,7 @@ struct GfxRenderingAPI* gfx_get_current_rendering_api(void) {
 
 void gfx_start_frame(void) {
     gfx_wapi->handle_events();
-    gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height);
+    gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height, &gfx_current_window_position_x, &gfx_current_window_position_y);
     LUS::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
     has_drawn_imgui_menu = true;
     if (gfx_current_dimensions.height == 0) {

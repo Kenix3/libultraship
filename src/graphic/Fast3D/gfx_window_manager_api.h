@@ -6,7 +6,7 @@
 
 struct GfxWindowManagerAPI {
     void (*init)(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
-                 uint32_t height);
+                 uint32_t height, int32_t posX, int32_t posY);
     void (*close)(void);
     void (*set_keyboard_callbacks)(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
                                    void (*on_all_keys_up)(void));
@@ -15,7 +15,7 @@ struct GfxWindowManagerAPI {
     void (*get_active_window_refresh_rate)(uint32_t* refresh_rate);
     void (*set_cursor_visibility)(bool visible);
     void (*main_loop)(void (*run_one_game_iter)(void));
-    void (*get_dimensions)(uint32_t* width, uint32_t* height);
+    void (*get_dimensions)(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
     void (*handle_events)(void);
     bool (*start_frame)(void);
     void (*swap_buffers_begin)(void);

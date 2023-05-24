@@ -42,7 +42,11 @@ static struct {
     HWND h_wnd;
     bool in_paint;
     bool recursive_paint_detected;
-    uint32_t current_width, current_height;
+
+    // These four only apply in windowed mode.
+    uint32_t current_width, current_height; // Width and height of client areas
+    int32_t posX, posY; // Screen coordinates
+
     std::string game_name;
     bool is_running = true;
 
@@ -52,7 +56,6 @@ static struct {
 
     bool process_dpi_awareness_done;
 
-    RECT last_window_rect;
     bool is_full_screen, last_maximized_state;
 
     bool dxgi1_4;
@@ -170,8 +173,6 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
     }
 
     if (!enable) {
-        RECT r = dxgi.last_window_rect;
-
         // Set in window mode with the last saved position and size
         SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
 
@@ -179,7 +180,14 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
             SetWindowPos(dxgi.h_wnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
             ShowWindow(dxgi.h_wnd, SW_MAXIMIZE);
         } else {
-            SetWindowPos(dxgi.h_wnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_FRAMECHANGED);
+            auto conf = LUS::Context::GetInstance()->GetConfig();
+            dxgi.current_width = conf->GetInt("Window.Width", 640);
+            dxgi.current_height = conf->GetInt("Window.Height", 480);
+            dxgi.posX = conf->GetInt("Window.PositionX", 100);
+            dxgi.posY = conf->GetInt("Window.PositionY", 100);
+            RECT wr = { dxgi.posX, dxgi.posY, dxgi.posX + static_cast<int32_t>(dxgi.current_width), dxgi.posY+ static_cast<int32_t>(dxgi.current_height) };
+            AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+            SetWindowPos(dxgi.h_wnd, NULL, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
             ShowWindow(dxgi.h_wnd, SW_RESTORE);
         }
 
@@ -190,9 +198,6 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
         window_placement.length = sizeof(WINDOWPLACEMENT);
         GetWindowPlacement(dxgi.h_wnd, &window_placement);
         dxgi.last_maximized_state = window_placement.showCmd == SW_SHOWMAXIMIZED;
-
-        // Save window position and size if the window is not maximized
-        GetWindowRect(dxgi.h_wnd, &dxgi.last_window_rect);
 
         // Get in which monitor the window is
         HMONITOR h_monitor = MonitorFromWindow(dxgi.h_wnd, MONITOR_DEFAULTTONEAREST);
@@ -205,8 +210,10 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
 
         // Set borderless full screen to that monitor
         SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
+        // OTRTODO: This should be setting the resolution from config.
+        dxgi.current_width = r.right - r.left;
+        dxgi.current_height = r.bottom - r.top;
         SetWindowPos(dxgi.h_wnd, HWND_TOP, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_FRAMECHANGED);
-
         dxgi.is_full_screen = true;
     }
 
@@ -235,8 +242,12 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
     switch (message) {
         case WM_SIZE:
-            dxgi.current_width = (uint32_t)(l_param & 0xffff);
-            dxgi.current_height = (uint32_t)(l_param >> 16);
+            dxgi.current_width = LOWORD(l_param);
+            dxgi.current_height = HIWORD(l_param);
+            break;
+        case WM_MOVE:
+            dxgi.posX = LOWORD(l_param);
+            dxgi.posY = HIWORD(l_param);
             break;
         case WM_DESTROY:
             PostQuitMessage(0);
@@ -275,13 +286,6 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             CVarSetInteger("gNewFileDropped", 1);
             CVarSave();
             break;
-        case WM_SYSKEYDOWN:
-            if ((w_param == VK_RETURN) && ((l_param & 1 << 30) == 0)) {
-                toggle_borderless_window_full_screen(!dxgi.is_full_screen, true);
-                break;
-            } else {
-                return DefWindowProcW(h_wnd, message, w_param, l_param);
-            }
         default:
             return DefWindowProcW(h_wnd, message, w_param, l_param);
     }
@@ -289,7 +293,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
 }
 
 void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
-                   uint32_t height) {
+                   uint32_t height, int32_t posX, int32_t posY) {
     LARGE_INTEGER qpc_init, qpc_freq;
     QueryPerformanceCounter(&qpc_init);
     QueryPerformanceFrequency(&qpc_freq);
@@ -331,9 +335,12 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         // We need to be dpi aware when calculating the size
         RECT wr = { 0, 0, width, height };
         AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
-
-        dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, wr.right - wr.left,
-                                   wr.bottom - wr.top, nullptr, nullptr, nullptr, nullptr);
+        dxgi.current_width = wr.right - wr.left;
+        dxgi.current_height = wr.bottom - wr.top;
+        dxgi.posX = posX;
+        dxgi.posY = posY;
+        dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top, dxgi.current_width,
+                                   dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
     });
 
     load_dxgi_library();
@@ -398,9 +405,11 @@ static void gfx_dxgi_main_loop(void (*run_one_game_iter)(void)) {
     }
 }
 
-static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height) {
+static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     *width = dxgi.current_width;
     *height = dxgi.current_height;
+    *posX = dxgi.posX;
+    *posY = dxgi.posY;
 }
 
 static void gfx_dxgi_handle_events(void) {
@@ -726,8 +735,6 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     apply_maximum_frame_latency(true);
 
     ThrowIfFailed(dxgi.swap_chain->GetDesc1(&swap_chain_desc));
-    dxgi.current_width = swap_chain_desc.Width;
-    dxgi.current_height = swap_chain_desc.Height;
 
     dxgi.swap_chain_device = device;
     dxgi.before_destroy_swap_chain_fn = std::move(before_destroy_fn);
