@@ -11,9 +11,11 @@
 namespace LUS {
 enum class WindowBackend { DX11, DX12, GLX_OPENGL, SDL_OPENGL, SDL_METAL, GX2, BACKEND_COUNT };
 
-class Context;
+class Config;
 
 class Window {
+    friend class Context;
+
   public:
     Window();
     ~Window();
@@ -29,8 +31,10 @@ class Window {
     void ToggleFullscreen();
     void SetFullscreen(bool isFullscreen);
     void SetCursorVisibility(bool visible);
-    uint32_t GetCurrentWidth();
-    uint32_t GetCurrentHeight();
+    uint32_t GetWidth();
+    uint32_t GetHeight();
+    int32_t GetPosX();
+    int32_t GetPosY();
     uint32_t GetCurrentRefreshRate();
     bool CanDisableVerticalSync();
     float GetCurrentAspectRatio();
@@ -45,11 +49,11 @@ class Window {
     void SetTextureFilter(FilteringMode filteringMode);
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
-    void SaveBackendSettingToConfig(WindowBackend backend);
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
 
   protected:
     void SetWindowBackend(WindowBackend backend);
+    void SaveWindowSizeToConfig(std::shared_ptr<Config> conf);
 
   private:
     static bool KeyDown(int32_t scancode);
@@ -66,6 +70,8 @@ class Window {
     uint32_t mRefreshRate;
     uint32_t mWidth;
     uint32_t mHeight;
+    int32_t mPosX;
+    int32_t mPosY;
     int32_t mLastScancode;
 };
 } // namespace LUS

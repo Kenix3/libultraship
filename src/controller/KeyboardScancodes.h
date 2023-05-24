@@ -70,7 +70,7 @@ typedef enum KbScancode {
     LUS_KB_F7 = 65,
     LUS_KB_F8 = 66,
     LUS_KB_F9 = 67,
-    LUS_KB_F10 = 68,
+    LUS_KB_F10 = 68, // Generally inadvised to use this as it's a windows system key.
     LUS_KB_PAUSE = 69,
     LUS_KB_SCROLL = 70,
     LUS_KB_NUMPAD7 = 71,

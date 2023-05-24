@@ -11,7 +11,7 @@
 #include "graphic/Fast3D/gfx_metal.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
-
+#include "controller/KeyboardScancodes.h"
 #include "Context.h"
 
 #ifdef __APPLE__
@@ -30,6 +30,8 @@ Window::Window() {
     mIsFullscreen = false;
     mWidth = 320;
     mHeight = 240;
+    mPosX = 100;
+    mPosY = 100;
     mGui = std::make_shared<Gui>();
 }
 
@@ -66,8 +68,10 @@ void Window::Init() {
         mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height",
                                                                    steamDeckGameMode ? 800 : 1080);
     } else {
-        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
-        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
+        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", mWidth);
+        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", mHeight);
+        mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
+        mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
     }
 
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
@@ -88,7 +92,7 @@ void Window::Init() {
     InitWindowManager();
 
     gfx_init(mWindowManagerApi, mRenderingApi, LUS::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
-             mHeight);
+             mHeight, mPosX, mPosY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
     SetTextureFilter((FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
@@ -119,11 +123,11 @@ uint16_t Window::GetPixelDepth(float x, float y) {
 }
 
 void Window::ToggleFullscreen() {
-    SetFullscreen(!mIsFullscreen);
+    SetFullscreen(!IsFullscreen());
 }
 
 void Window::SetFullscreen(bool isFullscreen) {
-    this->mIsFullscreen = isFullscreen;
+    SaveWindowSizeToConfig(LUS::Context::GetInstance()->GetConfig());
     mWindowManagerApi->set_fullscreen(isFullscreen);
 }
 
@@ -136,7 +140,7 @@ void Window::MainLoop(void (*mainFunction)(void)) {
 }
 
 bool Window::KeyUp(int32_t scancode) {
-    if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", 0x044)) {
+    if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F9)) {
         Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
@@ -181,26 +185,36 @@ void Window::AllKeysUp(void) {
 }
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
-    std::shared_ptr<Config> pConf = Context::GetInstance()->GetConfig();
+    std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
 
-    Context::GetInstance()->GetWindow()->mIsFullscreen = isNowFullscreen;
-    pConf->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
+    wnd->mIsFullscreen = isNowFullscreen;
     if (isNowFullscreen) {
-        auto menuBar = Context::GetInstance()->GetWindow()->GetGui()->GetMenuBar();
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(menuBar && menuBar->IsVisible());
+        auto menuBar = wnd->GetGui()->GetMenuBar();
+        wnd->SetCursorVisibility(menuBar && menuBar->IsVisible());
     } else {
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(true);
+        wnd->SetCursorVisibility(true);
     }
 }
 
-uint32_t Window::GetCurrentWidth() {
-    mWindowManagerApi->get_dimensions(&mWidth, &mHeight);
+uint32_t Window::GetWidth() {
+    mWindowManagerApi->get_dimensions(&mWidth, &mHeight, &mPosX, &mPosY);
     return mWidth;
 }
 
-uint32_t Window::GetCurrentHeight() {
-    mWindowManagerApi->get_dimensions(&mWidth, &mHeight);
+uint32_t Window::GetHeight() {
+    mWindowManagerApi->get_dimensions(&mWidth, &mHeight, &mPosX, &mPosY);
     return mHeight;
+}
+
+int32_t Window::GetPosX() {
+    mWindowManagerApi->get_dimensions(&mWidth, &mHeight, &mPosX, &mPosY);
+    return mPosX;
+}
+
+int32_t Window::GetPosY() {
+    mWindowManagerApi->get_dimensions(&mWidth, &mHeight, &mPosX, &mPosY);
+    return mPosY;
 }
 
 uint32_t Window::GetCurrentRefreshRate() {
@@ -213,7 +227,7 @@ bool Window::CanDisableVerticalSync() {
 }
 
 float Window::GetCurrentAspectRatio() {
-    return (float)GetCurrentWidth() / (float)GetCurrentHeight();
+    return (float)GetWidth() / (float)GetHeight();
 }
 
 void Window::InitWindowManager() {
@@ -318,5 +332,19 @@ void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
     Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
     Context::GetInstance()->GetConfig()->Save();
+}
+
+void Window::SaveWindowSizeToConfig(std::shared_ptr<Config> conf) {
+    // This accepts conf in because it can be run in the destruction of LUS.
+    conf->SetBool("Window.Fullscreen.Enabled", IsFullscreen());
+    if (IsFullscreen()) {
+        conf->SetInt("Window.Fullscreen.Width", (int32_t)GetWidth());
+        conf->SetInt("Window.Fullscreen.Height", (int32_t)GetHeight());
+    } else {
+        conf->SetInt("Window.Width", (int32_t)GetWidth());
+        conf->SetInt("Window.Height", (int32_t)GetHeight());
+        conf->SetInt("Window.PositionX", GetPosX());
+        conf->SetInt("Window.PositionY", GetPosY());
+    }
 }
 } // namespace LUS

@@ -208,7 +208,7 @@ static bool gfx_glx_check_extension(const char* extensions, const char* extensio
 }
 
 static void gfx_glx_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, u_int32_t width,
-                         uint32_t height) {
+                         uint32_t height, int32_t posX, int32_t posY) {
     // On NVIDIA proprietary driver, make the driver queue up to two frames on glXSwapBuffers,
     // which means that glXSwapBuffers should be non-blocking,
     // if we are sure to wait at least one vsync interval between calls.
@@ -232,8 +232,8 @@ static void gfx_glx_init(const char* game_name, const char* gfx_api_name, bool s
     XSetWindowAttributes swa;
     swa.colormap = cmap;
     swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | FocusChangeMask;
-    glx.win = XCreateWindow(glx.dpy, glx.root, 0, 0, DESIRED_SCREEN_WIDTH, DESIRED_SCREEN_HEIGHT, 0, vi->depth,
-                            InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
+    glx.win = XCreateWindow(glx.dpy, glx.root, posX, posY, width, height, 0, vi->depth, InputOutput, vi->visual,
+                            CWColormap | CWEventMask, &swa);
 
     glx.atom_wm_state = XInternAtom(glx.dpy, "_NET_WM_STATE", False);
     glx.atom_wm_state_fullscreen = XInternAtom(glx.dpy, "_NET_WM_STATE_FULLSCREEN", False);
@@ -327,11 +327,13 @@ static void gfx_glx_main_loop(void (*run_one_game_iter)(void)) {
     }
 }
 
-static void gfx_glx_get_dimensions(uint32_t* width, uint32_t* height) {
+static void gfx_glx_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     XWindowAttributes attributes;
     XGetWindowAttributes(glx.dpy, glx.win, &attributes);
     *width = attributes.width;
     *height = attributes.height;
+    *posX = attributes.x;
+    *posY = attributes.y;
 }
 
 static void gfx_glx_handle_events(void) {
@@ -348,9 +350,6 @@ static void gfx_glx_handle_events(void) {
                 int scancode = glx.keymap[xev.xkey.keycode];
                 if (scancode != 0) {
                     if (xev.type == KeyPress) {
-                        if (scancode == 0x44) { // F10
-                            gfx_glx_set_fullscreen_state(!glx.is_fullscreen, true);
-                        }
                         if (glx.on_key_down != NULL) {
                             glx.on_key_down(scancode);
                         }

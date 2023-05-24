@@ -1,4 +1,5 @@
 #include "Context.h"
+#include "controller/KeyboardScancodes.h"
 #include <iostream>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -23,12 +24,14 @@ Context::~Context() {
     SPDLOG_TRACE("destruct context");
     // Explicitly destructing everything so that logging is done last.
     mAudio = nullptr;
+    GetWindow()->SaveWindowSizeToConfig(GetConfig());
     mWindow = nullptr;
     mConsole = nullptr;
     mCrashHandler = nullptr;
     mControlDeck = nullptr;
     mResourceManager = nullptr;
     mConsoleVariables = nullptr;
+    GetConfig()->Save();
     mConfig = nullptr;
     spdlog::shutdown();
 }
@@ -58,6 +61,8 @@ void Context::CreateDefaultSettings() {
     if (GetConfig()->IsNewInstance()) {
         GetConfig()->SetInt("Window.Width", 640);
         GetConfig()->SetInt("Window.Height", 480);
+        GetConfig()->SetInt("Window.PositionX", 100);
+        GetConfig()->SetInt("Window.PositionY", 100);
 
         GetConfig()->SetString("Window.GfxBackend", "");
         GetConfig()->SetString("Window.GfxApi", "");
@@ -71,8 +76,9 @@ void Context::CreateDefaultSettings() {
         GetConfig()->SetString("Game.Main Archive", "");
         GetConfig()->SetString("Game.Patches Archive", "");
 
-        GetConfig()->SetInt("Shortcuts.Fullscreen", 0x044);
-        GetConfig()->SetInt("Shortcuts.Console", 0x029);
+        GetConfig()->SetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F9);
+        GetConfig()->SetInt("Shortcuts.Console", KbScancode::LUS_KB_OEM_3);
+
         GetConfig()->Save();
     }
 }

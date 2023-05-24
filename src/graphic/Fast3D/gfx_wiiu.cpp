@@ -228,7 +228,7 @@ static uint32_t gfx_wiiu_proc_callback_released(void* context) {
 }
 
 static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
-                          uint32_t height) {
+                          uint32_t height, int32_t posX, int32_t posY) {
     WHBProcInit();
 
     uint32_t mem1_addr, mem1_size;
@@ -365,9 +365,11 @@ static void gfx_wiiu_main_loop(void (*run_one_game_iter)(void)) {
     WHBProcShutdown();
 }
 
-static void gfx_wiiu_get_dimensions(uint32_t* width, uint32_t* height) {
+static void gfx_wiiu_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     *width = WIIU_DEFAULT_FB_WIDTH;
     *height = WIIU_DEFAULT_FB_HEIGHT;
+    *posX = 0;
+    *posY = 0;
 }
 
 static void gfx_wiiu_handle_events(void) {

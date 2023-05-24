@@ -5,11 +5,11 @@
 extern "C" {
 
 uint32_t WindowGetWidth() {
-    return LUS::Context::GetInstance()->GetWindow()->GetCurrentWidth();
+    return LUS::Context::GetInstance()->GetWindow()->GetWidth();
 }
 
 uint32_t WindowGetHeight() {
-    return LUS::Context::GetInstance()->GetWindow()->GetCurrentHeight();
+    return LUS::Context::GetInstance()->GetWindow()->GetHeight();
 }
 
 float WindowGetAspectRatio() {

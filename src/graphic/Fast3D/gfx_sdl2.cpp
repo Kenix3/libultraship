@@ -51,6 +51,7 @@ static SDL_GLContext ctx;
 static SDL_Renderer* renderer;
 static int sdl_to_lus_table[512];
 static bool vsync_enabled = false;
+// OTRTODO: These are redundant. Info can be queried from SDL.
 static int window_width = DESIRED_SCREEN_WIDTH;
 static int window_height = DESIRED_SCREEN_HEIGHT;
 static bool fullscreen_state;
@@ -225,14 +226,19 @@ static void set_fullscreen(bool on, bool call_callback) {
     fullscreen_state = on;
 
     if (on) {
+        // OTRTODO: Get mode from config.
         SDL_DisplayMode mode;
         SDL_GetDesktopDisplayMode(0, &mode);
         window_width = mode.w;
         window_height = mode.h;
         SDL_ShowCursor(false);
     } else {
-        window_width = DESIRED_SCREEN_WIDTH;
-        window_height = DESIRED_SCREEN_HEIGHT;
+        auto conf = LUS::Context::GetInstance()->GetConfig();
+        window_width = conf->GetInt("Window.Width", 640);
+        window_height = conf->GetInt("Window.Height", 480);
+        int32_t posX = conf->GetInt("Window.PositionX", 100);
+        int32_t posY = conf->GetInt("Window.PositionY", 100);
+        SDL_SetWindowPosition(wnd, posX, posY);
     }
     SDL_SetWindowSize(wnd, window_width, window_height);
     SDL_SetWindowFullscreen(
@@ -264,7 +270,10 @@ static int target_fps = 60;
 #define FRAME_INTERVAL_US_DENOMINATOR (target_fps)
 
 static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
-                         uint32_t height) {
+                         uint32_t height, int32_t posX, int32_t posY) {
+    window_width = width;
+    window_height = height;
+
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
@@ -315,7 +324,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         flags = flags | SDL_WINDOW_METAL;
     }
 
-    wnd = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
+    wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
     LUS::GuiWindowInitData window_impl;
 
     if (use_opengl) {
@@ -413,9 +422,9 @@ static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
     SDL_Quit();
 }
 
-static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height) {
-    *width = window_width;
-    *height = window_height;
+static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+    SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
 static int translate_scancode(int scancode) {
