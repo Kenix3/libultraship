@@ -22,9 +22,9 @@ class ResourceManager {
 
   public:
     ResourceManager(const std::string& mainPath, const std::string& patchesPath,
-                    const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount = 1);
+                    const std::unordered_set<uint32_t>& validHashes, int32_t reservedThreadCount = 1);
     ResourceManager(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
-                    uint32_t reservedThreadCount = 1);
+                    int32_t reservedThreadCount = 1);
     ~ResourceManager();
 
     bool DidLoadSuccessfully();
