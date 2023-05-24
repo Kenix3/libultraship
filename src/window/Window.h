@@ -14,7 +14,7 @@ enum class WindowBackend { DX11, DX12, GLX_OPENGL, SDL_OPENGL, SDL_METAL, GX2, B
 class Config;
 
 class Window {
-friend class Context;
+    friend class Context;
 
   public:
     Window();

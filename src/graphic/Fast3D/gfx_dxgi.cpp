@@ -45,7 +45,7 @@ static struct {
 
     // These four only apply in windowed mode.
     uint32_t current_width, current_height; // Width and height of client areas
-    int32_t posX, posY; // Screen coordinates
+    int32_t posX, posY;                     // Screen coordinates
 
     std::string game_name;
     bool is_running = true;
@@ -185,7 +185,8 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
             dxgi.current_height = conf->GetInt("Window.Height", 480);
             dxgi.posX = conf->GetInt("Window.PositionX", 100);
             dxgi.posY = conf->GetInt("Window.PositionY", 100);
-            RECT wr = { dxgi.posX, dxgi.posY, dxgi.posX + static_cast<int32_t>(dxgi.current_width), dxgi.posY+ static_cast<int32_t>(dxgi.current_height) };
+            RECT wr = { dxgi.posX, dxgi.posY, dxgi.posX + static_cast<int32_t>(dxgi.current_width),
+                        dxgi.posY + static_cast<int32_t>(dxgi.current_height) };
             AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
             SetWindowPos(dxgi.h_wnd, NULL, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
             ShowWindow(dxgi.h_wnd, SW_RESTORE);
@@ -339,8 +340,8 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         dxgi.current_height = wr.bottom - wr.top;
         dxgi.posX = posX;
         dxgi.posY = posY;
-        dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top, dxgi.current_width,
-                                   dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
+        dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
+                                   dxgi.current_width, dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
     });
 
     load_dxgi_library();
