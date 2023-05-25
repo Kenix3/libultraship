@@ -57,6 +57,7 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
             backend->SetButtonMapping(currentPort, btn, n64Btn);
             auto keyboardBackend = dynamic_pointer_cast<KeyboardController>(backend);
             if (keyboardBackend != nullptr) {
+                // Window backend has not called release on the scancode and thus we need to release all buttons.
                 keyboardBackend->ReleaseAllButtons();
             }
             Context::GetInstance()->GetControlDeck()->SaveSettings();
