@@ -21,8 +21,9 @@ class InputEditorWindow : public GuiWindow {
     void DrawElement() override;
     void UpdateElement() override;
 
-  private:
     int32_t mCurrentPort;
+
+  private:
     int32_t mBtnReading;
     int32_t mGameInputBlockTimer;
     const int32_t mGameInputBlockId = -1;
