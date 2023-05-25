@@ -22,7 +22,7 @@ class WiiUController : public Controller {
     int32_t ReadRawPress() override;
     int32_t SetRumble(int32_t portIndex, bool rumble) override;
     int32_t SetLedColor(int32_t portIndex, Color_RGB8 color) override;
-    const std::string GetButtonName(int32_t portIndex, int n64Button) override;
+    const std::string GetButtonName(int32_t portIndex, int32_t n64bitmask) override;
 
   protected:
     void CreateDefaultBinding(int32_t portIndex) override;

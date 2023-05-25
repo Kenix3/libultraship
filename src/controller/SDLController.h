@@ -7,7 +7,7 @@ class SDLController : public Controller {
   public:
     SDLController(int32_t deviceIndex);
     void ReadDevice(int32_t portIndex) override;
-    const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
+    const std::string GetButtonName(int32_t portIndex, int32_t n64bitmask) override;
     int32_t SetRumble(int32_t portIndex, bool rumble) override;
     int32_t SetLedColor(int32_t portIndex, Color_RGB8 color) override;
     bool Connected() const override;

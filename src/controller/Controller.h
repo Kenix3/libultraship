@@ -17,9 +17,9 @@ namespace LUS {
 enum GyroData { DRIFT_X, DRIFT_Y, GYRO_SENSITIVITY };
 enum Stick { LEFT, RIGHT };
 enum Axis { X, Y };
-enum DeviceProfileVersion { DEVICE_PROFILE_VERSION_V0 = 0, DEVICE_PROFILE_VERSION_V1 = 1 };
+enum DeviceProfileVersion { DEVICE_PROFILE_VERSION_0 = 0, DEVICE_PROFILE_VERSION_1 = 1, DEVICE_PROFILE_VERSION_2 = 2 };
 
-#define DEVICE_PROFILE_CURRENT_VERSION DEVICE_PROFILE_VERSION_V1
+#define DEVICE_PROFILE_CURRENT_VERSION DEVICE_PROFILE_VERSION_2
 
 struct DeviceProfile {
     int32_t Version = 0;
@@ -33,8 +33,6 @@ struct DeviceProfile {
     std::map<int32_t, int32_t> Mappings;
 };
 
-class ControlDeck;
-
 class Controller {
   public:
     Controller(int32_t deviceIndex);
@@ -47,13 +45,13 @@ class Controller {
     virtual void CreateDefaultBinding(int32_t portIndex) = 0;
     virtual void ClearRawPress() = 0;
     virtual int32_t ReadRawPress() = 0;
-    virtual const std::string GetButtonName(int32_t portIndex, int32_t n64Button) = 0;
+    virtual const std::string GetButtonName(int32_t portIndex, int32_t n64bitmask) = 0;
     virtual int32_t SetRumble(int32_t portIndex, bool rumble) = 0;
     virtual int32_t SetLedColor(int32_t portIndex, Color_RGB8 color) = 0;
 
     std::string GetControllerName();
     void ReadToPad(OSContPad* pad, int32_t portIndex);
-    void SetButtonMapping(int32_t portIndex, int32_t n64Button, int32_t scancode);
+    void SetButtonMapping(int32_t portIndex, int32_t deviceButtonId, int32_t n64bitmask);
 
     std::shared_ptr<DeviceProfile> GetProfile(int32_t portIndex);
     int8_t& GetLeftStickX(int32_t portIndex);
@@ -74,9 +72,9 @@ class Controller {
     int32_t mDeviceIndex;
     std::string mControllerName = "Unknown";
 
-    void LoadBinding();
     int8_t ReadStick(int32_t portIndex, Stick stick, Axis axis);
     void ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold);
+    double GetClosestNotch(double angle, double approximationThreshold);
 
   private:
     struct Buttons {
@@ -92,7 +90,5 @@ class Controller {
     std::unordered_map<int32_t, std::shared_ptr<DeviceProfile>> mProfiles;
     std::unordered_map<int32_t, std::shared_ptr<Buttons>> mButtonData = {};
     std::deque<OSContPad> mPadBuffer;
-
-    double GetClosestNotch(double angle, double approximationThreshold);
 };
 } // namespace LUS
