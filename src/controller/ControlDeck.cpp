@@ -266,9 +266,17 @@ void ControlDeck::SaveSettings() {
             config->SetBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
             config->SetInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
 
-            for (auto const& val : conf["Mappings"].items()) {
-                config->Erase(NESTED("Mappings.%s", val.key().c_str()));
+            // Clear all sections with a one controller to many relationship.
+            const static std::vector<std::string> clearSections = {"Mappings", "AxisDeadzones", "AxisMinimumPress", "GyroData"};
+            for (auto const& section : clearSections) {
+                if (conf.contains(section)) {
+                    for (auto const& val : conf[section].items()) {
+                        std::string erase = NESTED("%s.%s", section.c_str(), val.key().c_str());
+                        config->Erase(erase);
+                    }
+                }
             }
+
             for (auto const& [key, val] : profile->Mappings) {
                 config->SetInt(NESTED("Mappings.%d", key), val);
             }
