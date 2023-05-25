@@ -9,7 +9,7 @@ class DummyController final : public Controller {
   public:
     DummyController(int32_t deviceIndex, const std::string& guid, const std::string& keyName, bool connected);
     void ReadDevice(int32_t portIndex) override;
-    const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
+    const std::string GetButtonName(int32_t portIndex, int32_t n64bitmask) override;
     bool Connected() const override;
     bool CanRumble() const override;
     bool CanSetLed() const override;

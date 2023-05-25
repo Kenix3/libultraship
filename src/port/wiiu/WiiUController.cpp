@@ -303,7 +303,7 @@ int32_t WiiUController::ReadRawPress() {
     return -1;
 }
 
-const std::string WiiUController::GetButtonName(int32_t portIndex, int n64Button) {
+const std::string WiiUController::GetButtonName(int32_t portIndex, int32_t n64bitmask) {
     std::map<int32_t, int32_t>& Mappings = GetProfile(portIndex)->Mappings;
     const auto find =
         std::find_if(Mappings.begin(), Mappings.end(),

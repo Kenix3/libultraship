@@ -8,7 +8,7 @@ class KeyboardController : public Controller {
     KeyboardController(int32_t deviceIndex);
 
     void ReadDevice(int32_t portIndex) override;
-    const std::string GetButtonName(int32_t portIndex, int32_t n64Button) override;
+    const std::string GetButtonName(int32_t portIndex, int32_t n64bitmask) override;
     bool PressButton(int32_t scancode);
     bool ReleaseButton(int32_t scancode);
     bool Connected() const override;

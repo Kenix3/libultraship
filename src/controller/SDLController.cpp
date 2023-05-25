@@ -315,13 +315,14 @@ int32_t SDLController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
     return SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), mLedColor.r, mLedColor.g, mLedColor.b);
 }
 
-const std::string SDLController::GetButtonName(int32_t portIndex, int32_t n64Button) {
+const std::string SDLController::GetButtonName(int32_t portIndex, int32_t n64bitmask) {
     char buffer[50];
+    // OTRTODO: This should get the scancode of all bits in the mask.
     std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
 
     const auto find =
         std::find_if(mappings.begin(), mappings.end(),
-                     [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
+                     [n64bitmask](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64bitmask; });
 
     if (find == mappings.end()) {
         return "Unknown";
