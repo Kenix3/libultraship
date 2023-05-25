@@ -207,8 +207,8 @@ void Controller::ReadToPad(OSContPad* pad, int32_t portIndex) {
     }
 }
 
-void Controller::SetButtonMapping(int32_t portIndex, int32_t n64bitmask, int32_t scancode) {
-    GetProfile(portIndex)->Mappings[scancode] = n64bitmask;
+void Controller::SetButtonMapping(int32_t portIndex, int32_t deviceButtonId, int32_t n64bitmask) {
+    GetProfile(portIndex)->Mappings[deviceButtonId] = n64bitmask;
 }
 
 int8_t& Controller::GetLeftStickX(int32_t portIndex) {

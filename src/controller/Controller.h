@@ -51,7 +51,7 @@ class Controller {
 
     std::string GetControllerName();
     void ReadToPad(OSContPad* pad, int32_t portIndex);
-    void SetButtonMapping(int32_t portIndex, int32_t n64bitmask, int32_t scancode);
+    void SetButtonMapping(int32_t portIndex, int32_t deviceButtonId, int32_t n64bitmask);
 
     std::shared_ptr<DeviceProfile> GetProfile(int32_t portIndex);
     int8_t& GetLeftStickX(int32_t portIndex);

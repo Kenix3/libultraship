@@ -50,11 +50,11 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
 
         if (btn != -1) {
             auto profile = backend->GetProfile(currentPort);
-            // Remove other mappings that include the n64 button. Note that the n64 button is really a mask and is not
+            // Remove other mappings that include the n64 bitmask. Note that the n64 button is really a mask and is not
             // unique, but the UI as-is needs a way to unset the old n64 button.
             std::erase_if(profile->Mappings,
                           [n64Btn](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Btn; });
-            backend->SetButtonMapping(currentPort, n64Btn, btn);
+            backend->SetButtonMapping(currentPort, btn, n64Btn);
             auto keyboardBackend = dynamic_pointer_cast<KeyboardController>(backend);
             if (keyboardBackend != nullptr) {
                 keyboardBackend->ReleaseAllButtons();

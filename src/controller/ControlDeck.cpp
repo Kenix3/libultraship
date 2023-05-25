@@ -175,7 +175,7 @@ void ControlDeck::LoadSettings() {
                     profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
 
                     for (auto const& val : rawProfile["Mappings"].items()) {
-                        device->SetButtonMapping(virtualSlot, std::stoi(val.key().substr(4)), val.value());
+                        device->SetButtonMapping(virtualSlot, val.value(), std::stoi(val.key().substr(4)));
                     }
 
                     break;
@@ -199,7 +199,7 @@ void ControlDeck::LoadSettings() {
                     }
 
                     for (auto const& val : rawProfile["Mappings"].items()) {
-                        device->SetButtonMapping(virtualSlot, std::stoi(val.key().substr(4)), val.value());
+                        device->SetButtonMapping(virtualSlot, val.value(), std::stoi(val.key().substr(4)));
                     }
 
                     break;
@@ -223,7 +223,7 @@ void ControlDeck::LoadSettings() {
                     }
 
                     for (auto const& val : rawProfile["Mappings"].items()) {
-                        device->SetButtonMapping(virtualSlot, val.value(), std::stoi(val.key()));
+                        device->SetButtonMapping(virtualSlot, std::stoi(val.key()), val.value());
                     }
 
                     break;
