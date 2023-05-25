@@ -268,7 +268,7 @@ void ControlDeck::SaveSettings() {
 
             // Clear all sections with a one controller to many relationship.
             const static std::vector<std::string> sClearSections = { "Mappings", "AxisDeadzones", "AxisMinimumPress",
-                                                                    "GyroData" };
+                                                                     "GyroData" };
             for (auto const& section : sClearSections) {
                 if (conf.contains(section)) {
                     for (auto const& val : conf[section].items()) {
