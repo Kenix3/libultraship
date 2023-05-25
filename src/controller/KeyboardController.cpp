@@ -59,11 +59,12 @@ int32_t KeyboardController::ReadRawPress() {
     return mLastKey;
 }
 
-const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n64Button) {
+const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n64bitmask) {
     std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
+    // OTRTODO: This should get the scancode of all bits in the mask.
     const auto find =
         std::find_if(mappings.begin(), mappings.end(),
-                     [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
+                     [n64bitmask](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64bitmask; });
 
     if (find == mappings.end()) {
         return "Unknown";
@@ -74,6 +75,16 @@ const std::string KeyboardController::GetButtonName(int32_t portIndex, int32_t n
 
 void KeyboardController::CreateDefaultBinding(int32_t portIndex) {
     auto profile = GetProfile(portIndex);
+    profile->Mappings.clear();
+    profile->AxisDeadzones.clear();
+    profile->AxisMinimumPress.clear();
+    profile->GyroData.clear();
+
+    profile->Version = DEVICE_PROFILE_CURRENT_VERSION;
+    profile->UseRumble = false;
+    profile->RumbleStrength = 1.0f;
+    profile->UseGyro = false;
+
     profile->Mappings[0x14D] = BTN_CRIGHT;
     profile->Mappings[0x14B] = BTN_CLEFT;
     profile->Mappings[0x150] = BTN_CDOWN;

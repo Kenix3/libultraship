@@ -161,11 +161,11 @@ void ControlDeck::LoadSettings() {
             profile->AxisMinimumPress.clear();
             profile->GyroData.clear();
 
-            profile->Version = config->GetInt(NESTED("Version", ""), DEVICE_PROFILE_VERSION_V0);
+            profile->Version = config->GetInt(NESTED("Version", ""), DEVICE_PROFILE_VERSION_0);
 
             switch (profile->Version) {
 
-                case DEVICE_PROFILE_VERSION_V0:
+                case DEVICE_PROFILE_VERSION_0:
 
                     // Load up defaults for the things we can't load.
                     device->CreateDefaultBinding(virtualSlot);
@@ -180,7 +180,7 @@ void ControlDeck::LoadSettings() {
 
                     break;
 
-                case DEVICE_PROFILE_VERSION_V1:
+                case DEVICE_PROFILE_VERSION_1:
                     profile->UseRumble = config->GetBool(NESTED("Rumble.Enabled", ""));
                     profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
                     profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
@@ -204,6 +204,30 @@ void ControlDeck::LoadSettings() {
 
                     break;
 
+                case DEVICE_PROFILE_VERSION_2:
+                    profile->UseRumble = config->GetBool(NESTED("Rumble.Enabled", ""));
+                    profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
+                    profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
+                    profile->NotchProximityThreshold = config->GetInt(NESTED("Notches.ProximityThreshold", ""));
+
+                    for (auto const& val : rawProfile["AxisDeadzones"].items()) {
+                        profile->AxisDeadzones[std::stoi(val.key())] = val.value();
+                    }
+
+                    for (auto const& val : rawProfile["AxisMinimumPress"].items()) {
+                        profile->AxisMinimumPress[std::stoi(val.key())] = val.value();
+                    }
+
+                    for (auto const& val : rawProfile["GyroData"].items()) {
+                        profile->GyroData[std::stoi(val.key())] = val.value();
+                    }
+
+                    for (auto const& val : rawProfile["Mappings"].items()) {
+                        device->SetButtonMapping(virtualSlot, val.value(), std::stoi(val.key()));
+                    }
+
+                    break;
+
                 // Version is invalid.
                 default:
                     device->CreateDefaultBinding(virtualSlot);
@@ -218,7 +242,7 @@ void ControlDeck::SaveSettings() {
 
     for (size_t i = 0; i < mPortList.size(); i++) {
         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
-        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int)i), backend->GetGuid());
+        config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int32_t)i), backend->GetGuid());
     }
 
     for (const auto& device : mDevices) {
@@ -231,16 +255,22 @@ void ControlDeck::SaveSettings() {
                 continue;
             }
 
-            auto rawProfile =
-                config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+            // We always save to the most recent version.
+            profile->Version = DEVICE_PROFILE_CURRENT_VERSION;
+
+            auto conf = config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
+
             config->SetInt(NESTED("Version", ""), profile->Version);
             config->SetBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
             config->SetFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
             config->SetBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
             config->SetInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
 
-            for (auto const& val : rawProfile["Mappings"].items()) {
-                config->SetInt(NESTED("Mappings.%s", val.key().c_str()), -1);
+            for (auto const& val : conf["Mappings"].items()) {
+                config->Erase(NESTED("Mappings.%s", val.key().c_str()));
+            }
+            for (auto const& [key, val] : profile->Mappings) {
+                config->SetInt(NESTED("Mappings.%d", key), val);
             }
 
             for (auto const& [key, val] : profile->AxisDeadzones) {
@@ -253,10 +283,6 @@ void ControlDeck::SaveSettings() {
 
             for (auto const& [key, val] : profile->GyroData) {
                 config->SetFloat(NESTED("GyroData.%d", key), val);
-            }
-
-            for (auto const& [key, val] : profile->Mappings) {
-                config->SetInt(NESTED("Mappings.BTN_%d", val), key);
             }
 
             virtualSlot++;

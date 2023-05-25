@@ -1,5 +1,6 @@
 #include "InputEditorWindow.h"
 #include "controller/Controller.h"
+#include "controller/KeyboardController.h"
 #include "Context.h"
 #include "Gui.h"
 #include <Utils/StringHelper.h>
@@ -48,7 +49,14 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
         Context::GetInstance()->GetControlDeck()->BlockGameInput(mGameInputBlockId);
 
         if (btn != -1) {
+            auto profile = backend->GetProfile(currentPort);
+            // Remove other mappings that include the n64 button. Note that the n64 button is really a mask and is not unique, but the UI as-is needs a way to unset the old n64 button.
+            std::erase_if(profile->Mappings, [n64Btn](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Btn; });
             backend->SetButtonMapping(currentPort, n64Btn, btn);
+            auto keyboardBackend = dynamic_pointer_cast<KeyboardController>(backend);
+            if (keyboardBackend != nullptr) {
+                keyboardBackend->ReleaseAllButtons();
+            }
             Context::GetInstance()->GetControlDeck()->SaveSettings();
 
             *btnReading = -1;

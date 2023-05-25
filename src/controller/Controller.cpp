@@ -207,10 +207,8 @@ void Controller::ReadToPad(OSContPad* pad, int32_t portIndex) {
     }
 }
 
-void Controller::SetButtonMapping(int32_t portIndex, int32_t n64Button, int32_t scancode) {
-    std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
-    std::erase_if(mappings, [n64Button](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Button; });
-    mappings[scancode] = n64Button;
+void Controller::SetButtonMapping(int32_t portIndex, int32_t n64bitmask, int32_t scancode) {
+    GetProfile(portIndex)->Mappings[scancode] = n64bitmask;
 }
 
 int8_t& Controller::GetLeftStickX(int32_t portIndex) {

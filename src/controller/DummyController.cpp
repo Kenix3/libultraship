@@ -13,7 +13,7 @@ DummyController::DummyController(int32_t deviceIndex, const std::string& guid, c
 void DummyController::ReadDevice(int32_t portIndex) {
 }
 
-const std::string DummyController::GetButtonName(int32_t portIndex, int32_t n64Button) {
+const std::string DummyController::GetButtonName(int32_t portIndex, int32_t n64bitmask) {
     return mButtonName;
 }
 
