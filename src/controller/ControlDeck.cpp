@@ -267,7 +267,8 @@ void ControlDeck::SaveSettings() {
             config->SetInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
 
             // Clear all sections with a one controller to many relationship.
-            const static std::vector<std::string> clearSections = {"Mappings", "AxisDeadzones", "AxisMinimumPress", "GyroData"};
+            const static std::vector<std::string> clearSections = { "Mappings", "AxisDeadzones", "AxisMinimumPress",
+                                                                    "GyroData" };
             for (auto const& section : clearSections) {
                 if (conf.contains(section)) {
                     for (auto const& val : conf[section].items()) {
