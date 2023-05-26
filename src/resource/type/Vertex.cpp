@@ -4,7 +4,7 @@ namespace LUS {
 Vertex::Vertex() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
-void* Vertex::GetRawPointer() {
+void* Vertex::GetPointer() {
     return VertexList.data();
 }
 

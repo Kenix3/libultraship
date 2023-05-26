@@ -65,7 +65,7 @@ void* ResourceGetDataByName(const char* name) {
         return nullptr;
     }
 
-    return resource->GetRawPointer();
+    return resource->GetPointer();
 }
 
 void* ResourceGetDataByCrc(uint64_t crc) {

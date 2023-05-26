@@ -72,7 +72,7 @@ class Array : public Resource {
 
     Array();
 
-    void* GetRawPointer();
+    void* GetPointer();
     size_t GetPointerSize();
 
     ArrayResourceType ArrayType;

@@ -11,7 +11,7 @@ class DisplayList : public Resource {
 
     DisplayList();
 
-    void* GetRawPointer();
+    void* GetPointer();
     size_t GetPointerSize();
 
     std::vector<Gfx> Instructions;

@@ -4,7 +4,7 @@ namespace LUS {
 Blob::Blob() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
-void* Blob::GetRawPointer() {
+void* Blob::GetPointer() {
     return Data.data();
 }
 

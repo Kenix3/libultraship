@@ -11,7 +11,7 @@ class Vertex : public Resource {
 
     Vertex();
 
-    void* GetRawPointer();
+    void* GetPointer();
     size_t GetPointerSize();
 
     std::vector<Vtx> VertexList;

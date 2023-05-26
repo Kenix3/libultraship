@@ -10,7 +10,7 @@ class Matrix : public Resource {
 
     Matrix();
 
-    void* GetRawPointer();
+    void* GetPointer();
     size_t GetPointerSize();
 
     Mtx Matrx;

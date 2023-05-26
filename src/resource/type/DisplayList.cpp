@@ -4,7 +4,7 @@ namespace LUS {
 DisplayList::DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
-void* DisplayList::GetRawPointer() {
+void* DisplayList::GetPointer() {
     return Instructions.data();
 }
 
