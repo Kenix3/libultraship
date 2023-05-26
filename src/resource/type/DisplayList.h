@@ -11,8 +11,8 @@ class DisplayList : public Resource {
 
     DisplayList();
 
-    void* GetPointer();
-    size_t GetPointerSize();
+    void* GetPointer() override;
+    size_t GetPointerSize() override;
 
     std::vector<Gfx> Instructions;
 };

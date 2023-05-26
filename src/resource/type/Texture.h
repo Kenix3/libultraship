@@ -25,8 +25,8 @@ class Texture : public Resource {
 
     Texture();
 
-    void* GetPointer();
-    size_t GetPointerSize();
+    void* GetPointer() override;
+    size_t GetPointerSize() override;
 
     TextureType Type;
     uint16_t Width, Height;

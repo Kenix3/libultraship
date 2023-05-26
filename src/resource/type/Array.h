@@ -72,8 +72,8 @@ class Array : public Resource {
 
     Array();
 
-    void* GetPointer();
-    size_t GetPointerSize();
+    void* GetPointer() override;
+    size_t GetPointerSize() override;
 
     ArrayResourceType ArrayType;
     ScalarType ArrayScalarType;
