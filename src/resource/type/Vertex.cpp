@@ -1,7 +1,10 @@
 #include "resource/type/Vertex.h"
 
 namespace LUS {
-void* Vertex::GetPointer() {
+Vertex::Vertex() : Resource(std::shared_ptr<ResourceInitData>()) {
+}
+
+void* Vertex::GetRawPointer() {
     return VertexList.data();
 }
 

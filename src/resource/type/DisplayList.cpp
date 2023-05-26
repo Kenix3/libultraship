@@ -1,7 +1,10 @@
 #include "resource/type/DisplayList.h"
 
 namespace LUS {
-void* DisplayList::GetPointer() {
+DisplayList::DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {
+}
+
+void* DisplayList::GetRawPointer() {
     return Instructions.data();
 }
 

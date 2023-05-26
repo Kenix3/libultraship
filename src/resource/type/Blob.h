@@ -7,10 +7,9 @@ class Blob : public Resource {
   public:
     using Resource::Resource;
 
-    Blob() : Resource(std::shared_ptr<ResourceInitData>()) {
-    }
+    Blob();
 
-    void* GetPointer();
+    void* GetRawPointer();
     size_t GetPointerSize();
 
     std::vector<uint8_t> Data;

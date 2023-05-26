@@ -1,7 +1,10 @@
 #include "Array.h"
 
 namespace LUS {
-void* Array::GetPointer() {
+Array::Array() : Resource(std::shared_ptr<ResourceInitData>()) {
+}
+
+void* Array::GetRawPointer() {
     void* dataPointer = nullptr;
     switch (ArrayType) {
         case ArrayResourceType::Vertex:

@@ -9,10 +9,9 @@ class DisplayList : public Resource {
   public:
     using Resource::Resource;
 
-    DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {
-    }
+    DisplayList();
 
-    void* GetPointer();
+    void* GetRawPointer();
     size_t GetPointerSize();
 
     std::vector<Gfx> Instructions;

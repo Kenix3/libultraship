@@ -9,10 +9,9 @@ class Vertex : public Resource {
   public:
     using Resource::Resource;
 
-    Vertex() : Resource(std::shared_ptr<ResourceInitData>()) {
-    }
+    Vertex();
 
-    void* GetPointer();
+    void* GetRawPointer();
     size_t GetPointerSize();
 
     std::vector<Vtx> VertexList;

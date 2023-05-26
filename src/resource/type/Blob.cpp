@@ -1,7 +1,10 @@
 #include "Blob.h"
 
 namespace LUS {
-void* Blob::GetPointer() {
+Blob::Blob() : Resource(std::shared_ptr<ResourceInitData>()) {
+}
+
+void* Blob::GetRawPointer() {
     return Data.data();
 }
 

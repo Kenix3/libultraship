@@ -8,10 +8,9 @@ class Matrix : public Resource {
   public:
     using Resource::Resource;
 
-    Matrix() : Resource(std::shared_ptr<ResourceInitData>()) {
-    }
+    Matrix();
 
-    void* GetPointer();
+    void* GetRawPointer();
     size_t GetPointerSize();
 
     Mtx Matrx;
