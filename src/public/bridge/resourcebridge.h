@@ -12,6 +12,12 @@
 
 std::shared_ptr<LUS::Resource> ResourceLoad(const char* name);
 std::shared_ptr<LUS::Resource> ResourceLoad(uint64_t crc);
+template <class T> std::shared_ptr<T> ResourceLoad(const char* name) {
+    return static_pointer_cast<T>(ResourceLoad(name));
+}
+template <class T> std::shared_ptr<T> ResourceLoad(uint64_t crc) {
+    return static_pointer_cast<T>(ResourceLoad(crc));
+}
 
 extern "C" {
 #endif
