@@ -10,14 +10,14 @@ std::shared_ptr<Resource> DisplayListFactory::ReadResource(std::shared_ptr<Resou
     auto resource = std::make_shared<DisplayList>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 
@@ -31,14 +31,14 @@ std::shared_ptr<Resource> DisplayListFactory::ReadResourceXML(std::shared_ptr<Re
     auto resource = std::make_shared<DisplayList>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<DisplayListFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 

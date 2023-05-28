@@ -4,10 +4,22 @@
 #include "libultraship/libultra/gbi.h"
 
 namespace LUS {
-Resource::Resource(std::shared_ptr<ResourceInitData> initData) : InitData(initData) {
+Resource::Resource(std::shared_ptr<ResourceInitData> initData) : mInitData(initData) {
 }
 
 Resource::~Resource() {
-    SPDLOG_TRACE("Resource Unloaded: {}\n", InitData->Path);
+    SPDLOG_TRACE("Resource Unloaded: {}\n", GetInitData()->Path);
+}
+
+bool Resource::IsDirty() {
+    return mIsDirty;
+}
+
+void Resource::Dirty() {
+    mIsDirty = true;
+}
+
+std::shared_ptr<ResourceInitData> Resource::GetInitData() {
+    return mInitData;
 }
 } // namespace LUS

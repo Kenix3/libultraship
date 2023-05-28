@@ -9,7 +9,7 @@ std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceI
     auto resource = std::make_shared<Texture>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<TextureFactoryV0>();
             break;
@@ -19,7 +19,7 @@ std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceI
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Texture with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load Texture with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 

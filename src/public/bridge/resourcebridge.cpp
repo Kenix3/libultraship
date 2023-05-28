@@ -51,7 +51,7 @@ uint8_t ResourceGetIsCustomByName(const char* name) {
         return false;
     }
 
-    return resource->InitData->IsCustom;
+    return resource->GetInitData()->IsCustom;
 }
 
 uint8_t ResourceGetIsCustomByCrc(uint64_t crc) {
@@ -172,7 +172,7 @@ void ResourceDirtyByName(const char* name) {
     auto resource = ResourceLoad(name);
 
     if (resource != nullptr) {
-        resource->IsDirty = true;
+        resource->Dirty();
     }
 }
 
@@ -180,7 +180,7 @@ void ResourceDirtyByCrc(uint64_t crc) {
     auto resource = ResourceLoad(crc);
 
     if (resource != nullptr) {
-        resource->IsDirty = true;
+        resource->Dirty();
     }
 }
 

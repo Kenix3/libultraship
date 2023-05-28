@@ -233,7 +233,7 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
                 return nullptr;
             }
 
-            if (resource->IsDirty) {
+            if (resource->IsDirty()) {
                 return nullptr;
             }
 
@@ -294,7 +294,7 @@ void ResourceManager::DirtyDirectory(const std::string& searchMask) {
         auto resource = GetCachedResource(key);
         // If it's a resource, we will set the dirty flag, else we will just unload it.
         if (resource != nullptr) {
-            resource->IsDirty = true;
+            resource->Dirty();
         } else {
             UnloadResource(key);
         }

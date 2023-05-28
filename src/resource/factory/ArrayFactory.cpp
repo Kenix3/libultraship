@@ -8,14 +8,14 @@ std::shared_ptr<Resource> ArrayFactory::ReadResource(std::shared_ptr<ResourceIni
     auto resource = std::make_shared<Array>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<ArrayFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Array with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load Array with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 

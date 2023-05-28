@@ -8,14 +8,14 @@ std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<ResourceIn
     auto resource = std::make_shared<Vertex>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 
@@ -29,14 +29,14 @@ std::shared_ptr<Resource> VertexFactory::ReadResourceXML(std::shared_ptr<Resourc
     auto resource = std::make_shared<Vertex>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 

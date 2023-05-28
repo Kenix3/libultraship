@@ -20,12 +20,20 @@ class Resource {
   public:
     inline static const std::string gAltAssetPrefix = "alt/";
 
-    std::shared_ptr<LUS::ResourceManager> ResourceManager;
-    std::shared_ptr<ResourceInitData> InitData;
-    bool IsDirty = false;
-    virtual void* GetRawPointer() = 0;
-    virtual size_t GetPointerSize() = 0;
     Resource(std::shared_ptr<ResourceInitData> initData);
     virtual ~Resource();
+
+    virtual void* GetRawPointer() = 0;
+    virtual size_t GetPointerSize() = 0;
+
+    bool IsDirty();
+    void Dirty();
+    std::shared_ptr<ResourceInitData> GetInitData();
+
+  private:
+    std::shared_ptr<ResourceInitData> mInitData;
+    bool mIsDirty = false;
 };
+
+
 } // namespace LUS
