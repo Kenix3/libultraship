@@ -3,19 +3,19 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<Resource> BlobFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                    std::shared_ptr<BinaryReader> reader) {
+std::shared_ptr<IResource> BlobFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                     std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Blob>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<BlobFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Blob with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load Blob with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 
@@ -24,7 +24,7 @@ std::shared_ptr<Resource> BlobFactory::ReadResource(std::shared_ptr<ResourceInit
     return resource;
 }
 
-void BlobFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) {
+void BlobFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
     std::shared_ptr<Blob> blob = std::static_pointer_cast<Blob>(resource);
     ResourceVersionFactory::ParseFileBinary(reader, blob);
 

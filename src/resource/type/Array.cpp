@@ -1,6 +1,9 @@
 #include "Array.h"
 
 namespace LUS {
+Array::Array() : Resource(std::shared_ptr<ResourceInitData>()) {
+}
+
 void* Array::GetPointer() {
     void* dataPointer = nullptr;
     switch (ArrayType) {

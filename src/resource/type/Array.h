@@ -66,15 +66,14 @@ enum class ArrayResourceType {
     Audio
 };
 
-class Array : public Resource {
+class Array : public Resource<void> {
   public:
     using Resource::Resource;
 
-    Array() : Resource(std::shared_ptr<ResourceInitData>()) {
-    }
+    Array();
 
-    void* GetPointer();
-    size_t GetPointerSize();
+    void* GetPointer() override;
+    size_t GetPointerSize() override;
 
     ArrayResourceType ArrayType;
     ScalarType ArrayScalarType;

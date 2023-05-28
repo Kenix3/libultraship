@@ -5,15 +5,14 @@
 #include "libultraship/libultra/gbi.h"
 
 namespace LUS {
-class DisplayList : public Resource {
+class DisplayList : public Resource<Gfx> {
   public:
     using Resource::Resource;
 
-    DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {
-    }
+    DisplayList();
 
-    void* GetPointer();
-    size_t GetPointerSize();
+    Gfx* GetPointer() override;
+    size_t GetPointerSize() override;
 
     std::vector<Gfx> Instructions;
 };

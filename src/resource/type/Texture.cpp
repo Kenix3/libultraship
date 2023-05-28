@@ -1,7 +1,10 @@
 #include "resource/type/Texture.h"
 
 namespace LUS {
-void* Texture::GetPointer() {
+Texture::Texture() : Resource(std::shared_ptr<ResourceInitData>()) {
+}
+
+uint8_t* Texture::GetPointer() {
     return ImageData;
 }
 

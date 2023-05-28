@@ -3,15 +3,14 @@
 #include "resource/Resource.h"
 
 namespace LUS {
-class Blob : public Resource {
+class Blob : public Resource<void> {
   public:
     using Resource::Resource;
 
-    Blob() : Resource(std::shared_ptr<ResourceInitData>()) {
-    }
+    Blob();
 
-    void* GetPointer();
-    size_t GetPointerSize();
+    void* GetPointer() override;
+    size_t GetPointerSize() override;
 
     std::vector<uint8_t> Data;
 };

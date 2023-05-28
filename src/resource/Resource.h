@@ -16,16 +16,32 @@ struct ResourceInitData {
     bool IsCustom;
 };
 
-class Resource {
+class IResource {
   public:
     inline static const std::string gAltAssetPrefix = "alt/";
 
-    std::shared_ptr<LUS::ResourceManager> ResourceManager;
-    std::shared_ptr<ResourceInitData> InitData;
-    bool IsDirty = false;
-    virtual void* GetPointer() = 0;
+    IResource(std::shared_ptr<ResourceInitData> initData);
+    virtual ~IResource();
+
+    virtual void* GetRawPointer() = 0;
     virtual size_t GetPointerSize() = 0;
-    Resource(std::shared_ptr<ResourceInitData> initData);
-    virtual ~Resource();
+
+    bool IsDirty();
+    void Dirty();
+    std::shared_ptr<ResourceInitData> GetInitData();
+
+  private:
+    std::shared_ptr<ResourceInitData> mInitData;
+    bool mIsDirty = false;
 };
+
+template <class T> class Resource : public IResource {
+  public:
+    using IResource::IResource;
+    virtual T* GetPointer() = 0;
+    void* GetRawPointer() override {
+        return static_cast<void*>(GetPointer());
+    }
+};
+
 } // namespace LUS

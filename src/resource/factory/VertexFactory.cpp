@@ -3,19 +3,19 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                      std::shared_ptr<BinaryReader> reader) {
+std::shared_ptr<IResource> VertexFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                       std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Vertex>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 
@@ -24,19 +24,19 @@ std::shared_ptr<Resource> VertexFactory::ReadResource(std::shared_ptr<ResourceIn
     return resource;
 }
 
-std::shared_ptr<Resource> VertexFactory::ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
-                                                         tinyxml2::XMLElement* reader) {
+std::shared_ptr<IResource> VertexFactory::ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
+                                                          tinyxml2::XMLElement* reader) {
     auto resource = std::make_shared<Vertex>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
-    switch (resource->InitData->ResourceVersion) {
+    switch (resource->GetInitData()->ResourceVersion) {
         case 0:
             factory = std::make_shared<VertexFactoryV0>();
             break;
     }
 
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->InitData->ResourceVersion);
+        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->GetInitData()->ResourceVersion);
         return nullptr;
     }
 
@@ -45,7 +45,7 @@ std::shared_ptr<Resource> VertexFactory::ReadResourceXML(std::shared_ptr<Resourc
     return resource;
 }
 
-void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) {
+void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
     std::shared_ptr<Vertex> vertex = std::static_pointer_cast<Vertex>(resource);
     ResourceVersionFactory::ParseFileBinary(reader, vertex);
 
@@ -67,7 +67,7 @@ void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
         vertex->VertexList.push_back(data);
     }
 }
-void LUS::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<Resource> resource) {
+void LUS::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<IResource> resource) {
     std::shared_ptr<Vertex> vertex = std::static_pointer_cast<Vertex>(resource);
     auto child = reader->FirstChildElement();
 

@@ -1,7 +1,10 @@
 #include "resource/type/Matrix.h"
 
 namespace LUS {
-void* Matrix::GetPointer() {
+Matrix::Matrix() : Resource(std::shared_ptr<ResourceInitData>()) {
+}
+
+Mtx* Matrix::GetPointer() {
     return &Matrx;
 }
 

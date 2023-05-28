@@ -43,8 +43,8 @@ bool ResourceLoader::RegisterResourceFactory(ResourceType resourceType, std::str
     return true;
 }
 
-std::shared_ptr<Resource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
-    std::shared_ptr<Resource> result = nullptr;
+std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
+    std::shared_ptr<IResource> result = nullptr;
 
     if (fileToLoad != nullptr) {
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer.data(), fileToLoad->Buffer.size());

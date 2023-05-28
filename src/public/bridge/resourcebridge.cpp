@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-std::shared_ptr<LUS::Resource> ResourceLoad(const char* name) {
+std::shared_ptr<LUS::IResource> ResourceLoad(const char* name) {
     return LUS::Context::GetInstance()->GetResourceManager()->LoadResource(name);
 }
 
-std::shared_ptr<LUS::Resource> ResourceLoad(uint64_t crc) {
+std::shared_ptr<LUS::IResource> ResourceLoad(uint64_t crc) {
     auto name = ResourceGetNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
@@ -51,7 +51,7 @@ uint8_t ResourceGetIsCustomByName(const char* name) {
         return false;
     }
 
-    return resource->InitData->IsCustom;
+    return resource->GetInitData()->IsCustom;
 }
 
 uint8_t ResourceGetIsCustomByCrc(uint64_t crc) {
@@ -65,7 +65,7 @@ void* ResourceGetDataByName(const char* name) {
         return nullptr;
     }
 
-    return resource->GetPointer();
+    return resource->GetRawPointer();
 }
 
 void* ResourceGetDataByCrc(uint64_t crc) {
@@ -172,7 +172,7 @@ void ResourceDirtyByName(const char* name) {
     auto resource = ResourceLoad(name);
 
     if (resource != nullptr) {
-        resource->IsDirty = true;
+        resource->Dirty();
     }
 }
 
@@ -180,7 +180,7 @@ void ResourceDirtyByCrc(uint64_t crc) {
     auto resource = ResourceLoad(crc);
 
     if (resource != nullptr) {
-        resource->IsDirty = true;
+        resource->Dirty();
     }
 }
 
