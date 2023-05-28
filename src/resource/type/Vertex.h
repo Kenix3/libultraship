@@ -11,7 +11,7 @@ class Vertex : public Resource {
 
     Vertex();
 
-    void* GetPointer() override;
+    void* GetRawPointer() override;
     size_t GetPointerSize() override;
 
     std::vector<Vtx> VertexList;

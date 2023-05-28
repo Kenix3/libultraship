@@ -72,7 +72,7 @@ class Array : public Resource {
 
     Array();
 
-    void* GetPointer() override;
+    void* GetRawPointer() override;
     size_t GetPointerSize() override;
 
     ArrayResourceType ArrayType;

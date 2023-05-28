@@ -4,7 +4,7 @@ namespace LUS {
 Matrix::Matrix() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
-void* Matrix::GetPointer() {
+void* Matrix::GetRawPointer() {
     return &Matrx;
 }
 

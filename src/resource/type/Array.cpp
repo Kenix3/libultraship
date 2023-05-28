@@ -4,7 +4,7 @@ namespace LUS {
 Array::Array() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
-void* Array::GetPointer() {
+void* Array::GetRawPointer() {
     void* dataPointer = nullptr;
     switch (ArrayType) {
         case ArrayResourceType::Vertex:

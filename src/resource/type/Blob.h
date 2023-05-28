@@ -9,7 +9,7 @@ class Blob : public Resource {
 
     Blob();
 
-    void* GetPointer() override;
+    void* GetRawPointer() override;
     size_t GetPointerSize() override;
 
     std::vector<uint8_t> Data;

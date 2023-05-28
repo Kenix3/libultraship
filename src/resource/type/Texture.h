@@ -25,7 +25,7 @@ class Texture : public Resource {
 
     Texture();
 
-    void* GetPointer() override;
+    void* GetRawPointer() override;
     size_t GetPointerSize() override;
 
     TextureType Type;
