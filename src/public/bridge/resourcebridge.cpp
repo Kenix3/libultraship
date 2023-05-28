@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-std::shared_ptr<LUS::Resource> ResourceLoad(const char* name) {
+std::shared_ptr<LUS::IResource> ResourceLoad(const char* name) {
     return LUS::Context::GetInstance()->GetResourceManager()->LoadResource(name);
 }
 
-std::shared_ptr<LUS::Resource> ResourceLoad(uint64_t crc) {
+std::shared_ptr<LUS::IResource> ResourceLoad(uint64_t crc) {
     auto name = ResourceGetNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {

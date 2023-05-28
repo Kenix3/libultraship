@@ -4,7 +4,7 @@ namespace LUS {
 Texture::Texture() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
-void* Texture::GetRawPointer() {
+uint8_t* Texture::GetPointer() {
     return ImageData;
 }
 

@@ -4,13 +4,13 @@
 #include "libultraship/libultra/types.h"
 
 namespace LUS {
-class Matrix : public Resource {
+class Matrix : public Resource<Mtx> {
   public:
     using Resource::Resource;
 
     Matrix();
 
-    void* GetRawPointer() override;
+    Mtx* GetPointer() override;
     size_t GetPointerSize() override;
 
     Mtx Matrx;

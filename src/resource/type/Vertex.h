@@ -5,13 +5,13 @@
 #include <vector>
 
 namespace LUS {
-class Vertex : public Resource {
+class Vertex : public Resource<Vtx> {
   public:
     using Resource::Resource;
 
     Vertex();
 
-    void* GetRawPointer() override;
+    Vtx* GetPointer() override;
     size_t GetPointerSize() override;
 
     std::vector<Vtx> VertexList;

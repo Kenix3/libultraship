@@ -4,8 +4,8 @@
 
 namespace LUS {
 
-std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                       std::shared_ptr<BinaryReader> reader) {
+std::shared_ptr<IResource> TextureFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                        std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Texture>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
@@ -28,7 +28,7 @@ std::shared_ptr<Resource> TextureFactory::ReadResource(std::shared_ptr<ResourceI
     return resource;
 }
 
-void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) {
+void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
     std::shared_ptr<Texture> texture = std::static_pointer_cast<Texture>(resource);
     ResourceVersionFactory::ParseFileBinary(reader, texture);
 
@@ -44,7 +44,7 @@ void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
     reader->Read((char*)texture->ImageData, dataSize);
 }
 
-void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) {
+void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
     std::shared_ptr<Texture> texture = std::static_pointer_cast<Texture>(resource);
     ResourceVersionFactory::ParseFileBinary(reader, texture);
 

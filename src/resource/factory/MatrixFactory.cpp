@@ -3,8 +3,8 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<Resource> MatrixFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                      std::shared_ptr<BinaryReader> reader) {
+std::shared_ptr<IResource> MatrixFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                       std::shared_ptr<BinaryReader> reader) {
     auto resource = std::make_shared<Matrix>(initData);
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
@@ -24,7 +24,7 @@ std::shared_ptr<Resource> MatrixFactory::ReadResource(std::shared_ptr<ResourceIn
     return resource;
 }
 
-void MatrixFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<Resource> resource) {
+void MatrixFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
     std::shared_ptr<Matrix> mtx = static_pointer_cast<Matrix>(resource);
     ResourceVersionFactory::ParseFileBinary(reader, resource);
 

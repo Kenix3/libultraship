@@ -561,8 +561,8 @@ static bool gfx_texture_cache_lookup(int i, const TextureCacheKey& key) {
 }
 
 static std::string gfx_get_base_texture_path(const std::string& path) {
-    if (path.starts_with(LUS::Resource::gAltAssetPrefix)) {
-        return path.substr(LUS::Resource::gAltAssetPrefix.length());
+    if (path.starts_with(LUS::IResource::gAltAssetPrefix)) {
+        return path.substr(LUS::IResource::gAltAssetPrefix.length());
     }
 
     return path;

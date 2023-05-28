@@ -66,13 +66,13 @@ enum class ArrayResourceType {
     Audio
 };
 
-class Array : public Resource {
+class Array : public Resource<void> {
   public:
     using Resource::Resource;
 
     Array();
 
-    void* GetRawPointer() override;
+    void* GetPointer() override;
     size_t GetPointerSize() override;
 
     ArrayResourceType ArrayType;

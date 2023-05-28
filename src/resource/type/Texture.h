@@ -19,13 +19,13 @@ enum class TextureType {
     GrayscaleAlpha16bpp = 9,
 };
 
-class Texture : public Resource {
+class Texture : public Resource<uint8_t> {
   public:
     using Resource::Resource;
 
     Texture();
 
-    void* GetRawPointer() override;
+    uint8_t* GetPointer() override;
     size_t GetPointerSize() override;
 
     TextureType Type;
