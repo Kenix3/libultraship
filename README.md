@@ -5,7 +5,7 @@ LUS uses an asset loading system where data is stored separately from the execut
 
 ## Contributing
 LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/RQvdvavB).
-Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/README.md) file for more information.
+Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/CONTRIBUTING.md) file for more information.
 
 ## Versioning
 We use semantic versioning. We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h.
