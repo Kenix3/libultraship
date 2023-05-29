@@ -8,7 +8,7 @@ LUS accepts any and all contributions. You can interact with the project via PRs
 Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/README.md) file for more information.
 
 ## Versioning
-We use semantic versioning. We have defined the API as `every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h`.
+We use semantic versioning. We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h.
 
 ## Building on Linux/Mac
 ```
@@ -27,11 +27,6 @@ cmake --build build
 ## To build on Windows
 ```
 & 'C:\Program Files\CMake\bin\cmake' --build .\build\x64
-```
-
-## Running clang-format
-```
-find src include -name "*.cpp" -o -name "*.h" | sed 's| |\\ |g' | xargs clang-format-12 -i
 ```
 
 ## Sponsors
