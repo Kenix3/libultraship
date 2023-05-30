@@ -293,7 +293,6 @@ void ControlDeck::SaveSettings() {
                 config->SetFloat(NESTED("GyroData.%d", key), val);
             }
 
-            virtualSlot++;
         }
     }
 
