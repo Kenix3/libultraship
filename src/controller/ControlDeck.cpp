@@ -292,7 +292,6 @@ void ControlDeck::SaveSettings() {
             for (auto const& [key, val] : profile->GyroData) {
                 config->SetFloat(NESTED("GyroData.%d", key), val);
             }
-
         }
     }
 
