@@ -562,12 +562,17 @@ static bool gfx_dxgi_start_frame(void) {
             vsyncs_to_wait = 4;
             dxgi.use_timer = true;
         }
-        dxgi.length_in_vsync_frames = vsyncs_to_wait;
     } else {
-        dxgi.length_in_vsync_frames = 1;
         dxgi.use_timer = true;
     }
-
+    // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
+    // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
+    // Get the present interval the user wants instead (V-Sync toggle).
+    if (dxgi.is_vsync_enabled != CVarGetInteger("gVsyncEnabled", 1)) {
+        // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
+        dxgi.is_vsync_enabled = !!CVarGetInteger("gVsyncEnabled", 1);
+    }
+    dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
     return true;
 }
 
@@ -587,7 +592,12 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     }
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;
-    ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
+    if (dxgi.tearing_support && !dxgi.length_in_vsync_frames) {
+        // 512: DXGI_PRESENT_ALLOW_TEARING - allows for true V-Sync off with flip model
+        ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 512));
+    } else {
+        ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
+    }
 
     UINT this_present_id;
     if (dxgi.swap_chain->GetLastPresentCount(&this_present_id) == S_OK) {
@@ -718,8 +728,8 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
         dxgi.dxgi1_4 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : // Introduced in DXGI 1.4 and Windows 10
             DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // Apparently flip sequential was also backported to Win 7 Platform Update
     swap_chain_desc.Flags = dxgi_13 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
-    if (dxgi.tearing_support && !dxgi.is_vsync_enabled) {
-        swap_chain_desc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+    if (dxgi.tearing_support) {
+        swap_chain_desc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING; // Now we can use DXGI_PRESENT_ALLOW_TEARING
     }
     swap_chain_desc.SampleDesc.Count = 1;
 
