@@ -1,6 +1,7 @@
 #ifdef __WIIU__
 #include "WiiUGamepad.h"
 #include <cstring>
+#include <algorithm>
 #include "WiiUImpl.h"
 
 namespace LUS {
