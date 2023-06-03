@@ -1,6 +1,6 @@
 #ifdef __WIIU__
 #include "WiiUGamepad.h"
-
+#include <cstring>
 #include "WiiUImpl.h"
 
 namespace LUS {
@@ -228,7 +228,7 @@ const std::string WiiUGamepad::GetButtonName(int32_t portIndex, int32_t n64bitma
     std::map<int32_t, int32_t>& mappings = GetProfile(portIndex)->Mappings;
     const auto find =
         std::find_if(mappings.begin(), mappings.end(),
-                     [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
+                     [n64bitmask](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64bitmask; });
 
     if (find == mappings.end())
         return "Unknown";
