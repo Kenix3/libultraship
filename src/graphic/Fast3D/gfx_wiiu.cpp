@@ -303,8 +303,8 @@ static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool 
     gfx_current_dimensions.width = gfx_current_game_window_viewport.width = WIIU_DEFAULT_FB_WIDTH;
     gfx_current_dimensions.height = gfx_current_game_window_viewport.height = WIIU_DEFAULT_FB_HEIGHT;
 
-    LUS::WindowImpl window_impl;
-    window_impl.backend = LUS::Backend::GX2;
+    LUS::GuiWindowInitData window_impl;
+    // window_impl.backend = LUS::Backend::GX2;
     window_impl.Gx2.Width = WIIU_DEFAULT_FB_WIDTH;
     window_impl.Gx2.Height = WIIU_DEFAULT_FB_HEIGHT;
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
@@ -391,7 +391,7 @@ static void gfx_wiiu_handle_events(void) {
         }
     }
 
-    LUS::EventImpl event_impl;
+    LUS::WindowEvent event_impl;
     event_impl.Gx2.Input = &input;
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
 }

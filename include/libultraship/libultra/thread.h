@@ -1,6 +1,8 @@
 #ifndef ULTRA64_THREAD_H
 #define ULTRA64_THREAD_H
 
+#ifndef __WIIU__
+
 #include "types.h"
 
 #define OS_PRIORITY_MAX 255
@@ -60,5 +62,7 @@ typedef struct OSThread {
     /* 0x1C */ __OSThreadprofile* thprof;
     /* 0x20 */ __OSThreadContext context;
 } OSThread; // size = 0x1B0
+
+#endif
 
 #endif

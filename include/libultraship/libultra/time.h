@@ -3,6 +3,7 @@
 
 #include "message.h"
 
+#ifndef __WIIU__
 typedef u64 OSTime;
 
 typedef struct OSTimer {
@@ -13,5 +14,6 @@ typedef struct OSTimer {
     /* 0x18 */ OSMesgQueue* mq;
     /* 0x1C */ OSMesg msg;
 } OSTimer; // size = 0x20
+#endif
 
 #endif
