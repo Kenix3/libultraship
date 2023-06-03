@@ -1,7 +1,7 @@
 #ifdef __WIIU__
 #include "WiiUController.h"
 #include "window/Window.h"
-
+#include <algorithm>
 #include "WiiUImpl.h"
 
 namespace LUS {
