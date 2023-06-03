@@ -4,8 +4,8 @@
 #include <time.h>
 #include <malloc.h>
 
-#include <coreinit/time.h>
-#include <coreinit/thread.h>
+// #include <coreinit/time.h>
+// #include <coreinit/thread.h>
 #include <coreinit/foreground.h>
 #include <coreinit/memory.h>
 #include <coreinit/memheap.h>
