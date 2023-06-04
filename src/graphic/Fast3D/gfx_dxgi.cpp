@@ -372,11 +372,21 @@ static void gfx_dxgi_set_cursor_visibility(bool visible) {
     // https://devblogs.microsoft.com/oldnewthing/20091217-00/?p=15643
     // ShowCursor uses a counter, not a boolean value, and increments or decrements that value when called
     // This means we need to keep calling it until we get the value we want
+
+    //
+    //  NOTE:  If you continue calling until you "get the value you want" and there is no mouse attached,
+    //  it will lock the software up.  Windows always returns -1 if there is no mouse!
+    //
+
+    const int _MAX_TRIES = 15; // Prevent spinning infinitely if no mouse is plugged in
+
+    int cursorVisibilityTries = 0;
     int cursorVisibilityCounter;
     if (visible) {
         do {
             cursorVisibilityCounter = ShowCursor(true);
-        } while (cursorVisibilityCounter < 0);
+        } while (cursorVisibilityCounter < 0 &&
+               ++cursorVisibilityTries   < _MAX_TRIES);
     } else {
         do {
             cursorVisibilityCounter = ShowCursor(false);
