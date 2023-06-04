@@ -147,8 +147,11 @@ template <typename Fun> static void run_as_dpi_aware(Fun f) {
 }
 
 static void apply_maximum_frame_latency(bool first) {
+    DXGI_SWAP_CHAIN_DESC       swap_desc = {};
+    dxgi.swap_chain->GetDesc (&swap_desc);
+    
     ComPtr<IDXGISwapChain2> swap_chain2;
-    if (dxgi.swap_chain->QueryInterface(__uuidof(IDXGISwapChain2), &swap_chain2) == S_OK) {
+    if ((swap_desc.Flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) && dxgi.swap_chain->QueryInterface(__uuidof(IDXGISwapChain2), &swap_chain2) == S_OK) {
         ThrowIfFailed(swap_chain2->SetMaximumFrameLatency(dxgi.maximum_frame_latency));
         if (first) {
             dxgi.waitable_object = swap_chain2->GetFrameLatencyWaitableObject();
