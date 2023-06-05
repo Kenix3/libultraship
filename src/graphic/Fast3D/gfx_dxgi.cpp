@@ -307,7 +307,13 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     dxgi.target_fps = 60;
     dxgi.maximum_frame_latency = 1;
-    dxgi.timer = CreateWaitableTimer(nullptr, false, nullptr);
+
+    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    dxgi.timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution timer if unsupported by the OS
+    if (dxgi.timer == nullptr) {
+        dxgi.timer = CreateWaitableTimer(nullptr, FALSE, nullptr);
+    }
 
     // Prepare window title
 
@@ -373,11 +379,9 @@ static void gfx_dxgi_set_cursor_visibility(bool visible) {
     // https://devblogs.microsoft.com/oldnewthing/20091217-00/?p=15643
     // ShowCursor uses a counter, not a boolean value, and increments or decrements that value when called
     // This means we need to keep calling it until we get the value we want
-
     //
     //  NOTE:  If you continue calling until you "get the value you want" and there is no mouse attached,
     //  it will lock the software up.  Windows always returns -1 if there is no mouse!
-    //
 
     const int _MAX_TRIES = 15; // Prevent spinning infinitely if no mouse is plugged in
 
