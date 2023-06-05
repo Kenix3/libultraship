@@ -4,8 +4,8 @@
 #include <time.h>
 #include <malloc.h>
 
-// #include <coreinit/time.h>
-// #include <coreinit/thread.h>
+#include <coreinit/time.h>
+#include <coreinit/thread.h>
 #include <coreinit/foreground.h>
 #include <coreinit/memory.h>
 #include <coreinit/memheap.h>
@@ -39,7 +39,6 @@
 
 #include <ImGui/backends/wiiu/imgui_impl_wiiu.h>
 #include "port/wiiu/WiiUImpl.h" 
-// #include "libultraship/libultraship.h"
 #include "libultraship/classes.h"
 
 static MEMHeapHandle heap_MEM1 = nullptr;
@@ -305,7 +304,6 @@ static void gfx_wiiu_init(const char* game_name, const char* gfx_api_name, bool 
     gfx_current_dimensions.height = gfx_current_game_window_viewport.height = WIIU_DEFAULT_FB_HEIGHT;
 
     LUS::GuiWindowInitData window_impl;
-    // window_impl.backend = LUS::Backend::GX2;
     window_impl.Gx2.Width = WIIU_DEFAULT_FB_WIDTH;
     window_impl.Gx2.Height = WIIU_DEFAULT_FB_HEIGHT;
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
