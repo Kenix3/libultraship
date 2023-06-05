@@ -38,8 +38,9 @@
 #include "gfx_wiiu.h"
 
 #include <ImGui/backends/wiiu/imgui_impl_wiiu.h>
-#include "port/wiiu/WiiUImpl.h"
-#include "libultraship/libultraship.h"
+#include "port/wiiu/WiiUImpl.h" 
+// #include "libultraship/libultraship.h"
+#include "libultraship/classes.h"
 
 static MEMHeapHandle heap_MEM1 = nullptr;
 static MEMHeapHandle heap_foreground = nullptr;
