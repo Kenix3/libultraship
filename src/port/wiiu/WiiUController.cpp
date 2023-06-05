@@ -1,8 +1,7 @@
 #ifdef __WIIU__
 #include "WiiUController.h"
 #include "window/Window.h"
-#include "menu/ImGuiImpl.h"
-
+#include <algorithm>
 #include "WiiUImpl.h"
 
 namespace LUS {
@@ -307,7 +306,7 @@ const std::string WiiUController::GetButtonName(int32_t portIndex, int32_t n64bi
     std::map<int32_t, int32_t>& Mappings = GetProfile(portIndex)->Mappings;
     const auto find =
         std::find_if(Mappings.begin(), Mappings.end(),
-                     [n64Button](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64Button; });
+                     [n64bitmask](const std::pair<int32_t, int32_t>& pair) { return pair.second == n64bitmask; });
 
     if (find == Mappings.end())
         return "Unknown";

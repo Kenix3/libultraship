@@ -364,8 +364,8 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ZAPDUtils StrHash64
-    PUBLIC ImGui storm tinyxml2 nlohmann_json::nlohmann_json
+    PRIVATE StrHash64
+    PUBLIC ZAPDUtils ImGui storm tinyxml2 nlohmann_json::nlohmann_json
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")

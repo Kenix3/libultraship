@@ -9,6 +9,8 @@
 #include "graphic/Fast3D/gfx_dxgi.h"
 #include "graphic/Fast3D/gfx_opengl.h"
 #include "graphic/Fast3D/gfx_metal.h"
+#include "graphic/Fast3D/gfx_gx2.h"
+#include "graphic/Fast3D/gfx_wiiu.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
 #include "controller/KeyboardScancodes.h"
