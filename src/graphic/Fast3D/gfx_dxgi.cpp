@@ -303,7 +303,13 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     dxgi.target_fps = 60;
     dxgi.maximum_frame_latency = 1;
-    dxgi.timer = CreateWaitableTimer(nullptr, false, nullptr);
+
+    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    dxgi.timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution timer if unsupported by the OS
+    if (dxgi.timer == nullptr) {
+        dxgi.timer = CreateWaitableTimer(nullptr, FALSE, nullptr);
+    }
 
     // Prepare window title
 
