@@ -364,8 +364,8 @@ endif()
 #=================== Linking ===================
 
 target_link_libraries(libultraship
-    PRIVATE ZAPDUtils StrHash64
-    PUBLIC ImGui storm tinyxml2 nlohmann_json::nlohmann_json
+    PRIVATE StrHash64
+    PUBLIC ZAPDUtils ImGui storm tinyxml2 nlohmann_json::nlohmann_json
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
@@ -452,15 +452,7 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
 	target_compile_options(libultraship PRIVATE
-		-Wall
-		-Wextra
-		-Wno-error
-		-Wno-unused-variable
-		-Wno-unused-parameter
-		-Wno-unused-function
-		-Wno-parentheses
-		-Wno-narrowing
-		-Wno-missing-field-initializers
+		-w
         $<$<COMPILE_LANGUAGE:C,OBJC>:-Wno-int-conversion>
 	)
 endif()
