@@ -452,15 +452,15 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
 	target_compile_options(libultraship PRIVATE
-        -Wall
-        -Wextra
-        -Wno-error
-        -Wno-unused-variable
-        -Wno-unused-parameter
-        -Wno-unused-function
-        -Wno-parentheses
-        -Wno-narrowing
-        -Wno-missing-field-initializers
+		-Wall
+		-Wextra
+		-Wno-error
+		-Wno-unused-variable
+		-Wno-unused-parameter
+		-Wno-unused-function
+		-Wno-parentheses
+		-Wno-narrowing
+		-Wno-missing-field-initializers
         $<$<COMPILE_LANGUAGE:C,OBJC>:-Wno-int-conversion>
 	)
 endif()
