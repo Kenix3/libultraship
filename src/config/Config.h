@@ -8,6 +8,10 @@
 #include "window/Window.h"
 
 namespace LUS {
+class ConfigVersionUpdater {
+  public:
+    virtual void Update(std::shared_ptr<Config> conf) = 0;
+};
 class Config {
   public:
     Config(std::string path);
@@ -36,6 +40,9 @@ class Config {
     WindowBackend GetWindowBackend();
     void SetWindowBackend(WindowBackend backend);
 
+    void RegisterConfigVersion(std::shared_ptr<ConfigVersionUpdater> version);
+    void RunVersionUpdates();
+
   protected:
     nlohmann::json Nested(const std::string& key);
     static std::string FormatNestedKey(const std::string& key);
@@ -47,5 +54,6 @@ class Config {
     nlohmann::json mNestedJson;
     std::string mPath;
     bool mIsNewInstance;
+    std::vector<std::shared_ptr<ConfigVersionUpdater>> mVersions;
 };
 } // namespace LUS
