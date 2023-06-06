@@ -76,7 +76,7 @@ void Context::CreateDefaultSettings() {
         GetConfig()->SetString("Game.Main Archive", "");
         GetConfig()->SetString("Game.Patches Archive", "");
 
-        GetConfig()->SetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F9);
+        GetConfig()->SetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F11);
         GetConfig()->SetInt("Shortcuts.Console", KbScancode::LUS_KB_OEM_3);
 
         GetConfig()->Save();
