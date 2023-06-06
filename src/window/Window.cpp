@@ -142,7 +142,7 @@ void Window::MainLoop(void (*mainFunction)(void)) {
 }
 
 bool Window::KeyUp(int32_t scancode) {
-    if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F9)) {
+    if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F11)) {
         Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
