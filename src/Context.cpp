@@ -57,39 +57,12 @@ Context::Context(std::string name, std::string shortName, std::string configFile
     : mName(std::move(name)), mShortName(std::move(shortName)), mConfigFilePath(std::move(configFilePath)) {
 }
 
-void Context::CreateDefaultSettings() {
-    if (GetConfig()->IsNewInstance()) {
-        GetConfig()->SetInt("Window.Width", 640);
-        GetConfig()->SetInt("Window.Height", 480);
-        GetConfig()->SetInt("Window.PositionX", 100);
-        GetConfig()->SetInt("Window.PositionY", 100);
-
-        GetConfig()->SetString("Window.GfxBackend", "");
-        GetConfig()->SetString("Window.GfxApi", "");
-        GetConfig()->SetString("Window.AudioBackend", "");
-
-        GetConfig()->SetBool("Window.Fullscreen.Enabled", false);
-        GetConfig()->SetInt("Window.Fullscreen.Width", 1920);
-        GetConfig()->SetInt("Window.Fullscreen.Height", 1080);
-
-        GetConfig()->SetString("Game.SaveName", "");
-        GetConfig()->SetString("Game.Main Archive", "");
-        GetConfig()->SetString("Game.Patches Archive", "");
-
-        GetConfig()->SetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F11);
-        GetConfig()->SetInt("Shortcuts.Console", KbScancode::LUS_KB_OEM_3);
-
-        GetConfig()->Save();
-    }
-}
-
 void Context::Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
                    uint32_t reservedThreadCount) {
     InitLogging();
     InitConfiguration();
     InitConsoleVariables();
     InitResourceManager(otrFiles, validHashes, reservedThreadCount);
-    CreateDefaultSettings();
     InitControlDeck();
     InitCrashHandler();
     InitConsole();

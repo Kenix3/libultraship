@@ -272,9 +272,10 @@ void Config::RegisterConfigVersion(std::shared_ptr<ConfigVersionUpdater> version
 void Config::RunVersionUpdates() {
     uint32_t version = GetUInt("ConfigVersion", 0);
     for (uint32_t i = version; i < mVersions.size(); i++) {
-        mVersions[i]->Update(std::shared_ptr<Config>(this));
+        mVersions[i]->Update(this);
         SetUInt("ConfigVersion", i + 1);
     }
+    Save();
 }
 
 } // namespace LUS

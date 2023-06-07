@@ -10,7 +10,7 @@
 namespace LUS {
 class ConfigVersionUpdater {
   public:
-    virtual void Update(std::shared_ptr<Config> conf) = 0;
+    virtual void Update(Config* conf) = 0;
 };
 class Config {
   public:
