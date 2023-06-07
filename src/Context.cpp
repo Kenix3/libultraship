@@ -275,7 +275,7 @@ std::string Context::GetAppDirectoryPath() {
     }
 #endif
 
-    char *prefpath = SDL_GetPrefPath(NULL, "soh");
+    char* prefpath = SDL_GetPrefPath(NULL, "soh");
     if (prefpath != NULL) {
         std::string ret(prefpath);
         SDL_free(prefpath);
