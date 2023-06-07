@@ -4,6 +4,7 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include "install_config.h"
 
 #ifdef __APPLE__
 #include "utils/OSXFolderManager.h"
@@ -254,19 +255,16 @@ std::string Context::GetShortName() {
 }
 
 std::string Context::GetAppBundlePath() {
+#ifdef SHIP_BIN_DIR
+    return SHIP_BIN_DIR;
+#else
 #ifdef __APPLE__
     FolderManager folderManager;
     return folderManager.getMainBundlePath();
 #endif
 
-#ifdef __linux__
-    char* fpath = std::getenv("SHIP_BIN_DIR");
-    if (fpath != NULL) {
-        return std::string(fpath);
-    }
-#endif
-
     return ".";
+#endif
 }
 
 std::string Context::GetAppDirectoryPath() {
@@ -276,6 +274,13 @@ std::string Context::GetAppDirectoryPath() {
         return std::string(fpath);
     }
 #endif
+
+    char *prefpath = SDL_GetPrefPath(NULL, "soh");
+    if (prefpath != NULL) {
+        std::string ret(prefpath);
+        SDL_free(prefpath);
+        return ret;
+    }
 
     return ".";
 }
@@ -287,4 +292,22 @@ std::string Context::GetPathRelativeToAppBundle(const std::string path) {
 std::string Context::GetPathRelativeToAppDirectory(const std::string path) {
     return GetAppDirectoryPath() + "/" + path;
 }
+
+std::string Context::LocateFileAcrossAppDirs(const std::string path) {
+    std::string fpath;
+
+    // app configuration dir
+    fpath = GetPathRelativeToAppDirectory(path);
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+    // app install dir
+    fpath = GetPathRelativeToAppBundle(path);
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+    // current dir
+    return "./" + std::string(path);
+}
+
 } // namespace LUS

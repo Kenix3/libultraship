@@ -9,9 +9,12 @@ endif()
 
 #=================== Top-Level ===================
 
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/install_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/install_config.h @ONLY)
+
 set(Source_Files__TopLevel
     ${CMAKE_CURRENT_SOURCE_DIR}/Context.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Context.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/install_config.h
 )
 
 source_group("" FILES ${Source_Files__TopLevel})
@@ -351,7 +354,7 @@ endif()
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 

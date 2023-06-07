@@ -14,8 +14,8 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
     }
 
 #ifndef __SWITCH__
-    const char* controllerDb = "gamecontrollerdb.txt";
-    int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb);
+    std::string controllerDb = LUS::Context::LocateFileAcrossAppDirs("gamecontrollerdb.txt");
+    int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb.c_str());
     if (mappingsAdded >= 0) {
         SPDLOG_INFO("Added SDL game controllers from \"{}\" ({})", controllerDb, mappingsAdded);
     } else {
