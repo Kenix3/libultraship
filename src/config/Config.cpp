@@ -281,7 +281,7 @@ void Config::RunVersionUpdates() {
     Save();
 }
 
-ConfigVersionUpdater::ConfigVersionUpdater(uint32_t version_) : mVersion(version_) {
+ConfigVersionUpdater::ConfigVersionUpdater(uint32_t version) : mVersion(version) {
 }
 
 uint32_t ConfigVersionUpdater::GetVersion() {

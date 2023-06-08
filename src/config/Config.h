@@ -22,13 +22,14 @@ namespace LUS {
 class ConfigVersionUpdater {
   protected:
     uint32_t mVersion;
+
   public:
-    ConfigVersionUpdater(uint32_t version_);
+    ConfigVersionUpdater(uint32_t version);
     /**
      * @brief Performs actions on a Config object via the provided pointer to update it
      * to the next version. (i.e. removing/changing default values or renaming options)
-     * 
-     * @param conf 
+     *
+     * @param conf
      */
     virtual void Update(Config* conf) = 0;
 
@@ -69,8 +70,8 @@ class Config {
 
     /**
      * @brief Adds a ConfigVersionUpdater instance to the list to be run later via RunVersionUpdates
-     * 
-     * @param versionUpdater 
+     *
+     * @param versionUpdater
      * @return true if the insert was successful, or
      * @return false if the insert failed, i.e. if the list already has a ConfigVersionUpdater with
      * a matching version.
@@ -80,7 +81,7 @@ class Config {
     /**
      * @brief Runs the Update function on each ConfigVersionUpdater instance if the version matches\
      * the current ConfigVersion value of the config object.
-     * 
+     *
      */
     void RunVersionUpdates();
 
