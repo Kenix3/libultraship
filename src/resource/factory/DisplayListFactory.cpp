@@ -160,6 +160,11 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
         } else if (childName == "SetEnvColor") {
             g = gsDPSetEnvColor(child->IntAttribute("R"), child->IntAttribute("G"), child->IntAttribute("B"),
                                 child->IntAttribute("A"));
+        } else if (childName == "Grayscale") {
+            g = gsSPGrayscale(child->BoolAttribute("Enabled"));
+        } else if (childName == "SetGrayscaleColor") {
+            g = gsDPSetGrayscaleColor(child->IntAttribute("R"), child->IntAttribute("G"), child->IntAttribute("B"),
+                                      child->IntAttribute("A"));
         } else if (childName == "SetDepthSource") {
             g = gsDPSetDepthSource(child->IntAttribute("Mode"));
         } else if (childName == "SetAlphaCompare") {
