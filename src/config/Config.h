@@ -35,8 +35,8 @@ class ConfigVersionUpdater {
 
     /**
      * @brief Get the value of mVersion
-     * 
-     * @return uint32_t 
+     *
+     * @return uint32_t
      */
     uint32_t GetVersion();
 };
