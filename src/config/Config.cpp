@@ -265,17 +265,27 @@ void Config::SetWindowBackend(WindowBackend backend) {
     }
 }
 
-void Config::RegisterConfigVersion(std::shared_ptr<ConfigVersionUpdater> version) {
-    mVersions.push_back(version);
+bool Config::RegisterConfigVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {
+    auto [_, emplaced] = mVersionUpdaters.emplace(versionUpdater->GetVersion(), versionUpdater);
+    return emplaced;
 }
 
 void Config::RunVersionUpdates() {
-    uint32_t version = GetUInt("ConfigVersion", 0);
-    for (uint32_t i = version; i < mVersions.size(); i++) {
-        mVersions[i]->Update(this);
-        SetUInt("ConfigVersion", i + 1);
+    for (auto [_, versionUpdater] : mVersionUpdaters) {
+        uint32_t version = GetUInt("ConfigVersion", 0);
+        if (version == versionUpdater->GetVersion()) {
+            versionUpdater->Update(this);
+            SetUInt("ConfigVersion", version + 1);
+        }
     }
     Save();
+}
+
+ConfigVersionUpdater::ConfigVersionUpdater(uint32_t version_) : mVersion(version_) {
+}
+
+uint32_t ConfigVersionUpdater::GetVersion() {
+    return mVersion;
 }
 
 } // namespace LUS
