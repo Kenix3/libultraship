@@ -183,6 +183,7 @@
 
 // RDP Cmd
 #define G_SETGRAYSCALE 0x39
+#define G_EXTRAGEOMETRYMODE 0x3a
 #define G_SETINTENSITY 0x40
 
 /*
@@ -358,6 +359,11 @@
 #define G_CLIPPING_H (G_CLIPPING / 0x10000)
 #endif
 #endif
+
+/*
+ * G_EXTRAGEOMETRY flags: set extra custom geometry modes
+ */
+#define G_EX_INVERT_CULLING 0x00000001
 
 /* Need these defined for Sprite Microcode */
 #ifdef _LANGUAGE_ASSEMBLY
@@ -2652,6 +2658,17 @@ typedef union {
 
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
+
+#define gSPExtraGeometryMode(pkt, c, s)                                                 \
+    _DW({                                                                               \
+        Gfx* _g = (Gfx*)(pkt);                                                          \
+                                                                                        \
+        _g->words.w0 = _SHIFTL(G_EXTRAGEOMETRYMODE, 24, 8) | _SHIFTL(~(u32)(c), 0, 24); \
+        _g->words.w1 = (u32)(s);                                                        \
+    })
+
+#define gSPSetExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), 0, word)
+#define gSPClearExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), word, 0)
 
 #ifdef F3DEX_GBI_2
 /*
