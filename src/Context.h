@@ -26,10 +26,10 @@ class Context {
                                                    uint32_t reservedThreadCount = 1);
 
     static std::string GetAppBundlePath();
-    static std::string GetAppDirectoryPath();
-    static std::string GetPathRelativeToAppDirectory(const std::string path);
+    static std::string GetAppDirectoryPath(const std::string appname);
+    static std::string GetPathRelativeToAppDirectory(const std::string path, const std::string appname);
     static std::string GetPathRelativeToAppBundle(const std::string path);
-    static std::string LocateFileAcrossAppDirs(const std::string path);
+    static std::string LocateFileAcrossAppDirs(const std::string path, const std::string appname);
 
     Context(std::string name, std::string shortName, std::string configFilePath);
     ~Context();
