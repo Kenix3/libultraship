@@ -13,6 +13,7 @@
 #include <dxgi1_4.h>
 #include <dxgi1_5.h>
 #include <versionhelpers.h>
+#include <d3d11.h>
 
 #include <shellscalingapi.h>
 
@@ -584,7 +585,21 @@ static bool gfx_dxgi_start_frame(void) {
 
 static void gfx_dxgi_swap_buffers_begin(void) {
     LARGE_INTEGER t;
+    // dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
+        ComPtr<ID3D11Device> device;
+        dxgi.swap_chain_device.As(&device);
+
+        if (device != nullptr) {
+            ComPtr<ID3D11DeviceContext> dev_ctx;
+            device->GetImmediateContext(&dev_ctx);
+
+            if (dev_ctx != nullptr) {
+                // Always flush the immediate context before forcing a CPU-wait, otherwise the GPU might only start
+                // working when the SwapChain is presented.
+                dev_ctx->Flush();
+            }
+        }
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
