@@ -588,12 +588,17 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
-        int64_t left = next - qpc_to_100ns(t.QuadPart);
+        int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
         if (left > 0) {
             LARGE_INTEGER li;
             li.QuadPart = -left;
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
             WaitForSingleObject(dxgi.timer, INFINITE);
+
+            do {
+                YieldProcessor();
+                QueryPerformanceCounter(&t);
+            } while (t.QuadPart < next);
         }
     }
     QueryPerformanceCounter(&t);
