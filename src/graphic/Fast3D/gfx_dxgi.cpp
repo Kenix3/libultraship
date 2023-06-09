@@ -73,8 +73,8 @@ static struct {
     HMONITOR h_Monitor;
     std::vector<std::tuple<HMONITOR, RECT, BOOL>> monitor_list;
     bool zero_latency;
-    float detected_hz;
-    float display_period; // (1000 / dxgi.detected_hz) in ms
+    double detected_hz;
+    double display_period; // (1000 / dxgi.detected_hz) in ms
     UINT length_in_vsync_frames;
     uint32_t target_fps;
     uint32_t maximum_frame_latency;
@@ -278,16 +278,16 @@ HMONITOR GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> Monito
     }
 }
 
-float HzToPeriod(float Frequency) {
+double HzToPeriod(double Frequency) {
     if (Frequency == 0)
         Frequency = 60; // Default to 60, to prevent devision by zero
-    float period = (float)1000 / Frequency;
+    double period = (double)1000 / Frequency;
     if (period == 0)
         period = 16.666666; // In case we go too low, use 16 ms (60 Hz) to prevent division by zero later
     return period;
 }
 
-void GetMonitorHzPeriod(HMONITOR hMonitor, float& Frequency, float& Period) {
+void GetMonitorHzPeriod(HMONITOR hMonitor, double& Frequency, double& Period) {
     DEVMODE dm = {};
     dm.dmSize = sizeof(DEVMODE);
     if (hMonitor != NULL) {
@@ -574,16 +574,15 @@ static bool gfx_dxgi_start_frame(void) {
             sync_vsync_diff = 1;
         }
 
-        // More consistent time with this?:
         // uint64_t estimated_vsync_interval_ns = dxgi.display_period * 1000000;
-        // double estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
+        // double estimated_vsync_interval = (double)estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         double estimated_vsync_interval = (double)sync_qpc_diff / (double)sync_vsync_diff;
         uint64_t estimated_vsync_interval_ns = qpc_to_ns(estimated_vsync_interval);
         // printf("Estimated vsync_interval: %d\n", (int)estimated_vsync_interval_ns);
         if (estimated_vsync_interval_ns < 2000 || estimated_vsync_interval_ns > 1000000000) {
             // Unreasonable, maybe a monitor change
             estimated_vsync_interval_ns = 16666666;
-            estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
+            estimated_vsync_interval = (double)estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         }
 
         UINT queued_vsyncs = 0;
@@ -674,7 +673,7 @@ static bool gfx_dxgi_start_frame(void) {
 
 static void gfx_dxgi_swap_buffers_begin(void) {
     LARGE_INTEGER t;
-    // dxgi.use_timer = true;
+    dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
         ComPtr<ID3D11Device> device;
         dxgi.swap_chain_device.As(&device);
