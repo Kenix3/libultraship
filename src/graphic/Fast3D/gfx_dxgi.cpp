@@ -69,8 +69,11 @@ static struct {
     std::map<UINT, DXGI_FRAME_STATISTICS> frame_stats;
     std::set<std::pair<UINT, UINT>> pending_frame_stats;
     bool dropped_frame;
+    HMONITOR h_Monitor;
+    std::vector<std::tuple<HMONITOR, RECT, BOOL>> monitor_list;
     bool zero_latency;
     float detected_hz;
+    float display_period; // (1000 / dxgi.detected_hz) in ms
     UINT length_in_vsync_frames;
     uint32_t target_fps;
     uint32_t maximum_frame_latency;
@@ -240,11 +243,71 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
     }
 }
 
+std::vector<std::tuple<HMONITOR, RECT, BOOL>> GetMonitorList() {
+    std::vector<std::tuple<HMONITOR, RECT, BOOL>> monitors;
+    EnumDisplayMonitors(
+        nullptr, nullptr,
+        [](HMONITOR hmon, HDC hdc, LPRECT rc, LPARAM lp) {
+            UNREFERENCED_PARAMETER(hdc);
+            UNREFERENCED_PARAMETER(rc);
+
+            bool isPrimary;
+            MONITORINFOEX mi = {};
+            mi.cbSize = sizeof(MONITORINFOEX);
+            GetMonitorInfo(hmon, &mi);
+            auto monitors = (std::vector<std::tuple<HMONITOR, RECT, BOOL>>*)lp;
+            if (mi.dwFlags == MONITORINFOF_PRIMARY) {
+                isPrimary = TRUE;
+            } else {
+                isPrimary = FALSE;
+            }
+            monitors->push_back({ hmon, mi.rcMonitor, isPrimary });
+            return TRUE;
+        },
+        (LPARAM)&monitors);
+    return monitors;
+}
+
+// Uses coordinates to get a Monitor handle from a list
+HMONITOR GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorList, int x, int y) {
+    for (auto i : MonitorList) {
+        if (PtInRect(&std::get<1>(i), POINT(x, y))) {
+            return std::get<0>(i);
+        }
+    }
+}
+
+float HzToPeriod(float Frequency) {
+    if (Frequency == 0)
+        Frequency = 60; // Default to 60, to prevent devision by zero
+    float period = (float)1000 / Frequency;
+    if (period == 0)
+        period = 16.666666; // In case we go too low, use 16 ms (60 Hz) to prevent division by zero later
+    return period;
+}
+
+void GetMonitorHzPeriod(HMONITOR hMonitor, float& Frequency, float& Period) {
+    DEVMODE dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    if (hMonitor != NULL) {
+        MONITORINFOEX minfoex = {};
+        minfoex.cbSize = sizeof(MONITORINFOEX);
+
+        if (GetMonitorInfo(hMonitor, (LPMONITORINFOEX)&minfoex)) {
+            if (EnumDisplaySettings(minfoex.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+                Frequency = dm.dmDisplayFrequency;
+                Period = HzToPeriod(Frequency);
+            }
+        }
+    }
+}
+
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
     LUS::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
+    HMONITOR newMonitor;
     switch (message) {
         case WM_SIZE:
             dxgi.current_width = LOWORD(l_param);
@@ -253,6 +316,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOVE:
             dxgi.posX = LOWORD(l_param);
             dxgi.posY = HIWORD(l_param);
+            newMonitor = GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY);
+            if (newMonitor != dxgi.h_Monitor) {
+                dxgi.h_Monitor = newMonitor;
+                GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
+            }
             break;
         case WM_DESTROY:
             PostQuitMessage(0);
@@ -290,6 +358,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             CVarSetString("gDroppedFile", fileName);
             CVarSetInteger("gNewFileDropped", 1);
             CVarSave();
+            break;
+        case WM_DISPLAYCHANGE:
+            dxgi.monitor_list = GetMonitorList();
+            dxgi.h_Monitor = GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY);
+            GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             break;
         default:
             return DefWindowProcW(h_wnd, message, w_param, l_param);
@@ -364,6 +437,11 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     }
 
     DragAcceptFiles(dxgi.h_wnd, TRUE);
+
+    // Get refresh rate
+    dxgi.monitor_list = GetMonitorList();
+    dxgi.h_Monitor = GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY);
+    GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
 }
 
 static void gfx_dxgi_close() {
@@ -495,6 +573,9 @@ static bool gfx_dxgi_start_frame(void) {
             sync_vsync_diff = 1;
         }
 
+        // More consistent time with this?:
+        // uint64_t estimated_vsync_interval_ns = dxgi.display_period * 1000000;
+        // double estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         double estimated_vsync_interval = (double)sync_qpc_diff / (double)sync_vsync_diff;
         uint64_t estimated_vsync_interval_ns = qpc_to_ns(estimated_vsync_interval);
         // printf("Estimated vsync_interval: %d\n", (int)estimated_vsync_interval_ns);
@@ -503,8 +584,6 @@ static bool gfx_dxgi_start_frame(void) {
             estimated_vsync_interval_ns = 16666666;
             estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         }
-
-        dxgi.detected_hz = (float)((double)1000000000 / (double)estimated_vsync_interval_ns);
 
         UINT queued_vsyncs = 0;
         bool is_first = true;
@@ -586,7 +665,6 @@ static bool gfx_dxgi_start_frame(void) {
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
     if (dxgi.is_vsync_enabled != CVarGetInteger("gVsyncEnabled", 1)) {
-        // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
         dxgi.is_vsync_enabled = CVarGetInteger("gVsyncEnabled", 1);
     }
     dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
