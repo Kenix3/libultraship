@@ -14,8 +14,8 @@ namespace LUS {
  * upgrade a Configuration file from one version of a config to another (i.e. removing
  * default values, changing option names, etc.) It can be used by subclassing `ConfigVersionUpdater`,
  * implementing the Update function, and implementing the Constructor passing the version that the
- * Config is being updated from to this class' constructor from the child class' default constructor.
- * For example: \code ConfigVersion0Updater() : ConfigVersionUpdater(0) {} \endcode
+ * Config is being updated to to this class' constructor from the child class' default constructor.
+ * For example: \code ConfigVersion1Updater() : ConfigVersionUpdater(1) {} \endcode
  * Finally, give an instance of this subclass to a Config object via
  * RegisterConfigVersionUpdater and call RunVersionUpdates.
  */
@@ -24,7 +24,7 @@ class ConfigVersionUpdater {
     uint32_t mVersion;
 
   public:
-    ConfigVersionUpdater(uint32_t version);
+    ConfigVersionUpdater(uint32_t toVersion);
     /**
      * @brief Performs actions on a Config object via the provided pointer to update it
      * to the next version. (i.e. removing/changing default values or renaming options)

@@ -273,15 +273,15 @@ bool Config::RegisterConfigVersionUpdater(std::shared_ptr<ConfigVersionUpdater> 
 void Config::RunVersionUpdates() {
     for (auto [_, versionUpdater] : mVersionUpdaters) {
         uint32_t version = GetUInt("ConfigVersion", 0);
-        if (version == versionUpdater->GetVersion()) {
+        if (version < versionUpdater->GetVersion()) {
             versionUpdater->Update(this);
-            SetUInt("ConfigVersion", version + 1);
+            SetUInt("ConfigVersion", versionUpdater->GetVersion());
         }
     }
     Save();
 }
 
-ConfigVersionUpdater::ConfigVersionUpdater(uint32_t version) : mVersion(version) {
+ConfigVersionUpdater::ConfigVersionUpdater(uint32_t toVersion) : mVersion(toVersion) {
 }
 
 uint32_t ConfigVersionUpdater::GetVersion() {
