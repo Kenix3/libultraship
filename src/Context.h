@@ -50,7 +50,6 @@ class Context {
     std::string GetName();
     std::string GetShortName();
 
-    void CreateDefaultSettings();
     void InitLogging();
     void InitConfiguration();
     void InitConsoleVariables();

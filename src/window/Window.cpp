@@ -70,8 +70,8 @@ void Window::Init() {
         mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height",
                                                                    steamDeckGameMode ? 800 : 1080);
     } else {
-        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", mWidth);
-        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", mHeight);
+        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
+        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
         mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
         mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
     }

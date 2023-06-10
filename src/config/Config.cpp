@@ -265,4 +265,27 @@ void Config::SetWindowBackend(WindowBackend backend) {
     }
 }
 
+bool Config::RegisterConfigVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {
+    auto [_, emplaced] = mVersionUpdaters.emplace(versionUpdater->GetVersion(), versionUpdater);
+    return emplaced;
+}
+
+void Config::RunVersionUpdates() {
+    for (auto [_, versionUpdater] : mVersionUpdaters) {
+        uint32_t version = GetUInt("ConfigVersion", 0);
+        if (version < versionUpdater->GetVersion()) {
+            versionUpdater->Update(this);
+            SetUInt("ConfigVersion", versionUpdater->GetVersion());
+        }
+    }
+    Save();
+}
+
+ConfigVersionUpdater::ConfigVersionUpdater(uint32_t toVersion) : mVersion(toVersion) {
+}
+
+uint32_t ConfigVersionUpdater::GetVersion() {
+    return mVersion;
+}
+
 } // namespace LUS
