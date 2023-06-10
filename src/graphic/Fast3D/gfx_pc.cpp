@@ -116,6 +116,8 @@ static struct RSP {
     uint32_t geometry_mode;
     int16_t fog_mul, fog_offset;
 
+    uint32_t extra_geometry_mode;
+
     struct {
         // U0.16
         uint16_t s, t;
@@ -1382,6 +1384,11 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             cross = -cross;
         }
 
+        // If inverted culling is requested, negate the cross
+        if ((rsp.extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
+            cross = -cross;
+        }
+
         switch (rsp.geometry_mode & G_CULL_BOTH) {
             case G_CULL_FRONT:
                 if (cross <= 0) {
@@ -1767,6 +1774,11 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 static void gfx_sp_geometry_mode(uint32_t clear, uint32_t set) {
     rsp.geometry_mode &= ~clear;
     rsp.geometry_mode |= set;
+}
+
+static void gfx_sp_extra_geometry_mode(uint32_t clear, uint32_t set) {
+    rsp.extra_geometry_mode &= ~clear;
+    rsp.extra_geometry_mode |= set;
 }
 
 static void gfx_adjust_viewport_or_scissor(XYWidthHeight* area) {
@@ -3035,6 +3047,9 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_s2dex_bg_copy((uObjBg*)cmd->words.w1); // not seg_addr here it seems
                 }
 
+                break;
+            case G_EXTRAGEOMETRYMODE:
+                gfx_sp_extra_geometry_mode(~C0(0, 24), cmd->words.w1);
                 break;
         }
         ++cmd;
