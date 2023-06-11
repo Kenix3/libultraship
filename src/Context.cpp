@@ -267,7 +267,7 @@ std::string Context::GetAppBundlePath() {
 #endif
 }
 
-std::string Context::GetAppDirectoryPath() {
+std::string Context::GetAppDirectoryPath(std::string appname) {
 #if defined(__linux__) || defined(__APPLE__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {
@@ -275,7 +275,10 @@ std::string Context::GetAppDirectoryPath() {
     }
 #endif
 
-    char* prefpath = SDL_GetPrefPath(NULL, GetInstance()->mShortName.c_str());
+    if (appname.empty()) {
+        appname = GetInstance()->mShortName;
+    }
+    char* prefpath = SDL_GetPrefPath(NULL, appname.c_str());
     if (prefpath != NULL) {
         std::string ret(prefpath);
         SDL_free(prefpath);
@@ -289,15 +292,15 @@ std::string Context::GetPathRelativeToAppBundle(const std::string path) {
     return GetAppBundlePath() + "/" + path;
 }
 
-std::string Context::GetPathRelativeToAppDirectory(const std::string path) {
-    return GetAppDirectoryPath() + "/" + path;
+std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appname) {
+    return GetAppDirectoryPath(appname) + "/" + path;
 }
 
-std::string Context::LocateFileAcrossAppDirs(const std::string path) {
+std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string appname) {
     std::string fpath;
 
     // app configuration dir
-    fpath = GetPathRelativeToAppDirectory(path);
+    fpath = GetPathRelativeToAppDirectory(path, appname);
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
