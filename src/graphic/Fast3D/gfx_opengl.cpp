@@ -27,7 +27,7 @@
 
 #ifndef __SWITCH__
 #define GL_GLEXT_PROTOTYPES 1
-#ifndef FOR_WINDOWS
+#if !defined(FOR_WINDOWS) || defined(_MSC_VER)
 #include <GL/gl.h>
 #include <GL/glext.h>
 #else
