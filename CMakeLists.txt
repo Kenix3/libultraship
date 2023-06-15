@@ -20,7 +20,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND USE_AUTO_VCPKG)
     set(VCPKG_TARGET_TRIPLET x64-windows-static)
 
     vcpkg_bootstrap()
-    vcpkg_install_packages(zlib bzip2 sdl2 glew)
+    vcpkg_install_packages(zlib bzip2 sdl2)
 endif()
 
 add_subdirectory("extern")

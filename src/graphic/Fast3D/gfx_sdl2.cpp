@@ -17,10 +17,10 @@
 #endif
 
 #if FOR_WINDOWS
-#include <GL/glew.h>
 #include "SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
 #include "SDL_opengl.h"
+#include "SDL_opengl_glext.h"
 #elif __APPLE__
 #include <SDL.h>
 #include "gfx_metal.h"
