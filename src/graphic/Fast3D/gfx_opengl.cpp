@@ -19,7 +19,7 @@
 #define FOR_WINDOWS 0
 #endif
 
-#ifndef FOR_WINDOWS
+#if !defined(FOR_WINDOWS) || defined(_MSC_VER)
 #include <SDL2/SDL.h>
 #else
 #include "SDL.h"
