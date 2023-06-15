@@ -100,8 +100,12 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(GLEW REQUIRED)
-    target_link_libraries(ImGui PUBLIC ${OPENGL_glx_LIBRARY} ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
+    if (NO_GLEW STREQUAL "ON")
+        target_link_libraries(ImGui PUBLIC ${OPENGL_glx_LIBRARY} ${OPENGL_opengl_LIBRARY})
+    else()
+        find_package(GLEW REQUIRED)
+        target_link_libraries(ImGui PUBLIC ${OPENGL_glx_LIBRARY} ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
+    endif()
 endif()
 
 #=================== tinyxml2 ===================
