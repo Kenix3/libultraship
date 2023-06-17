@@ -188,6 +188,9 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
+#elif defined(USE_OPENGLES)
+            // Let ImGui try to figure this out. Should be something like #version 320 es
+            ImGui_ImplOpenGL3_Init(NULL);
 #else
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif

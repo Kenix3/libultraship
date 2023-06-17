@@ -35,10 +35,28 @@
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #else
+#ifdef USE_OPENGLES
+#include <SDL2/SDL.h>
+#define GL_GLEXT_PROTOTYPES 1
+#include <SDL2/SDL_opengles2.h>
+#define GL_RGBA8			0x8058
+#define GL_DEPTH_CLAMP 			0x864F
+#define GL_MIRROR_CLAMP_TO_EDGE 	0x8743
+#define GL_UNSIGNED_INT_24_8		0x84FA
+#define GL_DEPTH_STENCIL                0x84F9
+#define GL_DEPTH24_STENCIL8             0x88F0
+#define GL_RGB8                         0x8051
+#define GL_READ_FRAMEBUFFER             0x8CA8
+#define GL_DRAW_FRAMEBUFFER             0x8CA9
+#define GL_DEPTH_STENCIL_ATTACHMENT     0x821A
+#define glRenderbufferStorageMultisample glRenderbufferStorageMultisampleEXT
+#define glBlitFramebuffer glBlitFramebufferNV
+#else
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
 #define GL_GLEXT_PROTOTYPES 1
 // #include <SDL2/SDL_opengles2.h>
+#endif
 #endif
 
 #include "gfx_cc.h"
@@ -257,6 +275,9 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     // Vertex shader
 #ifdef __APPLE__
     append_line(vs_buf, &vs_len, "#version 410 core");
+    append_line(vs_buf, &vs_len, "in vec4 aVtxPos;");
+#elif USE_OPENGLES
+    append_line(vs_buf, &vs_len, "#version 300 es");
     append_line(vs_buf, &vs_len, "in vec4 aVtxPos;");
 #else
     append_line(vs_buf, &vs_len, "#version 110");
@@ -832,7 +853,7 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
 }
 
 static void gfx_opengl_init(void) {
-#ifndef __SWITCH__
+#if !defined(__SWITCH__) && !defined(USE_OPENGLES)
     glewInit();
 #endif
 

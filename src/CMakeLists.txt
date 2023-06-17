@@ -306,10 +306,19 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d_common.cpp
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND Source_Files__Graphic
-        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.cpp
-    )
+    if (USE_OPENGLES STREQUAL "ON")
+        list(APPEND Source_Files__Graphic
+	    ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_opengl.h
+	    ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_opengl.cpp
+	    ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_sdl.h
+	    ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_sdl2.cpp
+        )
+    else()
+        list(APPEND Source_Files__Graphic
+            ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.cpp
+        )
+    endif()
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND Source_Files__Graphic
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.cpp
@@ -383,9 +392,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(X11)
     find_package(PulseAudio)
-    target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARY})
+    if (USE_OPENGLES STREQUAL "ON")
+     target_link_libraries(libultraship PRIVATE ${PULSEAUDIO_LIBRARY})
+    else ()
+        find_package(X11)
+        target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARY})
+    endif()
 endif()
 
 #=================== Compile Options & Defs ===================
