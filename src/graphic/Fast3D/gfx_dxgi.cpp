@@ -727,13 +727,17 @@ static void gfx_dxgi_swap_buffers_end(void) {
 
     if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
         // If latency is decreased, you have to wait the same amout of times as the old latency was set to
+        int times_to_wait = dxgi.applied_maximum_frame_latency;
+        int latency = dxgi.maximum_frame_latency;
+        dxgi.maximum_frame_latency = 1;
+        apply_maximum_frame_latency(false);
         if (dxgi.waitable_object != nullptr) {
-            int times_to_wait = dxgi.applied_maximum_frame_latency;
             while (times_to_wait > 0) {
                 WaitForSingleObject(dxgi.waitable_object, INFINITE);
                 times_to_wait--;
             }
         }
+        dxgi.maximum_frame_latency = latency;
         apply_maximum_frame_latency(false);
 
         return; // Make sure we don't wait a second time on the waitable object, since that would hang the program
