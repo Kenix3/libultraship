@@ -1,1 +1,2 @@
-#cmakedefine SHIP_BIN_DIR "@SHIP_BIN_DIR@"
+#define CMAKE_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@"
+#cmakedefine NON_PORTABLE

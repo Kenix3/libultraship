@@ -254,9 +254,9 @@ std::string Context::GetShortName() {
     return mShortName;
 }
 
-std::string Context::GetAppBundlePath() {
-#ifdef SHIP_BIN_DIR
-    return SHIP_BIN_DIR;
+std::string Context::GetAppInstallationPath() {
+#ifdef NON_PORTABLE
+    return CMAKE_INSTALL_PREFIX;
 #else
 #ifdef __APPLE__
     FolderManager folderManager;
@@ -275,6 +275,7 @@ std::string Context::GetAppDirectoryPath(std::string appname) {
     }
 #endif
 
+#ifdef NON_PORTABLE
     if (appname.empty()) {
         appname = GetInstance()->mShortName;
     }
@@ -284,12 +285,13 @@ std::string Context::GetAppDirectoryPath(std::string appname) {
         SDL_free(prefpath);
         return ret;
     }
+#endif
 
     return ".";
 }
 
-std::string Context::GetPathRelativeToAppBundle(const std::string path) {
-    return GetAppBundlePath() + "/" + path;
+std::string Context::GetPathRelativeToAppInstallation(const std::string path) {
+    return GetAppInstallationPath() + "/" + path;
 }
 
 std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appname) {
@@ -305,7 +307,7 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
         return fpath;
     }
     // app install dir
-    fpath = GetPathRelativeToAppBundle(path);
+    fpath = GetPathRelativeToAppInstallation(path);
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
