@@ -40,18 +40,8 @@
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengles2.h>
 #include <GLES3/gl3.h>
-#define GL_RGBA8			0x8058
 #define GL_DEPTH_CLAMP 			0x864F
 #define GL_MIRROR_CLAMP_TO_EDGE 	0x8743
-#define GL_UNSIGNED_INT_24_8		0x84FA
-#define GL_DEPTH_STENCIL                0x84F9
-#define GL_DEPTH24_STENCIL8             0x88F0
-#define GL_RGB8                         0x8051
-#define GL_READ_FRAMEBUFFER             0x8CA8
-#define GL_DRAW_FRAMEBUFFER             0x8CA9
-#define GL_DEPTH_STENCIL_ATTACHMENT     0x821A
-//#define glRenderbufferStorageMultisample glRenderbufferStorageMultisampleEXT
-//#define glBlitFramebuffer glBlitFramebufferNV
 #else
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
