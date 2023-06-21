@@ -481,7 +481,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         if (cc_features.used_textures[i]) {
             bool s = cc_features.clamp[i][0], t = cc_features.clamp[i][1];
 
+            #ifdef USE_OPENGLES
+            // ES glsl can't implicitly convert ivec2 -> vec2
+            fs_len += sprintf(fs_buf + fs_len, "ivec2 itexSize%d = textureSize(uTex%d, 0);\n", i, i);
+            fs_len += sprintf(fs_buf + fs_len, "vec2 texSize%d = vec2(itexSize%d.x, itexSize%d.y);\n", i, i, i);
+            #else
             fs_len += sprintf(fs_buf + fs_len, "vec2 texSize%d = textureSize(uTex%d, 0);\n", i, i);
+            #endif
 
             if (!s && !t) {
                 fs_len += sprintf(fs_buf + fs_len, "vec2 vTexCoordAdj%d = vTexCoord%d;\n", i, i);
