@@ -136,10 +136,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     ImGui::GetStyle().ScaleAllSizes(2);
 #endif
 
-    if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
-    }
-
     CVarClear("gNewFileDropped");
     CVarClear("gDroppedFile");
 
@@ -654,6 +650,10 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
 
     if (GetMenuBar()) {
         GetMenuBar()->Init();
+    }
+
+    if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
     }
 }
 
