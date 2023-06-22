@@ -249,12 +249,6 @@ void Window::InitWindowManager() {
             break;
 #endif
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
-#if defined(__linux__) && defined(X11_SUPPORTED)
-        case WindowBackend::GLX_OPENGL:
-            mRenderingApi = &gfx_opengl_api;
-            mWindowManagerApi = &gfx_glx;
-            break;
-#endif
         case WindowBackend::SDL_OPENGL:
             mRenderingApi = &gfx_opengl_api;
             mWindowManagerApi = &gfx_sdl;
