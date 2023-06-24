@@ -115,20 +115,52 @@ void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick) {
     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 5, ImGui::GetCursorPos().y));
     ImGui::BeginChild(label, ImVec2(68, 75), false);
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
 
-    float sz = 45.0f;
-    float rad = sz * 0.5f;
-    ImVec2 pos = ImVec2(p.x + sz * 0.5f + 12, p.y + sz * 0.5f + 11);
+    const ImVec2 cursorScreenPosition = ImGui::GetCursorScreenPos();
 
-    float stickX = (stick.x / 83.0f) * (rad * 0.5f);
-    float stickY = -(stick.y / 83.0f) * (rad * 0.5f);
-
-    ImVec4 rect = ImVec4(p.x + 2, p.y + 2, 65, 65);
-    drawList->AddRect(ImVec2(rect.x, rect.y), ImVec2(rect.x + rect.z, rect.y + rect.w), ImColor(100, 100, 100, 255),
+    // Draw the border box
+    float borderSquareLeft = cursorScreenPosition.x + 2.0f;
+    float borderSquareTop = cursorScreenPosition.y + 2.0f;
+    float borderSquareSize = 65.0f;
+    drawList->AddRect(ImVec2(borderSquareLeft, borderSquareTop),
+                      ImVec2(borderSquareLeft + borderSquareSize, borderSquareTop + borderSquareSize),
+                      ImColor(100, 100, 100, 255),
                       0.0f, 0, 1.5f);
-    drawList->AddCircleFilled(pos, rad, ImColor(130, 130, 130, 255), 8);
-    drawList->AddCircleFilled(ImVec2(pos.x + stickX, pos.y + stickY), 5, ImColor(15, 15, 15, 255), 7);
+
+    // Draw the gate background
+    float cardinalRadius = 22.5f;
+    float diagonalRadius = cardinalRadius * (68.0f/85.0f);
+
+    ImVec2 joystickCenterpoint = ImVec2(cursorScreenPosition.x + cardinalRadius + 12, cursorScreenPosition.y + cardinalRadius + 11);
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImVec2(joystickCenterpoint.x, joystickCenterpoint.y + cardinalRadius),
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImVec2(joystickCenterpoint.x + cardinalRadius, joystickCenterpoint.y),
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImVec2(joystickCenterpoint.x, joystickCenterpoint.y - cardinalRadius),
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImVec2(joystickCenterpoint.x - cardinalRadius, joystickCenterpoint.y),
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+
+    // Draw the joystick position indicator
+    float indicatorRadius = 5.0f;
+    ImVec2 joystickIndicatorDistanceFromCenter = ImVec2((stick.x * (cardinalRadius / 85.0f)),
+                                                        -(stick.y * (cardinalRadius / 85.0f)));
+    drawList->AddCircleFilled(ImVec2(joystickCenterpoint.x + joystickIndicatorDistanceFromCenter.x,
+                                     joystickCenterpoint.y + joystickIndicatorDistanceFromCenter.y),
+                              indicatorRadius, ImColor(34, 51, 76, 255), 7);
+
     ImGui::EndChild();
 }
 
