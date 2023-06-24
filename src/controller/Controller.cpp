@@ -99,7 +99,7 @@ void Controller::ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadz
         SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", deadzoneY, deadzoneX);
     }
 
-    // create scaled circular dead-zone in range {-15 ... +15}
+    // create scaled circular dead-zone
     auto len = sqrt(ux * ux + uy * uy);
     if (len < deadzoneX) {
         len = 0;
