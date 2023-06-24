@@ -128,7 +128,7 @@ void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick, float 
 
     // Draw the gate background
     float cardinalRadius = 22.5f;
-    float diagonalRadius = cardinalRadius * (68.0f / 85.0f);
+    float diagonalRadius = cardinalRadius * (69.0f / 85.0f);
 
     ImVec2 joystickCenterpoint =
         ImVec2(cursorScreenPosition.x + cardinalRadius + 12, cursorScreenPosition.y + cardinalRadius + 11);
