@@ -124,14 +124,14 @@ void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick, float 
     float borderSquareSize = 65.0f;
     drawList->AddRect(ImVec2(borderSquareLeft, borderSquareTop),
                       ImVec2(borderSquareLeft + borderSquareSize, borderSquareTop + borderSquareSize),
-                      ImColor(100, 100, 100, 255),
-                      0.0f, 0, 1.5f);
+                      ImColor(100, 100, 100, 255), 0.0f, 0, 1.5f);
 
     // Draw the gate background
     float cardinalRadius = 22.5f;
-    float diagonalRadius = cardinalRadius * (68.0f/85.0f);
+    float diagonalRadius = cardinalRadius * (68.0f / 85.0f);
 
-    ImVec2 joystickCenterpoint = ImVec2(cursorScreenPosition.x + cardinalRadius + 12, cursorScreenPosition.y + cardinalRadius + 11);
+    ImVec2 joystickCenterpoint =
+        ImVec2(cursorScreenPosition.x + cardinalRadius + 12, cursorScreenPosition.y + cardinalRadius + 11);
     drawList->AddQuadFilled(joystickCenterpoint,
                             ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
                             ImVec2(joystickCenterpoint.x, joystickCenterpoint.y + cardinalRadius),
@@ -154,10 +154,10 @@ void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick, float 
                             ImColor(130, 130, 130, 255));
 
     // Draw the joystick position indicator
-    ImVec2 joystickIndicatorDistanceFromCenter = ImVec2(0,0);
+    ImVec2 joystickIndicatorDistanceFromCenter = ImVec2(0, 0);
     if ((stick.x * stick.x + stick.y * stick.y) > (deadzone * deadzone)) {
-        joystickIndicatorDistanceFromCenter = ImVec2((stick.x * (cardinalRadius / 85.0f)),
-                                                     -(stick.y * (cardinalRadius / 85.0f)));
+        joystickIndicatorDistanceFromCenter =
+            ImVec2((stick.x * (cardinalRadius / 85.0f)), -(stick.y * (cardinalRadius / 85.0f)));
     }
     float indicatorRadius = 5.0f;
     drawList->AddCircleFilled(ImVec2(joystickCenterpoint.x + joystickIndicatorDistanceFromCenter.x,
