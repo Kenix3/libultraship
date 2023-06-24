@@ -227,8 +227,9 @@ static void set_fullscreen(bool on, bool call_callback) {
 
     if (on) {
         // OTRTODO: Get mode from config.
+        int display_in_use = SDL_GetWindowDisplayIndex(wnd);
         SDL_DisplayMode mode;
-        SDL_GetDesktopDisplayMode(0, &mode);
+        SDL_GetDesktopDisplayMode(display_in_use, &mode);
         window_width = mode.w;
         window_height = mode.h;
         SDL_ShowCursor(false);
