@@ -69,8 +69,11 @@ static struct {
     std::map<UINT, DXGI_FRAME_STATISTICS> frame_stats;
     std::set<std::pair<UINT, UINT>> pending_frame_stats;
     bool dropped_frame;
+    std::tuple<HMONITOR, RECT, BOOL> h_Monitor; // 0: Handle, 1: Display Monitor Rect, 2: Is_Primary
+    std::vector<std::tuple<HMONITOR, RECT, BOOL>> monitor_list;
     bool zero_latency;
-    float detected_hz;
+    double detected_hz;
+    double display_period; // (1000 / dxgi.detected_hz) in ms
     UINT length_in_vsync_frames;
     uint32_t target_fps;
     uint32_t maximum_frame_latency;
@@ -162,6 +165,48 @@ static void apply_maximum_frame_latency(bool first) {
     dxgi.applied_maximum_frame_latency = dxgi.maximum_frame_latency;
 }
 
+std::vector<std::tuple<HMONITOR, RECT, BOOL>> GetMonitorList() {
+    std::vector<std::tuple<HMONITOR, RECT, BOOL>> monitors;
+    EnumDisplayMonitors(
+        nullptr, nullptr,
+        [](HMONITOR hmon, HDC hdc, LPRECT rc, LPARAM lp) {
+            UNREFERENCED_PARAMETER(hdc);
+            UNREFERENCED_PARAMETER(rc);
+
+            bool isPrimary;
+            MONITORINFOEX mi = {};
+            mi.cbSize = sizeof(MONITORINFOEX);
+            GetMonitorInfo(hmon, &mi);
+            auto monitors = (std::vector<std::tuple<HMONITOR, RECT, BOOL>>*)lp;
+            if (mi.dwFlags == MONITORINFOF_PRIMARY) {
+                isPrimary = TRUE;
+            } else {
+                isPrimary = FALSE;
+            }
+            monitors->push_back({ hmon, mi.rcMonitor, isPrimary });
+            return TRUE;
+        },
+        (LPARAM)&monitors);
+    return monitors;
+}
+
+// Uses coordinates to get a Monitor handle from a list
+bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorList, int x, int y,
+                        std::tuple<HMONITOR, RECT, BOOL>& MonitorInfo) {
+    std::tuple<HMONITOR, RECT, BOOL> primary;
+    for (std::tuple<HMONITOR, RECT, BOOL> i : MonitorList) {
+        if (PtInRect(&get<1>(i), POINT(x, y))) {
+            MonitorInfo = i;
+            return true;
+        }
+        if (get<2>(i)) {
+            primary = i;
+        }
+    }
+    MonitorInfo = primary; // Fallback to primary, when out of bounds.
+    return false;
+}
+
 static void toggle_borderless_window_full_screen(bool enable, bool call_callback) {
     // Windows 7 + flip mode + waitable object can't go to exclusive fullscreen,
     // so do borderless instead. If DWM is enabled, this means we get one monitor
@@ -236,6 +281,48 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
     }
 }
 
+double HzToPeriod(double Frequency) {
+    if (Frequency == 0)
+        Frequency = 60; // Default to 60, to prevent devision by zero
+    double period = (double)1000 / Frequency;
+    if (period == 0)
+        period = 16.666666; // In case we go too low, use 16 ms (60 Hz) to prevent division by zero later
+    return period;
+}
+
+void GetMonitorHzPeriod(HMONITOR hMonitor, double& Frequency, double& Period) {
+    DEVMODE dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    if (hMonitor != NULL) {
+        MONITORINFOEX minfoex = {};
+        minfoex.cbSize = sizeof(MONITORINFOEX);
+
+        if (GetMonitorInfo(hMonitor, (LPMONITORINFOEX)&minfoex)) {
+            if (EnumDisplaySettings(minfoex.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+                Frequency = dm.dmDisplayFrequency;
+                Period = HzToPeriod(Frequency);
+            }
+        }
+    }
+}
+
+void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Frequency, double& Period) {
+    HMONITOR hMonitor = get<0>(Monitor);
+    DEVMODE dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    if (hMonitor != NULL) {
+        MONITORINFOEX minfoex = {};
+        minfoex.cbSize = sizeof(MONITORINFOEX);
+
+        if (GetMonitorInfo(hMonitor, (LPMONITORINFOEX)&minfoex)) {
+            if (EnumDisplaySettings(minfoex.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+                Frequency = dm.dmDisplayFrequency;
+                Period = HzToPeriod(Frequency);
+            }
+        }
+    }
+}
+
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
     LUS::WindowEvent event_impl;
@@ -249,6 +336,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOVE:
             dxgi.posX = LOWORD(l_param);
             dxgi.posY = HIWORD(l_param);
+            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, newMonitor);
+            if (newMonitor != dxgi.h_Monitor) {
+                dxgi.h_Monitor = newMonitor;
+                GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
+            }
             break;
         case WM_DESTROY:
             PostQuitMessage(0);
@@ -286,6 +378,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             CVarSetString("gDroppedFile", fileName);
             CVarSetInteger("gNewFileDropped", 1);
             CVarSave();
+            break;
+        case WM_DISPLAYCHANGE:
+            dxgi.monitor_list = GetMonitorList();
+            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.h_Monitor);
+            GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             break;
         default:
             return DefWindowProcW(h_wnd, message, w_param, l_param);
@@ -338,6 +435,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
         dxgi.current_width = wr.right - wr.left;
         dxgi.current_height = wr.bottom - wr.top;
+        dxgi.monitor_list = GetMonitorList();
         dxgi.posX = posX;
         dxgi.posY = posY;
         dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
@@ -348,6 +446,9 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     ShowWindow(dxgi.h_wnd, SW_SHOW);
     UpdateWindow(dxgi.h_wnd);
+
+    // Get refresh rate
+    GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
 
     if (start_in_fullscreen) {
         toggle_borderless_window_full_screen(true, false);
@@ -486,8 +587,6 @@ static bool gfx_dxgi_start_frame(void) {
             estimated_vsync_interval_ns = 16666666;
             estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         }
-
-        dxgi.detected_hz = (float)((double)1000000000 / (double)estimated_vsync_interval_ns);
 
         UINT queued_vsyncs = 0;
         bool is_first = true;
