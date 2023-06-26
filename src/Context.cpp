@@ -263,6 +263,22 @@ std::string Context::GetAppInstallationPath() {
     return folderManager.getMainBundlePath();
 #endif
 
+#ifdef __linux__
+    std::string progpath(PATH_MAX, '\0');
+    int len = readlink("/proc/self/exe", &progpath[0], progpath.size() - 1);
+    if (len != -1) {
+        progpath.resize(len);
+        
+        // Find the last '/' and remove everything after it
+        size last_slash = progpath.find_last_of("/");
+        if (last_slash != std::string::npos) {
+            progpath.erase(last_slash);
+        }
+
+        return progpath;
+    }
+#endif
+
     return ".";
 #endif
 }
