@@ -147,11 +147,12 @@ template <typename Fun> static void run_as_dpi_aware(Fun f) {
 }
 
 static void apply_maximum_frame_latency(bool first) {
-    DXGI_SWAP_CHAIN_DESC       swap_desc = {};
-    dxgi.swap_chain->GetDesc (&swap_desc);
-    
+    DXGI_SWAP_CHAIN_DESC swap_desc = {};
+    dxgi.swap_chain->GetDesc(&swap_desc);
+
     ComPtr<IDXGISwapChain2> swap_chain2;
-    if ((swap_desc.Flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) && dxgi.swap_chain->QueryInterface(__uuidof(IDXGISwapChain2), &swap_chain2) == S_OK) {
+    if ((swap_desc.Flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) &&
+        dxgi.swap_chain->QueryInterface(__uuidof(IDXGISwapChain2), &swap_chain2) == S_OK) {
         ThrowIfFailed(swap_chain2->SetMaximumFrameLatency(dxgi.maximum_frame_latency));
         if (first) {
             dxgi.waitable_object = swap_chain2->GetFrameLatencyWaitableObject();
@@ -385,8 +386,7 @@ static void gfx_dxgi_set_cursor_visibility(bool visible) {
     if (visible) {
         do {
             cursorVisibilityCounter = ShowCursor(true);
-        } while (cursorVisibilityCounter < 0 &&
-               ++cursorVisibilityTries   < _MAX_TRIES);
+        } while (cursorVisibilityCounter < 0 && ++cursorVisibilityTries < _MAX_TRIES);
     } else {
         do {
             cursorVisibilityCounter = ShowCursor(false);
@@ -624,27 +624,16 @@ static void gfx_dxgi_swap_buffers_end(void) {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
-    if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency ||
-        dxgi.is_vsync_enabled != CVarGetInteger("gVsyncEnabled", 1)) {
-        // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
-        // swap chain
+    if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
+        // If latency is decreased, you have to wait the same amout of times as the old latency was set to
         if (dxgi.waitable_object != nullptr) {
-            if (!dxgi.dropped_frame) {
-                // Wait the last time on this swap chain
+            int times_to_wait = dxgi.applied_maximum_frame_latency;
+            while (times_to_wait > 0) {
                 WaitForSingleObject(dxgi.waitable_object, INFINITE);
+                times_to_wait--;
             }
-            CloseHandle(dxgi.waitable_object);
-            dxgi.waitable_object = nullptr;
         }
-
-        dxgi.before_destroy_swap_chain_fn();
-        dxgi.swap_chain.Reset();
-        dxgi.is_vsync_enabled = CVarGetInteger("gVsyncEnabled", 1);
-        gfx_dxgi_create_swap_chain(dxgi.swap_chain_device.Get(), move(dxgi.before_destroy_swap_chain_fn));
-
-        dxgi.frame_timestamp = 0;
-        dxgi.frame_stats.clear();
-        dxgi.pending_frame_stats.clear();
+        apply_maximum_frame_latency(false);
 
         return; // Make sure we don't wait a second time on the waitable object, since that would hang the program
     } else if (dxgi.applied_maximum_frame_latency != dxgi.maximum_frame_latency) {
