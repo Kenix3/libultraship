@@ -491,7 +491,7 @@ static bool gfx_dxgi_start_frame(void) {
         if (estimated_vsync_interval_ns < 2000 || estimated_vsync_interval_ns > 1000000000) {
             // Unreasonable, maybe a monitor change
             estimated_vsync_interval_ns = 16666666;
-            estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
+            estimated_vsync_interval = (double)estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         }
 
         dxgi.detected_hz = (float)((double)1000000000 / (double)estimated_vsync_interval_ns);
@@ -585,7 +585,7 @@ static bool gfx_dxgi_start_frame(void) {
 
 static void gfx_dxgi_swap_buffers_begin(void) {
     LARGE_INTEGER t;
-    // dxgi.use_timer = true;
+    dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
         ComPtr<ID3D11Device> device;
         dxgi.swap_chain_device.As(&device);
