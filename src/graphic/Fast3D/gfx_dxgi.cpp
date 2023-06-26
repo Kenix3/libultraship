@@ -225,11 +225,17 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
             SetWindowPos(dxgi.h_wnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
             ShowWindow(dxgi.h_wnd, SW_MAXIMIZE);
         } else {
+            std::tuple<HMONITOR, RECT, BOOL> Monitor;
             auto conf = LUS::Context::GetInstance()->GetConfig();
             dxgi.current_width = conf->GetInt("Window.Width", 640);
             dxgi.current_height = conf->GetInt("Window.Height", 480);
             dxgi.posX = conf->GetInt("Window.PositionX", 100);
             dxgi.posY = conf->GetInt("Window.PositionY", 100);
+            if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY,
+                                    Monitor)) { // Fallback to default when out of bounds.
+                dxgi.posX = 100;
+                dxgi.posY = 100;
+            }
             RECT wr = { dxgi.posX, dxgi.posY, dxgi.posX + static_cast<int32_t>(dxgi.current_width),
                         dxgi.posY + static_cast<int32_t>(dxgi.current_height) };
             AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
@@ -245,14 +251,9 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
         GetWindowPlacement(dxgi.h_wnd, &window_placement);
         dxgi.last_maximized_state = window_placement.showCmd == SW_SHOWMAXIMIZED;
 
-        // Get in which monitor the window is
-        HMONITOR h_monitor = MonitorFromWindow(dxgi.h_wnd, MONITOR_DEFAULTTONEAREST);
-
+        // We already know on what monitor we are (gets it on init or move)
         // Get info from that monitor
-        MONITORINFOEX monitor_info;
-        monitor_info.cbSize = sizeof(MONITORINFOEX);
-        GetMonitorInfo(h_monitor, &monitor_info);
-        RECT r = monitor_info.rcMonitor;
+        RECT r = get<1>(dxgi.h_Monitor);
 
         // Set borderless full screen to that monitor
         SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
@@ -328,6 +329,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     LUS::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
     LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
+    std::tuple<HMONITOR, RECT, BOOL> newMonitor;
     switch (message) {
         case WM_SIZE:
             dxgi.current_width = LOWORD(l_param);
@@ -337,7 +339,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.posX = LOWORD(l_param);
             dxgi.posY = HIWORD(l_param);
             GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, newMonitor);
-            if (newMonitor != dxgi.h_Monitor) {
+            if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
                 dxgi.h_Monitor = newMonitor;
                 GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             }
@@ -438,6 +440,11 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         dxgi.monitor_list = GetMonitorList();
         dxgi.posX = posX;
         dxgi.posY = posY;
+        if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.h_Monitor)) {
+            dxgi.posX = 100;
+            dxgi.posY = 100;
+        }
+
         dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
                                    dxgi.current_width, dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
     });
