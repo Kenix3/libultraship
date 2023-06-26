@@ -607,7 +607,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     dxgi.previous_present_time = t;
     if (dxgi.tearing_support && !dxgi.length_in_vsync_frames) {
         // 512: DXGI_PRESENT_ALLOW_TEARING - allows for true V-Sync off with flip model
-        ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 512));
+        ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, DXGI_PRESENT_ALLOW_TEARING));
     } else {
         ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
     }
