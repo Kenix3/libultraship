@@ -8,6 +8,7 @@
 #include <string>
 
 #include <windows.h>
+#include <windowsx.h> // GET_X_LPARAM(), GET_Y_LPARAM()
 #include <wrl/client.h>
 #include <dxgi1_3.h>
 #include <dxgi1_4.h>
@@ -247,8 +248,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.current_height = HIWORD(l_param);
             break;
         case WM_MOVE:
-            dxgi.posX = LOWORD(l_param);
-            dxgi.posY = HIWORD(l_param);
+            dxgi.posX = GET_X_LPARAM(l_param);
+            dxgi.posY = GET_Y_LPARAM(l_param);
             break;
         case WM_DESTROY:
             PostQuitMessage(0);
