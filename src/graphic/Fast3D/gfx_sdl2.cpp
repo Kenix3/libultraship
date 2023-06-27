@@ -224,12 +224,16 @@ static void set_fullscreen(bool on, bool call_callback) {
         return;
     }
     fullscreen_state = on;
+    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    SDL_DisplayMode mode;
+    if (display_in_use < 0) {
+        SDL_GetDesktopDisplayMode(0, &mode);
+    } else {
+        SDL_GetDesktopDisplayMode(display_in_use, &mode);
+    }
 
     if (on) {
         // OTRTODO: Get mode from config.
-        int display_in_use = SDL_GetWindowDisplayIndex(wnd);
-        SDL_DisplayMode mode;
-        SDL_GetDesktopDisplayMode(display_in_use, &mode);
         window_width = mode.w;
         window_height = mode.h;
         SDL_ShowCursor(false);
@@ -239,6 +243,10 @@ static void set_fullscreen(bool on, bool call_callback) {
         window_height = conf->GetInt("Window.Height", 480);
         int32_t posX = conf->GetInt("Window.PositionX", 100);
         int32_t posY = conf->GetInt("Window.PositionY", 100);
+        if (display_in_use < 0) { // Fallback to default if out of bounds
+            posX = 100;
+            posY = 100;
+        }
         SDL_SetWindowPosition(wnd, posX, posY);
     }
     SDL_SetWindowSize(wnd, window_width, window_height);
@@ -324,7 +332,6 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     } else {
         flags = flags | SDL_WINDOW_METAL;
     }
-
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
     LUS::GuiWindowInitData window_impl;
 
