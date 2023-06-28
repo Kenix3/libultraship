@@ -332,6 +332,13 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     } else {
         flags = flags | SDL_WINDOW_METAL;
     }
+
+    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    if (display_in_use < 0) { // Fallback to default if out of bounds
+        posX = 100;
+        posY = 100;
+    }
+
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
     LUS::GuiWindowInitData window_impl;
 
