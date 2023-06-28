@@ -14,6 +14,7 @@
 #include <dxgi1_4.h>
 #include <dxgi1_5.h>
 #include <versionhelpers.h>
+#include <d3d11.h>
 
 #include <shellscalingapi.h>
 
@@ -304,7 +305,13 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     dxgi.target_fps = 60;
     dxgi.maximum_frame_latency = 1;
-    dxgi.timer = CreateWaitableTimer(nullptr, false, nullptr);
+
+    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    dxgi.timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution timer if unsupported by the OS
+    if (dxgi.timer == nullptr) {
+        dxgi.timer = CreateWaitableTimer(nullptr, FALSE, nullptr);
+    }
 
     // Prepare window title
 
@@ -485,7 +492,7 @@ static bool gfx_dxgi_start_frame(void) {
         if (estimated_vsync_interval_ns < 2000 || estimated_vsync_interval_ns > 1000000000) {
             // Unreasonable, maybe a monitor change
             estimated_vsync_interval_ns = 16666666;
-            estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
+            estimated_vsync_interval = (double)estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         }
 
         dxgi.detected_hz = (float)((double)1000000000 / (double)estimated_vsync_interval_ns);
@@ -579,16 +586,35 @@ static bool gfx_dxgi_start_frame(void) {
 
 static void gfx_dxgi_swap_buffers_begin(void) {
     LARGE_INTEGER t;
+    dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
+        ComPtr<ID3D11Device> device;
+        dxgi.swap_chain_device.As(&device);
+
+        if (device != nullptr) {
+            ComPtr<ID3D11DeviceContext> dev_ctx;
+            device->GetImmediateContext(&dev_ctx);
+
+            if (dev_ctx != nullptr) {
+                // Always flush the immediate context before forcing a CPU-wait, otherwise the GPU might only start
+                // working when the SwapChain is presented.
+                dev_ctx->Flush();
+            }
+        }
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
-        int64_t left = next - qpc_to_100ns(t.QuadPart);
+        int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
         if (left > 0) {
             LARGE_INTEGER li;
             li.QuadPart = -left;
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
             WaitForSingleObject(dxgi.timer, INFINITE);
+
+            do {
+                YieldProcessor();
+                QueryPerformanceCounter(&t);
+            } while (t.QuadPart < next);
         }
     }
     QueryPerformanceCounter(&t);
