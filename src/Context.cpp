@@ -270,8 +270,8 @@ std::string Context::GetAppInstallationPath() {
         progpath.resize(len);
 
         // Find the last '/' and remove everything after it
-        int last_slash = progpath.find_last_of("/");
-        if (last_slash != std::string::npos) {
+        int lastSlash = progpath.find_last_of("/");
+        if (lastSlash != std::string::npos) {
             progpath.erase(last_slash);
         }
 
@@ -283,7 +283,7 @@ std::string Context::GetAppInstallationPath() {
 #endif
 }
 
-std::string Context::GetAppDirectoryPath(std::string appname) {
+std::string Context::GetAppDirectoryPath(std::string appName) {
 #if defined(__linux__) || defined(__APPLE__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {
@@ -292,10 +292,10 @@ std::string Context::GetAppDirectoryPath(std::string appname) {
 #endif
 
 #ifdef NON_PORTABLE
-    if (appname.empty()) {
-        appname = GetInstance()->mShortName;
+    if (appName.empty()) {
+        appName = GetInstance()->mShortName;
     }
-    char* prefpath = SDL_GetPrefPath(NULL, appname.c_str());
+    char* prefpath = SDL_GetPrefPath(NULL, appName.c_str());
     if (prefpath != NULL) {
         std::string ret(prefpath);
         SDL_free(prefpath);
@@ -310,15 +310,15 @@ std::string Context::GetPathRelativeToAppInstallation(const std::string path) {
     return GetAppInstallationPath() + "/" + path;
 }
 
-std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appname) {
-    return GetAppDirectoryPath(appname) + "/" + path;
+std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appName) {
+    return GetAppDirectoryPath(appName) + "/" + path;
 }
 
-std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string appname) {
+std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string appName) {
     std::string fpath;
 
     // app configuration dir
-    fpath = GetPathRelativeToAppDirectory(path, appname);
+    fpath = GetPathRelativeToAppDirectory(path, appName);
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
