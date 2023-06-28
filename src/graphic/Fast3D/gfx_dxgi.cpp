@@ -8,11 +8,13 @@
 #include <string>
 
 #include <windows.h>
+#include <windowsx.h> // GET_X_LPARAM(), GET_Y_LPARAM()
 #include <wrl/client.h>
 #include <dxgi1_3.h>
 #include <dxgi1_4.h>
 #include <dxgi1_5.h>
 #include <versionhelpers.h>
+#include <d3d11.h>
 
 #include <shellscalingapi.h>
 
@@ -150,8 +152,12 @@ template <typename Fun> static void run_as_dpi_aware(Fun f) {
 }
 
 static void apply_maximum_frame_latency(bool first) {
+    DXGI_SWAP_CHAIN_DESC swap_desc = {};
+    dxgi.swap_chain->GetDesc(&swap_desc);
+
     ComPtr<IDXGISwapChain2> swap_chain2;
-    if (dxgi.swap_chain->QueryInterface(__uuidof(IDXGISwapChain2), &swap_chain2) == S_OK) {
+    if ((swap_desc.Flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) &&
+        dxgi.swap_chain->QueryInterface(__uuidof(IDXGISwapChain2), &swap_chain2) == S_OK) {
         ThrowIfFailed(swap_chain2->SetMaximumFrameLatency(dxgi.maximum_frame_latency));
         if (first) {
             dxgi.waitable_object = swap_chain2->GetFrameLatencyWaitableObject();
@@ -336,8 +342,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.current_height = HIWORD(l_param);
             break;
         case WM_MOVE:
-            dxgi.posX = LOWORD(l_param);
-            dxgi.posY = HIWORD(l_param);
+            dxgi.posX = GET_X_LPARAM(l_param);
+            dxgi.posY = GET_Y_LPARAM(l_param);
             GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, newMonitor);
             if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
                 dxgi.h_Monitor = newMonitor;
@@ -402,7 +408,13 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     dxgi.target_fps = 60;
     dxgi.maximum_frame_latency = 1;
-    dxgi.timer = CreateWaitableTimer(nullptr, false, nullptr);
+
+    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    dxgi.timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution timer if unsupported by the OS
+    if (dxgi.timer == nullptr) {
+        dxgi.timer = CreateWaitableTimer(nullptr, FALSE, nullptr);
+    }
 
     // Prepare window title
 
@@ -477,11 +489,20 @@ static void gfx_dxgi_set_cursor_visibility(bool visible) {
     // https://devblogs.microsoft.com/oldnewthing/20091217-00/?p=15643
     // ShowCursor uses a counter, not a boolean value, and increments or decrements that value when called
     // This means we need to keep calling it until we get the value we want
+
+    //
+    //  NOTE:  If you continue calling until you "get the value you want" and there is no mouse attached,
+    //  it will lock the software up.  Windows always returns -1 if there is no mouse!
+    //
+
+    const int _MAX_TRIES = 15; // Prevent spinning infinitely if no mouse is plugged in
+
+    int cursorVisibilityTries = 0;
     int cursorVisibilityCounter;
     if (visible) {
         do {
             cursorVisibilityCounter = ShowCursor(true);
-        } while (cursorVisibilityCounter < 0);
+        } while (cursorVisibilityCounter < 0 && ++cursorVisibilityTries < _MAX_TRIES);
     } else {
         do {
             cursorVisibilityCounter = ShowCursor(false);
@@ -592,7 +613,7 @@ static bool gfx_dxgi_start_frame(void) {
         if (estimated_vsync_interval_ns < 2000 || estimated_vsync_interval_ns > 1000000000) {
             // Unreasonable, maybe a monitor change
             estimated_vsync_interval_ns = 16666666;
-            estimated_vsync_interval = estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
+            estimated_vsync_interval = (double)estimated_vsync_interval_ns * dxgi.qpc_freq / 1000000000;
         }
 
         UINT queued_vsyncs = 0;
@@ -684,23 +705,42 @@ static bool gfx_dxgi_start_frame(void) {
 
 static void gfx_dxgi_swap_buffers_begin(void) {
     LARGE_INTEGER t;
+    dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
+        ComPtr<ID3D11Device> device;
+        dxgi.swap_chain_device.As(&device);
+
+        if (device != nullptr) {
+            ComPtr<ID3D11DeviceContext> dev_ctx;
+            device->GetImmediateContext(&dev_ctx);
+
+            if (dev_ctx != nullptr) {
+                // Always flush the immediate context before forcing a CPU-wait, otherwise the GPU might only start
+                // working when the SwapChain is presented.
+                dev_ctx->Flush();
+            }
+        }
         QueryPerformanceCounter(&t);
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
-        int64_t left = next - qpc_to_100ns(t.QuadPart);
+        int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
         if (left > 0) {
             LARGE_INTEGER li;
             li.QuadPart = -left;
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
             WaitForSingleObject(dxgi.timer, INFINITE);
+
+            do {
+                YieldProcessor();
+                QueryPerformanceCounter(&t);
+            } while (t.QuadPart < next);
         }
     }
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;
     if (dxgi.tearing_support && !dxgi.length_in_vsync_frames) {
         // 512: DXGI_PRESENT_ALLOW_TEARING - allows for true V-Sync off with flip model
-        ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 512));
+        ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, DXGI_PRESENT_ALLOW_TEARING));
     } else {
         ThrowIfFailed(dxgi.swap_chain->Present(dxgi.length_in_vsync_frames, 0));
     }
@@ -717,27 +757,20 @@ static void gfx_dxgi_swap_buffers_end(void) {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
-    if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency ||
-        dxgi.is_vsync_enabled != CVarGetInteger("gVsyncEnabled", 1)) {
-        // There seems to be a bug that if latency is decreased, there is no effect of that operation, so recreate
-        // swap chain
+    if (dxgi.applied_maximum_frame_latency > dxgi.maximum_frame_latency) {
+        // If latency is decreased, you have to wait the same amout of times as the old latency was set to
+        int times_to_wait = dxgi.applied_maximum_frame_latency;
+        int latency = dxgi.maximum_frame_latency;
+        dxgi.maximum_frame_latency = 1;
+        apply_maximum_frame_latency(false);
         if (dxgi.waitable_object != nullptr) {
-            if (!dxgi.dropped_frame) {
-                // Wait the last time on this swap chain
+            while (times_to_wait > 0) {
                 WaitForSingleObject(dxgi.waitable_object, INFINITE);
+                times_to_wait--;
             }
-            CloseHandle(dxgi.waitable_object);
-            dxgi.waitable_object = nullptr;
         }
-
-        dxgi.before_destroy_swap_chain_fn();
-        dxgi.swap_chain.Reset();
-        dxgi.is_vsync_enabled = CVarGetInteger("gVsyncEnabled", 1);
-        gfx_dxgi_create_swap_chain(dxgi.swap_chain_device.Get(), move(dxgi.before_destroy_swap_chain_fn));
-
-        dxgi.frame_timestamp = 0;
-        dxgi.frame_stats.clear();
-        dxgi.pending_frame_stats.clear();
+        dxgi.maximum_frame_latency = latency;
+        apply_maximum_frame_latency(false);
 
         return; // Make sure we don't wait a second time on the waitable object, since that would hang the program
     } else if (dxgi.applied_maximum_frame_latency != dxgi.maximum_frame_latency) {

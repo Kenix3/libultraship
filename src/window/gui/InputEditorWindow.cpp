@@ -111,24 +111,59 @@ void InputEditorWindow::DrawControllerSelect(int32_t currentPort) {
     }
 }
 
-void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick) {
+void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick, float deadzone) {
     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 5, ImGui::GetCursorPos().y));
     ImGui::BeginChild(label, ImVec2(68, 75), false);
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
 
-    float sz = 45.0f;
-    float rad = sz * 0.5f;
-    ImVec2 pos = ImVec2(p.x + sz * 0.5f + 12, p.y + sz * 0.5f + 11);
+    const ImVec2 cursorScreenPosition = ImGui::GetCursorScreenPos();
 
-    float stickX = (stick.x / 83.0f) * (rad * 0.5f);
-    float stickY = -(stick.y / 83.0f) * (rad * 0.5f);
+    // Draw the border box
+    float borderSquareLeft = cursorScreenPosition.x + 2.0f;
+    float borderSquareTop = cursorScreenPosition.y + 2.0f;
+    float borderSquareSize = 65.0f;
+    drawList->AddRect(ImVec2(borderSquareLeft, borderSquareTop),
+                      ImVec2(borderSquareLeft + borderSquareSize, borderSquareTop + borderSquareSize),
+                      ImColor(100, 100, 100, 255), 0.0f, 0, 1.5f);
 
-    ImVec4 rect = ImVec4(p.x + 2, p.y + 2, 65, 65);
-    drawList->AddRect(ImVec2(rect.x, rect.y), ImVec2(rect.x + rect.z, rect.y + rect.w), ImColor(100, 100, 100, 255),
-                      0.0f, 0, 1.5f);
-    drawList->AddCircleFilled(pos, rad, ImColor(130, 130, 130, 255), 8);
-    drawList->AddCircleFilled(ImVec2(pos.x + stickX, pos.y + stickY), 5, ImColor(15, 15, 15, 255), 7);
+    // Draw the gate background
+    float cardinalRadius = 22.5f;
+    float diagonalRadius = cardinalRadius * (69.0f / 85.0f);
+
+    ImVec2 joystickCenterpoint =
+        ImVec2(cursorScreenPosition.x + cardinalRadius + 12, cursorScreenPosition.y + cardinalRadius + 11);
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImVec2(joystickCenterpoint.x, joystickCenterpoint.y + cardinalRadius),
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImVec2(joystickCenterpoint.x + cardinalRadius, joystickCenterpoint.y),
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImVec2(joystickCenterpoint.x, joystickCenterpoint.y - cardinalRadius),
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImVec2(joystickCenterpoint.x - cardinalRadius, joystickCenterpoint.y),
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+
+    // Draw the joystick position indicator
+    ImVec2 joystickIndicatorDistanceFromCenter = ImVec2(0, 0);
+    if ((stick.x * stick.x + stick.y * stick.y) > (deadzone * deadzone)) {
+        joystickIndicatorDistanceFromCenter =
+            ImVec2((stick.x * (cardinalRadius / 85.0f)), -(stick.y * (cardinalRadius / 85.0f)));
+    }
+    float indicatorRadius = 5.0f;
+    drawList->AddCircleFilled(ImVec2(joystickCenterpoint.x + joystickIndicatorDistanceFromCenter.x,
+                                     joystickCenterpoint.y + joystickIndicatorDistanceFromCenter.y),
+                              indicatorRadius, ImColor(34, 51, 76, 255), 7);
+
     ImGui::EndChild();
 }
 
@@ -176,7 +211,8 @@ void InputEditorWindow::DrawControllerSchema() {
     if (!isKeyboard) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
         DrawVirtualStick("##MainVirtualStick",
-                         ImVec2(backend->GetLeftStickX(mCurrentPort), backend->GetLeftStickY(mCurrentPort)));
+                         ImVec2(backend->GetLeftStickX(mCurrentPort), backend->GetLeftStickY(mCurrentPort)),
+                         profile->AxisDeadzones[0]);
         ImGui::SameLine();
 
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -197,6 +233,9 @@ void InputEditorWindow::DrawControllerSchema() {
         // SDL_CONTROLLER_AXIS_LEFTX: 0
         // SDL_CONTROLLER_AXIS_LEFTY: 1
         if (ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[0], 1.0f, 0.0f, "%.0f")) {
+            if (profile->AxisDeadzones[0] < 0) {
+                profile->AxisDeadzones[0] = 0;
+            }
             profile->AxisDeadzones[1] = profile->AxisDeadzones[0];
             Context::GetInstance()->GetControlDeck()->SaveSettings();
         }
@@ -224,7 +263,8 @@ void InputEditorWindow::DrawControllerSchema() {
         // 2 is the SDL value for right stick X axis
         // 3 is the SDL value for right stick Y axis.
         DrawVirtualStick("##RightVirtualStick",
-                         ImVec2(backend->GetRightStickX(mCurrentPort), backend->GetRightStickY(mCurrentPort)));
+                         ImVec2(backend->GetRightStickX(mCurrentPort), backend->GetRightStickY(mCurrentPort)),
+                         profile->AxisDeadzones[2]);
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -244,6 +284,9 @@ void InputEditorWindow::DrawControllerSchema() {
         // SDL_CONTROLLER_AXIS_RIGHTX: 2
         // SDL_CONTROLLER_AXIS_RIGHTY: 3
         if (ImGui::InputFloat("##MDZone", &profile->AxisDeadzones[2], 1.0f, 0.0f, "%.0f")) {
+            if (profile->AxisDeadzones[2] < 0) {
+                profile->AxisDeadzones[2] = 0;
+            }
             Context::GetInstance()->GetControlDeck()->SaveSettings();
             profile->AxisDeadzones[3] = profile->AxisDeadzones[2];
         }
