@@ -4,6 +4,7 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include "install_config.h"
 
 #ifdef __APPLE__
 #include "utils/OSXFolderManager.h"
@@ -253,23 +254,36 @@ std::string Context::GetShortName() {
     return mShortName;
 }
 
-std::string Context::GetAppBundlePath() {
+std::string Context::GetAppInstallationPath() {
+#ifdef NON_PORTABLE
+    return CMAKE_INSTALL_PREFIX;
+#else
 #ifdef __APPLE__
     FolderManager folderManager;
     return folderManager.getMainBundlePath();
 #endif
 
 #ifdef __linux__
-    char* fpath = std::getenv("SHIP_BIN_DIR");
-    if (fpath != NULL) {
-        return std::string(fpath);
+    std::string progpath(PATH_MAX, '\0');
+    int len = readlink("/proc/self/exe", &progpath[0], progpath.size() - 1);
+    if (len != -1) {
+        progpath.resize(len);
+
+        // Find the last '/' and remove everything after it
+        int lastSlash = progpath.find_last_of("/");
+        if (lastSlash != std::string::npos) {
+            progpath.erase(lastSlash);
+        }
+
+        return progpath;
     }
 #endif
 
     return ".";
+#endif
 }
 
-std::string Context::GetAppDirectoryPath() {
+std::string Context::GetAppDirectoryPath(std::string appName) {
 #if defined(__linux__) || defined(__APPLE__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {
@@ -277,14 +291,44 @@ std::string Context::GetAppDirectoryPath() {
     }
 #endif
 
+#ifdef NON_PORTABLE
+    if (appName.empty()) {
+        appName = GetInstance()->mShortName;
+    }
+    char* prefpath = SDL_GetPrefPath(NULL, appName.c_str());
+    if (prefpath != NULL) {
+        std::string ret(prefpath);
+        SDL_free(prefpath);
+        return ret;
+    }
+#endif
+
     return ".";
 }
 
-std::string Context::GetPathRelativeToAppBundle(const std::string path) {
-    return GetAppBundlePath() + "/" + path;
+std::string Context::GetPathRelativeToAppInstallation(const std::string path) {
+    return GetAppInstallationPath() + "/" + path;
 }
 
-std::string Context::GetPathRelativeToAppDirectory(const std::string path) {
-    return GetAppDirectoryPath() + "/" + path;
+std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appName) {
+    return GetAppDirectoryPath(appName) + "/" + path;
 }
+
+std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string appName) {
+    std::string fpath;
+
+    // app configuration dir
+    fpath = GetPathRelativeToAppDirectory(path, appName);
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+    // app install dir
+    fpath = GetPathRelativeToAppInstallation(path);
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+    // current dir
+    return "./" + std::string(path);
+}
+
 } // namespace LUS
