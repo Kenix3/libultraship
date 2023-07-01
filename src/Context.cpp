@@ -254,7 +254,7 @@ std::string Context::GetShortName() {
     return mShortName;
 }
 
-std::string Context::GetAppInstallationPath() {
+std::string Context::GetAppBundlePath() {
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
@@ -306,8 +306,8 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     return ".";
 }
 
-std::string Context::GetPathRelativeToAppInstallation(const std::string path) {
-    return GetAppInstallationPath() + "/" + path;
+std::string Context::GetPathRelativeToAppBundle(const std::string path) {
+    return GetAppBundlePath() + "/" + path;
 }
 
 std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appName) {
@@ -323,7 +323,7 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
         return fpath;
     }
     // app install dir
-    fpath = GetPathRelativeToAppInstallation(path);
+    fpath = GetPathRelativeToAppBundle(path);
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
