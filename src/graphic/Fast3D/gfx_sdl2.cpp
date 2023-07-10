@@ -318,7 +318,12 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
 #ifdef _WIN32
-    timer = CreateWaitableTimer(nullptr, false, nullptr);
+    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution timer if unsupported by the OS
+    if (timer == nullptr) {
+        timer = CreateWaitableTimer(nullptr, false, nullptr);
+    }
 #endif
 
     char title[512];
