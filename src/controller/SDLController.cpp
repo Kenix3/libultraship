@@ -62,13 +62,17 @@ bool SDLController::Close() {
     return true;
 }
 
+float SDLController::NormaliseStickValue(float axisValue) {
+    // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
+    return axisValue * MAX_AXIS_RANGE / MAX_SDL_RANGE;
+}
+
 void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t portIndex) {
     const auto axisValueX = SDL_GameControllerGetAxis(mController, axisX);
     const auto axisValueY = SDL_GameControllerGetAxis(mController, axisY);
 
-    // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
-    auto ax = axisValueX * MAX_AXIS_RANGE / MAX_SDL_RANGE;
-    auto ay = axisValueY * MAX_AXIS_RANGE / MAX_SDL_RANGE;
+    auto ax = NormaliseStickValue(axisValueX);
+    auto ay = NormaliseStickValue(axisValueY);
 
     if (axisX == SDL_CONTROLLER_AXIS_LEFTX) {
         GetLeftStickX(portIndex) = +ax;
@@ -175,6 +179,7 @@ void SDLController::ReadDevice(int32_t portIndex) {
         const auto posScancode = i | AXIS_SCANCODE_BIT;
         const auto negScancode = -posScancode;
         const auto axisMinimumPress = profile->AxisMinimumPress[i];
+        const auto axisDeadzone = profile->AxisDeadzones[i];
         const auto posButton = profile->Mappings[posScancode];
         const auto negButton = profile->Mappings[negScancode];
         const auto axisValue = SDL_GameControllerGetAxis(mController, axis);
@@ -198,10 +203,18 @@ void SDLController::ReadDevice(int32_t portIndex) {
               negButton == BTN_VSTICKDOWN)) {
 
             // The axis is being treated as a "button"
-            if (axisValue > axisMinimumPress) {
+
+            auto axisComparableValue = axisValue;
+            auto axisMinValue = axisMinimumPress;
+            if (profile->UseStickDeadzoneForButtons) {
+                axisComparableValue = NormaliseStickValue(axisValue);
+                axisMinValue = axisDeadzone;
+            }
+
+            if (axisComparableValue > axisMinValue) {
                 GetPressedButtons(portIndex) |= posButton;
                 GetPressedButtons(portIndex) &= ~negButton;
-            } else if (axisValue < -axisMinimumPress) {
+            } else if (axisComparableValue < -axisMinValue) {
                 GetPressedButtons(portIndex) &= ~posButton;
                 GetPressedButtons(portIndex) |= negButton;
             } else {

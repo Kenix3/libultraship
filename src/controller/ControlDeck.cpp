@@ -209,6 +209,7 @@ void ControlDeck::LoadSettings() {
                     profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
                     profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
                     profile->NotchProximityThreshold = config->GetInt(NESTED("Notches.ProximityThreshold", ""));
+                    profile->UseStickDeadzoneForButtons = config->GetBool(NESTED("UseStickDeadzoneForButtons", ""));
 
                     for (auto const& val : rawProfile["AxisDeadzones"].items()) {
                         profile->AxisDeadzones[std::stoi(val.key())] = val.value();
@@ -265,6 +266,7 @@ void ControlDeck::SaveSettings() {
             config->SetFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
             config->SetBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
             config->SetInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
+            config->SetBool(NESTED("UseStickDeadzoneForButtons", ""), profile->UseStickDeadzoneForButtons);
 
             // Clear all sections with a one controller to many relationship.
             const static std::vector<std::string> sClearSections = { "Mappings", "AxisDeadzones", "AxisMinimumPress",

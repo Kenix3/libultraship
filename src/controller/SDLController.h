@@ -27,6 +27,7 @@ class SDLController : public Controller {
   private:
     SDL_GameController* mController;
     bool mSupportsGyro;
+    float NormaliseStickValue(float axisValue);
     void NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t portIndex);
     bool Close();
 };
