@@ -377,11 +377,11 @@ void InputEditorWindow::DrawControllerSchema() {
     DrawButton("Left", BTN_CLEFT, mCurrentPort, &mBtnReading);
     DrawButton("Right", BTN_CRIGHT, mCurrentPort, &mBtnReading);
     ImGui::Dummy(ImVec2(0, 5));
-    #ifdef __SWITCH__
-        EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
-    #else
-        EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
-    #endif
+#ifdef __SWITCH__
+    EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
+#else
+    EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
+#endif
 
     ImGui::SetCursorPosX(cursor.x);
     ImGui::SameLine();
@@ -431,8 +431,7 @@ void InputEditorWindow::DrawControllerSchema() {
             Context::GetInstance()->GetControlDeck()->SaveSettings();
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(
-                "%s", "Uses the stick deadzone values when sticks are mapped to buttons");
+            ImGui::SetTooltip("%s", "Uses the stick deadzone values when sticks are mapped to buttons");
         }
     }
 
