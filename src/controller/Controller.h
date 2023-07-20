@@ -25,6 +25,7 @@ struct DeviceProfile {
     int32_t Version = 0;
     bool UseRumble = false;
     bool UseGyro = false;
+    bool UseStickDeadzoneForButtons = false;
     float RumbleStrength = 1.0f;
     int32_t NotchProximityThreshold = 0;
     std::unordered_map<int32_t, float> AxisDeadzones;
