@@ -225,17 +225,16 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
     fullscreen_state = on;
     int display_in_use = SDL_GetWindowDisplayIndex(wnd);
-    SDL_DisplayMode mode;
-    if (display_in_use < 0) {
-        SDL_GetDesktopDisplayMode(0, &mode);
-    } else {
-        SDL_GetDesktopDisplayMode(display_in_use, &mode);
-    }
 
     if (on) {
         // OTRTODO: Get mode from config.
-        window_width = mode.w;
-        window_height = mode.h;
+        SDL_DisplayMode mode;
+        if (display_in_use < 0) {
+            SDL_GetDesktopDisplayMode(0, &mode);
+        } else {
+            SDL_GetDesktopDisplayMode(display_in_use, &mode);
+        }
+        SDL_SetWindowDisplayMode(wnd, &mode);
         SDL_ShowCursor(false);
     } else {
         auto conf = LUS::Context::GetInstance()->GetConfig();
@@ -248,8 +247,8 @@ static void set_fullscreen(bool on, bool call_callback) {
             posY = 100;
         }
         SDL_SetWindowPosition(wnd, posX, posY);
+        SDL_SetWindowSize(wnd, window_width, window_height);
     }
-    SDL_SetWindowSize(wnd, window_width, window_height);
     SDL_SetWindowFullscreen(
         wnd,
         on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0);
