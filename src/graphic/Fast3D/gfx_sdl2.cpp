@@ -223,19 +223,21 @@ static void set_fullscreen(bool on, bool call_callback) {
     if (fullscreen_state == on) {
         return;
     }
-    fullscreen_state = on;
     int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    if (display_in_use < 0) {
+        SPDLOG_WARN("Can't detect on wich monitor we are. Probably out of display area?");
+        SPDLOG_WARN(SDL_GetError());
+    }
 
     if (on) {
         // OTRTODO: Get mode from config.
         SDL_DisplayMode mode;
-        if (display_in_use < 0) {
-            SDL_GetDesktopDisplayMode(0, &mode);
+        if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
+            SDL_SetWindowDisplayMode(wnd, &mode);
+            SDL_ShowCursor(false);
         } else {
-            SDL_GetDesktopDisplayMode(display_in_use, &mode);
+            SPDLOG_ERROR(SDL_GetError());
         }
-        SDL_SetWindowDisplayMode(wnd, &mode);
-        SDL_ShowCursor(false);
     } else {
         auto conf = LUS::Context::GetInstance()->GetConfig();
         window_width = conf->GetInt("Window.Width", 640);
@@ -249,9 +251,14 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_SetWindowPosition(wnd, posX, posY);
         SDL_SetWindowSize(wnd, window_width, window_height);
     }
-    SDL_SetWindowFullscreen(
-        wnd,
-        on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0);
+    if (SDL_SetWindowFullscreen(wnd, on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                                                                       : SDL_WINDOW_FULLSCREEN)
+                                        : 0) >= 0) {
+        fullscreen_state = on;
+    } else {
+        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
+        SPDLOG_ERROR(SDL_GetError());
+    }
     SDL_SetCursor(SDL_DISABLE);
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
