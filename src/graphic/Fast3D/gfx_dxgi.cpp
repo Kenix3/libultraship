@@ -358,6 +358,12 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_SIZE:
             dxgi.current_width = LOWORD(l_param);
             dxgi.current_height = HIWORD(l_param);
+            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                               newMonitor);
+            if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
+                dxgi.h_Monitor = newMonitor;
+                GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
+            }
             break;
         case WM_MOVE:
             dxgi.posX = GET_X_LPARAM(l_param);
