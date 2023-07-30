@@ -597,25 +597,37 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res->Width * res->Height * 4);
 
-    switch (res->Type) {
-        case LUS::TextureType::RGBA32bpp:
-            texBuffer.assign(res->ImageData, res->ImageData + (res->Width * res->Height * 4));
-            break;
-        case LUS::TextureType::GrayscaleAlpha8bpp:
-            for (int32_t i = 0; i < res->Width * res->Height; i++) {
-                uint8_t ia = res->ImageData[i];
-                uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
-                uint8_t alpha = (ia & 0xF) * 255 / 15;
-                texBuffer.push_back(color);
-                texBuffer.push_back(color);
-                texBuffer.push_back(color);
-                texBuffer.push_back(alpha);
-            }
-            break;
-        default:
+    // For HD textures we need to load the buffer raw (similar to inside gfx_pp)
+    if ((res->Flags & TEX_FLAG_LOAD_AS_RAW) != 0) {
+        // Raw loading doesn't support TLUT textures
+        if (res->Type == LUS::TextureType::Palette4bpp || res->Type == LUS::TextureType::Palette8bpp) {
             // TODO convert other image types
-            SPDLOG_WARN("ImGui::ResourceLoad: Attempting to load unsupporting image type %s", path.c_str());
+            SPDLOG_WARN("ImGui::ResourceLoad: Attempting to load unsupported image type %s", path.c_str());
             return;
+        }
+
+        texBuffer.assign(res->ImageData, res->ImageData + (res->Width * res->Height * 4));
+    } else {
+        switch (res->Type) {
+            case LUS::TextureType::RGBA32bpp:
+                texBuffer.assign(res->ImageData, res->ImageData + (res->Width * res->Height * 4));
+                break;
+            case LUS::TextureType::GrayscaleAlpha8bpp:
+                for (int32_t i = 0; i < res->Width * res->Height; i++) {
+                    uint8_t ia = res->ImageData[i];
+                    uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
+                    uint8_t alpha = (ia & 0xF) * 255 / 15;
+                    texBuffer.push_back(color);
+                    texBuffer.push_back(color);
+                    texBuffer.push_back(color);
+                    texBuffer.push_back(alpha);
+                }
+                break;
+            default:
+                // TODO convert other image types
+                SPDLOG_WARN("ImGui::ResourceLoad: Attempting to load unsupported image type %s", path.c_str());
+                return;
+        }
     }
 
     for (size_t pixel = 0; pixel < texBuffer.size() / 4; pixel++) {
