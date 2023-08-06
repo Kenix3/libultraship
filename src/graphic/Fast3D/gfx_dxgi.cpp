@@ -197,17 +197,35 @@ std::vector<std::tuple<HMONITOR, RECT, BOOL>> GetMonitorList() {
 }
 
 // Uses coordinates to get a Monitor handle from a list
-bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorList, int x, int y,
+bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorList, int x, int y, UINT cx, UINT cy,
                         std::tuple<HMONITOR, RECT, BOOL>& MonitorInfo) {
+    RECT wr = { x, y, (x + cx), (y + cy) };
     std::tuple<HMONITOR, RECT, BOOL> primary;
     for (std::tuple<HMONITOR, RECT, BOOL> i : MonitorList) {
-        if (PtInRect(&get<1>(i), POINT(x, y))) {
+        if (PtInRect(&get<1>(i), POINT((x + (cx / 2)), (y + (cy / 2))))) {
             MonitorInfo = i;
             return true;
         }
         if (get<2>(i)) {
             primary = i;
         }
+    }
+    RECT intersection;
+    LONG area;
+    LONG lastArea = 0;
+    std::tuple<HMONITOR, RECT, BOOL> biggest;
+    for (std::tuple<HMONITOR, RECT, BOOL> i : MonitorList) {
+        if (IntersectRect(&intersection, &get<1>(i), &wr)) {
+            area = (intersection.right - intersection.left) * (intersection.bottom - intersection.top);
+            if (area > lastArea) {
+                lastArea = area;
+                biggest = i;
+            }
+        }
+    }
+    if (lastArea > 0) {
+        MonitorInfo = biggest;
+        return true;
     }
     MonitorInfo = primary; // Fallback to primary, when out of bounds.
     return false;
@@ -237,7 +255,7 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
             dxgi.current_height = conf->GetInt("Window.Height", 480);
             dxgi.posX = conf->GetInt("Window.PositionX", 100);
             dxgi.posY = conf->GetInt("Window.PositionY", 100);
-            if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY,
+            if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                     Monitor)) { // Fallback to default when out of bounds.
                 dxgi.posX = 100;
                 dxgi.posY = 100;
@@ -340,11 +358,18 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_SIZE:
             dxgi.current_width = LOWORD(l_param);
             dxgi.current_height = HIWORD(l_param);
+            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                               newMonitor);
+            if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
+                dxgi.h_Monitor = newMonitor;
+                GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
+            }
             break;
         case WM_MOVE:
             dxgi.posX = GET_X_LPARAM(l_param);
             dxgi.posY = GET_Y_LPARAM(l_param);
-            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, newMonitor);
+            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                               newMonitor);
             if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
                 dxgi.h_Monitor = newMonitor;
                 GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
@@ -389,7 +414,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DISPLAYCHANGE:
             dxgi.monitor_list = GetMonitorList();
-            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.h_Monitor);
+            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                               dxgi.h_Monitor);
             GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             break;
         default:
@@ -452,7 +478,8 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         dxgi.monitor_list = GetMonitorList();
         dxgi.posX = posX;
         dxgi.posY = posY;
-        if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.h_Monitor)) {
+        if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                                dxgi.h_Monitor)) {
             dxgi.posX = 100;
             dxgi.posY = 100;
         }
