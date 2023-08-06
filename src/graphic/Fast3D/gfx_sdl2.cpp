@@ -225,7 +225,7 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
     int display_in_use = SDL_GetWindowDisplayIndex(wnd);
     if (display_in_use < 0) {
-        SPDLOG_WARN("Can't detect on wich monitor we are. Probably out of display area?");
+        SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
         SPDLOG_WARN(SDL_GetError());
     }
 
