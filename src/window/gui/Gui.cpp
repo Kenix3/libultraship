@@ -52,6 +52,7 @@
 #include <graphic/Fast3D/gfx_direct3d11.h>
 #include <ImGui/backends/imgui_impl_dx11.h>
 #include <ImGui/backends/imgui_impl_win32.h>
+#include "advancedResolution.h"
 
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -384,13 +385,18 @@ void Gui::DrawMenu() {
     gfx_current_game_window_viewport.width = (int16_t)size.x;
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
+    if (CVarGetInteger("gAdvancedResolutionMode", 0)) {
+        AdvancedResolutionSettings::ApplyResolutionChanges();
+    }
+
     switch (CVarGetInteger("gLowResMode", 0)) {
         case 1: { // N64 Mode
             gfx_current_dimensions.width = 320;
-            gfx_current_dimensions.height = 240;
+            gfx_current_dimensions.height = 240; 
+            /*
             const int sw = size.y * 320 / 240;
             gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
-            gfx_current_game_window_viewport.width = sw;
+            gfx_current_game_window_viewport.width = sw;*/
             break;
         }
         case 2: { // 240p Widescreen
@@ -463,10 +469,33 @@ void Gui::StartFrame() {
     const ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (CVarGetInteger("gLowResMode", 0) == 1) {
+    if (CVarGetInteger("gLowResMode", 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(size.x / 2 - sw / 2, 0);
         size = ImVec2(sw, size.y);
+    } else if (CVarGetInteger("gAdvancedResolutionMode", 0)) {
+        if (!CVarGetInteger("gAdvancedResolution_PixelPerfectMode", 0)) {
+            float sw = size.y * gfx_current_dimensions.width / gfx_current_dimensions.height;
+            float sh = size.x * gfx_current_dimensions.height / gfx_current_dimensions.width;
+            float sPosX = size.x / 2 - sw / 2;
+            float sPosY = size.y / 2 - sh / 2;
+            if (sPosY < 0.0f) { // pillarbox
+                sPosY = 0.0f;   // clamp y position
+                sh = size.y;  // reset height
+            }
+            if (sPosX < 0.0f) { // letterbox
+                sPosX = 0.0f;   // clamp x position
+                sw = size.x;  // reset width
+            }
+            pos = ImVec2(sPosX, sPosY);
+            size = ImVec2(sw, sh);
+        } else { // in pixel perfect mode it's much easier, i hope
+            const int factor = CVarGetInteger("gAdvancedResolution_IntegerScaleFactor", 0);
+            float sPosX = size.x / 2 - (gfx_current_dimensions.width * factor) / 2;
+            float sPosY = size.y / 2 - (gfx_current_dimensions.height * factor) / 2;
+            pos = ImVec2(sPosX, sPosY);
+            size = ImVec2(float(gfx_current_dimensions.width) * factor, float(gfx_current_dimensions.height) * factor);
+        }
     }
     if (gfxFramebuffer) {
         ImGui::SetCursorPos(pos);
