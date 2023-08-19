@@ -489,8 +489,8 @@ void Gui::StartFrame() {
             }
             pos = ImVec2(sPosX, sPosY);
             size = ImVec2(sw, sh);
-        } else { // in pixel perfect mode it's much easier, i hope
-            const int factor = CVarGetInteger("gAdvancedResolution_IntegerScaleFactor", 0);
+        } else { // in pixel perfect mode it's much easier
+            const int factor = CVarGetInteger("gAdvancedResolution_IntegerScaleFactor", 1);
             float sPosX = size.x / 2 - (gfx_current_dimensions.width * factor) / 2;
             float sPosY = size.y / 2 - (gfx_current_dimensions.height * factor) / 2;
             pos = ImVec2(sPosX, sPosY);

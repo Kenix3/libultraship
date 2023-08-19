@@ -36,9 +36,9 @@ namespace AdvancedResolutionSettings {
         if (aspectRatioIsEnabled) {
                 if ((float(gfx_current_game_window_viewport.width) / gfx_current_game_window_viewport.height) >
                 (aspectRatio_X / aspectRatio_Y)) { // when pillarboxed
-                gfx_current_dimensions.width = (gfx_current_dimensions.height / aspectRatio_Y) * aspectRatio_X;
+                gfx_current_dimensions.width = uint32_t(float(gfx_current_dimensions.height / aspectRatio_Y) * aspectRatio_X);
             } else { // when letterboxed
-                gfx_current_dimensions.height = (gfx_current_dimensions.width / aspectRatio_X) * aspectRatio_Y;
+                gfx_current_dimensions.height = uint32_t(float(gfx_current_dimensions.width / aspectRatio_X) * aspectRatio_Y);
             }
         } // else, having both options turned off does nothing.
         }
