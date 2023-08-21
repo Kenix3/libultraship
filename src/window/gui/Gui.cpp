@@ -52,7 +52,7 @@
 #include <graphic/Fast3D/gfx_direct3d11.h>
 #include <ImGui/backends/imgui_impl_dx11.h>
 #include <ImGui/backends/imgui_impl_win32.h>
-#include "AdvancedResolution.h"
+#include "window/gui/AdvancedResolution.h"
 
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -392,7 +392,7 @@ void Gui::DrawMenu() {
     switch (CVarGetInteger("gLowResMode", 0)) {
         case 1: { // N64 Mode
             gfx_current_dimensions.width = 320;
-            gfx_current_dimensions.height = 240; 
+            gfx_current_dimensions.height = 240;
             /*
             const int sw = size.y * 320 / 240;
             gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
