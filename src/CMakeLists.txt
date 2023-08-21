@@ -163,8 +163,8 @@ set(Source_Files__Window__Gui
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiElement.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/advancedResolution.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/advancedResolution.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/AdvancedResolution.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/AdvancedResolution.cpp
 )
 
 source_group("window/gui" FILES ${Source_Files__Window__Gui})

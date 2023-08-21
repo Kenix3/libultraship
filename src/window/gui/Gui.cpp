@@ -52,7 +52,7 @@
 #include <graphic/Fast3D/gfx_direct3d11.h>
 #include <ImGui/backends/imgui_impl_dx11.h>
 #include <ImGui/backends/imgui_impl_win32.h>
-#include "advancedResolution.h"
+#include "AdvancedResolution.h"
 
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -386,7 +386,7 @@ void Gui::DrawMenu() {
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
     if (CVarGetInteger("gAdvancedResolutionMode", 0)) {
-        AdvancedResolutionSettings::ApplyResolutionChanges();
+        ApplyResolutionChanges();
     }
 
     switch (CVarGetInteger("gLowResMode", 0)) {
@@ -481,11 +481,11 @@ void Gui::StartFrame() {
             float sPosY = size.y / 2 - sh / 2;
             if (sPosY < 0.0f) { // pillarbox
                 sPosY = 0.0f;   // clamp y position
-                sh = size.y;  // reset height
+                sh = size.y;    // reset height
             }
             if (sPosX < 0.0f) { // letterbox
                 sPosX = 0.0f;   // clamp x position
-                sw = size.x;  // reset width
+                sw = size.x;    // reset width
             }
             pos = ImVec2(sPosX, sPosY);
             size = ImVec2(sw, sh);

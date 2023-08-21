@@ -1,17 +1,11 @@
 // Date created: 2023 08 15
-// Description: Advanced Resolution Editor - LUS GFX Functions
-#include "advancedResolution.h"
+// Description: Advanced Resolution Editor - LUS Functions
+#include "AdvancedResolution.h"
 
 #include <libultraship/libultraship.h>
 #include <graphic/Fast3D/gfx_pc.h>
 
-namespace AdvancedResolutionSettings {
-    /*
-    void InitResolutionCvars() {
-        CVarSetFloat("gInternalResolution", 1.0f);
-        CVarSetInteger("gLowResMode", 0);
-    }*/
-
+namespace LUS {
     void ApplyResolutionChanges() {
         ImVec2 size = ImGui::GetContentRegionAvail(); // size value, same as it's generated in Gui.cpp
 
