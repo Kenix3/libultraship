@@ -386,7 +386,7 @@ void Gui::DrawMenu() {
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
     if (CVarGetInteger("gAdvancedResolutionMode", 0)) {
-        ApplyResolutionChanges();
+        LUS::ApplyResolutionChanges();
     }
 
     switch (CVarGetInteger("gLowResMode", 0)) {
