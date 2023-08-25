@@ -15,6 +15,7 @@
 #include "resource/File.h"
 #include <stb/stb_image.h>
 #include "window/gui/Fonts.h"
+#include "window/gui/AdvancedResolution.h"
 
 #ifdef __WIIU__
 #include <gx2/registers.h> // GX2SetViewport / GX2SetScissor
@@ -52,7 +53,6 @@
 #include <graphic/Fast3D/gfx_direct3d11.h>
 #include <ImGui/backends/imgui_impl_dx11.h>
 #include <ImGui/backends/imgui_impl_win32.h>
-#include "window/gui/AdvancedResolution.h"
 
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
