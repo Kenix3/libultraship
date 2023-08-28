@@ -67,6 +67,7 @@ class Gui {
     void EndFrame();
     void RenderViewports();
     void DrawMenu();
+    void ApplyResolutionChanges();
 
     void SaveConsoleVariablesOnNextTick();
     void Update(WindowEvent event);
