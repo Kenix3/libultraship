@@ -526,7 +526,7 @@ void Gui::StartFrame() {
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(size.x / 2 - sw / 2, 0);
         size = ImVec2(sw, size.y);
-    } else if (CVarGetInteger("gAdvancedResolutionMode", 0)) {
+    } else if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
         if (!CVarGetInteger("gAdvancedResolution.PixelPerfectMode", 0)) {
             if (!CVarGetInteger("gAdvancedResolution.IgnoreAspectCorrection", 0)) {
                 float sWdth = size.y * gfx_current_dimensions.width / gfx_current_dimensions.height;
