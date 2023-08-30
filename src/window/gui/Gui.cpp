@@ -384,7 +384,7 @@ void Gui::DrawMenu() {
     gfx_current_game_window_viewport.width = (int16_t)size.x;
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
-    if (CVarGetInteger("gAdvancedResolutionMode", 0)) {
+    if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
         ApplyResolutionChanges();
     }
 
