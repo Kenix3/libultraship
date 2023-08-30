@@ -467,10 +467,10 @@ void Gui::ImGuiWMNewFrame() {
 void Gui::ApplyResolutionChanges() {
     ImVec2 size = ImGui::GetContentRegionAvail();
 
-    const float aspectRatioX = CVarGetFloat("gAdvancedResolution_aspectRatioX", 16.0f);
-    const float aspectRatioY = CVarGetFloat("gAdvancedResolution_aspectRatioY", 9.0f);
-    const uint32_t verticalPixelCount = CVarGetInteger("gAdvancedResolution_verticalPixelCount", 480);
-    const bool verticalResolutionToggle = CVarGetInteger("gAdvancedResolution_verticalResolutionToggle", (int)false);
+    const float aspectRatioX = CVarGetFloat("gAdvancedResolution.aspectRatioX", 16.0f);
+    const float aspectRatioY = CVarGetFloat("gAdvancedResolution.aspectRatioY", 9.0f);
+    const uint32_t verticalPixelCount = CVarGetInteger("gAdvancedResolution.verticalPixelCount", 480);
+    const bool verticalResolutionToggle = CVarGetInteger("gAdvancedResolution.verticalResolutionToggle", 0);
 
     const bool aspectRatioIsEnabled = (aspectRatioX > 0.0f) && (aspectRatioY > 0.0f);
 
@@ -527,23 +527,25 @@ void Gui::StartFrame() {
         pos = ImVec2(size.x / 2 - sw / 2, 0);
         size = ImVec2(sw, size.y);
     } else if (CVarGetInteger("gAdvancedResolutionMode", 0)) {
-        if (!CVarGetInteger("gAdvancedResolution_PixelPerfectMode", 0)) {
-            float sw = size.y * gfx_current_dimensions.width / gfx_current_dimensions.height;
-            float sh = size.x * gfx_current_dimensions.height / gfx_current_dimensions.width;
-            float sPosX = size.x / 2 - sw / 2;
-            float sPosY = size.y / 2 - sh / 2;
-            if (sPosY < 0.0f) { // pillarbox
-                sPosY = 0.0f;   // clamp y position
-                sh = size.y;    // reset height
+        if (!CVarGetInteger("gAdvancedResolution.PixelPerfectMode", 0)) {
+            if (!CVarGetInteger("gAdvancedResolution.IgnoreAspectCorrection", 0)) {
+                float sWdth = size.y * gfx_current_dimensions.width / gfx_current_dimensions.height;
+                float sHght = size.x * gfx_current_dimensions.height / gfx_current_dimensions.width;
+                float sPosX = size.x / 2 - sWdth / 2;
+                float sPosY = size.y / 2 - sHght / 2;
+                if (sPosY < 0.0f) { // pillarbox
+                    sPosY = 0.0f;   // clamp y position
+                    sHght = size.y; // reset height
+                }
+                if (sPosX < 0.0f) { // letterbox
+                    sPosX = 0.0f;   // clamp x position
+                    sWdth = size.x; // reset width
+                }
+                pos = ImVec2(sPosX, sPosY);
+                size = ImVec2(sWdth, sHght);
             }
-            if (sPosX < 0.0f) { // letterbox
-                sPosX = 0.0f;   // clamp x position
-                sw = size.x;    // reset width
-            }
-            pos = ImVec2(sPosX, sPosY);
-            size = ImVec2(sw, sh);
         } else { // in pixel perfect mode it's much easier
-            const int factor = CVarGetInteger("gAdvancedResolution_IntegerScaleFactor", 1);
+            const int factor = CVarGetInteger("gAdvancedResolution.IntegerScaleFactor", 1);
             float sPosX = size.x / 2 - (gfx_current_dimensions.width * factor) / 2;
             float sPosY = size.y / 2 - (gfx_current_dimensions.height * factor) / 2;
             pos = ImVec2(sPosX, sPosY);

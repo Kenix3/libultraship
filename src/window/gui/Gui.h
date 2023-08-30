@@ -67,7 +67,6 @@ class Gui {
     void EndFrame();
     void RenderViewports();
     void DrawMenu();
-    void ApplyResolutionChanges();
 
     void SaveConsoleVariablesOnNextTick();
     void Update(WindowEvent event);
@@ -91,6 +90,7 @@ class Gui {
     void ImGuiWMNewFrame();
     void ImGuiRenderDrawData(ImDrawData* data);
     ImTextureID GetTextureById(int32_t id);
+    void ApplyResolutionChanges();
 
   private:
     struct GuiTexture {
