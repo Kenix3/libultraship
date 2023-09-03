@@ -2512,6 +2512,7 @@ static void gfx_run_dl(Gfx* cmd) {
                     mtxAddr == SEG_ADDR(0, 0x12DB40) || // GC NMQ D
                     mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
                     mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
+                    mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
                     mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
                 ) {
                     mtxAddr = clearMtx;
