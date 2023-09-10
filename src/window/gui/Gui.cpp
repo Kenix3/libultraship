@@ -518,6 +518,31 @@ void Gui::ApplyResolutionChanges() {
     // centring the image is done in Gui::StartFrame().
 }
 
+int16_t Gui::GetIntegerScaleFactor() {
+    if (!CVarGetInteger("gAdvancedResolution.IntegerScaleFitAutomatically", 0)) {
+        int16_t factor = CVarGetInteger("gAdvancedResolution.IntegerScaleFactor", 1);
+        if (factor < 1) {
+            factor = 1;
+        }
+        return factor;
+    } else { // Skip the preferred value and automatically determine from window size
+        int16_t factor = 1;
+        // Compare aspect ratios of game framebuffer and GUI dimensions
+        if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
+            ((float)gfx_current_dimensions.width / gfx_current_dimensions.height)) {
+            // Scale to window height
+            factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
+        } else {
+            // Scale to window width
+            factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
+        }
+        if (factor < 1) {
+            factor = 1;
+        }
+        return factor;
+    }
+}
+
 void Gui::StartFrame() {
     const ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
@@ -545,7 +570,7 @@ void Gui::StartFrame() {
                 size = ImVec2(sWdth, sHght);
             }
         } else { // in pixel perfect mode it's much easier
-            const int factor = CVarGetInteger("gAdvancedResolution.IntegerScaleFactor", 1);
+            const int factor = GetIntegerScaleFactor();
             float sPosX = size.x / 2 - (gfx_current_dimensions.width * factor) / 2;
             float sPosY = size.y / 2 - (gfx_current_dimensions.height * factor) / 2;
             pos = ImVec2(sPosX, sPosY);
