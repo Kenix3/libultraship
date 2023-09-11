@@ -519,15 +519,34 @@ void Gui::ApplyResolutionChanges() {
 }
 
 int16_t Gui::GetIntegerScaleFactor() {
-    if (!CVarGetInteger("gAdvancedResolution.IntegerScaleFitAutomatically", 0)) {
-        int16_t factor = CVarGetInteger("gAdvancedResolution.IntegerScaleFactor", 1);
+    if (!CVarGetInteger("gAdvancedResolution.IntegerScale.FitAutomatically", 0)) {
+        int16_t factor = CVarGetInteger("gAdvancedResolution.IntegerScale.Factor", 1);
+
+        if (CVarGetInteger("gAdvancedResolution.IntegerScale.NeverExceedBounds", 1)) {
+            // Screen bounds take priority over whatever Factor is set to.
+            // The same comparison as below, but checked against the configured factor
+            if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
+                ((float)gfx_current_dimensions.width / gfx_current_dimensions.height)) {
+                if (factor > gfx_current_game_window_viewport.height / gfx_current_dimensions.height) {
+                    // Scale to window height
+                    factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
+                }
+            } else {
+                if (factor > gfx_current_game_window_viewport.width / gfx_current_dimensions.width) {
+                    // Scale to window width
+                    factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
+                }
+            }
+        }
+
         if (factor < 1) {
             factor = 1;
         }
         return factor;
     } else { // Skip the preferred value and automatically determine from window size
         int16_t factor = 1;
-        // Compare aspect ratios of game framebuffer and GUI dimensions
+
+        // Compare aspect ratios of game framebuffer and GUI
         if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
             ((float)gfx_current_dimensions.width / gfx_current_dimensions.height)) {
             // Scale to window height
@@ -536,6 +555,10 @@ int16_t Gui::GetIntegerScaleFactor() {
             // Scale to window width
             factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
         }
+
+        // Add screen bounds offset, if set.
+        factor += CVarGetInteger("gAdvancedResolution.IntegerScale.ExceedBoundsBy", 0);
+
         if (factor < 1) {
             factor = 1;
         }
