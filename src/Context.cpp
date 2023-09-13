@@ -54,6 +54,19 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string name, const s
     return GetInstance();
 }
 
+std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string name, const std::string shortName,
+                                                              const std::string configFilePath) {
+    if (mContext.expired()) {
+        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
+        mContext = shared;
+        return shared;
+    }
+
+    SPDLOG_DEBUG("Trying to create an uninitialized context when it already exists. Returning existing.");
+
+    return GetInstance();
+}
+
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
     : mName(std::move(name)), mShortName(std::move(shortName)), mConfigFilePath(std::move(configFilePath)) {
 }
@@ -72,6 +85,10 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
 }
 
 void Context::InitLogging() {
+    if (GetLogger() != nullptr) {
+        return;
+    }
+
     try {
         // Setup Logging
         spdlog::init_thread_pool(8192, 1);
@@ -149,24 +166,36 @@ void Context::InitLogging() {
 }
 
 void Context::InitConfiguration() {
+    if (GetConfig() != nullptr) {
+        return;
+    }
+
     mConfig = std::make_shared<Config>(GetPathRelativeToAppDirectory(GetConfigFilePath()));
 }
 
 void Context::InitConsoleVariables() {
+    if (GetConsoleVariables() != nullptr) {
+        return;
+    }
+
     mConsoleVariables = std::make_shared<ConsoleVariable>();
 }
 
 void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
                                   const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
+    if (GetResourceManager() != nullptr) {
+        return;
+    }
+
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
-    mPatchesPath = mConfig->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+    mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
         mResourceManager = std::make_shared<ResourceManager>(mMainPath, mPatchesPath, validHashes, reservedThreadCount);
     } else {
         mResourceManager = std::make_shared<ResourceManager>(otrFiles, validHashes, reservedThreadCount);
     }
 
-    if (!mResourceManager->DidLoadSuccessfully()) {
+    if (!GetResourceManager()->DidLoadSuccessfully()) {
 #if defined(__SWITCH__)
         printf("Main OTR file not found!\n");
 #elif defined(__WIIU__)
@@ -184,24 +213,44 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 }
 
 void Context::InitControlDeck() {
+    if (GetControlDeck() != nullptr) {
+        return;
+    }
+
     mControlDeck = std::make_shared<ControlDeck>();
 }
 
 void Context::InitCrashHandler() {
+    if (GetCrashHandler() != nullptr) {
+        return;
+    }
+
     mCrashHandler = std::make_shared<CrashHandler>();
 }
 
 void Context::InitAudio() {
+    if (GetAudio() != nullptr) {
+        return;
+    }
+
     mAudio = std::make_shared<Audio>();
-    mAudio->Init();
+    GetAudio()->Init();
 }
 
 void Context::InitConsole() {
+    if (GetConsole() != nullptr) {
+        return;
+    }
+
     mConsole = std::make_shared<Console>();
     GetConsole()->Init();
 }
 
 void Context::InitWindow() {
+    if (GetWindow() != nullptr) {
+        return;
+    }
+
     mWindow = std::make_shared<Window>();
     GetWindow()->Init();
 }

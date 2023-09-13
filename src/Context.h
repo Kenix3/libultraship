@@ -24,7 +24,8 @@ class Context {
                                                    const std::vector<std::string>& otrFiles = {},
                                                    const std::unordered_set<uint32_t>& validHashes = {},
                                                    uint32_t reservedThreadCount = 1);
-
+    static std::shared_ptr<Context> CreateUninitializedInstance(const std::string name, const std::string shortName,
+                                                                const std::string configFilePath);
     static std::string GetAppBundlePath();
     static std::string GetAppDirectoryPath(std::string appName = "");
     static std::string GetPathRelativeToAppDirectory(const std::string path, std::string appName = "");
