@@ -184,7 +184,7 @@ public:
 
 	// Rewrites the rom data in-place to be in BigEndian/z64 format
 	static inline void RomToBigEndian(uint8_t* rom, size_t romSize) {
-		if (romSize > 0) {
+		if (romSize <= 0) {
 			return;
 		}
 
