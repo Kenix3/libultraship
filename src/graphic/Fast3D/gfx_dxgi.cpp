@@ -373,8 +373,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
                 GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             }
             break;
-        case WM_DESTROY:
-            PostQuitMessage(0);
+        case WM_CLOSE:
+            dxgi.is_running = false;
             break;
         case WM_ACTIVATEAPP:
             if (dxgi.on_all_keys_up != nullptr) {
