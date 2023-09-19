@@ -393,6 +393,11 @@ void Archive::GenerateCrcMap() {
 }
 
 bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
+    // Skip when there are no valid hashes to check against
+    if (mValidHashes.empty()) {
+        return true;
+    }
+
     auto t = LoadFileFromHandle("version", false, mpqHandle);
     if (t != nullptr && t->IsLoaded) {
         auto stream = std::make_shared<MemoryStream>(t->Buffer.data(), t->Buffer.size());
@@ -400,7 +405,7 @@ bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
         LUS::Endianness endianness = (LUS::Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
         uint32_t version = reader->ReadUInt32();
-        if (mValidHashes.empty() || mValidHashes.contains(version)) {
+        if (mValidHashes.contains(version)) {
             PushGameVersion(version);
             return true;
         }
