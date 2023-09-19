@@ -490,8 +490,8 @@ void Gui::ApplyResolutionChanges() {
         newHeight = verticalPixelCount;
     } else { // Use the window's resolution
         if (aspectRatioIsEnabled) {
-            if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
-                (aspectRatioX / aspectRatioY)) {
+            if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+                (aspectRatioY / aspectRatioX)) {
                 // when pillarboxed
                 newWidth = uint32_t(float(gfx_current_dimensions.height / aspectRatioY) * aspectRatioX);
             } else { // when letterboxed
@@ -524,9 +524,10 @@ int16_t Gui::GetIntegerScaleFactor() {
 
         if (CVarGetInteger("gAdvancedResolution.IntegerScale.NeverExceedBounds", 1)) {
             // Screen bounds take priority over whatever Factor is set to.
+
             // The same comparison as below, but checked against the configured factor
-            if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
-                ((float)gfx_current_dimensions.width / gfx_current_dimensions.height)) {
+            if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+                ((float)gfx_current_dimensions.height / gfx_current_dimensions.width)) {
                 if (factor > gfx_current_game_window_viewport.height / gfx_current_dimensions.height) {
                     // Scale to window height
                     factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
@@ -547,8 +548,8 @@ int16_t Gui::GetIntegerScaleFactor() {
         int16_t factor = 1;
 
         // Compare aspect ratios of game framebuffer and GUI
-        if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
-            ((float)gfx_current_dimensions.width / gfx_current_dimensions.height)) {
+        if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+            ((float)gfx_current_dimensions.height / gfx_current_dimensions.width)) {
             // Scale to window height
             factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
         } else {
