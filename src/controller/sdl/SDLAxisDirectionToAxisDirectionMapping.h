@@ -8,7 +8,7 @@ class SDLAxisDirectionToAxisDirectionMapping final : public AxisDirectionMapping
   public:
     SDLAxisDirectionToAxisDirectionMapping(int32_t sdlControllerIndex, int32_t sdlControllerAxis,
                                            int32_t axisDirection);
-
+    GetNormalizedAxisDirectionValue();
   private:
     SDL_GameControllerAxis mControllerAxis;
     AxisDirection mAxisDirection;
