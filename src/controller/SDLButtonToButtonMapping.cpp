@@ -8,19 +8,8 @@ SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint16_t bitmask, int32_t sdl
 }
 
 void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
-    SDL_GameControllerUpdate();
-
-    // If the controller is disconnected, close it.
-    if (mController != nullptr && !SDL_GameControllerGetAttached(mController)) {
-        CloseController();
-    }
-
-    // Attempt to load the controller if it's not loaded
-    if (mController == nullptr) {
-        // If we failed to load the controller, don't process it.
-        if (!OpenController()) {
-            return;
-        }
+    if (!ControllerLoaded()) {
+        return;
     }
 
     if (SDL_GameControllerGetButton(mController, mControllerButton)) {

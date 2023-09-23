@@ -32,4 +32,23 @@ bool SDLMapping::CloseController() {
 
     return true;
 }
+
+bool SDLMapping::ControllerLoaded() {
+    SDL_GameControllerUpdate();
+
+    // If the controller is disconnected, close it.
+    if (mController != nullptr && !SDL_GameControllerGetAttached(mController)) {
+        CloseController();
+    }
+
+    // Attempt to load the controller if it's not loaded
+    if (mController == nullptr) {
+        // If we failed to load the controller, don't process it.
+        if (!OpenController()) {
+            return false;
+        }
+    }
+
+    return true;
+}
 } // namespace LUS

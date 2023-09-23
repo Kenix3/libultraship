@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <SDL2/SDL.h>
 #include <memory>
@@ -9,10 +11,13 @@ class SDLMapping {
     ~SDLMapping();
 
   protected:
-    bool OpenController();
-    bool CloseController();
+    bool ControllerLoaded();
 
     int32_t mControllerIndex;
     SDL_GameController* mController;
+
+  private:
+    bool OpenController();
+    bool CloseController();
 };
 } // namespace LUS

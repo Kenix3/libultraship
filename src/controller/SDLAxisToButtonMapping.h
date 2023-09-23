@@ -2,7 +2,7 @@
 #include "SDLMapping.h"
 
 namespace LUS {
-enum AxisDirection { NEGATIVE = 0, POSITIVE = 1};
+enum AxisDirection { NEGATIVE = -1, POSITIVE = 1};
 
 class SDLAxisToButtonMapping final : public ButtonMapping, public SDLMapping {
   public:

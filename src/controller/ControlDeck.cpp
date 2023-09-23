@@ -8,6 +8,7 @@
 #include <imgui.h>
 
 #include "SDLButtonToButtonMapping.h"
+#include "SDLAxisToButtonMapping.h"
 
 #ifndef __WIIU__
 #include "controller/KeyboardController.h"
@@ -32,6 +33,10 @@ void ControlDeck::Init(uint8_t* bits) {
     mControllers.push_back(std::make_shared<Controller>());
     const std::shared_ptr<Controller> controller = mControllers[0];
     controller->AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, 0, 0));
+    controller->AddButtonMapping(std::make_shared<SDLAxisToButtonMapping>(BTN_CUP, 0, 3, -1));
+    controller->AddButtonMapping(std::make_shared<SDLAxisToButtonMapping>(BTN_CDOWN, 0, 3, 1));
+    controller->AddButtonMapping(std::make_shared<SDLAxisToButtonMapping>(BTN_CLEFT, 0, 2, -1));
+    controller->AddButtonMapping(std::make_shared<SDLAxisToButtonMapping>(BTN_CRIGHT, 0, 2, 1));
 }
 
 // void ControlDeck::ScanDevices() {
