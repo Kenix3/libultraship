@@ -1,4 +1,4 @@
-#include "ButtonMapping.h"
+#include "controller/ButtonMapping.h"
 #include "SDLMapping.h"
 
 namespace LUS {

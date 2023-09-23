@@ -60,14 +60,14 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyController.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLAxisToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLAxisToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLButtonToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLButtonToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.h
     
 )
 
