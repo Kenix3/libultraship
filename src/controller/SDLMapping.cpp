@@ -29,4 +29,4 @@ bool SDLMapping::CloseController() {
 
     return true;
 }
-}
+} // namespace LUS
