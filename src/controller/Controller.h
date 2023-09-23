@@ -10,6 +10,7 @@
 #include "libultraship/color.h"
 #include <unordered_map>
 #include "ButtonMapping.h"
+#include "StickMapping.h"
 
 #define EXTENDED_SCANCODE_BIT (1 << 8)
 #define AXIS_SCANCODE_BIT (1 << 9)
@@ -59,9 +60,13 @@ class Controller {
     double GetClosestNotch(double angle, double approximationThreshold);
 
   private:
-    // todo: maybe use unique_ptr for these instead?
     std::vector<std::shared_ptr<ButtonMapping>> mButtonMappings;
+    std::shared_ptr<StickMapping> mLeftStickMapping;
+    std::shared_ptr<StickMapping> mRightStickMapping;
+
+
     bool mIsConnected;
+
 
     struct Buttons {
         int32_t PressedButtons = 0;
