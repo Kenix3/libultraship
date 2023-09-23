@@ -1,8 +1,11 @@
-#include "SDLButtonMapping.h"
+#include "SDLMapping.h"
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-SDLMapping::SDLMapping(int32_t sdlControllerIndex) : mControllerIndex(sdlControllerIndex) {
+SDLMapping::SDLMapping(int32_t sdlControllerIndex) : mControllerIndex(sdlControllerIndex), mController(nullptr) {
+}
+
+SDLMapping::~SDLMapping() {
 }
 
 bool SDLMapping::OpenController() {
@@ -20,9 +23,9 @@ bool SDLMapping::OpenController() {
 
 bool SDLMapping::CloseController() {
     if (mController != nullptr && SDL_WasInit(SDL_INIT_GAMECONTROLLER)) {
-        if (CanRumble()) {
-            SDL_GameControllerRumble(mController, 0, 0, 0);
-        }
+        // if (CanRumble()) {
+        //     SDL_GameControllerRumble(mController, 0, 0, 0);
+        // }
         SDL_GameControllerClose(mController);
     }
     mController = nullptr;

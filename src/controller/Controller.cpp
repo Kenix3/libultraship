@@ -147,7 +147,7 @@ void Controller::ReadToPad(OSContPad* pad) {
 
     // Button Inputs
     for (auto mapping : mButtonMappings) {
-        mapping.UpdatePad(padToBuffer.button);
+        mapping->UpdatePad(padToBuffer.button);
     }
     // padToBuffer.button |= GetPressedButtons(portIndex) & 0xFFFF;
 
@@ -265,8 +265,31 @@ double Controller::GetClosestNotch(double angle, double approximationThreshold) 
     return distanceToNotch < approximationThreshold / 2 ? closestNotch : angle;
 }
 
-bool Controller::Connected() const {
+bool Controller::IsConnected() const {
     return mIsConnected;
+}
+
+void Controller::Connect() {
+    mIsConnected = true;
+}
+
+void Controller::Disconnect() {
+    mIsConnected = false;
+}
+
+void Controller::AddButtonMapping(std::shared_ptr<ButtonMapping> mapping) {
+    mButtonMappings.push_back(mapping);
+}
+
+void Controller::ClearButtonMappings(uint16_t bitmask) {
+    // todo: figure out why this isn't compiling
+    // std::erase_if(mButtonMappings, [](std::shared_ptr<ButtonMapping> mapping, uint16_t bitmask) {
+    //     return mapping->GetBitmask() == bitmask;
+    // });
+}
+
+void Controller::ClearAllButtonMappings() {
+    mButtonMappings.clear();
 }
 
 } // namespace LUS

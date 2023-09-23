@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <SDL2/SDL.h>
+#include <memory>
 
 namespace LUS {
 class SDLMapping {

@@ -47,22 +47,36 @@ target_sources(libultraship PRIVATE ${Source_Files__Audio})
 #=================== Controller ===================
 
 set(Source_Files__Controller
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/AxisMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControlDeck.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControlDeck.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyController.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLAxisToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLAxisToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLButtonToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLButtonToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLMapping.h
+    
 )
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    list(APPEND Source_Files__Controller
-        ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.h
-    )
-endif()
+# if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+#     list(APPEND Source_Files__Controller
+#         ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
+#         ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.h
+#     )
+# endif()
 
 source_group("controller" FILES ${Source_Files__Controller})
 target_sources(libultraship PRIVATE ${Source_Files__Controller})

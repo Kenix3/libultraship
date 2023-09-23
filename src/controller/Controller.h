@@ -45,18 +45,23 @@ class Controller {
   public:
     Controller();
     ~Controller();
-    int32_t GetConnectedPortIndex();
+    bool IsConnected() const;
+    void Connect();
+    void Disconnect();
+    void AddButtonMapping(std::shared_ptr<ButtonMapping> mapping);
+    void ClearButtonMappings(uint16_t bitmask);
+    void ClearAllButtonMappings();
     void ReadToPad(OSContPad* pad);
 
   protected:
-    int32_t mConnectedPortIndex;
-
     int8_t ReadStick(int32_t portIndex, Stick stick, Axis axis);
     void ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold);
     double GetClosestNotch(double angle, double approximationThreshold);
 
   private:
-    std::vector<ButtonMapping> mButtonMappings;
+    // todo: maybe use unique_ptr for these instead?
+    std::vector<std::shared_ptr<ButtonMapping>> mButtonMappings;
+    bool mIsConnected;
 
     struct Buttons {
         int32_t PressedButtons = 0;
