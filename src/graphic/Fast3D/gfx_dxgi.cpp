@@ -378,7 +378,9 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_ENDSESSION:
             // This hopefully gives the game a chance to shut down, before windows kills it.
-            dxgi.is_running = false;
+            if (w_param == TRUE) {
+                dxgi.is_running = false;
+            }
             break;
         case WM_ACTIVATEAPP:
             if (dxgi.on_all_keys_up != nullptr) {
