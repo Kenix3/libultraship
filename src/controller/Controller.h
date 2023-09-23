@@ -10,7 +10,7 @@
 #include "libultraship/color.h"
 #include <unordered_map>
 #include "ButtonMapping.h"
-#include "StickMapping.h"
+#include "ControllerStick.h"
 
 #define EXTENDED_SCANCODE_BIT (1 << 8)
 #define AXIS_SCANCODE_BIT (1 << 9)
@@ -61,8 +61,8 @@ class Controller {
 
   private:
     std::vector<std::shared_ptr<ButtonMapping>> mButtonMappings;
-    std::shared_ptr<StickMapping> mLeftStickMapping;
-    std::shared_ptr<StickMapping> mRightStickMapping;
+    ControllerStick mLeftStick;
+    ControllerStick mRightStick;
 
 
     bool mIsConnected;
