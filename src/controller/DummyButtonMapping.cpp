@@ -1,6 +1,6 @@
 #include "DummyButtonMapping.h"
 
 namespace LUS {
-void DummyButtonMapping::UpdatePad(int32_t& padButtons) {
+void DummyButtonMapping::UpdatePad(uint16_t& padButtons) {
 }
 } // namespace LUS

@@ -25,57 +25,56 @@ ControlDeck::~ControlDeck() {
 }
 
 void ControlDeck::Init(uint8_t* bits) {
-    ScanDevices();
     mControllerBits = bits;
 }
 
-void ControlDeck::ScanDevices() {
-    mPortList.clear();
-    mDevices.clear();
+// void ControlDeck::ScanDevices() {
+//     mPortList.clear();
+//     mDevices.clear();
 
-    // Always load controllers that need their device indices zero based first because we add some other devices
-    // afterward.
-    int32_t i;
+//     // Always load controllers that need their device indices zero based first because we add some other devices
+//     // afterward.
+//     int32_t i;
 
-#ifndef __WIIU__
-    for (i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            auto sdl = std::make_shared<SDLController>(i);
-            sdl->Open();
-            mDevices.push_back(sdl);
-        }
-    }
+// #ifndef __WIIU__
+//     for (i = 0; i < SDL_NumJoysticks(); i++) {
+//         if (SDL_IsGameController(i)) {
+//             auto sdl = std::make_shared<SDLController>(i);
+//             sdl->Open();
+//             mDevices.push_back(sdl);
+//         }
+//     }
 
-    mDevices.push_back(std::make_shared<DummyController>(i++, "Auto", "Auto", true));
-    mDevices.push_back(std::make_shared<KeyboardController>(i++));
-#else
-    for (i = 0; i < 4; i++) {
-        auto controller = std::make_shared<LUS::WiiUController>(i, (WPADChan)i);
-        controller->Open();
-        mDevices.push_back(controller);
-    }
+//     mDevices.push_back(std::make_shared<DummyController>(i++, "Auto", "Auto", true));
+//     mDevices.push_back(std::make_shared<KeyboardController>(i++));
+// #else
+//     for (i = 0; i < 4; i++) {
+//         auto controller = std::make_shared<LUS::WiiUController>(i, (WPADChan)i);
+//         controller->Open();
+//         mDevices.push_back(controller);
+//     }
 
-    auto gamepad = std::make_shared<LUS::WiiUGamepad>(i++);
-    gamepad->Open();
-    mDevices.push_back(gamepad);
+//     auto gamepad = std::make_shared<LUS::WiiUGamepad>(i++);
+//     gamepad->Open();
+//     mDevices.push_back(gamepad);
 
-    mDevices.push_back(std::make_shared<DummyController>(i++, "Auto", "Auto", true));
-#endif
+//     mDevices.push_back(std::make_shared<DummyController>(i++, "Auto", "Auto", true));
+// #endif
 
-    mDevices.push_back(std::make_shared<DummyController>(i++, "Disconnected", "None", false));
+//     mDevices.push_back(std::make_shared<DummyController>(i++, "Disconnected", "None", false));
 
-    for (const auto& device : mDevices) {
-        for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-            device->CreateDefaultBinding(i);
-        }
-    }
+//     for (const auto& device : mDevices) {
+//         for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
+//             device->CreateDefaultBinding(i);
+//         }
+//     }
 
-    for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPortList.push_back(i == 0 ? 0 : static_cast<int>(mDevices.size()) - 1);
-    }
+//     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
+//         mPortList.push_back(i == 0 ? 0 : static_cast<int>(mDevices.size()) - 1);
+//     }
 
-    LoadSettings();
-}
+//     LoadSettings();
+// }
 
 void ControlDeck::SetDeviceToPort(int32_t portIndex, int32_t deviceIndex) {
     const std::shared_ptr<Controller> backend = mDevices[deviceIndex];
@@ -86,10 +85,10 @@ void ControlDeck::SetDeviceToPort(int32_t portIndex, int32_t deviceIndex) {
 void ControlDeck::WriteToPad(OSContPad* pad) {
     mPads = pad;
 
-    for (size_t i = 0; i < mPortList.size(); i++) {
-        const std::shared_ptr<Controller> controller = mDevices[mPortList[i]];
+    for (size_t i = 0; i < mDevices.size(); i++) {
+        const std::shared_ptr<Controller> controller = mDevices[i];
 
-        controller->ReadToPad(&pad[i], i);
+        controller->ReadToPad(&pad[i]);
     }
 }
 
@@ -301,9 +300,9 @@ std::shared_ptr<Controller> ControlDeck::GetDeviceFromPortIndex(int32_t portInde
     return GetDeviceFromDeviceIndex(GetDeviceIndexFromPortIndex(portIndex));
 }
 
-uint8_t* ControlDeck::GetControllerBits() {
-    return mControllerBits;
-}
+// uint8_t* ControlDeck::GetControllerBits() {
+//     return mControllerBits;
+// }
 
 void ControlDeck::BlockGameInput(int32_t inputBlockId) {
     mGameInputBlockers[inputBlockId] = true;

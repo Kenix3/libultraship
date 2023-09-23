@@ -2,12 +2,12 @@
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(int32_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerButton)
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerButton)
     : ButtonMapping(bitmask), SDLMapping(sdlControllerIndex) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 
-void SDLButtonToButtonMapping::UpdatePad(int32_t& padButtons) {
+void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
     SDL_GameControllerUpdate();
 
     // If the controller is disconnected, close it.

@@ -146,56 +146,59 @@ void Controller::ReadToPad(OSContPad* pad) {
 #endif
 
     // Button Inputs
-    padToBuffer.button |= GetPressedButtons(portIndex) & 0xFFFF;
-
-    // Stick Inputs
-    int8_t leftStickX = ReadStick(portIndex, LEFT, X);
-    int8_t leftStickY = ReadStick(portIndex, LEFT, Y);
-    int8_t rightStickX = ReadStick(portIndex, RIGHT, X);
-    int8_t rightStickY = ReadStick(portIndex, RIGHT, Y);
-
-    auto profile = GetProfile(portIndex);
-    ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1],
-                 profile->NotchProximityThreshold);
-    ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3],
-                 profile->NotchProximityThreshold);
-
-    if (pad == nullptr) {
-        return;
+    for (auto mapping : mButtonMappings) {
+        mapping.UpdatePad(padToBuffer.button);
     }
+    // padToBuffer.button |= GetPressedButtons(portIndex) & 0xFFFF;
 
-    padToBuffer.stick_x = leftStickX;
-    padToBuffer.stick_y = leftStickY;
-    padToBuffer.right_stick_x = rightStickX;
-    padToBuffer.right_stick_y = rightStickY;
+    // // Stick Inputs
+    // int8_t leftStickX = ReadStick(portIndex, LEFT, X);
+    // int8_t leftStickY = ReadStick(portIndex, LEFT, Y);
+    // int8_t rightStickX = ReadStick(portIndex, RIGHT, X);
+    // int8_t rightStickY = ReadStick(portIndex, RIGHT, Y);
 
-    // Gyro
-    padToBuffer.gyro_x = GetGyroX(portIndex);
-    padToBuffer.gyro_y = GetGyroY(portIndex);
+    // auto profile = GetProfile(portIndex);
+    // ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1],
+    //              profile->NotchProximityThreshold);
+    // ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3],
+    //              profile->NotchProximityThreshold);
+
+    // if (pad == nullptr) {
+    //     return;
+    // }
+
+    // padToBuffer.stick_x = leftStickX;
+    // padToBuffer.stick_y = leftStickY;
+    // padToBuffer.right_stick_x = rightStickX;
+    // padToBuffer.right_stick_y = rightStickY;
+
+    // // Gyro
+    // padToBuffer.gyro_x = GetGyroX(portIndex);
+    // padToBuffer.gyro_y = GetGyroY(portIndex);
 
     mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
         auto& padFromBuffer =
             mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger("gSimulatedInputLag", 0))];
         pad->button |= padFromBuffer.button;
-        if (pad->stick_x == 0) {
-            pad->stick_x = padFromBuffer.stick_x;
-        }
-        if (pad->stick_y == 0) {
-            pad->stick_y = padFromBuffer.stick_y;
-        }
-        if (pad->gyro_x == 0) {
-            pad->gyro_x = padFromBuffer.gyro_x;
-        }
-        if (pad->gyro_y == 0) {
-            pad->gyro_y = padFromBuffer.gyro_y;
-        }
-        if (pad->right_stick_x == 0) {
-            pad->right_stick_x = padFromBuffer.right_stick_x;
-        }
-        if (pad->right_stick_y == 0) {
-            pad->right_stick_y = padFromBuffer.right_stick_y;
-        }
+        // if (pad->stick_x == 0) {
+        //     pad->stick_x = padFromBuffer.stick_x;
+        // }
+        // if (pad->stick_y == 0) {
+        //     pad->stick_y = padFromBuffer.stick_y;
+        // }
+        // if (pad->gyro_x == 0) {
+        //     pad->gyro_x = padFromBuffer.gyro_x;
+        // }
+        // if (pad->gyro_y == 0) {
+        //     pad->gyro_y = padFromBuffer.gyro_y;
+        // }
+        // if (pad->right_stick_x == 0) {
+        //     pad->right_stick_x = padFromBuffer.right_stick_x;
+        // }
+        // if (pad->right_stick_y == 0) {
+        //     pad->right_stick_y = padFromBuffer.right_stick_y;
+        // }
     }
 
     while (mPadBuffer.size() > 6) {
@@ -203,57 +206,57 @@ void Controller::ReadToPad(OSContPad* pad) {
     }
 }
 
-void Controller::SetButtonMapping(int32_t portIndex, int32_t deviceButtonId, int32_t n64bitmask) {
-    GetProfile(portIndex)->Mappings[deviceButtonId] = n64bitmask;
-}
+// void Controller::SetButtonMapping(int32_t portIndex, int32_t deviceButtonId, int32_t n64bitmask) {
+//     GetProfile(portIndex)->Mappings[deviceButtonId] = n64bitmask;
+// }
 
-int8_t& Controller::GetLeftStickX(int32_t portIndex) {
-    return mButtonData[portIndex]->LeftStickX;
-}
+// int8_t& Controller::GetLeftStickX(int32_t portIndex) {
+//     return mButtonData[portIndex]->LeftStickX;
+// }
 
-int8_t& Controller::GetLeftStickY(int32_t portIndex) {
-    return mButtonData[portIndex]->LeftStickY;
-}
+// int8_t& Controller::GetLeftStickY(int32_t portIndex) {
+//     return mButtonData[portIndex]->LeftStickY;
+// }
 
-int8_t& Controller::GetRightStickX(int32_t portIndex) {
-    return mButtonData[portIndex]->RightStickX;
-}
+// int8_t& Controller::GetRightStickX(int32_t portIndex) {
+//     return mButtonData[portIndex]->RightStickX;
+// }
 
-int8_t& Controller::GetRightStickY(int32_t portIndex) {
-    return mButtonData[portIndex]->RightStickY;
-}
+// int8_t& Controller::GetRightStickY(int32_t portIndex) {
+//     return mButtonData[portIndex]->RightStickY;
+// }
 
-int32_t& Controller::GetPressedButtons(int32_t portIndex) {
-    return mButtonData[portIndex]->PressedButtons;
-}
+// int32_t& Controller::GetPressedButtons(int32_t portIndex) {
+//     return mButtonData[portIndex]->PressedButtons;
+// }
 
-float& Controller::GetGyroX(int32_t portIndex) {
-    return mButtonData[portIndex]->GyroX;
-}
+// float& Controller::GetGyroX(int32_t portIndex) {
+//     return mButtonData[portIndex]->GyroX;
+// }
 
-float& Controller::GetGyroY(int32_t portIndex) {
-    return mButtonData[portIndex]->GyroY;
-}
+// float& Controller::GetGyroY(int32_t portIndex) {
+//     return mButtonData[portIndex]->GyroY;
+// }
 
-std::shared_ptr<DeviceProfile> Controller::GetProfile(int32_t portIndex) {
-    return mProfiles[portIndex];
-}
+// std::shared_ptr<DeviceProfile> Controller::GetProfile(int32_t portIndex) {
+//     return mProfiles[portIndex];
+// }
 
-bool Controller::IsRumbling() {
-    return mIsRumbling;
-}
+// bool Controller::IsRumbling() {
+//     return mIsRumbling;
+// }
 
-Color_RGB8 Controller::GetLedColor() {
-    return mLedColor;
-}
+// Color_RGB8 Controller::GetLedColor() {
+//     return mLedColor;
+// }
 
-std::string Controller::GetGuid() {
-    return mGuid;
-}
+// std::string Controller::GetGuid() {
+//     return mGuid;
+// }
 
-std::string Controller::GetControllerName() {
-    return mControllerName;
-}
+// std::string Controller::GetControllerName() {
+//     return mControllerName;
+// }
 
 double Controller::GetClosestNotch(double angle, double approximationThreshold) {
     constexpr auto octagonAngle = M_TAU / 8;

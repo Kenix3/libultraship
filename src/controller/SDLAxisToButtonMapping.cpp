@@ -2,13 +2,13 @@
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-SDLAxisToButtonMapping::SDLAxisToButtonMapping(int32_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerAxis, int32_t axisDirection)
+SDLAxisToButtonMapping::SDLAxisToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerAxis, int32_t axisDirection)
     : ButtonMapping(bitmask), SDLMapping(sdlControllerIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
 
-void SDLAxisToButtonMapping::UpdatePad(int32_t& padButtons) {
+void SDLAxisToButtonMapping::UpdatePad(uint16_t& padButtons) {
     SDL_GameControllerUpdate();
 
     // If the controller is disconnected, close it.
