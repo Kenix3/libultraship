@@ -2,7 +2,8 @@
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerAxis, int32_t axisDirection)
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex,
+                                                                 int32_t sdlControllerAxis, int32_t axisDirection)
     : ButtonMapping(bitmask), SDLMapping(sdlControllerIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);

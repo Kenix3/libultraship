@@ -64,9 +64,7 @@ class Controller {
     ControllerStick mLeftStick;
     ControllerStick mRightStick;
 
-
     bool mIsConnected;
-
 
     struct Buttons {
         int32_t PressedButtons = 0;

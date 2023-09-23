@@ -2,7 +2,9 @@
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(int32_t sdlControllerIndex, int32_t sdlControllerAxis, int32_t axisDirection) {
+SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(int32_t sdlControllerIndex,
+                                                                               int32_t sdlControllerAxis,
+                                                                               int32_t axisDirection) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }

@@ -43,7 +43,8 @@
 
 // #ifdef __SWITCH__
 //     mGuid = StringHelper::Sprintf("%s:%d", guidBuf, mDeviceIndex);
-//     mControllerName = StringHelper::Sprintf("%s #%d", SDL_GameControllerNameForIndex(mDeviceIndex), mDeviceIndex + 1);
+//     mControllerName = StringHelper::Sprintf("%s #%d", SDL_GameControllerNameForIndex(mDeviceIndex), mDeviceIndex +
+//     1);
 // #else
 //     mGuid = std::string(guidBuf);
 //     mControllerName = std::string(SDL_GameControllerNameForIndex(mDeviceIndex));
@@ -68,7 +69,8 @@
 //     return axisValue * MAX_AXIS_RANGE / MAX_SDL_RANGE;
 // }
 
-// void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t portIndex) {
+// void SDLController::NormalizeStickAxis(SDL_GameControllerAxis axisX, SDL_GameControllerAxis axisY, int32_t portIndex)
+// {
 //     const auto axisValueX = SDL_GameControllerGetAxis(mController, axisX);
 //     const auto axisValueY = SDL_GameControllerGetAxis(mController, axisY);
 

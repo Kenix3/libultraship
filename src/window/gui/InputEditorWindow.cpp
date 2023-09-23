@@ -50,7 +50,8 @@
 
 //         if (btn != -1) {
 //             auto profile = backend->GetProfile(currentPort);
-//             // Remove other mappings that include the n64 bitmask. Note that the n64 button is really a mask and is not
+//             // Remove other mappings that include the n64 bitmask. Note that the n64 button is really a mask and is
+//             not
 //             // unique, but the UI as-is needs a way to unset the old n64 button.
 //             std::erase_if(profile->Mappings,
 //                           [n64Btn](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Btn; });
@@ -75,7 +76,8 @@
 //     const std::string btnName = backend->GetButtonName(currentPort, n64Btn);
 
 //     if (ImGui::Button(
-//             StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(), n64Btn).c_str())) {
+//             StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(),
+//             n64Btn).c_str())) {
 //         *btnReading = n64Btn;
 //         backend->ClearRawPress();
 //     }

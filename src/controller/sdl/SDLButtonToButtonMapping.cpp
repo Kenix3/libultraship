@@ -2,7 +2,8 @@
 #include <spdlog/spdlog.h>
 
 namespace LUS {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerButton)
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex,
+                                                   int32_t sdlControllerButton)
     : ButtonMapping(bitmask), SDLMapping(sdlControllerIndex) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
