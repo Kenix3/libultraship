@@ -65,10 +65,6 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyController.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyController.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
