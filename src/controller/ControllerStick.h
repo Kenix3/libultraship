@@ -5,17 +5,27 @@
 #include <memory>
 
 namespace LUS {
+enum Direction { LEFT, RIGHT, UP, DOWN };
+
 class ControllerStick {
   public:
     ControllerStick();
     ~ControllerStick();
 
-    virtual void UpdatePad(int8_t& x, int8_t& y) = 0;
+    void UpdatePad(int8_t& x, int8_t& y);
+    void UpdateAxisDirectionMapping(Direction direction, std::shared_ptr<AxisDirectionMapping> mapping);
 
   private:
-    std::shared_ptr<AxisDirectionMapping> mLeftMapping;
-    std::shared_ptr<AxisDirectionMapping> mRightMapping;
+    void Process(int8_t& x, int8_t& y);
+    double GetClosestNotch(double angle, double approximationThreshold);
+
+    // TODO: handle deadzones separately for X and Y?
+    float mDeadzone;
+    int32_t mNotchProxmityThreshold;
+
     std::shared_ptr<AxisDirectionMapping> mUpMapping;
     std::shared_ptr<AxisDirectionMapping> mDownMapping;
+    std::shared_ptr<AxisDirectionMapping> mLeftMapping;
+    std::shared_ptr<AxisDirectionMapping> mRightMapping;
 };
 } // namespace LUS

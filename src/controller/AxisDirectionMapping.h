@@ -9,6 +9,6 @@ class AxisDirectionMapping {
   public:
     AxisDirectionMapping();
     ~AxisDirectionMapping();
-    float GetNormalizedAxisDirectionValue();
+    virtual float GetNormalizedAxisDirectionValue() = 0;
 };
 } // namespace LUS

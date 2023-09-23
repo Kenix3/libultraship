@@ -15,126 +15,136 @@
 namespace LUS {
 
 Controller::Controller() {
+    mLeftStick = std::make_shared<ControllerStick>();
+    mRightStick = std::make_shared<ControllerStick>();
 }
 
 Controller::~Controller() {
     SPDLOG_TRACE("destruct controller");
 }
 
-int8_t Controller::ReadStick(int32_t portIndex, Stick stick, Axis axis) {
-    // switch (stick) {
-    //     case Stick::LEFT: {
-    //         switch (axis) {
-    //             case Axis::X: {
-    //                 if (GetLeftStickX(portIndex) == 0) {
-    //                     if (GetPressedButtons(portIndex) & BTN_STICKLEFT) {
-    //                         return -MAX_AXIS_RANGE;
-    //                     } else if (GetPressedButtons(portIndex) & BTN_STICKRIGHT) {
-    //                         return MAX_AXIS_RANGE;
-    //                     }
-    //                 } else {
-    //                     return GetLeftStickX(portIndex);
-    //                 }
-    //                 break;
-    //             }
-    //             case Axis::Y: {
-    //                 if (GetLeftStickY(portIndex) == 0) {
-    //                     if (GetPressedButtons(portIndex) & BTN_STICKDOWN) {
-    //                         return -MAX_AXIS_RANGE;
-    //                     } else if (GetPressedButtons(portIndex) & BTN_STICKUP) {
-    //                         return MAX_AXIS_RANGE;
-    //                     }
-    //                 } else {
-    //                     return GetLeftStickY(portIndex);
-    //                 }
-    //                 break;
-    //             }
-    //         }
-    //         break;
-    //     }
-    //     case Stick::RIGHT: {
-    //         switch (axis) {
-    //             case Axis::X: {
-    //                 if (GetRightStickX(portIndex) == 0) {
-    //                     if (GetPressedButtons(portIndex) & BTN_VSTICKLEFT) {
-    //                         return -MAX_AXIS_RANGE;
-    //                     } else if (GetPressedButtons(portIndex) & BTN_VSTICKRIGHT) {
-    //                         return MAX_AXIS_RANGE;
-    //                     }
-    //                 } else {
-    //                     return GetRightStickX(portIndex);
-    //                 }
-    //                 break;
-    //             }
-    //             case Axis::Y: {
-    //                 if (GetRightStickY(portIndex) == 0) {
-    //                     if (GetPressedButtons(portIndex) & BTN_VSTICKDOWN) {
-    //                         return -MAX_AXIS_RANGE;
-    //                     } else if (GetPressedButtons(portIndex) & BTN_VSTICKUP) {
-    //                         return MAX_AXIS_RANGE;
-    //                     }
-    //                 } else {
-    //                     return GetRightStickY(portIndex);
-    //                 }
-    //                 break;
-    //             }
-    //         }
-    //         break;
-    //     }
-    // }
-
-    return 0;
+std::shared_ptr<ControllerStick> Controller::GetLeftStick() {
+    return mLeftStick;
 }
 
-void Controller::ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold) {
-    // auto ux = fabs(x);
-    // auto uy = fabs(y);
-
-    // // TODO: handle deadzones separately for X and Y
-    // if (deadzoneX != deadzoneY) {
-    //     SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", deadzoneY, deadzoneX);
-    // }
-
-    // // create scaled circular dead-zone
-    // auto len = sqrt(ux * ux + uy * uy);
-    // if (len < deadzoneX) {
-    //     len = 0;
-    // } else if (len > MAX_AXIS_RANGE) {
-    //     len = MAX_AXIS_RANGE / len;
-    // } else {
-    //     len = (len - deadzoneX) * MAX_AXIS_RANGE / (MAX_AXIS_RANGE - deadzoneX) / len;
-    // }
-    // ux *= len;
-    // uy *= len;
-
-    // // bound diagonals to an octagonal range {-69 ... +69}
-    // if (ux != 0.0 && uy != 0.0) {
-    //     auto slope = uy / ux;
-    //     auto edgex = copysign(MAX_AXIS_RANGE / (fabs(slope) + 16.0 / 69.0), ux);
-    //     auto edgey = copysign(std::min(fabs(edgex * slope), MAX_AXIS_RANGE / (1.0 / fabs(slope) + 16.0 / 69.0)), y);
-    //     edgex = edgey / slope;
-
-    //     auto scale = sqrt(edgex * edgex + edgey * edgey) / MAX_AXIS_RANGE;
-    //     ux *= scale;
-    //     uy *= scale;
-    // }
-
-    // // map to virtual notches
-    // const double notchProximityValRadians = notchProxmityThreshold * M_TAU / 360;
-
-    // const double distance = std::sqrt((ux * ux) + (uy * uy)) / MAX_AXIS_RANGE;
-    // if (distance >= MINIMUM_RADIUS_TO_MAP_NOTCH) {
-    //     auto angle = atan2(uy, ux) + M_TAU;
-    //     auto newAngle = GetClosestNotch(angle, notchProximityValRadians);
-
-    //     ux = cos(newAngle) * distance * MAX_AXIS_RANGE;
-    //     uy = sin(newAngle) * distance * MAX_AXIS_RANGE;
-    // }
-
-    // // assign back to original sign
-    // x = copysign(ux, x);
-    // y = copysign(uy, y);
+std::shared_ptr<ControllerStick> Controller::GetRightStick() {
+    return mRightStick;
 }
+
+// int8_t Controller::ReadStick(int32_t portIndex, Stick stick, Axis axis) {
+//     // switch (stick) {
+//     //     case Stick::LEFT: {
+//     //         switch (axis) {
+//     //             case Axis::X: {
+//     //                 if (GetLeftStickX(portIndex) == 0) {
+//     //                     if (GetPressedButtons(portIndex) & BTN_STICKLEFT) {
+//     //                         return -MAX_AXIS_RANGE;
+//     //                     } else if (GetPressedButtons(portIndex) & BTN_STICKRIGHT) {
+//     //                         return MAX_AXIS_RANGE;
+//     //                     }
+//     //                 } else {
+//     //                     return GetLeftStickX(portIndex);
+//     //                 }
+//     //                 break;
+//     //             }
+//     //             case Axis::Y: {
+//     //                 if (GetLeftStickY(portIndex) == 0) {
+//     //                     if (GetPressedButtons(portIndex) & BTN_STICKDOWN) {
+//     //                         return -MAX_AXIS_RANGE;
+//     //                     } else if (GetPressedButtons(portIndex) & BTN_STICKUP) {
+//     //                         return MAX_AXIS_RANGE;
+//     //                     }
+//     //                 } else {
+//     //                     return GetLeftStickY(portIndex);
+//     //                 }
+//     //                 break;
+//     //             }
+//     //         }
+//     //         break;
+//     //     }
+//     //     case Stick::RIGHT: {
+//     //         switch (axis) {
+//     //             case Axis::X: {
+//     //                 if (GetRightStickX(portIndex) == 0) {
+//     //                     if (GetPressedButtons(portIndex) & BTN_VSTICKLEFT) {
+//     //                         return -MAX_AXIS_RANGE;
+//     //                     } else if (GetPressedButtons(portIndex) & BTN_VSTICKRIGHT) {
+//     //                         return MAX_AXIS_RANGE;
+//     //                     }
+//     //                 } else {
+//     //                     return GetRightStickX(portIndex);
+//     //                 }
+//     //                 break;
+//     //             }
+//     //             case Axis::Y: {
+//     //                 if (GetRightStickY(portIndex) == 0) {
+//     //                     if (GetPressedButtons(portIndex) & BTN_VSTICKDOWN) {
+//     //                         return -MAX_AXIS_RANGE;
+//     //                     } else if (GetPressedButtons(portIndex) & BTN_VSTICKUP) {
+//     //                         return MAX_AXIS_RANGE;
+//     //                     }
+//     //                 } else {
+//     //                     return GetRightStickY(portIndex);
+//     //                 }
+//     //                 break;
+//     //             }
+//     //         }
+//     //         break;
+//     //     }
+//     // }
+
+//     return 0;
+// }
+
+// void Controller::ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold) {
+//     // auto ux = fabs(x);
+//     // auto uy = fabs(y);
+
+//     // // TODO: handle deadzones separately for X and Y
+//     // if (deadzoneX != deadzoneY) {
+//     //     SPDLOG_TRACE("Invalid Deadzone configured. Up/Down was {} and Left/Right is {}", deadzoneY, deadzoneX);
+//     // }
+
+//     // // create scaled circular dead-zone
+//     // auto len = sqrt(ux * ux + uy * uy);
+//     // if (len < deadzoneX) {
+//     //     len = 0;
+//     // } else if (len > MAX_AXIS_RANGE) {
+//     //     len = MAX_AXIS_RANGE / len;
+//     // } else {
+//     //     len = (len - deadzoneX) * MAX_AXIS_RANGE / (MAX_AXIS_RANGE - deadzoneX) / len;
+//     // }
+//     // ux *= len;
+//     // uy *= len;
+
+//     // // bound diagonals to an octagonal range {-69 ... +69}
+//     // if (ux != 0.0 && uy != 0.0) {
+//     //     auto slope = uy / ux;
+//     //     auto edgex = copysign(MAX_AXIS_RANGE / (fabs(slope) + 16.0 / 69.0), ux);
+//     //     auto edgey = copysign(std::min(fabs(edgex * slope), MAX_AXIS_RANGE / (1.0 / fabs(slope) + 16.0 / 69.0)), y);
+//     //     edgex = edgey / slope;
+
+//     //     auto scale = sqrt(edgex * edgex + edgey * edgey) / MAX_AXIS_RANGE;
+//     //     ux *= scale;
+//     //     uy *= scale;
+//     // }
+
+//     // // map to virtual notches
+//     // const double notchProximityValRadians = notchProxmityThreshold * M_TAU / 360;
+
+//     // const double distance = std::sqrt((ux * ux) + (uy * uy)) / MAX_AXIS_RANGE;
+//     // if (distance >= MINIMUM_RADIUS_TO_MAP_NOTCH) {
+//     //     auto angle = atan2(uy, ux) + M_TAU;
+//     //     auto newAngle = GetClosestNotch(angle, notchProximityValRadians);
+
+//     //     ux = cos(newAngle) * distance * MAX_AXIS_RANGE;
+//     //     uy = sin(newAngle) * distance * MAX_AXIS_RANGE;
+//     // }
+
+//     // // assign back to original sign
+//     // x = copysign(ux, x);
+//     // y = copysign(uy, y);
+// }
 
 void Controller::ReadToPad(OSContPad* pad) {
     // ReadDevice(portIndex);
@@ -149,6 +159,8 @@ void Controller::ReadToPad(OSContPad* pad) {
     for (auto mapping : mButtonMappings) {
         mapping->UpdatePad(padToBuffer.button);
     }
+
+    mLeftStick->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
     // padToBuffer.button |= GetPressedButtons(portIndex) & 0xFFFF;
 
     // // Stick Inputs
@@ -181,12 +193,12 @@ void Controller::ReadToPad(OSContPad* pad) {
         auto& padFromBuffer =
             mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger("gSimulatedInputLag", 0))];
         pad->button |= padFromBuffer.button;
-        // if (pad->stick_x == 0) {
-        //     pad->stick_x = padFromBuffer.stick_x;
-        // }
-        // if (pad->stick_y == 0) {
-        //     pad->stick_y = padFromBuffer.stick_y;
-        // }
+        if (pad->stick_x == 0) {
+            pad->stick_x = padFromBuffer.stick_x;
+        }
+        if (pad->stick_y == 0) {
+            pad->stick_y = padFromBuffer.stick_y;
+        }
         // if (pad->gyro_x == 0) {
         //     pad->gyro_x = padFromBuffer.gyro_x;
         // }
@@ -258,12 +270,12 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     return mControllerName;
 // }
 
-double Controller::GetClosestNotch(double angle, double approximationThreshold) {
-    constexpr auto octagonAngle = M_TAU / 8;
-    const auto closestNotch = std::round(angle / octagonAngle) * octagonAngle;
-    const auto distanceToNotch = std::abs(fmod(closestNotch - angle + M_PI, M_TAU) - M_PI);
-    return distanceToNotch < approximationThreshold / 2 ? closestNotch : angle;
-}
+// double Controller::GetClosestNotch(double angle, double approximationThreshold) {
+//     constexpr auto octagonAngle = M_TAU / 8;
+//     const auto closestNotch = std::round(angle / octagonAngle) * octagonAngle;
+//     const auto distanceToNotch = std::abs(fmod(closestNotch - angle + M_PI, M_TAU) - M_PI);
+//     return distanceToNotch < approximationThreshold / 2 ? closestNotch : angle;
+// }
 
 bool Controller::IsConnected() const {
     return mIsConnected;

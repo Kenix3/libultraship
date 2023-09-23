@@ -17,8 +17,8 @@
 
 namespace LUS {
 enum GyroData { DRIFT_X, DRIFT_Y, GYRO_SENSITIVITY };
-enum Stick { LEFT, RIGHT };
-enum Axis { X, Y };
+
+
 enum DeviceProfileVersion {
     DEVICE_PROFILE_VERSION_0 = 0,
     DEVICE_PROFILE_VERSION_1 = 1,
@@ -51,17 +51,19 @@ class Controller {
     void AddButtonMapping(std::shared_ptr<ButtonMapping> mapping);
     void ClearButtonMappings(uint16_t bitmask);
     void ClearAllButtonMappings();
+    std::shared_ptr<ControllerStick> GetLeftStick();
+    std::shared_ptr<ControllerStick> GetRightStick();
     void ReadToPad(OSContPad* pad);
 
   protected:
-    int8_t ReadStick(int32_t portIndex, Stick stick, Axis axis);
-    void ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold);
-    double GetClosestNotch(double angle, double approximationThreshold);
+    // int8_t ReadStick(int32_t portIndex, Stick stick, Axis axis);
+    // void ProcessStick(int8_t& x, int8_t& y, float deadzoneX, float deadzoneY, int32_t notchProxmityThreshold);
+    // double GetClosestNotch(double angle, double approximationThreshold);
 
   private:
     std::vector<std::shared_ptr<ButtonMapping>> mButtonMappings;
-    ControllerStick mLeftStick;
-    ControllerStick mRightStick;
+    std::shared_ptr<ControllerStick> mLeftStick;
+    std::shared_ptr<ControllerStick> mRightStick;
 
     bool mIsConnected;
 

@@ -47,28 +47,32 @@ target_sources(libultraship PRIVATE ${Source_Files__Audio})
 #=================== Controller ===================
 
 set(Source_Files__Controller
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/AxisMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToAxisDirectionMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToAxisDirectionMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/AxisDirectionMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/AxisDirectionMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ButtonMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControlDeck.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControlDeck.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyButtonMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/DummyController.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.h
-    
 )
 
 # if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
