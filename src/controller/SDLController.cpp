@@ -162,8 +162,6 @@ void SDLController::ReadDevice(int32_t portIndex) {
         if (profile->Mappings.contains(i)) {
             if (SDL_GameControllerGetButton(mController, static_cast<SDL_GameControllerButton>(i))) {
                 GetPressedButtons(portIndex) |= profile->Mappings[i];
-            } else {
-                GetPressedButtons(portIndex) &= ~profile->Mappings[i];
             }
         }
     }
