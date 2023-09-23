@@ -23,6 +23,7 @@ SDLController::SDLController(int32_t deviceIndex) : Controller(deviceIndex), mCo
 
 bool SDLController::Open() {
     const auto newCont = SDL_GameControllerOpen(mDeviceIndex);
+    const auto newContToo = SDL_GameControllerOpen(mDeviceIndex);
 
     // We failed to load the controller. Go to next.
     if (newCont == nullptr) {
