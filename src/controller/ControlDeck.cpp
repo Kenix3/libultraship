@@ -87,28 +87,9 @@ void ControlDeck::WriteToPad(OSContPad* pad) {
     mPads = pad;
 
     for (size_t i = 0; i < mPortList.size(); i++) {
-        const std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
+        const std::shared_ptr<Controller> controller = mDevices[mPortList[i]];
 
-        // If the controller backend is "Auto" we need to get the real device
-        // we search for the real device to read input from it
-        if (backend->GetGuid() == "Auto") {
-            for (const auto& device : mDevices) {
-                if (IsBlockingGameInput(device->GetGuid())) {
-                    device->ReadToPad(nullptr, i);
-                    continue;
-                }
-
-                device->ReadToPad(&pad[i], i);
-            }
-            continue;
-        }
-
-        if (IsBlockingGameInput(backend->GetGuid())) {
-            backend->ReadToPad(nullptr, i);
-            continue;
-        }
-
-        backend->ReadToPad(&pad[i], i);
+        controller->ReadToPad(&pad[i], i);
     }
 }
 

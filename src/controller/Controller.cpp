@@ -14,11 +14,8 @@
 
 namespace LUS {
 
-Controller::Controller(int32_t deviceIndex) : mIsRumbling(false), mLedColor({ 0, 0, 0 }), mDeviceIndex(deviceIndex) {
-    for (int32_t portIndex = 0; portIndex < MAXCONTROLLERS; portIndex++) {
-        mProfiles[portIndex] = std::make_shared<DeviceProfile>();
-        mButtonData[portIndex] = std::make_shared<Buttons>();
-    }
+Controller::Controller() {
+    
 }
 
 Controller::~Controller() {
@@ -265,4 +262,9 @@ double Controller::GetClosestNotch(double angle, double approximationThreshold) 
     const auto distanceToNotch = std::abs(fmod(closestNotch - angle + M_PI, M_TAU) - M_PI);
     return distanceToNotch < approximationThreshold / 2 ? closestNotch : angle;
 }
+
+bool Controller::Connected() const {
+    return mIsConnected;
+}
+
 } // namespace LUS
