@@ -21,7 +21,7 @@ class Controller {
     Controller(uint8_t port);
     ~Controller();
 
-    void ReloadAllMappings();
+    void ReloadAllMappingsFromConfig();
 
     bool IsConnected() const;
     void Connect();
@@ -30,6 +30,7 @@ class Controller {
     void ClearButtonMapping(std::string uuid);
     void ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping);
     void ClearAllButtonMappings();
+    void ResetToDefaultButtonMappings(int32_t sdlControllerIndex);
     std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> GetAllButtonMappings();
     std::shared_ptr<ButtonMapping> GetButtonMappingByUuid(std::string uuid);
     std::shared_ptr<ControllerStick> GetLeftStick();
@@ -40,7 +41,6 @@ class Controller {
   private:
     void LoadButtonMappingFromConfig(std::string uuid);
     void SaveButtonMappingIdsToConfig();
-    void ResetToDefaultButtonMappings();
 
     std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> mButtonMappings;
     std::shared_ptr<ControllerStick> mLeftStick;

@@ -31,7 +31,7 @@ void ControlDeck::Init(uint8_t* bits) {
     *mControllerBits |= 1 << 0;
 
     for (auto controller : mControllers) {
-        controller->ReloadAllMappings();
+        controller->ReloadAllMappingsFromConfig();
     }
 }
 
