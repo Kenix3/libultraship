@@ -463,7 +463,7 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
     ImGui::EndDisabled();
 }
 
-void InputEditorWindow::DrawButtonLine(const char* buttonName, ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawButtonLine(const char* buttonName, uint16_t bitmask, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine(32.0f);
     DrawInputChip(buttonName, color);
@@ -517,24 +517,24 @@ void InputEditorWindow::DrawElement() {
             ImGui::Checkbox("Connected", &connected[i]);
 
             if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine("A", CHIP_COLOR_N64_BLUE);
-                DrawButtonLine("B", CHIP_COLOR_N64_GREEN);
-                DrawButtonLine("L");
-                DrawButtonLine("R");
-                DrawButtonLine("Z");
-                DrawButtonLine("Start", CHIP_COLOR_N64_RED);
+                DrawButtonLine("A", BTN_A, CHIP_COLOR_N64_BLUE);
+                DrawButtonLine("B", BTN_B, CHIP_COLOR_N64_GREEN);
+                DrawButtonLine("L", BTN_L);
+                DrawButtonLine("R", BTN_R);
+                DrawButtonLine("Z", BTN_Z);
+                DrawButtonLine("Start", BTN_START, CHIP_COLOR_N64_RED);
             }
             if (ImGui::CollapsingHeader("C-Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), BTN_CLEFT, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), BTN_CRIGHT, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), BTN_CUP, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), BTN_CDOWN, CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT).c_str());
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str());
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP).c_str());
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str());
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT).c_str(), BTN_DLEFT);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str(), BTN_DRIGHT);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP).c_str(), BTN_DUP);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str(), BTN_DDOWN);
             }
             if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 static int32_t deadzone = 20;

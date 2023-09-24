@@ -12,7 +12,7 @@ class InputEditorWindow : public GuiWindow {
     ~InputEditorWindow();
 
     void DrawButton(const char* label, int32_t n64Btn, int32_t currentPort, int32_t* btnReading);
-    void DrawButtonLine(const char* buttonName, ImVec4 color);
+    void DrawButtonLine(const char* buttonName, uint16_t bitmask, ImVec4 color);
     void DrawAxisDirectionLine(const char* axisDirectionName, ImVec4 color);
     void DrawInputChip(const char* buttonName, ImVec4 color);
     void DrawControllerSelect(int32_t currentPort);
