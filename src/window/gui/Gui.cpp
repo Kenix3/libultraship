@@ -67,7 +67,7 @@ Gui::Gui() : mNeedsConsoleVariableSave(false) {
     mInputViewer = std::make_shared<InputViewer>();
 
     AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
-    // AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
+    AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
 }
 
@@ -126,7 +126,7 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     }
 
     GetGuiWindow("Stats")->Init();
-    // GetGuiWindow("Input Editor")->Init();
+    GetGuiWindow("Input Editor")->Init();
     GetGuiWindow("Console")->Init();
     GetGameOverlay()->Init();
 

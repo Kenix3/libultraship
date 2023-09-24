@@ -1,24 +1,24 @@
-// #include "InputEditorWindow.h"
-// #include "controller/Controller.h"
-// #include "controller/KeyboardController.h"
-// #include "Context.h"
-// #include "Gui.h"
-// #include <Utils/StringHelper.h>
-// #include "public/bridge/consolevariablebridge.h"
+#include "InputEditorWindow.h"
+#include "controller/Controller.h"
+#include "controller/KeyboardController.h"
+#include "Context.h"
+#include "Gui.h"
+#include <Utils/StringHelper.h>
+#include "public/bridge/consolevariablebridge.h"
 
-// namespace LUS {
+namespace LUS {
 
-// #define SEPARATION() ImGui::Dummy(ImVec2(0, 5))
+#define SEPARATION() ImGui::Dummy(ImVec2(0, 5))
 
-// InputEditorWindow::~InputEditorWindow() {
-//     SPDLOG_TRACE("destruct input editor window");
-// }
+InputEditorWindow::~InputEditorWindow() {
+    SPDLOG_TRACE("destruct input editor window");
+}
 
-// void InputEditorWindow::InitElement() {
-//     mCurrentPort = 0;
-//     mBtnReading = -1;
-//     mGameInputBlockTimer = INT32_MAX;
-// }
+void InputEditorWindow::InitElement() {
+    mCurrentPort = 0;
+    mBtnReading = -1;
+    mGameInputBlockTimer = INT32_MAX;
+}
 
 // std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
 //     auto controlDeck = Context::GetInstance()->GetControlDeck();
@@ -50,8 +50,7 @@
 
 //         if (btn != -1) {
 //             auto profile = backend->GetProfile(currentPort);
-//             // Remove other mappings that include the n64 bitmask. Note that the n64 button is really a mask and is
-//             not
+//             // Remove other mappings that include the n64 bitmask. Note that the n64 button is really a mask and is not
 //             // unique, but the UI as-is needs a way to unset the old n64 button.
 //             std::erase_if(profile->Mappings,
 //                           [n64Btn](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Btn; });
@@ -76,8 +75,7 @@
 //     const std::string btnName = backend->GetButtonName(currentPort, n64Btn);
 
 //     if (ImGui::Button(
-//             StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(),
-//             n64Btn).c_str())) {
+//             StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(), n64Btn).c_str())) {
 //         *btnReading = n64Btn;
 //         backend->ClearRawPress();
 //     }
@@ -111,62 +109,6 @@
 //     if (ImGui::Button("Refresh")) {
 //         controlDeck->ScanDevices();
 //     }
-// }
-
-// void InputEditorWindow::DrawVirtualStick(const char* label, ImVec2 stick, float deadzone) {
-//     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 5, ImGui::GetCursorPos().y));
-//     ImGui::BeginChild(label, ImVec2(68, 75), false);
-//     ImDrawList* drawList = ImGui::GetWindowDrawList();
-
-//     const ImVec2 cursorScreenPosition = ImGui::GetCursorScreenPos();
-
-//     // Draw the border box
-//     float borderSquareLeft = cursorScreenPosition.x + 2.0f;
-//     float borderSquareTop = cursorScreenPosition.y + 2.0f;
-//     float borderSquareSize = 65.0f;
-//     drawList->AddRect(ImVec2(borderSquareLeft, borderSquareTop),
-//                       ImVec2(borderSquareLeft + borderSquareSize, borderSquareTop + borderSquareSize),
-//                       ImColor(100, 100, 100, 255), 0.0f, 0, 1.5f);
-
-//     // Draw the gate background
-//     float cardinalRadius = 22.5f;
-//     float diagonalRadius = cardinalRadius * (69.0f / 85.0f);
-
-//     ImVec2 joystickCenterpoint =
-//         ImVec2(cursorScreenPosition.x + cardinalRadius + 12, cursorScreenPosition.y + cardinalRadius + 11);
-//     drawList->AddQuadFilled(joystickCenterpoint,
-//                             ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
-//                             ImVec2(joystickCenterpoint.x, joystickCenterpoint.y + cardinalRadius),
-//                             ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
-//                             ImColor(130, 130, 130, 255));
-//     drawList->AddQuadFilled(joystickCenterpoint,
-//                             ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
-//                             ImVec2(joystickCenterpoint.x + cardinalRadius, joystickCenterpoint.y),
-//                             ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
-//                             ImColor(130, 130, 130, 255));
-//     drawList->AddQuadFilled(joystickCenterpoint,
-//                             ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
-//                             ImVec2(joystickCenterpoint.x, joystickCenterpoint.y - cardinalRadius),
-//                             ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
-//                             ImColor(130, 130, 130, 255));
-//     drawList->AddQuadFilled(joystickCenterpoint,
-//                             ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
-//                             ImVec2(joystickCenterpoint.x - cardinalRadius, joystickCenterpoint.y),
-//                             ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
-//                             ImColor(130, 130, 130, 255));
-
-//     // Draw the joystick position indicator
-//     ImVec2 joystickIndicatorDistanceFromCenter = ImVec2(0, 0);
-//     if ((stick.x * stick.x + stick.y * stick.y) > (deadzone * deadzone)) {
-//         joystickIndicatorDistanceFromCenter =
-//             ImVec2((stick.x * (cardinalRadius / 85.0f)), -(stick.y * (cardinalRadius / 85.0f)));
-//     }
-//     float indicatorRadius = 5.0f;
-//     drawList->AddCircleFilled(ImVec2(joystickCenterpoint.x + joystickIndicatorDistanceFromCenter.x,
-//                                      joystickCenterpoint.y + joystickIndicatorDistanceFromCenter.y),
-//                               indicatorRadius, ImColor(34, 51, 76, 255), 7);
-
-//     ImGui::EndChild();
 // }
 
 // void InputEditorWindow::DrawControllerSchema() {
@@ -212,9 +154,9 @@
 
 //     if (!isKeyboard) {
 //         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
-//         DrawVirtualStick("##MainVirtualStick",
-//                          ImVec2(backend->GetLeftStickX(mCurrentPort), backend->GetLeftStickY(mCurrentPort)),
-//                          profile->AxisDeadzones[0]);
+//         // DrawVirtualStick("##MainVirtualStick",
+//         //                  ImVec2(backend->GetLeftStickX(mCurrentPort), backend->GetLeftStickY(mCurrentPort)),
+//         //                  profile->AxisDeadzones[0]);
 //         ImGui::SameLine();
 
 //         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -264,9 +206,9 @@
 //         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
 //         // 2 is the SDL value for right stick X axis
 //         // 3 is the SDL value for right stick Y axis.
-//         DrawVirtualStick("##RightVirtualStick",
-//                          ImVec2(backend->GetRightStickX(mCurrentPort), backend->GetRightStickY(mCurrentPort)),
-//                          profile->AxisDeadzones[2]);
+//         // DrawVirtualStick("##RightVirtualStick",
+//         //                  ImVec2(backend->GetRightStickX(mCurrentPort), backend->GetRightStickY(mCurrentPort)),
+//         //                  profile->AxisDeadzones[2]);
 
 //         ImGui::SameLine();
 //         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -331,8 +273,8 @@
 //             Context::GetInstance()->GetControlDeck()->SaveSettings();
 //         }
 //         ImGui::SetCursorPosX(cursorX);
-//         DrawVirtualStick("##GyroPreview",
-//                          ImVec2(-10.0f * backend->GetGyroY(mCurrentPort), 10.0f * backend->GetGyroX(mCurrentPort)));
+//         // DrawVirtualStick("##GyroPreview",
+//         //                  ImVec2(-10.0f * backend->GetGyroY(mCurrentPort), 10.0f * backend->GetGyroX(mCurrentPort)));
 
 //         ImGui::SameLine();
 //         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -441,48 +383,200 @@
 //     EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 // }
 
-// void InputEditorWindow::UpdateElement() {
-//     if (mGameInputBlockTimer != INT32_MAX) {
-//         mGameInputBlockTimer--;
-//         if (mGameInputBlockTimer <= 0) {
-//             LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(mGameInputBlockId);
-//             mGameInputBlockTimer = INT32_MAX;
-//         }
-//     }
-// }
+void InputEditorWindow::UpdateElement() {
+    // if (mGameInputBlockTimer != INT32_MAX) {
+    //     mGameInputBlockTimer--;
+    //     if (mGameInputBlockTimer <= 0) {
+    //         LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(mGameInputBlockId);
+    //         mGameInputBlockTimer = INT32_MAX;
+    //     }
+    // }
+}
 
-// void InputEditorWindow::DrawElement() {
-// #ifdef __SWITCH__
-//     ImVec2 minSize = ImVec2(641, 250);
-//     ImVec2 maxSize = ImVec2(2200, 505);
-// #elif defined(__WIIU__)
-//     ImVec2 minSize = ImVec2(641 * 2, 250 * 2);
-//     ImVec2 maxSize = ImVec2(1200 * 2, 330 * 2);
-// #else
-//     ImVec2 minSize = ImVec2(641, 250);
-//     ImVec2 maxSize = ImVec2(1200, 330);
-// #endif
+void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone) {
+    ImGui::BeginChild(label, ImVec2(78, 85), false);
+    ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 10, ImGui::GetCursorPos().y + 10));
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-//     ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
-//     // OTRTODO: Disable this stupid workaround ( ReadRawPress() only works when the window is on the main viewport )
-//     ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-//     ImGui::Begin("Controller Configuration", &mIsVisible,
-//                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    const ImVec2 cursorScreenPosition = ImGui::GetCursorScreenPos();
 
-//     ImGui::BeginTabBar("##Controllers");
+    // Draw the border box
+    float borderSquareLeft = cursorScreenPosition.x + 2.0f;
+    float borderSquareTop = cursorScreenPosition.y + 2.0f;
+    float borderSquareSize = 65.0f;
+    drawList->AddRect(ImVec2(borderSquareLeft, borderSquareTop),
+                      ImVec2(borderSquareLeft + borderSquareSize, borderSquareTop + borderSquareSize),
+                      ImColor(100, 100, 100, 255), 0.0f, 0, 1.5f);
 
-//     for (int i = 0; i < 4; i++) {
-//         if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d", i + 1).c_str())) {
-//             mCurrentPort = i;
-//             ImGui::EndTabItem();
-//         }
-//     }
+    // Draw the gate background
+    float cardinalRadius = 22.5f;
+    float diagonalRadius = cardinalRadius * (69.0f / 85.0f);
 
-//     ImGui::EndTabBar();
+    ImVec2 joystickCenterpoint =
+        ImVec2(cursorScreenPosition.x + cardinalRadius + 12, cursorScreenPosition.y + cardinalRadius + 11);
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImVec2(joystickCenterpoint.x, joystickCenterpoint.y + cardinalRadius),
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImVec2(joystickCenterpoint.x + cardinalRadius, joystickCenterpoint.y),
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x + diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImVec2(joystickCenterpoint.x, joystickCenterpoint.y - cardinalRadius),
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImColor(130, 130, 130, 255));
+    drawList->AddQuadFilled(joystickCenterpoint,
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y - diagonalRadius),
+                            ImVec2(joystickCenterpoint.x - cardinalRadius, joystickCenterpoint.y),
+                            ImVec2(joystickCenterpoint.x - diagonalRadius, joystickCenterpoint.y + diagonalRadius),
+                            ImColor(130, 130, 130, 255));
 
-//     // Draw current cfg
-//     DrawControllerSchema();
+    // Draw the joystick position indicator
+    ImVec2 joystickIndicatorDistanceFromCenter = ImVec2(0, 0);
+    if ((stick.x * stick.x + stick.y * stick.y) > (deadzone * deadzone)) {
+        joystickIndicatorDistanceFromCenter =
+            ImVec2((stick.x * (cardinalRadius / 85.0f)), -(stick.y * (cardinalRadius / 85.0f)));
+    }
+    float indicatorRadius = 5.0f;
+    drawList->AddCircleFilled(ImVec2(joystickCenterpoint.x + joystickIndicatorDistanceFromCenter.x,
+                                     joystickCenterpoint.y + joystickIndicatorDistanceFromCenter.y),
+                              indicatorRadius, ImColor(34, 51, 76, 255), 7);
 
-//     ImGui::End();
-// }
-// } // namespace LUS
+    ImGui::EndChild();
+}
+
+#define CHIP_COLOR_N64_GREY ImVec4(0.4f, 0.4f, 0.4f, 1.0f)
+#define CHIP_COLOR_N64_BLUE ImVec4(0.176f, 0.176f, 0.5f, 1.0f)
+#define CHIP_COLOR_N64_GREEN ImVec4(0.0f, 0.294f, 0.0f, 1.0f)
+#define CHIP_COLOR_N64_YELLOW ImVec4(0.5f, 0.314f, 0.0f, 1.0f)
+#define CHIP_COLOR_N64_RED ImVec4(0.392f, 0.0f, 0.0f, 1.0f)
+
+void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHIP_COLOR_N64_GREY) {
+    ImGui::BeginDisabled();
+    ImGui::PushStyleColor(ImGuiCol_Button, color);
+    ImGui::Button(buttonName, ImVec2(50.0f, 0));
+    ImGui::PopStyleColor();
+    ImGui::EndDisabled();
+}
+
+void InputEditorWindow::DrawButtonLine(const char* buttonName, ImVec4 color = CHIP_COLOR_N64_GREY) {
+    ImGui::NewLine();
+    ImGui::SameLine(32.0f);
+    DrawInputChip(buttonName, color);
+    ImGui::SameLine(86.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+    ImGui::Button(StringHelper::Sprintf("%s %s   ", ICON_FA_GAMEPAD, buttonName).c_str());
+    ImGui::PopStyleVar();
+    ImGui::SameLine(0,0);
+    ImGui::Button(ICON_FA_TIMES);
+}
+
+void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, ImVec4 color = CHIP_COLOR_N64_GREY) {
+    ImGui::NewLine();
+    ImGui::SameLine();
+    DrawInputChip(axisDirectionName, color);
+    ImGui::SameLine(62.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+    ImGui::Button(StringHelper::Sprintf("%s %s   ", ICON_FA_GAMEPAD, axisDirectionName).c_str());
+    ImGui::PopStyleVar();
+    ImGui::SameLine(0,0);
+    ImGui::Button(ICON_FA_TIMES);
+}
+
+void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
+    DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(0.0f, 0.0f));
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    DrawAxisDirectionLine(ICON_FA_ARROW_LEFT, color);
+    DrawAxisDirectionLine(ICON_FA_ARROW_RIGHT, color);
+    DrawAxisDirectionLine(ICON_FA_ARROW_UP, color);
+    DrawAxisDirectionLine(ICON_FA_ARROW_DOWN, color);
+    ImGui::EndGroup();
+    if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
+        ImGui::Text("Deadzone:");
+        ImGui::SetNextItemWidth(160.0f);
+        ImGui::SliderInt(StringHelper::Sprintf("##Deadzone%d", id).c_str(), deadzone, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::Text("Notch Snap Angle:");
+        ImGui::SetNextItemWidth(160.0f);
+        ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), notchProximityThreshold, 0, 45, "%d°", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::TreePop();
+    }
+}
+
+void InputEditorWindow::DrawElement() {
+    static bool connected[4] = {true, false, false, false};
+    // static bool openTab[4] = {false, false, false, false};
+    ImGui::Begin("Controller Configuration", &mIsVisible);
+    ImGui::BeginTabBar("##ControllerConfigPortTabs");
+    for (int i = 0; i < 4; i++) {
+        if (ImGui::BeginTabItem(StringHelper::Sprintf("%s Port %d###port%d", connected[i] ? ICON_FA_PLUG : ICON_FA_CHAIN_BROKEN, i + 1, i).c_str())) {
+            ImGui::Checkbox("Connected", &connected[i]);
+
+            if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+                DrawButtonLine("A", CHIP_COLOR_N64_BLUE);
+                DrawButtonLine("B", CHIP_COLOR_N64_GREEN);
+                DrawButtonLine("L");
+                DrawButtonLine("R");
+                DrawButtonLine("Z");
+                DrawButtonLine("Start", CHIP_COLOR_N64_RED);
+            }
+            if (ImGui::CollapsingHeader("C-Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), CHIP_COLOR_N64_YELLOW);
+            }
+            if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT).c_str());
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str());
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP).c_str());
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str());
+            }
+            if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+                static int32_t deadzone = 20;
+                static int32_t notchProximityThreshold = 0;
+                DrawAnalogStickSection(&deadzone, &notchProximityThreshold, 0);
+            }
+            if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
+                static int32_t additionalDeadzone = 20;
+                static int32_t additionalNotchProximityThreshold = 0;
+                DrawAnalogStickSection(&additionalDeadzone, &additionalNotchProximityThreshold, 1, CHIP_COLOR_N64_YELLOW);
+            }
+            if (ImGui::CollapsingHeader("Gyro")) {
+                // does previewing using the analog stick preview work currently?
+                // i'd think trying to normalize gyro to an analog stick would be problematic.
+                // i'm thinking we might be better off just throwing a couple non-interactable
+                //  sliders in here so people can see gyro working (and we can throw numbers on them too)
+                DrawAnalogPreview("##gyro", ImVec2(0.0f, 0.0f));
+                ImGui::SameLine();
+                ImGui::BeginGroup();
+                ImGui::Text("Gyro Device");
+                static int8_t selectedGyroController = -1;
+                ImGui::SetNextItemWidth(160.0f);
+                if (ImGui::BeginCombo("##gryoControllers", "None")) {
+                    for (int8_t i = 0; i < 4; i++) {
+                        std::string deviceName = StringHelper::Sprintf("Controller %d", i);
+                        if (ImGui::Selectable(deviceName.c_str(), i == selectedGyroController)) {
+                            selectedGyroController = i;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::Text("todo: either figure out sdl doesn't think my controllers have gyro\nor find someone else to finish the gyro section");
+                ImGui::EndGroup();
+            }
+            if (ImGui::CollapsingHeader("Rumble and LEDs")) {
+                ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso you could say do 10%% intensity on the big motor and 50%% on the small one");
+                ImGui::Text("todo: leds");
+            }
+            ImGui::EndTabItem();
+        }
+    }
+    ImGui::EndTabBar();
+    ImGui::End();
+}
+} // namespace LUS
