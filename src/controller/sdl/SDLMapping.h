@@ -5,6 +5,7 @@
 #include <memory>
 
 namespace LUS {
+enum Axis { X = 0, Y = 1 };
 enum AxisDirection { NEGATIVE = -1, POSITIVE = 1 };
 
 class SDLMapping {

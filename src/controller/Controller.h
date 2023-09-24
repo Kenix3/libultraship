@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include "ButtonMapping.h"
 #include "ControllerStick.h"
+#include "ControllerGyro.h"
 
 namespace LUS {
 
@@ -29,12 +30,14 @@ class Controller {
     void ClearAllButtonMappings();
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();
+    std::shared_ptr<ControllerGyro> GetGyro();
     void ReadToPad(OSContPad* pad);
 
   private:
     std::vector<std::shared_ptr<ButtonMapping>> mButtonMappings;
     std::shared_ptr<ControllerStick> mLeftStick;
     std::shared_ptr<ControllerStick> mRightStick;
+    std::shared_ptr<ControllerGyro> mGyro;
 
     bool mIsConnected;
     std::deque<OSContPad> mPadBuffer;

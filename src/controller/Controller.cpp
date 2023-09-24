@@ -20,6 +20,7 @@ namespace LUS {
 Controller::Controller() {
     mLeftStick = std::make_shared<ControllerStick>();
     mRightStick = std::make_shared<ControllerStick>();
+    mGyro = std::make_shared<ControllerGyro>();
 }
 
 Controller::~Controller() {
@@ -32,6 +33,10 @@ std::shared_ptr<ControllerStick> Controller::GetLeftStick() {
 
 std::shared_ptr<ControllerStick> Controller::GetRightStick() {
     return mRightStick;
+}
+
+std::shared_ptr<ControllerGyro> Controller::GetGyro() {
+    return mGyro;
 }
 
 void Controller::ReloadAllMappings() {
@@ -48,8 +53,6 @@ void Controller::ReloadAllMappings() {
 }
 
 void Controller::ReadToPad(OSContPad* pad) {
-    // ReadDevice(portIndex);
-
     OSContPad padToBuffer = { 0 };
 
 #ifndef __WIIU__
@@ -61,33 +64,12 @@ void Controller::ReadToPad(OSContPad* pad) {
         mapping->UpdatePad(padToBuffer.button);
     }
 
-    mLeftStick->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
-    // padToBuffer.button |= GetPressedButtons(portIndex) & 0xFFFF;
-
-    // // Stick Inputs
-    // int8_t leftStickX = ReadStick(portIndex, LEFT, X);
-    // int8_t leftStickY = ReadStick(portIndex, LEFT, Y);
-    // int8_t rightStickX = ReadStick(portIndex, RIGHT, X);
-    // int8_t rightStickY = ReadStick(portIndex, RIGHT, Y);
-
-    // auto profile = GetProfile(portIndex);
-    // ProcessStick(leftStickX, leftStickY, profile->AxisDeadzones[0], profile->AxisDeadzones[1],
-    //              profile->NotchProximityThreshold);
-    // ProcessStick(rightStickX, rightStickY, profile->AxisDeadzones[2], profile->AxisDeadzones[3],
-    //              profile->NotchProximityThreshold);
-
-    // if (pad == nullptr) {
-    //     return;
-    // }
-
-    // padToBuffer.stick_x = leftStickX;
-    // padToBuffer.stick_y = leftStickY;
-    // padToBuffer.right_stick_x = rightStickX;
-    // padToBuffer.right_stick_y = rightStickY;
-
-    // // Gyro
-    // padToBuffer.gyro_x = GetGyroX(portIndex);
-    // padToBuffer.gyro_y = GetGyroY(portIndex);
+    // Stick Inputs
+    GetLeftStick()->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
+    GetRightStick()->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
+    
+    // Gyro
+    GetGyro()->UpdatePad(padToBuffer.gyro_x, padToBuffer.gyro_y);
 
     mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
@@ -100,18 +82,18 @@ void Controller::ReadToPad(OSContPad* pad) {
         if (pad->stick_y == 0) {
             pad->stick_y = padFromBuffer.stick_y;
         }
-        // if (pad->gyro_x == 0) {
-        //     pad->gyro_x = padFromBuffer.gyro_x;
-        // }
-        // if (pad->gyro_y == 0) {
-        //     pad->gyro_y = padFromBuffer.gyro_y;
-        // }
-        // if (pad->right_stick_x == 0) {
-        //     pad->right_stick_x = padFromBuffer.right_stick_x;
-        // }
-        // if (pad->right_stick_y == 0) {
-        //     pad->right_stick_y = padFromBuffer.right_stick_y;
-        // }
+        if (pad->gyro_x == 0) {
+            pad->gyro_x = padFromBuffer.gyro_x;
+        }
+        if (pad->gyro_y == 0) {
+            pad->gyro_y = padFromBuffer.gyro_y;
+        }
+        if (pad->right_stick_x == 0) {
+            pad->right_stick_x = padFromBuffer.right_stick_x;
+        }
+        if (pad->right_stick_y == 0) {
+            pad->right_stick_y = padFromBuffer.right_stick_y;
+        }
     }
 
     while (mPadBuffer.size() > 6) {

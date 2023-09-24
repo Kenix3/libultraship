@@ -53,6 +53,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLGyroAxisMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLGyroAxisMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/AxisDirectionMapping.h
@@ -63,8 +65,12 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControlDeck.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerGyro.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerGyro.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/GyroAxisMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/GyroAxisMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
