@@ -2,7 +2,6 @@
 
 #include "Context.h"
 #include "Controller.h"
-#include "DummyController.h"
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>

@@ -25,7 +25,6 @@
 #include "controller/ControlDeck.h"
 #include "controller/KeyboardController.h"
 #include "controller/KeyboardScancodes.h"
-#include "controller/DummyController.h"
 #include "utils/binarytools/BinaryReader.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/binarytools/BinaryWriter.h"
