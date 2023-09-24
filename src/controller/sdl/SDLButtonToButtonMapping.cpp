@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
+#include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex,
@@ -22,6 +23,15 @@ void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
 
 uint8_t SDLButtonToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
+}
+
+void SDLButtonToButtonMapping::SaveToConfig() {
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLButtonToButtonMapping");
+    CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
+    CVarSave();
 }
 
 std::string SDLButtonToButtonMapping::GetButtonName() {

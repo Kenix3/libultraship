@@ -29,6 +29,15 @@ uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 
+void SDLAxisDirectionToButtonMapping::SaveToConfig() {
+    // const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    // CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey).c_str(), "SDLButtonToButtonMapping");
+    // CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey).c_str(), mBitmask);
+    // CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey).c_str(), mControllerIndex);
+    // CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey).c_str(), mControllerButton);
+    // CVarSave();
+}
+
 std::string SDLAxisDirectionToButtonMapping::GetButtonName() {
     switch (mControllerAxis) {
         case SDL_CONTROLLER_AXIS_LEFTX:

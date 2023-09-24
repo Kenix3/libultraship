@@ -19,6 +19,8 @@ class ButtonMapping {
     virtual uint8_t GetMappingType();
     virtual std::string GetButtonName();
 
+    virtual void SaveToConfig() = 0;
+
   protected:
     uint16_t mBitmask;
     std::string mUuid;

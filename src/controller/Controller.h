@@ -38,6 +38,10 @@ class Controller {
     void ReadToPad(OSContPad* pad);
 
   private:
+    void LoadButtonMappingFromConfig(std::string uuid);
+    void SaveButtonMappingIdsToConfig();
+    void ResetToDefaultButtonMappings();
+
     std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> mButtonMappings;
     std::shared_ptr<ControllerStick> mLeftStick;
     std::shared_ptr<ControllerStick> mRightStick;

@@ -8,6 +8,7 @@
 #include <SDL2/SDL_events.h>
 #endif
 #include <spdlog/spdlog.h>
+#include <Utils/StringHelper.h>
 
 #include "controller/sdl/SDLButtonToButtonMapping.h"
 #include "controller/sdl/SDLAxisDirectionToButtonMapping.h"
@@ -47,22 +48,130 @@ std::shared_ptr<ButtonMapping> Controller::GetButtonMappingByUuid(std::string uu
     return mButtonMappings[uuid];
 }
 
-void Controller::ReloadAllMappings() {
+void Controller::LoadButtonMappingFromConfig(std::string uuid) {
+    // todo: maybe this stuff makes sense in a factory?
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + uuid;
+    const std::string mappingClass = CVarGetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    if (mappingClass == "SDLButtonToButtonMapping") {
+        uint16_t bitmask = CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t sdlControllerIndex = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t sdlControllerButton = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), 0);
+        
+        if (!bitmask || sdlControllerIndex < 0 || sdlControllerButton == -1) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return;
+        }
+        
+        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(bitmask, sdlControllerIndex, sdlControllerButton));
+        return;
+    }
+
+    if (mappingClass == "SDLAxisDirectionToButtonMapping") {
+        
+    }
+}
+
+void Controller::SaveButtonMappingIdsToConfig() {
+    // todo: this efficently (when we build out cvar array support?)
+    std::string buttonMappingIdListString = "";
+    for (auto [uuid, mapping] : mButtonMappings) {
+        buttonMappingIdListString += uuid;
+        buttonMappingIdListString += ",";
+    }
+
+    const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.MappingIds", mPort + 1);
+    CVarSetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
+    CVarSave();
+}
+
+void Controller::ResetToDefaultButtonMappings() {
+    const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.MappingIds", mPort + 1);
+    CVarClear(buttonMappingIdsCvarKey.c_str());
+
+    for (auto [uuid, mapping] : mButtonMappings) {
+        const std::string mappingCvarKey = "gControllers.ButtonMappings." + uuid;
+        CVarClear(mappingCvarKey.c_str());
+    }
+
     ClearAllButtonMappings();
 
-    if (mPort == 0) {
-        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, 0, 0));
-        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_B, 0, 1));
-        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_B, 0, 5));
-        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CUP, 0, 3, -1));
-        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CDOWN, 0, 3, 1));
-        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CLEFT, 0, 2, -1));
-        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CRIGHT, 0, 2, 1));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, mPort, SDL_CONTROLLER_BUTTON_A));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_B, mPort, SDL_CONTROLLER_BUTTON_B));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_L, mPort, SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_R, mPort, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
+    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_Z, mPort, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_START, mPort, SDL_CONTROLLER_BUTTON_START));
+    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CUP, mPort, SDL_CONTROLLER_AXIS_RIGHTY, -1));
+    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CDOWN, mPort, SDL_CONTROLLER_AXIS_RIGHTY, 1));
+    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CLEFT, mPort, SDL_CONTROLLER_AXIS_RIGHTX, -1));
+    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CRIGHT, mPort, SDL_CONTROLLER_AXIS_RIGHTX, 1));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DUP, mPort, SDL_CONTROLLER_BUTTON_DPAD_UP));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DDOWN, mPort, SDL_CONTROLLER_BUTTON_DPAD_DOWN));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DLEFT, mPort, SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DRIGHT, mPort, SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
+    
+    for (auto [uuid, mapping] : mButtonMappings) {
+        mapping->SaveToConfig();
+    }
+    SaveButtonMappingIdsToConfig();
+}
+
+void Controller::ReloadAllMappings() {
+    ClearAllButtonMappings();
+    // ResetToDefaultButtonMappings();
+
+    // todo: this efficently (when we build out cvar array support?)
+    // i don't expect it to really be a problem with the small number of mappings we have
+    // for each controller (especially compared to include/exclude locations in rando), and
+    // the audio editor pattern doesn't work for this because that looks for ids that are either
+    // hardcoded or provided by an otr file
+    const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.MappingIds", mPort + 1);
+    std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
+    std::string buttonMappingIdString;
+    while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
+        LoadButtonMappingFromConfig(buttonMappingIdString);
     }
 
     GetLeftStick()->ReloadAllMappings();
     GetRightStick()->ReloadAllMappings();
 }
+
+// void AudioCollection::RemoveFromShufflePool(SequenceInfo* seqInfo) {
+//     const std::string cvarKey = "gAudioEditor.Excluded." + seqInfo->sfxKey;
+//     excludedSequences.insert(seqInfo);
+//     includedSequences.erase(seqInfo);
+    // CVarSetInteger(cvarKey.c_str(), 1);
+//     LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+// }
+
+// void AudioCollection::AddToShufflePool(SequenceInfo* seqInfo) {
+//     const std::string cvarKey = "gAudioEditor.Excluded." + seqInfo->sfxKey;
+//     includedSequences.insert(seqInfo);
+//     excludedSequences.erase(seqInfo);
+//     CVarClear(cvarKey.c_str());
+//     LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+// }
+
+// void AudioCollection::InitializeShufflePool() {
+//     if (shufflePoolInitialized) return;
+    
+//     for (auto& [seqId, seqInfo] : sequenceMap) {
+//         const std::string cvarKey = "gAudioEditor.Excluded." + seqInfo.sfxKey;
+//         if (CVarGetInteger(cvarKey.c_str(), 0)) {
+//             excludedSequences.insert(&seqInfo);
+//         } else {
+//             if (seqInfo.category != SEQ_NOSHUFFLE) {
+//                 includedSequences.insert(&seqInfo);
+//             }
+//         }
+//     }
+
+//     shufflePoolInitialized = true;
+// };
+
+
 
 void Controller::ReadToPad(OSContPad* pad) {
     OSContPad padToBuffer = { 0 };
