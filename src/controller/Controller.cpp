@@ -92,6 +92,15 @@ void Controller::LoadButtonMappingFromConfig(std::string uuid) {
     }
 }
 
+uint8_t Controller::GetPort() {
+    return mPort;
+}
+
+bool Controller::HasConfig() {
+    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPort + 1);
+    return CVarGetInteger(hasConfigCvarKey.c_str(), false);
+}
+
 void Controller::SaveButtonMappingIdsToConfig() {
     // todo: this efficently (when we build out cvar array support?)
     std::string buttonMappingIdListString = "";
@@ -135,6 +144,10 @@ void Controller::ResetToDefaultButtonMappings(int32_t sdlControllerIndex) {
         mapping->SaveToConfig();
     }
     SaveButtonMappingIdsToConfig();
+    
+    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPort + 1);
+    CVarSetInteger(hasConfigCvarKey.c_str(), true);
+    CVarSave();
 }
 
 void Controller::ReloadAllMappingsFromConfig() {
@@ -153,8 +166,8 @@ void Controller::ReloadAllMappingsFromConfig() {
         LoadButtonMappingFromConfig(buttonMappingIdString);
     }
 
-    GetLeftStick()->ReloadAllMappings();
-    GetRightStick()->ReloadAllMappings();
+    GetLeftStick()->ReloadAllMappingsFromConfig();
+    GetRightStick()->ReloadAllMappingsFromConfig();
 }
 
 void Controller::ReadToPad(OSContPad* pad) {

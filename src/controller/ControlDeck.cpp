@@ -31,7 +31,11 @@ void ControlDeck::Init(uint8_t* bits) {
     *mControllerBits |= 1 << 0;
 
     for (auto controller : mControllers) {
-        controller->ReloadAllMappingsFromConfig();
+        if (controller->HasConfig()) {
+            controller->ReloadAllMappingsFromConfig();
+        } else {
+            controller->ResetToDefaultButtonMappings(controller->GetPort());
+        }
     }
 }
 

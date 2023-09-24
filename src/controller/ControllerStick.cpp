@@ -22,7 +22,27 @@ void ControllerStick::ClearAllMappings() {
   mDownMapping = nullptr;
 }
 
-void ControllerStick::ReloadAllMappings() {
+void ControllerStick::SaveToConfig() {
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLButtonToButtonMapping");
+    CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
+    CVarSave();
+}
+
+void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
+    ClearAllMappings();
+
+    UpdateAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, -1));
+    UpdateAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, 1));
+    UpdateAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, -1));
+    UpdateAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, 1));
+
+
+}
+
+void ControllerStick::ReloadAllMappingsFromConfig() {
     ClearAllMappings();
 
     UpdateAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, -1));

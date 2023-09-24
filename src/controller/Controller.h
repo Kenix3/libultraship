@@ -37,6 +37,8 @@ class Controller {
     std::shared_ptr<ControllerStick> GetRightStick();
     std::shared_ptr<ControllerGyro> GetGyro();
     void ReadToPad(OSContPad* pad);
+    bool HasConfig();
+    uint8_t GetPort();
 
   private:
     void LoadButtonMappingFromConfig(std::string uuid);
