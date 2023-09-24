@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
+#include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex,
@@ -30,12 +31,13 @@ uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
 }
 
 void SDLAxisDirectionToButtonMapping::SaveToConfig() {
-    // const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
-    // CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey).c_str(), "SDLButtonToButtonMapping");
-    // CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey).c_str(), mBitmask);
-    // CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey).c_str(), mControllerIndex);
-    // CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey).c_str(), mControllerButton);
-    // CVarSave();
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLAxisDirectionToButtonMapping");
+    CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
+    CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
+    CVarSave();
 }
 
 std::string SDLAxisDirectionToButtonMapping::GetButtonName() {

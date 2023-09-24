@@ -52,12 +52,19 @@ void Controller::LoadButtonMappingFromConfig(std::string uuid) {
     // todo: maybe this stuff makes sense in a factory?
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + uuid;
     const std::string mappingClass = CVarGetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    uint16_t bitmask = CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
+    if (!bitmask) {
+        // all button mappings need bitmasks
+        CVarClear(mappingCvarKey.c_str());
+        CVarSave();
+        return;
+    }
+
     if (mappingClass == "SDLButtonToButtonMapping") {
-        uint16_t bitmask = CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
         int32_t sdlControllerIndex = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
         int32_t sdlControllerButton = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), 0);
         
-        if (!bitmask || sdlControllerIndex < 0 || sdlControllerButton == -1) {
+        if (sdlControllerIndex < 0 || sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
@@ -69,7 +76,19 @@ void Controller::LoadButtonMappingFromConfig(std::string uuid) {
     }
 
     if (mappingClass == "SDLAxisDirectionToButtonMapping") {
-        
+        int32_t sdlControllerIndex = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t sdlControllerAxis = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t axisDirection = CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
+
+        if (sdlControllerIndex < 0 || sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return;
+        }
+
+        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(bitmask, sdlControllerIndex, sdlControllerAxis, axisDirection));
+        return;
     }
 }
 
@@ -137,41 +156,6 @@ void Controller::ReloadAllMappings() {
     GetLeftStick()->ReloadAllMappings();
     GetRightStick()->ReloadAllMappings();
 }
-
-// void AudioCollection::RemoveFromShufflePool(SequenceInfo* seqInfo) {
-//     const std::string cvarKey = "gAudioEditor.Excluded." + seqInfo->sfxKey;
-//     excludedSequences.insert(seqInfo);
-//     includedSequences.erase(seqInfo);
-    // CVarSetInteger(cvarKey.c_str(), 1);
-//     LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
-// }
-
-// void AudioCollection::AddToShufflePool(SequenceInfo* seqInfo) {
-//     const std::string cvarKey = "gAudioEditor.Excluded." + seqInfo->sfxKey;
-//     includedSequences.insert(seqInfo);
-//     excludedSequences.erase(seqInfo);
-//     CVarClear(cvarKey.c_str());
-//     LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
-// }
-
-// void AudioCollection::InitializeShufflePool() {
-//     if (shufflePoolInitialized) return;
-    
-//     for (auto& [seqId, seqInfo] : sequenceMap) {
-//         const std::string cvarKey = "gAudioEditor.Excluded." + seqInfo.sfxKey;
-//         if (CVarGetInteger(cvarKey.c_str(), 0)) {
-//             excludedSequences.insert(&seqInfo);
-//         } else {
-//             if (seqInfo.category != SEQ_NOSHUFFLE) {
-//                 includedSequences.insert(&seqInfo);
-//             }
-//         }
-//     }
-
-//     shufflePoolInitialized = true;
-// };
-
-
 
 void Controller::ReadToPad(OSContPad* pad) {
     OSContPad padToBuffer = { 0 };
