@@ -1,5 +1,4 @@
 #include "InputEditorWindow.h"
-#include "controller/Controller.h"
 #include "controller/KeyboardController.h"
 #include "Context.h"
 #include "Gui.h"
@@ -492,26 +491,47 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uin
     ImGui::PopStyleVar();
 }
 
-void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine();
     DrawInputChip(axisDirectionName, color);
     ImGui::SameLine(62.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-    ImGui::Button(StringHelper::Sprintf("%s %s ", ICON_FA_GAMEPAD, axisDirectionName).c_str());
+    uint8_t mappingType;
+    std::string mappingName = "";
+    if (stick == LEFT) {
+        mappingType = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->GetAxisDirectionMappingByDirection(direction)->GetMappingType();
+        mappingName = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->GetAxisDirectionMappingByDirection(direction)->GetAxisDirectionName();
+    } else if (stick == RIGHT) {
+        mappingType = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->GetAxisDirectionMappingByDirection(direction)->GetMappingType();
+        mappingName = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->GetAxisDirectionMappingByDirection(direction)->GetAxisDirectionName();
+    }
+    std::string icon = "";
+    switch (mappingType) {
+        case MAPPING_TYPE_GAMEPAD:
+            icon = ICON_FA_GAMEPAD;
+            break;
+        case MAPPING_TYPE_KEYBOARD:
+            icon = ICON_FA_KEYBOARD_O;
+            break;
+        case MAPPING_TYPE_UNKNOWN:
+            icon = ICON_FA_BUG;
+            break;
+    }
+    ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), mappingName.c_str()).c_str());
     ImGui::PopStyleVar();
     ImGui::SameLine(0,0);
     ImGui::Button(ICON_FA_TIMES);
 }
 
-void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port, uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
     DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(0.0f, 0.0f));
     ImGui::SameLine();
     ImGui::BeginGroup();
-    DrawAxisDirectionLine(ICON_FA_ARROW_LEFT, color);
-    DrawAxisDirectionLine(ICON_FA_ARROW_RIGHT, color);
-    DrawAxisDirectionLine(ICON_FA_ARROW_UP, color);
-    DrawAxisDirectionLine(ICON_FA_ARROW_DOWN, color);
+    DrawAxisDirectionLine(ICON_FA_ARROW_LEFT, port, stick, LEFT, color);
+    DrawAxisDirectionLine(ICON_FA_ARROW_RIGHT, port, stick, RIGHT, color);
+    DrawAxisDirectionLine(ICON_FA_ARROW_UP, port, stick, UP, color);
+    DrawAxisDirectionLine(ICON_FA_ARROW_DOWN, port, stick, DOWN, color);
     ImGui::EndGroup();
     if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
         ImGui::Text("Deadzone:");
@@ -570,12 +590,12 @@ void InputEditorWindow::DrawElement() {
             if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 static int32_t deadzone = 20;
                 static int32_t notchProximityThreshold = 0;
-                DrawAnalogStickSection(&deadzone, &notchProximityThreshold, 0);
+                DrawAnalogStickSection(&deadzone, &notchProximityThreshold, i, LEFT, 0);
             }
             if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
                 static int32_t additionalDeadzone = 20;
                 static int32_t additionalNotchProximityThreshold = 0;
-                DrawAnalogStickSection(&additionalDeadzone, &additionalNotchProximityThreshold, 1, CHIP_COLOR_N64_YELLOW);
+                DrawAnalogStickSection(&additionalDeadzone, &additionalNotchProximityThreshold, i, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("Gyro")) {
                 // does previewing using the analog stick preview work currently?

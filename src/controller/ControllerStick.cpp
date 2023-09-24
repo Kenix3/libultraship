@@ -103,6 +103,19 @@ void ControllerStick::UpdateAxisDirectionMapping(Direction direction, std::share
   }
 }
 
+std::shared_ptr<AxisDirectionMapping> ControllerStick::GetAxisDirectionMappingByDirection(Direction direction) {
+  switch (direction) {
+    case LEFT:
+      return mLeftMapping;
+    case RIGHT:
+      return mRightMapping;
+    case UP:
+      return mUpMapping;
+    case DOWN:
+      return mDownMapping;
+  }
+}
+
 void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
   if (mRightMapping == nullptr || mLeftMapping == nullptr || mUpMapping == nullptr || mDownMapping == nullptr) {
     return;
