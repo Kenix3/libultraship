@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <queue>
 #include <vector>
+#include <map>
 #include "libultraship/libultra/controller.h"
 #include "libultraship/color.h"
 #include <unordered_map>
@@ -26,7 +27,8 @@ class Controller {
     void Connect();
     void Disconnect();
     void AddButtonMapping(std::shared_ptr<ButtonMapping> mapping);
-    void ClearButtonMappings(uint16_t bitmask);
+    void ClearButtonMapping(std::string uuid);
+    void ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping);
     void ClearAllButtonMappings();
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();
@@ -34,7 +36,7 @@ class Controller {
     void ReadToPad(OSContPad* pad);
 
   private:
-    std::vector<std::shared_ptr<ButtonMapping>> mButtonMappings;
+    std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> mButtonMappings;
     std::shared_ptr<ControllerStick> mLeftStick;
     std::shared_ptr<ControllerStick> mRightStick;
     std::shared_ptr<ControllerGyro> mGyro;

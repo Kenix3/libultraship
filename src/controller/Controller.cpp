@@ -60,7 +60,7 @@ void Controller::ReadToPad(OSContPad* pad) {
 #endif
 
     // Button Inputs
-    for (auto mapping : mButtonMappings) {
+    for (const auto& [uuid, mapping] : mButtonMappings) {
         mapping->UpdatePad(padToBuffer.button);
     }
 
@@ -153,13 +153,6 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     return mControllerName;
 // }
 
-// double Controller::GetClosestNotch(double angle, double approximationThreshold) {
-//     constexpr auto octagonAngle = M_TAU / 8;
-//     const auto closestNotch = std::round(angle / octagonAngle) * octagonAngle;
-//     const auto distanceToNotch = std::abs(fmod(closestNotch - angle + M_PI, M_TAU) - M_PI);
-//     return distanceToNotch < approximationThreshold / 2 ? closestNotch : angle;
-// }
-
 bool Controller::IsConnected() const {
     return mIsConnected;
 }
@@ -173,14 +166,15 @@ void Controller::Disconnect() {
 }
 
 void Controller::AddButtonMapping(std::shared_ptr<ButtonMapping> mapping) {
-    mButtonMappings.push_back(mapping);
+    mButtonMappings[mapping->GetUuid()] = mapping;
 }
 
-void Controller::ClearButtonMappings(uint16_t bitmask) {
-    // todo: figure out why this isn't compiling
-    // std::erase_if(mButtonMappings, [](std::shared_ptr<ButtonMapping> mapping, uint16_t bitmask) {
-    //     return mapping->GetBitmask() == bitmask;
-    // });
+void Controller::ClearButtonMapping(std::string uuid) {
+    mButtonMappings.erase(uuid);
+}
+
+void Controller::ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping) {
+    ClearButtonMapping(mapping->GetUuid());
 }
 
 void Controller::ClearAllButtonMappings() {
