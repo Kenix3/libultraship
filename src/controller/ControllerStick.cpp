@@ -1,6 +1,8 @@
 #include "ControllerStick.h"
 #include <spdlog/spdlog.h>
 
+#include "controller/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
+
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
@@ -11,6 +13,22 @@ ControllerStick::ControllerStick() {
 }
 
 ControllerStick::~ControllerStick() {
+}
+
+void ControllerStick::ClearAllMappings() {
+  mLeftMapping = nullptr;
+  mRightMapping = nullptr;
+  mUpMapping = nullptr;
+  mDownMapping = nullptr;
+}
+
+void ControllerStick::ReloadAllMappings() {
+    ClearAllMappings();
+
+    UpdateAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, -1));
+    UpdateAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, 1));
+    UpdateAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, -1));
+    UpdateAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, 1));
 }
 
 double ControllerStick::GetClosestNotch(double angle, double approximationThreshold) {
@@ -86,6 +104,10 @@ void ControllerStick::UpdateAxisDirectionMapping(Direction direction, std::share
 }
 
 void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
+  if (mRightMapping == nullptr || mLeftMapping == nullptr || mUpMapping == nullptr || mDownMapping == nullptr) {
+    return;
+  }
+
   Process(x, y);
 }
 } // namespace LUS

@@ -12,6 +12,9 @@ class ControllerStick {
     ControllerStick();
     ~ControllerStick();
 
+    void ReloadAllMappings();
+
+    void ClearAllMappings();
     void UpdatePad(int8_t& x, int8_t& y);
     void UpdateAxisDirectionMapping(Direction direction, std::shared_ptr<AxisDirectionMapping> mapping);
 

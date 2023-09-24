@@ -45,6 +45,9 @@ class Controller {
   public:
     Controller();
     ~Controller();
+
+    void ReloadAllMappings();
+
     bool IsConnected() const;
     void Connect();
     void Disconnect();
