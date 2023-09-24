@@ -52,7 +52,8 @@ void Controller::ReloadAllMappings() {
 
     if (mPort == 0) {
         AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, 0, 0));
-        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, 0, 1));
+        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_B, 0, 1));
+        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_B, 0, 5));
         AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CUP, 0, 3, -1));
         AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CDOWN, 0, 3, 1));
         AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CLEFT, 0, 2, -1));

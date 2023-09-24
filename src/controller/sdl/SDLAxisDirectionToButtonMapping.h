@@ -8,6 +8,7 @@ class SDLAxisDirectionToButtonMapping final : public ButtonMapping, public SDLMa
                                     int32_t axisDirection);
     void UpdatePad(uint16_t& padButtons) override;
     uint8_t GetMappingType() override;
+    std::string GetButtonName() override;
 
   private:
     SDL_GameControllerAxis mControllerAxis;

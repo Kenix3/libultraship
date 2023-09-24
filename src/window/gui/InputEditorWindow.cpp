@@ -481,7 +481,7 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uin
                 icon = ICON_FA_BUG;
                 break;
         }
-        ImGui::Button(StringHelper::Sprintf("%s %s   ##%s", icon.c_str(), buttonName, uuid).c_str());
+        ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetButtonName().c_str()).c_str());
         ImGui::PopStyleVar();
         ImGui::SameLine(0,0);
         ImGui::Button(ICON_FA_TIMES);
@@ -498,7 +498,7 @@ void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, ImV
     DrawInputChip(axisDirectionName, color);
     ImGui::SameLine(62.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-    ImGui::Button(StringHelper::Sprintf("%s %s   ", ICON_FA_GAMEPAD, axisDirectionName).c_str());
+    ImGui::Button(StringHelper::Sprintf("%s %s ", ICON_FA_GAMEPAD, axisDirectionName).c_str());
     ImGui::PopStyleVar();
     ImGui::SameLine(0,0);
     ImGui::Button(ICON_FA_TIMES);

@@ -20,6 +20,7 @@ class ButtonMapping {
     uint16_t GetBitmask();
     virtual void UpdatePad(uint16_t& padButtons) = 0;
     virtual uint8_t GetMappingType();
+    virtual std::string GetButtonName();
 
   protected:
     uint16_t mBitmask;

@@ -51,4 +51,23 @@ bool SDLMapping::ControllerLoaded() {
 
     return true;
 }
+
+SDL_GameControllerType SDLMapping::GetSDLControllerType() {
+    return SDL_GameControllerGetType(mController);
+}
+
+bool SDLMapping::UsesPlaystationLayout() {
+    auto type = GetSDLControllerType();
+    return type == SDL_CONTROLLER_TYPE_PS3 || type == SDL_CONTROLLER_TYPE_PS4 || type == SDL_CONTROLLER_TYPE_PS5;
+}
+
+bool SDLMapping::UsesSwitchLayout() {
+    auto type = GetSDLControllerType();
+    return type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR;
+}
+
+bool SDLMapping::UsesXboxLayout() {
+    auto type = GetSDLControllerType();
+    return type == SDL_CONTROLLER_TYPE_XBOX360 || type == SDL_CONTROLLER_TYPE_XBOXONE;
+}
 } // namespace LUS

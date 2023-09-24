@@ -27,6 +27,10 @@ uint8_t ButtonMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
 
+std::string ButtonMapping::GetButtonName() {
+    return "Unknown";
+}
+
 void ButtonMapping::GenerateUuid() {
     // todo: this a better way
     // i tried some cross-platform uuid lib stuff and ended up fighting cmake

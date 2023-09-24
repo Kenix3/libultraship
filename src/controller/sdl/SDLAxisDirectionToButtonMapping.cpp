@@ -26,4 +26,9 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
 uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
+
+std::string SDLAxisDirectionToButtonMapping::GetButtonName() {
+    auto blarg = mController;
+    return "blarg";
+}
 } // namespace LUS

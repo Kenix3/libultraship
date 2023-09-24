@@ -15,6 +15,10 @@ class SDLMapping {
 
   protected:
     bool ControllerLoaded();
+    SDL_GameControllerType GetSDLControllerType();
+    bool UsesPlaystationLayout();
+    bool UsesSwitchLayout();
+    bool UsesXboxLayout();
 
     int32_t mControllerIndex;
     SDL_GameController* mController;
