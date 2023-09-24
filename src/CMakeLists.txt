@@ -71,10 +71,6 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/GyroAxisMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/GyroAxisMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/KeyboardController.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.h
 )
 
 # if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
