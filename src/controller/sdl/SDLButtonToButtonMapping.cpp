@@ -17,4 +17,8 @@ void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
         padButtons |= mBitmask;
     }
 }
+
+uint8_t SDLButtonToButtonMapping::GetMappingType() {
+    return MAPPING_TYPE_GAMEPAD;
+}
 } // namespace LUS

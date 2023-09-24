@@ -22,4 +22,8 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
         padButtons |= mBitmask;
     }
 }
+
+uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
+    return MAPPING_TYPE_GAMEPAD;
+}
 } // namespace LUS

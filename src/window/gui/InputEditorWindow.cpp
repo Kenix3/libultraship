@@ -469,7 +469,19 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uin
     ImGui::SameLine(86.0f);
     for (auto uuid : mBitmaskToMappingUuids[port][bitmask]) {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-        ImGui::Button(StringHelper::Sprintf("%s %s   ##%s", ICON_FA_GAMEPAD, buttonName, uuid).c_str());
+        std::string icon = "";
+        switch (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetMappingType()) {
+            case MAPPING_TYPE_GAMEPAD:
+                icon = ICON_FA_GAMEPAD;
+                break;
+            case MAPPING_TYPE_KEYBOARD:
+                icon = ICON_FA_KEYBOARD_O;
+                break;
+            case MAPPING_TYPE_UNKNOWN:
+                icon = ICON_FA_BUG;
+                break;
+        }
+        ImGui::Button(StringHelper::Sprintf("%s %s   ##%s", icon.c_str(), buttonName, uuid).c_str());
         ImGui::PopStyleVar();
         ImGui::SameLine(0,0);
         ImGui::Button(ICON_FA_TIMES);

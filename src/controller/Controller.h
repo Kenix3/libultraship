@@ -31,6 +31,7 @@ class Controller {
     void ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping);
     void ClearAllButtonMappings();
     std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> GetAllButtonMappings();
+    std::shared_ptr<ButtonMapping> GetButtonMappingByUuid(std::string uuid);
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();
     std::shared_ptr<ControllerGyro> GetGyro();

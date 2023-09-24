@@ -43,6 +43,10 @@ std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> Controller::GetA
     return mButtonMappings;
 }
 
+std::shared_ptr<ButtonMapping> Controller::GetButtonMappingByUuid(std::string uuid) {
+    return mButtonMappings[uuid];
+}
+
 void Controller::ReloadAllMappings() {
     ClearAllButtonMappings();
 
