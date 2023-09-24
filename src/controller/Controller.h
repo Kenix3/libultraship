@@ -18,7 +18,7 @@ namespace LUS {
 
 class Controller {
   public:
-    Controller();
+    Controller(uint8_t port);
     ~Controller();
 
     void ReloadAllMappings();
@@ -30,6 +30,7 @@ class Controller {
     void ClearButtonMapping(std::string uuid);
     void ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping);
     void ClearAllButtonMappings();
+    std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> GetAllButtonMappings();
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();
     std::shared_ptr<ControllerGyro> GetGyro();
@@ -42,6 +43,8 @@ class Controller {
     std::shared_ptr<ControllerGyro> mGyro;
 
     bool mIsConnected;
+    uint8_t mPort;
+
     std::deque<OSContPad> mPadBuffer;
 };
 } // namespace LUS

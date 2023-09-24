@@ -15,6 +15,7 @@ class ControlDeck {
     void WriteToPad(OSContPad* pad);
     OSContPad* GetPads();
     uint8_t* GetControllerBits();
+    std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
 
   private:
     std::vector<std::shared_ptr<Controller>> mControllers = {};

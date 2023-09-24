@@ -18,7 +18,7 @@ namespace LUS {
 
 ControlDeck::ControlDeck() : mPads(nullptr) {
     for (int32_t i = 0; i < 4; i++) {
-        mControllers.push_back(std::make_shared<Controller>());    
+        mControllers.push_back(std::make_shared<Controller>(i));    
     }
 }
 
@@ -289,9 +289,9 @@ OSContPad* ControlDeck::GetPads() {
 //     config->Save();
 // }
 
-// std::shared_ptr<Controller> ControlDeck::GetDeviceFromDeviceIndex(int32_t deviceIndex) {
-//     return mDevices[deviceIndex];
-// }
+std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
+    return mControllers[port];
+}
 
 // size_t ControlDeck::GetNumDevices() {
 //     return mDevices.size();

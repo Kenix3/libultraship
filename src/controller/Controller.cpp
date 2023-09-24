@@ -17,7 +17,7 @@
 
 namespace LUS {
 
-Controller::Controller() {
+Controller::Controller(uint8_t port) : mPort(port) {
     mLeftStick = std::make_shared<ControllerStick>();
     mRightStick = std::make_shared<ControllerStick>();
     mGyro = std::make_shared<ControllerGyro>();
@@ -39,14 +39,21 @@ std::shared_ptr<ControllerGyro> Controller::GetGyro() {
     return mGyro;
 }
 
+std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> Controller::GetAllButtonMappings() {
+    return mButtonMappings;
+}
+
 void Controller::ReloadAllMappings() {
     ClearAllButtonMappings();
 
-    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, 0, 0));
-    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CUP, 0, 3, -1));
-    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CDOWN, 0, 3, 1));
-    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CLEFT, 0, 2, -1));
-    AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CRIGHT, 0, 2, 1));
+    if (mPort == 0) {
+        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, 0, 0));
+        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, 0, 1));
+        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CUP, 0, 3, -1));
+        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CDOWN, 0, 3, 1));
+        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CLEFT, 0, 2, -1));
+        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CRIGHT, 0, 2, 1));
+    }
 
     GetLeftStick()->ReloadAllMappings();
     GetRightStick()->ReloadAllMappings();

@@ -15,7 +15,6 @@ InputEditorWindow::~InputEditorWindow() {
 }
 
 void InputEditorWindow::InitElement() {
-    mCurrentPort = 0;
     mBtnReading = -1;
     mGameInputBlockTimer = INT32_MAX;
 }
@@ -463,16 +462,22 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
     ImGui::EndDisabled();
 }
 
-void InputEditorWindow::DrawButtonLine(const char* buttonName, uint16_t bitmask, ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine(32.0f);
     DrawInputChip(buttonName, color);
     ImGui::SameLine(86.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-    ImGui::Button(StringHelper::Sprintf("%s %s   ", ICON_FA_GAMEPAD, buttonName).c_str());
+    for (auto uuid : mBitmaskToMappingUuids[port][bitmask]) {
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+        ImGui::Button(StringHelper::Sprintf("%s %s   ##%s", ICON_FA_GAMEPAD, buttonName, uuid).c_str());
+        ImGui::PopStyleVar();
+        ImGui::SameLine(0,0);
+        ImGui::Button(ICON_FA_TIMES);
+        ImGui::SameLine(0, 4.0f);
+    }
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::Button(ICON_FA_PLUS, ImVec2(20.0f, 0.0f));
     ImGui::PopStyleVar();
-    ImGui::SameLine(0,0);
-    ImGui::Button(ICON_FA_TIMES);
 }
 
 void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, ImVec4 color = CHIP_COLOR_N64_GREY) {
@@ -507,34 +512,48 @@ void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notch
     }
 }
 
+void InputEditorWindow::UpdateBitmaskToMappingUuids(uint8_t port) {
+    for (auto [uuid, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtonMappings()) {
+        // using a vector here instead of a set because i want newly added mappings
+        // to go to the end of the list instead of autosorting
+        #define V mBitmaskToMappingUuids[port][mapping->GetBitmask()]
+        if(std::find(V.begin(), V.end(), uuid) == V.end()) {
+            V.push_back(uuid);
+        }
+        #undef V
+    }
+}
+
 void InputEditorWindow::DrawElement() {
     static bool connected[4] = {true, false, false, false};
     // static bool openTab[4] = {false, false, false, false};
     ImGui::Begin("Controller Configuration", &mIsVisible);
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
-    for (int i = 0; i < 4; i++) {
+    for (uint8_t i = 0; i < 4; i++) {
         if (ImGui::BeginTabItem(StringHelper::Sprintf("%s Port %d###port%d", connected[i] ? ICON_FA_PLUG : ICON_FA_CHAIN_BROKEN, i + 1, i).c_str())) {
             ImGui::Checkbox("Connected", &connected[i]);
 
+            UpdateBitmaskToMappingUuids(i);
+
             if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine("A", BTN_A, CHIP_COLOR_N64_BLUE);
-                DrawButtonLine("B", BTN_B, CHIP_COLOR_N64_GREEN);
-                DrawButtonLine("L", BTN_L);
-                DrawButtonLine("R", BTN_R);
-                DrawButtonLine("Z", BTN_Z);
-                DrawButtonLine("Start", BTN_START, CHIP_COLOR_N64_RED);
+                DrawButtonLine("A", i, BTN_A, CHIP_COLOR_N64_BLUE);
+                DrawButtonLine("B", i, BTN_B, CHIP_COLOR_N64_GREEN);
+                DrawButtonLine("L", i, BTN_L);
+                DrawButtonLine("R", i, BTN_R);
+                DrawButtonLine("Z", i, BTN_Z);
+                DrawButtonLine("Start", i, BTN_START, CHIP_COLOR_N64_RED);
             }
             if (ImGui::CollapsingHeader("C-Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), BTN_CLEFT, CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), BTN_CRIGHT, CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), BTN_CUP, CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), BTN_CDOWN, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), i, BTN_CLEFT, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), i, BTN_CRIGHT, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), i, BTN_CUP, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), i, BTN_CDOWN, CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT).c_str(), BTN_DLEFT);
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str(), BTN_DRIGHT);
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP).c_str(), BTN_DUP);
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str(), BTN_DDOWN);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT).c_str(), i, BTN_DLEFT);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str(), i, BTN_DRIGHT);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP).c_str(), i, BTN_DUP);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str(), i, BTN_DDOWN);
             }
             if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 static int32_t deadzone = 20;
@@ -550,7 +569,7 @@ void InputEditorWindow::DrawElement() {
                 // does previewing using the analog stick preview work currently?
                 // i'd think trying to normalize gyro to an analog stick would be problematic.
                 // i'm thinking we might be better off just throwing a couple non-interactable
-                //  sliders in here so people can see gyro working (and we can throw numbers on them too)
+                // sliders in here so people can see gyro working (and we can throw numbers on them too)
                 DrawAnalogPreview("##gyro", ImVec2(0.0f, 0.0f));
                 ImGui::SameLine();
                 ImGui::BeginGroup();
