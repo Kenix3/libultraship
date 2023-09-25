@@ -464,8 +464,18 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
 
 void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    ImGui::Button(ICON_FA_PLUS, ImVec2(20.0f, 0.0f));
+    if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(), ImVec2(20.0f, 0.0f))) {
+        ImGui::OpenPopup(StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask).c_str());
+    };
     ImGui::PopStyleVar();
+
+    if (ImGui::BeginPopup(StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask).c_str())) {
+        ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto add mapping");
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::string uuid) {
@@ -496,12 +506,9 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
         ImGui::OpenPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", uuid.c_str()).c_str());
     }
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", uuid.c_str()).c_str()))
-    {
-        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
+    if (ImGui::BeginPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", uuid.c_str()).c_str())) {
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto edit mapping");
         if (ImGui::Button("Cancel")) {
-            LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -616,6 +623,12 @@ void InputEditorWindow::UpdateBitmaskToMappingUuids(uint8_t port) {
 }
 
 void InputEditorWindow::DrawElement() {
+    if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
+        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
+    } else {
+        LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
+    }
+
     static bool connected[4] = { true, false, false, false };
     // static bool openTab[4] = {false, false, false, false};
     ImGui::Begin("Controller Configuration", &mIsVisible);
