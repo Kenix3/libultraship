@@ -499,7 +499,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
     if (mapping == nullptr) {
         return;
     }
-    
+
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
     switch (mapping->GetMappingType()) {

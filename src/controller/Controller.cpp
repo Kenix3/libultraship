@@ -326,6 +326,39 @@ bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::strin
                 break;
             }
         }
+
+        if (result) {
+            break;
+        }
+
+        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+            const auto axis = static_cast<SDL_GameControllerAxis>(i);
+            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+            int32_t axisDirection = 0;
+            if (axisValue < -0.7f) {
+                axisDirection = NEGATIVE;
+            } else if (axisValue > 0.7f) {
+                axisDirection = POSITIVE;
+            }
+
+            if (axisDirection == 0) {
+                continue;
+            }
+
+            if (uuid != "") {
+                ClearButtonMapping(uuid);
+                auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(uuid, bitmask, controllerIndex, axis, axisDirection);
+                AddButtonMapping(mapping);
+                mapping->SaveToConfig();
+            } else {
+                auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(bitmask, controllerIndex, axis, axisDirection);
+                AddButtonMapping(mapping);
+                mapping->SaveToConfig();
+                SaveButtonMappingIdsToConfig();
+            }
+            result = true;
+            break;
+        }
     }
 
     for (auto [i, controller] : sdlControllers) {
@@ -333,21 +366,6 @@ bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::strin
     }
 
     return result;
-
-    // SDL_GameControllerUpdate();
-
-    // for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-    //     const auto axis = static_cast<SDL_GameControllerAxis>(i);
-    //     const auto axisValue = SDL_GameControllerGetAxis(mController, axis) / 32767.0f;
-
-    //     if (axisValue < -0.7f) {
-    //         return -(axis + AXIS_SCANCODE_BIT);
-    //     }
-
-    //     if (axisValue > 0.7f) {
-    //         return (axis + AXIS_SCANCODE_BIT);
-    //     }
-    // }
 }
 
 bool Controller::IsConnected() const {
