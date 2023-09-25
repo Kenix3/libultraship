@@ -6,6 +6,8 @@ class SDLAxisDirectionToButtonMapping final : public ButtonMapping, public SDLMa
   public:
     SDLAxisDirectionToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerAxis,
                                     int32_t axisDirection);
+    SDLAxisDirectionToButtonMapping(std::string uuid, uint16_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerAxis,
+                                  int32_t axisDirection);
     void UpdatePad(uint16_t& padButtons) override;
     uint8_t GetMappingType() override;
     std::string GetButtonName() override;

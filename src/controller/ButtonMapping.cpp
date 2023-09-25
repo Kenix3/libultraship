@@ -8,7 +8,7 @@ ButtonMapping::ButtonMapping(uint16_t bitmask) : mBitmask(bitmask) {
     GenerateUuid();
 }
 
-ButtonMapping::ButtonMapping(uint16_t bitmask, std::string uuid) : mBitmask(bitmask) {
+ButtonMapping::ButtonMapping(std::string uuid, uint16_t bitmask) : mBitmask(bitmask) {
     mUuid = uuid;
 }
 

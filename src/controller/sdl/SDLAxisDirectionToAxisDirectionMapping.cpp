@@ -14,6 +14,14 @@ SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(i
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
 
+SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(std::string uuid, int32_t sdlControllerIndex,
+                                                                               int32_t sdlControllerAxis,
+                                                                               int32_t axisDirection)
+    : SDLMapping(sdlControllerIndex), AxisDirectionMapping(uuid) {
+    mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
+    mAxisDirection = static_cast<AxisDirection>(axisDirection);
+}
+
 float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
     if (!ControllerLoaded()) {
         return 0.0f;

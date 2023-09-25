@@ -9,7 +9,7 @@ namespace LUS {
 class ButtonMapping {
   public:
     ButtonMapping(uint16_t bitmask);
-    ButtonMapping(uint16_t bitmask, std::string uuid);
+    ButtonMapping(std::string uuid, uint16_t bitmask);
     ~ButtonMapping();
 
     std::string GetUuid();

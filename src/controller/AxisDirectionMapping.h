@@ -12,6 +12,7 @@ namespace LUS {
 class AxisDirectionMapping {
   public:
     AxisDirectionMapping();
+    AxisDirectionMapping(std::string uuid);
     ~AxisDirectionMapping();
     virtual float GetNormalizedAxisDirectionValue() = 0;
     virtual uint8_t GetMappingType();

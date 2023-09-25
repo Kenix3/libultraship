@@ -19,8 +19,8 @@
 namespace LUS {
 
 Controller::Controller(uint8_t port) : mPort(port) {
-    mLeftStick = std::make_shared<ControllerStick>();
-    mRightStick = std::make_shared<ControllerStick>();
+    mLeftStick = std::make_shared<ControllerStick>(LEFT_STICK);
+    mRightStick = std::make_shared<ControllerStick>(RIGHT_STICK);
     mGyro = std::make_shared<ControllerGyro>();
 }
 
@@ -71,7 +71,7 @@ void Controller::LoadButtonMappingFromConfig(std::string uuid) {
             return;
         }
         
-        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(bitmask, sdlControllerIndex, sdlControllerButton));
+        AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(uuid, bitmask, sdlControllerIndex, sdlControllerButton));
         return;
     }
 
@@ -87,7 +87,7 @@ void Controller::LoadButtonMappingFromConfig(std::string uuid) {
             return;
         }
 
-        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(bitmask, sdlControllerIndex, sdlControllerAxis, axisDirection));
+        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(uuid, bitmask, sdlControllerIndex, sdlControllerAxis, axisDirection));
         return;
     }
 }
@@ -152,7 +152,6 @@ void Controller::ResetToDefaultButtonMappings(int32_t sdlControllerIndex) {
 
 void Controller::ReloadAllMappingsFromConfig() {
     ClearAllButtonMappings();
-    // ResetToDefaultButtonMappings();
 
     // todo: this efficently (when we build out cvar array support?)
     // i don't expect it to really be a problem with the small number of mappings we have

@@ -11,6 +11,12 @@ SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint16_t bitmask, int32_t sdl
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(std::string uuid, uint16_t bitmask, int32_t sdlControllerIndex,
+                                                   int32_t sdlControllerButton)
+    : ButtonMapping(uuid, bitmask), SDLMapping(sdlControllerIndex) {
+    mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
+}
+
 void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
     if (!ControllerLoaded()) {
         return;

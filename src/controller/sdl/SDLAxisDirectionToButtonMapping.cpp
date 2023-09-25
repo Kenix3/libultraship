@@ -12,6 +12,13 @@ SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint16_t bitmas
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
 
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(std::string uuid, uint16_t bitmask, int32_t sdlControllerIndex,
+                                                                 int32_t sdlControllerAxis, int32_t axisDirection)
+    : ButtonMapping(uuid, bitmask), SDLMapping(sdlControllerIndex) {
+    mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
+    mAxisDirection = static_cast<AxisDirection>(axisDirection);
+}
+
 void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
     if (!ControllerLoaded()) {
         return;

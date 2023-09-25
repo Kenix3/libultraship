@@ -5,11 +5,12 @@
 #include <memory>
 
 namespace LUS {
+enum Stick { LEFT_STICK, RIGHT_STICK };
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
 class ControllerStick {
   public:
-    ControllerStick();
+    ControllerStick(Stick stick);
     ~ControllerStick();
 
     void ReloadAllMappingsFromConfig();
@@ -27,6 +28,7 @@ class ControllerStick {
     // TODO: handle deadzones separately for X and Y?
     float mDeadzone;
     int32_t mNotchProxmityThreshold;
+    Stick mStick;
 
     std::shared_ptr<AxisDirectionMapping> mUpMapping;
     std::shared_ptr<AxisDirectionMapping> mDownMapping;

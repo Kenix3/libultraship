@@ -7,7 +7,7 @@
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace LUS {
-ControllerStick::ControllerStick() {
+ControllerStick::ControllerStick(Stick stick) : mStick(stick) {
   mDeadzone = 16.0f;
   mNotchProxmityThreshold = 0;
 }
@@ -22,14 +22,14 @@ void ControllerStick::ClearAllMappings() {
   mDownMapping = nullptr;
 }
 
-void ControllerStick::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
-    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLButtonToButtonMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
-    CVarSave();
-}
+// void ControllerStick::SaveToConfig() {
+//     const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+//     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLButtonToButtonMapping");
+//     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
+//     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+//     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
+//     CVarSave();
+// }
 
 void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     ClearAllMappings();
