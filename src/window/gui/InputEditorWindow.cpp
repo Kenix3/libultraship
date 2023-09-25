@@ -592,13 +592,13 @@ void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notch
 void InputEditorWindow::UpdateBitmaskToMappingUuids(uint8_t port) {
     for (auto [uuid, mapping] :
          LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtonMappings()) {
-// using a vector here instead of a set because i want newly added mappings
-// to go to the end of the list instead of autosorting
-#define V mBitmaskToMappingUuids[port][mapping->GetBitmask()]
-        if (std::find(V.begin(), V.end(), uuid) == V.end()) {
-            V.push_back(uuid);
+        // using a vector here instead of a set because i want newly added mappings
+        // to go to the end of the list instead of autosorting
+        if (std::find(mBitmaskToMappingUuids[port][mapping->GetBitmask()].begin(),
+                      mBitmaskToMappingUuids[port][mapping->GetBitmask()].end(),
+                      uuid) == mBitmaskToMappingUuids[port][mapping->GetBitmask()].end()) {
+            mBitmaskToMappingUuids[port][mapping->GetBitmask()].push_back(uuid);
         }
-#undef V
     }
 }
 
