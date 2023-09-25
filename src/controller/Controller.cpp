@@ -275,29 +275,6 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     return mLedColor;
 // }
 
-// void Controller::AddButtonMappingFromRawPress() {
-//     SDL_GameControllerUpdate();
-
-//     for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
-//         if (SDL_GameControllerGetButton(mController, static_cast<SDL_GameControllerButton>(i))) {
-//             return i;
-//         }
-//     }
-
-//     for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-//         const auto axis = static_cast<SDL_GameControllerAxis>(i);
-//         const auto axisValue = SDL_GameControllerGetAxis(mController, axis) / 32767.0f;
-
-//         if (axisValue < -0.7f) {
-//             return -(axis + AXIS_SCANCODE_BIT);
-//         }
-
-//         if (axisValue > 0.7f) {
-//             return (axis + AXIS_SCANCODE_BIT);
-//         }
-//     }
-// }
-
 bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid) {
     // sdl
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
