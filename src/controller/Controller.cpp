@@ -318,9 +318,14 @@ bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::strin
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
                 if (uuid != "") {
                     ClearButtonMapping(uuid);
-                    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(uuid, bitmask, controllerIndex, button));
+                    auto mapping = std::make_shared<SDLButtonToButtonMapping>(uuid, bitmask, controllerIndex, button);
+                    AddButtonMapping(mapping);
+                    mapping->SaveToConfig();
                 } else {
-                    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(bitmask, controllerIndex, button));
+                    auto mapping = std::make_shared<SDLButtonToButtonMapping>(bitmask, controllerIndex, button);
+                    AddButtonMapping(mapping);
+                    mapping->SaveToConfig();
+                    SaveButtonMappingIdsToConfig();
                 }
                 result = true;
                 break;
