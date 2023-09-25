@@ -486,14 +486,27 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
             icon = ICON_FA_BUG;
             break;
     }
-    ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(),
+    if (ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(),
                                         LUS::Context::GetInstance()
                                             ->GetControlDeck()
                                             ->GetControllerByPort(port)
                                             ->GetButtonMappingByUuid(uuid)
                                             ->GetButtonName()
-                                            .c_str())
-                      .c_str());
+                                            .c_str()).c_str())) {
+        ImGui::OpenPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", uuid.c_str()).c_str());
+    }
+
+    if (ImGui::BeginPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", uuid.c_str()).c_str()))
+    {
+        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
+        ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto edit mapping");
+        if (ImGui::Button("Cancel")) {
+            LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
     ImGui::Button(ICON_FA_TIMES);

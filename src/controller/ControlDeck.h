@@ -16,10 +16,13 @@ class ControlDeck {
     OSContPad* GetPads();
     uint8_t* GetControllerBits();
     std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
+    void BlockGameInput();
+    void UnblockGameInput();
 
   private:
     std::vector<std::shared_ptr<Controller>> mControllers = {};
     uint8_t* mControllerBits = nullptr;
     OSContPad* mPads;
+    bool mGameInputBlocked;
 };
 } // namespace LUS

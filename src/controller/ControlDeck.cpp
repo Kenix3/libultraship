@@ -20,6 +20,7 @@ ControlDeck::ControlDeck() : mPads(nullptr) {
     for (int32_t i = 0; i < 4; i++) {
         mControllers.push_back(std::make_shared<Controller>(i));
     }
+    mGameInputBlocked = false;
 }
 
 ControlDeck::~ControlDeck() {
@@ -87,13 +88,11 @@ void ControlDeck::Init(uint8_t* bits) {
 //     LoadSettings();
 // }
 
-// void ControlDeck::SetDeviceToPort(int32_t portIndex, int32_t deviceIndex) {
-//     const std::shared_ptr<Controller> backend = mDevices[deviceIndex];
-//     mPortList[portIndex] = deviceIndex;
-//     *mControllerBits |= (backend->Connected()) << portIndex;
-// }
-
 void ControlDeck::WriteToPad(OSContPad* pad) {
+    if (mGameInputBlocked) {
+        return;
+    }
+
     mPads = pad;
 
     for (size_t i = 0; i < mControllers.size(); i++) {
@@ -108,190 +107,6 @@ void ControlDeck::WriteToPad(OSContPad* pad) {
 OSContPad* ControlDeck::GetPads() {
     return mPads;
 }
-
-// #define NESTED(key, ...) \
-//     StringHelper::Sprintf("Controllers.%s.Slot_%d." key, device->GetGuid().c_str(), virtualSlot, __VA_ARGS__)
-
-// void ControlDeck::LoadSettings() {
-//     std::shared_ptr<Config> config = Context::GetInstance()->GetConfig();
-
-//     auto json = config->GetNestedJson();
-//     for (auto const& val : json["Controllers"]["Deck"].items()) {
-//         int32_t slot = std::stoi(val.key().substr(5));
-
-//         for (size_t dev = 0; dev < mDevices.size(); dev++) {
-//             std::string guid = mDevices[dev]->GetGuid();
-//             if (guid != val.value().get<std::string>()) {
-//                 continue;
-//             }
-
-//             mPortList[slot] = dev;
-//         }
-//     }
-
-//     for (size_t i = 0; i < mPortList.size(); i++) {
-//         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
-//         config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int32_t)i), backend->GetGuid());
-//     }
-
-//     for (const auto& device : mDevices) {
-//         std::string guid = device->GetGuid();
-
-//         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-
-//             if (!(config->GetNestedJson()["Controllers"].contains(guid) &&
-//                   config->GetNestedJson()["Controllers"][guid].contains(
-//                       StringHelper::Sprintf("Slot_%d", virtualSlot)))) {
-//                 continue;
-//             }
-
-//             auto profile = device->GetProfile(virtualSlot);
-//             auto rawProfile =
-//                 config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
-
-//             profile->Mappings.clear();
-//             profile->AxisDeadzones.clear();
-//             profile->AxisMinimumPress.clear();
-//             profile->GyroData.clear();
-
-//             profile->Version = config->GetInt(NESTED("Version", ""), DEVICE_PROFILE_VERSION_0);
-
-//             switch (profile->Version) {
-
-//                 case DEVICE_PROFILE_VERSION_0:
-
-//                     // Load up defaults for the things we can't load.
-//                     device->CreateDefaultBinding(virtualSlot);
-
-//                     profile->UseRumble = config->GetBool(NESTED("Rumble.Enabled", ""));
-//                     profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
-//                     profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
-
-//                     for (auto const& val : rawProfile["Mappings"].items()) {
-//                         device->SetButtonMapping(virtualSlot, val.value(), std::stoi(val.key().substr(4)));
-//                     }
-
-//                     break;
-
-//                 case DEVICE_PROFILE_VERSION_1:
-//                     profile->UseRumble = config->GetBool(NESTED("Rumble.Enabled", ""));
-//                     profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
-//                     profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
-//                     profile->NotchProximityThreshold = config->GetInt(NESTED("Notches.ProximityThreshold", ""));
-
-//                     for (auto const& val : rawProfile["AxisDeadzones"].items()) {
-//                         profile->AxisDeadzones[std::stoi(val.key())] = val.value();
-//                     }
-
-//                     for (auto const& val : rawProfile["AxisMinimumPress"].items()) {
-//                         profile->AxisMinimumPress[std::stoi(val.key())] = val.value();
-//                     }
-
-//                     for (auto const& val : rawProfile["GyroData"].items()) {
-//                         profile->GyroData[std::stoi(val.key())] = val.value();
-//                     }
-
-//                     for (auto const& val : rawProfile["Mappings"].items()) {
-//                         device->SetButtonMapping(virtualSlot, val.value(), std::stoi(val.key().substr(4)));
-//                     }
-
-//                     break;
-
-//                 case DEVICE_PROFILE_VERSION_2:
-//                     profile->UseRumble = config->GetBool(NESTED("Rumble.Enabled", ""));
-//                     profile->RumbleStrength = config->GetFloat(NESTED("Rumble.Strength", ""));
-//                     profile->UseGyro = config->GetBool(NESTED("Gyro.Enabled", ""));
-//                     profile->NotchProximityThreshold = config->GetInt(NESTED("Notches.ProximityThreshold", ""));
-//                     profile->UseStickDeadzoneForButtons = config->GetBool(NESTED("UseStickDeadzoneForButtons", ""));
-
-//                     for (auto const& val : rawProfile["AxisDeadzones"].items()) {
-//                         profile->AxisDeadzones[std::stoi(val.key())] = val.value();
-//                     }
-
-//                     for (auto const& val : rawProfile["AxisMinimumPress"].items()) {
-//                         profile->AxisMinimumPress[std::stoi(val.key())] = val.value();
-//                     }
-
-//                     for (auto const& val : rawProfile["GyroData"].items()) {
-//                         profile->GyroData[std::stoi(val.key())] = val.value();
-//                     }
-
-//                     for (auto const& val : rawProfile["Mappings"].items()) {
-//                         device->SetButtonMapping(virtualSlot, std::stoi(val.key()), val.value());
-//                     }
-
-//                     break;
-
-//                 // Version is invalid.
-//                 default:
-//                     device->CreateDefaultBinding(virtualSlot);
-//                     break;
-//             }
-//         }
-//     }
-// }
-
-// void ControlDeck::SaveSettings() {
-//     std::shared_ptr<Config> config = Context::GetInstance()->GetConfig();
-
-//     for (size_t i = 0; i < mPortList.size(); i++) {
-//         std::shared_ptr<Controller> backend = mDevices[mPortList[i]];
-//         config->SetString(StringHelper::Sprintf("Controllers.Deck.Slot_%d", (int32_t)i), backend->GetGuid());
-//     }
-
-//     for (const auto& device : mDevices) {
-//         std::string guid = device->GetGuid();
-
-//         for (int32_t virtualSlot = 0; virtualSlot < MAXCONTROLLERS; virtualSlot++) {
-//             auto profile = device->GetProfile(virtualSlot);
-
-//             if (!device->Connected()) {
-//                 continue;
-//             }
-
-//             // We always save to the most recent version.
-//             profile->Version = DEVICE_PROFILE_CURRENT_VERSION;
-
-//             auto conf = config->GetNestedJson()["Controllers"][guid][StringHelper::Sprintf("Slot_%d", virtualSlot)];
-
-//             config->SetInt(NESTED("Version", ""), profile->Version);
-//             config->SetBool(NESTED("Rumble.Enabled", ""), profile->UseRumble);
-//             config->SetFloat(NESTED("Rumble.Strength", ""), profile->RumbleStrength);
-//             config->SetBool(NESTED("Gyro.Enabled", ""), profile->UseGyro);
-//             config->SetInt(NESTED("Notches.ProximityThreshold", ""), profile->NotchProximityThreshold);
-//             config->SetBool(NESTED("UseStickDeadzoneForButtons", ""), profile->UseStickDeadzoneForButtons);
-
-//             // Clear all sections with a one controller to many relationship.
-//             const static std::vector<std::string> sClearSections = { "Mappings", "AxisDeadzones", "AxisMinimumPress",
-//                                                                      "GyroData" };
-//             for (auto const& section : sClearSections) {
-//                 if (conf.contains(section)) {
-//                     for (auto const& val : conf[section].items()) {
-//                         config->Erase(NESTED("%s.%s", section.c_str(), val.key().c_str()));
-//                     }
-//                 }
-//             }
-
-//             for (auto const& [key, val] : profile->Mappings) {
-//                 config->SetInt(NESTED("Mappings.%d", key), val);
-//             }
-
-//             for (auto const& [key, val] : profile->AxisDeadzones) {
-//                 config->SetFloat(NESTED("AxisDeadzones.%d", key), val);
-//             }
-
-//             for (auto const& [key, val] : profile->AxisMinimumPress) {
-//                 config->SetFloat(NESTED("AxisMinimumPress.%d", key), val);
-//             }
-
-//             for (auto const& [key, val] : profile->GyroData) {
-//                 config->SetFloat(NESTED("GyroData.%d", key), val);
-//             }
-//         }
-//     }
-
-//     config->Save();
-// }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
     return mControllers[port];
@@ -317,13 +132,13 @@ std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
 //     return mControllerBits;
 // }
 
-// void ControlDeck::BlockGameInput(int32_t inputBlockId) {
-//     mGameInputBlockers[inputBlockId] = true;
-// }
+void ControlDeck::BlockGameInput() {
+    mGameInputBlocked = true;
+}
 
-// void ControlDeck::UnblockGameInput(int32_t inputBlockId) {
-//     mGameInputBlockers.erase(inputBlockId);
-// }
+void ControlDeck::UnblockGameInput() {
+    mGameInputBlocked = false;
+}
 
 // bool ControlDeck::IsBlockingGameInput(const std::string& inputDeviceGuid) const {
 //     // We block controller input if F1 menu is open and control navigation is on.
