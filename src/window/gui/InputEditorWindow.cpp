@@ -518,7 +518,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
-        if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->EditButtonMappingFromRawPress(uuid)) {
+        if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->AddOrEditButtonMappingFromRawPress(LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetBitmask(), uuid)) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();

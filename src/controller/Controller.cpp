@@ -303,26 +303,32 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     }
 // }
 
-bool Controller::EditButtonMappingFromRawPress(std::string uuid) {
+bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid = "") {
     // sdl
-    std::vector<SDL_GameController*> sdlControllers;
+    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     bool result = false;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
-            sdlControllers.push_back(SDL_GameControllerOpen(i));
+            sdlControllers[i] = SDL_GameControllerOpen(i);
         }
     }
 
-    for (auto controller : sdlControllers) {
-        for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
-            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(i))) {
+    for (auto [controllerIndex, controller] : sdlControllers) {
+        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+                if (uuid != "") {
+                    ClearButtonMapping(uuid);
+                    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(uuid, bitmask, controllerIndex, button));
+                } else {
+                    AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(bitmask, controllerIndex, button));
+                }
                 result = true;
                 break;
             }
         }
     }
 
-    for (auto controller : sdlControllers) {
+    for (auto [i, controller] : sdlControllers) {
         SDL_GameControllerClose(controller);
     }
 
