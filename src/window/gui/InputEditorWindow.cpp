@@ -513,7 +513,9 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
             icon = ICON_FA_BUG;
             break;
     }
-    if (ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), mapping->GetButtonName().c_str()).c_str())) {
+    if (ImGui::Button(StringHelper::Sprintf("%s %s ###editButtonMappingButton%s", icon.c_str(),
+                                            mapping->GetButtonName().c_str(), uuid.c_str())
+                          .c_str())) {
         ImGui::OpenPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", uuid.c_str()).c_str());
     }
 
@@ -651,6 +653,11 @@ void InputEditorWindow::DrawElement() {
                                                       connected[i] ? ICON_FA_PLUG : ICON_FA_CHAIN_BROKEN, i + 1, i)
                                     .c_str())) {
             ImGui::Checkbox("Connected", &connected[i]);
+            ImGui::SameLine();
+            if (ImGui::Button("Clear All")) {
+                // todo: not just buttons
+                LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(i)->ClearAllButtonMappings();
+            }
 
             UpdateBitmaskToMappingUuids(i);
 

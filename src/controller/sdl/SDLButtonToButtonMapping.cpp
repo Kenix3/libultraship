@@ -41,6 +41,16 @@ void SDLButtonToButtonMapping::SaveToConfig() {
     CVarSave();
 }
 
+void SDLButtonToButtonMapping::EraseFromConfig() {
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+
+    CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
+    CVarSave();
+}
+
 std::string SDLButtonToButtonMapping::GetButtonName() {
     if (UsesPlaystationLayout()) {
         return GetPlaystationButtonName();

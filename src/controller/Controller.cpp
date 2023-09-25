@@ -123,7 +123,12 @@ void Controller::SaveButtonMappingIdsToConfig() {
 
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf("gControllers.Port%d.ButtonMappingIds", mPort + 1);
-    CVarSetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
+    if (buttonMappingIdListString == "") {
+        CVarClear(buttonMappingIdsCvarKey.c_str());
+    } else {
+        CVarSetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
+    }
+
     CVarSave();
 }
 

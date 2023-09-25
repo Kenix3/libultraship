@@ -20,7 +20,7 @@ class ButtonMapping {
     virtual std::string GetButtonName();
 
     virtual void SaveToConfig() = 0;
-    void EraseFromConfig();
+    virtual void EraseFromConfig() = 0;
 
   protected:
     uint16_t mBitmask;

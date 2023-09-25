@@ -49,6 +49,16 @@ void SDLAxisDirectionToButtonMapping::SaveToConfig() {
     CVarSave();
 }
 
+void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
+    CVarSave();
+}
+
 std::string SDLAxisDirectionToButtonMapping::GetButtonName() {
     switch (mControllerAxis) {
         case SDL_CONTROLLER_AXIS_LEFTX:

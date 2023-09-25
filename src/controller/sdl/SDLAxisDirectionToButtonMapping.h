@@ -12,6 +12,7 @@ class SDLAxisDirectionToButtonMapping final : public ButtonMapping, public SDLMa
     uint8_t GetMappingType() override;
     std::string GetButtonName() override;
     void SaveToConfig() override;
+    void EraseFromConfig() override;
 
   private:
     SDL_GameControllerAxis mControllerAxis;

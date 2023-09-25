@@ -11,6 +11,7 @@ class SDLButtonToButtonMapping final : public ButtonMapping, public SDLMapping {
     uint8_t GetMappingType() override;
     std::string GetButtonName() override;
     void SaveToConfig() override;
+    void EraseFromConfig() override;
 
   private:
     std::string GetPlaystationButtonName();
