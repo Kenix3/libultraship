@@ -70,7 +70,7 @@ std::string SDLButtonToButtonMapping::GetPlaystationButtonName() {
         case SDL_CONTROLLER_BUTTON_X:
             return StringHelper::Sprintf("%s", ICON_FA_SQUARE_O);
         case SDL_CONTROLLER_BUTTON_Y:
-            return "△";
+            return "Triangle"; // imgui default font doesn't have Δ, and font-awesome 4 doesn't have a triangle
         case SDL_CONTROLLER_BUTTON_BACK:
             if (GetSDLControllerType() == SDL_CONTROLLER_TYPE_PS3) {
                 return "Select";
