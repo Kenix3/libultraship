@@ -221,10 +221,6 @@ void Controller::ReadToPad(OSContPad* pad) {
     }
 }
 
-// void Controller::SetButtonMapping(int32_t portIndex, int32_t deviceButtonId, int32_t n64bitmask) {
-//     GetProfile(portIndex)->Mappings[deviceButtonId] = n64bitmask;
-// }
-
 // int8_t& Controller::GetLeftStickX(int32_t portIndex) {
 //     return mButtonData[portIndex]->LeftStickX;
 // }
@@ -253,10 +249,6 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     return mButtonData[portIndex]->GyroY;
 // }
 
-// std::shared_ptr<DeviceProfile> Controller::GetProfile(int32_t portIndex) {
-//     return mProfiles[portIndex];
-// }
-
 // bool Controller::IsRumbling() {
 //     return mIsRumbling;
 // }
@@ -265,12 +257,27 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     return mLedColor;
 // }
 
-// std::string Controller::GetGuid() {
-//     return mGuid;
-// }
+// void Controller::AddButtonMappingFromRawPress() {
+//     SDL_GameControllerUpdate();
 
-// std::string Controller::GetControllerName() {
-//     return mControllerName;
+//     for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
+//         if (SDL_GameControllerGetButton(mController, static_cast<SDL_GameControllerButton>(i))) {
+//             return i;
+//         }
+//     }
+
+//     for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+//         const auto axis = static_cast<SDL_GameControllerAxis>(i);
+//         const auto axisValue = SDL_GameControllerGetAxis(mController, axis) / 32767.0f;
+
+//         if (axisValue < -0.7f) {
+//             return -(axis + AXIS_SCANCODE_BIT);
+//         }
+
+//         if (axisValue > 0.7f) {
+//             return (axis + AXIS_SCANCODE_BIT);
+//         }
+//     }
 // }
 
 bool Controller::IsConnected() const {
