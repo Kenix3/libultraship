@@ -24,7 +24,7 @@ class ButtonMapping {
   protected:
     uint16_t mBitmask;
     std::string mUuid;
-  
+
   private:
     void GenerateUuid();
 };

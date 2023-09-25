@@ -36,11 +36,11 @@ void ButtonMapping::GenerateUuid() {
     // i tried some cross-platform uuid lib stuff and ended up fighting cmake
     // so i figured i'd just this for now despite the fact that has been advised
     // against on stackoverflow: https://stackoverflow.com/a/60198074
-    static std::random_device              rd;
-    static std::mt19937                    gen(rd());
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> dis(0, 15);
     static std::uniform_int_distribution<> dis2(8, 11);
-    
+
     std::stringstream ss;
     int i;
     ss << std::hex;

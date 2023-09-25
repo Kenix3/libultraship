@@ -11,39 +11,46 @@
 
 namespace LUS {
 ControllerStick::ControllerStick(Stick stick) : mStick(stick) {
-  mDeadzone = 16.0f;
-  mNotchProxmityThreshold = 0;
+    mDeadzone = 16.0f;
+    mNotchProxmityThreshold = 0;
 }
 
 ControllerStick::~ControllerStick() {
 }
 
 void ControllerStick::ClearAllMappings() {
-  mLeftMapping = nullptr;
-  mRightMapping = nullptr;
-  mUpMapping = nullptr;
-  mDownMapping = nullptr;
+    mLeftMapping = nullptr;
+    mRightMapping = nullptr;
+    mUpMapping = nullptr;
+    mDownMapping = nullptr;
 }
 
 void ControllerStick::SaveToConfig(uint8_t port) {
-    const std::string stickCvarKey = StringHelper::Sprintf("gControllers.Port%d.%s", port + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
-    CVarSetString(StringHelper::Sprintf("%s.LeftMappingId", stickCvarKey.c_str()).c_str(), mLeftMapping->GetUuid().c_str());
-    CVarSetString(StringHelper::Sprintf("%s.RightMappingId", stickCvarKey.c_str()).c_str(), mRightMapping->GetUuid().c_str());
+    const std::string stickCvarKey =
+        StringHelper::Sprintf("gControllers.Port%d.%s", port + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
+    CVarSetString(StringHelper::Sprintf("%s.LeftMappingId", stickCvarKey.c_str()).c_str(),
+                  mLeftMapping->GetUuid().c_str());
+    CVarSetString(StringHelper::Sprintf("%s.RightMappingId", stickCvarKey.c_str()).c_str(),
+                  mRightMapping->GetUuid().c_str());
     CVarSetString(StringHelper::Sprintf("%s.UpMappingId", stickCvarKey.c_str()).c_str(), mUpMapping->GetUuid().c_str());
-    CVarSetString(StringHelper::Sprintf("%s.DownMappingId", stickCvarKey.c_str()).c_str(), mDownMapping->GetUuid().c_str());
+    CVarSetString(StringHelper::Sprintf("%s.DownMappingId", stickCvarKey.c_str()).c_str(),
+                  mDownMapping->GetUuid().c_str());
     CVarSave();
 }
 
 void ControllerStick::ResetToDefaultMappings(uint8_t port, int32_t sdlControllerIndex) {
     ClearAllMappings();
 
-    UpdateAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 0, -1));
+    UpdateAxisDirectionMapping(LEFT,
+                               std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 0, -1));
     mLeftMapping->SaveToConfig();
-    UpdateAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 0, 1));
+    UpdateAxisDirectionMapping(RIGHT,
+                               std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 0, 1));
     mRightMapping->SaveToConfig();
     UpdateAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 1, -1));
     mUpMapping->SaveToConfig();
-    UpdateAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 1, 1));
+    UpdateAxisDirectionMapping(DOWN,
+                               std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 1, 1));
     mDownMapping->SaveToConfig();
 
     SaveToConfig(port);
@@ -52,21 +59,27 @@ void ControllerStick::ResetToDefaultMappings(uint8_t port, int32_t sdlController
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string uuid, Direction direction) {
     // todo: maybe this stuff makes sense in a factory?
     const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + uuid;
-    const std::string mappingClass = CVarGetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    const std::string mappingClass =
+        CVarGetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
-        int32_t sdlControllerIndex = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
-        int32_t sdlControllerAxis = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), 0);
-        int32_t axisDirection = CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
-        
-        if (sdlControllerIndex < 0 || sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
+        int32_t sdlControllerIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t sdlControllerAxis =
+            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t axisDirection =
+            CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
+
+        if (sdlControllerIndex < 0 || sdlControllerAxis == -1 ||
+            (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return;
         }
-        
-        UpdateAxisDirectionMapping(direction, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(uuid, sdlControllerIndex, sdlControllerAxis, axisDirection));
+
+        UpdateAxisDirectionMapping(direction, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
+                                                  uuid, sdlControllerIndex, sdlControllerAxis, axisDirection));
         return;
     }
 }
@@ -74,22 +87,26 @@ void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string uuid, Direc
 void ControllerStick::ReloadAllMappingsFromConfig(uint8_t port) {
     ClearAllMappings();
 
-    const std::string stickCvarKey = StringHelper::Sprintf("gControllers.Port%d.%s", port + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
-    std::string leftUuidString = CVarGetString(StringHelper::Sprintf("%s.LeftMappingId", stickCvarKey.c_str()).c_str(), "");
-    std::string rightUuidString = CVarGetString(StringHelper::Sprintf("%s.RightMappingId", stickCvarKey.c_str()).c_str(), "");
+    const std::string stickCvarKey =
+        StringHelper::Sprintf("gControllers.Port%d.%s", port + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
+    std::string leftUuidString =
+        CVarGetString(StringHelper::Sprintf("%s.LeftMappingId", stickCvarKey.c_str()).c_str(), "");
+    std::string rightUuidString =
+        CVarGetString(StringHelper::Sprintf("%s.RightMappingId", stickCvarKey.c_str()).c_str(), "");
     std::string upUuidString = CVarGetString(StringHelper::Sprintf("%s.UpMappingId", stickCvarKey.c_str()).c_str(), "");
-    std::string downUuidString = CVarGetString(StringHelper::Sprintf("%s.DownMappingId", stickCvarKey.c_str()).c_str(), "");
+    std::string downUuidString =
+        CVarGetString(StringHelper::Sprintf("%s.DownMappingId", stickCvarKey.c_str()).c_str(), "");
     if (leftUuidString != "") {
-      LoadAxisDirectionMappingFromConfig(leftUuidString, LEFT);
+        LoadAxisDirectionMappingFromConfig(leftUuidString, LEFT);
     }
     if (rightUuidString != "") {
-      LoadAxisDirectionMappingFromConfig(rightUuidString, RIGHT);
+        LoadAxisDirectionMappingFromConfig(rightUuidString, RIGHT);
     }
     if (upUuidString != "") {
-      LoadAxisDirectionMappingFromConfig(upUuidString, UP);
+        LoadAxisDirectionMappingFromConfig(upUuidString, UP);
     }
     if (downUuidString != "") {
-      LoadAxisDirectionMappingFromConfig(downUuidString, DOWN);
+        LoadAxisDirectionMappingFromConfig(downUuidString, DOWN);
     }
 }
 
@@ -149,40 +166,40 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
 }
 
 void ControllerStick::UpdateAxisDirectionMapping(Direction direction, std::shared_ptr<AxisDirectionMapping> mapping) {
-  switch (direction) {
-    case LEFT:
-      mLeftMapping = mapping;
-      break;
-    case RIGHT:
-      mRightMapping = mapping;
-      break;
-    case UP:
-      mUpMapping = mapping;
-      break;
-    case DOWN:
-      mDownMapping = mapping;
-      break;
-  }
+    switch (direction) {
+        case LEFT:
+            mLeftMapping = mapping;
+            break;
+        case RIGHT:
+            mRightMapping = mapping;
+            break;
+        case UP:
+            mUpMapping = mapping;
+            break;
+        case DOWN:
+            mDownMapping = mapping;
+            break;
+    }
 }
 
 std::shared_ptr<AxisDirectionMapping> ControllerStick::GetAxisDirectionMappingByDirection(Direction direction) {
-  switch (direction) {
-    case LEFT:
-      return mLeftMapping;
-    case RIGHT:
-      return mRightMapping;
-    case UP:
-      return mUpMapping;
-    case DOWN:
-      return mDownMapping;
-  }
+    switch (direction) {
+        case LEFT:
+            return mLeftMapping;
+        case RIGHT:
+            return mRightMapping;
+        case UP:
+            return mUpMapping;
+        case DOWN:
+            return mDownMapping;
+    }
 }
 
 void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
-  if (mRightMapping == nullptr || mLeftMapping == nullptr || mUpMapping == nullptr || mDownMapping == nullptr) {
-    return;
-  }
+    if (mRightMapping == nullptr || mLeftMapping == nullptr || mUpMapping == nullptr || mDownMapping == nullptr) {
+        return;
+    }
 
-  Process(x, y);
+    Process(x, y);
 }
 } // namespace LUS

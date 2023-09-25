@@ -33,7 +33,8 @@ uint8_t SDLButtonToButtonMapping::GetMappingType() {
 
 void SDLButtonToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
-    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLButtonToButtonMapping");
+    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
+                  "SDLButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
@@ -147,7 +148,8 @@ std::string SDLButtonToButtonMapping::GetSwitchButtonName() {
         case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
             return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_BUTTON_MISC1:
-            return "Capture";    /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button, Amazon Luna microphone button */
+            return "Capture"; /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button,
+                                 Amazon Luna microphone button */
     }
 
     return GetGenericButtonName();
@@ -192,7 +194,8 @@ std::string SDLButtonToButtonMapping::GetXboxButtonName() {
         case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
             return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_BUTTON_MISC1:
-            return "Share";    /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button, Amazon Luna microphone button */
+            return "Share"; /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button,
+                               Amazon Luna microphone button */
         case SDL_CONTROLLER_BUTTON_PADDLE1:
             return "P1";
         case SDL_CONTROLLER_BUTTON_PADDLE2:

@@ -12,8 +12,9 @@ SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint16_t bitmas
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
 
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(std::string uuid, uint16_t bitmask, int32_t sdlControllerIndex,
-                                                                 int32_t sdlControllerAxis, int32_t axisDirection)
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(std::string uuid, uint16_t bitmask,
+                                                                 int32_t sdlControllerIndex, int32_t sdlControllerAxis,
+                                                                 int32_t axisDirection)
     : ButtonMapping(uuid, bitmask), SDLMapping(sdlControllerIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
@@ -39,7 +40,8 @@ uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
 
 void SDLAxisDirectionToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
-    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLAxisDirectionToButtonMapping");
+    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
+                  "SDLAxisDirectionToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
@@ -50,13 +52,17 @@ void SDLAxisDirectionToButtonMapping::SaveToConfig() {
 std::string SDLAxisDirectionToButtonMapping::GetButtonName() {
     switch (mControllerAxis) {
         case SDL_CONTROLLER_AXIS_LEFTX:
-            return StringHelper::Sprintf("Left Stick %s", mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
+            return StringHelper::Sprintf("Left Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_AXIS_LEFTY:
-            return StringHelper::Sprintf("Left Stick %s", mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
+            return StringHelper::Sprintf("Left Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_AXIS_RIGHTX:
-            return StringHelper::Sprintf("Right Stick %s", mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
+            return StringHelper::Sprintf("Right Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_AXIS_RIGHTY:
-            return StringHelper::Sprintf("Right Stick %s", mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
+            return StringHelper::Sprintf("Right Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
             if (UsesPlaystationLayout()) {
                 return "L2";
@@ -81,6 +87,7 @@ std::string SDLAxisDirectionToButtonMapping::GetButtonName() {
             break;
     }
 
-    return StringHelper::Sprintf("Axis %d %s", mControllerAxis, mAxisDirection == NEGATIVE ? ICON_FA_MINUS : ICON_FA_PLUS);
+    return StringHelper::Sprintf("Axis %d %s", mControllerAxis,
+                                 mAxisDirection == NEGATIVE ? ICON_FA_MINUS : ICON_FA_PLUS);
 }
 } // namespace LUS

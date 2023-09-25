@@ -15,7 +15,7 @@ class ControllerGyro {
     std::shared_ptr<GyroAxisMapping> GetGyroYMapping();
 
     void UpdatePad(float& x, float& y);
-  
+
   private:
     std::shared_ptr<GyroAxisMapping> mGyroXMapping;
     std::shared_ptr<GyroAxisMapping> mGyroYMapping;

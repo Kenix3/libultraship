@@ -27,8 +27,10 @@ class InputEditorWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-    void DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port, uint8_t stick, int32_t id, ImVec4 color);
-    void DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction, ImVec4 color);
+    void DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port, uint8_t stick,
+                                int32_t id, ImVec4 color);
+    void DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
+                               ImVec4 color);
     void DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask, ImVec4 color);
     void DrawButtonLineEditMappingButton(uint8_t port, std::string uuid);
     void DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask);

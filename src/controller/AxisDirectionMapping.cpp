@@ -12,7 +12,6 @@ AxisDirectionMapping::AxisDirectionMapping(std::string uuid) {
     mUuid = uuid;
 }
 
-
 AxisDirectionMapping::~AxisDirectionMapping() {
 }
 
@@ -32,11 +31,11 @@ void AxisDirectionMapping::GenerateUuid() {
     // todo: this a better way
     // this is bad multiple reasons, first because it's copypasta from ButtonMapping.cpp
     // the other reasons are explained there
-    static std::random_device              rd;
-    static std::mt19937                    gen(rd());
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> dis(0, 15);
     static std::uniform_int_distribution<> dis2(8, 11);
-    
+
     std::stringstream ss;
     int i;
     ss << std::hex;

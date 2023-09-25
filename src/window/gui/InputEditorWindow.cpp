@@ -46,7 +46,8 @@ void InputEditorWindow::InitElement() {
 
 //         if (btn != -1) {
 //             auto profile = backend->GetProfile(currentPort);
-//             // Remove other mappings that include the n64 bitmask. Note that the n64 button is really a mask and is not
+//             // Remove other mappings that include the n64 bitmask. Note that the n64 button is really a mask and is
+//             not
 //             // unique, but the UI as-is needs a way to unset the old n64 button.
 //             std::erase_if(profile->Mappings,
 //                           [n64Btn](const std::pair<int32_t, int32_t>& bin) { return bin.second == n64Btn; });
@@ -71,7 +72,8 @@ void InputEditorWindow::InitElement() {
 //     const std::string btnName = backend->GetButtonName(currentPort, n64Btn);
 
 //     if (ImGui::Button(
-//             StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(), n64Btn).c_str())) {
+//             StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(),
+//             n64Btn).c_str())) {
 //         *btnReading = n64Btn;
 //         backend->ClearRawPress();
 //     }
@@ -270,7 +272,8 @@ void InputEditorWindow::InitElement() {
 //         }
 //         ImGui::SetCursorPosX(cursorX);
 //         // DrawVirtualStick("##GyroPreview",
-//         //                  ImVec2(-10.0f * backend->GetGyroY(mCurrentPort), 10.0f * backend->GetGyroX(mCurrentPort)));
+//         //                  ImVec2(-10.0f * backend->GetGyroY(mCurrentPort), 10.0f *
+//         backend->GetGyroX(mCurrentPort)));
 
 //         ImGui::SameLine();
 //         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
@@ -468,7 +471,11 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
 void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::string uuid) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
-    switch (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetMappingType()) {
+    switch (LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->GetButtonMappingByUuid(uuid)
+                ->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
             break;
@@ -479,14 +486,22 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
             icon = ICON_FA_BUG;
             break;
     }
-    ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetButtonName().c_str()).c_str());
+    ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(),
+                                        LUS::Context::GetInstance()
+                                            ->GetControlDeck()
+                                            ->GetControllerByPort(port)
+                                            ->GetButtonMappingByUuid(uuid)
+                                            ->GetButtonName()
+                                            .c_str())
+                      .c_str());
     ImGui::PopStyleVar();
-    ImGui::SameLine(0,0);
+    ImGui::SameLine(0, 0);
     ImGui::Button(ICON_FA_TIMES);
     ImGui::SameLine(0, 4.0f);
 }
 
-void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask, ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask,
+                                       ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine(32.0f);
     DrawInputChip(buttonName, color);
@@ -497,7 +512,8 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uin
     DrawButtonLineAddMappingButton(port, bitmask);
 }
 
-void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick,
+                                              Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine();
     DrawInputChip(axisDirectionName, color);
@@ -506,11 +522,31 @@ void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, uin
     uint8_t mappingType;
     std::string mappingName = "";
     if (stick == LEFT) {
-        mappingType = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->GetAxisDirectionMappingByDirection(direction)->GetMappingType();
-        mappingName = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->GetAxisDirectionMappingByDirection(direction)->GetAxisDirectionName();
+        mappingType = LUS::Context::GetInstance()
+                          ->GetControlDeck()
+                          ->GetControllerByPort(port)
+                          ->GetLeftStick()
+                          ->GetAxisDirectionMappingByDirection(direction)
+                          ->GetMappingType();
+        mappingName = LUS::Context::GetInstance()
+                          ->GetControlDeck()
+                          ->GetControllerByPort(port)
+                          ->GetLeftStick()
+                          ->GetAxisDirectionMappingByDirection(direction)
+                          ->GetAxisDirectionName();
     } else if (stick == RIGHT) {
-        mappingType = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->GetAxisDirectionMappingByDirection(direction)->GetMappingType();
-        mappingName = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->GetAxisDirectionMappingByDirection(direction)->GetAxisDirectionName();
+        mappingType = LUS::Context::GetInstance()
+                          ->GetControlDeck()
+                          ->GetControllerByPort(port)
+                          ->GetRightStick()
+                          ->GetAxisDirectionMappingByDirection(direction)
+                          ->GetMappingType();
+        mappingName = LUS::Context::GetInstance()
+                          ->GetControlDeck()
+                          ->GetControllerByPort(port)
+                          ->GetRightStick()
+                          ->GetAxisDirectionMappingByDirection(direction)
+                          ->GetAxisDirectionName();
     }
     std::string icon = "";
     switch (mappingType) {
@@ -526,11 +562,12 @@ void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, uin
     }
     ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), mappingName.c_str()).c_str());
     ImGui::PopStyleVar();
-    ImGui::SameLine(0,0);
+    ImGui::SameLine(0, 0);
     ImGui::Button(ICON_FA_TIMES);
 }
 
-void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port, uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port,
+                                               uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
     DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(0.0f, 0.0f));
     ImGui::SameLine();
     ImGui::BeginGroup();
@@ -542,33 +579,38 @@ void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notch
     if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
         ImGui::Text("Deadzone:");
         ImGui::SetNextItemWidth(160.0f);
-        ImGui::SliderInt(StringHelper::Sprintf("##Deadzone%d", id).c_str(), deadzone, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderInt(StringHelper::Sprintf("##Deadzone%d", id).c_str(), deadzone, 0, 100, "%d%%",
+                         ImGuiSliderFlags_AlwaysClamp);
         ImGui::Text("Notch Snap Angle:");
         ImGui::SetNextItemWidth(160.0f);
-        ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), notchProximityThreshold, 0, 45, "%d°", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), notchProximityThreshold, 0,
+                         45, "%d°", ImGuiSliderFlags_AlwaysClamp);
         ImGui::TreePop();
     }
 }
 
 void InputEditorWindow::UpdateBitmaskToMappingUuids(uint8_t port) {
-    for (auto [uuid, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtonMappings()) {
-        // using a vector here instead of a set because i want newly added mappings
-        // to go to the end of the list instead of autosorting
-        #define V mBitmaskToMappingUuids[port][mapping->GetBitmask()]
-        if(std::find(V.begin(), V.end(), uuid) == V.end()) {
+    for (auto [uuid, mapping] :
+         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtonMappings()) {
+// using a vector here instead of a set because i want newly added mappings
+// to go to the end of the list instead of autosorting
+#define V mBitmaskToMappingUuids[port][mapping->GetBitmask()]
+        if (std::find(V.begin(), V.end(), uuid) == V.end()) {
             V.push_back(uuid);
         }
-        #undef V
+#undef V
     }
 }
 
 void InputEditorWindow::DrawElement() {
-    static bool connected[4] = {true, false, false, false};
+    static bool connected[4] = { true, false, false, false };
     // static bool openTab[4] = {false, false, false, false};
     ImGui::Begin("Controller Configuration", &mIsVisible);
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
     for (uint8_t i = 0; i < 4; i++) {
-        if (ImGui::BeginTabItem(StringHelper::Sprintf("%s Port %d###port%d", connected[i] ? ICON_FA_PLUG : ICON_FA_CHAIN_BROKEN, i + 1, i).c_str())) {
+        if (ImGui::BeginTabItem(StringHelper::Sprintf("%s Port %d###port%d",
+                                                      connected[i] ? ICON_FA_PLUG : ICON_FA_CHAIN_BROKEN, i + 1, i)
+                                    .c_str())) {
             ImGui::Checkbox("Connected", &connected[i]);
 
             UpdateBitmaskToMappingUuids(i);
@@ -582,14 +624,19 @@ void InputEditorWindow::DrawElement() {
                 DrawButtonLine("Start", i, BTN_START, CHIP_COLOR_N64_RED);
             }
             if (ImGui::CollapsingHeader("C-Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), i, BTN_CLEFT, CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), i, BTN_CRIGHT, CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), i, BTN_CUP, CHIP_COLOR_N64_YELLOW);
-                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), i, BTN_CDOWN, CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), i, BTN_CLEFT,
+                               CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), i, BTN_CRIGHT,
+                               CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), i, BTN_CUP,
+                               CHIP_COLOR_N64_YELLOW);
+                DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), i, BTN_CDOWN,
+                               CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT).c_str(), i, BTN_DLEFT);
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str(), i, BTN_DRIGHT);
+                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str(), i,
+                               BTN_DRIGHT);
                 DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP).c_str(), i, BTN_DUP);
                 DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str(), i, BTN_DDOWN);
             }
@@ -601,7 +648,8 @@ void InputEditorWindow::DrawElement() {
             if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
                 static int32_t additionalDeadzone = 20;
                 static int32_t additionalNotchProximityThreshold = 0;
-                DrawAnalogStickSection(&additionalDeadzone, &additionalNotchProximityThreshold, i, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
+                DrawAnalogStickSection(&additionalDeadzone, &additionalNotchProximityThreshold, i, RIGHT, 1,
+                                       CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("Gyro")) {
                 // does previewing using the analog stick preview work currently?
@@ -623,11 +671,13 @@ void InputEditorWindow::DrawElement() {
                     }
                     ImGui::EndCombo();
                 }
-                ImGui::Text("todo: either figure out sdl doesn't think my controllers have gyro\nor find someone else to finish the gyro section");
+                ImGui::Text("todo: either figure out sdl doesn't think my controllers have gyro\nor find someone else "
+                            "to finish the gyro section");
                 ImGui::EndGroup();
             }
             if (ImGui::CollapsingHeader("Rumble and LEDs")) {
-                ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso you could say do 10%% intensity on the big motor and 50%% on the small one");
+                ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
+                            "you could say do 10%% intensity on the big motor and 50%% on the small one");
                 ImGui::Text("todo: leds");
             }
             ImGui::EndTabItem();

@@ -18,7 +18,7 @@ namespace LUS {
 
 ControlDeck::ControlDeck() : mPads(nullptr) {
     for (int32_t i = 0; i < 4; i++) {
-        mControllers.push_back(std::make_shared<Controller>(i));    
+        mControllers.push_back(std::make_shared<Controller>(i));
     }
 }
 
