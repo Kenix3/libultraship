@@ -45,6 +45,10 @@ std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> Controller::GetA
 }
 
 std::shared_ptr<ButtonMapping> Controller::GetButtonMappingByUuid(std::string uuid) {
+    if (!mButtonMappings.contains(uuid)) {
+        return nullptr;
+    }
+
     return mButtonMappings[uuid];
 }
 
@@ -124,15 +128,6 @@ void Controller::SaveButtonMappingIdsToConfig() {
 }
 
 void Controller::ResetToDefaultMappings(int32_t sdlControllerIndex) {
-    const std::string buttonMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.ButtonMappingIds", mPort + 1);
-    CVarClear(buttonMappingIdsCvarKey.c_str());
-
-    for (auto [uuid, mapping] : mButtonMappings) {
-        const std::string mappingCvarKey = "gControllers.ButtonMappings." + uuid;
-        CVarClear(mappingCvarKey.c_str());
-    }
-
     ClearAllButtonMappings();
 
     AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, sdlControllerIndex, SDL_CONTROLLER_BUTTON_A));
@@ -176,7 +171,7 @@ void Controller::ResetToDefaultMappings(int32_t sdlControllerIndex) {
 }
 
 void Controller::ReloadAllMappingsFromConfig() {
-    ClearAllButtonMappings();
+    mButtonMappings.clear();
 
     // todo: this efficently (when we build out cvar array support?)
     // i don't expect it to really be a problem with the small number of mappings we have
@@ -341,8 +336,6 @@ bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::strin
 
     // SDL_GameControllerUpdate();
 
-
-
     // for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
     //     const auto axis = static_cast<SDL_GameControllerAxis>(i);
     //     const auto axisValue = SDL_GameControllerGetAxis(mController, axis) / 32767.0f;
@@ -374,7 +367,9 @@ void Controller::AddButtonMapping(std::shared_ptr<ButtonMapping> mapping) {
 }
 
 void Controller::ClearButtonMapping(std::string uuid) {
+    mButtonMappings[uuid]->EraseFromConfig();
     mButtonMappings.erase(uuid);
+    SaveButtonMappingIdsToConfig();
 }
 
 void Controller::ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping) {
@@ -382,7 +377,11 @@ void Controller::ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping) {
 }
 
 void Controller::ClearAllButtonMappings() {
+    for (auto [uuid, mapping] : mButtonMappings) {
+        mapping->EraseFromConfig();
+    }
     mButtonMappings.clear();
+    SaveButtonMappingIdsToConfig();
 }
 
 } // namespace LUS

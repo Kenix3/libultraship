@@ -385,7 +385,7 @@ void InputEditorWindow::InitElement() {
 void InputEditorWindow::UpdateElement() {
     if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
         LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
-        
+
         // continue to block input for a third of a second after getting the mapping
         mGameInputBlockTimer = ImGui::GetIO().Framerate / 3;
     } else {
@@ -471,7 +471,8 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
 
 void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(), ImVec2(20.0f, 0.0f))) {
+    if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(),
+                      ImVec2(20.0f, 0.0f))) {
         ImGui::OpenPopup(StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask).c_str());
     };
     ImGui::PopStyleVar();
@@ -482,7 +483,10 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
             ImGui::CloseCurrentPopup();
         }
         // todo: figure out why optional params (using uuid = "" in the definition) wasn't working
-        if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
+        if (LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -490,13 +494,15 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
 }
 
 void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::string uuid) {
+    auto mapping =
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid);
+    if (mapping == nullptr) {
+        return;
+    }
+    
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
-    switch (LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(port)
-                ->GetButtonMappingByUuid(uuid)
-                ->GetMappingType()) {
+    switch (mapping->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
             break;
@@ -507,13 +513,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
             icon = ICON_FA_BUG;
             break;
     }
-    if (ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(),
-                                        LUS::Context::GetInstance()
-                                            ->GetControlDeck()
-                                            ->GetControllerByPort(port)
-                                            ->GetButtonMappingByUuid(uuid)
-                                            ->GetButtonName()
-                                            .c_str()).c_str())) {
+    if (ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), mapping->GetButtonName().c_str()).c_str())) {
         ImGui::OpenPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", uuid.c_str()).c_str());
     }
 
@@ -522,7 +522,10 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
-        if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->AddOrEditButtonMappingFromRawPress(LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetBitmask(), uuid)) {
+        if (LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->AddOrEditButtonMappingFromRawPress(mapping->GetBitmask(), uuid)) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -530,7 +533,9 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
 
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
-    ImGui::Button(ICON_FA_TIMES);
+    if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, uuid.c_str()).c_str())) {
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->ClearButtonMapping(uuid);
+    };
     ImGui::SameLine(0, 4.0f);
 }
 

@@ -3,6 +3,8 @@
 #include <random>
 #include <sstream>
 
+#include "public/bridge/consolevariablebridge.h"
+
 namespace LUS {
 ButtonMapping::ButtonMapping(uint16_t bitmask) : mBitmask(bitmask) {
     GenerateUuid();
@@ -29,6 +31,12 @@ uint8_t ButtonMapping::GetMappingType() {
 
 std::string ButtonMapping::GetButtonName() {
     return "Unknown";
+}
+
+void ButtonMapping::EraseFromConfig() {
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    CVarClear(mappingCvarKey.c_str());
+    CVarSave();
 }
 
 void ButtonMapping::GenerateUuid() {
