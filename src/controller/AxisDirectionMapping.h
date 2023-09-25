@@ -18,6 +18,9 @@ class AxisDirectionMapping {
     virtual uint8_t GetMappingType();
     virtual std::string GetAxisDirectionName();
   
+    std::string GetUuid();
+    virtual void SaveToConfig() = 0;
+
   protected:
     std::string mUuid;
   

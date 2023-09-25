@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
+#include "public/bridge/consolevariablebridge.h"
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
@@ -36,6 +37,16 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
     // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
     // and return the absolute value of it
     return fabs(axisValue * MAX_AXIS_RANGE / MAX_SDL_RANGE);
+}
+
+void SDLAxisDirectionToAxisDirectionMapping::SaveToConfig() {
+    const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + mUuid;
+    CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "SDLAxisDirectionToAxisDirectionMapping");
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
+    CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
+
+    CVarSave();
 }
 
 std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionName() {

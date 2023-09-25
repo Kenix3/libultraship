@@ -24,6 +24,10 @@ std::string AxisDirectionMapping::GetAxisDirectionName() {
     return "Unknown";
 }
 
+std::string AxisDirectionMapping::GetUuid() {
+    return mUuid;
+}
+
 void AxisDirectionMapping::GenerateUuid() {
     // todo: this a better way
     // this is bad multiple reasons, first because it's copypasta from ButtonMapping.cpp

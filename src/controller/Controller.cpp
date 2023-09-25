@@ -114,7 +114,7 @@ void Controller::SaveButtonMappingIdsToConfig() {
     CVarSave();
 }
 
-void Controller::ResetToDefaultButtonMappings(int32_t sdlControllerIndex) {
+void Controller::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.ButtonMappingIds", mPort + 1);
     CVarClear(buttonMappingIdsCvarKey.c_str());
 
@@ -145,6 +145,9 @@ void Controller::ResetToDefaultButtonMappings(int32_t sdlControllerIndex) {
     }
     SaveButtonMappingIdsToConfig();
     
+    GetLeftStick()->ResetToDefaultMappings(mPort, sdlControllerIndex);
+    GetRightStick()->ResetToDefaultMappings(mPort, sdlControllerIndex);
+
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPort + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
@@ -165,8 +168,8 @@ void Controller::ReloadAllMappingsFromConfig() {
         LoadButtonMappingFromConfig(buttonMappingIdString);
     }
 
-    GetLeftStick()->ReloadAllMappingsFromConfig();
-    GetRightStick()->ReloadAllMappingsFromConfig();
+    GetLeftStick()->ReloadAllMappingsFromConfig(mPort);
+    GetRightStick()->ReloadAllMappingsFromConfig(mPort);
 }
 
 void Controller::ReadToPad(OSContPad* pad) {

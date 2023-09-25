@@ -11,6 +11,7 @@ class SDLAxisDirectionToAxisDirectionMapping final : public AxisDirectionMapping
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionName() override;
     uint8_t GetMappingType() override;
+    void SaveToConfig() override;
 
   private:
     SDL_GameControllerAxis mControllerAxis;

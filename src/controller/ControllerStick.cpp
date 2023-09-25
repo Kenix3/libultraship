@@ -2,6 +2,9 @@
 #include <spdlog/spdlog.h>
 
 #include "controller/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
+#include "public/bridge/consolevariablebridge.h"
+
+#include <Utils/StringHelper.h>
 
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
@@ -22,33 +25,72 @@ void ControllerStick::ClearAllMappings() {
   mDownMapping = nullptr;
 }
 
-// void ControllerStick::SaveToConfig() {
-//     const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
-//     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "SDLButtonToButtonMapping");
-//     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-//     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
-//     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
-//     CVarSave();
-// }
-
-void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
-    ClearAllMappings();
-
-    UpdateAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, -1));
-    UpdateAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, 1));
-    UpdateAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, -1));
-    UpdateAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, 1));
-
-
+void ControllerStick::SaveToConfig(uint8_t port) {
+    const std::string stickCvarKey = StringHelper::Sprintf("gControllers.Port%d.%s", port + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
+    CVarSetString(StringHelper::Sprintf("%s.LeftMappingId", stickCvarKey.c_str()).c_str(), mLeftMapping->GetUuid().c_str());
+    CVarSetString(StringHelper::Sprintf("%s.RightMappingId", stickCvarKey.c_str()).c_str(), mRightMapping->GetUuid().c_str());
+    CVarSetString(StringHelper::Sprintf("%s.UpMappingId", stickCvarKey.c_str()).c_str(), mUpMapping->GetUuid().c_str());
+    CVarSetString(StringHelper::Sprintf("%s.DownMappingId", stickCvarKey.c_str()).c_str(), mDownMapping->GetUuid().c_str());
+    CVarSave();
 }
 
-void ControllerStick::ReloadAllMappingsFromConfig() {
+void ControllerStick::ResetToDefaultMappings(uint8_t port, int32_t sdlControllerIndex) {
     ClearAllMappings();
 
-    UpdateAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, -1));
-    UpdateAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 0, 1));
-    UpdateAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, -1));
-    UpdateAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(0, 1, 1));
+    UpdateAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 0, -1));
+    mLeftMapping->SaveToConfig();
+    UpdateAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 0, 1));
+    mRightMapping->SaveToConfig();
+    UpdateAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 1, -1));
+    mUpMapping->SaveToConfig();
+    UpdateAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 1, 1));
+    mDownMapping->SaveToConfig();
+
+    SaveToConfig(port);
+}
+
+void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string uuid, Direction direction) {
+    // todo: maybe this stuff makes sense in a factory?
+    const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + uuid;
+    const std::string mappingClass = CVarGetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
+
+    if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
+        int32_t sdlControllerIndex = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t sdlControllerAxis = CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t axisDirection = CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
+        
+        if (sdlControllerIndex < 0 || sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return;
+        }
+        
+        UpdateAxisDirectionMapping(direction, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(uuid, sdlControllerIndex, sdlControllerAxis, axisDirection));
+        return;
+    }
+}
+
+void ControllerStick::ReloadAllMappingsFromConfig(uint8_t port) {
+    ClearAllMappings();
+
+    const std::string stickCvarKey = StringHelper::Sprintf("gControllers.Port%d.%s", port + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
+    std::string leftUuidString = CVarGetString(StringHelper::Sprintf("%s.LeftMappingId", stickCvarKey.c_str()).c_str(), "");
+    std::string rightUuidString = CVarGetString(StringHelper::Sprintf("%s.RightMappingId", stickCvarKey.c_str()).c_str(), "");
+    std::string upUuidString = CVarGetString(StringHelper::Sprintf("%s.UpMappingId", stickCvarKey.c_str()).c_str(), "");
+    std::string downUuidString = CVarGetString(StringHelper::Sprintf("%s.DownMappingId", stickCvarKey.c_str()).c_str(), "");
+    if (leftUuidString != "") {
+      LoadAxisDirectionMappingFromConfig(leftUuidString, LEFT);
+    }
+    if (rightUuidString != "") {
+      LoadAxisDirectionMappingFromConfig(rightUuidString, RIGHT);
+    }
+    if (upUuidString != "") {
+      LoadAxisDirectionMappingFromConfig(upUuidString, UP);
+    }
+    if (downUuidString != "") {
+      LoadAxisDirectionMappingFromConfig(downUuidString, DOWN);
+    }
 }
 
 double ControllerStick::GetClosestNotch(double angle, double approximationThreshold) {

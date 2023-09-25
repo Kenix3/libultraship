@@ -30,7 +30,7 @@ class Controller {
     void ClearButtonMapping(std::string uuid);
     void ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping);
     void ClearAllButtonMappings();
-    void ResetToDefaultButtonMappings(int32_t sdlControllerIndex);
+    void ResetToDefaultMappings(int32_t sdlControllerIndex);
     std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> GetAllButtonMappings();
     std::shared_ptr<ButtonMapping> GetButtonMappingByUuid(std::string uuid);
     std::shared_ptr<ControllerStick> GetLeftStick();
