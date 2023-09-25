@@ -461,34 +461,42 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
     ImGui::EndDisabled();
 }
 
+void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask) {
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::Button(ICON_FA_PLUS, ImVec2(20.0f, 0.0f));
+    ImGui::PopStyleVar();
+}
+
+void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::string uuid) {
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+    std::string icon = "";
+    switch (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetMappingType()) {
+        case MAPPING_TYPE_GAMEPAD:
+            icon = ICON_FA_GAMEPAD;
+            break;
+        case MAPPING_TYPE_KEYBOARD:
+            icon = ICON_FA_KEYBOARD_O;
+            break;
+        case MAPPING_TYPE_UNKNOWN:
+            icon = ICON_FA_BUG;
+            break;
+    }
+    ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetButtonName().c_str()).c_str());
+    ImGui::PopStyleVar();
+    ImGui::SameLine(0,0);
+    ImGui::Button(ICON_FA_TIMES);
+    ImGui::SameLine(0, 4.0f);
+}
+
 void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine(32.0f);
     DrawInputChip(buttonName, color);
     ImGui::SameLine(86.0f);
     for (auto uuid : mBitmaskToMappingUuids[port][bitmask]) {
-        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-        std::string icon = "";
-        switch (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetMappingType()) {
-            case MAPPING_TYPE_GAMEPAD:
-                icon = ICON_FA_GAMEPAD;
-                break;
-            case MAPPING_TYPE_KEYBOARD:
-                icon = ICON_FA_KEYBOARD_O;
-                break;
-            case MAPPING_TYPE_UNKNOWN:
-                icon = ICON_FA_BUG;
-                break;
-        }
-        ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid)->GetButtonName().c_str()).c_str());
-        ImGui::PopStyleVar();
-        ImGui::SameLine(0,0);
-        ImGui::Button(ICON_FA_TIMES);
-        ImGui::SameLine(0, 4.0f);
+        DrawButtonLineEditMappingButton(port, uuid);
     }
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    ImGui::Button(ICON_FA_PLUS, ImVec2(20.0f, 0.0f));
-    ImGui::PopStyleVar();
+    DrawButtonLineAddMappingButton(port, bitmask);
 }
 
 void InputEditorWindow::DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
