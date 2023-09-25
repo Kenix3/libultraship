@@ -324,11 +324,13 @@ bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::strin
 
             if (uuid != "") {
                 ClearButtonMapping(uuid);
-                auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(uuid, bitmask, controllerIndex, axis, axisDirection);
+                auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(uuid, bitmask, controllerIndex, axis,
+                                                                                 axisDirection);
                 AddButtonMapping(mapping);
                 mapping->SaveToConfig();
             } else {
-                auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(bitmask, controllerIndex, axis, axisDirection);
+                auto mapping =
+                    std::make_shared<SDLAxisDirectionToButtonMapping>(bitmask, controllerIndex, axis, axisDirection);
                 AddButtonMapping(mapping);
                 mapping->SaveToConfig();
                 SaveButtonMappingIdsToConfig();
