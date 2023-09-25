@@ -481,6 +481,10 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
+        // todo: figure out why optional params (using uuid = "" in the definition) wasn't working
+        if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 }

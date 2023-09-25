@@ -303,7 +303,7 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     }
 // }
 
-bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid = "") {
+bool Controller::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid) {
     // sdl
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     bool result = false;
