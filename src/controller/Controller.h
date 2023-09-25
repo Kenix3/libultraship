@@ -39,6 +39,7 @@ class Controller {
     void ReadToPad(OSContPad* pad);
     bool HasConfig();
     uint8_t GetPort();
+    bool EditButtonMappingFromRawPress(std::string uuid);
 
   private:
     void LoadButtonMappingFromConfig(std::string uuid);

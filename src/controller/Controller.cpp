@@ -303,6 +303,49 @@ void Controller::ReadToPad(OSContPad* pad) {
 //     }
 // }
 
+bool Controller::EditButtonMappingFromRawPress(std::string uuid) {
+    // sdl
+    std::vector<SDL_GameController*> sdlControllers;
+    bool result = false;
+    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            sdlControllers.push_back(SDL_GameControllerOpen(i));
+        }
+    }
+
+    for (auto controller : sdlControllers) {
+        for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
+            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(i))) {
+                result = true;
+                break;
+            }
+        }
+    }
+
+    for (auto controller : sdlControllers) {
+        SDL_GameControllerClose(controller);
+    }
+
+    return result;
+
+    // SDL_GameControllerUpdate();
+
+
+
+    // for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+    //     const auto axis = static_cast<SDL_GameControllerAxis>(i);
+    //     const auto axisValue = SDL_GameControllerGetAxis(mController, axis) / 32767.0f;
+
+    //     if (axisValue < -0.7f) {
+    //         return -(axis + AXIS_SCANCODE_BIT);
+    //     }
+
+    //     if (axisValue > 0.7f) {
+    //         return (axis + AXIS_SCANCODE_BIT);
+    //     }
+    // }
+}
+
 bool Controller::IsConnected() const {
     return mIsConnected;
 }

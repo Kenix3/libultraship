@@ -383,13 +383,20 @@ void InputEditorWindow::InitElement() {
 // }
 
 void InputEditorWindow::UpdateElement() {
-    // if (mGameInputBlockTimer != INT32_MAX) {
-    //     mGameInputBlockTimer--;
-    //     if (mGameInputBlockTimer <= 0) {
-    //         LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(mGameInputBlockId);
-    //         mGameInputBlockTimer = INT32_MAX;
-    //     }
-    // }
+    if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
+        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
+        
+        // continue to block input for a third of a second after getting the mapping
+        mGameInputBlockTimer = ImGui::GetIO().Framerate / 3;
+    } else {
+        if (mGameInputBlockTimer != INT32_MAX) {
+            mGameInputBlockTimer--;
+            if (mGameInputBlockTimer <= 0) {
+                LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
+                mGameInputBlockTimer = INT32_MAX;
+            }
+        }
+    }
 }
 
 void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone) {
@@ -511,6 +518,9 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
+        if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->EditButtonMappingFromRawPress(uuid)) {
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 
@@ -623,12 +633,6 @@ void InputEditorWindow::UpdateBitmaskToMappingUuids(uint8_t port) {
 }
 
 void InputEditorWindow::DrawElement() {
-    if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
-        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
-    } else {
-        LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
-    }
-
     static bool connected[4] = { true, false, false, false };
     // static bool openTab[4] = {false, false, false, false};
     ImGui::Begin("Controller Configuration", &mIsVisible);
