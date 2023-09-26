@@ -721,7 +721,7 @@ void InputEditorWindow::DrawElement() {
                             "to finish the gyro section");
                 ImGui::EndGroup();
             }
-            if (ImGui::CollapsingHeader("Rumble and LEDs")) {
+            if (ImGui::CollapsingHeader("Attachments (Rumble etc.)")) {
                 ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
                             "you could say do 10%% intensity on the big motor and 50%% on the small one");
                 ImGui::Text("todo: leds");
