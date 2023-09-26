@@ -6,11 +6,11 @@
 
 namespace LUS {
 
-class ButtonMapping {
+class ControllerButtonMapping {
   public:
-    ButtonMapping(uint16_t bitmask);
-    ButtonMapping(std::string uuid, uint16_t bitmask);
-    ~ButtonMapping();
+    ControllerButtonMapping(uint16_t bitmask);
+    ControllerButtonMapping(std::string uuid, uint16_t bitmask);
+    ~ControllerButtonMapping();
 
     std::string GetUuid();
 

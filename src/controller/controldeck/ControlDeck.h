@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Controller.h"
+#include "ControlPort.h"
 #include <vector>
 #include <config/Config.h>
 
@@ -20,7 +20,7 @@ class ControlDeck {
     void UnblockGameInput();
 
   private:
-    std::vector<std::shared_ptr<Controller>> mControllerPorts = {};
+    std::vector<std::shared_ptr<ControlPort>> mPorts = {};
     uint8_t* mControllerBits = nullptr;
     OSContPad* mPads;
     bool mGameInputBlocked;

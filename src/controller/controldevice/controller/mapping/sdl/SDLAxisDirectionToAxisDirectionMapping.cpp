@@ -19,7 +19,7 @@ SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(s
                                                                                int32_t sdlControllerIndex,
                                                                                int32_t sdlControllerAxis,
                                                                                int32_t axisDirection)
-    : SDLMapping(sdlControllerIndex), AxisDirectionMapping(uuid) {
+    : SDLMapping(sdlControllerIndex), ControllerAxisDirectionMapping(uuid) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }

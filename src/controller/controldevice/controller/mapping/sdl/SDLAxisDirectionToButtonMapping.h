@@ -1,8 +1,8 @@
-#include "controller/ButtonMapping.h"
+#include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "SDLMapping.h"
 
 namespace LUS {
-class SDLAxisDirectionToButtonMapping final : public ButtonMapping, public SDLMapping {
+class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, public SDLMapping {
   public:
     SDLAxisDirectionToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex, int32_t sdlControllerAxis,
                                     int32_t axisDirection);

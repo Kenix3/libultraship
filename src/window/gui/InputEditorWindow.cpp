@@ -1,5 +1,5 @@
 #include "InputEditorWindow.h"
-#include "controller/KeyboardController.h"
+// #include "controller/KeyboardController.h"
 #include "Context.h"
 #include "Gui.h"
 #include <Utils/StringHelper.h>
@@ -493,9 +493,9 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
     }
 }
 
-void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::string uuid) {
+void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t bitmask, std::string uuid) {
     auto mapping =
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButtonMappingByUuid(uuid);
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButton(bitmask)->GetButtonMappingByUuid(uuid);
     if (mapping == nullptr) {
         return;
     }
@@ -536,7 +536,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, std::strin
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
     if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, uuid.c_str()).c_str())) {
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->ClearButtonMapping(uuid);
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButton(bitmask)->ClearButtonMapping(uuid);
     };
     ImGui::SameLine(0, 4.0f);
 }
@@ -548,7 +548,7 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uin
     DrawInputChip(buttonName, color);
     ImGui::SameLine(86.0f);
     for (auto uuid : mBitmaskToMappingUuids[port][bitmask]) {
-        DrawButtonLineEditMappingButton(port, uuid);
+        DrawButtonLineEditMappingButton(port, bitmask, uuid);
     }
     DrawButtonLineAddMappingButton(port, bitmask);
 }
@@ -631,14 +631,17 @@ void InputEditorWindow::DrawAnalogStickSection(int32_t* deadzone, int32_t* notch
 }
 
 void InputEditorWindow::UpdateBitmaskToMappingUuids(uint8_t port) {
-    for (auto [uuid, mapping] :
-         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtonMappings()) {
-        // using a vector here instead of a set because i want newly added mappings
-        // to go to the end of the list instead of autosorting
-        if (std::find(mBitmaskToMappingUuids[port][mapping->GetBitmask()].begin(),
-                      mBitmaskToMappingUuids[port][mapping->GetBitmask()].end(),
-                      uuid) == mBitmaskToMappingUuids[port][mapping->GetBitmask()].end()) {
-            mBitmaskToMappingUuids[port][mapping->GetBitmask()].push_back(uuid);
+    // todo: do we need this now that ControllerButton exists?
+
+    for (auto [bitmask, button] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtons()) {
+        for (auto [uuid, mapping] : button->GetAllButtonMappings()) {
+            // using a vector here instead of a set because i want newly added mappings
+            // to go to the end of the list instead of autosorting
+            if (std::find(mBitmaskToMappingUuids[port][bitmask].begin(),
+                        mBitmaskToMappingUuids[port][bitmask].end(),
+                        uuid) == mBitmaskToMappingUuids[port][bitmask].end()) {
+                mBitmaskToMappingUuids[port][bitmask].push_back(uuid);
+            }
         }
     }
 }

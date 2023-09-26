@@ -1,33 +1,33 @@
-#include "AxisDirectionMapping.h"
+#include "ControllerAxisDirectionMapping.h"
 
 #include <random>
 #include <sstream>
 
 namespace LUS {
-AxisDirectionMapping::AxisDirectionMapping() {
+ControllerAxisDirectionMapping::ControllerAxisDirectionMapping() {
     GenerateUuid();
 }
 
-AxisDirectionMapping::AxisDirectionMapping(std::string uuid) {
+ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(std::string uuid) {
     mUuid = uuid;
 }
 
-AxisDirectionMapping::~AxisDirectionMapping() {
+ControllerAxisDirectionMapping::~ControllerAxisDirectionMapping() {
 }
 
-uint8_t AxisDirectionMapping::GetMappingType() {
+uint8_t ControllerAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
 
-std::string AxisDirectionMapping::GetAxisDirectionName() {
+std::string ControllerAxisDirectionMapping::GetAxisDirectionName() {
     return "Unknown";
 }
 
-std::string AxisDirectionMapping::GetUuid() {
+std::string ControllerAxisDirectionMapping::GetUuid() {
     return mUuid;
 }
 
-void AxisDirectionMapping::GenerateUuid() {
+void ControllerAxisDirectionMapping::GenerateUuid() {
     // todo: this a better way
     // this is bad multiple reasons, first because it's copypasta from ButtonMapping.cpp
     // the other reasons are explained there

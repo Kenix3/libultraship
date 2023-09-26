@@ -1,4 +1,4 @@
-#include "ButtonMapping.h"
+#include "ControllerButtonMapping.h"
 
 #include <random>
 #include <sstream>
@@ -6,34 +6,34 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-ButtonMapping::ButtonMapping(uint16_t bitmask) : mBitmask(bitmask) {
+ControllerButtonMapping::ControllerButtonMapping(uint16_t bitmask) : mBitmask(bitmask) {
     GenerateUuid();
 }
 
-ButtonMapping::ButtonMapping(std::string uuid, uint16_t bitmask) : mBitmask(bitmask) {
+ControllerButtonMapping::ControllerButtonMapping(std::string uuid, uint16_t bitmask) : mBitmask(bitmask) {
     mUuid = uuid;
 }
 
-ButtonMapping::~ButtonMapping() {
+ControllerButtonMapping::~ControllerButtonMapping() {
 }
 
-uint16_t ButtonMapping::GetBitmask() {
+uint16_t ControllerButtonMapping::GetBitmask() {
     return mBitmask;
 }
 
-std::string ButtonMapping::GetUuid() {
+std::string ControllerButtonMapping::GetUuid() {
     return mUuid;
 }
 
-uint8_t ButtonMapping::GetMappingType() {
+uint8_t ControllerButtonMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
 
-std::string ButtonMapping::GetButtonName() {
+std::string ControllerButtonMapping::GetButtonName() {
     return "Unknown";
 }
 
-void ButtonMapping::GenerateUuid() {
+void ControllerButtonMapping::GenerateUuid() {
     // todo: this a better way
     // i tried some cross-platform uuid lib stuff and ended up fighting cmake
     // so i figured i'd just this for now despite the fact that has been advised

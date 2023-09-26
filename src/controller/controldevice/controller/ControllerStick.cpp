@@ -1,7 +1,8 @@
 #include "ControllerStick.h"
 #include <spdlog/spdlog.h>
 
-#include "controller/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
+
 #include "public/bridge/consolevariablebridge.h"
 
 #include <Utils/StringHelper.h>
@@ -10,7 +11,7 @@
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace LUS {
-ControllerStick::ControllerStick(Stick stick) : mStick(stick) {
+ControllerStick::ControllerStick(uint8_t portIndex, Stick stick) : mPortIndex(portIndex), mStick(stick) {
     mDeadzone = 16.0f;
     mNotchProxmityThreshold = 0;
 }
@@ -38,7 +39,7 @@ void ControllerStick::SaveToConfig(uint8_t port) {
     CVarSave();
 }
 
-void ControllerStick::ResetToDefaultMappings(uint8_t port, int32_t sdlControllerIndex) {
+void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     ClearAllMappings();
 
     UpdateAxisDirectionMapping(LEFT,
@@ -53,7 +54,7 @@ void ControllerStick::ResetToDefaultMappings(uint8_t port, int32_t sdlController
                                std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(sdlControllerIndex, 1, 1));
     mDownMapping->SaveToConfig();
 
-    SaveToConfig(port);
+    SaveToConfig(mPortIndex);
 }
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string uuid, Direction direction) {
@@ -84,11 +85,11 @@ void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string uuid, Direc
     }
 }
 
-void ControllerStick::ReloadAllMappingsFromConfig(uint8_t port) {
+void ControllerStick::ReloadAllMappingsFromConfig() {
     ClearAllMappings();
 
     const std::string stickCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.%s", port + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
+        StringHelper::Sprintf("gControllers.Port%d.%s", mPortIndex + 1, mStick == LEFT_STICK ? "LeftStick" : "RightStick");
     std::string leftUuidString =
         CVarGetString(StringHelper::Sprintf("%s.LeftMappingId", stickCvarKey.c_str()).c_str(), "");
     std::string rightUuidString =
@@ -165,7 +166,7 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     y = copysign(uy, sy);
 }
 
-void ControllerStick::UpdateAxisDirectionMapping(Direction direction, std::shared_ptr<AxisDirectionMapping> mapping) {
+void ControllerStick::UpdateAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
     switch (direction) {
         case LEFT:
             mLeftMapping = mapping;
@@ -182,7 +183,7 @@ void ControllerStick::UpdateAxisDirectionMapping(Direction direction, std::share
     }
 }
 
-std::shared_ptr<AxisDirectionMapping> ControllerStick::GetAxisDirectionMappingByDirection(Direction direction) {
+std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingByDirection(Direction direction) {
     switch (direction) {
         case LEFT:
             return mLeftMapping;

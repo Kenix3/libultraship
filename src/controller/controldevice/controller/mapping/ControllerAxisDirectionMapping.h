@@ -9,11 +9,11 @@
 
 namespace LUS {
 
-class AxisDirectionMapping {
+class ControllerAxisDirectionMapping {
   public:
-    AxisDirectionMapping();
-    AxisDirectionMapping(std::string uuid);
-    ~AxisDirectionMapping();
+    ControllerAxisDirectionMapping();
+    ControllerAxisDirectionMapping(std::string uuid);
+    ~ControllerAxisDirectionMapping();
     virtual float GetNormalizedAxisDirectionValue() = 0;
     virtual uint8_t GetMappingType();
     virtual std::string GetAxisDirectionName();

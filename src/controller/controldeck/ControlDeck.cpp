@@ -1,24 +1,21 @@
 #include "ControlDeck.h"
 
 #include "Context.h"
-#include "Controller.h"
+#include "controller/controldevice/controller/Controller.h"
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>
 
-#ifndef __WIIU__
-#include "controller/KeyboardController.h"
-#include "controller/SDLController.h"
-#else
-#include "port/wiiu/WiiUGamepad.h"
-#include "port/wiiu/WiiUController.h"
-#endif
+// #ifdef __WIIU__
+// #include "port/wiiu/WiiUGamepad.h"
+// #include "port/wiiu/WiiUController.h"
+// #endif
 
 namespace LUS {
 
 ControlDeck::ControlDeck() : mPads(nullptr) {
     for (int32_t i = 0; i < 4; i++) {
-        mControllers.push_back(std::make_shared<Controller>(i));
+        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i)));
     }
     mGameInputBlocked = false;
 }
@@ -31,11 +28,11 @@ void ControlDeck::Init(uint8_t* bits) {
     mControllerBits = bits;
     *mControllerBits |= 1 << 0;
 
-    for (auto controller : mControllers) {
-        if (controller->HasConfig()) {
-            controller->ReloadAllMappingsFromConfig();
+    for (auto port : mPorts) {
+        if (port->GetConnectedController()->HasConfig()) {
+            port->GetConnectedController()->ReloadAllMappingsFromConfig();
         } else {
-            controller->ResetToDefaultMappings(controller->GetPort());
+            port->GetConnectedController()->ResetToDefaultMappings(port->GetConnectedController()->GetPort());
         }
     }
 }
@@ -95,10 +92,10 @@ void ControlDeck::WriteToPad(OSContPad* pad) {
 
     mPads = pad;
 
-    for (size_t i = 0; i < mControllers.size(); i++) {
-        const std::shared_ptr<Controller> controller = mControllers[i];
+    for (size_t i = 0; i < mPorts.size(); i++) {
+        const std::shared_ptr<Controller> controller = mPorts[i]->GetConnectedController(); 
 
-        if (controller->IsConnected()) {
+        if (controller != nullptr) {
             controller->ReadToPad(&pad[i]);
         }
     }
@@ -109,7 +106,7 @@ OSContPad* ControlDeck::GetPads() {
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
-    return mControllers[port];
+    return mPorts[port]->GetConnectedController();
 }
 
 // size_t ControlDeck::GetNumDevices() {

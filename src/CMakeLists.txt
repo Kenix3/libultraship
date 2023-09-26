@@ -47,30 +47,46 @@ target_sources(libultraship PRIVATE ${Source_Files__Audio})
 #=================== Controller ===================
 
 set(Source_Files__Controller
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToAxisDirectionMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToAxisDirectionMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLAxisDirectionToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLButtonToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLGyroAxisMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLGyroAxisMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/sdl/SDLMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/AxisDirectionMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/AxisDirectionMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControlDeck.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControlDeck.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/Controller.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerGyro.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerGyro.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/ControllerStick.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/GyroAxisMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/GyroAxisMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldeck/ControlDeck.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldeck/ControlDeck.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldeck/ControlPort.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldeck/ControlPort.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/AttachmentPort.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/AttachmentPort.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/DeviceAttachment.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/DeviceAttachment.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/LEDAttachment.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/LEDAttachment.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/RumbleAttachment.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/RumbleAttachment.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/ControlDevice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/ControlDevice.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerButton.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerButton.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/Controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerGyro.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerGyro.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/Controller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerStick.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerStick.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/MappingTypes.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroAxisMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroAxisMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.h
 )
 
 # if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")

@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include "public/bridge/consolevariablebridge.h"
-#include "controller/KeyboardController.h"
+// #include "controller/KeyboardController.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
 #include "graphic/Fast3D/gfx_dxgi.h"
@@ -13,7 +13,7 @@
 #include "graphic/Fast3D/gfx_wiiu.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
-#include "controller/KeyboardScancodes.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "Context.h"
 
 #ifdef __APPLE__

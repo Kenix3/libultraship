@@ -1,32 +1,24 @@
-// #pragma once
+#pragma once
 
-// #include "Controller.h"
-// #include <vector>
-// #include <config/Config.h>
+#include "controller/controldevice/ControlDevice.h"
+#include "controller/controldevice/controller/Controller.h"
+#include <memory>
 
-// namespace LUS {
+namespace LUS {
+class ControlPort {
+  public:
+    ControlPort(uint8_t portIndex);
+    ControlPort(uint8_t portIndex, std::shared_ptr<ControlDevice> device);
+    ~ControlPort();
 
-// class ControlPort {
-//   public:
-//     ControlDeck();
-//     ~ControlDeck();
+    void Connect(std::shared_ptr<ControlDevice> device);
+    void Disconnect();
 
-//     void Init(uint8_t* controllerBits);
-//     void WriteToPad(OSContPad* pad);
-//     OSContPad* GetPads();
-//     uint8_t* GetControllerBits();
-//     std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
-//     void BlockGameInput();
-//     void UnblockGameInput();
+    std::shared_ptr<ControlDevice> GetConnectedDevice();
+    std::shared_ptr<Controller> GetConnectedController();
 
-//   private:
-//     std::vector<std::shared_ptr<Controller>> mControllerPorts = {};
-//     uint8_t* mControllerBits = nullptr;
-//     OSContPad* mPads;
-//     bool mGameInputBlocked;
-// };
-// } // namespace LUS
-
-// has a control device
-// has a port index
-// connect/disconnect methods that update control device pointer
+  private:
+    uint8_t mPortIndex;
+    std::shared_ptr<ControlDevice> mDevice;
+};
+}

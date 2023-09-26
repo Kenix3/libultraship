@@ -10,15 +10,16 @@
 #include "libultraship/libultra/controller.h"
 #include "libultraship/color.h"
 #include <unordered_map>
-#include "ButtonMapping.h"
+#include "ControllerButton.h"
 #include "ControllerStick.h"
 #include "ControllerGyro.h"
+#include "controller/controldevice/ControlDevice.h"
 
 namespace LUS {
 
 class Controller : public ControlDevice {
   public:
-    Controller(uint8_t port);
+    Controller(uint8_t portIndex);
     ~Controller();
 
     void ReloadAllMappingsFromConfig();
@@ -26,13 +27,11 @@ class Controller : public ControlDevice {
     bool IsConnected() const;
     void Connect();
     void Disconnect();
-    void AddButtonMapping(std::shared_ptr<ButtonMapping> mapping);
-    void ClearButtonMapping(std::string uuid);
-    void ClearButtonMapping(std::shared_ptr<ButtonMapping> mapping);
+
     void ClearAllButtonMappings();
     void ResetToDefaultMappings(int32_t sdlControllerIndex);
-    std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> GetAllButtonMappings();
-    std::shared_ptr<ButtonMapping> GetButtonMappingByUuid(std::string uuid);
+    std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> GetAllButtons();
+    std::shared_ptr<ControllerButton> GetButton(uint16_t bitmask);
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();
     std::shared_ptr<ControllerGyro> GetGyro();
@@ -41,17 +40,14 @@ class Controller : public ControlDevice {
     uint8_t GetPort();
     bool AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid);
 
+
   private:
     void LoadButtonMappingFromConfig(std::string uuid);
     void SaveButtonMappingIdsToConfig();
 
-    std::unordered_map<std::string, std::shared_ptr<ButtonMapping>> mButtonMappings;
-    std::shared_ptr<ControllerStick> mLeftStick;
-    std::shared_ptr<ControllerStick> mRightStick;
+    std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> mButtons;
+    std::shared_ptr<ControllerStick> mLeftStick, mRightStick;
     std::shared_ptr<ControllerGyro> mGyro;
-
-    bool mIsConnected;
-    uint8_t mPort;
 
     std::deque<OSContPad> mPadBuffer;
 };

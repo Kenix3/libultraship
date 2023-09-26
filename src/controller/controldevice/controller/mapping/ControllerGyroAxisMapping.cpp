@@ -1,9 +1,9 @@
-#include "GyroAxisMapping.h"
+#include "ControllerGyroAxisMapping.h"
 
 namespace LUS {
-GyroAxisMapping::GyroAxisMapping() {
+ControllerGyroAxisMapping::ControllerGyroAxisMapping() {
 }
 
-GyroAxisMapping::~GyroAxisMapping() {
+ControllerGyroAxisMapping::~ControllerGyroAxisMapping() {
 }
 } // namespace LUS

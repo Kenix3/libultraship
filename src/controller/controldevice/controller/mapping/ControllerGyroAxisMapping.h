@@ -5,10 +5,10 @@
 #define MAX_AXIS_RANGE 85.0f
 
 namespace LUS {
-class GyroAxisMapping {
+class ControllerGyroAxisMapping {
   public:
-    GyroAxisMapping();
-    ~GyroAxisMapping();
+    ControllerGyroAxisMapping();
+    ~ControllerGyroAxisMapping();
     virtual float GetGyroAxisValue() = 0;
 };
 } // namespace LUS

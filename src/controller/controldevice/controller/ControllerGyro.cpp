@@ -7,11 +7,11 @@ ControllerGyro::ControllerGyro() {
 ControllerGyro::~ControllerGyro() {
 }
 
-std::shared_ptr<GyroAxisMapping> ControllerGyro::GetGyroXMapping() {
+std::shared_ptr<ControllerGyroAxisMapping> ControllerGyro::GetGyroXMapping() {
     return mGyroXMapping;
 }
 
-std::shared_ptr<GyroAxisMapping> ControllerGyro::GetGyroYMapping() {
+std::shared_ptr<ControllerGyroAxisMapping> ControllerGyro::GetGyroYMapping() {
     return mGyroYMapping;
 }
 

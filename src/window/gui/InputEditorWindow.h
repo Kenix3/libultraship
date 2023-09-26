@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
-#include "controller/Controller.h"
+#include "controller/controldevice/controller/Controller.h"
 
 namespace LUS {
 
@@ -32,7 +32,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                ImVec4 color);
     void DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask, ImVec4 color);
-    void DrawButtonLineEditMappingButton(uint8_t port, std::string uuid);
+    void DrawButtonLineEditMappingButton(uint8_t port, uint16_t bitmask, std::string uuid);
     void DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask);
 
     int32_t mBtnReading;
