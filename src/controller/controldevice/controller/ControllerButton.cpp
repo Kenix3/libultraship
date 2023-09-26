@@ -13,6 +13,24 @@ ControllerButton::ControllerButton(uint8_t portIndex, uint16_t bitmask) : mPortI
 ControllerButton::~ControllerButton() {
 }
 
+// todo: where should this live?
+std::unordered_map<uint16_t, std::string> ButtonBitmaskToConfigButtonName = {
+  { BTN_A, "A" },
+  { BTN_B, "B" },
+  { BTN_L, "L" },
+  { BTN_R, "R" },
+  { BTN_Z, "Z" },
+  { BTN_START, "Start" },
+  { BTN_CLEFT, "CLeft" },
+  { BTN_CRIGHT, "CRight" },
+  { BTN_CUP, "CUp" },
+  { BTN_CDOWN, "CDown" },
+  { BTN_DLEFT, "DLeft" },
+  { BTN_DRIGHT, "DRight" },
+  { BTN_DUP, "DUp" },
+  { BTN_DDOWN, "DDown" }
+};
+
 std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> ControllerButton::GetAllButtonMappings() {
     return mButtonMappings;
 }
@@ -100,7 +118,7 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
     }
 
     const std::string buttonMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.ButtonMappingIds", mPortIndex + 1);
+        StringHelper::Sprintf("gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, ButtonBitmaskToConfigButtonName[mBitmask].c_str());
     if (buttonMappingIdListString == "") {
         CVarClear(buttonMappingIdsCvarKey.c_str());
     } else {
@@ -119,7 +137,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
     const std::string buttonMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.ButtonMappingIds", mPortIndex + 1);
+        StringHelper::Sprintf("gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, ButtonBitmaskToConfigButtonName[mBitmask].c_str());
     std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {

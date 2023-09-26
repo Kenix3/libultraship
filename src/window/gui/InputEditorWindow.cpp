@@ -655,8 +655,6 @@ void InputEditorWindow::DrawElement() {
         if (ImGui::BeginTabItem(StringHelper::Sprintf("%s Port %d###port%d",
                                                       connected[i] ? ICON_FA_PLUG : ICON_FA_CHAIN_BROKEN, i + 1, i)
                                     .c_str())) {
-            ImGui::Checkbox("Connected", &connected[i]);
-            ImGui::SameLine();
             if (ImGui::Button("Clear All")) {
                 LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(i)->ClearAllMappings();
             }
