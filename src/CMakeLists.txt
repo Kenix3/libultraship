@@ -75,7 +75,6 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/MappingTypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h

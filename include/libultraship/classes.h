@@ -20,6 +20,7 @@
 #include "window/gui/GuiWindow.h"
 #include "window/gui/InputEditorWindow.h"
 #include "window/gui/StatsWindow.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/controldevice/controller/Controller.h"
 #include "controller/controldeck/ControlDeck.h"
 #include "utils/binarytools/BinaryReader.h"

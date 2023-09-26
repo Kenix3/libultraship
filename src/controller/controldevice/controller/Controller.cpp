@@ -28,6 +28,14 @@ Controller::~Controller() {
     SPDLOG_TRACE("destruct controller");
 }
 
+std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> Controller::GetAllButtons() {
+    return mButtons;
+}
+
+std::shared_ptr<ControllerButton> Controller::GetButton(uint16_t bitmask) {
+    return mButtons[bitmask];
+}
+
 std::shared_ptr<ControllerStick> Controller::GetLeftStick() {
     return mLeftStick;
 }
@@ -40,10 +48,6 @@ std::shared_ptr<ControllerGyro> Controller::GetGyro() {
     return mGyro;
 }
 
-std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> Controller::GetAllButtons() {
-    return mButtons;
-}
-
 uint8_t Controller::GetPort() {
     return mPortIndex;
 }
@@ -51,6 +55,13 @@ uint8_t Controller::GetPort() {
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
     return CVarGetInteger(hasConfigCvarKey.c_str(), false);
+}
+
+void Controller::ClearAllMappings() {
+    // todo: not just buttons
+    for (auto [bitmask, button] : GetAllButtons()) {
+        button->ClearAllButtonMappings();
+    }
 }
 
 void Controller::ResetToDefaultMappings(int32_t sdlControllerIndex) {

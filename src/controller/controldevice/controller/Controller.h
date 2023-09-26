@@ -28,7 +28,7 @@ class Controller : public ControlDevice {
     void Connect();
     void Disconnect();
 
-    void ClearAllButtonMappings();
+    void ClearAllMappings();
     void ResetToDefaultMappings(int32_t sdlControllerIndex);
     std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> GetAllButtons();
     std::shared_ptr<ControllerButton> GetButton(uint16_t bitmask);
@@ -38,8 +38,6 @@ class Controller : public ControlDevice {
     void ReadToPad(OSContPad* pad);
     bool HasConfig();
     uint8_t GetPort();
-    bool AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid);
-
 
   private:
     void LoadButtonMappingFromConfig(std::string uuid);

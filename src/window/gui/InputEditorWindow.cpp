@@ -485,7 +485,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
         // todo: figure out why optional params (using uuid = "" in the definition) wasn't working
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
-                ->GetControllerByPort(port)
+                ->GetControllerByPort(port)->GetButton(bitmask)
                 ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
             ImGui::CloseCurrentPopup();
         }
@@ -526,8 +526,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
         }
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
-                ->GetControllerByPort(port)
-                ->AddOrEditButtonMappingFromRawPress(mapping->GetBitmask(), uuid)) {
+                ->GetControllerByPort(port)->GetButton(bitmask)
+                ->AddOrEditButtonMappingFromRawPress(bitmask, uuid)) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -658,8 +658,7 @@ void InputEditorWindow::DrawElement() {
             ImGui::Checkbox("Connected", &connected[i]);
             ImGui::SameLine();
             if (ImGui::Button("Clear All")) {
-                // todo: not just buttons
-                LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(i)->ClearAllButtonMappings();
+                LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(i)->ClearAllMappings();
             }
 
             UpdateBitmaskToMappingUuids(i);
