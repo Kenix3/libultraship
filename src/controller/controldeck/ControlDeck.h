@@ -20,7 +20,7 @@ class ControlDeck {
     void UnblockGameInput();
 
   private:
-    std::vector<std::shared_ptr<Controller>> mControllers = {};
+    std::vector<std::shared_ptr<Controller>> mControllerPorts = {};
     uint8_t* mControllerBits = nullptr;
     OSContPad* mPads;
     bool mGameInputBlocked;
