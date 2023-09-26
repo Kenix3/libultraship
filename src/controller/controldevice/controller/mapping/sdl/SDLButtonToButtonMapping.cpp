@@ -5,15 +5,9 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex,
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, uint16_t bitmask, int32_t sdlControllerIndex,
                                                    int32_t sdlControllerButton)
-    : ControllerButtonMapping(bitmask), SDLMapping(sdlControllerIndex) {
-    mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
-}
-
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(std::string uuid, uint16_t bitmask, int32_t sdlControllerIndex,
-                                                   int32_t sdlControllerButton)
-    : ControllerButtonMapping(uuid, bitmask), SDLMapping(sdlControllerIndex) {
+    : ControllerButtonMapping(portIndex, bitmask), SDLMapping(sdlControllerIndex) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 
@@ -31,8 +25,12 @@ uint8_t SDLButtonToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 
+std::string SDLButtonToButtonMapping::GetButtonMappingId() {
+    return StringHelper::Sprintf("P%d-B%d-SDLI%d-SDLB%d", mPortIndex, mBitmask, mControllerIndex, mControllerButton);
+}
+
 void SDLButtonToButtonMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
@@ -42,7 +40,7 @@ void SDLButtonToButtonMapping::SaveToConfig() {
 }
 
 void SDLButtonToButtonMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());

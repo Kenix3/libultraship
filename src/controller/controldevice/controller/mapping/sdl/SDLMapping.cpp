@@ -13,7 +13,6 @@ bool SDLMapping::OpenController() {
 
     // We failed to load the controller. Go to next.
     if (newCont == nullptr) {
-        SPDLOG_ERROR("SDL Controller failed to open: ({})", SDL_GetError());
         return false;
     }
 

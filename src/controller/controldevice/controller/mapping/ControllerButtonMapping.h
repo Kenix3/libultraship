@@ -8,11 +8,10 @@ namespace LUS {
 
 class ControllerButtonMapping {
   public:
-    ControllerButtonMapping(uint16_t bitmask);
-    ControllerButtonMapping(std::string uuid, uint16_t bitmask);
+    ControllerButtonMapping(uint8_t portIndex, uint16_t bitmask);
     ~ControllerButtonMapping();
 
-    std::string GetUuid();
+    virtual std::string GetButtonMappingId() = 0; 
 
     uint16_t GetBitmask();
     virtual void UpdatePad(uint16_t& padButtons) = 0;
@@ -23,10 +22,7 @@ class ControllerButtonMapping {
     virtual void EraseFromConfig() = 0;
 
   protected:
+    uint8_t mPortIndex;
     uint16_t mBitmask;
-    std::string mUuid;
-
-  private:
-    void GenerateUuid();
 };
 } // namespace LUS

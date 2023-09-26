@@ -44,7 +44,7 @@ std::shared_ptr<ControllerButtonMapping> ControllerButton::GetButtonMappingByUui
 }
 
 void ControllerButton::AddButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping) {
-    mButtonMappings[mapping->GetUuid()] = mapping;
+    mButtonMappings[mapping->GetButtonMappingId()] = mapping;
 }
 
 void ControllerButton::ClearButtonMapping(std::string uuid) {
@@ -54,12 +54,12 @@ void ControllerButton::ClearButtonMapping(std::string uuid) {
 }
 
 void ControllerButton::ClearButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping) {
-    ClearButtonMapping(mapping->GetUuid());
+    ClearButtonMapping(mapping->GetButtonMappingId());
 }
 
-void ControllerButton::LoadButtonMappingFromConfig(std::string uuid) {
+void ControllerButton::LoadButtonMappingFromConfig(std::string id) {
     // todo: maybe this stuff makes sense in a factory?
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + uuid;
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
     uint16_t bitmask = CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
@@ -84,7 +84,7 @@ void ControllerButton::LoadButtonMappingFromConfig(std::string uuid) {
         }
 
         AddButtonMapping(
-            std::make_shared<SDLButtonToButtonMapping>(uuid, bitmask, sdlControllerIndex, sdlControllerButton));
+            std::make_shared<SDLButtonToButtonMapping>(mPortIndex, bitmask, sdlControllerIndex, sdlControllerButton));
         return;
     }
 
@@ -103,7 +103,7 @@ void ControllerButton::LoadButtonMappingFromConfig(std::string uuid) {
             return;
         }
 
-        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(uuid, bitmask, sdlControllerIndex,
+        AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, bitmask, sdlControllerIndex,
                                                                            sdlControllerAxis, axisDirection));
         return;
     }
@@ -176,7 +176,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
                     ClearButtonMapping(uuid);
                 }
                 
-                auto mapping = std::make_shared<SDLButtonToButtonMapping>(bitmask, controllerIndex, button);
+                auto mapping = std::make_shared<SDLButtonToButtonMapping>(mPortIndex, bitmask, controllerIndex, button);
                 AddButtonMapping(mapping);
                 mapping->SaveToConfig();
                 SaveButtonMappingIdsToConfig();
@@ -207,7 +207,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
                 ClearButtonMapping(uuid);
             }
 
-            auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(bitmask, controllerIndex, axis, axisDirection);
+            auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, bitmask, controllerIndex, axis, axisDirection);
             AddButtonMapping(mapping);
             mapping->SaveToConfig();
             SaveButtonMappingIdsToConfig();
@@ -228,46 +228,46 @@ void ControllerButton::ResetToDefaultMappings(int32_t sdlControllerIndex) {
 
     switch (mBitmask) {
         case BTN_A:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_A, sdlControllerIndex, SDL_CONTROLLER_BUTTON_A));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_A, sdlControllerIndex, SDL_CONTROLLER_BUTTON_A));
             break;
         case BTN_B:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_B, sdlControllerIndex, SDL_CONTROLLER_BUTTON_B));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_B, sdlControllerIndex, SDL_CONTROLLER_BUTTON_B));
             break;
         case BTN_L:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_L, sdlControllerIndex, SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_L, sdlControllerIndex, SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
             break;
         case BTN_R:
-            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_R, sdlControllerIndex, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
+            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_R, sdlControllerIndex, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
             break;
         case BTN_Z:
-            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_Z, sdlControllerIndex, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
+            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_Z, sdlControllerIndex, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
             break;
         case BTN_START:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_START, sdlControllerIndex, SDL_CONTROLLER_BUTTON_START));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_START, sdlControllerIndex, SDL_CONTROLLER_BUTTON_START));
             break;
         case BTN_CUP:
-            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CUP, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTY, -1));
+            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CUP, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTY, -1));
             break;
         case BTN_CDOWN:
-            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CDOWN, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTY, 1));
+            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CDOWN, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTY, 1));
             break;
         case BTN_CLEFT:
-            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CLEFT, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTX, -1));
+            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CLEFT, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTX, -1));
             break;
         case BTN_CRIGHT:
-            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(BTN_CRIGHT, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTX, 1));
+            AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CRIGHT, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTX, 1));
             break;
         case BTN_DUP:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DUP, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_UP));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DUP, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_UP));
             break;
         case BTN_DDOWN:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DDOWN, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_DOWN));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DDOWN, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_DOWN));
             break;
         case BTN_DLEFT:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DLEFT, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DLEFT, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_LEFT));
             break;
         case BTN_DRIGHT:
-            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(BTN_DRIGHT, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
+            AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DRIGHT, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
             break;
     }
 

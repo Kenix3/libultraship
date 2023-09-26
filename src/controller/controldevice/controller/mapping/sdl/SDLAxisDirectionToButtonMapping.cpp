@@ -5,17 +5,9 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint16_t bitmask, int32_t sdlControllerIndex,
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, uint16_t bitmask, int32_t sdlControllerIndex,
                                                                  int32_t sdlControllerAxis, int32_t axisDirection)
-    : ControllerButtonMapping(bitmask), SDLMapping(sdlControllerIndex) {
-    mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
-    mAxisDirection = static_cast<AxisDirection>(axisDirection);
-}
-
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(std::string uuid, uint16_t bitmask,
-                                                                 int32_t sdlControllerIndex, int32_t sdlControllerAxis,
-                                                                 int32_t axisDirection)
-    : ControllerButtonMapping(uuid, bitmask), SDLMapping(sdlControllerIndex) {
+    : ControllerButtonMapping(portIndex, bitmask), SDLMapping(sdlControllerIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
@@ -38,8 +30,12 @@ uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 
+std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
+    return StringHelper::Sprintf("P%d-B%d-SDLI%d-SDLA%d-AD%s", mPortIndex, mBitmask, mControllerIndex, mControllerAxis, mAxisDirection == 1 ? "P" : "N");
+}
+
 void SDLAxisDirectionToButtonMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLAxisDirectionToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
@@ -50,7 +46,7 @@ void SDLAxisDirectionToButtonMapping::SaveToConfig() {
 }
 
 void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + mUuid;
+    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
