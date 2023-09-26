@@ -16,7 +16,7 @@
 
 namespace LUS {
 
-class Controller {
+class Controller : public ControlDevice {
   public:
     Controller(uint8_t port);
     ~Controller();
@@ -56,3 +56,6 @@ class Controller {
     std::deque<OSContPad> mPadBuffer;
 };
 } // namespace LUS
+
+// add attachments
+// mempak/rumble/transfer (for now just implement rumble)
