@@ -39,6 +39,10 @@ class Controller : public ControlDevice {
     bool HasConfig();
     uint8_t GetPort();
 
+    void ProcessKeyboardAllKeysUp();
+    bool ProcessKeyboardKeyUp(int32_t scancode);
+    bool ProcessKeyboardKeyDown(int32_t scancode);
+
   private:
     void LoadButtonMappingFromConfig(std::string uuid);
     void SaveButtonMappingIdsToConfig();

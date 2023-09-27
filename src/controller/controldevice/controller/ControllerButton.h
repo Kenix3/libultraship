@@ -31,6 +31,10 @@ class ControllerButton {
 
     void UpdatePad(uint16_t& padButtons);
 
+    void ProcessKeyboardAllKeysUp();
+    bool ProcessKeyboardKeyUp(int32_t scancode);
+    bool ProcessKeyboardKeyDown(int32_t scancode);
+
   private:
     uint8_t mPortIndex;
     uint16_t mBitmask;

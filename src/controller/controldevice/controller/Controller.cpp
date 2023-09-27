@@ -134,6 +134,34 @@ void Controller::ReadToPad(OSContPad* pad) {
     }
 }
 
+void Controller::ProcessKeyboardAllKeysUp() {
+    for (auto [bitmask, button] : GetAllButtons()) {
+        button->ProcessKeyboardAllKeysUp();
+    }
+    GetLeftStick()->ProcessKeyboardAllKeysUp();
+    GetRightStick()->ProcessKeyboardAllKeysUp();
+}
+
+bool Controller::ProcessKeyboardKeyUp(int32_t scancode) {
+    for (auto [bitmask, button] : GetAllButtons()) {
+        button->ProcessKeyboardKeyUp(scancode);
+    }
+    GetLeftStick()->ProcessKeyboardKeyUp(scancode);
+    GetRightStick()->ProcessKeyboardKeyUp(scancode);
+
+    return true; //not sure what this return value is used for
+}
+
+bool Controller::ProcessKeyboardKeyDown(int32_t scancode) {
+    for (auto [bitmask, button] : GetAllButtons()) {
+        button->ProcessKeyboardKeyDown(scancode);
+    }
+    GetLeftStick()->ProcessKeyboardKeyDown(scancode);
+    GetRightStick()->ProcessKeyboardKeyDown(scancode);
+
+    return true; //not sure what this return value is used for
+}
+
 // bool Controller::IsRumbling() {
 //     return mIsRumbling;
 // }

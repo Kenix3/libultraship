@@ -19,6 +19,10 @@ class ControlDeck {
     void BlockGameInput();
     void UnblockGameInput();
 
+    void ProcessKeyboardAllKeysUp();
+    bool ProcessKeyboardKeyUp(int32_t scancode);
+    bool ProcessKeyboardKeyDown(int32_t scancode);
+
   private:
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
     uint8_t* mControllerBits = nullptr;

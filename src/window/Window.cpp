@@ -147,43 +147,18 @@ bool Window::KeyUp(int32_t scancode) {
     }
 
     Context::GetInstance()->GetWindow()->SetLastScancode(-1);
-
-    bool isProcessed = false;
-    auto controlDeck = Context::GetInstance()->GetControlDeck();
-    // const auto pad = dynamic_cast<KeyboardController*>(
-    //     controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
-    // if (pad != nullptr) {
-    //     if (pad->ReleaseButton(scancode)) {
-    //         isProcessed = true;
-    //     }
-    // }
-
-    return isProcessed;
+    return Context::GetInstance()->GetControlDeck()->ProcessKeyboardKeyUp(scancode);
 }
 
 bool Window::KeyDown(int32_t scancode) {
-    bool isProcessed = false;
-    auto controlDeck = Context::GetInstance()->GetControlDeck();
-    // const auto pad = dynamic_cast<KeyboardController*>(
-    //     controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
-    // if (pad != nullptr) {
-    //     if (pad->PressButton(scancode)) {
-    //         isProcessed = true;
-    //     }
-    // }
-
+    bool isProcessed = Context::GetInstance()->GetControlDeck()->ProcessKeyboardKeyDown(scancode);
     Context::GetInstance()->GetWindow()->SetLastScancode(scancode);
 
     return isProcessed;
 }
 
 void Window::AllKeysUp(void) {
-    auto controlDeck = Context::GetInstance()->GetControlDeck();
-    // const auto pad = dynamic_cast<KeyboardController*>(
-    //     controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
-    // if (pad != nullptr) {
-    //     pad->ReleaseAllButtons();
-    // }
+    Context::GetInstance()->GetControlDeck()->ProcessKeyboardAllKeysUp();
 }
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {

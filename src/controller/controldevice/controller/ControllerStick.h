@@ -25,6 +25,10 @@ class ControllerStick {
     void SaveAxisDirectionMappingIdsToConfig();
     bool AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id);
 
+    void ProcessKeyboardAllKeysUp();
+    bool ProcessKeyboardKeyUp(int32_t scancode);
+    bool ProcessKeyboardKeyDown(int32_t scancode);
+
   private:
     void Process(int8_t& x, int8_t& y);
     double GetClosestNotch(double angle, double approximationThreshold);

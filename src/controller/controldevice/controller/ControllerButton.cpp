@@ -223,6 +223,21 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
     return result;
 }
 
+void ControllerButton::ProcessKeyboardAllKeysUp() {
+    return;
+}
+
+bool ControllerButton::ProcessKeyboardKeyUp(int32_t scancode) {
+    return true;
+}
+
+bool ControllerButton::ProcessKeyboardKeyDown(int32_t scancode) {
+    for (auto mapping : GetAllButtonMappings()) {
+        // if ()
+    }
+    return true;
+}
+
 void ControllerButton::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     ClearAllButtonMappings();
 

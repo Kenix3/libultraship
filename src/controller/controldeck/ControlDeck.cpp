@@ -37,6 +37,42 @@ void ControlDeck::Init(uint8_t* bits) {
     }
 }
 
+void ControlDeck::ProcessKeyboardAllKeysUp() {
+    for (auto port : mPorts) {
+        auto controller = port->GetConnectedController(); 
+
+        if (controller != nullptr) {
+            controller->ProcessKeyboardAllKeysUp();
+        }
+    }
+
+    return;
+}
+
+bool ControlDeck::ProcessKeyboardKeyUp(int32_t scancode) {
+    for (auto port : mPorts) {
+        auto controller = port->GetConnectedController(); 
+
+        if (controller != nullptr) {
+            controller->ProcessKeyboardKeyUp(scancode);
+        }
+    }
+    
+    return true;
+}
+
+bool ControlDeck::ProcessKeyboardKeyDown(int32_t scancode) {
+    for (auto port : mPorts) {
+        auto controller = port->GetConnectedController(); 
+
+        if (controller != nullptr) {
+            controller->ProcessKeyboardKeyDown(scancode);
+        }
+    }
+
+    return true;
+}
+
 // void ControlDeck::ScanDevices() {
 //     mPortList.clear();
 //     mDevices.clear();
