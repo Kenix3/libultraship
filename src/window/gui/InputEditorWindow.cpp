@@ -704,7 +704,14 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
 
 void InputEditorWindow::DrawStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port,
                                                uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
-    DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(0.0f, 0.0f));
+    static int8_t x, y;
+    if (stick == LEFT) {
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->Process(x, y);
+    } else {
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->Process(x, y);
+    }
+    DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(x, y));
+    
     ImGui::SameLine();
     ImGui::BeginGroup();
     DrawStickDirectionLine(ICON_FA_ARROW_LEFT, port, stick, LEFT, color);

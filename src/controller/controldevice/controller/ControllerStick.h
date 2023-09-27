@@ -24,13 +24,13 @@ class ControllerStick {
     void ClearAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping);
     void SaveAxisDirectionMappingIdsToConfig();
     bool AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id);
+    void Process(int8_t& x, int8_t& y);
 
     void ProcessKeyboardAllKeysUp();
     bool ProcessKeyboardKeyUp(int32_t scancode);
     bool ProcessKeyboardKeyDown(int32_t scancode);
 
   private:
-    void Process(int8_t& x, int8_t& y);
     double GetClosestNotch(double angle, double approximationThreshold);
     void LoadAxisDirectionMappingFromConfig(std::string id);
     float GetAxisDirectionValue(Direction direction);
