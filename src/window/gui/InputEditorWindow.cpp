@@ -514,7 +514,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
             break;
     }
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editButtonMappingButton%s", icon.c_str(),
-                                            mapping->GetButtonName().c_str(), id.c_str())
+                                            mapping->GetPhysicalInputName().c_str(), id.c_str())
                           .c_str())) {
         ImGui::OpenPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str()).c_str());
     }
@@ -605,7 +605,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
             break;
     }
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editStickDirectionMappingButton%s", icon.c_str(),
-                                            mapping->GetAxisDirectionName().c_str(), id.c_str())
+                                            mapping->GetPhysicalInputName().c_str(), id.c_str())
                           .c_str())) {
         ImGui::OpenPopup(StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str()).c_str());
     }

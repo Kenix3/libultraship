@@ -19,8 +19,4 @@ uint16_t ControllerButtonMapping::GetBitmask() {
 uint8_t ControllerButtonMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
-
-std::string ControllerButtonMapping::GetButtonName() {
-    return "Unknown";
-}
 } // namespace LUS

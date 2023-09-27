@@ -22,7 +22,7 @@ class ControllerButton {
     void ClearButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
     void ResetToDefaultMappings(int32_t sdlControllerIndex);
 
-    void LoadButtonMappingFromConfig(std::string uuid);
+    void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
     void ReloadAllMappingsFromConfig();
     void ClearAllButtonMappings();
