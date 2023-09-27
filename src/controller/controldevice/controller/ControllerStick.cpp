@@ -62,15 +62,6 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
         }
     }
 
-    // for (auto direction : {LEFT, RIGHT, UP, DOWN}) {
-    //     const std::string axisDirectionMappingIdsCvarKey =
-    //         StringHelper::Sprintf("gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, StickToConfigStickName[mStick].c_str(),  DirectionToConfigDirectionName[direction].c_str());
-    //     if (axisDirectionMappingIdListString == "") {
-    //         CVarClear(axisDirectionMappingIdsCvarKey.c_str());
-    //     } else {
-    //         CVarSetString(axisDirectionMappingIdsCvarKey.c_str(), axisDirectionMappingIdListString.c_str());
-    //     }
-    // }
     CVarSave();
 }
 
@@ -91,10 +82,10 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction, std::shared_p
 void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     ClearAllMappings();
 
-    AddAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, LEFT, sdlControllerIndex, 0, -1));
-    AddAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, RIGHT, sdlControllerIndex, 0, 1));
-    AddAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, UP, sdlControllerIndex, 1, -1));
-    AddAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, DOWN, sdlControllerIndex, 1, 1));
+    AddAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, LEFT, sdlControllerIndex, mStick == LEFT_STICK ? 0 : 2, -1));
+    AddAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, RIGHT, sdlControllerIndex, mStick == LEFT_STICK ? 0 : 2, 1));
+    AddAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, UP, sdlControllerIndex, mStick == LEFT_STICK ? 1 : 3, -1));
+    AddAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, DOWN, sdlControllerIndex, mStick == LEFT_STICK ? 1 : 3, 1));
 
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
