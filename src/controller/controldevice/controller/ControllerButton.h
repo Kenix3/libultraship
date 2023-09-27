@@ -27,7 +27,7 @@ class ControllerButton {
     void ReloadAllMappingsFromConfig();
     void ClearAllButtonMappings();
 
-    bool AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid);
+    bool AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id);
 
     void UpdatePad(uint16_t& padButtons);
 

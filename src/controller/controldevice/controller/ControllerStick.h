@@ -23,6 +23,7 @@ class ControllerStick {
     void ClearAxisDirectionMapping(Direction direction, std::string id);
     void ClearAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping);
     void SaveAxisDirectionMappingIdsToConfig();
+    bool AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id);
 
   private:
     void Process(int8_t& x, int8_t& y);

@@ -99,7 +99,7 @@ void Controller::ReadToPad(OSContPad* pad) {
 
     // Stick Inputs
     GetLeftStick()->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
-    GetRightStick()->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
+    GetRightStick()->UpdatePad(padToBuffer.right_stick_x, padToBuffer.right_stick_y);
 
     // Gyro
     GetGyro()->UpdatePad(padToBuffer.gyro_x, padToBuffer.gyro_y);

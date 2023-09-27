@@ -566,13 +566,15 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
-        // // todo: figure out why optional params (using uuid = "" in the definition) wasn't working
-        // if (LUS::Context::GetInstance()
-        //         ->GetControlDeck()
-        //         ->GetControllerByPort(port)->GetButton(bitmask)
-        //         ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
-        //     ImGui::CloseCurrentPopup();
-        // }
+        if (stick == LEFT) {
+            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, "")) {
+                ImGui::CloseCurrentPopup();
+            }
+        } else {
+            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, "")) {
+                ImGui::CloseCurrentPopup();
+            }
+        }
         ImGui::EndPopup();
     }
 }
@@ -613,12 +615,16 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
-        // if (LUS::Context::GetInstance()
-        //         ->GetControlDeck()
-        //         ->GetControllerByPort(port)->GetButton(bitmask)
-        //         ->AddOrEditButtonMappingFromRawPress(bitmask, uuid)) {
-        //     ImGui::CloseCurrentPopup();
-        // }
+
+        if (stick == LEFT) {
+            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, id)) {
+                ImGui::CloseCurrentPopup();
+            }
+        } else {
+            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, id)) {
+                ImGui::CloseCurrentPopup();
+            }
+        }
         ImGui::EndPopup();
     }
 

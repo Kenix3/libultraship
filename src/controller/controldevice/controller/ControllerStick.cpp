@@ -216,6 +216,71 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     y = copysign(uy, sy);
 }
 
+bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
+    // sdl
+    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
+    bool result = false;
+    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            sdlControllers[i] = SDL_GameControllerOpen(i);
+        }
+    }
+
+    for (auto [controllerIndex, controller] : sdlControllers) {
+        // todo: SDLButtonToAxisDirectionMapping
+        // for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+        //     if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+        //         if (id != "") {
+        //             ClearButtonMapping(id);
+        //         }
+                
+        //         auto mapping = std::make_shared<SDLButtonToButtonMapping>(mPortIndex, bitmask, controllerIndex, button);
+        //         AddButtonMapping(mapping);
+        //         mapping->SaveToConfig();
+        //         SaveButtonMappingIdsToConfig();
+        //         result = true;
+        //         break;
+        //     }
+        // }
+
+        // if (result) {
+        //     break;
+        // }
+
+        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+            const auto axis = static_cast<SDL_GameControllerAxis>(i);
+            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+            int32_t axisDirection = 0;
+            if (axisValue < -0.7f) {
+                axisDirection = NEGATIVE;
+            } else if (axisValue > 0.7f) {
+                axisDirection = POSITIVE;
+            }
+
+            if (axisDirection == 0) {
+                continue;
+            }
+
+            if (id != "") {
+                ClearAxisDirectionMapping(direction, id);
+            }
+
+            auto mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, direction, controllerIndex, axis, axisDirection);
+            AddAxisDirectionMapping(direction, mapping);
+            mapping->SaveToConfig();
+            SaveAxisDirectionMappingIdsToConfig();
+            result = true;
+            break;
+        }
+    }
+
+    for (auto [i, controller] : sdlControllers) {
+        SDL_GameControllerClose(controller);
+    }
+
+    return result;
+}
+
 std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction, std::string id) {
     if (!mAxisDirectionMappings[direction].contains(id)) {
         return nullptr;

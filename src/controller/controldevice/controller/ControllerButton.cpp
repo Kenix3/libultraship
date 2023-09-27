@@ -159,7 +159,7 @@ void ControllerButton::UpdatePad(uint16_t& padButtons) {
     }
 }
 
-bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string uuid) {
+bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
     // sdl
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     bool result = false;
@@ -172,8 +172,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
     for (auto [controllerIndex, controller] : sdlControllers) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                if (uuid != "") {
-                    ClearButtonMapping(uuid);
+                if (id != "") {
+                    ClearButtonMapping(id);
                 }
                 
                 auto mapping = std::make_shared<SDLButtonToButtonMapping>(mPortIndex, bitmask, controllerIndex, button);
@@ -203,8 +203,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
                 continue;
             }
 
-            if (uuid != "") {
-                ClearButtonMapping(uuid);
+            if (id != "") {
+                ClearButtonMapping(id);
             }
 
             auto mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, bitmask, controllerIndex, axis, axisDirection);
