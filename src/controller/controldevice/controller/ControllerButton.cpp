@@ -112,8 +112,8 @@ void ControllerButton::LoadButtonMappingFromConfig(std::string id) {
 void ControllerButton::SaveButtonMappingIdsToConfig() {
     // todo: this efficently (when we build out cvar array support?)
     std::string buttonMappingIdListString = "";
-    for (auto [uuid, mapping] : mButtonMappings) {
-        buttonMappingIdListString += uuid;
+    for (auto [id, mapping] : mButtonMappings) {
+        buttonMappingIdListString += id;
         buttonMappingIdListString += ",";
     }
 
@@ -146,7 +146,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
 }
 
 void ControllerButton::ClearAllButtonMappings() {
-    for (auto [uuid, mapping] : mButtonMappings) {
+    for (auto [id, mapping] : mButtonMappings) {
         mapping->EraseFromConfig();
     }
     mButtonMappings.clear();
@@ -154,7 +154,7 @@ void ControllerButton::ClearAllButtonMappings() {
 }
 
 void ControllerButton::UpdatePad(uint16_t& padButtons) {
-    for (const auto& [uuid, mapping] : mButtonMappings) {
+    for (const auto& [id, mapping] : mButtonMappings) {
         mapping->UpdatePad(padButtons);
     }
 }

@@ -3,10 +3,9 @@
 #include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 
 namespace LUS {
-enum Stick { LEFT_STICK, RIGHT_STICK };
-enum Direction { LEFT, RIGHT, UP, DOWN };
 
 class ControllerStick {
   public:
@@ -19,13 +18,16 @@ class ControllerStick {
     void ClearAllMappings();
     void UpdatePad(int8_t& x, int8_t& y);
     std::shared_ptr<ControllerAxisDirectionMapping> GetAxisDirectionMappingByDirection(Direction direction);
-    void UpdateAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping);
-    void SaveToConfig(uint8_t port);
+    void AddAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping);
+    void ClearAxisDirectionMapping(Direction direction, std::string id);
+    void ClearAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping);
+    void SaveAxisDirectionMappingIdsToConfig();
 
   private:
     void Process(int8_t& x, int8_t& y);
     double GetClosestNotch(double angle, double approximationThreshold);
-    void LoadAxisDirectionMappingFromConfig(std::string uuid, Direction direction);
+    void LoadAxisDirectionMappingFromConfig(std::string id);
+    float GetAxisDirectionValue(Direction direction);
 
     uint8_t mPortIndex;
     Stick mStick;
@@ -33,10 +35,7 @@ class ControllerStick {
     // TODO: handle deadzones separately for X and Y?
     float mDeadzone;
     int32_t mNotchProxmityThreshold;
-    
-    std::shared_ptr<ControllerAxisDirectionMapping> mUpMapping;
-    std::shared_ptr<ControllerAxisDirectionMapping> mDownMapping;
-    std::shared_ptr<ControllerAxisDirectionMapping> mLeftMapping;
-    std::shared_ptr<ControllerAxisDirectionMapping> mRightMapping;
+
+    std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>> mAxisDirectionMappings;
 };
 } // namespace LUS
