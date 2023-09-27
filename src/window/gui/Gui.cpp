@@ -490,8 +490,8 @@ void Gui::ApplyResolutionChanges() {
         newHeight = verticalPixelCount;
     } else { // Use the window's resolution
         if (aspectRatioIsEnabled) {
-            if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
-                (aspectRatioX / aspectRatioY)) {
+            if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+                (aspectRatioY / aspectRatioX)) {
                 // when pillarboxed
                 newWidth = uint32_t(float(gfx_current_dimensions.height / aspectRatioY) * aspectRatioX);
             } else { // when letterboxed
@@ -516,6 +516,55 @@ void Gui::ApplyResolutionChanges() {
     gfx_current_dimensions.width = newWidth;
     gfx_current_dimensions.height = newHeight;
     // centring the image is done in Gui::StartFrame().
+}
+
+int16_t Gui::GetIntegerScaleFactor() {
+    if (!CVarGetInteger("gAdvancedResolution.IntegerScale.FitAutomatically", 0)) {
+        int16_t factor = CVarGetInteger("gAdvancedResolution.IntegerScale.Factor", 1);
+
+        if (CVarGetInteger("gAdvancedResolution.IntegerScale.NeverExceedBounds", 1)) {
+            // Screen bounds take priority over whatever Factor is set to.
+
+            // The same comparison as below, but checked against the configured factor
+            if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+                ((float)gfx_current_dimensions.height / gfx_current_dimensions.width)) {
+                if (factor > gfx_current_game_window_viewport.height / gfx_current_dimensions.height) {
+                    // Scale to window height
+                    factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
+                }
+            } else {
+                if (factor > gfx_current_game_window_viewport.width / gfx_current_dimensions.width) {
+                    // Scale to window width
+                    factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
+                }
+            }
+        }
+
+        if (factor < 1) {
+            factor = 1;
+        }
+        return factor;
+    } else { // Skip the preferred value and automatically determine from window size
+        int16_t factor = 1;
+
+        // Compare aspect ratios of game framebuffer and GUI
+        if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+            ((float)gfx_current_dimensions.height / gfx_current_dimensions.width)) {
+            // Scale to window height
+            factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
+        } else {
+            // Scale to window width
+            factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
+        }
+
+        // Add screen bounds offset, if set.
+        factor += CVarGetInteger("gAdvancedResolution.IntegerScale.ExceedBoundsBy", 0);
+
+        if (factor < 1) {
+            factor = 1;
+        }
+        return factor;
+    }
 }
 
 void Gui::StartFrame() {
@@ -545,7 +594,7 @@ void Gui::StartFrame() {
                 size = ImVec2(sWdth, sHght);
             }
         } else { // in pixel perfect mode it's much easier
-            const int factor = CVarGetInteger("gAdvancedResolution.IntegerScaleFactor", 1);
+            const int factor = GetIntegerScaleFactor();
             float sPosX = size.x / 2 - (gfx_current_dimensions.width * factor) / 2;
             float sPosY = size.y / 2 - (gfx_current_dimensions.height * factor) / 2;
             pos = ImVec2(sPosX, sPosY);

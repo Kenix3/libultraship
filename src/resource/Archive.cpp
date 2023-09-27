@@ -400,12 +400,15 @@ bool Archive::ProcessOtrVersion(HANDLE mpqHandle) {
         LUS::Endianness endianness = (LUS::Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
         uint32_t version = reader->ReadUInt32();
+        // Game version found so track it if it matches or there is nothing to match against
         if (mValidHashes.empty() || mValidHashes.contains(version)) {
             PushGameVersion(version);
             return true;
         }
     }
-    return false;
+
+    // Allow the otr through if there are no valid hashes anyways
+    return mValidHashes.empty();
 }
 
 bool Archive::LoadMainMPQ(bool enableWriting, bool generateCrcMap) {

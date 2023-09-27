@@ -71,7 +71,7 @@ jobs:
     - name: Install dependencies
       run: |
         choco install ninja
-        Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force
+        Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
     - uses: actions/checkout@v2
     - name: ccache
       uses: dcvz/ccache-action@27b9f33213c0079872f064f6b6ba0233dfa16ba2
