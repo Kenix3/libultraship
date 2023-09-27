@@ -11,8 +11,5 @@ class SDLAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirect
     uint8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
-
-  private:
-
 };
 } // namespace LUS

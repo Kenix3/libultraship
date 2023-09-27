@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
 
@@ -227,25 +228,24 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     }
 
     for (auto [controllerIndex, controller] : sdlControllers) {
-        // todo: SDLButtonToAxisDirectionMapping
-        // for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-        //     if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-        //         if (id != "") {
-        //             ClearButtonMapping(id);
-        //         }
-                
-        //         auto mapping = std::make_shared<SDLButtonToButtonMapping>(mPortIndex, bitmask, controllerIndex, button);
-        //         AddButtonMapping(mapping);
-        //         mapping->SaveToConfig();
-        //         SaveButtonMappingIdsToConfig();
-        //         result = true;
-        //         break;
-        //     }
-        // }
+        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+                if (id != "") {
+                    ClearAxisDirectionMapping(direction, id);
+                }
 
-        // if (result) {
-        //     break;
-        // }
+                auto mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(mPortIndex, mStick, direction, controllerIndex, button);
+                AddAxisDirectionMapping(direction, mapping);
+                mapping->SaveToConfig();
+                SaveAxisDirectionMappingIdsToConfig();
+                result = true;
+                break;
+            }
+        }
+
+        if (result) {
+            break;
+        }
 
         for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
             const auto axis = static_cast<SDL_GameControllerAxis>(i);
