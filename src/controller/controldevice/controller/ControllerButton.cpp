@@ -35,12 +35,12 @@ std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> Contro
     return mButtonMappings;
 }
 
-std::shared_ptr<ControllerButtonMapping> ControllerButton::GetButtonMappingByUuid(std::string uuid) {
-    if (!mButtonMappings.contains(uuid)) {
+std::shared_ptr<ControllerButtonMapping> ControllerButton::GetButtonMappingById(std::string id) {
+    if (!mButtonMappings.contains(id)) {
         return nullptr;
     }
 
-    return mButtonMappings[uuid];
+    return mButtonMappings[id];
 }
 
 void ControllerButton::AddButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping) {

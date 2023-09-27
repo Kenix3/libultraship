@@ -225,9 +225,16 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     y = copysign(uy, sy);
 }
 
-std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingByDirection(Direction direction) {
-    // todo: actually make the multimap stuff work here
-    return mAxisDirectionMappings[direction].begin()->second;
+std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction, std::string id) {
+    if (!mAxisDirectionMappings[direction].contains(id)) {
+        return nullptr;
+    }
+
+    return mAxisDirectionMappings[direction][id];
+}
+
+std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>> ControllerStick::GetAllAxisDirectionMappingByDirection(Direction direction) {
+    return mAxisDirectionMappings[direction];
 }
 
 void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {

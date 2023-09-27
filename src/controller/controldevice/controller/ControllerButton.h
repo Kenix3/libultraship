@@ -15,7 +15,7 @@ class ControllerButton {
     ControllerButton(uint8_t portIndex, uint16_t bitmask);
     ~ControllerButton();
 
-    std::shared_ptr<ControllerButtonMapping> GetButtonMappingByUuid(std::string uuid);
+    std::shared_ptr<ControllerButtonMapping> GetButtonMappingById(std::string id);
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> GetAllButtonMappings();
     void AddButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
     void ClearButtonMapping(std::string uuid);

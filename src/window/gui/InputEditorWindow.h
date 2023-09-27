@@ -27,19 +27,27 @@ class InputEditorWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-    void DrawAnalogStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port, uint8_t stick,
+    void DrawStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port, uint8_t stick,
                                 int32_t id, ImVec4 color);
-    void DrawAxisDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
+    void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                ImVec4 color);
     void DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask, ImVec4 color);
-    void DrawButtonLineEditMappingButton(uint8_t port, uint16_t bitmask, std::string uuid);
+    void DrawButtonLineEditMappingButton(uint8_t port, uint16_t bitmask, std::string id);
     void DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask);
+
+    void DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction, std::string id);
+    void DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction);
 
     int32_t mBtnReading;
     int32_t mGameInputBlockTimer;
-    const int32_t mGameInputBlockId = -1;
-    std::unordered_map<uint8_t, std::unordered_map<uint16_t, std::vector<std::string>>> mBitmaskToMappingUuids;
 
-    void UpdateBitmaskToMappingUuids(uint8_t port);
+    // mBitmaskToMappingIds[port][bitmask] = { id, id }
+    std::unordered_map<uint8_t, std::unordered_map<uint16_t, std::vector<std::string>>> mBitmaskToMappingIds;
+    
+    // mStickDirectionToMappingIds[port][stick][direction] = { id, id }
+    std::unordered_map<uint8_t, std::unordered_map<uint8_t, std::unordered_map<Direction, std::vector<std::string>>>> mStickDirectionToMappingIds;
+
+    void UpdateBitmaskToMappingIds(uint8_t port);
+    void UpdateStickDirectionToMappingIds(uint8_t port);
 };
 } // namespace LUS
