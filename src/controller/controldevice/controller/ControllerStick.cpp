@@ -297,15 +297,12 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
     Process(x, y);
 }
 
-void ControllerStick::ProcessKeyboardAllKeysUp() {
-    return;
-}
-
-bool ControllerStick::ProcessKeyboardKeyUp(int32_t scancode) {
-    return true;
-}
-
-bool ControllerStick::ProcessKeyboardKeyDown(int32_t scancode) {
+bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
+    // for (auto [direction, mappings] : mAxisDirectionMappings) {
+    //     for (auto mapping : mappings) {
+    //         // if ()
+    //     }
+    // }
     return true;
 }
 } // namespace LUS

@@ -1,6 +1,15 @@
+#pragma once
+
 #ifdef __cplusplus
 namespace LUS {
 #endif
+typedef enum KbEventType {
+    LUS_KB_EVENT_KEY_DOWN = 0,
+    LUS_KB_EVENT_KEY_UP = 1,
+    LUS_KB_EVENT_ALL_KEYS_UP = 2,
+    LUS_KB_EVENT_MAX
+};
+
 typedef enum KbScancode {
     LUS_KB_UNKNOWN = 0,
     LUS_KB_ESCAPE = 1,
@@ -101,6 +110,10 @@ typedef enum KbScancode {
     LUS_KB_F22 = 133,
     LUS_KB_F23 = 134,
     LUS_KB_F24 = 135,
+    LUS_KB_ARROWKEY_UP = 328,
+    LUS_KB_ARROWKEY_LEFT = 331,
+    LUS_KB_ARROWKEY_RIGHT = 333,
+    LUS_KB_ARROWKEY_DOWN = 336,
     LUS_KB_MAX
 
 };

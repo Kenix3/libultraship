@@ -14,6 +14,7 @@
 #include "ControllerStick.h"
 #include "ControllerGyro.h"
 #include "controller/controldevice/ControlDevice.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace LUS {
 
@@ -39,9 +40,7 @@ class Controller : public ControlDevice {
     bool HasConfig();
     uint8_t GetPort();
 
-    void ProcessKeyboardAllKeysUp();
-    bool ProcessKeyboardKeyUp(int32_t scancode);
-    bool ProcessKeyboardKeyDown(int32_t scancode);
+    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
   private:
     void LoadButtonMappingFromConfig(std::string uuid);

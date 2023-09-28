@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <string>
 #include "libultraship/libultra/controller.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace LUS {
 
@@ -31,9 +32,7 @@ class ControllerButton {
 
     void UpdatePad(uint16_t& padButtons);
 
-    void ProcessKeyboardAllKeysUp();
-    bool ProcessKeyboardKeyUp(int32_t scancode);
-    bool ProcessKeyboardKeyDown(int32_t scancode);
+    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
   private:
     uint8_t mPortIndex;

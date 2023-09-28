@@ -3,6 +3,7 @@
 #include "ControlPort.h"
 #include <vector>
 #include <config/Config.h>
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace LUS {
 
@@ -19,9 +20,7 @@ class ControlDeck {
     void BlockGameInput();
     void UnblockGameInput();
 
-    void ProcessKeyboardAllKeysUp();
-    bool ProcessKeyboardKeyUp(int32_t scancode);
-    bool ProcessKeyboardKeyDown(int32_t scancode);
+    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
   private:
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};

@@ -2,6 +2,7 @@
 
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
@@ -105,6 +106,15 @@ void ControllerButton::LoadButtonMappingFromConfig(std::string id) {
 
         AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, bitmask, sdlControllerIndex,
                                                                            sdlControllerAxis, axisDirection));
+        return;
+    }
+
+    if (mappingClass == "KeyboardKeyToButtonMapping") {
+        int32_t scancode =
+            CVarGetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
+
+        AddButtonMapping(
+            std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, static_cast<KbScancode>(scancode)));
         return;
     }
 }
@@ -223,19 +233,17 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
     return result;
 }
 
-void ControllerButton::ProcessKeyboardAllKeysUp() {
-    return;
-}
-
-bool ControllerButton::ProcessKeyboardKeyUp(int32_t scancode) {
-    return true;
-}
-
-bool ControllerButton::ProcessKeyboardKeyDown(int32_t scancode) {
-    for (auto mapping : GetAllButtonMappings()) {
-        // if ()
+bool ControllerButton::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
+    bool result = false;
+    for (auto [id, mapping] : GetAllButtonMappings()) {
+        if (mapping->GetMappingType() == MAPPING_TYPE_KEYBOARD) {
+            std::shared_ptr<KeyboardKeyToButtonMapping> ktobMapping = std::dynamic_pointer_cast<KeyboardKeyToButtonMapping>(mapping);
+            if (ktobMapping != nullptr) {
+                result = result || ktobMapping->ProcessKeyboardEvent(eventType, scancode);
+            }
+        }
     }
-    return true;
+    return result;
 }
 
 void ControllerButton::ResetToDefaultMappings(int32_t sdlControllerIndex) {
@@ -244,45 +252,59 @@ void ControllerButton::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     switch (mBitmask) {
         case BTN_A:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_A, sdlControllerIndex, SDL_CONTROLLER_BUTTON_A));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_A, KbScancode::LUS_KB_X));
             break;
         case BTN_B:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_B, sdlControllerIndex, SDL_CONTROLLER_BUTTON_B));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_B, KbScancode::LUS_KB_C));
             break;
         case BTN_L:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_L, sdlControllerIndex, SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_L, KbScancode::LUS_KB_E));
             break;
         case BTN_R:
             AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_R, sdlControllerIndex, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_R, KbScancode::LUS_KB_R));
             break;
         case BTN_Z:
             AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_Z, sdlControllerIndex, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_Z, KbScancode::LUS_KB_Z));
             break;
         case BTN_START:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_START, sdlControllerIndex, SDL_CONTROLLER_BUTTON_START));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_START, KbScancode::LUS_KB_SPACE));
             break;
         case BTN_CUP:
             AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CUP, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTY, -1));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_CUP, KbScancode::LUS_KB_ARROWKEY_UP));
             break;
         case BTN_CDOWN:
             AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CDOWN, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTY, 1));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_CDOWN, KbScancode::LUS_KB_ARROWKEY_DOWN));
             break;
         case BTN_CLEFT:
             AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CLEFT, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTX, -1));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_CLEFT, KbScancode::LUS_KB_ARROWKEY_LEFT));
             break;
         case BTN_CRIGHT:
             AddButtonMapping(std::make_shared<SDLAxisDirectionToButtonMapping>(mPortIndex, BTN_CRIGHT, sdlControllerIndex, SDL_CONTROLLER_AXIS_RIGHTX, 1));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_CRIGHT, KbScancode::LUS_KB_ARROWKEY_RIGHT));
             break;
         case BTN_DUP:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DUP, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_UP));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_DUP, KbScancode::LUS_KB_T));
             break;
         case BTN_DDOWN:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DDOWN, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_DOWN));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_DDOWN, KbScancode::LUS_KB_G));
             break;
         case BTN_DLEFT:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DLEFT, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_DLEFT, KbScancode::LUS_KB_F));
             break;
         case BTN_DRIGHT:
             AddButtonMapping(std::make_shared<SDLButtonToButtonMapping>(mPortIndex, BTN_DRIGHT, sdlControllerIndex, SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
+            AddButtonMapping(std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, BTN_DRIGHT, KbScancode::LUS_KB_H));
             break;
     }
 

@@ -134,32 +134,14 @@ void Controller::ReadToPad(OSContPad* pad) {
     }
 }
 
-void Controller::ProcessKeyboardAllKeysUp() {
+bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
+    bool result = false;
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->ProcessKeyboardAllKeysUp();
+        result = result || button->ProcessKeyboardEvent(eventType, scancode);
     }
-    GetLeftStick()->ProcessKeyboardAllKeysUp();
-    GetRightStick()->ProcessKeyboardAllKeysUp();
-}
-
-bool Controller::ProcessKeyboardKeyUp(int32_t scancode) {
-    for (auto [bitmask, button] : GetAllButtons()) {
-        button->ProcessKeyboardKeyUp(scancode);
-    }
-    GetLeftStick()->ProcessKeyboardKeyUp(scancode);
-    GetRightStick()->ProcessKeyboardKeyUp(scancode);
-
-    return true; //not sure what this return value is used for
-}
-
-bool Controller::ProcessKeyboardKeyDown(int32_t scancode) {
-    for (auto [bitmask, button] : GetAllButtons()) {
-        button->ProcessKeyboardKeyDown(scancode);
-    }
-    GetLeftStick()->ProcessKeyboardKeyDown(scancode);
-    GetRightStick()->ProcessKeyboardKeyDown(scancode);
-
-    return true; //not sure what this return value is used for
+    result = result || GetLeftStick()->ProcessKeyboardEvent(eventType, scancode);
+    result = result || GetRightStick()->ProcessKeyboardEvent(eventType, scancode);
+    return result;
 }
 
 // bool Controller::IsRumbling() {

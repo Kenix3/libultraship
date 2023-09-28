@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace LUS {
 
@@ -26,9 +27,7 @@ class ControllerStick {
     bool AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id);
     void Process(int8_t& x, int8_t& y);
 
-    void ProcessKeyboardAllKeysUp();
-    bool ProcessKeyboardKeyUp(int32_t scancode);
-    bool ProcessKeyboardKeyDown(int32_t scancode);
+    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
   private:
     double GetClosestNotch(double angle, double approximationThreshold);
