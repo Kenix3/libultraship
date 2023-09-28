@@ -2,8 +2,6 @@
 
 #include "controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 
-#include "controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h"
-#include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
@@ -146,14 +144,14 @@ void ControllerButton::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t s
     ClearAllButtonMappings();
 
     if (sdl) {
-        for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask, sdlControllerIndex)) {
+        for (auto mapping :
+             ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask, sdlControllerIndex)) {
             AddButtonMapping(mapping);
         }
     }
 
     if (keyboard) {
-        for (auto mapping :
-             ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
             AddButtonMapping(mapping);
         }
     }
