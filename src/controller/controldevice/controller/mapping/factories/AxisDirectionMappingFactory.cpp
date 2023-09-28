@@ -68,6 +68,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         return std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction),
                                                                    static_cast<KbScancode>(scancode));
     }
+
+    return nullptr;
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>

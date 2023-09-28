@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <string>
 
-#include "MappingTypes.h"
 #include "ControllerMapping.h"
 
 #define MAX_AXIS_RANGE 85.0f

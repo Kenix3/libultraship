@@ -58,15 +58,16 @@ bool Controller::HasConfig() {
 }
 
 void Controller::ClearAllMappings() {
-    // todo: not just buttons
     for (auto [bitmask, button] : GetAllButtons()) {
         button->ClearAllButtonMappings();
     }
+    GetLeftStick()->ClearAllMappings();
+    GetRightStick()->ClearAllMappings();
 }
 
 void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->ResetToDefaultMappings(sdlControllerIndex);
+        button->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
     }
 
     GetLeftStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);

@@ -3,7 +3,7 @@
 
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
 
-#include "controller/controldevice/controller/mapping/AxisDirectionMappingFactory.h"
+#include "controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
 
 #include "public/bridge/consolevariablebridge.h"
 

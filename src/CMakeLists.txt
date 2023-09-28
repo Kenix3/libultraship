@@ -69,8 +69,6 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/Controller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerStick.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerStick.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/AxisDirectionMappingFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/AxisDirectionMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerButtonMapping.cpp
@@ -79,13 +77,16 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/MappingTypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.cpp

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <string>
-#include "MappingTypes.h"
+
 #include "ControllerMapping.h"
 
 namespace LUS {
