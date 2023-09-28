@@ -63,4 +63,26 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
         return std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction), static_cast<KbScancode>(scancode));
     }
 }
+
+std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick) {
+    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, LEFT, LUS_KB_A),
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, RIGHT, LUS_KB_D),
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, UP, LUS_KB_W),
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, DOWN, LUS_KB_S)
+    };
+
+    return mappings;
+}
+
+std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, Stick stick, int32_t sdlControllerIndex) {
+    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, LEFT, sdlControllerIndex, stick == LEFT_STICK ? 0 : 2, -1),
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, RIGHT, sdlControllerIndex, stick == LEFT_STICK ? 0 : 2, 1),
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, UP, sdlControllerIndex, stick == LEFT_STICK ? 1 : 3, -1),
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, DOWN, sdlControllerIndex, stick == LEFT_STICK ? 1 : 3, 1)
+    };
+
+    return mappings;
+}
 }

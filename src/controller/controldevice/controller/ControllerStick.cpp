@@ -86,15 +86,13 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction, std::shared_p
 void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     ClearAllMappings();
 
-    AddAxisDirectionMapping(LEFT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, LEFT, sdlControllerIndex, mStick == LEFT_STICK ? 0 : 2, -1));
-    AddAxisDirectionMapping(RIGHT, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, RIGHT, sdlControllerIndex, mStick == LEFT_STICK ? 0 : 2, 1));
-    AddAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, UP, sdlControllerIndex, mStick == LEFT_STICK ? 1 : 3, -1));
-    AddAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, DOWN, sdlControllerIndex, mStick == LEFT_STICK ? 1 : 3, 1));
+    for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStick, sdlControllerIndex)) {
+        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    }
 
-    AddAxisDirectionMapping(LEFT, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, LEFT, LUS_KB_A));
-    AddAxisDirectionMapping(RIGHT, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, RIGHT, LUS_KB_D));
-    AddAxisDirectionMapping(UP, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, UP, LUS_KB_W));
-    AddAxisDirectionMapping(DOWN, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, DOWN, LUS_KB_S));
+    for (auto mapping : AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
+        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    }
 
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
