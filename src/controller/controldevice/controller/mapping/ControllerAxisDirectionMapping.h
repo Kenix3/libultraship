@@ -22,6 +22,7 @@ class ControllerAxisDirectionMapping : virtual public ControllerMapping {
     virtual std::string GetAxisDirectionMappingId() = 0; 
     virtual void SaveToConfig() = 0;
     virtual void EraseFromConfig() = 0;
+    Direction GetDirection();
 
   protected:
     uint8_t mPortIndex;

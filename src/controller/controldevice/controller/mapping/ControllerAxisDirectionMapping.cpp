@@ -13,4 +13,8 @@ ControllerAxisDirectionMapping::~ControllerAxisDirectionMapping() {
 uint8_t ControllerAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
+
+Direction ControllerAxisDirectionMapping::GetDirection() {
+    return mDirection;
+}
 } // namespace LUS

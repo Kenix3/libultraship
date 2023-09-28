@@ -5,6 +5,8 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
 
+#include "controller/controldevice/controller/mapping/AxisDirectionMappingFactory.h"
+
 #include "public/bridge/consolevariablebridge.h"
 
 #include <Utils/StringHelper.h>
@@ -103,65 +105,13 @@ void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
 }
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
-    // todo: maybe this stuff makes sense in a factory?
-    const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + id;
-    const std::string mappingClass =
-        CVarGetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(mPortIndex, mStick, id);
 
-    if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t sdlControllerIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
-        int32_t sdlControllerAxis =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), 0);
-        int32_t axisDirection =
-            CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
-
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || sdlControllerIndex < 0 || sdlControllerAxis == -1 ||
-            (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
-            // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
-            return;
-        }
-
-        AddAxisDirectionMapping(static_cast<Direction>(direction), std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerAxis, axisDirection));
+    if (mapping == nullptr) {
         return;
     }
 
-    if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t sdlControllerIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
-        int32_t sdlControllerButton =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), 0);
-
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || sdlControllerIndex < 0 || sdlControllerButton == -1) {
-            // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
-            return;
-        }
-
-        AddAxisDirectionMapping(static_cast<Direction>(direction), std::make_shared<SDLButtonToAxisDirectionMapping>(mPortIndex, mStick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerButton));
-        return;
-    }
-
-    if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t scancode =
-            CVarGetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
-
-        if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
-            // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
-            return;
-        }
-
-        AddAxisDirectionMapping(static_cast<Direction>(direction), std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, static_cast<Direction>(direction), static_cast<KbScancode>(scancode)));
-        return;
-    }
+    AddAxisDirectionMapping(mapping->GetDirection(), mapping);
 }
 
 void ControllerStick::ReloadAllMappingsFromConfig() {
