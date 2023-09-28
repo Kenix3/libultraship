@@ -71,7 +71,7 @@ void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlCont
     }
 
     GetLeftStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
-    GetRightStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
+    GetRightStick()->ClearAllMappings();
 
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
