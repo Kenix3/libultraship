@@ -5,7 +5,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace LUS {
-KeyboardKeyToAnyMapping::KeyboardKeyToAnyMapping(KbScancode scancode) : mKeyboardScancode(scancode) {
+KeyboardKeyToAnyMapping::KeyboardKeyToAnyMapping(KbScancode scancode) : mKeyboardScancode(scancode), mKeyPressed(false) {
 }
 
 KeyboardKeyToAnyMapping::~KeyboardKeyToAnyMapping() {

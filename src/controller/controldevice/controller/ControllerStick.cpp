@@ -3,6 +3,7 @@
 
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
 
@@ -88,6 +89,11 @@ void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
     AddAxisDirectionMapping(UP, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, UP, sdlControllerIndex, mStick == LEFT_STICK ? 1 : 3, -1));
     AddAxisDirectionMapping(DOWN, std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, DOWN, sdlControllerIndex, mStick == LEFT_STICK ? 1 : 3, 1));
 
+    AddAxisDirectionMapping(LEFT, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, LEFT, LUS_KB_A));
+    AddAxisDirectionMapping(RIGHT, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, RIGHT, LUS_KB_D));
+    AddAxisDirectionMapping(UP, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, UP, LUS_KB_W));
+    AddAxisDirectionMapping(DOWN, std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, DOWN, LUS_KB_S));
+
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
             mapping->SaveToConfig();
@@ -120,6 +126,40 @@ void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
         }
 
         AddAxisDirectionMapping(static_cast<Direction>(direction), std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(mPortIndex, mStick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerAxis, axisDirection));
+        return;
+    }
+
+    if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
+        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t sdlControllerIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t sdlControllerButton =
+            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), 0);
+
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || sdlControllerIndex < 0 || sdlControllerButton == -1) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return;
+        }
+
+        AddAxisDirectionMapping(static_cast<Direction>(direction), std::make_shared<SDLButtonToAxisDirectionMapping>(mPortIndex, mStick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerButton));
+        return;
+    }
+
+    if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
+        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t scancode =
+            CVarGetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
+
+        if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return;
+        }
+
+        AddAxisDirectionMapping(static_cast<Direction>(direction), std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, static_cast<Direction>(direction), static_cast<KbScancode>(scancode)));
         return;
     }
 }
@@ -298,11 +338,17 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
 }
 
 bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
-    // for (auto [direction, mappings] : mAxisDirectionMappings) {
-    //     for (auto mapping : mappings) {
-    //         // if ()
-    //     }
-    // }
-    return true;
+    bool result = false;
+    for (auto [direction, mappings] : mAxisDirectionMappings) {
+        for (auto [id, mapping] : mappings) {
+            if (mapping->GetMappingType() == MAPPING_TYPE_KEYBOARD) {
+                std::shared_ptr<KeyboardKeyToAxisDirectionMapping> ktoadMapping = std::dynamic_pointer_cast<KeyboardKeyToAxisDirectionMapping>(mapping);
+                if (ktoadMapping != nullptr) {
+                    result = result || ktoadMapping->ProcessKeyboardEvent(eventType, scancode);
+                }
+            }
+        }
+    }
+    return result;
 }
 } // namespace LUS
