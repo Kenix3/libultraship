@@ -12,6 +12,12 @@
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
+// for some reason windows isn't seeing M_PI
+// this is copied from my system's math.h
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace LUS {
 ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
     : mPortIndex(portIndex), mStick(stick), mUseKeydownEventToCreateNewMapping(false),
