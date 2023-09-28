@@ -48,7 +48,7 @@ std::shared_ptr<ControllerGyro> Controller::GetGyro() {
     return mGyro;
 }
 
-uint8_t Controller::GetPort() {
+uint8_t Controller::GetPortIndex() {
     return mPortIndex;
 }
 
@@ -64,13 +64,13 @@ void Controller::ClearAllMappings() {
     }
 }
 
-void Controller::ResetToDefaultMappings(int32_t sdlControllerIndex) {
+void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         button->ResetToDefaultMappings(sdlControllerIndex);
     }
 
-    GetLeftStick()->ResetToDefaultMappings(sdlControllerIndex);
-    GetRightStick()->ResetToDefaultMappings(sdlControllerIndex);
+    GetLeftStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
+    GetRightStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
 
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);

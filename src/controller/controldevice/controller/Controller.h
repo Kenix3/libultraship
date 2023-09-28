@@ -30,7 +30,7 @@ class Controller : public ControlDevice {
     void Disconnect();
 
     void ClearAllMappings();
-    void ResetToDefaultMappings(int32_t sdlControllerIndex);
+    void ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex);
     std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> GetAllButtons();
     std::shared_ptr<ControllerButton> GetButton(uint16_t bitmask);
     std::shared_ptr<ControllerStick> GetLeftStick();
@@ -38,7 +38,7 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerGyro> GetGyro();
     void ReadToPad(OSContPad* pad);
     bool HasConfig();
-    uint8_t GetPort();
+    uint8_t GetPortIndex();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 

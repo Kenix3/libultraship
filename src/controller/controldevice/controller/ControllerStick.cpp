@@ -83,15 +83,19 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction, std::shared_p
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
 
-void ControllerStick::ResetToDefaultMappings(int32_t sdlControllerIndex) {
+void ControllerStick::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex) {
     ClearAllMappings();
 
-    for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStick, sdlControllerIndex)) {
-        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    if (sdl) {
+        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStick, sdlControllerIndex)) {
+            AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+        }
     }
 
-    for (auto mapping : AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
-        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    if (keyboard) {
+        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
+            AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+        }
     }
 
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {

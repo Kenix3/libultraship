@@ -14,7 +14,7 @@ class ControllerStick {
     ~ControllerStick();
 
     void ReloadAllMappingsFromConfig();
-    void ResetToDefaultMappings(int32_t sdlControllerIndex);
+    void ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex);
 
     void ClearAllMappings();
     void UpdatePad(int8_t& x, int8_t& y);

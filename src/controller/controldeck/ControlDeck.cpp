@@ -32,7 +32,7 @@ void ControlDeck::Init(uint8_t* bits) {
         if (port->GetConnectedController()->HasConfig()) {
             port->GetConnectedController()->ReloadAllMappingsFromConfig();
         } else {
-            port->GetConnectedController()->ResetToDefaultMappings(port->GetConnectedController()->GetPort());
+            port->GetConnectedController()->ResetToDefaultMappings(port->GetConnectedController()->GetPortIndex() == 0, true, port->GetConnectedController()->GetPortIndex());
         }
     }
 }
