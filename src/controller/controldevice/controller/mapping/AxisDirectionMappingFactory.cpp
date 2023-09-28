@@ -85,4 +85,52 @@ std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> AxisDirectionMappin
 
     return mappings;
 }
+
+std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::CreateAxisDirectionMappingFromRawPress(uint8_t portIndex, Stick stick, Direction direction) {
+    // sdl
+    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
+    std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
+    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            sdlControllers[i] = SDL_GameControllerOpen(i);
+        }
+    }
+
+    for (auto [controllerIndex, controller] : sdlControllers) {
+        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+                mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stick, direction, controllerIndex, button);
+                break;
+            }
+        }
+
+        if (mapping != nullptr) {
+            break;
+        }
+
+        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+            const auto axis = static_cast<SDL_GameControllerAxis>(i);
+            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+            int32_t axisDirection = 0;
+            if (axisValue < -0.7f) {
+                axisDirection = NEGATIVE;
+            } else if (axisValue > 0.7f) {
+                axisDirection = POSITIVE;
+            }
+
+            if (axisDirection == 0) {
+                continue;
+            }
+
+            mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, direction, controllerIndex, axis, axisDirection);
+            break;
+        }
+    }
+
+    for (auto [i, controller] : sdlControllers) {
+        SDL_GameControllerClose(controller);
+    }
+
+    return mapping;
+}
 }
