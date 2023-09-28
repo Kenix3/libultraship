@@ -8,4 +8,4 @@ class LEDAttachment : public DeviceAttachment {
     LEDAttachment();
     ~LEDAttachment();
 };
-}
+} // namespace LUS

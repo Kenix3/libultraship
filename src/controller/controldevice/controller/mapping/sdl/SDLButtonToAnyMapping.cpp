@@ -4,7 +4,8 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace LUS {
-SDLButtonToAnyMapping::SDLButtonToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerButton) : SDLMapping(sdlControllerIndex) {
+SDLButtonToAnyMapping::SDLButtonToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerButton)
+    : SDLMapping(sdlControllerIndex) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 

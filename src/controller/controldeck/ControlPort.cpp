@@ -4,7 +4,8 @@ namespace LUS {
 ControlPort::ControlPort(uint8_t portIndex) : mPortIndex(portIndex), mDevice(nullptr) {
 }
 
-ControlPort::ControlPort(uint8_t portIndex, std::shared_ptr<ControlDevice> device) : mPortIndex(portIndex), mDevice(device) {
+ControlPort::ControlPort(uint8_t portIndex, std::shared_ptr<ControlDevice> device)
+    : mPortIndex(portIndex), mDevice(device) {
 }
 
 ControlPort::~ControlPort() {

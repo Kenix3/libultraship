@@ -8,4 +8,4 @@ class RumbleAttachment : public DeviceAttachment {
     RumbleAttachment();
     ~RumbleAttachment();
 };
-}
+} // namespace LUS

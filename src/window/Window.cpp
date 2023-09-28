@@ -147,18 +147,21 @@ bool Window::KeyUp(int32_t scancode) {
     }
 
     Context::GetInstance()->GetWindow()->SetLastScancode(-1);
-    return Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_KEY_UP, static_cast<KbScancode>(scancode));
+    return Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_KEY_UP,
+                                                                          static_cast<KbScancode>(scancode));
 }
 
 bool Window::KeyDown(int32_t scancode) {
-    bool isProcessed = Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_KEY_DOWN, static_cast<KbScancode>(scancode));
+    bool isProcessed = Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(
+        KbEventType::LUS_KB_EVENT_KEY_DOWN, static_cast<KbScancode>(scancode));
     Context::GetInstance()->GetWindow()->SetLastScancode(scancode);
 
     return isProcessed;
 }
 
 void Window::AllKeysUp(void) {
-    Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_ALL_KEYS_UP, KbScancode::LUS_KB_UNKNOWN);
+    Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
+                                                                   KbScancode::LUS_KB_UNKNOWN);
 }
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {

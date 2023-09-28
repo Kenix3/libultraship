@@ -5,8 +5,8 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(
-    uint8_t portIndex, Stick stick, Direction direction, KbScancode scancode)
+KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
+                                                                     Direction direction, KbScancode scancode)
     : ControllerAxisDirectionMapping(portIndex, stick, direction), KeyboardKeyToAnyMapping(scancode) {
 }
 
@@ -23,7 +23,7 @@ void KeyboardKeyToAxisDirectionMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
-    CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);              
+    CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), mKeyboardScancode);
     CVarSave();
 }
@@ -31,7 +31,7 @@ void KeyboardKeyToAxisDirectionMapping::SaveToConfig() {
 void KeyboardKeyToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str()); 
+    CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str());
     CVarSave();

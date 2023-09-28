@@ -32,17 +32,12 @@ void ControllerStick::ClearAllMappings() {
 }
 
 // todo: where should this live?
-std::unordered_map<Stick, std::string> StickToConfigStickName = {
-  { LEFT_STICK, "LeftStick" },
-  { RIGHT_STICK, "RightStick" }
-};
+std::unordered_map<Stick, std::string> StickToConfigStickName = { { LEFT_STICK, "LeftStick" },
+                                                                  { RIGHT_STICK, "RightStick" } };
 
 // todo: where should this live?
 std::unordered_map<Direction, std::string> DirectionToConfigDirectionName = {
-  { LEFT, "Left" },
-  { RIGHT, "Right" },
-  { UP, "Up" },
-  { DOWN, "Down" }
+    { LEFT, "Left" }, { RIGHT, "Right" }, { UP, "Up" }, { DOWN, "Down" }
 };
 
 void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
@@ -55,8 +50,9 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
             axisDirectionMappingIdListString += ",";
         }
 
-        const std::string axisDirectionMappingIdsCvarKey =
-            StringHelper::Sprintf("gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, StickToConfigStickName[mStick].c_str(),  DirectionToConfigDirectionName[direction].c_str());
+        const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
+            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, StickToConfigStickName[mStick].c_str(),
+            DirectionToConfigDirectionName[direction].c_str());
         if (axisDirectionMappingIdListString == "") {
             CVarClear(axisDirectionMappingIdsCvarKey.c_str());
         } else {
@@ -68,16 +64,18 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
 }
 
 void ControllerStick::ClearAxisDirectionMapping(Direction direction, std::string id) {
-    mAxisDirectionMappings[direction][id]->EraseFromConfig(); 
+    mAxisDirectionMappings[direction][id]->EraseFromConfig();
     mAxisDirectionMappings[direction].erase(id);
     SaveAxisDirectionMappingIdsToConfig();
 }
 
-void ControllerStick::ClearAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
+void ControllerStick::ClearAxisDirectionMapping(Direction direction,
+                                                std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
     ClearAxisDirectionMapping(direction, mapping->GetAxisDirectionMappingId());
 }
 
-void ControllerStick::AddAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
+void ControllerStick::AddAxisDirectionMapping(Direction direction,
+                                              std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
 
@@ -85,13 +83,15 @@ void ControllerStick::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sd
     ClearAllMappings();
 
     if (sdl) {
-        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStick, sdlControllerIndex)) {
+        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStick,
+                                                                                               sdlControllerIndex)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
         }
     }
 
     if (keyboard) {
-        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
+        for (auto mapping :
+             AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
         }
     }
@@ -122,11 +122,13 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    for (auto direction : {LEFT, RIGHT, UP, DOWN}) {
-        const std::string axisDirectionMappingIdsCvarKey =
-            StringHelper::Sprintf("gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, StickToConfigStickName[mStick].c_str(),  DirectionToConfigDirectionName[direction].c_str());
+    for (auto direction : { LEFT, RIGHT, UP, DOWN }) {
+        const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
+            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, StickToConfigStickName[mStick].c_str(),
+            DirectionToConfigDirectionName[direction].c_str());
 
-        std::stringstream axisDirectionMappingIdsStringStream(CVarGetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
+        std::stringstream axisDirectionMappingIdsStringStream(
+            CVarGetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
         std::string axisDirectionMappingIdString;
         while (getline(axisDirectionMappingIdsStringStream, axisDirectionMappingIdString, ',')) {
             LoadAxisDirectionMappingFromConfig(axisDirectionMappingIdString);
@@ -150,9 +152,12 @@ float ControllerStick::GetAxisDirectionValue(Direction direction) {
         return mAxisDirectionMappings[direction].begin()->second->GetNormalizedAxisDirectionValue();
     }
 
-    auto maxMapping = std::max_element(mAxisDirectionMappings[direction].begin(), mAxisDirectionMappings[direction].end(), [](const std::pair<std::string, std::shared_ptr<ControllerAxisDirectionMapping>> a, const std::pair<std::string, std::shared_ptr<ControllerAxisDirectionMapping>> b) {
-        return a.second->GetNormalizedAxisDirectionValue() < b.second->GetNormalizedAxisDirectionValue();
-    });
+    auto maxMapping = std::max_element(
+        mAxisDirectionMappings[direction].begin(), mAxisDirectionMappings[direction].end(),
+        [](const std::pair<std::string, std::shared_ptr<ControllerAxisDirectionMapping>> a,
+           const std::pair<std::string, std::shared_ptr<ControllerAxisDirectionMapping>> b) {
+            return a.second->GetNormalizedAxisDirectionValue() < b.second->GetNormalizedAxisDirectionValue();
+        });
     return maxMapping->second->GetNormalizedAxisDirectionValue();
 }
 
@@ -223,7 +228,8 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     return true;
 }
 
-std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction, std::string id) {
+std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction,
+                                                                                             std::string id) {
     if (!mAxisDirectionMappings[direction].contains(id)) {
         return nullptr;
     }
@@ -231,7 +237,8 @@ std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectio
     return mAxisDirectionMappings[direction][id];
 }
 
-std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>> ControllerStick::GetAllAxisDirectionMappingByDirection(Direction direction) {
+std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>
+ControllerStick::GetAllAxisDirectionMappingByDirection(Direction direction) {
     return mAxisDirectionMappings[direction];
 }
 
@@ -244,7 +251,8 @@ bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbSc
     for (auto [direction, mappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : mappings) {
             if (mapping->GetMappingType() == MAPPING_TYPE_KEYBOARD) {
-                std::shared_ptr<KeyboardKeyToAxisDirectionMapping> ktoadMapping = std::dynamic_pointer_cast<KeyboardKeyToAxisDirectionMapping>(mapping);
+                std::shared_ptr<KeyboardKeyToAxisDirectionMapping> ktoadMapping =
+                    std::dynamic_pointer_cast<KeyboardKeyToAxisDirectionMapping>(mapping);
                 if (ktoadMapping != nullptr) {
                     result = result || ktoadMapping->ProcessKeyboardEvent(eventType, scancode);
                 }

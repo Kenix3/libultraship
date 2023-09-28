@@ -152,8 +152,4 @@ bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancod
 //     return mLedColor;
 // }
 
-
-
-
-
 } // namespace LUS

@@ -32,7 +32,9 @@ void ControlDeck::Init(uint8_t* bits) {
         if (port->GetConnectedController()->HasConfig()) {
             port->GetConnectedController()->ReloadAllMappingsFromConfig();
         } else {
-            port->GetConnectedController()->ResetToDefaultMappings(port->GetConnectedController()->GetPortIndex() == 0, true, port->GetConnectedController()->GetPortIndex());
+            port->GetConnectedController()->ResetToDefaultMappings(port->GetConnectedController()->GetPortIndex() == 0,
+                                                                   true,
+                                                                   port->GetConnectedController()->GetPortIndex());
         }
     }
 }
@@ -40,7 +42,7 @@ void ControlDeck::Init(uint8_t* bits) {
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
     bool result = false;
     for (auto port : mPorts) {
-        auto controller = port->GetConnectedController(); 
+        auto controller = port->GetConnectedController();
 
         if (controller != nullptr) {
             result = result || controller->ProcessKeyboardEvent(eventType, scancode);
@@ -106,7 +108,7 @@ void ControlDeck::WriteToPad(OSContPad* pad) {
     mPads = pad;
 
     for (size_t i = 0; i < mPorts.size(); i++) {
-        const std::shared_ptr<Controller> controller = mPorts[i]->GetConnectedController(); 
+        const std::shared_ptr<Controller> controller = mPorts[i]->GetConnectedController();
 
         if (controller != nullptr) {
             controller->ReadToPad(&pad[i]);

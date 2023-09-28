@@ -5,9 +5,11 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, uint16_t bitmask, int32_t sdlControllerIndex,
-                                                                 int32_t sdlControllerAxis, int32_t axisDirection)
-    : ControllerButtonMapping(portIndex, bitmask), SDLAxisDirectionToAnyMapping(sdlControllerIndex, sdlControllerAxis, axisDirection) {
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, uint16_t bitmask,
+                                                                 int32_t sdlControllerIndex, int32_t sdlControllerAxis,
+                                                                 int32_t axisDirection)
+    : ControllerButtonMapping(portIndex, bitmask),
+      SDLAxisDirectionToAnyMapping(sdlControllerIndex, sdlControllerAxis, axisDirection) {
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
@@ -29,7 +31,8 @@ uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
 }
 
 std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-SDLI%d-SDLA%d-AD%s", mPortIndex, mBitmask, mControllerIndex, mControllerAxis, mAxisDirection == 1 ? "P" : "N");
+    return StringHelper::Sprintf("P%d-B%d-SDLI%d-SDLA%d-AD%s", mPortIndex, mBitmask, mControllerIndex, mControllerAxis,
+                                 mAxisDirection == 1 ? "P" : "N");
 }
 
 void SDLAxisDirectionToButtonMapping::SaveToConfig() {

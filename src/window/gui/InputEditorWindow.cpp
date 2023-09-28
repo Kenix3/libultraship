@@ -485,7 +485,8 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
         // todo: figure out why optional params (using uuid = "" in the definition) wasn't working
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
-                ->GetControllerByPort(port)->GetButton(bitmask)
+                ->GetControllerByPort(port)
+                ->GetButton(bitmask)
                 ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
             ImGui::CloseCurrentPopup();
         }
@@ -494,8 +495,11 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
 }
 
 void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t bitmask, std::string id) {
-    auto mapping =
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButton(bitmask)->GetButtonMappingById(id);
+    auto mapping = LUS::Context::GetInstance()
+                       ->GetControlDeck()
+                       ->GetControllerByPort(port)
+                       ->GetButton(bitmask)
+                       ->GetButtonMappingById(id);
     if (mapping == nullptr) {
         return;
     }
@@ -526,7 +530,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
         }
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
-                ->GetControllerByPort(port)->GetButton(bitmask)
+                ->GetControllerByPort(port)
+                ->GetButton(bitmask)
                 ->AddOrEditButtonMappingFromRawPress(bitmask, id)) {
             ImGui::CloseCurrentPopup();
         }
@@ -536,7 +541,11 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
     if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetButton(bitmask)->ClearButtonMapping(id);
+        LUS::Context::GetInstance()
+            ->GetControlDeck()
+            ->GetControllerByPort(port)
+            ->GetButton(bitmask)
+            ->ClearButtonMapping(id);
     };
     ImGui::SameLine(0, 4.0f);
 }
@@ -555,23 +564,35 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uin
 
 void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if (ImGui::Button(StringHelper::Sprintf("%s###addStickDirectionMappingButton%d-%d-%d", ICON_FA_PLUS, port, stick, direction).c_str(),
-                      ImVec2(20.0f, 0.0f))) {
-        ImGui::OpenPopup(StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction).c_str());
+    if (ImGui::Button(
+            StringHelper::Sprintf("%s###addStickDirectionMappingButton%d-%d-%d", ICON_FA_PLUS, port, stick, direction)
+                .c_str(),
+            ImVec2(20.0f, 0.0f))) {
+        ImGui::OpenPopup(
+            StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction).c_str());
     };
     ImGui::PopStyleVar();
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction).c_str())) {
+    if (ImGui::BeginPopup(
+            StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction).c_str())) {
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto add mapping");
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
         if (stick == LEFT) {
-            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, "")) {
+            if (LUS::Context::GetInstance()
+                    ->GetControlDeck()
+                    ->GetControllerByPort(port)
+                    ->GetLeftStick()
+                    ->AddOrEditAxisDirectionMappingFromRawPress(direction, "")) {
                 ImGui::CloseCurrentPopup();
             }
         } else {
-            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, "")) {
+            if (LUS::Context::GetInstance()
+                    ->GetControlDeck()
+                    ->GetControllerByPort(port)
+                    ->GetRightStick()
+                    ->AddOrEditAxisDirectionMappingFromRawPress(direction, "")) {
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -579,12 +600,21 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
     }
 }
 
-void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction, std::string id) {
+void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction,
+                                                                std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     if (stick == LEFT) {
-        mapping = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->GetAxisDirectionMappingById(direction, id);
+        mapping = LUS::Context::GetInstance()
+                      ->GetControlDeck()
+                      ->GetControllerByPort(port)
+                      ->GetLeftStick()
+                      ->GetAxisDirectionMappingById(direction, id);
     } else {
-        mapping = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->GetAxisDirectionMappingById(direction, id);
+        mapping = LUS::Context::GetInstance()
+                      ->GetControlDeck()
+                      ->GetControllerByPort(port)
+                      ->GetRightStick()
+                      ->GetAxisDirectionMappingById(direction, id);
     }
 
     if (mapping == nullptr) {
@@ -617,11 +647,19 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
         }
 
         if (stick == LEFT) {
-            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, id)) {
+            if (LUS::Context::GetInstance()
+                    ->GetControlDeck()
+                    ->GetControllerByPort(port)
+                    ->GetLeftStick()
+                    ->AddOrEditAxisDirectionMappingFromRawPress(direction, id)) {
                 ImGui::CloseCurrentPopup();
             }
         } else {
-            if (LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->AddOrEditAxisDirectionMappingFromRawPress(direction, id)) {
+            if (LUS::Context::GetInstance()
+                    ->GetControlDeck()
+                    ->GetControllerByPort(port)
+                    ->GetRightStick()
+                    ->AddOrEditAxisDirectionMappingFromRawPress(direction, id)) {
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -630,18 +668,27 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
 
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
-    if (ImGui::Button(StringHelper::Sprintf("%s###removeStickDirectionMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
+    if (ImGui::Button(
+            StringHelper::Sprintf("%s###removeStickDirectionMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
         if (stick == LEFT) {
-            LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->ClearAxisDirectionMapping(direction, id);
+            LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->GetLeftStick()
+                ->ClearAxisDirectionMapping(direction, id);
         } else {
-            LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->ClearAxisDirectionMapping(direction, id);
+            LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->GetRightStick()
+                ->ClearAxisDirectionMapping(direction, id);
         }
     };
     ImGui::SameLine(0, 4.0f);
 }
 
 void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick,
-                                              Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
+                                               Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine();
     DrawInputChip(axisDirectionName, color);
@@ -703,7 +750,7 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
 }
 
 void InputEditorWindow::DrawStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port,
-                                               uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
+                                         uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
     static int8_t x, y;
     if (stick == LEFT) {
         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->Process(x, y);
@@ -711,7 +758,7 @@ void InputEditorWindow::DrawStickSection(int32_t* deadzone, int32_t* notchProxim
         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->Process(x, y);
     }
     DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(x, y));
-    
+
     ImGui::SameLine();
     ImGui::BeginGroup();
     DrawStickDirectionLine(ICON_FA_ARROW_LEFT, port, stick, LEFT, color);
@@ -735,13 +782,13 @@ void InputEditorWindow::DrawStickSection(int32_t* deadzone, int32_t* notchProxim
 void InputEditorWindow::UpdateBitmaskToMappingIds(uint8_t port) {
     // todo: do we need this now that ControllerButton exists?
 
-    for (auto [bitmask, button] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtons()) {
+    for (auto [bitmask, button] :
+         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtons()) {
         for (auto [id, mapping] : button->GetAllButtonMappings()) {
             // using a vector here instead of a set because i want newly added mappings
             // to go to the end of the list instead of autosorting
-            if (std::find(mBitmaskToMappingIds[port][bitmask].begin(),
-                        mBitmaskToMappingIds[port][bitmask].end(),
-                        id) == mBitmaskToMappingIds[port][bitmask].end()) {
+            if (std::find(mBitmaskToMappingIds[port][bitmask].begin(), mBitmaskToMappingIds[port][bitmask].end(), id) ==
+                mBitmaskToMappingIds[port][bitmask].end()) {
                 mBitmaskToMappingIds[port][bitmask].push_back(id);
             }
         }
@@ -750,14 +797,18 @@ void InputEditorWindow::UpdateBitmaskToMappingIds(uint8_t port) {
 
 void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
     // todo: do we need this?
-    for (auto stick : {std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(LEFT, LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()), std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(RIGHT, LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick())}) {
+    for (auto stick :
+         { std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(
+               LEFT, LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()),
+           std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(
+               RIGHT, LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()) }) {
         for (auto direction : { LEFT, RIGHT, UP, DOWN }) {
             for (auto [id, mapping] : stick.second->GetAllAxisDirectionMappingByDirection(direction)) {
                 // using a vector here instead of a set because i want newly added mappings
                 // to go to the end of the list instead of autosorting
                 if (std::find(mStickDirectionToMappingIds[port][stick.first][direction].begin(),
-                            mStickDirectionToMappingIds[port][stick.first][direction].end(),
-                            id) == mStickDirectionToMappingIds[port][stick.first][direction].end()) {
+                              mStickDirectionToMappingIds[port][stick.first][direction].end(),
+                              id) == mStickDirectionToMappingIds[port][stick.first][direction].end()) {
                     mStickDirectionToMappingIds[port][stick.first][direction].push_back(id);
                 }
             }
@@ -815,7 +866,7 @@ void InputEditorWindow::DrawElement() {
                 static int32_t additionalDeadzone = 20;
                 static int32_t additionalNotchProximityThreshold = 0;
                 DrawStickSection(&additionalDeadzone, &additionalNotchProximityThreshold, i, RIGHT, 1,
-                                       CHIP_COLOR_N64_YELLOW);
+                                 CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("Gyro")) {
                 // does previewing using the analog stick preview work currently?

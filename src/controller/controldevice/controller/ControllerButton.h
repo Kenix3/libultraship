@@ -9,7 +9,9 @@
 
 namespace LUS {
 
-#define BUTTON_BITMASKS BTN_A, BTN_B, BTN_L, BTN_R, BTN_Z, BTN_START, BTN_CLEFT, BTN_CRIGHT, BTN_CUP, BTN_CDOWN, BTN_DLEFT, BTN_DRIGHT, BTN_DUP, BTN_DDOWN 
+#define BUTTON_BITMASKS                                                                                             \
+    BTN_A, BTN_B, BTN_L, BTN_R, BTN_Z, BTN_START, BTN_CLEFT, BTN_CRIGHT, BTN_CUP, BTN_CDOWN, BTN_DLEFT, BTN_DRIGHT, \
+        BTN_DUP, BTN_DDOWN
 
 class ControllerButton {
   public:
@@ -39,4 +41,4 @@ class ControllerButton {
     uint16_t mBitmask;
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
 };
-}
+} // namespace LUS

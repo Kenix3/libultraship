@@ -12,7 +12,7 @@ class ControllerButtonMapping : virtual public ControllerMapping {
     ControllerButtonMapping(uint8_t portIndex, uint16_t bitmask);
     ~ControllerButtonMapping();
 
-    virtual std::string GetButtonMappingId() = 0; 
+    virtual std::string GetButtonMappingId() = 0;
 
     uint16_t GetBitmask();
     virtual void UpdatePad(uint16_t& padButtons) = 0;

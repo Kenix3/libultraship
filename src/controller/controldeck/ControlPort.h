@@ -21,4 +21,4 @@ class ControlPort {
     uint8_t mPortIndex;
     std::shared_ptr<ControlDevice> mDevice;
 };
-}
+} // namespace LUS

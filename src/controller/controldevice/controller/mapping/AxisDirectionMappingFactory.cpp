@@ -6,7 +6,8 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIndex, Stick stick, std::string id) {
+std::shared_ptr<ControllerAxisDirectionMapping>
+AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIndex, Stick stick, std::string id) {
     const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -20,7 +21,8 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || sdlControllerIndex < 0 || sdlControllerAxis == -1 ||
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
+            sdlControllerIndex < 0 || sdlControllerAxis == -1 ||
             (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -28,7 +30,8 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
             return nullptr;
         }
 
-        return std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerAxis, axisDirection);
+        return std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
+            portIndex, stick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerAxis, axisDirection);
     }
 
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
@@ -38,14 +41,16 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || sdlControllerIndex < 0 || sdlControllerButton == -1) {
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
+            sdlControllerIndex < 0 || sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerButton);
+        return std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction),
+                                                                 sdlControllerIndex, sdlControllerButton);
     }
 
     if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
@@ -60,11 +65,13 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
             return nullptr;
         }
 
-        return std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction), static_cast<KbScancode>(scancode));
+        return std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction),
+                                                                   static_cast<KbScancode>(scancode));
     }
 }
 
-std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick) {
+std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
+AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick) {
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
         std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, LEFT, LUS_KB_A),
         std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, RIGHT, LUS_KB_D),
@@ -75,18 +82,26 @@ std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> AxisDirectionMappin
     return mappings;
 }
 
-std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, Stick stick, int32_t sdlControllerIndex) {
+std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, Stick stick,
+                                                                   int32_t sdlControllerIndex) {
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, LEFT, sdlControllerIndex, stick == LEFT_STICK ? 0 : 2, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, RIGHT, sdlControllerIndex, stick == LEFT_STICK ? 0 : 2, 1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, UP, sdlControllerIndex, stick == LEFT_STICK ? 1 : 3, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, DOWN, sdlControllerIndex, stick == LEFT_STICK ? 1 : 3, 1)
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, LEFT, sdlControllerIndex,
+                                                                 stick == LEFT_STICK ? 0 : 2, -1),
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, RIGHT, sdlControllerIndex,
+                                                                 stick == LEFT_STICK ? 0 : 2, 1),
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, UP, sdlControllerIndex,
+                                                                 stick == LEFT_STICK ? 1 : 3, -1),
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, DOWN, sdlControllerIndex,
+                                                                 stick == LEFT_STICK ? 1 : 3, 1)
     };
 
     return mappings;
 }
 
-std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::CreateAxisDirectionMappingFromRawPress(uint8_t portIndex, Stick stick, Direction direction) {
+std::shared_ptr<ControllerAxisDirectionMapping>
+AxisDirectionMappingFactory::CreateAxisDirectionMappingFromRawPress(uint8_t portIndex, Stick stick,
+                                                                    Direction direction) {
     // sdl
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
@@ -99,7 +114,8 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
     for (auto [controllerIndex, controller] : sdlControllers) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stick, direction, controllerIndex, button);
+                mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stick, direction,
+                                                                            controllerIndex, button);
                 break;
             }
         }
@@ -122,7 +138,8 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
                 continue;
             }
 
-            mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, direction, controllerIndex, axis, axisDirection);
+            mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, direction,
+                                                                               controllerIndex, axis, axisDirection);
             break;
         }
     }
@@ -133,4 +150,4 @@ std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::Cre
 
     return mapping;
 }
-}
+} // namespace LUS

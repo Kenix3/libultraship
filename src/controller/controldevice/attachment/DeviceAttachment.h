@@ -8,4 +8,4 @@ class DeviceAttachment {
     DeviceAttachment();
     ~DeviceAttachment();
 };
-}
+} // namespace LUS

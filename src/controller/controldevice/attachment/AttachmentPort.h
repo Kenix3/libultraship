@@ -16,4 +16,4 @@ class AttachmentPort {
   private:
     std::shared_ptr<DeviceAttachment> mAttachment;
 };
-}
+} // namespace LUS

@@ -4,7 +4,9 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace LUS {
-SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerAxis, int32_t axisDirection) : SDLMapping(sdlControllerIndex) {
+SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerAxis,
+                                                           int32_t axisDirection)
+    : SDLMapping(sdlControllerIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
