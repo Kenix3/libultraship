@@ -102,9 +102,8 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
 }
 
 std::shared_ptr<ControllerAxisDirectionMapping>
-AxisDirectionMappingFactory::CreateAxisDirectionMappingFromRawPress(uint8_t portIndex, Stick stick,
+AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, Stick stick,
                                                                     Direction direction) {
-    // sdl
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {

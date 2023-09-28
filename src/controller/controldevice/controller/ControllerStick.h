@@ -44,5 +44,8 @@ class ControllerStick {
 
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
         mAxisDirectionMappings;
+
+    bool mUseKeydownEventToCreateNewMapping;
+    KbScancode mKeyboardScancodeForNewMapping;
 };
 } // namespace LUS

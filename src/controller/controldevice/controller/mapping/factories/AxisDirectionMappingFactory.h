@@ -18,6 +18,6 @@ class AxisDirectionMappingFactory {
     CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, Stick stick, int32_t sdlControllerIndex);
 
     static std::shared_ptr<ControllerAxisDirectionMapping>
-    CreateAxisDirectionMappingFromRawPress(uint8_t portIndex, Stick stick, Direction direction);
+    CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, Stick stick, Direction direction);
 };
 } // namespace LUS

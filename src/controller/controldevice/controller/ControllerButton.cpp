@@ -8,7 +8,9 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-ControllerButton::ControllerButton(uint8_t portIndex, uint16_t bitmask) : mPortIndex(portIndex), mBitmask(bitmask) {
+ControllerButton::ControllerButton(uint8_t portIndex, uint16_t bitmask)
+    : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN) {
 }
 
 ControllerButton::~ControllerButton() {
@@ -111,10 +113,23 @@ void ControllerButton::UpdatePad(uint16_t& padButtons) {
 }
 
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
-    auto mapping = ButtonMappingFactory::CreateButtonMappingFromRawPress(mPortIndex, bitmask);
+    std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
+
+    mUseKeydownEventToCreateNewMapping = true;
+    if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
+        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
+    }
+
+    if (mapping == nullptr) {
+        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
+    }
+
     if (mapping == nullptr) {
         return false;
     }
+
+    mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
+    mUseKeydownEventToCreateNewMapping = false;
 
     if (id != "") {
         ClearButtonMapping(id);
@@ -127,6 +142,11 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
 }
 
 bool ControllerButton::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
+    if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
+        mKeyboardScancodeForNewMapping = scancode;
+        return true;
+    }
+
     bool result = false;
     for (auto [id, mapping] : GetAllButtonMappings()) {
         if (mapping->GetMappingType() == MAPPING_TYPE_KEYBOARD) {

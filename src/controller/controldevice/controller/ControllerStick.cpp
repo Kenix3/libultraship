@@ -13,7 +13,9 @@
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace LUS {
-ControllerStick::ControllerStick(uint8_t portIndex, Stick stick) : mPortIndex(portIndex), mStick(stick) {
+ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
+    : mPortIndex(portIndex), mStick(stick), mUseKeydownEventToCreateNewMapping(false),
+      mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN) {
     mDeadzone = 16.0f;
     mNotchProxmityThreshold = 0;
 }
@@ -213,10 +215,24 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
 }
 
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
-    auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromRawPress(mPortIndex, mStick, direction);
+    std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
+
+    mUseKeydownEventToCreateNewMapping = true;
+    if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
+        mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, direction,
+                                                                      mKeyboardScancodeForNewMapping);
+    }
+
+    if (mapping == nullptr) {
+        mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStick, direction);
+    }
+
     if (mapping == nullptr) {
         return false;
     }
+
+    mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
+    mUseKeydownEventToCreateNewMapping = false;
 
     if (id != "") {
         ClearAxisDirectionMapping(direction, id);
@@ -247,6 +263,11 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
 }
 
 bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
+    if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
+        mKeyboardScancodeForNewMapping = scancode;
+        return true;
+    }
+
     bool result = false;
     for (auto [direction, mappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : mappings) {

@@ -40,5 +40,8 @@ class ControllerButton {
     uint8_t mPortIndex;
     uint16_t mBitmask;
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
+
+    bool mUseKeydownEventToCreateNewMapping;
+    KbScancode mKeyboardScancodeForNewMapping;
 };
 } // namespace LUS

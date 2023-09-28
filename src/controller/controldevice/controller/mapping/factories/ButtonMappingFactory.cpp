@@ -191,9 +191,8 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, uint16_t
     return mappings;
 }
 
-std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromRawPress(uint8_t portIndex,
+std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex,
                                                                                                uint16_t bitmask) {
-    // sdl
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {
