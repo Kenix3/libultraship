@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
+#include "Context.h"
 
 namespace LUS {
 KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, uint16_t bitmask, KbScancode scancode)
@@ -9,6 +10,10 @@ KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, uint16
 }
 
 void KeyboardKeyToButtonMapping::UpdatePad(uint16_t& padButtons) {
+    if (Context::GetInstance()->GetControlDeck()->KeyboardGameInputBlocked()) {
+        return;
+    }
+    
     if (!mKeyPressed) {
         return;
     }

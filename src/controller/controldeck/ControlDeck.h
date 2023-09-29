@@ -19,6 +19,8 @@ class ControlDeck {
     std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
     void BlockGameInput(int32_t blockId);
     void UnblockGameInput(int32_t blockId);
+    bool GamepadGameInputBlocked();
+    bool KeyboardGameInputBlocked();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 

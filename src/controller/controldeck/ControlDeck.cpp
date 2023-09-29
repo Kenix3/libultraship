@@ -103,6 +103,17 @@ bool ControlDeck::AllGameInputBlocked() {
     return !mGameInputBlockers.empty();
 }
 
+bool ControlDeck::GamepadGameInputBlocked() {
+    // block controller input when using the controller to navigate imgui menus
+    return AllGameInputBlocked() || (CVarGetInteger("gOpenMenuBar", 0) && CVarGetInteger("gControlNav", 0));
+}
+
+bool ControlDeck::KeyboardGameInputBlocked() {
+    // block keyboard input when typing in imgui
+    return AllGameInputBlocked() || ImGui::GetIO().WantCaptureKeyboard;
+}
+
+
 void ControlDeck::WriteToPad(OSContPad* pad) {
     if (AllGameInputBlocked()) {
         return;

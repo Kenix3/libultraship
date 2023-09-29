@@ -3,6 +3,7 @@
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "Context.h"
 
 namespace LUS {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, uint16_t bitmask,
@@ -14,6 +15,10 @@ SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portInd
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
     if (!ControllerLoaded()) {
+        return;
+    }
+
+    if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return;
     }
 

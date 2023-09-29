@@ -3,6 +3,7 @@
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "Context.h"
 
 namespace LUS {
 KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
@@ -11,6 +12,10 @@ KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t por
 }
 
 float KeyboardKeyToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
+    if (Context::GetInstance()->GetControlDeck()->KeyboardGameInputBlocked()) {
+        return 0.0f;
+    }
+
     return mKeyPressed ? MAX_AXIS_RANGE : 0.0f;
 }
 

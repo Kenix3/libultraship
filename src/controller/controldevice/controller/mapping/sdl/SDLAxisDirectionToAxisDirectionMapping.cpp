@@ -3,6 +3,7 @@
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "Context.h"
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
@@ -18,6 +19,10 @@ SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(u
 
 float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
     if (!ControllerLoaded()) {
+        return 0.0f;
+    }
+
+    if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return 0.0f;
     }
 

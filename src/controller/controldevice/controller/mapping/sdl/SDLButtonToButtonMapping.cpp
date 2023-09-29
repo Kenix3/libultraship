@@ -3,6 +3,7 @@
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "Context.h"
 
 namespace LUS {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, uint16_t bitmask, int32_t sdlControllerIndex,
@@ -12,6 +13,10 @@ SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, uint16_t b
 
 void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
     if (!ControllerLoaded()) {
+        return;
+    }
+
+    if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return;
     }
 
