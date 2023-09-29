@@ -24,7 +24,7 @@ ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN) {
     mDeadzonePercentage = 20;
     mDeadzone = 17.0f;
-    mNotchProxmityThreshold = 0;
+    mNotchSnapAngle = 0;
 }
 
 ControllerStick::~ControllerStick() {
@@ -39,6 +39,7 @@ void ControllerStick::ClearAllMappings() {
     mAxisDirectionMappings.clear();
     SaveAxisDirectionMappingIdsToConfig();
     SetDeadzone(20);
+    SetNotchSnapAngle(0);
 }
 
 // todo: where should this live?
@@ -149,6 +150,11 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
                                                      StickToConfigStickName[mStick].c_str())
                                    .c_str(),
                                20));
+
+    SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
+                                                    StickToConfigStickName[mStick].c_str())
+                                .c_str(),
+                            0));
 }
 
 double ControllerStick::GetClosestNotch(double angle, double approximationThreshold) {
@@ -208,7 +214,7 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     }
 
     // map to virtual notches
-    const double notchProximityValRadians = mNotchProxmityThreshold * M_TAU / 360;
+    const double notchProximityValRadians = mNotchSnapAngle * M_TAU / 360;
 
     const double distance = std::sqrt((ux * ux) + (uy * uy)) / MAX_AXIS_RANGE;
     if (distance >= MINIMUM_RADIUS_TO_MAP_NOTCH) {
@@ -305,5 +311,18 @@ void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
 
 uint8_t ControllerStick::GetDeadzonePercentage() {
     return mDeadzonePercentage;
+}
+
+void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
+    mNotchSnapAngle = notchSnapAngle;
+    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
+                                        StickToConfigStickName[mStick].c_str())
+                    .c_str(),
+                mNotchSnapAngle);
+    CVarSave();
+}
+
+uint8_t ControllerStick::GetNotchSnapAngle() {
+    return mNotchSnapAngle;
 }
 } // namespace LUS

@@ -29,6 +29,8 @@ class ControllerStick {
     void Process(int8_t& x, int8_t& y);
     void SetDeadzone(uint8_t deadzonePercentage);
     uint8_t GetDeadzonePercentage();
+    void SetNotchSnapAngle(uint8_t notchSnapAngle);
+    uint8_t GetNotchSnapAngle();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
@@ -43,7 +45,7 @@ class ControllerStick {
     // TODO: handle deadzones separately for X and Y?
     uint8_t mDeadzonePercentage;
     float mDeadzone;
-    int32_t mNotchProxmityThreshold;
+    uint8_t mNotchSnapAngle;
 
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
         mAxisDirectionMappings;

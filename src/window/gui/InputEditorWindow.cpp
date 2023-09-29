@@ -699,7 +699,7 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
     DrawStickDirectionLineAddMappingButton(port, stick, direction);
 }
 
-void InputEditorWindow::DrawStickSection(int32_t* notchProximityThreshold, uint8_t port, uint8_t stick, int32_t id,
+void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id,
                                          ImVec4 color = CHIP_COLOR_N64_GREY) {
     static int8_t x, y;
     std::shared_ptr<ControllerStick> controllerStick = nullptr;
@@ -730,8 +730,12 @@ void InputEditorWindow::DrawStickSection(int32_t* notchProximityThreshold, uint8
 
         ImGui::Text("Notch Snap Angle:");
         ImGui::SetNextItemWidth(160.0f);
-        ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), notchProximityThreshold, 0,
-                         45, "%d°", ImGuiSliderFlags_AlwaysClamp);
+
+        int32_t notchSnapAngle = controllerStick->GetNotchSnapAngle();
+        if (ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), &notchSnapAngle, 0,
+                         45, "%d°", ImGuiSliderFlags_AlwaysClamp)) {
+            controllerStick->SetNotchSnapAngle(notchSnapAngle);
+        }
         ImGui::TreePop();
     }
 }
@@ -817,12 +821,12 @@ void InputEditorWindow::DrawElement() {
             if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 static int32_t deadzone = 20;
                 static int32_t notchProximityThreshold = 0;
-                DrawStickSection(&notchProximityThreshold, i, LEFT, 0);
+                DrawStickSection(i, LEFT, 0);
             }
             if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
                 static int32_t additionalDeadzone = 20;
                 static int32_t additionalNotchProximityThreshold = 0;
-                DrawStickSection(&additionalNotchProximityThreshold, i, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
+                DrawStickSection(i, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("Gyro")) {
                 // does previewing using the analog stick preview work currently?
