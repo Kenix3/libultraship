@@ -13,7 +13,7 @@ void KeyboardKeyToButtonMapping::UpdatePad(uint16_t& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->KeyboardGameInputBlocked()) {
         return;
     }
-    
+
     if (!mKeyPressed) {
         return;
     }

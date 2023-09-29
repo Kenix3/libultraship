@@ -393,7 +393,8 @@ void InputEditorWindow::UpdateElement() {
         if (mGameInputBlockTimer != INT32_MAX) {
             mGameInputBlockTimer--;
             if (mGameInputBlockTimer <= 0) {
-                LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
+                LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(
+                    INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
                 mGameInputBlockTimer = INT32_MAX;
             }
         }

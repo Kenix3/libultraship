@@ -113,7 +113,6 @@ bool ControlDeck::KeyboardGameInputBlocked() {
     return AllGameInputBlocked() || ImGui::GetIO().WantCaptureKeyboard;
 }
 
-
 void ControlDeck::WriteToPad(OSContPad* pad) {
     if (AllGameInputBlocked()) {
         return;
