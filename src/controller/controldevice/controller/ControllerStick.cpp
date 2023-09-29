@@ -22,7 +22,8 @@ namespace LUS {
 ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
     : mPortIndex(portIndex), mStick(stick), mUseKeydownEventToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN) {
-    mDeadzone = 16.0f;
+    mDeadzonePercentage = 20;
+    mDeadzone = 17.0f;
     mNotchProxmityThreshold = 0;
 }
 
@@ -37,6 +38,7 @@ void ControllerStick::ClearAllMappings() {
     }
     mAxisDirectionMappings.clear();
     SaveAxisDirectionMappingIdsToConfig();
+    SetDeadzone(20);
 }
 
 // todo: where should this live?
@@ -110,6 +112,7 @@ void ControllerStick::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sd
         }
     }
     SaveAxisDirectionMappingIdsToConfig();
+
 }
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
@@ -142,6 +145,8 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
             LoadAxisDirectionMappingFromConfig(axisDirectionMappingIdString);
         }
     }
+
+    SetDeadzone(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1, StickToConfigStickName[mStick].c_str()).c_str(), 20));
 }
 
 double ControllerStick::GetClosestNotch(double angle, double approximationThreshold) {
@@ -170,9 +175,6 @@ float ControllerStick::GetAxisDirectionValue(Direction direction) {
 }
 
 void ControllerStick::Process(int8_t& x, int8_t& y) {
-    // auto sx = mRightMapping->GetNormalizedAxisDirectionValue() - mLeftMapping->GetNormalizedAxisDirectionValue();
-    // auto sy = mUpMapping->GetNormalizedAxisDirectionValue() - mDownMapping->GetNormalizedAxisDirectionValue();
-
     auto sx = GetAxisDirectionValue(RIGHT) - GetAxisDirectionValue(LEFT);
     auto sy = GetAxisDirectionValue(UP) - GetAxisDirectionValue(DOWN);
 
@@ -287,5 +289,16 @@ bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbSc
         }
     }
     return result;
+}
+
+void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
+    mDeadzonePercentage = deadzonePercentage;
+    mDeadzone = MAX_AXIS_RANGE * (deadzonePercentage / 100.0f);
+    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1, StickToConfigStickName[mStick].c_str()).c_str(), mDeadzonePercentage);
+    CVarSave();
+}
+
+uint8_t ControllerStick::GetDeadzonePercentage() {
+    return mDeadzonePercentage;
 }
 } // namespace LUS

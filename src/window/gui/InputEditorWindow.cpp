@@ -693,70 +693,22 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
     ImGui::SameLine();
     DrawInputChip(axisDirectionName, color);
     ImGui::SameLine(62.0f);
-    // ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-    // uint8_t mappingType;
-    // std::string mappingName = "";
     for (auto id : mStickDirectionToMappingIds[port][stick][direction]) {
         DrawStickDirectionLineEditMappingButton(port, stick, direction, id);
     }
     DrawStickDirectionLineAddMappingButton(port, stick, direction);
-    // for (auto id : mBitmaskToMappingIds[port][bitmask]) {
-    //     DrawButtonLineEditMappingButton(port, bitmask, id);
-    // }
-
-    // if (stick == LEFT) {
-    //     mappingType = LUS::Context::GetInstance()
-    //                       ->GetControlDeck()
-    //                       ->GetControllerByPort(port)
-    //                       ->GetLeftStick()
-    //                       ->GetAxisDirectionMappingByDirection(direction)
-    //                       ->GetMappingType();
-    //     mappingName = LUS::Context::GetInstance()
-    //                       ->GetControlDeck()
-    //                       ->GetControllerByPort(port)
-    //                       ->GetLeftStick()
-    //                       ->GetAxisDirectionMappingByDirection(direction)
-    //                       ->GetAxisDirectionName();
-    // } else if (stick == RIGHT) {
-    //     mappingType = LUS::Context::GetInstance()
-    //                       ->GetControlDeck()
-    //                       ->GetControllerByPort(port)
-    //                       ->GetRightStick()
-    //                       ->GetAxisDirectionMappingByDirection(direction)
-    //                       ->GetMappingType();
-    //     mappingName = LUS::Context::GetInstance()
-    //                       ->GetControlDeck()
-    //                       ->GetControllerByPort(port)
-    //                       ->GetRightStick()
-    //                       ->GetAxisDirectionMappingByDirection(direction)
-    //                       ->GetAxisDirectionName();
-    // }
-    // std::string icon = "";
-    // switch (mappingType) {
-    //     case MAPPING_TYPE_GAMEPAD:
-    //         icon = ICON_FA_GAMEPAD;
-    //         break;
-    //     case MAPPING_TYPE_KEYBOARD:
-    //         icon = ICON_FA_KEYBOARD_O;
-    //         break;
-    //     case MAPPING_TYPE_UNKNOWN:
-    //         icon = ICON_FA_BUG;
-    //         break;
-    // }
-    // ImGui::Button(StringHelper::Sprintf("%s %s ", icon.c_str(), mappingName.c_str()).c_str());
-    // ImGui::PopStyleVar();
-    // ImGui::SameLine(0, 0);
-    // ImGui::Button(ICON_FA_TIMES);
 }
 
-void InputEditorWindow::DrawStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port,
+void InputEditorWindow::DrawStickSection(int32_t* notchProximityThreshold, uint8_t port,
                                          uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
     static int8_t x, y;
+    std::shared_ptr<ControllerStick> controllerStick = nullptr;
     if (stick == LEFT) {
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()->Process(x, y);
+        controllerStick = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick();
     } else {
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()->Process(x, y);
+        controllerStick = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
     }
+    controllerStick->Process(x, y);
     DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(x, y));
 
     ImGui::SameLine();
@@ -769,8 +721,13 @@ void InputEditorWindow::DrawStickSection(int32_t* deadzone, int32_t* notchProxim
     if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
         ImGui::Text("Deadzone:");
         ImGui::SetNextItemWidth(160.0f);
-        ImGui::SliderInt(StringHelper::Sprintf("##Deadzone%d", id).c_str(), deadzone, 0, 100, "%d%%",
-                         ImGuiSliderFlags_AlwaysClamp);
+
+        int32_t deadzonePercentage = controllerStick->GetDeadzonePercentage();
+        if(ImGui::SliderInt(StringHelper::Sprintf("##Deadzone%d", id).c_str(), &deadzonePercentage, 0, 100, "%d%%",
+                         ImGuiSliderFlags_AlwaysClamp)) {
+            controllerStick->SetDeadzone(deadzonePercentage);
+        }
+        
         ImGui::Text("Notch Snap Angle:");
         ImGui::SetNextItemWidth(160.0f);
         ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), notchProximityThreshold, 0,
@@ -860,12 +817,12 @@ void InputEditorWindow::DrawElement() {
             if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 static int32_t deadzone = 20;
                 static int32_t notchProximityThreshold = 0;
-                DrawStickSection(&deadzone, &notchProximityThreshold, i, LEFT, 0);
+                DrawStickSection(&notchProximityThreshold, i, LEFT, 0);
             }
             if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
                 static int32_t additionalDeadzone = 20;
                 static int32_t additionalNotchProximityThreshold = 0;
-                DrawStickSection(&additionalDeadzone, &additionalNotchProximityThreshold, i, RIGHT, 1,
+                DrawStickSection(&additionalNotchProximityThreshold, i, RIGHT, 1,
                                  CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("Gyro")) {

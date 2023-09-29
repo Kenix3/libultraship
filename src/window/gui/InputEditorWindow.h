@@ -27,7 +27,7 @@ class InputEditorWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-    void DrawStickSection(int32_t* deadzone, int32_t* notchProximityThreshold, uint8_t port, uint8_t stick, int32_t id,
+    void DrawStickSection(int32_t* notchProximityThreshold, uint8_t port, uint8_t stick, int32_t id,
                           ImVec4 color);
     void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                 ImVec4 color);

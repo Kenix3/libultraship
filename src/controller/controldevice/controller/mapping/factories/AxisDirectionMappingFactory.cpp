@@ -34,7 +34,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             portIndex, stick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerAxis, axisDirection);
     }
 
-    if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
+    if (mappingClass == "SDLButtonToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);

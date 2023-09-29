@@ -27,6 +27,8 @@ class ControllerStick {
     void SaveAxisDirectionMappingIdsToConfig();
     bool AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id);
     void Process(int8_t& x, int8_t& y);
+    void SetDeadzone(uint8_t deadzonePercentage);
+    uint8_t GetDeadzonePercentage();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
@@ -39,6 +41,7 @@ class ControllerStick {
     Stick mStick;
 
     // TODO: handle deadzones separately for X and Y?
+    uint8_t mDeadzonePercentage;
     float mDeadzone;
     int32_t mNotchProxmityThreshold;
 
