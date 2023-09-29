@@ -112,7 +112,6 @@ void ControllerStick::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sd
         }
     }
     SaveAxisDirectionMappingIdsToConfig();
-
 }
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
@@ -146,7 +145,10 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
         }
     }
 
-    SetDeadzone(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1, StickToConfigStickName[mStick].c_str()).c_str(), 20));
+    SetDeadzone(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1,
+                                                     StickToConfigStickName[mStick].c_str())
+                                   .c_str(),
+                               20));
 }
 
 double ControllerStick::GetClosestNotch(double angle, double approximationThreshold) {
@@ -294,7 +296,10 @@ bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbSc
 void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     mDeadzonePercentage = deadzonePercentage;
     mDeadzone = MAX_AXIS_RANGE * (deadzonePercentage / 100.0f);
-    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1, StickToConfigStickName[mStick].c_str()).c_str(), mDeadzonePercentage);
+    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1,
+                                         StickToConfigStickName[mStick].c_str())
+                       .c_str(),
+                   mDeadzonePercentage);
     CVarSave();
 }
 
