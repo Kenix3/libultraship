@@ -382,9 +382,10 @@ void InputEditorWindow::InitElement() {
 //     EndGroupPanel(isKeyboard ? 0.0f : 2.0f);
 // }
 
+#define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
 void InputEditorWindow::UpdateElement() {
     if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
-        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput();
+        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
 
         // continue to block input for a third of a second after getting the mapping
         mGameInputBlockTimer = ImGui::GetIO().Framerate / 3;
@@ -392,7 +393,7 @@ void InputEditorWindow::UpdateElement() {
         if (mGameInputBlockTimer != INT32_MAX) {
             mGameInputBlockTimer--;
             if (mGameInputBlockTimer <= 0) {
-                LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput();
+                LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
                 mGameInputBlockTimer = INT32_MAX;
             }
         }

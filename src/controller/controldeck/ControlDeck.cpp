@@ -17,7 +17,6 @@ ControlDeck::ControlDeck() : mPads(nullptr) {
     for (int32_t i = 0; i < 4; i++) {
         mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i)));
     }
-    mGameInputBlocked = false;
 }
 
 ControlDeck::~ControlDeck() {
@@ -100,8 +99,12 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
 //     LoadSettings();
 // }
 
+bool ControlDeck::AllGameInputBlocked() {
+    return !mGameInputBlockers.empty();
+}
+
 void ControlDeck::WriteToPad(OSContPad* pad) {
-    if (mGameInputBlocked) {
+    if (AllGameInputBlocked()) {
         return;
     }
 
@@ -144,12 +147,12 @@ std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
 //     return mControllerBits;
 // }
 
-void ControlDeck::BlockGameInput() {
-    mGameInputBlocked = true;
+void ControlDeck::BlockGameInput(int32_t blockId) {
+    mGameInputBlockers[blockId] = true;
 }
 
-void ControlDeck::UnblockGameInput() {
-    mGameInputBlocked = false;
+void ControlDeck::UnblockGameInput(int32_t blockId) {
+    mGameInputBlockers.erase(blockId);
 }
 
 // bool ControlDeck::IsBlockingGameInput(const std::string& inputDeviceGuid) const {

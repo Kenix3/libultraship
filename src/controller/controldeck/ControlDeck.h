@@ -17,8 +17,8 @@ class ControlDeck {
     OSContPad* GetPads();
     uint8_t* GetControllerBits();
     std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
-    void BlockGameInput();
-    void UnblockGameInput();
+    void BlockGameInput(int32_t blockId);
+    void UnblockGameInput(int32_t blockId);
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
@@ -26,6 +26,8 @@ class ControlDeck {
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
     uint8_t* mControllerBits = nullptr;
     OSContPad* mPads;
-    bool mGameInputBlocked;
+
+    bool AllGameInputBlocked();
+    std::unordered_map<int32_t, bool> mGameInputBlockers;
 };
 } // namespace LUS
