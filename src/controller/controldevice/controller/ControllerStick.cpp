@@ -152,9 +152,9 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
                                20));
 
     SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                                    StickToConfigStickName[mStick].c_str())
-                                .c_str(),
-                            0));
+                                                           StickToConfigStickName[mStick].c_str())
+                                         .c_str(),
+                                     0));
 }
 
 double ControllerStick::GetClosestNotch(double angle, double approximationThreshold) {
@@ -316,9 +316,9 @@ uint8_t ControllerStick::GetDeadzonePercentage() {
 void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
     mNotchSnapAngle = notchSnapAngle;
     CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                        StickToConfigStickName[mStick].c_str())
-                    .c_str(),
-                mNotchSnapAngle);
+                                         StickToConfigStickName[mStick].c_str())
+                       .c_str(),
+                   mNotchSnapAngle);
     CVarSave();
 }
 

@@ -699,8 +699,7 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
     DrawStickDirectionLineAddMappingButton(port, stick, direction);
 }
 
-void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id,
-                                         ImVec4 color = CHIP_COLOR_N64_GREY) {
+void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
     static int8_t x, y;
     std::shared_ptr<ControllerStick> controllerStick = nullptr;
     if (stick == LEFT) {
@@ -732,8 +731,8 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
         ImGui::SetNextItemWidth(160.0f);
 
         int32_t notchSnapAngle = controllerStick->GetNotchSnapAngle();
-        if (ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), &notchSnapAngle, 0,
-                         45, "%d°", ImGuiSliderFlags_AlwaysClamp)) {
+        if (ImGui::SliderInt(StringHelper::Sprintf("##NotchProximityThreshold%d", id).c_str(), &notchSnapAngle, 0, 45,
+                             "%d°", ImGuiSliderFlags_AlwaysClamp)) {
             controllerStick->SetNotchSnapAngle(notchSnapAngle);
         }
         ImGui::TreePop();
