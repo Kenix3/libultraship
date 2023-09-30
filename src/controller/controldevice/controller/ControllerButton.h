@@ -21,7 +21,7 @@ class ControllerButton {
     std::shared_ptr<ControllerButtonMapping> GetButtonMappingById(std::string id);
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> GetAllButtonMappings();
     void AddButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
-    void ClearButtonMapping(std::string uuid);
+    void ClearButtonMapping(std::string id);
     void ClearButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
     void ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex);
 

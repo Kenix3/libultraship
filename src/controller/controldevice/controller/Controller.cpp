@@ -22,6 +22,7 @@ Controller::Controller(uint8_t port) : ControlDevice(port) {
     mLeftStick = std::make_shared<ControllerStick>(port, LEFT_STICK);
     mRightStick = std::make_shared<ControllerStick>(port, RIGHT_STICK);
     mGyro = std::make_shared<ControllerGyro>();
+    mRumble = std::make_shared<ControllerRumble>(port);
 }
 
 Controller::~Controller() {
@@ -48,6 +49,10 @@ std::shared_ptr<ControllerGyro> Controller::GetGyro() {
     return mGyro;
 }
 
+std::shared_ptr<ControllerRumble> Controller::GetRumble() {
+    return mRumble;
+}
+
 uint8_t Controller::GetPortIndex() {
     return mPortIndex;
 }
@@ -72,6 +77,8 @@ void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlCont
 
     GetLeftStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
     GetRightStick()->ClearAllMappings();
+
+    GetRumble()->ResetToDefaultMappings(sdl, sdlControllerIndex);
 
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
@@ -144,10 +151,6 @@ bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancod
     result = result || GetRightStick()->ProcessKeyboardEvent(eventType, scancode);
     return result;
 }
-
-// bool Controller::IsRumbling() {
-//     return mIsRumbling;
-// }
 
 // Color_RGB8 Controller::GetLedColor() {
 //     return mLedColor;

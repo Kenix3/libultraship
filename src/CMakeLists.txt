@@ -51,22 +51,16 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldeck/ControlDeck.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldeck/ControlPort.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldeck/ControlPort.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/AttachmentPort.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/AttachmentPort.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/DeviceAttachment.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/DeviceAttachment.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/LEDAttachment.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/LEDAttachment.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/RumbleAttachment.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/attachment/RumbleAttachment.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/ControlDevice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/ControlDevice.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerButton.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerButton.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/Controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/Controller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerGyro.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerGyro.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/Controller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerRumble.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerRumble.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerStick.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerStick.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.cpp
@@ -77,10 +71,14 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerRumbleMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerRumbleMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.cpp
@@ -103,6 +101,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroAxisMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h
 )
 
 # if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
