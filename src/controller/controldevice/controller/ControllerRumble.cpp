@@ -107,4 +107,19 @@ void ControllerRumble::ReloadAllMappingsFromConfig() {
 std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> ControllerRumble::GetAllRumbleMappings() {
     return mRumbleMappings;
 }
+
+bool ControllerRumble::AddRumbleMappingFromRawPress() {
+    std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
+
+    mapping = RumbleMappingFactory::CreateRumbleMappingFromSDLInput(mPortIndex);
+
+    if (mapping == nullptr) {
+        return false;
+    }
+
+    AddRumbleMapping(mapping);
+    mapping->SaveToConfig();
+    SaveRumbleMappingIdsToConfig();
+    return true;
+}
 } // namespace LUS

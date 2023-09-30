@@ -787,7 +787,28 @@ void InputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string 
     ImGui::PopStyleVar();
 }
 
-void InputEditorWindow::DrawAddRumbleMappingButton() {
+void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    if(ImGui::Button(StringHelper::Sprintf("%s###addRumbleMapping%d", ICON_FA_PLUS, port).c_str(), ImVec2(20.0f, 20.0f))) {
+        ImGui::OpenPopup(StringHelper::Sprintf("addRumbleMappingPopup##%d", port).c_str());
+    }
+    ImGui::PopStyleVar();
+
+    if (ImGui::BeginPopup(StringHelper::Sprintf("addRumbleMappingPopup##%d", port).c_str())) {
+        ImGui::Text("Press any button\nor move any axis\nto add rumble device");
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->GetRumble()->AddRumbleMappingFromRawPress()) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 
 }
 
@@ -822,8 +843,9 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
         }
     }
 
-    ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
-                "you could say do 10%% intensity on the big motor and 50%% on the small one");
+    ImGui::AlignTextToFramePadding();
+    ImGui::BulletText("Add rumble device");
+    DrawAddRumbleMappingButton(port);
 }
 
 void InputEditorWindow::DrawElement() {

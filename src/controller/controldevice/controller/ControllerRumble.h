@@ -22,6 +22,8 @@ class ControllerRumble {
     void LoadRumbleMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();
 
+    bool AddRumbleMappingFromRawPress();
+
     void StartRumble();
     void StopRumble();
 
