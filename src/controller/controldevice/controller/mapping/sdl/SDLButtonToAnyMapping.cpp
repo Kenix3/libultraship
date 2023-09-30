@@ -12,6 +12,10 @@ SDLButtonToAnyMapping::SDLButtonToAnyMapping(int32_t sdlControllerIndex, int32_t
 SDLButtonToAnyMapping::~SDLButtonToAnyMapping() {
 }
 
+int32_t SDLButtonToAnyMapping::GetPhysicalDeviceIndex() {
+    return mControllerIndex;
+}
+
 std::string SDLButtonToAnyMapping::GetPhysicalInputName() {
     if (UsesPlaystationLayout()) {
         return GetPlaystationButtonName();
@@ -178,5 +182,9 @@ std::string SDLButtonToAnyMapping::GetXboxButtonName() {
     }
 
     return GetGenericButtonName();
+}
+
+std::string SDLButtonToAnyMapping::GetPhysicalDeviceName() {
+    return GetSDLDeviceName();
 }
 } // namespace LUS

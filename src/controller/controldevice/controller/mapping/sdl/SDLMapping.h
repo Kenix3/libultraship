@@ -21,6 +21,7 @@ class SDLMapping {
     bool UsesSwitchLayout();
     bool UsesXboxLayout();
     std::string GetSDLDeviceName();
+    int32_t GetSDLDeviceIndex();
 
     int32_t mControllerIndex;
     SDL_GameController* mController;

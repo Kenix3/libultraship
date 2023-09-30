@@ -1,3 +1,6 @@
+// colors to use for controllers
+
+
 #include "InputEditorWindow.h"
 // #include "controller/KeyboardController.h"
 #include "Context.h"
@@ -463,6 +466,24 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define CHIP_COLOR_N64_YELLOW ImVec4(0.5f, 0.314f, 0.0f, 1.0f)
 #define CHIP_COLOR_N64_RED ImVec4(0.392f, 0.0f, 0.0f, 1.0f)
 
+#define BUTTON_COLOR_KEYBOARD_BEIGE ImVec4(0.651f, 0.482f, 0.357f, 0.5f)
+#define BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED ImVec4(0.651f, 0.482f, 0.357f, 1.0f)
+
+#define BUTTON_COLOR_GAMEPAD_BLUE ImVec4(0.0f, 0.255f, 0.976f, 0.5f)
+#define BUTTON_COLOR_GAMEPAD_BLUE_HOVERED ImVec4(0.0f, 0.255f, 0.976f, 1.0f)
+
+#define BUTTON_COLOR_GAMEPAD_RED ImVec4(0.976f, 0.0f, 0.094f, 0.5f)
+#define BUTTON_COLOR_GAMEPAD_RED_HOVERED ImVec4(0.976f, 0.0f, 0.094f, 1.0f)
+
+#define BUTTON_COLOR_GAMEPAD_ORANGE ImVec4(0.976f, 0.376f, 0.0f, 0.5f)
+#define BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED ImVec4(0.976f, 0.376f, 0.0f, 1.0f)
+
+#define BUTTON_COLOR_GAMEPAD_GREEN ImVec4(0.0f, 0.5f, 0.0f, 0.5f)
+#define BUTTON_COLOR_GAMEPAD_GREEN_HOVERED ImVec4(0.0f, 0.5f, 0.0f, 1.0f)
+
+#define BUTTON_COLOR_GAMEPAD_PURPLE ImVec4(0.431f, 0.369f, 0.706f, 0.5f)
+#define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
+
 void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::BeginDisabled();
     ImGui::PushStyleColor(ImGuiCol_Button, color);
@@ -508,22 +529,54 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
+    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     switch (mapping->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
+            switch (mapping->GetPhysicalDeviceIndex()) {
+                case 0:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
+                    break;
+                case 1:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_RED;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
+                    break;
+                case 2:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
+                    break;
+                case 3:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
+                    break;
+                default:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_PURPLE;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED;
+            }
             break;
         case MAPPING_TYPE_KEYBOARD:
             icon = ICON_FA_KEYBOARD_O;
+            buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
+            buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
             break;
         case MAPPING_TYPE_UNKNOWN:
             icon = ICON_FA_BUG;
             break;
     }
+    ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editButtonMappingButton%s", icon.c_str(),
                                             mapping->GetPhysicalInputName().c_str(), id.c_str())
                           .c_str())) {
         ImGui::OpenPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str()).c_str());
     }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
+        ImGui::SetTooltip(mapping->GetPhysicalDeviceName().c_str());
+    }
+    ImGui::PopStyleColor();
+    ImGui::PopStyleColor();
 
     if (ImGui::BeginPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str()).c_str())) {
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto edit mapping");
@@ -542,6 +595,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
 
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
+    ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
         LUS::Context::GetInstance()
             ->GetControlDeck()
@@ -549,6 +604,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
             ->GetButton(bitmask)
             ->ClearButtonMapping(id);
     };
+    ImGui::PopStyleColor();
+    ImGui::PopStyleColor();
     ImGui::SameLine(0, 4.0f);
 }
 
@@ -625,22 +682,54 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
+    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     switch (mapping->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
+            switch (mapping->GetPhysicalDeviceIndex()) {
+                case 0:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
+                    break;
+                case 1:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_RED;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
+                    break;
+                case 2:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
+                    break;
+                case 3:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
+                    break;
+                default:
+                    buttonColor = BUTTON_COLOR_GAMEPAD_PURPLE;
+                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED;
+            }
             break;
         case MAPPING_TYPE_KEYBOARD:
             icon = ICON_FA_KEYBOARD_O;
+            buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
+            buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
             break;
         case MAPPING_TYPE_UNKNOWN:
             icon = ICON_FA_BUG;
             break;
     }
+    ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editStickDirectionMappingButton%s", icon.c_str(),
                                             mapping->GetPhysicalInputName().c_str(), id.c_str())
                           .c_str())) {
         ImGui::OpenPopup(StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str()).c_str());
     }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
+        ImGui::SetTooltip(mapping->GetPhysicalDeviceName().c_str());
+    }
+    ImGui::PopStyleColor();
+    ImGui::PopStyleColor();
 
     if (ImGui::BeginPopup(StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str()).c_str())) {
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto edit mapping");
@@ -670,6 +759,8 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
 
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
+    ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeStickDirectionMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
         if (stick == LEFT) {
@@ -686,6 +777,8 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
                 ->ClearAxisDirectionMapping(direction, id);
         }
     };
+    ImGui::PopStyleColor();
+    ImGui::PopStyleColor();
     ImGui::SameLine(0, 4.0f);
 }
 

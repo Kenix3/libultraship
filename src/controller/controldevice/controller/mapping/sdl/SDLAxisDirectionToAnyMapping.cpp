@@ -14,6 +14,10 @@ SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(int32_t sdlController
 SDLAxisDirectionToAnyMapping::~SDLAxisDirectionToAnyMapping() {
 }
 
+int32_t SDLAxisDirectionToAnyMapping::GetPhysicalDeviceIndex() {
+    return mControllerIndex;
+}
+
 std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
     switch (mControllerAxis) {
         case SDL_CONTROLLER_AXIS_LEFTX:
@@ -54,5 +58,9 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
 
     return StringHelper::Sprintf("Axis %d %s", mControllerAxis,
                                  mAxisDirection == NEGATIVE ? ICON_FA_MINUS : ICON_FA_PLUS);
+}
+
+std::string SDLAxisDirectionToAnyMapping::GetPhysicalDeviceName() {
+    return GetSDLDeviceName();
 }
 } // namespace LUS

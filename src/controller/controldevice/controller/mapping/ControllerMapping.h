@@ -13,5 +13,6 @@ class ControllerMapping {
     ControllerMapping();
     ~ControllerMapping();
     virtual std::string GetPhysicalDeviceName();
+    virtual int32_t GetPhysicalDeviceIndex();
 };
 } // namespace LUS
