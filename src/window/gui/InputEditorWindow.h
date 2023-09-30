@@ -38,6 +38,8 @@ class InputEditorWindow : public GuiWindow {
     void DrawStickSection(uint8_t port, uint8_t stick, int32_t id, ImVec4 color);
 
     void DrawRumbleSection(uint8_t port);
+    void DrawRemoveRumbleMappingButton(uint8_t port, std::string id);
+    void DrawAddRumbleMappingButton();
 
     int32_t mBtnReading;
     int32_t mGameInputBlockTimer;

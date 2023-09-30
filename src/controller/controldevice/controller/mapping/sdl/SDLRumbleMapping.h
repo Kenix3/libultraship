@@ -16,6 +16,8 @@ class SDLRumbleMapping final : public ControllerRumbleMapping, public SDLMapping
     void SaveToConfig() override;
     void EraseFromConfig() override;
 
+    std::string GetPhysicalDeviceName() override;
+
   private:
     uint16_t mLowFrequencyIntensity;
     uint16_t mHighFrequencyIntensity;

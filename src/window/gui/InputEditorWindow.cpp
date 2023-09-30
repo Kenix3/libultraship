@@ -778,9 +778,26 @@ void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
     }
 }
 
+void InputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string id) {
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    if(ImGui::Button(StringHelper::Sprintf("%s###removeRumbleMapping%s", ICON_FA_TIMES, id.c_str()).c_str(), ImVec2(20.0f, 20.0f))) {
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(id);
+    }
+    ImGui::PopStyleVar();
+}
+
+void InputEditorWindow::DrawAddRumbleMappingButton() {
+
+}
+
 void InputEditorWindow::DrawRumbleSection(uint8_t port) {
     for (auto [id, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->GetAllRumbleMappings()) {
-        if (ImGui::TreeNode(StringHelper::Sprintf("blargrumble##%d", id).c_str())) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+        DrawRemoveRumbleMappingButton(port, id);
+        if (open) {
             ImGui::Text("Small Motor Intensity:");
             ImGui::SetNextItemWidth(160.0f);
 

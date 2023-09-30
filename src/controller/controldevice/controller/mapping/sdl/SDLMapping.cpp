@@ -1,6 +1,8 @@
 #include "SDLMapping.h"
 #include <spdlog/spdlog.h>
 
+#include <Utils/StringHelper.h>
+
 namespace LUS {
 SDLMapping::SDLMapping(int32_t sdlControllerIndex) : mControllerIndex(sdlControllerIndex), mController(nullptr) {
 }
@@ -68,5 +70,10 @@ bool SDLMapping::UsesSwitchLayout() {
 bool SDLMapping::UsesXboxLayout() {
     auto type = GetSDLControllerType();
     return type == SDL_CONTROLLER_TYPE_XBOX360 || type == SDL_CONTROLLER_TYPE_XBOXONE;
+}
+
+std::string SDLMapping::GetSDLDeviceName() {
+    auto sdlName = SDL_GameControllerNameForIndex(mControllerIndex);
+    return StringHelper::Sprintf("%s (SDL %d)", sdlName != nullptr ? sdlName : "Unknown", mControllerIndex);
 }
 } // namespace LUS

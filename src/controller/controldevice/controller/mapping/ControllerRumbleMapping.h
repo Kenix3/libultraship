@@ -2,9 +2,10 @@
 
 #include <cstdint>
 #include <string>
+#include "ControllerMapping.h"
 
 namespace LUS {
-class ControllerRumbleMapping {
+class ControllerRumbleMapping : public ControllerMapping {
   public:
     ControllerRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                             uint8_t highFrequencyIntensityPercentage);

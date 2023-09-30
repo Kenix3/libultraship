@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <SDL2/SDL.h>
 #include <memory>
+#include <string>
 
 namespace LUS {
 enum Axis { X = 0, Y = 1 };
@@ -19,6 +20,7 @@ class SDLMapping {
     bool UsesPlaystationLayout();
     bool UsesSwitchLayout();
     bool UsesXboxLayout();
+    std::string GetSDLDeviceName();
 
     int32_t mControllerIndex;
     SDL_GameController* mController;

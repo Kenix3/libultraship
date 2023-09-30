@@ -63,4 +63,8 @@ void SDLRumbleMapping::EraseFromConfig() {
 
     CVarSave();
 }
+
+std::string SDLRumbleMapping::GetPhysicalDeviceName() {
+    return GetSDLDeviceName();
+}
 } // namespace LUS
