@@ -8,10 +8,10 @@ namespace LUS {
 #define MAPPING_TYPE_KEYBOARD 1
 #define MAPPING_TYPE_UNKNOWN 2
 
-class ControllerMapping {
+class ControllerInputMapping {
   public:
-    ControllerMapping();
-    ~ControllerMapping();
+    ControllerInputMapping();
+    ~ControllerInputMapping();
     virtual std::string GetPhysicalInputName();
 };
 } // namespace LUS

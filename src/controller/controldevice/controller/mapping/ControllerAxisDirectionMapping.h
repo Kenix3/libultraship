@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-#include "ControllerMapping.h"
+#include "ControllerInputMapping.h"
 
 #define MAX_AXIS_RANGE 85.0f
 
@@ -11,7 +11,7 @@ namespace LUS {
 enum Stick { LEFT_STICK, RIGHT_STICK };
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
-class ControllerAxisDirectionMapping : virtual public ControllerMapping {
+class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
   public:
     ControllerAxisDirectionMapping(uint8_t portIndex, Stick stick, Direction direction);
     ~ControllerAxisDirectionMapping();

@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <string>
 
-#include "ControllerMapping.h"
+#include "ControllerInputMapping.h"
 
 namespace LUS {
 
-class ControllerButtonMapping : virtual public ControllerMapping {
+class ControllerButtonMapping : virtual public ControllerInputMapping {
   public:
     ControllerButtonMapping(uint8_t portIndex, uint16_t bitmask);
     ~ControllerButtonMapping();

@@ -69,8 +69,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerInputMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerInputMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerRumbleMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerRumbleMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.cpp

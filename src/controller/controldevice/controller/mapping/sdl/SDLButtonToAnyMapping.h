@@ -1,10 +1,10 @@
 #pragma once
 
 #include "SDLMapping.h"
-#include "controller/controldevice/controller/mapping/ControllerMapping.h"
+#include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
 namespace LUS {
-class SDLButtonToAnyMapping : virtual public ControllerMapping, public SDLMapping {
+class SDLButtonToAnyMapping : virtual public ControllerInputMapping, public SDLMapping {
   public:
     SDLButtonToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerButton);
     ~SDLButtonToAnyMapping();
