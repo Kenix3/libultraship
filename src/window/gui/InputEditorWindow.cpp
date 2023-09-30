@@ -778,6 +778,11 @@ void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
     }
 }
 
+void InputEditorWindow::DrawRumbleSection(uint8_t port) {
+    ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
+                "you could say do 10%% intensity on the big motor and 50%% on the small one");
+}
+
 void InputEditorWindow::DrawElement() {
     ImGui::Begin("Controller Configuration", &mIsVisible);
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
@@ -828,8 +833,7 @@ void InputEditorWindow::DrawElement() {
                 DrawStickSection(i, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("Rumble")) {
-                ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
-                            "you could say do 10%% intensity on the big motor and 50%% on the small one");
+                DrawRumbleSection(i);
             }
             if (ImGui::CollapsingHeader("Gyro")) {
                 // does previewing using the analog stick preview work currently?

@@ -27,7 +27,6 @@ class InputEditorWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-    void DrawStickSection(uint8_t port, uint8_t stick, int32_t id, ImVec4 color);
     void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                 ImVec4 color);
     void DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask, ImVec4 color);
@@ -36,6 +35,9 @@ class InputEditorWindow : public GuiWindow {
 
     void DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction, std::string id);
     void DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction);
+    void DrawStickSection(uint8_t port, uint8_t stick, int32_t id, ImVec4 color);
+
+    void DrawRumbleSection(uint8_t port);
 
     int32_t mBtnReading;
     int32_t mGameInputBlockTimer;
