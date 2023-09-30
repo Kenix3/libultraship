@@ -21,10 +21,13 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    int32_t lowFrequencyIntensityPercentage = CVarGetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
-    int32_t highFrequencyIntensityPercentage = CVarGetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
+    int32_t lowFrequencyIntensityPercentage =
+        CVarGetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
+    int32_t highFrequencyIntensityPercentage =
+        CVarGetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
 
-    if (lowFrequencyIntensityPercentage < 0 || lowFrequencyIntensityPercentage > 100 || highFrequencyIntensityPercentage < 0 || highFrequencyIntensityPercentage > 100) {
+    if (lowFrequencyIntensityPercentage < 0 || lowFrequencyIntensityPercentage > 100 ||
+        highFrequencyIntensityPercentage < 0 || highFrequencyIntensityPercentage > 100) {
         // something about this mapping is invalid
         CVarClear(mappingCvarKey.c_str());
         CVarSave();
@@ -42,11 +45,11 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
             return nullptr;
         }
 
-        return std::make_shared<SDLRumbleMapping>(portIndex, lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage, sdlControllerIndex);
+        return std::make_shared<SDLRumbleMapping>(portIndex, lowFrequencyIntensityPercentage,
+                                                  highFrequencyIntensityPercentage, sdlControllerIndex);
     }
 
     return nullptr;
 }
-
 
 } // namespace LUS

@@ -779,14 +779,16 @@ void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
 }
 
 void InputEditorWindow::DrawElement() {
-    static bool connected[4] = { true, false, false, false };
-    // static bool openTab[4] = {false, false, false, false};
     ImGui::Begin("Controller Configuration", &mIsVisible);
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
     for (uint8_t i = 0; i < 4; i++) {
-        if (ImGui::BeginTabItem(StringHelper::Sprintf("%s Port %d###port%d",
-                                                      connected[i] ? ICON_FA_PLUG : ICON_FA_CHAIN_BROKEN, i + 1, i)
-                                    .c_str())) {
+        if (ImGui::BeginTabItem(
+                StringHelper::Sprintf("%s Port %d###port%d",
+                                      LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(i) != nullptr
+                                          ? ICON_FA_PLUG
+                                          : ICON_FA_CHAIN_BROKEN,
+                                      i + 1, i)
+                    .c_str())) {
             if (ImGui::Button("Clear All")) {
                 LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(i)->ClearAllMappings();
             }
@@ -820,14 +822,14 @@ void InputEditorWindow::DrawElement() {
                 DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str(), i, BTN_DDOWN);
             }
             if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                static int32_t deadzone = 20;
-                static int32_t notchProximityThreshold = 0;
                 DrawStickSection(i, LEFT, 0);
             }
             if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
-                static int32_t additionalDeadzone = 20;
-                static int32_t additionalNotchProximityThreshold = 0;
                 DrawStickSection(i, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
+            }
+            if (ImGui::CollapsingHeader("Rumble")) {
+                ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
+                            "you could say do 10%% intensity on the big motor and 50%% on the small one");
             }
             if (ImGui::CollapsingHeader("Gyro")) {
                 // does previewing using the analog stick preview work currently?
@@ -853,9 +855,7 @@ void InputEditorWindow::DrawElement() {
                             "to finish the gyro section");
                 ImGui::EndGroup();
             }
-            if (ImGui::CollapsingHeader("Attachments (Rumble etc.)")) {
-                ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
-                            "you could say do 10%% intensity on the big motor and 50%% on the small one");
+            if (ImGui::CollapsingHeader("LEDs")) {
                 ImGui::Text("todo: leds");
             }
             ImGui::EndTabItem();
