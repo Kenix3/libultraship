@@ -13,6 +13,7 @@ class ControllerRumble {
     ControllerRumble(uint8_t portIndex);
     ~ControllerRumble();
 
+    std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> GetAllRumbleMappings();
     void AddRumbleMapping(std::shared_ptr<ControllerRumbleMapping> mapping);
     void ClearRumbleMapping(std::string id);
     void SaveRumbleMappingIdsToConfig();

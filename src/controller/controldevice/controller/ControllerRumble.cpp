@@ -103,4 +103,8 @@ void ControllerRumble::ReloadAllMappingsFromConfig() {
         LoadRumbleMappingFromConfig(rumbleMappingIdString);
     }
 }
+
+std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> ControllerRumble::GetAllRumbleMappings() {
+    return mRumbleMappings;
+}
 } // namespace LUS

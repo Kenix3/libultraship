@@ -779,6 +779,32 @@ void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
 }
 
 void InputEditorWindow::DrawRumbleSection(uint8_t port) {
+    for (auto [id, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->GetAllRumbleMappings()) {
+        if (ImGui::TreeNode(StringHelper::Sprintf("blargrumble##%d", id).c_str())) {
+            ImGui::Text("Small Motor Intensity:");
+            ImGui::SetNextItemWidth(160.0f);
+
+            int32_t smallMotorIntensity =  mapping->GetHighFrequencyIntensityPercentage();
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Small Motor Intensity%d", id).c_str(), &smallMotorIntensity, 0, 100, "%d%%",
+                                ImGuiSliderFlags_AlwaysClamp)) {
+                mapping->SetHighFrequencyIntensity(smallMotorIntensity);
+                mapping->SaveToConfig();
+            }
+
+            ImGui::Text("Large Motor Intensity:");
+            ImGui::SetNextItemWidth(160.0f);
+
+            int32_t largeMotorIntensity =  mapping->GetLowFrequencyIntensityPercentage();
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Large Motor Intensity%d", id).c_str(), &largeMotorIntensity, 0, 100, "%d%%",
+                                ImGuiSliderFlags_AlwaysClamp)) {
+                mapping->SetLowFrequencyIntensity(largeMotorIntensity);
+                mapping->SaveToConfig();
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
     ImGui::Text("todo: for rumble it'd be ideal to be able to add motors instead of just controllers\nso "
                 "you could say do 10%% intensity on the big motor and 50%% on the small one");
 }
