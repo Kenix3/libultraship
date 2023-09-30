@@ -1,7 +1,10 @@
 #include "ControllerRumbleMapping.h"
 
 namespace LUS {
-ControllerRumbleMapping::ControllerRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage) : mPortIndex(portIndex), mLowFrequencyIntensityPercentage(lowFrequencyIntensityPercentage), mHighFrequencyIntensityPercentage(highFrequencyIntensityPercentage) {
+ControllerRumbleMapping::ControllerRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+                                                 uint8_t highFrequencyIntensityPercentage)
+    : mPortIndex(portIndex), mLowFrequencyIntensityPercentage(lowFrequencyIntensityPercentage),
+      mHighFrequencyIntensityPercentage(highFrequencyIntensityPercentage) {
 }
 
 ControllerRumbleMapping::~ControllerRumbleMapping() {

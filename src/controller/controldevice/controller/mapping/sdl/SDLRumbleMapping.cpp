@@ -4,7 +4,10 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage, int32_t sdlControllerIndex) : ControllerRumbleMapping(portIndex, lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage), SDLMapping(sdlControllerIndex) {
+SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+                                   uint8_t highFrequencyIntensityPercentage, int32_t sdlControllerIndex)
+    : ControllerRumbleMapping(portIndex, lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage),
+      SDLMapping(sdlControllerIndex) {
     SetLowFrequencyIntensity(lowFrequencyIntensityPercentage);
     SetHighFrequencyIntensity(highFrequencyIntensityPercentage);
 }
@@ -13,7 +16,7 @@ void SDLRumbleMapping::StartRumble() {
     if (!ControllerLoaded()) {
         return;
     }
-    
+
     SDL_GameControllerRumble(mController, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
 }
 
@@ -24,7 +27,6 @@ void SDLRumbleMapping::StopRumble() {
 
     SDL_GameControllerRumble(mController, 0, 0, 0);
 }
-
 
 void SDLRumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
     mLowFrequencyIntensityPercentage = intensityPercentage;
@@ -42,11 +44,12 @@ std::string SDLRumbleMapping::GetRumbleMappingId() {
 
 void SDLRumbleMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
-    CVarSetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(),
-                  "SDLRumbleMapping");
+    CVarSetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "SDLRumbleMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), mLowFrequencyIntensityPercentage);
-    CVarSetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), mHighFrequencyIntensityPercentage);
+    CVarSetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
+                   mLowFrequencyIntensityPercentage);
+    CVarSetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
+                   mHighFrequencyIntensityPercentage);
     CVarSave();
 }
 

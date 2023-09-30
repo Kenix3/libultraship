@@ -67,8 +67,7 @@ void ControllerRumble::ResetToDefaultMappings(bool sdl, int32_t sdlControllerInd
         return;
     }
 
-    for (auto mapping :
-            RumbleMappingFactory::CreateDefaultSDLRumbleMappings(mPortIndex, sdlControllerIndex)) {
+    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(mPortIndex, sdlControllerIndex)) {
         AddRumbleMapping(mapping);
     }
 
@@ -77,4 +76,4 @@ void ControllerRumble::ResetToDefaultMappings(bool sdl, int32_t sdlControllerInd
     }
     SaveRumbleMappingIdsToConfig();
 }
-}
+} // namespace LUS
