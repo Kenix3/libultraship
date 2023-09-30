@@ -76,4 +76,31 @@ void ControllerRumble::ResetToDefaultMappings(bool sdl, int32_t sdlControllerInd
     }
     SaveRumbleMappingIdsToConfig();
 }
+
+void ControllerRumble::LoadRumbleMappingFromConfig(std::string id) {
+    auto mapping = RumbleMappingFactory::CreateRumbleMappingFromConfig(mPortIndex, id);
+
+    if (mapping == nullptr) {
+        return;
+    }
+
+    AddRumbleMapping(mapping);
+}
+
+void ControllerRumble::ReloadAllMappingsFromConfig() {
+    mRumbleMappings.clear();
+
+    // todo: this efficently (when we build out cvar array support?)
+    // i don't expect it to really be a problem with the small number of mappings we have
+    // for each controller (especially compared to include/exclude locations in rando), and
+    // the audio editor pattern doesn't work for this because that looks for ids that are either
+    // hardcoded or provided by an otr file
+    const std::string rumbleMappingIdsCvarKey =
+        StringHelper::Sprintf("gControllers.Port%d.RumbleMappingIds", mPortIndex + 1);
+    std::stringstream rumbleMappingIdsStringStream(CVarGetString(rumbleMappingIdsCvarKey.c_str(), ""));
+    std::string rumbleMappingIdString;
+    while (getline(rumbleMappingIdsStringStream, rumbleMappingIdString, ',')) {
+        LoadRumbleMappingFromConfig(rumbleMappingIdString);
+    }
+}
 } // namespace LUS

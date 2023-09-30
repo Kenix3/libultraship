@@ -91,6 +91,7 @@ void Controller::ReloadAllMappingsFromConfig() {
     }
     GetLeftStick()->ReloadAllMappingsFromConfig();
     GetRightStick()->ReloadAllMappingsFromConfig();
+    GetRumble()->ReloadAllMappingsFromConfig();
 }
 
 void Controller::ReadToPad(OSContPad* pad) {

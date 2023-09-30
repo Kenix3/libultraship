@@ -8,7 +8,7 @@
 namespace LUS {
 class RumbleMappingFactory {
   public:
-    // static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromConfig(uint8_t portIndex, std::string id);
+    static std::shared_ptr<ControllerRumbleMapping> CreateRumbleMappingFromConfig(uint8_t portIndex, std::string id);
     // static std::vector<std::shared_ptr<ControllerButtonMapping>> CreateDefaultKeyboardButtonMappings(uint8_t
     // portIndex,
     //                                                                                                  uint16_t
