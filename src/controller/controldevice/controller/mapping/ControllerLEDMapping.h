@@ -19,7 +19,8 @@ class ControllerLEDMapping : public ControllerMapping {
     void SetColorSource(uint8_t colorSource);
     uint8_t GetColorSource();
     virtual void SetLEDColor(Color_RGB8 color) = 0;
-    void SaveLEDColor(Color_RGB8 colorToSave);
+    void SetSavedColor(Color_RGB8 colorToSave);
+    Color_RGB8 GetSavedColor();
 
     virtual std::string GetLEDMappingId() = 0;
     virtual void SaveToConfig() = 0;

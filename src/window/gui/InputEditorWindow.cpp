@@ -941,6 +941,70 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
     DrawAddRumbleMappingButton(port);
 }
 
+void InputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::string id) {
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    if(ImGui::Button(StringHelper::Sprintf("%s###removeLEDMapping%s", ICON_FA_TIMES, id.c_str()).c_str(), ImVec2(20.0f, 20.0f))) {
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->ClearLEDMapping(id);
+    }
+    ImGui::PopStyleVar();
+}
+
+void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    if(ImGui::Button(StringHelper::Sprintf("%s###addLEDMapping%d", ICON_FA_PLUS, port).c_str(), ImVec2(20.0f, 20.0f))) {
+        ImGui::OpenPopup(StringHelper::Sprintf("addLEDMappingPopup##%d", port).c_str());
+    }
+    ImGui::PopStyleVar();
+
+    if (ImGui::BeginPopup(StringHelper::Sprintf("addLEDMappingPopup##%d", port).c_str())) {
+        ImGui::Text("Press any button\nor move any axis\nto add LED device");
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->GetLED()->AddLEDMappingFromRawPress()) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void InputEditorWindow::DrawLEDSection(uint8_t port) {
+    for (auto [id, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+        DrawRemoveLEDMappingButton(port, id);
+        if (open) {
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("LED Color:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(80.0f);
+            int32_t colorSource = mapping->GetColorSource();
+            if (ImGui::Combo(StringHelper::Sprintf("###ledColorSource%s", mapping->GetLEDMappingId().c_str()).c_str(), &colorSource, "Off\0Set\0Game\0\0")) {
+                mapping->SetColorSource(colorSource);
+            };
+            if (mapping->GetColorSource() == LED_COLOR_SOURCE_SET) {
+                ImGui::SameLine();
+                ImVec4 color = { mapping->GetSavedColor().r / 255.0f, mapping->GetSavedColor().g / 255.0f, mapping->GetSavedColor().b / 255.0f, 1.0f };
+                if (ImGui::ColorEdit3(StringHelper::Sprintf("###ledSavedColor%s", mapping->GetLEDMappingId().c_str()).c_str(), (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
+                    mapping->SetSavedColor(Color_RGB8({color.x * 255.0, color.y * 255.0, color.z * 255.0}));
+                }
+            }
+            ImGui::TreePop();
+        }
+    }
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::BulletText("Add LED device");
+    DrawAddLEDMappingButton(port);
+}
+
 void InputEditorWindow::DrawElement() {
     ImGui::Begin("Controller Configuration", &mIsVisible);
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
@@ -1018,7 +1082,7 @@ void InputEditorWindow::DrawElement() {
                 ImGui::EndGroup();
             }
             if (ImGui::CollapsingHeader("LEDs")) {
-                ImGui::Text("todo: leds");
+                DrawLEDSection(i);
             }
             ImGui::EndTabItem();
         }

@@ -41,6 +41,10 @@ class InputEditorWindow : public GuiWindow {
     void DrawRemoveRumbleMappingButton(uint8_t port, std::string id);
     void DrawAddRumbleMappingButton(uint8_t port);
 
+    void DrawLEDSection(uint8_t port);
+    void DrawRemoveLEDMappingButton(uint8_t port, std::string id);
+    void DrawAddLEDMappingButton(uint8_t port);
+
     int32_t mBtnReading;
     int32_t mGameInputBlockTimer;
 

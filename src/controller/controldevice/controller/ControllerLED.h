@@ -18,7 +18,6 @@ class ControllerLED {
     void ClearLEDMapping(std::string id);
     void SaveLEDMappingIdsToConfig();
     void ClearAllMappings();
-    void ResetToDefaultMappings(bool sdl, int32_t sdlControllerIndex);
     void LoadLEDMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();
 

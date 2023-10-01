@@ -55,22 +55,6 @@ void ControllerLED::ClearAllMappings() {
     SaveLEDMappingIdsToConfig();
 }
 
-void ControllerLED::ResetToDefaultMappings(bool sdl, int32_t sdlControllerIndex) {
-    ClearAllMappings();
-    if (!sdl) {
-        return;
-    }
-
-    for (auto mapping : LEDMappingFactory::CreateDefaultSDLLEDMappings(mPortIndex, sdlControllerIndex)) {
-        AddLEDMapping(mapping);
-    }
-
-    for (auto [id, mapping] : mLEDMappings) {
-        mapping->SaveToConfig();
-    }
-    SaveLEDMappingIdsToConfig();
-}
-
 void ControllerLED::LoadLEDMappingFromConfig(std::string id) {
     auto mapping = LEDMappingFactory::CreateLEDMappingFromConfig(mPortIndex, id);
 

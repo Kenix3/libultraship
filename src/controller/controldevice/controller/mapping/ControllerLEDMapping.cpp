@@ -16,16 +16,22 @@ void ControllerLEDMapping::SetColorSource(uint8_t colorSource) {
     if (mColorSource == LED_COLOR_SOURCE_SET) {
         SetLEDColor(mSavedColor);
     }
+    SaveToConfig();
 }
 
 uint8_t ControllerLEDMapping::GetColorSource() {
     return mColorSource;
 }
 
-void ControllerLEDMapping::SaveLEDColor(Color_RGB8 colorToSave) {
+void ControllerLEDMapping::SetSavedColor(Color_RGB8 colorToSave) {
     mSavedColor = colorToSave;
     if (mColorSource == LED_COLOR_SOURCE_SET) {
         SetLEDColor(mSavedColor);
     }
+    SaveToConfig();
+}
+
+Color_RGB8 ControllerLEDMapping::GetSavedColor() {
+    return mSavedColor;
 }
 } // namespace LUS
