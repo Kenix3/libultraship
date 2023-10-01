@@ -23,6 +23,7 @@ Controller::Controller(uint8_t port) : ControlDevice(port) {
     mRightStick = std::make_shared<ControllerStick>(port, RIGHT_STICK);
     mGyro = std::make_shared<ControllerGyro>();
     mRumble = std::make_shared<ControllerRumble>(port);
+    mLED = std::make_shared<ControllerLED>(port);
 }
 
 Controller::~Controller() {
@@ -53,6 +54,10 @@ std::shared_ptr<ControllerRumble> Controller::GetRumble() {
     return mRumble;
 }
 
+std::shared_ptr<ControllerLED> Controller::GetLED() {
+    return mLED;
+}
+
 uint8_t Controller::GetPortIndex() {
     return mPortIndex;
 }
@@ -68,17 +73,18 @@ void Controller::ClearAllMappings() {
     }
     GetLeftStick()->ClearAllMappings();
     GetRightStick()->ClearAllMappings();
+    GetRumble()->ClearAllMappings();
+    GetLED()->ClearAllMappings();
 }
 
 void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         button->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
     }
-
     GetLeftStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
     GetRightStick()->ClearAllMappings();
-
     GetRumble()->ResetToDefaultMappings(sdl, sdlControllerIndex);
+    GetLED()->ResetToDefaultMappings(sdl, sdlControllerIndex);
 
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
@@ -92,6 +98,7 @@ void Controller::ReloadAllMappingsFromConfig() {
     GetLeftStick()->ReloadAllMappingsFromConfig();
     GetRightStick()->ReloadAllMappingsFromConfig();
     GetRumble()->ReloadAllMappingsFromConfig();
+    GetLED()->ReloadAllMappingsFromConfig();
 }
 
 void Controller::ReadToPad(OSContPad* pad) {
@@ -152,9 +159,4 @@ bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancod
     result = result || GetRightStick()->ProcessKeyboardEvent(eventType, scancode);
     return result;
 }
-
-// Color_RGB8 Controller::GetLedColor() {
-//     return mLedColor;
-// }
-
 } // namespace LUS

@@ -14,6 +14,7 @@
 #include "ControllerStick.h"
 #include "ControllerGyro.h"
 #include "ControllerRumble.h"
+#include "ControllerLED.h"
 #include "controller/controldevice/ControlDevice.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
@@ -38,6 +39,7 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerStick> GetRightStick();
     std::shared_ptr<ControllerGyro> GetGyro();
     std::shared_ptr<ControllerRumble> GetRumble();
+    std::shared_ptr<ControllerLED> GetLED();
     void ReadToPad(OSContPad* pad);
     bool HasConfig();
     uint8_t GetPortIndex();
@@ -52,6 +54,7 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerStick> mLeftStick, mRightStick;
     std::shared_ptr<ControllerGyro> mGyro;
     std::shared_ptr<ControllerRumble> mRumble;
+    std::shared_ptr<ControllerLED> mLED;
 
     std::deque<OSContPad> mPadBuffer;
 };

@@ -59,6 +59,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/Controller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerGyro.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerGyro.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerLED.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerLED.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerRumble.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerRumble.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/ControllerStick.cpp
@@ -71,6 +73,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerGyroAxisMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerInputMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerInputMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerLEDMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerLEDMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/ControllerRumbleMapping.cpp
@@ -79,6 +83,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/LEDMappingFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/LEDMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.cpp
@@ -101,6 +107,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroAxisMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroAxisMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp

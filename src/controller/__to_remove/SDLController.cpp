@@ -1,4 +1,8 @@
 
+// bool SDLController::CanSetLed() const {
+//     return SDL_GameControllerHasLED(mController);
+// }
+
 // int32_t SDLController::SetLedColor(int32_t portIndex, Color_RGB8 color) {
 //     if (!CanSetLed()) {
 //         return -1000;
