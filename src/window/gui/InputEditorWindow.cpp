@@ -993,7 +993,7 @@ void InputEditorWindow::DrawLEDSection(uint8_t port) {
                 ImGui::SameLine();
                 ImVec4 color = { mapping->GetSavedColor().r / 255.0f, mapping->GetSavedColor().g / 255.0f, mapping->GetSavedColor().b / 255.0f, 1.0f };
                 if (ImGui::ColorEdit3(StringHelper::Sprintf("###ledSavedColor%s", mapping->GetLEDMappingId().c_str()).c_str(), (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
-                    mapping->SetSavedColor(Color_RGB8({color.x * 255.0, color.y * 255.0, color.z * 255.0}));
+                    mapping->SetSavedColor(Color_RGB8({static_cast<uint8_t>(color.x * 255.0), static_cast<uint8_t>(color.y * 255.0), static_cast<uint8_t>(color.z * 255.0)}));
                 }
             }
             ImGui::TreePop();
