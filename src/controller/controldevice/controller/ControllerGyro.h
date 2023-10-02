@@ -18,6 +18,7 @@ class ControllerGyro {
 
     std::shared_ptr<ControllerGyroMapping> GetGyroMapping();
     void SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mapping);
+    bool SetGyroMappingFromRawPress();
 
     void UpdatePad(float& x, float& y);
 

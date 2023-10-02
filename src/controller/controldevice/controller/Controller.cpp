@@ -91,6 +91,8 @@ void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlCont
     GetGyro()->ClearGyroMapping();
     // HEYHEYHEY REMOVE
     GetGyro()->SetGyroMapping(std::make_shared<SDLGyroMapping>(0, 1.0f, 0.0f, 0.0f, 0.0f, 0));
+    GetGyro()->GetGyroMapping()->SaveToConfig();
+    GetGyro()->SaveGyroMappingIdToConfig();
     // END OF HEYHEYHEY REMOVE
     GetRumble()->ResetToDefaultMappings(sdl, sdlControllerIndex);
     GetLED()->ClearAllMappings();

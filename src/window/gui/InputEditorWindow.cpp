@@ -909,7 +909,7 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
     for (auto [id, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->GetAllRumbleMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##Rumble%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
         DrawRemoveRumbleMappingButton(port, id);
         if (open) {
             ImGui::Text("Small Motor Intensity:");
@@ -978,7 +978,7 @@ void InputEditorWindow::DrawLEDSection(uint8_t port) {
     for (auto [id, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##LED%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
         DrawRemoveLEDMappingButton(port, id);
         if (open) {
             ImGui::AlignTextToFramePadding();
@@ -1003,6 +1003,76 @@ void InputEditorWindow::DrawLEDSection(uint8_t port) {
     ImGui::AlignTextToFramePadding();
     ImGui::BulletText("Add LED device");
     DrawAddLEDMappingButton(port);
+}
+
+void InputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::string id) {
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    if(ImGui::Button(StringHelper::Sprintf("%s###removeGyroMapping%s", ICON_FA_TIMES, id.c_str()).c_str(), ImVec2(20.0f, 20.0f))) {
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->ClearGyroMapping();
+    }
+    ImGui::PopStyleVar();
+}
+
+void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    if(ImGui::Button(StringHelper::Sprintf("%s###addGyroMapping%d", ICON_FA_PLUS, port).c_str(), ImVec2(20.0f, 20.0f))) {
+        ImGui::OpenPopup(StringHelper::Sprintf("addGyroMappingPopup##%d", port).c_str());
+    }
+    ImGui::PopStyleVar();
+
+    if (ImGui::BeginPopup(StringHelper::Sprintf("addGyroMappingPopup##%d", port).c_str())) {
+        ImGui::Text("Press any button\nor move any axis\nto add gyro device");
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (LUS::Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(port)
+                ->GetGyro()->SetGyroMappingFromRawPress()) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void InputEditorWindow::DrawGyroSection(uint8_t port) {
+    auto mapping = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->GetGyroMapping();
+    if (mapping != nullptr) {
+        auto id = mapping->GetGyroMappingId();
+        ImGui::AlignTextToFramePadding();
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        ImGui::BulletText(mapping->GetPhysicalDeviceName().c_str());
+        DrawRemoveGyroMappingButton(port, id);
+
+        ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y - 8));
+        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(), ImVec2(0.0f, 0.0f));
+        ImGui::SameLine();
+        ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 8, ImGui::GetCursorPos().y + 8));
+        
+        ImGui::BeginGroup();
+        ImGui::Text("Sensitivity:");
+        ImGui::SetNextItemWidth(160.0f);
+        int32_t sensitivity =  mapping->GetSensitivityPercent();
+        if (ImGui::SliderInt(StringHelper::Sprintf("##GyroSensitivity%d", id).c_str(), &sensitivity, 0, 100, "%d%%",
+                            ImGuiSliderFlags_AlwaysClamp)) {
+            mapping->SetSensitivity(sensitivity);
+            mapping->SaveToConfig();
+        }
+        ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y + 8));
+        if (ImGui::Button("Recalibrate")) {
+            mapping->Recalibrate();
+            mapping->SaveToConfig();
+        }
+        ImGui::EndGroup();
+        ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y - 8));
+    } else {
+        ImGui::AlignTextToFramePadding();
+        ImGui::BulletText("Add gyro device");
+        DrawAddGyroMappingButton(port);
+    }
 }
 
 void InputEditorWindow::DrawElement() {
@@ -1058,28 +1128,7 @@ void InputEditorWindow::DrawElement() {
                 DrawRumbleSection(i);
             }
             if (ImGui::CollapsingHeader("Gyro")) {
-                // does previewing using the analog stick preview work currently?
-                // i'd think trying to normalize gyro to an analog stick would be problematic.
-                // i'm thinking we might be better off just throwing a couple non-interactable
-                // sliders in here so people can see gyro working (and we can throw numbers on them too)
-                DrawAnalogPreview("##gyro", ImVec2(0.0f, 0.0f));
-                ImGui::SameLine();
-                ImGui::BeginGroup();
-                ImGui::Text("Gyro Device");
-                static int8_t selectedGyroController = -1;
-                ImGui::SetNextItemWidth(160.0f);
-                if (ImGui::BeginCombo("##gryoControllers", "None")) {
-                    for (int8_t i = 0; i < 4; i++) {
-                        std::string deviceName = StringHelper::Sprintf("Controller %d", i);
-                        if (ImGui::Selectable(deviceName.c_str(), i == selectedGyroController)) {
-                            selectedGyroController = i;
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-                ImGui::Text("todo: either figure out sdl doesn't think my controllers have gyro\nor find someone else "
-                            "to finish the gyro section");
-                ImGui::EndGroup();
+                DrawGyroSection(i);
             }
             if (ImGui::CollapsingHeader("LEDs")) {
                 DrawLEDSection(i);

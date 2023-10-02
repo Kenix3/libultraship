@@ -19,6 +19,21 @@ void ControllerGyro::SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mappi
     mGyroMapping = mapping;
 }
 
+bool ControllerGyro::SetGyroMappingFromRawPress() {
+    std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
+
+    mapping = GyroMappingFactory::CreateGyroMappingFromSDLInput(mPortIndex);
+
+    if (mapping == nullptr) {
+        return false;
+    }
+
+    SetGyroMapping(mapping);
+    mapping->SaveToConfig();
+    SaveGyroMappingIdToConfig();
+    return true;
+}
+
 void ControllerGyro::UpdatePad(float& x, float& y) {
     if (mGyroMapping == nullptr) {
         return;
@@ -49,10 +64,6 @@ void ControllerGyro::ClearGyroMapping() {
     mGyroMapping = nullptr;
     SaveGyroMappingIdToConfig();
 }
-
-// void ControllerGyro::AddOrReplaceGyroMapping(std::shared_ptr<ControllerGyroMapping> mapping) {
-//     mButtonMappings[mapping->GetButtonMappingId()] = mapping;
-// }
 
 void ControllerGyro::ReloadGyroMappingFromConfig() {
     const std::string gyroMappingIdCvarKey =
