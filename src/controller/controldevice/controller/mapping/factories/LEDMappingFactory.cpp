@@ -16,16 +16,6 @@ void SDLLEDMapping::SaveToConfig() {
 #include "libultraship/libultra/controller.h"
 
 namespace LUS {
-
-std::vector<std::shared_ptr<ControllerLEDMapping>>
-LEDMappingFactory::CreateDefaultSDLLEDMappings(uint8_t portIndex, int32_t sdlControllerIndex) {
-    std::vector<std::shared_ptr<ControllerLEDMapping>> mappings;
-
-    mappings.push_back(std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({0,0,0}), sdlControllerIndex));
-
-    return mappings;
-}
-
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex,
                                                                                              std::string id) {
     const std::string mappingCvarKey = "gControllers.LEDMappings." + id;

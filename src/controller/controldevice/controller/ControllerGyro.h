@@ -3,21 +3,25 @@
 #include <cstdint>
 #include <memory>
 
-#include "controller/controldevice/controller/mapping/ControllerGyroAxisMapping.h"
+#include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 
 namespace LUS {
 class ControllerGyro {
   public:
-    ControllerGyro();
+    ControllerGyro(uint8_t portIndex);
     ~ControllerGyro();
 
-    std::shared_ptr<ControllerGyroAxisMapping> GetGyroXMapping();
-    std::shared_ptr<ControllerGyroAxisMapping> GetGyroYMapping();
+    // void AddOrReplaceGyroMapping(std::shared_ptr<ControllerGyroMapping> mapping);
+    void ReloadGyroMappingFromConfig();
+    void ClearGyroMapping();
+    void SaveGyroMappingIdToConfig();
+
+    std::shared_ptr<ControllerGyroMapping> GetGyroMapping();
 
     void UpdatePad(float& x, float& y);
 
   private:
-    std::shared_ptr<ControllerGyroAxisMapping> mGyroXMapping;
-    std::shared_ptr<ControllerGyroAxisMapping> mGyroYMapping;
+    uint8_t mPortIndex;
+    std::shared_ptr<ControllerGyroMapping> mGyroMapping;
 };
 } // namespace LUS
