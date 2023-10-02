@@ -7,7 +7,7 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll, int32_t sdlControllerIndex) : ControllerGyroMapping(portIndex), SDLMapping(sdlControllerIndex), mSensitivity(sensitivity), mNeutralPitch(neutralPitch), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll, int32_t sdlControllerIndex) : ControllerGyroMapping(portIndex, sensitivity), SDLMapping(sdlControllerIndex), mNeutralPitch(neutralPitch), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
 void SDLGyroMapping::Recalibrate() {

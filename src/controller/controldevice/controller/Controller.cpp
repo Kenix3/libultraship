@@ -90,7 +90,7 @@ void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlCont
     GetRightStick()->ClearAllMappings();
     GetGyro()->ClearGyroMapping();
     // HEYHEYHEY REMOVE
-    GetGyro()->GetGyroMapping() = std::make_shared<SDLGyroMapping>();
+    GetGyro()->GetGyroMapping() = std::make_shared<SDLGyroMapping>(0, 1.0f, 0.0f, 0.0f, 0.0f, 0);
     // END OF HEYHEYHEY REMOVE
     GetRumble()->ResetToDefaultMappings(sdl, sdlControllerIndex);
     GetLED()->ClearAllMappings();
