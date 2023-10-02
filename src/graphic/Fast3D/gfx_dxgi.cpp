@@ -376,6 +376,16 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_CLOSE:
             dxgi.is_running = false;
             break;
+        case WM_DPICHANGED: {
+            RECT* const prcNewWindow = (RECT*)l_param;
+            SetWindowPos(h_wnd, NULL, prcNewWindow->left, prcNewWindow->top, prcNewWindow->right - prcNewWindow->left,
+                         prcNewWindow->bottom - prcNewWindow->top, SWP_NOZORDER | SWP_NOACTIVATE);
+            dxgi.posX = prcNewWindow->left;
+            dxgi.posY = prcNewWindow->top;
+            dxgi.current_width = prcNewWindow->right - prcNewWindow->left;
+            dxgi.current_height = prcNewWindow->bottom - prcNewWindow->top;
+            break;
+        }
         case WM_ENDSESSION:
             // This hopefully gives the game a chance to shut down, before windows kills it.
             if (w_param == TRUE) {
