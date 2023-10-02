@@ -5,6 +5,9 @@
 #include "ControllerInputMapping.h"
 
 namespace LUS {
+
+#define GYRO_SENSITIVITY_DEFAULT 100
+
 class ControllerGyroMapping : virtual public ControllerInputMapping {
   public:
     ControllerGyroMapping(uint8_t portIndex, float sensitivity);
@@ -17,6 +20,8 @@ class ControllerGyroMapping : virtual public ControllerInputMapping {
     float GetSensitivity();
     uint8_t GetSensitivityPercent();
     void SetSensitivity(uint8_t sensitivityPercent);
+    void ResetSensitivityToDefault();
+    bool SensitivityIsDefault();
 
   protected:
     uint8_t mPortIndex;

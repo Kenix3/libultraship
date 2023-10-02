@@ -22,4 +22,12 @@ uint8_t ControllerGyroMapping::GetSensitivityPercent() {
 float ControllerGyroMapping::GetSensitivity() {
     return mSensitivity;
 }
+
+void ControllerGyroMapping::ResetSensitivityToDefault() {
+    SetSensitivity(GYRO_SENSITIVITY_DEFAULT);
+}
+
+bool ControllerGyroMapping::SensitivityIsDefault() {
+    return mSensitivityPercent == GYRO_SENSITIVITY_DEFAULT;
+}
 } // namespace LUS

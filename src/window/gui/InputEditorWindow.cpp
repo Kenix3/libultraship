@@ -747,6 +747,13 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
             mapping->SetSensitivity(sensitivity);
             mapping->SaveToConfig();
         }
+        if (!mapping->SensitivityIsDefault()) {
+            ImGui::SameLine();
+            if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetGyroSensitivity%s", id.c_str()).c_str())) {
+                mapping->ResetSensitivityToDefault();
+            }
+        }
+
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y + 8));
         if (ImGui::Button("Recalibrate")) {
             mapping->Recalibrate();
