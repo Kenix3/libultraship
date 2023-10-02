@@ -6,6 +6,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
+#include <sstream>
 
 namespace LUS {
 ControllerButton::ControllerButton(uint8_t portIndex, uint16_t bitmask)
