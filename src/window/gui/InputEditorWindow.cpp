@@ -572,7 +572,8 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
             }
             if (!mapping->HighFrequencyIntensityIsDefault()) {
                 ImGui::SameLine();
-                if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetHighFrequencyIntensity%s", id.c_str()).c_str())) {
+                if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetHighFrequencyIntensity%s", id.c_str())
+                                      .c_str())) {
                     mapping->ResetHighFrequencyIntensityToDefault();
                 }
             }
@@ -588,7 +589,8 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
             }
             if (!mapping->LowFrequencyIntensityIsDefault()) {
                 ImGui::SameLine();
-                if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetLowFrequencyIntensity%s", id.c_str()).c_str())) {
+                if (ImGui::Button(
+                        StringHelper::Sprintf("Reset to Default###resetLowFrequencyIntensity%s", id.c_str()).c_str())) {
                     mapping->ResetLowFrequencyIntensityToDefault();
                 }
             }
@@ -806,8 +808,7 @@ void InputEditorWindow::DrawElement() {
             }
             if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_LEFT).c_str(), i, BTN_DLEFT);
-                DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), i,
-                               BTN_DRIGHT);
+                DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), i, BTN_DRIGHT);
                 DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_UP).c_str(), i, BTN_DUP);
                 DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_DOWN).c_str(), i, BTN_DDOWN);
             }
