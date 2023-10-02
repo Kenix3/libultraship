@@ -5,6 +5,10 @@
 #include "ControllerMapping.h"
 
 namespace LUS {
+
+#define DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE 100
+#define DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE 100
+
 class ControllerRumbleMapping : public ControllerMapping {
   public:
     ControllerRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
@@ -12,10 +16,15 @@ class ControllerRumbleMapping : public ControllerMapping {
     ~ControllerRumbleMapping();
     virtual void StartRumble() = 0;
     virtual void StopRumble() = 0;
+
     virtual void SetLowFrequencyIntensity(uint8_t intensityPercentage);
     virtual void SetHighFrequencyIntensity(uint8_t intensityPercentage);
     uint8_t GetLowFrequencyIntensityPercentage();
     uint8_t GetHighFrequencyIntensityPercentage();
+    bool HighFrequencyIntensityIsDefault();
+    bool LowFrequencyIntensityIsDefault();
+    void ResetHighFrequencyIntensityToDefault();
+    void ResetLowFrequencyIntensityToDefault();
 
     virtual std::string GetRumbleMappingId() = 0;
     virtual void SaveToConfig() = 0;

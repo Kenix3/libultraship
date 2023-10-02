@@ -570,6 +570,12 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
                 mapping->SetHighFrequencyIntensity(smallMotorIntensity);
                 mapping->SaveToConfig();
             }
+            if (!mapping->HighFrequencyIntensityIsDefault()) {
+                ImGui::SameLine();
+                if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetHighFrequencyIntensity%s", id.c_str()).c_str())) {
+                    mapping->ResetHighFrequencyIntensityToDefault();
+                }
+            }
 
             ImGui::Text("Large Motor Intensity:");
             ImGui::SetNextItemWidth(160.0f);
@@ -579,6 +585,12 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
                                  &largeMotorIntensity, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                 mapping->SetLowFrequencyIntensity(largeMotorIntensity);
                 mapping->SaveToConfig();
+            }
+            if (!mapping->LowFrequencyIntensityIsDefault()) {
+                ImGui::SameLine();
+                if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetLowFrequencyIntensity%s", id.c_str()).c_str())) {
+                    mapping->ResetLowFrequencyIntensityToDefault();
+                }
             }
 
             ImGui::TreePop();

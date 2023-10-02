@@ -18,11 +18,27 @@ void ControllerRumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercent
     mHighFrequencyIntensityPercentage = intensityPercentage;
 }
 
+void ControllerRumbleMapping::ResetLowFrequencyIntensityToDefault() {
+    SetLowFrequencyIntensity(DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE);
+}
+
+void ControllerRumbleMapping::ResetHighFrequencyIntensityToDefault() {
+    SetHighFrequencyIntensity(DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+}
+
 uint8_t ControllerRumbleMapping::GetLowFrequencyIntensityPercentage() {
     return mLowFrequencyIntensityPercentage;
 }
 
 uint8_t ControllerRumbleMapping::GetHighFrequencyIntensityPercentage() {
     return mHighFrequencyIntensityPercentage;
+}
+
+bool ControllerRumbleMapping::HighFrequencyIntensityIsDefault() {
+    return mHighFrequencyIntensityPercentage == DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE;
+}
+
+bool ControllerRumbleMapping::LowFrequencyIntensityIsDefault() {
+    return mLowFrequencyIntensityPercentage == DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE;
 }
 } // namespace LUS
