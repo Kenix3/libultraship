@@ -8,6 +8,9 @@
 
 namespace LUS {
 
+#define DEFAULT_STICK_DEADZONE_PERCENTAGE 20
+#define DEFAULT_NOTCH_SNAP_ANGLE 0
+
 class ControllerStick {
   public:
     ControllerStick(uint8_t portIndex, Stick stick);
@@ -27,10 +30,16 @@ class ControllerStick {
     void SaveAxisDirectionMappingIdsToConfig();
     bool AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id);
     void Process(int8_t& x, int8_t& y);
+
+    void ResetDeadzoneToDefault();
     void SetDeadzone(uint8_t deadzonePercentage);
     uint8_t GetDeadzonePercentage();
+    bool DeadzoneIsDefault();
+
+    void ResetNotchSnapAngleToDefault();
     void SetNotchSnapAngle(uint8_t notchSnapAngle);
     uint8_t GetNotchSnapAngle();
+    bool NotchSnapAngleIsDefault();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 

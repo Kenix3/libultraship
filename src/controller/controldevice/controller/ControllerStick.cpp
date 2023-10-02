@@ -310,8 +310,16 @@ void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     CVarSave();
 }
 
+void ControllerStick::ResetDeadzoneToDefault() {
+    SetDeadzone(DEFAULT_STICK_DEADZONE_PERCENTAGE);
+}
+
 uint8_t ControllerStick::GetDeadzonePercentage() {
     return mDeadzonePercentage;
+}
+
+bool ControllerStick::DeadzoneIsDefault() {
+    return mDeadzonePercentage == DEFAULT_STICK_DEADZONE_PERCENTAGE;
 }
 
 void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
@@ -323,7 +331,15 @@ void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
     CVarSave();
 }
 
+void ControllerStick::ResetNotchSnapAngleToDefault() {
+    SetNotchSnapAngle(DEFAULT_NOTCH_SNAP_ANGLE);
+}
+
 uint8_t ControllerStick::GetNotchSnapAngle() {
     return mNotchSnapAngle;
+}
+
+bool ControllerStick::NotchSnapAngleIsDefault() {
+    return mNotchSnapAngle == DEFAULT_NOTCH_SNAP_ANGLE;
 }
 } // namespace LUS

@@ -450,6 +450,12 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
                              ImGuiSliderFlags_AlwaysClamp)) {
             controllerStick->SetDeadzone(deadzonePercentage);
         }
+        if (!controllerStick->DeadzoneIsDefault()) {
+            ImGui::SameLine();
+            if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetStickDeadzone%d", id).c_str())) {
+                controllerStick->ResetDeadzoneToDefault();
+            }
+        }
 
         ImGui::Text("Notch Snap Angle:");
         ImGui::SetNextItemWidth(160.0f);
@@ -459,6 +465,13 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
                              "%d°", ImGuiSliderFlags_AlwaysClamp)) {
             controllerStick->SetNotchSnapAngle(notchSnapAngle);
         }
+        if (!controllerStick->NotchSnapAngleIsDefault()) {
+            ImGui::SameLine();
+            if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetStickSnap%d", id).c_str())) {
+                controllerStick->ResetNotchSnapAngleToDefault();
+            }
+        }
+
         ImGui::TreePop();
     }
 }
