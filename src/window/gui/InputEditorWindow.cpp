@@ -1047,11 +1047,17 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         ImGui::BulletText(mapping->GetPhysicalDeviceName().c_str());
         DrawRemoveGyroMappingButton(port, id);
 
-        static float x, y = 0.0f;
-        mapping->UpdatePad(x, y);
+        static float pitch, yaw = 0.0f;
+        mapping->UpdatePad(pitch, yaw);
 
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y - 8));
-        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(), ImVec2(x * 85.0f, y * 85.0f));
+        // to find a reasonable scaling factor gyro values 
+        // I tried to find the maximum value reported by shaking
+        // a PS5 controller as hard as I could without worrying about breaking it
+        // the max I found for both pitch and yaw was ~21
+        // the preview window expects values in an n64 analog stick range (-85 to 85)
+        // so I decided to multiply these by 85/21
+        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(), ImVec2(yaw * (85.0f/21.0f), pitch * (85.0f/21.0f)));
         ImGui::SameLine();
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 8, ImGui::GetCursorPos().y + 8));
         
