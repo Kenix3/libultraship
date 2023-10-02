@@ -552,8 +552,8 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
             ImGui::SetNextItemWidth(160.0f);
 
             int32_t smallMotorIntensity = mapping->GetHighFrequencyIntensityPercentage();
-            if (ImGui::SliderInt(StringHelper::Sprintf("##Small Motor Intensity%s", id.c_str()).c_str(), &smallMotorIntensity,
-                                 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Small Motor Intensity%s", id.c_str()).c_str(),
+                                 &smallMotorIntensity, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                 mapping->SetHighFrequencyIntensity(smallMotorIntensity);
                 mapping->SaveToConfig();
             }
@@ -562,8 +562,8 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
             ImGui::SetNextItemWidth(160.0f);
 
             int32_t largeMotorIntensity = mapping->GetLowFrequencyIntensityPercentage();
-            if (ImGui::SliderInt(StringHelper::Sprintf("##Large Motor Intensity%s", id.c_str()).c_str(), &largeMotorIntensity,
-                                 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Large Motor Intensity%s", id.c_str()).c_str(),
+                                 &largeMotorIntensity, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                 mapping->SetLowFrequencyIntensity(largeMotorIntensity);
                 mapping->SaveToConfig();
             }
@@ -618,8 +618,8 @@ void InputEditorWindow::DrawLEDSection(uint8_t port) {
          LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        auto open =
-            ImGui::TreeNode(StringHelper::Sprintf("%s##LED%s", mapping->GetPhysicalDeviceName().c_str(), id.c_str()).c_str());
+        auto open = ImGui::TreeNode(
+            StringHelper::Sprintf("%s##LED%s", mapping->GetPhysicalDeviceName().c_str(), id.c_str()).c_str());
         DrawRemoveLEDMappingButton(port, id);
         if (open) {
             ImGui::AlignTextToFramePadding();
@@ -717,8 +717,8 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         ImGui::Text("Sensitivity:");
         ImGui::SetNextItemWidth(160.0f);
         int32_t sensitivity = mapping->GetSensitivityPercent();
-        if (ImGui::SliderInt(StringHelper::Sprintf("##GyroSensitivity%s", id.c_str()).c_str(), &sensitivity, 0, 100, "%d%%",
-                             ImGuiSliderFlags_AlwaysClamp)) {
+        if (ImGui::SliderInt(StringHelper::Sprintf("##GyroSensitivity%s", id.c_str()).c_str(), &sensitivity, 0, 100,
+                             "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
             mapping->SetSensitivity(sensitivity);
             mapping->SaveToConfig();
         }
