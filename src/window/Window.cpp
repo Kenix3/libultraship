@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include "public/bridge/consolevariablebridge.h"
-// #include "controller/KeyboardController.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
 #include "graphic/Fast3D/gfx_dxgi.h"

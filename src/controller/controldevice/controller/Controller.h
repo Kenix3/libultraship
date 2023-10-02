@@ -59,6 +59,3 @@ class Controller : public ControlDevice {
     std::deque<OSContPad> mPadBuffer;
 };
 } // namespace LUS
-
-// add attachments
-// mempak/rumble/transfer (for now just implement rumble)
