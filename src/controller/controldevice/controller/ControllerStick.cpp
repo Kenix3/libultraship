@@ -8,6 +8,7 @@
 #include "public/bridge/consolevariablebridge.h"
 
 #include <Utils/StringHelper.h>
+#include <sstream>
 
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9

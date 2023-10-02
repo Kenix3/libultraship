@@ -2,6 +2,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
+#include <sstream>
 
 #include "controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
