@@ -1047,8 +1047,11 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         ImGui::BulletText(mapping->GetPhysicalDeviceName().c_str());
         DrawRemoveGyroMappingButton(port, id);
 
+        static float x, y = 0.0f;
+        mapping->UpdatePad(x, y);
+
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y - 8));
-        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(), ImVec2(0.0f, 0.0f));
+        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(), ImVec2(x * 85.0f, y * 85.0f));
         ImGui::SameLine();
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 8, ImGui::GetCursorPos().y + 8));
         
