@@ -49,13 +49,12 @@ class InputEditorWindow : public GuiWindow {
     void DrawRemoveGyroMappingButton(uint8_t port, std::string id);
     void DrawAddGyroMappingButton(uint8_t port);
 
-    int32_t mBtnReading;
     int32_t mGameInputBlockTimer;
 
-    // mBitmaskToMappingIds[port][bitmask] = { id, id }
+    // mBitmaskToMappingIds[port][bitmask] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<uint16_t, std::vector<std::string>>> mBitmaskToMappingIds;
 
-    // mStickDirectionToMappingIds[port][stick][direction] = { id, id }
+    // mStickDirectionToMappingIds[port][stick][direction] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<uint8_t, std::unordered_map<Direction, std::vector<std::string>>>>
         mStickDirectionToMappingIds;
 

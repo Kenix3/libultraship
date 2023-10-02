@@ -10,10 +10,6 @@
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 
-// HEY HEY HEY REMOVE THIS
-#include "controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h"
-// END OF HEY HEY HEY REMOVE THIS
-
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
@@ -89,11 +85,6 @@ void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlCont
     GetLeftStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
     GetRightStick()->ClearAllMappings();
     GetGyro()->ClearGyroMapping();
-    // HEYHEYHEY REMOVE
-    GetGyro()->SetGyroMapping(std::make_shared<SDLGyroMapping>(0, 1.0f, 0.0f, 0.0f, 0.0f, 0));
-    GetGyro()->GetGyroMapping()->SaveToConfig();
-    GetGyro()->SaveGyroMappingIdToConfig();
-    // END OF HEYHEYHEY REMOVE
     GetRumble()->ResetToDefaultMappings(sdl, sdlControllerIndex);
     GetLED()->ClearAllMappings();
 
