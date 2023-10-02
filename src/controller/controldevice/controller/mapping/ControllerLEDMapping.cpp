@@ -11,7 +11,7 @@ ControllerLEDMapping::~ControllerLEDMapping() {
 void ControllerLEDMapping::SetColorSource(uint8_t colorSource) {
     mColorSource = colorSource;
     if (mColorSource == LED_COLOR_SOURCE_OFF) {
-        SetLEDColor(Color_RGB8({0,0,0}));
+        SetLEDColor(Color_RGB8({ 0, 0, 0 }));
     }
     if (mColorSource == LED_COLOR_SOURCE_SET) {
         SetLEDColor(mSavedColor);

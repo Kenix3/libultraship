@@ -1,6 +1,5 @@
 // colors to use for controllers
 
-
 #include "InputEditorWindow.h"
 // #include "controller/KeyboardController.h"
 #include "Context.h"
@@ -874,7 +873,8 @@ void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
 void InputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string id) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if(ImGui::Button(StringHelper::Sprintf("%s###removeRumbleMapping%s", ICON_FA_TIMES, id.c_str()).c_str(), ImVec2(20.0f, 20.0f))) {
+    if (ImGui::Button(StringHelper::Sprintf("%s###removeRumbleMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
+                      ImVec2(20.0f, 20.0f))) {
         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(id);
     }
     ImGui::PopStyleVar();
@@ -883,7 +883,8 @@ void InputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string 
 void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if(ImGui::Button(StringHelper::Sprintf("%s###addRumbleMapping%d", ICON_FA_PLUS, port).c_str(), ImVec2(20.0f, 20.0f))) {
+    if (ImGui::Button(StringHelper::Sprintf("%s###addRumbleMapping%d", ICON_FA_PLUS, port).c_str(),
+                      ImVec2(20.0f, 20.0f))) {
         ImGui::OpenPopup(StringHelper::Sprintf("addRumbleMappingPopup##%d", port).c_str());
     }
     ImGui::PopStyleVar();
@@ -897,27 +898,32 @@ void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
-                ->GetRumble()->AddRumbleMappingFromRawPress()) {
+                ->GetRumble()
+                ->AddRumbleMappingFromRawPress()) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
     }
-
 }
 
 void InputEditorWindow::DrawRumbleSection(uint8_t port) {
-    for (auto [id, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->GetAllRumbleMappings()) {
+    for (auto [id, mapping] : LUS::Context::GetInstance()
+                                  ->GetControlDeck()
+                                  ->GetControllerByPort(port)
+                                  ->GetRumble()
+                                  ->GetAllRumbleMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##Rumble%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+        auto open = ImGui::TreeNode(
+            StringHelper::Sprintf("%s##Rumble%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
         DrawRemoveRumbleMappingButton(port, id);
         if (open) {
             ImGui::Text("Small Motor Intensity:");
             ImGui::SetNextItemWidth(160.0f);
 
-            int32_t smallMotorIntensity =  mapping->GetHighFrequencyIntensityPercentage();
-            if (ImGui::SliderInt(StringHelper::Sprintf("##Small Motor Intensity%d", id).c_str(), &smallMotorIntensity, 0, 100, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp)) {
+            int32_t smallMotorIntensity = mapping->GetHighFrequencyIntensityPercentage();
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Small Motor Intensity%d", id).c_str(), &smallMotorIntensity,
+                                 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                 mapping->SetHighFrequencyIntensity(smallMotorIntensity);
                 mapping->SaveToConfig();
             }
@@ -925,9 +931,9 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
             ImGui::Text("Large Motor Intensity:");
             ImGui::SetNextItemWidth(160.0f);
 
-            int32_t largeMotorIntensity =  mapping->GetLowFrequencyIntensityPercentage();
-            if (ImGui::SliderInt(StringHelper::Sprintf("##Large Motor Intensity%d", id).c_str(), &largeMotorIntensity, 0, 100, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp)) {
+            int32_t largeMotorIntensity = mapping->GetLowFrequencyIntensityPercentage();
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Large Motor Intensity%d", id).c_str(), &largeMotorIntensity,
+                                 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                 mapping->SetLowFrequencyIntensity(largeMotorIntensity);
                 mapping->SaveToConfig();
             }
@@ -944,7 +950,8 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
 void InputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::string id) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if(ImGui::Button(StringHelper::Sprintf("%s###removeLEDMapping%s", ICON_FA_TIMES, id.c_str()).c_str(), ImVec2(20.0f, 20.0f))) {
+    if (ImGui::Button(StringHelper::Sprintf("%s###removeLEDMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
+                      ImVec2(20.0f, 20.0f))) {
         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->ClearLEDMapping(id);
     }
     ImGui::PopStyleVar();
@@ -953,7 +960,8 @@ void InputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::string id)
 void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if(ImGui::Button(StringHelper::Sprintf("%s###addLEDMapping%d", ICON_FA_PLUS, port).c_str(), ImVec2(20.0f, 20.0f))) {
+    if (ImGui::Button(StringHelper::Sprintf("%s###addLEDMapping%d", ICON_FA_PLUS, port).c_str(),
+                      ImVec2(20.0f, 20.0f))) {
         ImGui::OpenPopup(StringHelper::Sprintf("addLEDMappingPopup##%d", port).c_str());
     }
     ImGui::PopStyleVar();
@@ -967,7 +975,8 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
-                ->GetLED()->AddLEDMappingFromRawPress()) {
+                ->GetLED()
+                ->AddLEDMappingFromRawPress()) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -975,10 +984,12 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
 }
 
 void InputEditorWindow::DrawLEDSection(uint8_t port) {
-    for (auto [id, mapping] : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
+    for (auto [id, mapping] :
+         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s##LED%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+        auto open =
+            ImGui::TreeNode(StringHelper::Sprintf("%s##LED%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
         DrawRemoveLEDMappingButton(port, id);
         if (open) {
             ImGui::AlignTextToFramePadding();
@@ -986,14 +997,20 @@ void InputEditorWindow::DrawLEDSection(uint8_t port) {
             ImGui::SameLine();
             ImGui::SetNextItemWidth(80.0f);
             int32_t colorSource = mapping->GetColorSource();
-            if (ImGui::Combo(StringHelper::Sprintf("###ledColorSource%s", mapping->GetLEDMappingId().c_str()).c_str(), &colorSource, "Off\0Set\0Game\0\0")) {
+            if (ImGui::Combo(StringHelper::Sprintf("###ledColorSource%s", mapping->GetLEDMappingId().c_str()).c_str(),
+                             &colorSource, "Off\0Set\0Game\0\0")) {
                 mapping->SetColorSource(colorSource);
             };
             if (mapping->GetColorSource() == LED_COLOR_SOURCE_SET) {
                 ImGui::SameLine();
-                ImVec4 color = { mapping->GetSavedColor().r / 255.0f, mapping->GetSavedColor().g / 255.0f, mapping->GetSavedColor().b / 255.0f, 1.0f };
-                if (ImGui::ColorEdit3(StringHelper::Sprintf("###ledSavedColor%s", mapping->GetLEDMappingId().c_str()).c_str(), (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
-                    mapping->SetSavedColor(Color_RGB8({static_cast<uint8_t>(color.x * 255.0), static_cast<uint8_t>(color.y * 255.0), static_cast<uint8_t>(color.z * 255.0)}));
+                ImVec4 color = { mapping->GetSavedColor().r / 255.0f, mapping->GetSavedColor().g / 255.0f,
+                                 mapping->GetSavedColor().b / 255.0f, 1.0f };
+                if (ImGui::ColorEdit3(
+                        StringHelper::Sprintf("###ledSavedColor%s", mapping->GetLEDMappingId().c_str()).c_str(),
+                        (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
+                    mapping->SetSavedColor(
+                        Color_RGB8({ static_cast<uint8_t>(color.x * 255.0), static_cast<uint8_t>(color.y * 255.0),
+                                     static_cast<uint8_t>(color.z * 255.0) }));
                 }
             }
             ImGui::TreePop();
@@ -1008,7 +1025,8 @@ void InputEditorWindow::DrawLEDSection(uint8_t port) {
 void InputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::string id) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if(ImGui::Button(StringHelper::Sprintf("%s###removeGyroMapping%s", ICON_FA_TIMES, id.c_str()).c_str(), ImVec2(20.0f, 20.0f))) {
+    if (ImGui::Button(StringHelper::Sprintf("%s###removeGyroMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
+                      ImVec2(20.0f, 20.0f))) {
         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->ClearGyroMapping();
     }
     ImGui::PopStyleVar();
@@ -1017,7 +1035,8 @@ void InputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::string id
 void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    if(ImGui::Button(StringHelper::Sprintf("%s###addGyroMapping%d", ICON_FA_PLUS, port).c_str(), ImVec2(20.0f, 20.0f))) {
+    if (ImGui::Button(StringHelper::Sprintf("%s###addGyroMapping%d", ICON_FA_PLUS, port).c_str(),
+                      ImVec2(20.0f, 20.0f))) {
         ImGui::OpenPopup(StringHelper::Sprintf("addGyroMappingPopup##%d", port).c_str());
     }
     ImGui::PopStyleVar();
@@ -1031,7 +1050,8 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
-                ->GetGyro()->SetGyroMappingFromRawPress()) {
+                ->GetGyro()
+                ->SetGyroMappingFromRawPress()) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -1039,7 +1059,8 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
 }
 
 void InputEditorWindow::DrawGyroSection(uint8_t port) {
-    auto mapping = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->GetGyroMapping();
+    auto mapping =
+        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->GetGyroMapping();
     if (mapping != nullptr) {
         auto id = mapping->GetGyroMappingId();
         ImGui::AlignTextToFramePadding();
@@ -1051,22 +1072,23 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         mapping->UpdatePad(pitch, yaw);
 
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y - 8));
-        // to find a reasonable scaling factor gyro values 
+        // to find a reasonable scaling factor gyro values
         // I tried to find the maximum value reported by shaking
         // a PS5 controller as hard as I could without worrying about breaking it
         // the max I found for both pitch and yaw was ~21
         // the preview window expects values in an n64 analog stick range (-85 to 85)
         // so I decided to multiply these by 85/21
-        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(), ImVec2(yaw * (85.0f/21.0f), pitch * (85.0f/21.0f)));
+        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(),
+                          ImVec2(yaw * (85.0f / 21.0f), pitch * (85.0f / 21.0f)));
         ImGui::SameLine();
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 8, ImGui::GetCursorPos().y + 8));
-        
+
         ImGui::BeginGroup();
         ImGui::Text("Sensitivity:");
         ImGui::SetNextItemWidth(160.0f);
-        int32_t sensitivity =  mapping->GetSensitivityPercent();
+        int32_t sensitivity = mapping->GetSensitivityPercent();
         if (ImGui::SliderInt(StringHelper::Sprintf("##GyroSensitivity%d", id).c_str(), &sensitivity, 0, 100, "%d%%",
-                            ImGuiSliderFlags_AlwaysClamp)) {
+                             ImGuiSliderFlags_AlwaysClamp)) {
             mapping->SetSensitivity(sensitivity);
             mapping->SaveToConfig();
         }

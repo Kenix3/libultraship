@@ -5,8 +5,7 @@
 
 namespace LUS {
 SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor, int32_t sdlControllerIndex)
-    : ControllerLEDMapping(portIndex, colorSource, savedColor),
-      SDLMapping(sdlControllerIndex) {
+    : ControllerLEDMapping(portIndex, colorSource, savedColor), SDLMapping(sdlControllerIndex) {
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
@@ -19,7 +18,7 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
     }
 
     if (mColorSource == LED_COLOR_SOURCE_OFF) {
-        color = {0, 0, 0};
+        color = { 0, 0, 0 };
     }
 
     if (mColorSource == LED_COLOR_SOURCE_SET) {

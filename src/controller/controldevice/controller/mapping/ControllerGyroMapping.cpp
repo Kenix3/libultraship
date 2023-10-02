@@ -1,7 +1,8 @@
 #include "ControllerGyroMapping.h"
 
 namespace LUS {
-ControllerGyroMapping::ControllerGyroMapping(uint8_t portIndex, float sensitivity) : mPortIndex(portIndex), mSensitivity(sensitivity) {
+ControllerGyroMapping::ControllerGyroMapping(uint8_t portIndex, float sensitivity)
+    : mPortIndex(portIndex), mSensitivity(sensitivity) {
     mSensitivityPercent = mSensitivity * 100;
 }
 

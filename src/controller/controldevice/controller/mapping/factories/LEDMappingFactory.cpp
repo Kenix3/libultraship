@@ -5,18 +5,17 @@
 #include "libultraship/libultra/controller.h"
 
 namespace LUS {
-std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex,
-                                                                                             std::string id) {
+std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
     const std::string mappingCvarKey = "gControllers.LEDMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    int32_t colorSource =
-        CVarGetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
+    int32_t colorSource = CVarGetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
     Color_RGB8 savedColor =
-        CVarGetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), {0, 0, 0});
+        CVarGetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), { 0, 0, 0 });
 
-    if (colorSource != LED_COLOR_SOURCE_OFF && colorSource != LED_COLOR_SOURCE_SET && colorSource != LED_COLOR_SOURCE_GAME) {
+    if (colorSource != LED_COLOR_SOURCE_OFF && colorSource != LED_COLOR_SOURCE_SET &&
+        colorSource != LED_COLOR_SOURCE_GAME) {
         // something about this mapping is invalid
         CVarClear(mappingCvarKey.c_str());
         CVarSave();
@@ -57,7 +56,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
     for (auto [controllerIndex, controller] : sdlControllersWithLEDs) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({0,0,0}), controllerIndex);
+                mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }), controllerIndex);
                 break;
             }
         }
@@ -80,7 +79,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
                 continue;
             }
 
-            mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({0, 0, 0}), controllerIndex);
+            mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }), controllerIndex);
             break;
         }
     }

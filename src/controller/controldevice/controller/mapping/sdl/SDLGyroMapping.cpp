@@ -7,7 +7,10 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll, int32_t sdlControllerIndex) : ControllerGyroMapping(portIndex, sensitivity), SDLMapping(sdlControllerIndex), mNeutralPitch(neutralPitch), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,
+                               float neutralRoll, int32_t sdlControllerIndex)
+    : ControllerGyroMapping(portIndex, sensitivity), SDLMapping(sdlControllerIndex), mNeutralPitch(neutralPitch),
+      mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
 void SDLGyroMapping::Recalibrate() {
@@ -37,7 +40,7 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
     float gyroData[3];
     SDL_GameControllerSetSensorEnabled(mController, SDL_SENSOR_GYRO, SDL_TRUE);
     SDL_GameControllerGetSensorData(mController, SDL_SENSOR_GYRO, gyroData, 3);
-    
+
     x = (gyroData[0] - mNeutralPitch) * mSensitivity;
     y = (gyroData[1] - mNeutralYaw) * mSensitivity;
 }
@@ -55,7 +58,7 @@ void SDLGyroMapping::SaveToConfig() {
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), mNeutralRoll);
-    
+
     CVarSave();
 }
 

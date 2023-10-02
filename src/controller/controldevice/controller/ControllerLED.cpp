@@ -26,8 +26,7 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
         LEDMappingIdListString += ",";
     }
 
-    const std::string LEDMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
+    const std::string LEDMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
     if (LEDMappingIdsCvarKey == "") {
         CVarClear(LEDMappingIdsCvarKey.c_str());
     } else {
@@ -73,8 +72,7 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    const std::string LEDMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
+    const std::string LEDMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
     std::stringstream LEDMappingIdsStringStream(CVarGetString(LEDMappingIdsCvarKey.c_str(), ""));
     std::string LEDMappingIdString;
     while (getline(LEDMappingIdsStringStream, LEDMappingIdString, ',')) {

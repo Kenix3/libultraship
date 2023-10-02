@@ -136,23 +136,23 @@ void Controller::ReadToPad(OSContPad* pad) {
     if (pad != nullptr) {
         auto& padFromBuffer =
             mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger("gSimulatedInputLag", 0))];
-        
+
         pad->button |= padFromBuffer.button;
-        
+
         if (pad->stick_x == 0) {
             pad->stick_x = padFromBuffer.stick_x;
         }
         if (pad->stick_y == 0) {
             pad->stick_y = padFromBuffer.stick_y;
         }
-        
+
         if (pad->right_stick_x == 0) {
             pad->right_stick_x = padFromBuffer.right_stick_x;
         }
         if (pad->right_stick_y == 0) {
             pad->right_stick_y = padFromBuffer.right_stick_y;
         }
-        
+
         if (pad->gyro_x == 0) {
             pad->gyro_x = padFromBuffer.gyro_x;
         }
