@@ -15,6 +15,10 @@ std::shared_ptr<ControllerGyroMapping> ControllerGyro::GetGyroMapping() {
     return mGyroMapping;
 }
 
+void ControllerGyro::SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mapping) {
+    mGyroMapping = mapping;
+}
+
 void ControllerGyro::UpdatePad(float& x, float& y) {
     if (mGyroMapping == nullptr) {
         return;

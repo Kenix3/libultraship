@@ -17,6 +17,7 @@ class ControllerGyro {
     void SaveGyroMappingIdToConfig();
 
     std::shared_ptr<ControllerGyroMapping> GetGyroMapping();
+    void SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mapping);
 
     void UpdatePad(float& x, float& y);
 
