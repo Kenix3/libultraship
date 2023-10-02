@@ -1,14 +1,3 @@
-/*
-void SDLLEDMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
-    CVarSetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
-    CVarSetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
-    CVarSave();
-}
-*/
-
 #include "LEDMappingFactory.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h"
 #include "public/bridge/consolevariablebridge.h"
@@ -36,7 +25,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
 
     if (mappingClass == "SDLLEDMapping") {
         int32_t sdlControllerIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), 0);
+            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), -1);
 
         if (sdlControllerIndex < 0) {
             // something about this mapping is invalid
