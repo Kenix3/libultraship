@@ -73,13 +73,13 @@ std::string SDLButtonToAnyMapping::GetPlaystationButtonName() {
         case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
             return "R1";
         case SDL_CONTROLLER_BUTTON_DPAD_UP:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_UP);
         case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_LEFT);
         case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_BUTTON_MISC1:
             if (GetSDLControllerType() == SDL_CONTROLLER_TYPE_PS5) {
                 return StringHelper::Sprintf("%s", ICON_FA_MICROPHONE_SLASH);
@@ -115,13 +115,13 @@ std::string SDLButtonToAnyMapping::GetSwitchButtonName() {
         case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
             return "R";
         case SDL_CONTROLLER_BUTTON_DPAD_UP:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_UP);
         case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_LEFT);
         case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_BUTTON_MISC1:
             return "Capture"; /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button,
                                  Amazon Luna microphone button */
@@ -161,13 +161,13 @@ std::string SDLButtonToAnyMapping::GetXboxButtonName() {
         case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
             return "RB";
         case SDL_CONTROLLER_BUTTON_DPAD_UP:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_UP);
         case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_LEFT);
         case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-            return StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT);
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_BUTTON_MISC1:
             return "Share"; /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button,
                                Amazon Luna microphone button */

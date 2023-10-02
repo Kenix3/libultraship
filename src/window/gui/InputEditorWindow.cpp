@@ -773,11 +773,11 @@ void InputEditorWindow::DrawElement() {
                                CHIP_COLOR_N64_YELLOW);
             }
             if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_LEFT).c_str(), i, BTN_DLEFT);
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_RIGHT).c_str(), i,
+                DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_LEFT).c_str(), i, BTN_DLEFT);
+                DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), i,
                                BTN_DRIGHT);
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_UP).c_str(), i, BTN_DUP);
-                DrawButtonLine(StringHelper::Sprintf("%s %s", ICON_FA_PLUS, ICON_FA_ARROW_DOWN).c_str(), i, BTN_DDOWN);
+                DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_UP).c_str(), i, BTN_DUP);
+                DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_DOWN).c_str(), i, BTN_DDOWN);
             }
             if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
                 DrawStickSection(i, LEFT, 0);
