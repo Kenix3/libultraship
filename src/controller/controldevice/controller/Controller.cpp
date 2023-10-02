@@ -15,15 +15,15 @@
 
 namespace LUS {
 
-Controller::Controller(uint8_t port) : ControlDevice(port) {
+Controller::Controller(uint8_t portIndex) : ControlDevice(portIndex) {
     for (auto bitmask : { BUTTON_BITMASKS }) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(port, bitmask);
+        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
     }
-    mLeftStick = std::make_shared<ControllerStick>(port, LEFT_STICK);
-    mRightStick = std::make_shared<ControllerStick>(port, RIGHT_STICK);
-    mGyro = std::make_shared<ControllerGyro>(port);
-    mRumble = std::make_shared<ControllerRumble>(port);
-    mLED = std::make_shared<ControllerLED>(port);
+    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK);
+    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK);
+    mGyro = std::make_shared<ControllerGyro>(portIndex);
+    mRumble = std::make_shared<ControllerRumble>(portIndex);
+    mLED = std::make_shared<ControllerLED>(portIndex);
 }
 
 Controller::~Controller() {

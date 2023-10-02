@@ -134,7 +134,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
-        // todo: figure out why optional params (using uuid = "" in the definition) wasn't working
+        // todo: figure out why optional params (using id = "" in the definition) wasn't working
         if (LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
@@ -424,15 +424,15 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
 }
 
 void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
-    static int8_t x, y;
+    static int8_t sX, sY;
     std::shared_ptr<ControllerStick> controllerStick = nullptr;
     if (stick == LEFT) {
         controllerStick = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick();
     } else {
         controllerStick = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
     }
-    controllerStick->Process(x, y);
-    DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(x, y));
+    controllerStick->Process(sX, sY);
+    DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(sX, sY));
 
     ImGui::SameLine();
     ImGui::BeginGroup();
@@ -545,14 +545,14 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         auto open = ImGui::TreeNode(
-            StringHelper::Sprintf("%s##Rumble%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+            StringHelper::Sprintf("%s##Rumble%s", mapping->GetPhysicalDeviceName().c_str(), id.c_str()).c_str());
         DrawRemoveRumbleMappingButton(port, id);
         if (open) {
             ImGui::Text("Small Motor Intensity:");
             ImGui::SetNextItemWidth(160.0f);
 
             int32_t smallMotorIntensity = mapping->GetHighFrequencyIntensityPercentage();
-            if (ImGui::SliderInt(StringHelper::Sprintf("##Small Motor Intensity%d", id).c_str(), &smallMotorIntensity,
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Small Motor Intensity%s", id.c_str()).c_str(), &smallMotorIntensity,
                                  0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                 mapping->SetHighFrequencyIntensity(smallMotorIntensity);
                 mapping->SaveToConfig();
@@ -562,7 +562,7 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
             ImGui::SetNextItemWidth(160.0f);
 
             int32_t largeMotorIntensity = mapping->GetLowFrequencyIntensityPercentage();
-            if (ImGui::SliderInt(StringHelper::Sprintf("##Large Motor Intensity%d", id).c_str(), &largeMotorIntensity,
+            if (ImGui::SliderInt(StringHelper::Sprintf("##Large Motor Intensity%s", id.c_str()).c_str(), &largeMotorIntensity,
                                  0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                 mapping->SetLowFrequencyIntensity(largeMotorIntensity);
                 mapping->SaveToConfig();
@@ -619,7 +619,7 @@ void InputEditorWindow::DrawLEDSection(uint8_t port) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         auto open =
-            ImGui::TreeNode(StringHelper::Sprintf("%s##LED%d", mapping->GetPhysicalDeviceName().c_str(), id).c_str());
+            ImGui::TreeNode(StringHelper::Sprintf("%s##LED%s", mapping->GetPhysicalDeviceName().c_str(), id.c_str()).c_str());
         DrawRemoveLEDMappingButton(port, id);
         if (open) {
             ImGui::AlignTextToFramePadding();
@@ -698,8 +698,8 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         ImGui::BulletText(mapping->GetPhysicalDeviceName().c_str());
         DrawRemoveGyroMappingButton(port, id);
 
-        static float pitch, yaw = 0.0f;
-        mapping->UpdatePad(pitch, yaw);
+        static float sPitch, sYaw = 0.0f;
+        mapping->UpdatePad(sPitch, sYaw);
 
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y - 8));
         // to find a reasonable scaling factor gyro values
@@ -709,7 +709,7 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         // the preview window expects values in an n64 analog stick range (-85 to 85)
         // so I decided to multiply these by 85/21
         DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(),
-                          ImVec2(yaw * (85.0f / 21.0f), pitch * (85.0f / 21.0f)));
+                          ImVec2(sYaw * (85.0f / 21.0f), sPitch * (85.0f / 21.0f)));
         ImGui::SameLine();
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 8, ImGui::GetCursorPos().y + 8));
 
@@ -717,7 +717,7 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         ImGui::Text("Sensitivity:");
         ImGui::SetNextItemWidth(160.0f);
         int32_t sensitivity = mapping->GetSensitivityPercent();
-        if (ImGui::SliderInt(StringHelper::Sprintf("##GyroSensitivity%d", id).c_str(), &sensitivity, 0, 100, "%d%%",
+        if (ImGui::SliderInt(StringHelper::Sprintf("##GyroSensitivity%s", id.c_str()).c_str(), &sensitivity, 0, 100, "%d%%",
                              ImGuiSliderFlags_AlwaysClamp)) {
             mapping->SetSensitivity(sensitivity);
             mapping->SaveToConfig();

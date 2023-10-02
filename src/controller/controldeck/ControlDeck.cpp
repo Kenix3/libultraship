@@ -23,8 +23,8 @@ ControlDeck::~ControlDeck() {
     SPDLOG_TRACE("destruct control deck");
 }
 
-void ControlDeck::Init(uint8_t* bits) {
-    mControllerBits = bits;
+void ControlDeck::Init(uint8_t* controllerBits) {
+    mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
 
     for (auto port : mPorts) {

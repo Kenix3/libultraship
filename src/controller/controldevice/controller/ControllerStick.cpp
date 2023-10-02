@@ -43,11 +43,11 @@ void ControllerStick::ClearAllMappings() {
 }
 
 // todo: where should this live?
-std::unordered_map<Stick, std::string> StickToConfigStickName = { { LEFT_STICK, "LeftStick" },
+std::unordered_map<Stick, std::string> stickToConfigStickName = { { LEFT_STICK, "LeftStick" },
                                                                   { RIGHT_STICK, "RightStick" } };
 
 // todo: where should this live?
-std::unordered_map<Direction, std::string> DirectionToConfigDirectionName = {
+std::unordered_map<Direction, std::string> directionToConfigDirectionName = {
     { LEFT, "Left" }, { RIGHT, "Right" }, { UP, "Up" }, { DOWN, "Down" }
 };
 
@@ -62,8 +62,8 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
         }
 
         const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
-            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, StickToConfigStickName[mStick].c_str(),
-            DirectionToConfigDirectionName[direction].c_str());
+            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, stickToConfigStickName[mStick].c_str(),
+            directionToConfigDirectionName[direction].c_str());
         if (axisDirectionMappingIdListString == "") {
             CVarClear(axisDirectionMappingIdsCvarKey.c_str());
         } else {
@@ -135,8 +135,8 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     for (auto direction : { LEFT, RIGHT, UP, DOWN }) {
         const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
-            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, StickToConfigStickName[mStick].c_str(),
-            DirectionToConfigDirectionName[direction].c_str());
+            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, stickToConfigStickName[mStick].c_str(),
+            directionToConfigDirectionName[direction].c_str());
 
         std::stringstream axisDirectionMappingIdsStringStream(
             CVarGetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
@@ -147,12 +147,12 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
     }
 
     SetDeadzone(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1,
-                                                     StickToConfigStickName[mStick].c_str())
+                                                     stickToConfigStickName[mStick].c_str())
                                    .c_str(),
                                20));
 
     SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                                           StickToConfigStickName[mStick].c_str())
+                                                           stickToConfigStickName[mStick].c_str())
                                          .c_str(),
                                      0));
 }
@@ -303,7 +303,7 @@ void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     mDeadzonePercentage = deadzonePercentage;
     mDeadzone = MAX_AXIS_RANGE * (deadzonePercentage / 100.0f);
     CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1,
-                                         StickToConfigStickName[mStick].c_str())
+                                         stickToConfigStickName[mStick].c_str())
                        .c_str(),
                    mDeadzonePercentage);
     CVarSave();
@@ -316,7 +316,7 @@ uint8_t ControllerStick::GetDeadzonePercentage() {
 void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
     mNotchSnapAngle = notchSnapAngle;
     CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                         StickToConfigStickName[mStick].c_str())
+                                         stickToConfigStickName[mStick].c_str())
                        .c_str(),
                    mNotchSnapAngle);
     CVarSave();

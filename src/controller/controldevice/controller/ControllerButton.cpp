@@ -17,7 +17,7 @@ ControllerButton::~ControllerButton() {
 }
 
 // todo: where should this live?
-std::unordered_map<uint16_t, std::string> ButtonBitmaskToConfigButtonName = {
+std::unordered_map<uint16_t, std::string> buttonBitmaskToConfigButtonName = {
     { BTN_A, "A" },     { BTN_B, "B" },         { BTN_L, "L" },         { BTN_R, "R" },
     { BTN_Z, "Z" },     { BTN_START, "Start" }, { BTN_CLEFT, "CLeft" }, { BTN_CRIGHT, "CRight" },
     { BTN_CUP, "CUp" }, { BTN_CDOWN, "CDown" }, { BTN_DLEFT, "DLeft" }, { BTN_DRIGHT, "DRight" },
@@ -40,9 +40,9 @@ void ControllerButton::AddButtonMapping(std::shared_ptr<ControllerButtonMapping>
     mButtonMappings[mapping->GetButtonMappingId()] = mapping;
 }
 
-void ControllerButton::ClearButtonMapping(std::string uuid) {
-    mButtonMappings[uuid]->EraseFromConfig();
-    mButtonMappings.erase(uuid);
+void ControllerButton::ClearButtonMapping(std::string id) {
+    mButtonMappings[id]->EraseFromConfig();
+    mButtonMappings.erase(id);
     SaveButtonMappingIdsToConfig();
 }
 
@@ -70,7 +70,7 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
 
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf("gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              ButtonBitmaskToConfigButtonName[mBitmask].c_str());
+                              buttonBitmaskToConfigButtonName[mBitmask].c_str());
     if (buttonMappingIdListString == "") {
         CVarClear(buttonMappingIdsCvarKey.c_str());
     } else {
@@ -90,7 +90,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf("gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              ButtonBitmaskToConfigButtonName[mBitmask].c_str());
+                              buttonBitmaskToConfigButtonName[mBitmask].c_str());
     std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
@@ -176,7 +176,7 @@ void ControllerButton::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t s
         }
     }
 
-    for (auto [uuid, mapping] : mButtonMappings) {
+    for (auto [id, mapping] : mButtonMappings) {
         mapping->SaveToConfig();
     }
     SaveButtonMappingIdsToConfig();

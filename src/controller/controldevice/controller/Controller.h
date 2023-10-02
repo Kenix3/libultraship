@@ -47,7 +47,7 @@ class Controller : public ControlDevice {
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
   private:
-    void LoadButtonMappingFromConfig(std::string uuid);
+    void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
 
     std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> mButtons;

@@ -20,17 +20,17 @@ void ControllerLED::SetLEDColor(Color_RGB8 color) {
 
 void ControllerLED::SaveLEDMappingIdsToConfig() {
     // todo: this efficently (when we build out cvar array support?)
-    std::string LEDMappingIdListString = "";
+    std::string ledMappingIdListString = "";
     for (auto [id, mapping] : mLEDMappings) {
-        LEDMappingIdListString += id;
-        LEDMappingIdListString += ",";
+        ledMappingIdListString += id;
+        ledMappingIdListString += ",";
     }
 
-    const std::string LEDMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
-    if (LEDMappingIdsCvarKey == "") {
-        CVarClear(LEDMappingIdsCvarKey.c_str());
+    const std::string ledMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
+    if (ledMappingIdsCvarKey == "") {
+        CVarClear(ledMappingIdsCvarKey.c_str());
     } else {
-        CVarSetString(LEDMappingIdsCvarKey.c_str(), LEDMappingIdListString.c_str());
+        CVarSetString(ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
     }
 
     CVarSave();
@@ -72,11 +72,11 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    const std::string LEDMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
-    std::stringstream LEDMappingIdsStringStream(CVarGetString(LEDMappingIdsCvarKey.c_str(), ""));
-    std::string LEDMappingIdString;
-    while (getline(LEDMappingIdsStringStream, LEDMappingIdString, ',')) {
-        LoadLEDMappingFromConfig(LEDMappingIdString);
+    const std::string ledMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
+    std::stringstream ledMappingIdsStringStream(CVarGetString(ledMappingIdsCvarKey.c_str(), ""));
+    std::string ledMappingIdString;
+    while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
+        LoadLEDMappingFromConfig(ledMappingIdString);
     }
 }
 
