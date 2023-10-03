@@ -186,12 +186,17 @@ void ConsoleVariable::Save() {
         } else if (variable.second->Type == ConsoleVariableType::Color ||
                    variable.second->Type == ConsoleVariableType::Color24) {
             auto keyStr = key.c_str();
-            Color_RGBA8 clr = variable.second->Color;
-            conf->SetUInt(StringHelper::Sprintf("%s.R", keyStr), clr.r);
-            conf->SetUInt(StringHelper::Sprintf("%s.G", keyStr), clr.g);
-            conf->SetUInt(StringHelper::Sprintf("%s.B", keyStr), clr.b);
+            conf->SetUInt(StringHelper::Sprintf("%s.R", keyStr), variable.second->Type == ConsoleVariableType::Color
+                                                                     ? variable.second->Color.r
+                                                                     : variable.second->Color24.r);
+            conf->SetUInt(StringHelper::Sprintf("%s.G", keyStr), variable.second->Type == ConsoleVariableType::Color
+                                                                     ? variable.second->Color.g
+                                                                     : variable.second->Color24.g);
+            conf->SetUInt(StringHelper::Sprintf("%s.B", keyStr), variable.second->Type == ConsoleVariableType::Color
+                                                                     ? variable.second->Color.b
+                                                                     : variable.second->Color24.b);
             if (variable.second->Type == ConsoleVariableType::Color) {
-                conf->SetUInt(StringHelper::Sprintf("%s.A", keyStr), clr.a);
+                conf->SetUInt(StringHelper::Sprintf("%s.A", keyStr), variable.second->Color.a);
                 conf->SetString(StringHelper::Sprintf("%s.Type", keyStr), "RGBA");
             } else {
                 conf->SetString(StringHelper::Sprintf("%s.Type", keyStr), "RGB");
