@@ -96,4 +96,21 @@ void ControlDeck::BlockGameInput(int32_t blockId) {
 void ControlDeck::UnblockGameInput(int32_t blockId) {
     mGameInputBlockers.erase(blockId);
 }
+
+int32_t ControlDeck::GetPhysicalDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    if (!mLUSDeviceIndexToPhysicalDeviceIndexMappings.contains(lusIndex)) {
+        // todo: figure out if -1 works to mean "we don't have one" in non-SDL implementations
+        return -1;
+    }
+
+    return mLUSDeviceIndexToPhysicalDeviceIndexMappings[lusIndex]->GetPhysicalDeviceIndex();
+}
+
+void ControlDeck::SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping) {
+    mLUSDeviceIndexToPhysicalDeviceIndexMappings[mapping->GetLUSDeviceIndex()] = mapping;
+}
+
+void ControlDeck::RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index) {
+    mLUSDeviceIndexToPhysicalDeviceIndexMappings.erase(index);
+}
 } // namespace LUS

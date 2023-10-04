@@ -1,21 +1,18 @@
 #pragma once
 
 #include <cstdint>
-#include "LUSDeviceIndex.h"
+#include "LUSDeviceIndexToPhysicalDeviceIndexMapping.h"
 
 namespace LUS {
 
-// todo: move some stuff out of here into a base class to handle
-// non-sdl physical devices
-class LUSDeviceIndexToSDLDeviceIndexMapping {
+class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
   public:
     LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex);
     ~LUSDeviceIndexToSDLDeviceIndexMapping();
 
-    int32_t GetSDLDeviceIndex();
+    int32_t GetPhysicalDeviceIndex() override;
 
-  protected:
-    LUSDeviceIndex mLUSDeviceIndex;
+  private:
     int32_t mSDLDeviceIndex;
 };
 } // namespace LUS
