@@ -3,6 +3,8 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
+#include "Context.h"
+#include "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h"
 
 namespace LUS {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
@@ -23,40 +25,52 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
     }
 
     if (mappingClass == "SDLLEDMapping") {
-        int32_t sdlControllerIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t lusDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (sdlControllerIndex < 0) {
+        if (lusDeviceIndex < 0) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLLEDMapping>(portIndex, colorSource, savedColor, sdlControllerIndex);
+        return std::make_shared<SDLLEDMapping>(lusDeviceIndex, portIndex, colorSource, savedColor);
     }
 
     return nullptr;
 }
 
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<int32_t, SDL_GameController*> sdlControllersWithLEDs;
+    std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllersWithLEDs;
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            auto controller = SDL_GameControllerOpen(i);
-            if (SDL_GameControllerHasLED(controller)) {
-                sdlControllersWithLEDs[i] = SDL_GameControllerOpen(i);
-            } else {
-                SDL_GameControllerClose(controller);
-            }
+    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetAllDeviceIndexMappings()) {
+        auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+
+        if (sdlIndexMapping == nullptr) {
+            // this LUS index isn't mapped to an SDL index
+            continue;
+        }
+
+        auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
+
+        if (!SDL_IsGameController(sdlIndex)) {
+            // this SDL device isn't a game controller
+            continue;
+        }
+
+        auto controller = SDL_GameControllerOpen(sdlIndex);
+        if (SDL_GameControllerHasLED(controller)) {
+            sdlControllersWithLEDs[lusIndex] = SDL_GameControllerOpen(sdlIndex);
+        } else {
+            SDL_GameControllerClose(controller);
         }
     }
 
-    for (auto [controllerIndex, controller] : sdlControllersWithLEDs) {
+    for (auto [lusIndex, controller] : sdlControllersWithLEDs) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }), controllerIndex);
+                mapping = std::make_shared<SDLLEDMapping>(lusIndex, portIndex, 0, Color_RGB8({ 0, 0, 0 }));
                 break;
             }
         }
@@ -79,7 +93,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
                 continue;
             }
 
-            mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }), controllerIndex);
+            mapping = std::make_shared<SDLLEDMapping>(lusIndex, portIndex, 0, Color_RGB8({ 0, 0, 0 }));
             break;
         }
     }

@@ -163,20 +163,20 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
     switch (mapping->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
-            switch (mapping->GetPhysicalDeviceIndex()) {
-                case 0:
+            switch (mapping->GetLUSDeviceIndex()) {
+                case LUSDeviceIndex::Blue:
                     buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
                     break;
-                case 1:
+                case LUSDeviceIndex::Red:
                     buttonColor = BUTTON_COLOR_GAMEPAD_RED;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
                     break;
-                case 2:
+                case LUSDeviceIndex::Orange:
                     buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
                     break;
-                case 3:
+                case LUSDeviceIndex::Green:
                     buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
                     break;
@@ -316,20 +316,20 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
     switch (mapping->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
-            switch (mapping->GetPhysicalDeviceIndex()) {
-                case 0:
+            switch (mapping->GetLUSDeviceIndex()) {
+                case LUSDeviceIndex::Blue:
                     buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
                     break;
-                case 1:
+                case LUSDeviceIndex::Red:
                     buttonColor = BUTTON_COLOR_GAMEPAD_RED;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
                     break;
-                case 2:
+                case LUSDeviceIndex::Orange:
                     buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
                     break;
-                case 3:
+                case LUSDeviceIndex::Green:
                     buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
                     buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
                     break;

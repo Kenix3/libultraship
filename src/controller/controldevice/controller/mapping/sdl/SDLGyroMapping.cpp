@@ -7,9 +7,9 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,
-                               float neutralRoll, int32_t sdlControllerIndex)
-    : ControllerGyroMapping(portIndex, sensitivity), SDLMapping(sdlControllerIndex), mNeutralPitch(neutralPitch),
+SDLGyroMapping::SDLGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,
+                               float neutralRoll)
+    : ControllerInputMapping(lusDeviceIndex), ControllerGyroMapping(lusDeviceIndex, portIndex, sensitivity), mNeutralPitch(neutralPitch), SDLMapping(lusDeviceIndex),
       mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
@@ -46,14 +46,14 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
 }
 
 std::string SDLGyroMapping::GetGyroMappingId() {
-    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, mControllerIndex);
+    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mLUSDeviceIndex);
 }
 
 void SDLGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerInputMapping::mLUSDeviceIndex);
     CVarSetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
@@ -66,7 +66,7 @@ void SDLGyroMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());

@@ -78,14 +78,15 @@ void Controller::ClearAllMappings() {
     GetLED()->ClearAllMappings();
 }
 
-void Controller::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex) {
+void Controller::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
+        button->AddDefaultMappings(lusDeviceIndex);
     }
-    GetLeftStick()->ResetToDefaultMappings(keyboard, sdl, sdlControllerIndex);
+    GetLeftStick()->AddDefaultMappings(lusDeviceIndex);
+    GetRumble()->AddDefaultMappings(lusDeviceIndex);
+    
     GetRightStick()->ClearAllMappings();
     GetGyro()->ClearGyroMapping();
-    GetRumble()->ResetToDefaultMappings(sdl, sdlControllerIndex);
     GetLED()->ClearAllMappings();
 
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);

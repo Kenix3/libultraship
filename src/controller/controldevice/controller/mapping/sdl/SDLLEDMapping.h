@@ -4,7 +4,7 @@
 namespace LUS {
 class SDLLEDMapping final : public ControllerLEDMapping, public SDLMapping {
   public:
-    SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor, int32_t sdlControllerIndex);
+    SDLLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
 
     void SetLEDColor(Color_RGB8 color) override;
 

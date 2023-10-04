@@ -21,7 +21,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
 
     if (mappingClass == "SDLGyroMapping") {
         int32_t sdlControllerIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), -1);
+            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
         if (sdlControllerIndex < 0) {
             // something about this mapping is invalid

@@ -8,11 +8,10 @@
 #define MAX_SDL_RANGE (float)INT16_MAX
 
 namespace LUS {
-SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(uint8_t portIndex, Stick stick, Direction direction,
-                                                                 int32_t sdlControllerIndex,
+SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
                                                                  int32_t sdlControllerButton)
-    : ControllerAxisDirectionMapping(portIndex, stick, direction),
-      SDLButtonToAnyMapping(sdlControllerIndex, sdlControllerButton) {
+    : ControllerInputMapping(lusDeviceIndex), ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
+      SDLButtonToAnyMapping(lusDeviceIndex, sdlControllerButton) {
 }
 
 float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
@@ -25,7 +24,7 @@ float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 }
 
 std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-SDLI%d-SDLB%d", mPortIndex, mStick, mDirection, mControllerIndex,
+    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLB%d", mPortIndex, mStick, mDirection, ControllerInputMapping::mLUSDeviceIndex,
                                  mControllerButton);
 }
 
@@ -35,7 +34,7 @@ void SDLButtonToAxisDirectionMapping::SaveToConfig() {
                   "SDLButtonToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerInputMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }
@@ -45,7 +44,7 @@ void SDLButtonToAxisDirectionMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
     CVarSave();
 }

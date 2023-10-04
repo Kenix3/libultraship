@@ -4,16 +4,11 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace LUS {
-SDLButtonToAnyMapping::SDLButtonToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerButton)
-    : SDLMapping(sdlControllerIndex) {
+SDLButtonToAnyMapping::SDLButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerButton) : ControllerInputMapping(lusDeviceIndex), SDLMapping(lusDeviceIndex) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 
 SDLButtonToAnyMapping::~SDLButtonToAnyMapping() {
-}
-
-int32_t SDLButtonToAnyMapping::GetPhysicalDeviceIndex() {
-    return mControllerIndex;
 }
 
 std::string SDLButtonToAnyMapping::GetPhysicalInputName() {

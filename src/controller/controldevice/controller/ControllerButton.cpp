@@ -161,17 +161,15 @@ bool ControllerButton::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbS
     return result;
 }
 
-void ControllerButton::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex) {
-    ClearAllButtonMappings();
-
-    if (sdl) {
-        for (auto mapping :
-             ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask, sdlControllerIndex)) {
+void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
+    for (auto mapping :
+            ButtonMappingFactory::CreateDefaultSDLButtonMappings(lusDeviceIndex)) {
+        if (mapping != nullptr) {
             AddButtonMapping(mapping);
         }
     }
 
-    if (keyboard) {
+    if (lusDeviceIndex == LUSDeviceIndex::Keyboard) {
         for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
             AddButtonMapping(mapping);
         }

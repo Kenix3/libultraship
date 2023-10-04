@@ -91,12 +91,12 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
 
-void ControllerStick::ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex) {
+void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex, bool keyboard, bool sdl) {
     ClearAllMappings();
 
     if (sdl) {
-        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStick,
-                                                                                               sdlControllerIndex)) {
+        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick
+                                                                                               )) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
         }
     }

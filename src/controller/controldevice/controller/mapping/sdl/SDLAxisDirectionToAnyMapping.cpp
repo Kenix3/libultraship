@@ -4,18 +4,14 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace LUS {
-SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerIndex, int32_t sdlControllerAxis,
+SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerAxis,
                                                            int32_t axisDirection)
-    : SDLMapping(sdlControllerIndex) {
+    : ControllerInputMapping(lusDeviceIndex), SDLMapping(lusDeviceIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
 
 SDLAxisDirectionToAnyMapping::~SDLAxisDirectionToAnyMapping() {
-}
-
-int32_t SDLAxisDirectionToAnyMapping::GetPhysicalDeviceIndex() {
-    return mControllerIndex;
 }
 
 std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {

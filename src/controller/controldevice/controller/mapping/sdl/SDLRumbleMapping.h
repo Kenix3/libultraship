@@ -4,8 +4,8 @@
 namespace LUS {
 class SDLRumbleMapping final : public ControllerRumbleMapping, public SDLMapping {
   public:
-    SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
-                     uint8_t highFrequencyIntensityPercentage, int32_t sdlControllerIndex);
+    SDLRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+                     uint8_t highFrequencyIntensityPercentage);
 
     void StartRumble() override;
     void StopRumble() override;

@@ -7,7 +7,7 @@ LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(LUS
 LUSDeviceIndexToSDLDeviceIndexMapping::~LUSDeviceIndexToSDLDeviceIndexMapping() {
 }
 
-int32_t LUSDeviceIndexToSDLDeviceIndexMapping::GetPhysicalDeviceIndex() {
+int32_t LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLDeviceIndex() {
     return mSDLDeviceIndex;
 }
 } // namespace LUS

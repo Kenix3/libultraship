@@ -4,6 +4,8 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
+#include "Context.h"
+#include "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h"
 
 namespace LUS {
 std::shared_ptr<ControllerAxisDirectionMapping>
@@ -14,15 +16,15 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t sdlControllerIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t lusDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerAxis =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
-            sdlControllerIndex < 0 || sdlControllerAxis == -1 ||
+            lusDeviceIndex < 0 || sdlControllerAxis == -1 ||
             (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -31,26 +33,26 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         }
 
         return std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
-            portIndex, stick, static_cast<Direction>(direction), sdlControllerIndex, sdlControllerAxis, axisDirection);
+            lusDeviceIndex, portIndex, stick, static_cast<Direction>(direction), sdlControllerAxis, axisDirection);
     }
 
     if (mappingClass == "SDLButtonToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t sdlControllerIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t lusDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
-            sdlControllerIndex < 0 || sdlControllerButton == -1) {
+            lusDeviceIndex < 0 || sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction),
-                                                                 sdlControllerIndex, sdlControllerButton);
+        return std::make_shared<SDLButtonToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, static_cast<Direction>(direction),
+                                                                sdlControllerButton);
     }
 
     if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
@@ -85,16 +87,15 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, Stick stick,
-                                                                   int32_t sdlControllerIndex) {
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick) {
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, LEFT, sdlControllerIndex,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, LEFT,
                                                                  stick == LEFT_STICK ? 0 : 2, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, RIGHT, sdlControllerIndex,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, RIGHT,
                                                                  stick == LEFT_STICK ? 0 : 2, 1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, UP, sdlControllerIndex,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, UP,
                                                                  stick == LEFT_STICK ? 1 : 3, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, DOWN, sdlControllerIndex,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, DOWN,
                                                                  stick == LEFT_STICK ? 1 : 3, 1)
     };
 
@@ -104,19 +105,31 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, Stick stick,
                                                                     Direction direction) {
-    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
+    std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            sdlControllers[i] = SDL_GameControllerOpen(i);
+    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetAllDeviceIndexMappings()) {
+        auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+
+        if (sdlIndexMapping == nullptr) {
+            // this LUS index isn't mapped to an SDL index
+            continue;
         }
+
+        auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
+
+        if (!SDL_IsGameController(sdlIndex)) {
+            // this SDL device isn't a game controller
+            continue;
+        }
+
+        sdlControllers[lusIndex] = SDL_GameControllerOpen(sdlIndex);
     }
 
-    for (auto [controllerIndex, controller] : sdlControllers) {
+    for (auto [lusIndex, controller] : sdlControllers) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stick, direction,
-                                                                            controllerIndex, button);
+                mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction,
+                                                                            button);
                 break;
             }
         }
@@ -139,8 +152,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
                 continue;
             }
 
-            mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stick, direction,
-                                                                               controllerIndex, axis, axisDirection);
+            mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction,
+                                                                            axis, axisDirection);
             break;
         }
     }

@@ -30,11 +30,12 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     for (auto port : mPorts) {
         if (port->GetConnectedController()->HasConfig()) {
             port->GetConnectedController()->ReloadAllMappingsFromConfig();
-        } else {
-            port->GetConnectedController()->ResetToDefaultMappings(port->GetConnectedController()->GetPortIndex() == 0,
-                                                                   true,
-                                                                   port->GetConnectedController()->GetPortIndex());
         }
+    }
+
+    // if we don't have a config for controller 1, set default keyboard bindings
+    if (!mPorts[0]->GetConnectedController()->HasConfig()) {
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(LUSDeviceIndex::Keyboard);
     }
 }
 
@@ -97,13 +98,16 @@ void ControlDeck::UnblockGameInput(int32_t blockId) {
     mGameInputBlockers.erase(blockId);
 }
 
-int32_t ControlDeck::GetPhysicalDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> ControlDeck::GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
     if (!mLUSDeviceIndexToPhysicalDeviceIndexMappings.contains(lusIndex)) {
-        // todo: figure out if -1 works to mean "we don't have one" in non-SDL implementations
-        return -1;
+        return nullptr;
     }
 
-    return mLUSDeviceIndexToPhysicalDeviceIndexMappings[lusIndex]->GetPhysicalDeviceIndex();
+    return mLUSDeviceIndexToPhysicalDeviceIndexMappings[lusIndex];
+}
+
+std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> ControlDeck::GetAllDeviceIndexMappings() {
+    return mLUSDeviceIndexToPhysicalDeviceIndexMappings;
 }
 
 void ControlDeck::SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping) {

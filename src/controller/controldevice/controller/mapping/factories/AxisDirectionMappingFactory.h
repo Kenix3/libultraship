@@ -15,7 +15,7 @@ class AxisDirectionMappingFactory {
     CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick);
 
     static std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-    CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, Stick stick, int32_t sdlControllerIndex);
+    CreateDefaultSDLAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick);
 
     static std::shared_ptr<ControllerAxisDirectionMapping>
     CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, Stick stick, Direction direction);

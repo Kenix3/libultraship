@@ -4,8 +4,8 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor, int32_t sdlControllerIndex)
-    : ControllerLEDMapping(portIndex, colorSource, savedColor), SDLMapping(sdlControllerIndex) {
+SDLLEDMapping::SDLLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor)
+    : ControllerLEDMapping(lusDeviceIndex, portIndex, colorSource, savedColor), SDLMapping(lusDeviceIndex) {
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
@@ -29,13 +29,13 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {
-    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, mControllerIndex);
+    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, ControllerLEDMapping::mLUSDeviceIndex);
 }
 
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
     CVarSetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerLEDMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
     CVarSetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
     CVarSave();
@@ -45,7 +45,7 @@ void SDLLEDMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str());
 

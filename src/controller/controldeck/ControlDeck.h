@@ -25,7 +25,8 @@ class ControlDeck {
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
     
-    int32_t GetPhysicalDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> GetAllDeviceIndexMappings();
+    std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
     void SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping);
     void RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index);
 

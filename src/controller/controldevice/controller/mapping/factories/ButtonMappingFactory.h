@@ -13,7 +13,7 @@ class ButtonMappingFactory {
                                                                                                      uint16_t bitmask);
 
     static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultSDLButtonMappings(uint8_t portIndex, uint16_t bitmask, int32_t sdlControllerIndex);
+    CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask);
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromSDLInput(uint8_t portIndex,
                                                                                     uint16_t bitmask);

@@ -6,10 +6,9 @@
 namespace LUS {
 class SDLButtonToAnyMapping : virtual public ControllerInputMapping, public SDLMapping {
   public:
-    SDLButtonToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerButton);
+    SDLButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerButton);
     ~SDLButtonToAnyMapping();
     std::string GetPhysicalInputName() override;
-    int32_t GetPhysicalDeviceIndex() override;
     std::string GetPhysicalDeviceName() override;
 
   protected:

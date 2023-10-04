@@ -6,9 +6,9 @@
 #include "Context.h"
 
 namespace LUS {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, uint16_t bitmask, int32_t sdlControllerIndex,
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
                                                    int32_t sdlControllerButton)
-    : ControllerButtonMapping(portIndex, bitmask), SDLButtonToAnyMapping(sdlControllerIndex, sdlControllerButton) {
+    : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask), SDLButtonToAnyMapping(lusDeviceIndex, sdlControllerButton) {
 }
 
 void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
@@ -30,7 +30,7 @@ uint8_t SDLButtonToButtonMapping::GetMappingType() {
 }
 
 std::string SDLButtonToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-SDLI%d-SDLB%d", mPortIndex, mBitmask, mControllerIndex, mControllerButton);
+    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask, ControllerInputMapping::mLUSDeviceIndex, mControllerButton);
 }
 
 void SDLButtonToButtonMapping::SaveToConfig() {
@@ -38,7 +38,7 @@ void SDLButtonToButtonMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerInputMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }
@@ -48,7 +48,7 @@ void SDLButtonToButtonMapping::EraseFromConfig() {
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
     CVarSave();
 }

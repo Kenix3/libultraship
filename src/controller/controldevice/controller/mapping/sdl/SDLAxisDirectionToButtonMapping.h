@@ -4,7 +4,7 @@
 namespace LUS {
 class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, public SDLAxisDirectionToAnyMapping {
   public:
-    SDLAxisDirectionToButtonMapping(uint8_t portIndex, uint16_t bitmask, int32_t sdlControllerIndex,
+    SDLAxisDirectionToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
                                     int32_t sdlControllerAxis, int32_t axisDirection);
     void UpdatePad(uint16_t& padButtons) override;
     uint8_t GetMappingType() override;

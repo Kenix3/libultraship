@@ -23,7 +23,7 @@ class ControllerButton {
     void AddButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
     void ClearButtonMapping(std::string id);
     void ClearButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
-    void ResetToDefaultMappings(bool keyboard, bool sdl, int32_t sdlControllerIndex);
+    void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
 
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();

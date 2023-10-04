@@ -62,7 +62,7 @@ void ControllerRumble::ClearAllMappings() {
     SaveRumbleMappingIdsToConfig();
 }
 
-void ControllerRumble::ResetToDefaultMappings(bool sdl, int32_t sdlControllerIndex) {
+void ControllerRumble::AddDefaultMappings(bool sdl, int32_t sdlControllerIndex) {
     ClearAllMappings();
     if (!sdl) {
         return;

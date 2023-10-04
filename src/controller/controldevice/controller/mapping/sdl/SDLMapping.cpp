@@ -1,19 +1,29 @@
 #include "SDLMapping.h"
 #include <spdlog/spdlog.h>
+#include "Context.h"
+#include "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h"
 
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLMapping::SDLMapping(int32_t sdlControllerIndex) : mControllerIndex(sdlControllerIndex), mController(nullptr) {
+SDLMapping::SDLMapping(LUSDeviceIndex lusDeviceIndex) : ControllerMapping(lusDeviceIndex), mController(nullptr) {
 }
 
 SDLMapping::~SDLMapping() {
 }
 
 bool SDLMapping::OpenController() {
-    const auto newCont = SDL_GameControllerOpen(mControllerIndex);
+    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
 
-    // We failed to load the controller. Go to next.
+    if (deviceIndexMapping == nullptr) {
+        // we don't have an sdl device for this LUS device index
+        mController = nullptr;
+        return false;
+    }
+
+    const auto newCont = SDL_GameControllerOpen(deviceIndexMapping->GetSDLDeviceIndex());
+
+    // We failed to load the controller
     if (newCont == nullptr) {
         return false;
     }
@@ -24,9 +34,6 @@ bool SDLMapping::OpenController() {
 
 bool SDLMapping::CloseController() {
     if (mController != nullptr && SDL_WasInit(SDL_INIT_GAMECONTROLLER)) {
-        // if (CanRumble()) {
-        //     SDL_GameControllerRumble(mController, 0, 0, 0);
-        // }
         SDL_GameControllerClose(mController);
     }
     mController = nullptr;
@@ -41,10 +48,6 @@ bool SDLMapping::ControllerLoaded() {
     if (mController != nullptr && !SDL_GameControllerGetAttached(mController)) {
         CloseController();
     }
-
-    uint16_t vendor, product, version, crc16;
-    SDL_JoystickGetDeviceGUID(mControllerIndex);
-    SDL_GetJoystickGUIDInfo(SDL_JoystickGetDeviceGUID(mControllerIndex), &vendor, &product, &version, &crc16);
 
     // Attempt to load the controller if it's not loaded
     if (mController == nullptr) {
@@ -76,8 +79,23 @@ bool SDLMapping::UsesXboxLayout() {
     return type == SDL_CONTROLLER_TYPE_XBOX360 || type == SDL_CONTROLLER_TYPE_XBOXONE;
 }
 
+int32_t SDLMapping::GetSDLDeviceIndex() {
+    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
+
+    if (deviceIndexMapping == nullptr) {
+        // we don't have an sdl device for this LUS device index
+        return -1;
+    }
+
+    return deviceIndexMapping->GetSDLDeviceIndex();
+}
+
 std::string SDLMapping::GetSDLDeviceName() {
-    auto sdlName = SDL_GameControllerNameForIndex(mControllerIndex);
-    return StringHelper::Sprintf("%s (SDL %d)", sdlName != nullptr ? sdlName : "Unknown", mControllerIndex);
+    if (mController == nullptr) {
+        return StringHelper::Sprintf("Disconnected (%d)", mLUSDeviceIndex);    
+    }
+
+    auto sdlName = SDL_GameControllerName(mController);
+    return StringHelper::Sprintf("%s (SDL %d)", sdlName != nullptr ? sdlName : "Unknown", GetSDLDeviceIndex());
 }
 } // namespace LUS

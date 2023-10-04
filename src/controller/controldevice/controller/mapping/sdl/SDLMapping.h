@@ -4,14 +4,15 @@
 #include <SDL2/SDL.h>
 #include <memory>
 #include <string>
+#include "controller/controldevice/controller/mapping/ControllerMapping.h"
 
 namespace LUS {
 enum Axis { X = 0, Y = 1 };
 enum AxisDirection { NEGATIVE = -1, POSITIVE = 1 };
 
-class SDLMapping {
+class SDLMapping : public ControllerMapping {
   public:
-    SDLMapping(int32_t sdlControllerIndex);
+    SDLMapping(LUSDeviceIndex lusDeviceIndex);
     ~SDLMapping();
 
   protected:
@@ -23,7 +24,6 @@ class SDLMapping {
     std::string GetSDLDeviceName();
     int32_t GetSDLDeviceIndex();
 
-    int32_t mControllerIndex;
     SDL_GameController* mController;
 
   private:

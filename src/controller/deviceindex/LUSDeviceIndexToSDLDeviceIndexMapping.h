@@ -10,7 +10,7 @@ class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDev
     LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex);
     ~LUSDeviceIndexToSDLDeviceIndexMapping();
 
-    int32_t GetPhysicalDeviceIndex() override;
+    int32_t GetSDLDeviceIndex();
 
   private:
     int32_t mSDLDeviceIndex;

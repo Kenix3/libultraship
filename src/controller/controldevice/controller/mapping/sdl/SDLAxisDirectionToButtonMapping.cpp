@@ -6,11 +6,11 @@
 #include "Context.h"
 
 namespace LUS {
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, uint16_t bitmask,
-                                                                 int32_t sdlControllerIndex, int32_t sdlControllerAxis,
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
+                                                                 int32_t sdlControllerAxis,
                                                                  int32_t axisDirection)
-    : ControllerButtonMapping(portIndex, bitmask),
-      SDLAxisDirectionToAnyMapping(sdlControllerIndex, sdlControllerAxis, axisDirection) {
+    : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
+      SDLAxisDirectionToAnyMapping(lusDeviceIndex, sdlControllerAxis, axisDirection) {
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
@@ -36,7 +36,7 @@ uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
 }
 
 std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-SDLI%d-SDLA%d-AD%s", mPortIndex, mBitmask, mControllerIndex, mControllerAxis,
+    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mBitmask, ControllerInputMapping::mLUSDeviceIndex, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 
@@ -45,7 +45,7 @@ void SDLAxisDirectionToButtonMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLAxisDirectionToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str(), mControllerIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerInputMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
     CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
     CVarSave();
@@ -55,7 +55,7 @@ void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLControllerIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
     CVarSave();

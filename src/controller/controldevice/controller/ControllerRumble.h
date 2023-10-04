@@ -18,7 +18,7 @@ class ControllerRumble {
     void ClearRumbleMapping(std::string id);
     void SaveRumbleMappingIdsToConfig();
     void ClearAllMappings();
-    void ResetToDefaultMappings(bool sdl, int32_t sdlControllerIndex);
+    void AddDefaultMappings(bool sdl, int32_t sdlControllerIndex);
     void LoadRumbleMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();
 
