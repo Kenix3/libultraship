@@ -3,14 +3,21 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
+#include "Context.h"
+#include "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h"
 
 namespace LUS {
 
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
-RumbleMappingFactory::CreateDefaultSDLRumbleMappings(uint8_t portIndex, int32_t sdlControllerIndex) {
-    std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings;
+RumbleMappingFactory::CreateDefaultSDLRumbleMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex) {
+    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
+    if (sdlIndexMapping == nullptr) {
+        return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
+    }
 
-    mappings.push_back(std::make_shared<SDLRumbleMapping>(portIndex, 100, 100, sdlControllerIndex));
+    std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = {
+        std::make_shared<SDLRumbleMapping>(lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE)
+    };
 
     return mappings;
 }
@@ -35,36 +42,53 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
     }
 
     if (mappingClass == "SDLRumbleMapping") {
-        int32_t sdlControllerIndex =
+        int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (sdlControllerIndex < 0) {
+        if (lusDeviceIndex < 0) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLRumbleMapping>(portIndex, lowFrequencyIntensityPercentage,
-                                                  highFrequencyIntensityPercentage, sdlControllerIndex);
+        return std::make_shared<SDLRumbleMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, lowFrequencyIntensityPercentage,
+                                                  highFrequencyIntensityPercentage);
     }
 
     return nullptr;
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
+    std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllersWithRumble;
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            sdlControllers[i] = SDL_GameControllerOpen(i);
+    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetAllDeviceIndexMappings()) {
+        auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+
+        if (sdlIndexMapping == nullptr) {
+            // this LUS index isn't mapped to an SDL index
+            continue;
+        }
+
+        auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
+
+        if (!SDL_IsGameController(sdlIndex)) {
+            // this SDL device isn't a game controller
+            continue;
+        }
+
+        auto controller = SDL_GameControllerOpen(sdlIndex);
+        if (SDL_GameControllerHasRumble(controller)) {
+            sdlControllersWithRumble[lusIndex] = SDL_GameControllerOpen(sdlIndex);
+        } else {
+            SDL_GameControllerClose(controller);
         }
     }
 
-    for (auto [controllerIndex, controller] : sdlControllers) {
+    for (auto [lusIndex, controller] : sdlControllersWithRumble) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLRumbleMapping>(portIndex, 100, 100, controllerIndex);
+                mapping = std::make_shared<SDLRumbleMapping>(lusIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 break;
             }
         }
@@ -87,12 +111,12 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                 continue;
             }
 
-            mapping = std::make_shared<SDLRumbleMapping>(portIndex, 100, 100, controllerIndex);
+            mapping = std::make_shared<SDLRumbleMapping>(lusIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
             break;
         }
     }
 
-    for (auto [i, controller] : sdlControllers) {
+    for (auto [i, controller] : sdlControllersWithRumble) {
         SDL_GameControllerClose(controller);
     }
 

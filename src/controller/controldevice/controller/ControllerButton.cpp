@@ -163,10 +163,8 @@ bool ControllerButton::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbS
 
 void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     for (auto mapping :
-            ButtonMappingFactory::CreateDefaultSDLButtonMappings(lusDeviceIndex)) {
-        if (mapping != nullptr) {
-            AddButtonMapping(mapping);
-        }
+            ButtonMappingFactory::CreateDefaultSDLButtonMappings(lusDeviceIndex, mPortIndex, mBitmask)) {
+        AddButtonMapping(mapping);
     }
 
     if (lusDeviceIndex == LUSDeviceIndex::Keyboard) {

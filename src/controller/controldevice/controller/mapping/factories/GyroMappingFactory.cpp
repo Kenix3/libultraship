@@ -3,6 +3,8 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
+#include "Context.h"
+#include "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h"
 
 namespace LUS {
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromConfig(uint8_t portIndex,
@@ -20,10 +22,10 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
     }
 
     if (mappingClass == "SDLGyroMapping") {
-        int32_t sdlControllerIndex =
+        int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (sdlControllerIndex < 0) {
+        if (lusDeviceIndex < 0) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
@@ -35,31 +37,42 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         float neutralYaw = CVarGetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
         float neutralRoll = CVarGetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
 
-        return std::make_shared<SDLGyroMapping>(portIndex, sensitivity, neutralPitch, neutralYaw, neutralRoll,
-                                                sdlControllerIndex);
+        return std::make_shared<SDLGyroMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, sensitivity, neutralPitch, neutralYaw, neutralRoll);
     }
 
     return nullptr;
 }
 
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<int32_t, SDL_GameController*> sdlControllersWithGyro;
+    std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllersWithGyro;
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            auto controller = SDL_GameControllerOpen(i);
-            if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
-                sdlControllersWithGyro[i] = SDL_GameControllerOpen(i);
-            } else {
-                SDL_GameControllerClose(controller);
-            }
+    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetAllDeviceIndexMappings()) {
+        auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+
+        if (sdlIndexMapping == nullptr) {
+            // this LUS index isn't mapped to an SDL index
+            continue;
+        }
+
+        auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
+
+        if (!SDL_IsGameController(sdlIndex)) {
+            // this SDL device isn't a game controller
+            continue;
+        }
+
+        auto controller = SDL_GameControllerOpen(sdlIndex);
+        if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
+            sdlControllersWithGyro[lusIndex] = SDL_GameControllerOpen(sdlIndex);
+        } else {
+            SDL_GameControllerClose(controller);
         }
     }
 
-    for (auto [controllerIndex, controller] : sdlControllersWithGyro) {
+    for (auto [lusIndex, controller] : sdlControllersWithGyro) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f, controllerIndex);
+                mapping = std::make_shared<SDLGyroMapping>(lusIndex, portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
                 mapping->Recalibrate();
                 break;
             }
@@ -83,7 +96,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
                 continue;
             }
 
-            mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f, controllerIndex);
+            mapping = std::make_shared<SDLGyroMapping>(lusIndex, portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
             mapping->Recalibrate();
             break;
         }

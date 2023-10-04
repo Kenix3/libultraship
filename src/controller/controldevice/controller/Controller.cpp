@@ -84,10 +84,6 @@ void Controller::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     }
     GetLeftStick()->AddDefaultMappings(lusDeviceIndex);
     GetRumble()->AddDefaultMappings(lusDeviceIndex);
-    
-    GetRightStick()->ClearAllMappings();
-    GetGyro()->ClearGyroMapping();
-    GetLED()->ClearAllMappings();
 
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);

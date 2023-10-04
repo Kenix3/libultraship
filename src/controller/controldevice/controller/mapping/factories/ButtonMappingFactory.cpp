@@ -23,37 +23,37 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     }
 
     if (mappingClass == "SDLButtonToButtonMapping") {
-        int32_t sdlControllerIndex =
+        int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (sdlControllerIndex < 0 || sdlControllerButton == -1) {
+        if (lusDeviceIndex < 0 || sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, sdlControllerIndex, sdlControllerButton);
+        return std::make_shared<SDLButtonToButtonMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, bitmask, sdlControllerButton);
     }
 
     if (mappingClass == "SDLAxisDirectionToButtonMapping") {
-        int32_t sdlControllerIndex =
+        int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerAxis =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if (sdlControllerIndex < 0 || sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
+        if (lusDeviceIndex < 0 || sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, sdlControllerIndex,
+        return std::make_shared<SDLAxisDirectionToButtonMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, bitmask,
                                                                  sdlControllerAxis, axisDirection);
     }
 
@@ -133,8 +133,7 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceInd
 
     auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
     if (sdlIndexMapping == nullptr) {
-        mappings.push_back(nullptr);
-        return mappings;
+        return std::vector<std::shared_ptr<ControllerButtonMapping>>();
     }
 
     switch (bitmask) {
@@ -201,18 +200,30 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceInd
 
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex,
                                                                                                uint16_t bitmask) {
-    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
+    std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            sdlControllers[i] = SDL_GameControllerOpen(i);
+    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetAllDeviceIndexMappings()) {
+        auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+
+        if (sdlIndexMapping == nullptr) {
+            // this LUS index isn't mapped to an SDL index
+            continue;
         }
+
+        auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
+
+        if (!SDL_IsGameController(sdlIndex)) {
+            // this SDL device isn't a game controller
+            continue;
+        }
+
+        sdlControllers[lusIndex] = SDL_GameControllerOpen(sdlIndex);
     }
 
-    for (auto [controllerIndex, controller] : sdlControllers) {
+    for (auto [lusIndex, controller] : sdlControllers) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, controllerIndex, button);
+                mapping = std::make_shared<SDLButtonToButtonMapping>(lusIndex, portIndex, bitmask, button);
                 break;
             }
         }
@@ -235,7 +246,7 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
                 continue;
             }
 
-            mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, controllerIndex, axis,
+            mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(lusIndex, portIndex, bitmask, axis,
                                                                         axisDirection);
             break;
         }

@@ -62,13 +62,8 @@ void ControllerRumble::ClearAllMappings() {
     SaveRumbleMappingIdsToConfig();
 }
 
-void ControllerRumble::AddDefaultMappings(bool sdl, int32_t sdlControllerIndex) {
-    ClearAllMappings();
-    if (!sdl) {
-        return;
-    }
-
-    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(mPortIndex, sdlControllerIndex)) {
+void ControllerRumble::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
+    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(lusDeviceIndex, mPortIndex)) {
         AddRumbleMapping(mapping);
     }
 
