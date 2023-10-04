@@ -1,7 +1,7 @@
 #include "ControllerInputMapping.h"
 
 namespace LUS {
-ControllerInputMapping::ControllerInputMapping() {
+ControllerInputMapping::ControllerInputMapping(LUSDeviceIndex lusDeviceIndex) : ControllerMapping(lusDeviceIndex) {
 }
 
 ControllerInputMapping::~ControllerInputMapping() {

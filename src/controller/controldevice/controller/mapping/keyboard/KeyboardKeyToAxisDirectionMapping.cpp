@@ -8,7 +8,7 @@
 namespace LUS {
 KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
                                                                      Direction direction, KbScancode scancode)
-    : ControllerAxisDirectionMapping(portIndex, stick, direction), KeyboardKeyToAnyMapping(scancode) {
+    : ControllerInputMapping(LUSDeviceIndex::Keyboard), ControllerAxisDirectionMapping(LUSDeviceIndex::Keyboard, portIndex, stick, direction), KeyboardKeyToAnyMapping(scancode) {
 }
 
 float KeyboardKeyToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {

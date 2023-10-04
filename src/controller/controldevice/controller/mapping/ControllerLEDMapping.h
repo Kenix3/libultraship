@@ -13,7 +13,7 @@ namespace LUS {
 
 class ControllerLEDMapping : public ControllerMapping {
   public:
-    ControllerLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
+    ControllerLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
     ~ControllerLEDMapping();
 
     void SetColorSource(uint8_t colorSource);

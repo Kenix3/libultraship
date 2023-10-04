@@ -10,7 +10,7 @@ namespace LUS {
 
 class ControllerGyroMapping : virtual public ControllerInputMapping {
   public:
-    ControllerGyroMapping(uint8_t portIndex, float sensitivity);
+    ControllerGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity);
     ~ControllerGyroMapping();
     virtual void UpdatePad(float& x, float& y) = 0;
     virtual void SaveToConfig() = 0;

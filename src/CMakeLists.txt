@@ -115,6 +115,9 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndex.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h
 )
 
 # if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")

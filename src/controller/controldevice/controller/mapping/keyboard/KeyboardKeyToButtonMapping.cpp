@@ -6,7 +6,7 @@
 
 namespace LUS {
 KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, uint16_t bitmask, KbScancode scancode)
-    : ControllerButtonMapping(portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
+    : ControllerInputMapping(LUSDeviceIndex::Keyboard), ControllerButtonMapping(LUSDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
 }
 
 void KeyboardKeyToButtonMapping::UpdatePad(uint16_t& padButtons) {

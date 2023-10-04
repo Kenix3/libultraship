@@ -7,7 +7,7 @@ namespace LUS {
 
 class ControllerInputMapping : public ControllerMapping {
   public:
-    ControllerInputMapping();
+    ControllerInputMapping(LUSDeviceIndex lusDeviceIndex);
     ~ControllerInputMapping();
     virtual std::string GetPhysicalInputName();
 };

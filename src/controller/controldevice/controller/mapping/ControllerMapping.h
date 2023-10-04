@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "controller/deviceindex/LUSDeviceIndex.h"
 
 namespace LUS {
 
@@ -10,9 +11,12 @@ namespace LUS {
 
 class ControllerMapping {
   public:
-    ControllerMapping();
+    ControllerMapping(LUSDeviceIndex lusDeviceIndex);
     ~ControllerMapping();
     virtual std::string GetPhysicalDeviceName();
-    virtual int32_t GetPhysicalDeviceIndex();
+    LUSDeviceIndex GetLUSDeviceIndex();
+  
+  protected:
+    LUSDeviceIndex mLUSDeviceIndex;
 };
 } // namespace LUS

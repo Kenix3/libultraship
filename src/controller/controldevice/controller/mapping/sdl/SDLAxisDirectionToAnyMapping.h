@@ -6,10 +6,9 @@
 namespace LUS {
 class SDLAxisDirectionToAnyMapping : virtual public ControllerInputMapping, public SDLMapping {
   public:
-    SDLAxisDirectionToAnyMapping(int32_t sdlControllerIndex, int32_t sdlControllerAxis, int32_t axisDirection);
+    SDLAxisDirectionToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerIndex, int32_t sdlControllerAxis, int32_t axisDirection);
     ~SDLAxisDirectionToAnyMapping();
     std::string GetPhysicalInputName() override;
-    int32_t GetPhysicalDeviceIndex() override;
     std::string GetPhysicalDeviceName() override;
 
   protected:

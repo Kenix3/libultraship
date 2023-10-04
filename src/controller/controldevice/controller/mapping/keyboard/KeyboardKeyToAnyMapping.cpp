@@ -6,7 +6,7 @@
 
 namespace LUS {
 KeyboardKeyToAnyMapping::KeyboardKeyToAnyMapping(KbScancode scancode)
-    : mKeyboardScancode(scancode), mKeyPressed(false) {
+    : ControllerInputMapping(LUSDeviceIndex::Keyboard), mKeyboardScancode(scancode), mKeyPressed(false) {
 }
 
 KeyboardKeyToAnyMapping::~KeyboardKeyToAnyMapping() {

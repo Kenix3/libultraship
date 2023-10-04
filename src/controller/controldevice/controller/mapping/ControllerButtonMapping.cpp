@@ -6,8 +6,8 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-ControllerButtonMapping::ControllerButtonMapping(uint8_t portIndex, uint16_t bitmask)
-    : mPortIndex(portIndex), mBitmask(bitmask) {
+ControllerButtonMapping::ControllerButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask)
+    : ControllerInputMapping(lusDeviceIndex), mPortIndex(portIndex), mBitmask(bitmask) {
 }
 
 ControllerButtonMapping::~ControllerButtonMapping() {

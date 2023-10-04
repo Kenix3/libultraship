@@ -11,7 +11,7 @@ namespace LUS {
 
 class ControllerRumbleMapping : public ControllerMapping {
   public:
-    ControllerRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+    ControllerRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                             uint8_t highFrequencyIntensityPercentage);
     ~ControllerRumbleMapping();
     virtual void StartRumble() = 0;

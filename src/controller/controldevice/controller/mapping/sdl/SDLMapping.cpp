@@ -42,6 +42,10 @@ bool SDLMapping::ControllerLoaded() {
         CloseController();
     }
 
+    uint16_t vendor, product, version, crc16;
+    SDL_JoystickGetDeviceGUID(mControllerIndex);
+    SDL_GetJoystickGUIDInfo(SDL_JoystickGetDeviceGUID(mControllerIndex), &vendor, &product, &version, &crc16);
+
     // Attempt to load the controller if it's not loaded
     if (mController == nullptr) {
         // If we failed to load the controller, don't process it.

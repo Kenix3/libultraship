@@ -9,7 +9,7 @@ namespace LUS {
 
 class ControllerButtonMapping : virtual public ControllerInputMapping {
   public:
-    ControllerButtonMapping(uint8_t portIndex, uint16_t bitmask);
+    ControllerButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask);
     ~ControllerButtonMapping();
 
     virtual std::string GetButtonMappingId() = 0;
