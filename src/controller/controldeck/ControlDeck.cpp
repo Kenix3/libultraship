@@ -5,6 +5,7 @@
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>
+#include "controller/deviceindex/LUSDeviceIndexMappingManager.h"
 
 // #ifdef __WIIU__
 // #include "port/wiiu/WiiUGamepad.h"
@@ -17,6 +18,7 @@ ControlDeck::ControlDeck() : mPads(nullptr) {
     for (int32_t i = 0; i < 4; i++) {
         mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i)));
     }
+    mDeviceIndexMappingManager = std::make_shared<LUSDeviceIndexMappingManager>();
 }
 
 ControlDeck::~ControlDeck() {
@@ -26,6 +28,8 @@ ControlDeck::~ControlDeck() {
 void ControlDeck::Init(uint8_t* controllerBits) {
     mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
+
+    mDeviceIndexMappingManager->InitializeMappings();
 
     for (auto port : mPorts) {
         if (port->GetConnectedController()->HasConfig()) {
@@ -98,23 +102,7 @@ void ControlDeck::UnblockGameInput(int32_t blockId) {
     mGameInputBlockers.erase(blockId);
 }
 
-std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> ControlDeck::GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    if (!mLUSDeviceIndexToPhysicalDeviceIndexMappings.contains(lusIndex)) {
-        return nullptr;
-    }
-
-    return mLUSDeviceIndexToPhysicalDeviceIndexMappings[lusIndex];
-}
-
-std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> ControlDeck::GetAllDeviceIndexMappings() {
-    return mLUSDeviceIndexToPhysicalDeviceIndexMappings;
-}
-
-void ControlDeck::SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping) {
-    mLUSDeviceIndexToPhysicalDeviceIndexMappings[mapping->GetLUSDeviceIndex()] = mapping;
-}
-
-void ControlDeck::RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index) {
-    mLUSDeviceIndexToPhysicalDeviceIndexMappings.erase(index);
+std::shared_ptr<LUSDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
+    return mDeviceIndexMappingManager;
 }
 } // namespace LUS

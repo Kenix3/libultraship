@@ -4,7 +4,7 @@
 #include <vector>
 #include <config/Config.h>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "controller/deviceindex/LUSDeviceIndexToPhysicalDeviceIndexMapping.h"
+#include "controller/deviceindex/LUSDeviceIndexMappingManager.h"
 
 namespace LUS {
 
@@ -25,10 +25,7 @@ class ControlDeck {
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
     
-    std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> GetAllDeviceIndexMappings();
-    std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
-    void SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping);
-    void RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index);
+    std::shared_ptr<LUSDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 
   private:
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
@@ -37,6 +34,6 @@ class ControlDeck {
 
     bool AllGameInputBlocked();
     std::unordered_map<int32_t, bool> mGameInputBlockers;
-    std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> mLUSDeviceIndexToPhysicalDeviceIndexMappings;
+    std::shared_ptr<LUSDeviceIndexMappingManager> mDeviceIndexMappingManager;
 };
 } // namespace LUS

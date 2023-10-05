@@ -13,7 +13,7 @@ SDLMapping::~SDLMapping() {
 }
 
 bool SDLMapping::OpenController() {
-    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
+    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
@@ -80,7 +80,7 @@ bool SDLMapping::UsesXboxLayout() {
 }
 
 int32_t SDLMapping::GetSDLDeviceIndex() {
-    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
+    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
