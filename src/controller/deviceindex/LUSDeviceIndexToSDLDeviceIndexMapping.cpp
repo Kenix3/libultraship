@@ -13,6 +13,10 @@ int32_t LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLDeviceIndex() {
     return mSDLDeviceIndex;
 }
 
+void LUSDeviceIndexToSDLDeviceIndexMapping::SetSDLDeviceIndex(int32_t index) {
+    mSDLDeviceIndex = index;
+}
+
 std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetJoystickGUID() {
     return mSDLJoystickGUID;
 }

@@ -17,6 +17,7 @@ class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDev
     void EraseFromConfig() override;
 
     int32_t GetSDLDeviceIndex();
+    void SetSDLDeviceIndex(int32_t index);
 
   private:
     int32_t mSDLDeviceIndex;

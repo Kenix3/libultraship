@@ -35,6 +35,7 @@ void LUSDeviceIndexMappingManager::InitializeMappings() {
         }
 
         if (attachedSdlControllerGuids[sdlMapping->GetSDLDeviceIndex()] == sdlMapping->GetJoystickGUID()) {
+            sdlMapping->EraseFromConfig();
             SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
             sdlIndicesToRemove.push_back(sdlMapping->GetSDLDeviceIndex());
             lusIndicesToRemove.push_back(sdlMapping->GetLUSDeviceIndex());
@@ -59,21 +60,23 @@ void LUSDeviceIndexMappingManager::InitializeMappings() {
             }
 
             if (sdlGuid == sdlMapping->GetJoystickGUID()) {
+                sdlMapping->EraseFromConfig();
+                sdlMapping->SetSDLDeviceIndex(sdlIndex);
                 SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
                 sdlIndicesToRemove.push_back(sdlMapping->GetSDLDeviceIndex());
                 lusIndicesToRemove.push_back(sdlMapping->GetLUSDeviceIndex());
                 break;
             }
         }
-        for (auto index : sdlIndicesToRemove) {
-            attachedSdlControllerGuids.erase(index);
-        }
         for (auto index : lusIndicesToRemove) {
             mappings.erase(index);
         }
-        sdlIndicesToRemove.clear();
         lusIndicesToRemove.clear();
     }
+    for (auto index : sdlIndicesToRemove) {
+        attachedSdlControllerGuids.erase(index);
+    }
+    sdlIndicesToRemove.clear();
 
     // todo: check to see if we've satisfied port 1 mappings
     // if we haven't, pause the game and prompt the player

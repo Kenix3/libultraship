@@ -61,6 +61,10 @@ bool SDLMapping::ControllerLoaded() {
 }
 
 SDL_GameControllerType SDLMapping::GetSDLControllerType() {
+    if (!ControllerLoaded()) {
+        return SDL_CONTROLLER_TYPE_UNKNOWN;
+    }
+
     return SDL_GameControllerGetType(mController);
 }
 
@@ -91,7 +95,7 @@ int32_t SDLMapping::GetSDLDeviceIndex() {
 }
 
 std::string SDLMapping::GetSDLDeviceName() {
-    if (mController == nullptr) {
+    if (!ControllerLoaded()) {
         return StringHelper::Sprintf("Disconnected (%d)", mLUSDeviceIndex);    
     }
 
