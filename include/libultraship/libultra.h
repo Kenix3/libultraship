@@ -4,6 +4,7 @@
 #include "libultra/abi.h"
 #include "libultra/controller.h"
 #include "libultra/convert.h"
+#include "libultra/eeprom.h"
 #include "libultra/exception.h"
 #include "libultra/gbi.h"
 #include "libultra/gs2dex.h"
