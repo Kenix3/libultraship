@@ -181,11 +181,11 @@ ZAPDUtils::Vec2f LUS::BinaryReader::ReadVec2f() {
     return ZAPDUtils::Vec2f();
 }
 
-#endif
-
 Color3b LUS::BinaryReader::ReadColor3b() {
     return Color3b();
 }
+
+#endif
 
 std::string LUS::BinaryReader::ReadString() {
     std::string res;

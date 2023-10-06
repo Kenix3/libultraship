@@ -47,8 +47,8 @@ class BinaryReader {
     ZAPDUtils::Vec3s ReadVec3s();
     ZAPDUtils::Vec3s ReadVec3b();
     ZAPDUtils::Vec2f ReadVec2f();
-#endif
     Color3b ReadColor3b();
+#endif
     std::string ReadString();
     std::string ReadCString();
 
