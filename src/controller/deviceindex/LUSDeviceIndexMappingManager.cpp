@@ -196,7 +196,16 @@ std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDevic
     return mappings;
 }
 
+// todo: update this to handle lus PORT logic as opposed to assuming lus device index is lus port
 std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> LUSDeviceIndexMappingManager::GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    // todo: get lus port from lus device index
+    // if no port found, return nullptr
+
+    // todo: get physical device index mapping from lus port
+    // if no physical device index mapping found, return nullptr
+
+    // todo: return physical device index mapping for port
+
     if (!mLUSDeviceIndexToPhysicalDeviceIndexMappings.contains(lusIndex)) {
         return nullptr;
     }
