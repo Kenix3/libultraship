@@ -61,6 +61,25 @@ bool TASController::CanGyro() const {
 }
 
 void TASController::CreateDefaultBinding(int32_t portIndex) {
+    auto profile = GetProfile(portIndex);
+    profile->Mappings.clear();
+    profile->AxisDeadzones.clear();
+    profile->AxisMinimumPress.clear();
+    profile->GyroData.clear();
+
+    profile->Version = DEVICE_PROFILE_CURRENT_VERSION;
+    profile->UseRumble = false;
+    profile->RumbleStrength = 0.0f;
+    profile->UseGyro = false;
+
+    for (int32_t i = 0; i < 6; i++) {
+        profile->AxisDeadzones[i] = 0.0f;
+        profile->AxisMinimumPress[i] = 0.0f;
+    }
+
+    profile->GyroData[DRIFT_X] = 0.0f;
+    profile->GyroData[DRIFT_Y] = 0.0f;
+    profile->GyroData[GYRO_SENSITIVITY] = 0.0f;
 }
 
 void TASController::ClearRawPress() {
