@@ -12,7 +12,7 @@ LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 }
 
 void LUSDeviceIndexMappingManager::InitializeMappings() {
-    // find all currently attached controllers and map their guids to sdl index
+    // find all currently attached physical devices and map their guids to sdl index
     std::unordered_map<int32_t, std::string> attachedSdlControllerGuids;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {
         if (!SDL_IsGameController(i)) {
@@ -35,7 +35,6 @@ void LUSDeviceIndexMappingManager::InitializeMappings() {
         }
 
         if (attachedSdlControllerGuids[sdlMapping->GetSDLDeviceIndex()] == sdlMapping->GetJoystickGUID()) {
-            sdlMapping->EraseFromConfig();
             SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
             sdlIndicesToRemove.push_back(sdlMapping->GetSDLDeviceIndex());
             lusIndicesToRemove.push_back(sdlMapping->GetLUSDeviceIndex());
@@ -82,6 +81,14 @@ void LUSDeviceIndexMappingManager::InitializeMappings() {
     // if we haven't, pause the game and prompt the player
     // not sure if we want to prompt for every LUS index with a mapping on port 1,
     // just the index with the most mappings, or just the lowest index
+
+    // prompt for use as saved vs use as new
+    // if input mappings only exist for one LUS color, then use as saved doesn't need extra prompts
+    // if input mappings exist for multiple LUS colors, then prompt for "which color" 
+    // is it possible to throw an imgui modal up with controller input temporarily enabled?
+    // use as new set default mappings
+    // only ask for use as saved if we don't have any "active" mappings on the port we're currently trying to map to (start with 1, then 2 etc.) 
+    // - active defined as any non-keyboard input mapping on a port using an LUS index with a non-null deviceindexmapping 
 
     // map any remaining controllers to the lowest available LUS index
     for (auto [sdlIndex, sdlGuid] : attachedSdlControllerGuids) {

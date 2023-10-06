@@ -1,7 +1,7 @@
 #include "ControllerMapping.h"
 
 namespace LUS {
-ControllerMapping::ControllerMapping(LUSDeviceIndex lusDeviceIndex) {
+ControllerMapping::ControllerMapping(LUSDeviceIndex lusDeviceIndex) : mLUSDeviceIndex(lusDeviceIndex) {
 }
 
 ControllerMapping::~ControllerMapping() {
