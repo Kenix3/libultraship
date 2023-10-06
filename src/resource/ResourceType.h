@@ -14,6 +14,9 @@ enum class ResourceType {
     Array = 0x4F415252,       // OARR
     Blob = 0x4F424C42,        // OBLB
     Texture = 0x4F544558,     // OTEX
+    Bank = 0x42414E4B,        // BANK
+    Sample = 0x41554643,      // AIFC
+    Sequence = 0x53455143,    // SEQC
 
     // LUS of Harkinian
     SOH_Animation = 0x4F414E4D,       // OANM
@@ -31,5 +34,10 @@ enum class ResourceType {
     SOH_AudioSequence = 0x4F534551,   // OSEQ
     SOH_Background = 0x4F424749,      // OBGI
     SOH_SceneCommand = 0x4F52434D,    // ORCM
+
+    // SM64
+    SAnim = 0x414E494D,       // ANIM
+    SDialog = 0x53444C47,     // SDLG
+    Dictionary = 0x44494354,  // DICT
 };
 } // namespace LUS
