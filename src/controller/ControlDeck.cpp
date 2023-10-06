@@ -3,6 +3,7 @@
 #include "Context.h"
 #include "Controller.h"
 #include "DummyController.h"
+#include "TASController.h"
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>
@@ -47,6 +48,7 @@ void ControlDeck::ScanDevices() {
     }
 
     mDevices.push_back(std::make_shared<DummyController>(i++, "Auto", "Auto", true));
+    mDevices.push_back(std::make_shared<TASController>(i++));
     mDevices.push_back(std::make_shared<KeyboardController>(i++));
 #else
     for (i = 0; i < 4; i++) {

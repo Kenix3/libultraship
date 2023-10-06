@@ -172,7 +172,7 @@ set(Source_Files__Public__Libultra
     ${CMAKE_CURRENT_SOURCE_DIR}/public/libultra/os.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/libultra/os.cpp
 )
- 
+
 source_group("public/libultra" FILES ${Source_Files__Public__Libultra})
 
 set(Source_Files__Public__Bridge
@@ -189,7 +189,7 @@ set(Source_Files__Public__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/crashhandlerbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/crashhandlerbridge.cpp
 )
- 
+
 source_group("public/bridge" FILES ${Source_Files__Public__Bridge})
 target_sources(libultraship PRIVATE ${Source_Files__Public__Libultra} ${Source_Files__Public__Bridge})
 
@@ -479,7 +479,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
     )
 endif()
 
