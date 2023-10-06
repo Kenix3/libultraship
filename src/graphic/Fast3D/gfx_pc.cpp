@@ -2791,6 +2791,11 @@ static void gfx_run_dl(Gfx* cmd) {
                         std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
                             LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
+                        if(tex == nullptr) {
+                            SPDLOG_ERROR("G_SETTIMG: Texture is null");
+                            break;
+                        }
+
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
                         rawTexMetdata.width = tex->Width;
