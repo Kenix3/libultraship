@@ -243,3 +243,33 @@ void LUSDeviceIndexMappingManager::RemoveLUSDeviceIndexToPhysicalDeviceIndexMapp
 //     }
 // }
 } // namespace LUS
+
+/*
+
+more todo space
+
+"single player" mode
+
+use case: 4 xbox controllers
+- first boot (empty json)
+  - default mappings for all 4 controllers appear in port 1 of the controller config menu
+- quit/restart
+  - with 4 xbox controllers connected (same sdl indices)
+    - controllers reassociate with lus device index based on guid/sdl index
+  - with sdl0 as switch controller, sdl1 as playstation controller, and 4 xbox controllers connected (sdl2-sdl5)
+    - 2 xbox controllers reassociate with lus device index based on guid/sdl index
+    - 2 xbox controllers reassociate with lus device index based on guid alone (lowest sdl index to lowest lus index)
+    - new default mappings added to port 1 for switch and playstation controllers
+  - with 1 xbox controller
+    - controller reassociates based on guid/sdl index if possible, if sdl id doesn't match it associates with guid alone
+      - i was worried we might have a risk of nonunique mappings here, but if we always match on both sdl index and guid first then even if we update the sdl index when reassociating on guid alone we'll be fine
+- new controller connected
+  - try to associate based on guid/sdl index, if we can't try to associate based on guid, if we can't add default mappings to port 1
+- controller disconnected
+  - can we use SDL_GameControllerGetAttached to figure out which controller was disconnected?
+  - might be able to do something with deviceinstanceid comparisons, use SDL_JoystickGetDeviceInstanceID(device_index) and SDL_JoystickInstanceID(joystick)
+  - SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller))
+  - we have no idea what controller the player is currently using, but it would be annoying to pause gameplay if an unused controller got disconnected,
+    so i think it makes sense to just show a little alert saying "controllername disconnected"
+  - automatically update all lusdeviceindex mappings to have the appropriate sdl device index
+*/
