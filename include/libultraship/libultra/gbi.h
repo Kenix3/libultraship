@@ -2090,7 +2090,7 @@ typedef union {
     { _SHIFTL(G_CULLDL, 24, 8) | ((0x0f & (vstart)) * 40), ((0x0f & ((vend) + 1)) * 40) }
 #endif
 
-#define __gSPSegment(pkt, segment, base) gMoveWd(pkt, G_MW_SEGMENT, (segment)*4, base)
+#define gSPSegment(pkt, segment, base) gMoveWd(pkt, G_MW_SEGMENT, (segment)*4, base)
 #define gsSPSegment(segment, base) gsMoveWd(G_MW_SEGMENT, (segment)*4, base)
 
 /*

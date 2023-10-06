@@ -597,6 +597,11 @@ static void import_texture_rgba16(int tile, bool importReplacement) {
             ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
                   ->second.replacementData
             : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        return;
+    }
+
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
