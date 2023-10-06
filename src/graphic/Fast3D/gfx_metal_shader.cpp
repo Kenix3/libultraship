@@ -184,6 +184,9 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[4096], size_t& num_floats
         vertex_descriptor->attributes()->object(vertex_index++)->setOffset(num_floats * sizeof(float));
         num_floats += 4;
     }
+    if(cc_features.opt_filtering){
+        three_point_filtering = false;
+    }
     for (int i = 0; i < cc_features.num_inputs; i++) {
         len += sprintf(buf + len, "    float%d input%d [[attribute(%d)]];\n", cc_features.opt_alpha ? 4 : 3, i + 1,
                        vertex_index);

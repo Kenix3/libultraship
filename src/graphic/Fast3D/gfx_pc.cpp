@@ -171,6 +171,7 @@ static struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     bool grayscale;
+    bool filtering;
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
@@ -1492,6 +1493,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
     if (rdp.loaded_texture[1].blended) {
         cc_options |= (uint64_t)SHADER_OPT_TEXEL1_BLEND;
+    }
+    if(rdp.filtering){
+        cc_options |= (uint64_t)SHADER_OPT_DISABLE_FILTERING;
     }
 
     // If we are not using alpha, clear the alpha components of the combiner as they have no effect
@@ -2927,6 +2931,10 @@ static void gfx_run_dl(Gfx* cmd) {
             }
             case G_SETGRAYSCALE: {
                 rdp.grayscale = cmd->words.w1;
+                break;
+            }
+            case G_SETFILTERING: {
+                rdp.filtering = cmd->words.w1;
                 break;
             }
             case G_LOADBLOCK:

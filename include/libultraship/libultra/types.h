@@ -32,15 +32,19 @@ typedef s32 intptr_t;
 typedef u32 uintptr_t;
 #endif
 
+#ifndef GBI_FLOATS
 typedef int Mtx_t[4][4];
 typedef union {
     Mtx_t m;
-    struct {
-        u16 intPart[4][4];
-        u16 fracPart[4][4];
+	@@ -41,6 +42,11 @@ typedef union {
     };
     long long int forc_structure_alignment;
 } Mtx;
+#else
+typedef struct {
+    float m[4][4];
+} Mtx;
+#endif
 
 typedef float MtxF_t[4][4];
 typedef union {

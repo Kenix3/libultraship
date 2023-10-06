@@ -47,8 +47,6 @@
         macro      \
     } while (0)
 
-#define F3DEX_GBI_2
-
 #ifdef F3DEX_GBI_2
 #ifndef F3DEX_GBI
 #define F3DEX_GBI
@@ -187,7 +185,9 @@
 
 // RDP Cmd
 #define G_SETGRAYSCALE 0x39
+#define G_EXTRAGEOMETRYMODE 0x3a
 #define G_SETINTENSITY 0x40
+#define G_SETFILTERING 0x41
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -362,6 +362,11 @@
 #define G_CLIPPING_H (G_CLIPPING / 0x10000)
 #endif
 #endif
+
+/*
+ * G_EXTRAGEOMETRY flags: set extra custom geometry modes
+ */
+#define G_EX_INVERT_CULLING 0x00000001
 
 /* Need these defined for Sprite Microcode */
 #ifdef _LANGUAGE_ASSEMBLY
@@ -1021,21 +1026,29 @@
  * Vertex (set up for use with colors)
  */
 typedef struct {
-    short ob[3]; /* x, y, z */
-    unsigned short flag;
-    short tc[2];         /* texture coord */
-    unsigned char cn[4]; /* color & alpha */
+#ifndef GBI_FLOATS
+	short		ob[3];	/* x, y, z */
+#else
+	float		ob[3];	/* x, y, z */
+#endif
+	unsigned short	flag;
+	short		tc[2];	/* texture coord */
+	unsigned char	cn[4];	/* color & alpha */
 } Vtx_t;
 
 /*
  * Vertex (set up for use with normals)
  */
 typedef struct {
-    short ob[3]; /* x, y, z */
-    unsigned short flag;
-    short tc[2];      /* texture coord */
-    signed char n[3]; /* normal */
-    unsigned char a;  /* alpha  */
+#ifndef GBI_FLOATS
+	short		ob[3];	/* x, y, z */
+#else
+	float		ob[3];	/* x, y, z */
+#endif
+	unsigned short	flag;
+	short		tc[2];	/* texture coord */
+	signed char	n[3];	/* normal */
+	unsigned char   a;      /* alpha  */
 } Vtx_tn;
 
 typedef union {
@@ -2677,6 +2690,28 @@ typedef union {
 
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
+
+#define gSPDisableFiltering(pkt, state)                       \
+    {                                                  \
+        Gfx* _g = (Gfx*)(pkt);                         \
+                                                       \
+        _g->words.w0 = _SHIFTL(G_SETFILTERING, 24, 8); \
+        _g->words.w1 = state;                          \
+    }
+
+#define gsSPDisableFiltering(state) \
+    { (_SHIFTL(G_SETFILTERING, 24, 8)), (state) }
+
+#define gSPExtraGeometryMode(pkt, c, s)                                                 \
+    _DW({                                                                               \
+        Gfx* _g = (Gfx*)(pkt);                                                          \
+                                                                                        \
+        _g->words.w0 = _SHIFTL(G_EXTRAGEOMETRYMODE, 24, 8) | _SHIFTL(~(u32)(c), 0, 24); \
+        _g->words.w1 = (u32)(s);                                                        \
+    })
+
+#define gSPSetExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), 0, word)
+#define gSPClearExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), word, 0)
 
 #ifdef F3DEX_GBI_2
 /*

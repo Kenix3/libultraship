@@ -414,6 +414,10 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         append_line(buf, &len, "texel.rgb = lerp(texel.rgb, new_texel, input.grayscale.a);");
     }
 
+    if(cc_features.opt_filtering){
+        three_point_filtering = false;
+    }
+
     if (cc_features.opt_alpha && cc_features.opt_noise) {
         append_line(buf, &len, "    float2 coords = screenSpace.xy * noise_scale;");
         append_line(buf, &len,
