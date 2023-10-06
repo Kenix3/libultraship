@@ -119,6 +119,10 @@
 #define G_RDPHALF_CONT (G_IMMFIRST - 13)
 #endif
 
+#ifdef F3DPD_GBI
+#define G_TRI4 -79
+#endif
+
 /* We are overloading 2 of the immediate commands
    to keep the byte alignment of dmem the same */
 
@@ -183,7 +187,6 @@
 
 // RDP Cmd
 #define G_SETGRAYSCALE 0x39
-#define G_EXTRAGEOMETRYMODE 0x3a
 #define G_SETINTENSITY 0x40
 
 /*
@@ -360,11 +363,6 @@
 #endif
 #endif
 
-/*
- * G_EXTRAGEOMETRY flags: set extra custom geometry modes
- */
-#define G_EX_INVERT_CULLING 0x00000001
-
 /* Need these defined for Sprite Microcode */
 #ifdef _LANGUAGE_ASSEMBLY
 #define G_TX_LOADTILE 7
@@ -468,33 +466,46 @@
 /* typical CC cycle 1 modes */
 #define G_CC_PRIMITIVE 0, 0, 0, PRIMITIVE, 0, 0, 0, PRIMITIVE
 #define G_CC_SHADE 0, 0, 0, SHADE, 0, 0, 0, SHADE
+#define	G_CC_MODULATEFADE TEXEL0, 0, SHADE, 0, ENVIRONMENT, 0, TEXEL0, 0
+#define	G_CC_MODULATEIFADEA TEXEL0, 0, SHADE, 0, TEXEL0, 0, ENVIRONMENT, 0
+#define	G_CC_MODULATERGBA G_CC_MODULATEIA
+#define	G_CC_MODULATERGBFADEA G_CC_MODULATEIFADEA
 #define G_CC_MODULATEI TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE
+#define G_CC_MODULATEI_PRIM TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE
+#define G_CC_MODULATEIA_PRIM TEXEL0, 0, PRIMITIVE, 0, TEXEL0, 0, PRIMITIVE, 0
+#define G_CC_MODULATEIDECALA_PRIM TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, TEXEL0
 #define G_CC_MODULATEIA TEXEL0, 0, SHADE, 0, TEXEL0, 0, SHADE, 0
+#define	G_CC_MODULATEIFADE TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT
 #define G_CC_MODULATEIDECALA TEXEL0, 0, SHADE, 0, 0, 0, 0, TEXEL0
 #define G_CC_MODULATERGB G_CC_MODULATEI
 #define G_CC_MODULATERGBA G_CC_MODULATEIA
 #define G_CC_MODULATERGBDECALA G_CC_MODULATEIDECALA
-#define G_CC_MODULATEI_PRIM TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE
-#define G_CC_MODULATEIA_PRIM TEXEL0, 0, PRIMITIVE, 0, TEXEL0, 0, PRIMITIVE, 0
-#define G_CC_MODULATEIDECALA_PRIM TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, TEXEL0
+#define	G_CC_MODULATERGBFADE G_CC_MODULATEIFADE
+#define	G_CC_FADE SHADE, 0, ENVIRONMENT, 0, SHADE, 0, ENVIRONMENT, 0
+#define	G_CC_FADEA TEXEL0, 0, ENVIRONMENT, 0, TEXEL0, 0, ENVIRONMENT, 0
 #define G_CC_MODULATERGB_PRIM G_CC_MODULATEI_PRIM
 #define G_CC_MODULATERGBA_PRIM G_CC_MODULATEIA_PRIM
 #define G_CC_MODULATERGBDECALA_PRIM G_CC_MODULATEIDECALA_PRIM
 #define G_CC_DECALRGB 0, 0, 0, TEXEL0, 0, 0, 0, SHADE
 #define G_CC_DECALRGBA 0, 0, 0, TEXEL0, 0, 0, 0, TEXEL0
+#define	G_CC_DECALFADE 0, 0, 0, TEXEL0, 0, 0, 0, ENVIRONMENT
+#define	G_CC_DECALFADEA 0, 0, 0, TEXEL0, TEXEL0, 0, ENVIRONMENT, 0
 #define G_CC_BLENDI ENVIRONMENT, SHADE, TEXEL0, SHADE, 0, 0, 0, SHADE
 #define G_CC_BLENDIA ENVIRONMENT, SHADE, TEXEL0, SHADE, TEXEL0, 0, SHADE, 0
 #define G_CC_BLENDIDECALA ENVIRONMENT, SHADE, TEXEL0, SHADE, 0, 0, 0, TEXEL0
 #define G_CC_BLENDRGBA TEXEL0, SHADE, TEXEL0_ALPHA, SHADE, 0, 0, 0, SHADE
 #define G_CC_BLENDRGBDECALA TEXEL0, SHADE, TEXEL0_ALPHA, SHADE, 0, 0, 0, TEXEL0
+#define	G_CC_BLENDRGBFADEA TEXEL0, SHADE, TEXEL0_ALPHA, SHADE, 0, 0, 0, ENVIRONMENT
 #define G_CC_ADDRGB 1, 0, TEXEL0, SHADE, 0, 0, 0, SHADE
 #define G_CC_ADDRGBDECALA 1, 0, TEXEL0, SHADE, 0, 0, 0, TEXEL0
+#define G_CC_ADDRGBFADE TEXEL0, 0, TEXEL0, SHADE, 0, 0, 0, ENVIRONMENT
 #define G_CC_REFLECTRGB ENVIRONMENT, 0, TEXEL0, SHADE, 0, 0, 0, SHADE
 #define G_CC_REFLECTRGBDECALA ENVIRONMENT, 0, TEXEL0, SHADE, 0, 0, 0, TEXEL0
 #define G_CC_HILITERGB PRIMITIVE, SHADE, TEXEL0, SHADE, 0, 0, 0, SHADE
 #define G_CC_HILITERGBA PRIMITIVE, SHADE, TEXEL0, SHADE, PRIMITIVE, SHADE, TEXEL0, SHADE
 #define G_CC_HILITERGBDECALA PRIMITIVE, SHADE, TEXEL0, SHADE, 0, 0, 0, TEXEL0
 #define G_CC_SHADEDECALA 0, 0, 0, SHADE, 0, 0, 0, TEXEL0
+#define G_CC_SHADEFADEA 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT
 #define G_CC_BLENDPE PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, SHADE, 0
 #define G_CC_BLENDPEDECALA PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, 0, 0, 0, TEXEL0
 
@@ -833,7 +844,13 @@
 #define RM_VISCVG(clk) IM_RD | FORCE_BL | GBL_c##clk(G_BL_CLR_IN, G_BL_0, G_BL_CLR_BL, G_BL_A_MEM)
 
 /* for rendering to an 8-bit framebuffer */
-#define RM_OPA_CI(clk) CVG_DST_CLAMP | ZMODE_OPA | GBL_c##clk(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
+#define RM_OPA_CI(clk)                    \
+	CVG_DST_CLAMP | ZMODE_OPA |          \
+	GBL_c##clk(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
+
+/* Custom version of RM_AA_ZB_XLU_SURF with Z_UPD */
+#define RM_CUSTOM_AA_ZB_XLU_SURF(clk)				\
+	RM_AA_ZB_XLU_SURF(clk) | Z_UPD
 
 #define G_RM_AA_ZB_OPA_SURF RM_AA_ZB_OPA_SURF(1)
 #define G_RM_AA_ZB_OPA_SURF2 RM_AA_ZB_OPA_SURF(2)
@@ -931,6 +948,8 @@
 #define G_RM_OPA_CI RM_OPA_CI(1)
 #define G_RM_OPA_CI2 RM_OPA_CI(2)
 
+#define G_RM_CUSTOM_AA_ZB_XLU_SURF	RM_CUSTOM_AA_ZB_XLU_SURF(1)
+#define G_RM_CUSTOM_AA_ZB_XLU_SURF2	RM_CUSTOM_AA_ZB_XLU_SURF(2)
 #define G_RM_FOG_SHADE_A GBL_c1(G_BL_CLR_FOG, G_BL_A_SHADE, G_BL_CLR_IN, G_BL_1MA)
 #define G_RM_FOG_PRIM_A GBL_c1(G_BL_CLR_FOG, G_BL_A_FOG, G_BL_CLR_IN, G_BL_1MA)
 #define G_RM_PASS GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
@@ -956,7 +975,7 @@
 #define G_DL_PUSH 0x00
 #define G_DL_NOPUSH 0x01
 
-#if defined(_MSC_VER) || defined(__GNUC__)
+#if defined(_MSC_VER) || defined(__GNUC__) && !defined(_LANGUAGE_C)
 #define _LANGUAGE_C
 #endif
 
@@ -1730,7 +1749,7 @@ typedef union {
  *        | |seg|         address             |
  *        +-+---+-----------------------------+
  */
-#define __gSPVertex(pkt, v, n, v0)                                                              \
+#define gSPVertex(pkt, v, n, v0)                                                              \
     _DW({                                                                                       \
         Gfx* _g = (Gfx*)(pkt);                                                                  \
         _g->words.w0 = _SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7); \
@@ -1765,7 +1784,7 @@ typedef union {
 #endif /* F3DEX_GBI_2 */
 
 #define gsSPPushCD(pkt, dl) gDma1p(pkt, G_PUSHCD, dl, 0, G_DL_PUSH)
-#define __gSPDisplayList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_PUSH)
+#define gSPDisplayList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_PUSH);
 #define gsSPDisplayList(dl) gsDma1p(G_DL, dl, 0, G_DL_PUSH)
 #define gsSPDisplayListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_PUSH)
 #define gsSPDisplayListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_PUSH)
@@ -2621,7 +2640,7 @@ typedef union {
 #define gsSPEndDisplayList() \
     { _SHIFTL(G_ENDDL, 24, 8), 0 }
 
-#define __gSPInvalidateTexCache(pkt, addr)              \
+#define gSPInvalidateTexCache(pkt, addr)              \
     _DW({                                               \
         Gfx* _g = (Gfx*)(pkt);                          \
                                                         \
@@ -2659,17 +2678,6 @@ typedef union {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gSPExtraGeometryMode(pkt, c, s)                                                 \
-    _DW({                                                                               \
-        Gfx* _g = (Gfx*)(pkt);                                                          \
-                                                                                        \
-        _g->words.w0 = _SHIFTL(G_EXTRAGEOMETRYMODE, 24, 8) | _SHIFTL(~(u32)(c), 0, 24); \
-        _g->words.w1 = (u32)(s);                                                        \
-    })
-
-#define gSPSetExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), 0, word)
-#define gSPClearExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), word, 0)
-
 #ifdef F3DEX_GBI_2
 /*
  *  One gSPGeometryMode(pkt,c,s) GBI is equal to these two GBIs.
@@ -2694,6 +2702,7 @@ typedef union {
 #define gsSPClearGeometryMode(word) gsSPGeometryMode((word), 0)
 #define gSPLoadGeometryMode(pkt, word) gSPGeometryMode((pkt), -1, (word))
 #define gsSPLoadGeometryMode(word) gsSPGeometryMode(-1, (word))
+#define gsSPGeometryModeSetFirst(c, s)	gsSPGeometryMode(c, s)
 
 #else /* F3DEX_GBI_2 */
 #define gSPSetGeometryMode(pkt, word)                     \
@@ -2822,9 +2831,9 @@ typedef union {
 #define gDPSetMaskImage(pkt, i) gDPSetDepthImage(pkt, i)
 #define gsDPSetMaskImage(i) gsDPSetDepthImage(i)
 
-#define __gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
+#define gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
 #define gsDPSetTextureImage(f, s, w, i) gsSetImage(G_SETTIMG, f, s, w, i)
-#define __gDPSetTextureImageFB(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG_FB, f, s, w, i)
+#define gDPSetTextureImageFB(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG_FB, f, s, w, i)
 
 /*
  * RDP macros
