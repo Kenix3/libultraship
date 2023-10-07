@@ -83,6 +83,7 @@ static struct {
     bool tearing_support;
     bool is_vsync_enabled;
     LARGE_INTEGER previous_present_time;
+    int dpi;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     void (*run_one_game_iter)(void);
@@ -377,6 +378,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.is_running = false;
             break;
         case WM_DPICHANGED: {
+            dxgi.dpi = HIWORD(w_param);
             RECT* const prcNewWindow = (RECT*)l_param;
             SetWindowPos(h_wnd, NULL, prcNewWindow->left, prcNewWindow->top, prcNewWindow->right - prcNewWindow->left,
                          prcNewWindow->bottom - prcNewWindow->top, SWP_NOZORDER | SWP_NOACTIVATE);
@@ -384,6 +386,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.posY = prcNewWindow->top;
             dxgi.current_width = prcNewWindow->right - prcNewWindow->left;
             dxgi.current_height = prcNewWindow->bottom - prcNewWindow->top;
+            SPDLOG_INFO(dxgi.dpi);
             break;
         }
         case WM_ENDSESSION:
@@ -493,6 +496,11 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     // Get refresh rate
     GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
 
+    // Get initial DPI
+    // breaks anything lower than Windows 10
+    // there is GetDpiForMonitor for Windows 8.1, but we don't care about a outdated OS
+    dxgi.dpi = GetDpiForWindow(dxgi.h_wnd);
+    SPDLOG_INFO(dxgi.dpi);
     if (start_in_fullscreen) {
         toggle_borderless_window_full_screen(true, false);
     }
@@ -948,6 +956,12 @@ const char* gfx_dxgi_get_key_name(int scancode) {
 bool gfx_dxgi_can_disable_vsync() {
     return dxgi.tearing_support;
 }
+int gfx_dxgi_get_dpi() {
+    return dxgi.dpi;
+}
+float gfx_dxgi_get_dpi_scale() {
+    return (float)dxgi.dpi / USER_DEFAULT_SCREEN_DPI;
+}
 
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
@@ -966,6 +980,8 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
                                                        gfx_dxgi_get_key_name,
-                                                       gfx_dxgi_can_disable_vsync };
+                                                       gfx_dxgi_can_disable_vsync,
+                                                       gfx_dxgi_get_dpi,
+                                                       gfx_dxgi_get_dpi_scale };
 
 #endif
