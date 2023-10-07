@@ -50,6 +50,8 @@ class Window {
     std::shared_ptr<Gui> GetGui();
     WindowBackend GetWindowBackend();
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
+    int GetDPI();
+    float GetDPIScale();
 
   protected:
     void SetWindowBackend(WindowBackend backend);

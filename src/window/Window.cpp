@@ -324,4 +324,10 @@ void Window::SaveWindowSizeToConfig(std::shared_ptr<Config> conf) {
         conf->SetInt("Window.PositionY", GetPosY());
     }
 }
+int Window::GetDPI() {
+    return mWindowManagerApi->get_dpi();
+}
+float Window::GetDPIScale() {
+    return mWindowManagerApi->get_dpi_scale();
+}
 } // namespace LUS
