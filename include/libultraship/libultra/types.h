@@ -36,7 +36,9 @@ typedef u32 uintptr_t;
 typedef int Mtx_t[4][4];
 typedef union {
     Mtx_t m;
-	@@ -41,6 +42,11 @@ typedef union {
+    struct {
+        u16 intPart[4][4];
+        u16 fracPart[4][4];
     };
     long long int forc_structure_alignment;
 } Mtx;
