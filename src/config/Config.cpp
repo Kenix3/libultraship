@@ -178,8 +178,10 @@ AudioBackend Config::GetAudioBackend() {
         return AudioBackend::WASAPI;
     }
 
+    // Migrate pulse player in config to sdl
     if (backendName == "pulse") {
-        return AudioBackend::PULSE;
+        SetAudioBackend(AudioBackend::SDL);
+        return AudioBackend::SDL;
     }
 
     if (backendName == "sdl") {
@@ -190,8 +192,6 @@ AudioBackend Config::GetAudioBackend() {
                  backendName);
 #ifdef _WIN32
     return AudioBackend::WASAPI;
-#elif defined(__linux)
-    return AudioBackend::PULSE;
 #endif
 
     return AudioBackend::SDL;
@@ -201,9 +201,6 @@ void Config::SetAudioBackend(AudioBackend backend) {
     switch (backend) {
         case AudioBackend::WASAPI:
             SetString("Window.AudioBackend", "wasapi");
-            break;
-        case AudioBackend::PULSE:
-            SetString("Window.AudioBackend", "pulse");
             break;
         case AudioBackend::SDL:
             SetString("Window.AudioBackend", "sdl");
