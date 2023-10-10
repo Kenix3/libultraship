@@ -95,27 +95,9 @@ void LUSDeviceIndexMappingManager::InitializeMappings() {
     // 
 
 
-// split up concepts of lus device index and lus port
 
-// disconnect and ask for order
-// - press button on controller to use for port BLUE
-// - check physical device id mapped to port BLUE
-//   - if the physical device id mapping guid matches the guid on the physical device
-//     - update the SDL index on the physical device id mapping to match the physical controller index
-//     - LUS physical device id already mapped to LUS port BLUE so no need to change anything there
-//   - if the physical device id mapping guid doesn't match the guid on the physical device
-//     - look for all lus physical device id mappings associated with the n64 port that match the physical device guid
-//       - if only one match
-//         - update the sdl index on the lus physical device id mapping to match the physical controller index
-//         - map LUS physical device id to LUS port BLUE 
-//       - if multiple matches
-//         - prompt user for which to use
-//           - update sdl index on selected lus physical device id mapping to match physical device guid
-//           - map lus physical device id to LUS port BLUE
-//       - if no matches
-//         - create default mappings using new LUS physical device id
-//         - map new LUS physical device id to LUS port BLUE
 
+    // look for guid on all ports and move lowest sdl index one to this port
 
     // map any remaining controllers to the lowest available LUS index
     for (auto [sdlIndex, sdlGuid] : attachedSdlControllerGuids) {
