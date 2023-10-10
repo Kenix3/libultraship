@@ -3,6 +3,7 @@
 #include "LUSDeviceIndexToSDLDeviceIndexMapping.h"
 #include <unordered_map>
 #include <memory>
+#include <vector>
 
 namespace LUS {
 class LUSDeviceIndexMappingManager {
@@ -16,8 +17,11 @@ class LUSDeviceIndexMappingManager {
     std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
     void SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping);
     void RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index);
+    LUSDeviceIndex GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings(); // did this name for the meme
 
-    void InitializeMappings();
+    void InitializeMappingsSinglePlayer();
+    void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
+    void InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex);
     void SaveMappingIdsToConfig();
   
   private:

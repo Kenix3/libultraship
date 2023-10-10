@@ -45,6 +45,7 @@ class Controller : public ControlDevice {
     uint8_t GetPortIndex();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
+    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
 
   private:
     void LoadButtonMappingFromConfig(std::string id);

@@ -79,4 +79,12 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     mGyroMapping->SaveToConfig();
     SaveGyroMappingIdToConfig();
 }
+
+bool ControllerGyro::HasMappingForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    if (mGyroMapping == nullptr) {
+        return false;
+    }
+
+    return mGyroMapping->GetLUSDeviceIndex() == lusIndex;
+}
 } // namespace LUS

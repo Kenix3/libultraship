@@ -163,4 +163,16 @@ bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancod
     result = result || GetRightStick()->ProcessKeyboardEvent(eventType, scancode);
     return result;
 }
+
+bool Controller::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    return std::any_of(GetAllButtons().begin(), GetAllButtons().end(),
+                        [lusIndex](const auto& button) {
+                            return button.second->HasMappingsForLUSDeviceIndex(lusIndex);
+                        }) || 
+        GetLeftStick()->HasMappingsForLUSDeviceIndex(lusIndex) || 
+        GetRightStick()->HasMappingsForLUSDeviceIndex(lusIndex) || 
+        GetGyro()->HasMappingForLUSDeviceIndex(lusIndex) || 
+        GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex) || 
+        GetLED()->HasMappingsForLUSDeviceIndex(lusIndex);
+}
 } // namespace LUS

@@ -3,6 +3,7 @@
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 #include <vector>
+#include "Context.h"
 
 namespace LUS {
 LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() {
@@ -11,7 +12,76 @@ LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() {
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 }
 
-void LUSDeviceIndexMappingManager::InitializeMappings() {
+void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
+    uint8_t port = 0;
+    for (auto sdlIndex : sdlIndices) {
+        InitializeSDLMappingsForPort(port, sdlIndex);
+        port++;
+    }
+}
+
+LUSDeviceIndex LUSDeviceIndexMappingManager::GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
+    for (uint8_t lusIndex = LUSDeviceIndex::Blue; lusIndex < LUSDeviceIndex::Max; lusIndex++) {
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(1)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(2)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(3)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex))) {
+            continue;
+        }
+        return static_cast<LUSDeviceIndex>(lusIndex);
+    }
+
+    // todo: invalid?
+    return LUSDeviceIndex::Max;
+}
+
+void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex) {
+    if (!SDL_IsGameController(sdlIndex)) {
+        return;
+    }
+
+    char guidString[33]; // SDL_GUID_LENGTH + 1 for null terminator
+    SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(sdlIndex), guidString, sizeof(guidString));
+    
+    // find all lus indices with this guid
+    std::map<int32_t, LUSDeviceIndex> matchingGuidLusIndices;
+    auto mappings = GetAllDeviceIndexMappingsFromConfig();
+    for (auto [lusIndex, mapping] : mappings) {
+        auto sdlMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+        if (sdlMapping == nullptr) {
+            continue;
+        }
+
+        if (sdlMapping->GetJoystickGUID() == guidString) {
+            matchingGuidLusIndices[sdlMapping->GetSDLDeviceIndex()] = lusIndex;
+        }
+    }
+
+    // set this device to the lowest available lus index with this guid
+    for (auto [sdlIndexFromConfig, lusIndex] : matchingGuidLusIndices) {
+        if (GetDeviceIndexMappingFromLUSDeviceIndex(lusIndex) != nullptr) {
+            // we already loaded this one
+            continue;
+        }
+
+        auto mapping = GetDeviceIndexMappingFromLUSDeviceIndex(lusIndex);
+        auto sdlMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+
+        sdlMapping->EraseFromConfig();
+        sdlMapping->SetSDLDeviceIndex(sdlIndex);
+        SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
+        // todo: move mappings from other port to this one
+        return;
+    }
+
+    // if we didn't find a mapping for this guid, make defaults
+    auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
+    SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString));
+    SaveMappingIdsToConfig();
+    Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->AddDefaultMappings(lusIndex);
+}
+
+void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
     // find all currently attached physical devices and map their guids to sdl index
     std::unordered_map<int32_t, std::string> attachedSdlControllerGuids;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {
@@ -95,10 +165,6 @@ void LUSDeviceIndexMappingManager::InitializeMappings() {
     // 
 
 
-
-
-    // look for guid on all ports and move lowest sdl index one to this port
-
     // map any remaining controllers to the lowest available LUS index
     for (auto [sdlIndex, sdlGuid] : attachedSdlControllerGuids) {
         for (uint8_t lusIndex = LUSDeviceIndex::Blue; lusIndex < LUSDeviceIndex::Max; lusIndex++) {
@@ -178,16 +244,7 @@ std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDevic
     return mappings;
 }
 
-// todo: update this to handle lus PORT logic as opposed to assuming lus device index is lus port
 std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> LUSDeviceIndexMappingManager::GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    // todo: get lus port from lus device index
-    // if no port found, return nullptr
-
-    // todo: get physical device index mapping from lus port
-    // if no physical device index mapping found, return nullptr
-
-    // todo: return physical device index mapping for port
-
     if (!mLUSDeviceIndexToPhysicalDeviceIndexMappings.contains(lusIndex)) {
         return nullptr;
     }

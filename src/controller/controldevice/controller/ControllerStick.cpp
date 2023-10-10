@@ -9,6 +9,7 @@
 
 #include <Utils/StringHelper.h>
 #include <sstream>
+#include <algorithm>
 
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
@@ -337,5 +338,17 @@ uint8_t ControllerStick::GetNotchSnapAngle() {
 
 bool ControllerStick::NotchSnapAngleIsDefault() {
     return mNotchSnapAngle == DEFAULT_NOTCH_SNAP_ANGLE;
+}
+
+bool ControllerStick::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    return std::any_of(mAxisDirectionMappings.begin(), mAxisDirectionMappings.end(),
+        [lusIndex](const auto& directionMappings) {
+            return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
+                [lusIndex](const auto& mappingPair) {
+                    return mappingPair.second->GetLUSDeviceIndex() == lusIndex;
+                }
+            );
+        }
+    );
 }
 } // namespace LUS

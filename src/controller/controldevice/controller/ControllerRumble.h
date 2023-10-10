@@ -27,6 +27,8 @@ class ControllerRumble {
     void StartRumble();
     void StopRumble();
 
+    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+
   private:
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> mRumbleMappings;

@@ -22,6 +22,8 @@ class ControllerGyro {
 
     void UpdatePad(float& x, float& y);
 
+    bool HasMappingForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+
   private:
     uint8_t mPortIndex;
     std::shared_ptr<ControllerGyroMapping> mGyroMapping;

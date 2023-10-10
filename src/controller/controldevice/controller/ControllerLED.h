@@ -25,6 +25,8 @@ class ControllerLED {
 
     void SetLEDColor(Color_RGB8 color);
 
+    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+
   private:
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> mLEDMappings;

@@ -43,6 +43,8 @@ class ControllerStick {
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
+    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+
   private:
     double GetClosestNotch(double angle, double approximationThreshold);
     void LoadAxisDirectionMappingFromConfig(std::string id);

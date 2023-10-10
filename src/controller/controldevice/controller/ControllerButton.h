@@ -36,6 +36,8 @@ class ControllerButton {
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
+    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+
   private:
     uint8_t mPortIndex;
     uint16_t mBitmask;

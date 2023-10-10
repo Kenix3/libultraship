@@ -118,4 +118,12 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
     SaveRumbleMappingIdsToConfig();
     return true;
 }
+
+bool ControllerRumble::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(), 
+        [lusIndex](const auto& mapping) {
+            return mapping.second->GetLUSDeviceIndex() == lusIndex;
+        }
+    );
+}
 } // namespace LUS

@@ -3,6 +3,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include <sstream>
+#include <algorithm>
 
 #include "controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
@@ -98,5 +99,13 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
     mapping->SaveToConfig();
     SaveLEDMappingIdsToConfig();
     return true;
+}
+
+bool ControllerLED::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    return std::any_of(mLEDMappings.begin(), mLEDMappings.end(), 
+        [lusIndex](const auto& mapping) {
+            return mapping.second->GetLUSDeviceIndex() == lusIndex;
+        }
+    );
 }
 } // namespace LUS
