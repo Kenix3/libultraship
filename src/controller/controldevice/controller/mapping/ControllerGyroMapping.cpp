@@ -30,4 +30,8 @@ void ControllerGyroMapping::ResetSensitivityToDefault() {
 bool ControllerGyroMapping::SensitivityIsDefault() {
     return mSensitivityPercent == GYRO_SENSITIVITY_DEFAULT;
 }
+
+void ControllerGyroMapping::SetPortIndex(uint8_t portIndex) {
+    mPortIndex = portIndex;
+}
 } // namespace LUS

@@ -22,6 +22,7 @@ class ControllerGyroMapping : virtual public ControllerInputMapping {
     void SetSensitivity(uint8_t sensitivityPercent);
     void ResetSensitivityToDefault();
     bool SensitivityIsDefault();
+    void SetPortIndex(uint8_t portIndex);
 
   protected:
     uint8_t mPortIndex;

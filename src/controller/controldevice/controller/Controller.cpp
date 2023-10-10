@@ -220,6 +220,13 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
         }
     }
 
-    
+    // todo: gyro after implementing multi-gyro
+    // todo: handle multiple gyro mappings because this will clear the one we're moving to
+    // if (GetGyro()->GetGyroMapping()->GetLUSDeviceIndex() == lusIndex) {
+    //     GetGyro()->GetGyroMapping()->SetPortIndex(newController->GetPortIndex());
+    //     GetGyro()->GetGyroMapping()->SaveToConfig();
+    //     newController->GetGyro()->SetGyroMapping()
+
+    // }
 }
 } // namespace LUS
