@@ -22,9 +22,12 @@ class ControllerStick {
     void ClearAllMappings();
     void UpdatePad(int8_t& x, int8_t& y);
     std::shared_ptr<ControllerAxisDirectionMapping> GetAxisDirectionMappingById(Direction direction, std::string id);
+    std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
+    GetAllAxisDirectionMappings();
     std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>
     GetAllAxisDirectionMappingByDirection(Direction direction);
     void AddAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping);
+    void ClearAxisDirectionMappingId(Direction direction, std::string id);
     void ClearAxisDirectionMapping(Direction direction, std::string id);
     void ClearAxisDirectionMapping(Direction direction, std::shared_ptr<ControllerAxisDirectionMapping> mapping);
     void SaveAxisDirectionMappingIdsToConfig();
@@ -44,6 +47,7 @@ class ControllerStick {
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 
     bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    Stick LeftOrRightStick();
 
   private:
     double GetClosestNotch(double angle, double approximationThreshold);

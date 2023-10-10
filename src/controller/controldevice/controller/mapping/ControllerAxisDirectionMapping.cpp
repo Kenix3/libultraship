@@ -18,4 +18,8 @@ uint8_t ControllerAxisDirectionMapping::GetMappingType() {
 Direction ControllerAxisDirectionMapping::GetDirection() {
     return mDirection;
 }
+
+void ControllerAxisDirectionMapping::SetPortIndex(uint8_t portIndex) {
+    mPortIndex = portIndex;
+}
 } // namespace LUS

@@ -198,5 +198,28 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
             button->ClearButtonMappingId(id);
         }
     }
+
+    for (auto stick : {GetLeftStick(), GetRightStick()}) {
+        auto newControllerStick = stick->LeftOrRightStick() == LEFT_STICK ? newController->GetLeftStick() : newController->GetRightStick();
+        for (auto [direction, mappings] : stick->GetAllAxisDirectionMappings()) {
+            std::vector<std::string> axisDirectionMappingIdsToRemove;
+            for (auto [id, mapping] : mappings) {
+                if (mapping->GetLUSDeviceIndex() == lusIndex) {
+                    axisDirectionMappingIdsToRemove.push_back(id);
+
+                    mapping->SetPortIndex(newController->GetPortIndex());
+                    mapping->SaveToConfig();
+                    
+                    newControllerStick->AddAxisDirectionMapping(direction, mapping);
+                }
+            }
+            newControllerStick->SaveAxisDirectionMappingIdsToConfig();
+            for (auto id : axisDirectionMappingIdsToRemove) {
+                stick->ClearAxisDirectionMappingId(direction, id);
+            }
+        }
+    }
+
+    
 }
 } // namespace LUS

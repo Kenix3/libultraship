@@ -23,6 +23,8 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
     virtual void EraseFromConfig() = 0;
     Direction GetDirection();
 
+    void SetPortIndex(uint8_t portIndex);
+
   protected:
     uint8_t mPortIndex;
     Stick mStick;

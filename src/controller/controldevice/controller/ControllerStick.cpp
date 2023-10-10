@@ -76,6 +76,11 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
     CVarSave();
 }
 
+void ControllerStick::ClearAxisDirectionMappingId(Direction direction, std::string id) {
+    mAxisDirectionMappings[direction].erase(id);
+    SaveAxisDirectionMappingIdsToConfig();
+}
+
 void ControllerStick::ClearAxisDirectionMapping(Direction direction, std::string id) {
     mAxisDirectionMappings[direction][id]->EraseFromConfig();
     mAxisDirectionMappings[direction].erase(id);
@@ -350,5 +355,13 @@ bool ControllerStick::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
             );
         }
     );
+}
+
+std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>> ControllerStick::GetAllAxisDirectionMappings() {
+    return mAxisDirectionMappings;
+}
+
+Stick ControllerStick::LeftOrRightStick() {
+    return mStick;
 }
 } // namespace LUS
