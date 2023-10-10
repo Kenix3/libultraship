@@ -175,4 +175,28 @@ bool Controller::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
         GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex) || 
         GetLED()->HasMappingsForLUSDeviceIndex(lusIndex);
 }
+
+std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(uint16_t bitmask) {
+    return mButtons[bitmask];
+}
+
+void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, LUSDeviceIndex lusIndex) {
+    for (auto [bitmask, button] : GetAllButtons()) {
+        std::vector<std::string> buttonMappingIdsToRemove;
+        for (auto [id, mapping] : button->GetAllButtonMappings()) {
+            if (mapping->GetLUSDeviceIndex() == lusIndex) { 
+                buttonMappingIdsToRemove.push_back(id);
+                
+                mapping->SetPortIndex(newController->GetPortIndex());
+                mapping->SaveToConfig();
+                
+                newController->GetButtonByBitmask(bitmask)->AddButtonMapping(mapping);
+            }
+        }
+        newController->GetButtonByBitmask(bitmask)->SaveButtonMappingIdsToConfig();
+        for (auto id : buttonMappingIdsToRemove) {
+            button->ClearButtonMappingId(id);
+        }
+    }
+}
 } // namespace LUS

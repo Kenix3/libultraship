@@ -17,6 +17,7 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
     uint16_t GetBitmask();
     virtual void UpdatePad(uint16_t& padButtons) = 0;
     virtual uint8_t GetMappingType();
+    void SetPortIndex(uint8_t portIndex);
 
     virtual void SaveToConfig() = 0;
     virtual void EraseFromConfig() = 0;

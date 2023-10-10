@@ -42,6 +42,11 @@ void ControllerButton::AddButtonMapping(std::shared_ptr<ControllerButtonMapping>
     mButtonMappings[mapping->GetButtonMappingId()] = mapping;
 }
 
+void ControllerButton::ClearButtonMappingId(std::string id) {
+    mButtonMappings.erase(id);
+    SaveButtonMappingIdsToConfig();
+}
+
 void ControllerButton::ClearButtonMapping(std::string id) {
     mButtonMappings[id]->EraseFromConfig();
     mButtonMappings.erase(id);

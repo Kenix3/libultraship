@@ -34,6 +34,7 @@ class Controller : public ControlDevice {
     void ClearAllMappings();
     void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
     std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> GetAllButtons();
+    std::shared_ptr<ControllerButton> GetButtonByBitmask(uint16_t bitmask);
     std::shared_ptr<ControllerButton> GetButton(uint16_t bitmask);
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();
@@ -46,6 +47,7 @@ class Controller : public ControlDevice {
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
     bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, LUSDeviceIndex lusIndex);
 
   private:
     void LoadButtonMappingFromConfig(std::string id);
