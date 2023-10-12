@@ -517,6 +517,9 @@ static void gfx_sdl_handle_events(void) {
             case SDL_QUIT:
                 is_running = false;
                 break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+                LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceDisconnect(event.cdevice.which);
+                break;
         }
     }
 }

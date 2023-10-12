@@ -5,6 +5,7 @@
 #include <vector>
 #include "Context.h"
 #include "ControllerReorderingWindow.h"
+#include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
 
 namespace LUS {
 LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() {
@@ -294,6 +295,71 @@ void LUSDeviceIndexMappingManager::SetLUSDeviceIndexToPhysicalDeviceIndexMapping
 
 void LUSDeviceIndexMappingManager::RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index) {
     mLUSDeviceIndexToPhysicalDeviceIndexMappings.erase(index);
+}
+
+LUSDeviceIndex LUSDeviceIndexMappingManager::GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId) {
+    for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+        auto controller = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex);
+
+        for (auto [bitmask, button] : controller->GetAllButtons()) {
+            for (auto [id, buttonMapping] : button->GetAllButtonMappings()) {
+                auto sdlButtonMapping = std::dynamic_pointer_cast<SDLMapping>(buttonMapping);
+                if (sdlButtonMapping == nullptr) {
+                    continue;
+                }
+                if (sdlButtonMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                    return sdlButtonMapping->GetLUSDeviceIndex();
+                }
+            }
+        }
+
+        for (auto stick : {controller->GetLeftStick(), controller->GetRightStick()}) {
+            for (auto [direction, axisDirectionMappings] : stick->GetAllAxisDirectionMappings()) {
+                for (auto [id, axisDirectionMapping] : axisDirectionMappings) {
+                    auto sdlAxisDirectionMapping = std::dynamic_pointer_cast<SDLMapping>(axisDirectionMapping);
+                    if (sdlAxisDirectionMapping == nullptr) {
+                        continue;
+                    }
+                    if (sdlAxisDirectionMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                        return sdlAxisDirectionMapping->GetLUSDeviceIndex();
+                    }
+                }
+            }
+        }
+
+        auto sdlGyroMapping = std::dynamic_pointer_cast<SDLMapping>(controller->GetGyro()->GetGyroMapping());
+        if (sdlGyroMapping != nullptr && sdlGyroMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+            return sdlGyroMapping->GetLUSDeviceIndex();
+        }
+
+        for (auto [id, rumbleMapping] : controller->GetRumble()->GetAllRumbleMappings()) {
+            auto sdlRumbleMapping = std::dynamic_pointer_cast<SDLMapping>(rumbleMapping);
+            if (sdlRumbleMapping == nullptr) {
+                continue;
+            }
+            if (sdlRumbleMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                return sdlRumbleMapping->GetLUSDeviceIndex();
+            }
+        }
+
+        for (auto [id, ledMapping] : controller->GetLED()->GetAllLEDMappings()) {
+            auto sdlLEDMapping = std::dynamic_pointer_cast<SDLMapping>(ledMapping);
+            if (sdlLEDMapping == nullptr) {
+                continue;
+            }
+            if (sdlLEDMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                return sdlLEDMapping->GetLUSDeviceIndex();
+            }
+        }
+    }
+
+    // couldn't find one
+    return LUSDeviceIndex::Max;
+}
+
+void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId) {
+    auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected = GetLUSDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
+
 }
 
 // void ControllerButton::ReloadAllMappingsFromConfig() {

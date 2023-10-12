@@ -102,4 +102,12 @@ std::string SDLMapping::GetSDLDeviceName() {
     auto sdlName = SDL_GameControllerName(mController);
     return StringHelper::Sprintf("%s (SDL %d)", sdlName != nullptr ? sdlName : "Unknown", GetSDLDeviceIndex());
 }
+
+int32_t SDLMapping::GetJoystickInstanceId() {
+    if (mController == nullptr) {
+        return -1;
+    }
+
+    return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(mController));
+}
 } // namespace LUS
