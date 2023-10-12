@@ -70,7 +70,27 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
         sdlMapping->EraseFromConfig();
         sdlMapping->SetSDLDeviceIndex(sdlIndex);
         SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
-        // todo: move mappings from other port to this one
+        
+        // if we have mappings for this LUS device on this port, we're good and don't need to move any mappings
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            return;
+        }
+
+        // move mappings from other port to this one
+        for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+            if (portIndex == n64port) {
+                continue;
+            }
+
+            if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForLUSDeviceIndex(lusIndex)) {
+                continue;
+            }
+
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
+            return;
+        }
+
+        // we shouldn't get here
         return;
     }
 

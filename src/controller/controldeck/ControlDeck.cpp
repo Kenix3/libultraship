@@ -14,7 +14,7 @@
 
 namespace LUS {
 
-ControlDeck::ControlDeck() : mPads(nullptr) {
+ControlDeck::ControlDeck() : mPads(nullptr), mSinglePlayerMappingMode(false) {
     for (int32_t i = 0; i < 4; i++) {
         mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i)));
     }
@@ -29,7 +29,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
 
-    mDeviceIndexMappingManager->InitializeMappings();
+    // mDeviceIndexMappingManager->InitializeMappings();
 
     for (auto port : mPorts) {
         if (port->GetConnectedController()->HasConfig()) {
@@ -104,5 +104,9 @@ void ControlDeck::UnblockGameInput(int32_t blockId) {
 
 std::shared_ptr<LUSDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
     return mDeviceIndexMappingManager;
+}
+
+void ControlDeck::SetSinglePlayerMappingMode(bool singlePlayer) {
+    mSinglePlayerMappingMode = singlePlayer;
 }
 } // namespace LUS

@@ -48,7 +48,7 @@ void ControllerRumble::AddRumbleMapping(std::shared_ptr<ControllerRumbleMapping>
     mRumbleMappings[mapping->GetRumbleMappingId()] = mapping;
 }
 
-void ControllerRumble::ClearRumbleMapping(std::string id) {
+void ControllerRumble::ClearRumbleMappingId(std::string id) {
     mRumbleMappings.erase(id);
     SaveRumbleMappingIdsToConfig();
 }

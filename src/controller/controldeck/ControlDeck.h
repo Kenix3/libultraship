@@ -22,6 +22,7 @@ class ControlDeck {
     void UnblockGameInput(int32_t blockId);
     bool GamepadGameInputBlocked();
     bool KeyboardGameInputBlocked();
+    void SetSinglePlayerMappingMode(bool singlePlayer);
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
     
@@ -31,6 +32,7 @@ class ControlDeck {
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
     uint8_t* mControllerBits = nullptr;
     OSContPad* mPads;
+    bool mSinglePlayerMappingMode;
 
     bool AllGameInputBlocked();
     std::unordered_map<int32_t, bool> mGameInputBlockers;
