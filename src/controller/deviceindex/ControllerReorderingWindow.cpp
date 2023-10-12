@@ -17,7 +17,8 @@ void ControllerReorderingWindow::DrawElement() {
     // use MAXCONTROLLERS not hardcoded 4
     // get a vector of int32_t (sdl index) from the modals
     // call into InitializeMappingsMultiplayer on the LUSDeviceIndexMappingManager with that vector
-    
+    // maybe have the thing the window calls remove the window? 
+    // maybe just use the cvar window pattern and never remove the window, just do the standard don't show stuff
 
 
     ImGui::OpenPopup("Delete?");
