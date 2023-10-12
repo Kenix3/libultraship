@@ -25,6 +25,7 @@ class ControllerRumbleMapping : public ControllerMapping {
     bool LowFrequencyIntensityIsDefault();
     void ResetHighFrequencyIntensityToDefault();
     void ResetLowFrequencyIntensityToDefault();
+    void SetPortIndex(uint8_t portIndex);
 
     virtual std::string GetRumbleMappingId() = 0;
     virtual void SaveToConfig() = 0;

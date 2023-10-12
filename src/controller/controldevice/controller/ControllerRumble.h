@@ -15,6 +15,7 @@ class ControllerRumble {
 
     std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> GetAllRumbleMappings();
     void AddRumbleMapping(std::shared_ptr<ControllerRumbleMapping> mapping);
+    void ClearRumbleMappingId(std::string id);
     void ClearRumbleMapping(std::string id);
     void SaveRumbleMappingIdsToConfig();
     void ClearAllMappings();

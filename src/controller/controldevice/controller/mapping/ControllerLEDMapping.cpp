@@ -34,4 +34,8 @@ void ControllerLEDMapping::SetSavedColor(Color_RGB8 colorToSave) {
 Color_RGB8 ControllerLEDMapping::GetSavedColor() {
     return mSavedColor;
 }
+
+void ControllerLEDMapping::SetPortIndex(uint8_t portIndex) {
+    mPortIndex = portIndex;
+}
 } // namespace LUS

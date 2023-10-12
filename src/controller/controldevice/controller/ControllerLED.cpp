@@ -42,6 +42,12 @@ void ControllerLED::AddLEDMapping(std::shared_ptr<ControllerLEDMapping> mapping)
     mLEDMappings[mapping->GetLEDMappingId()] = mapping;
 }
 
+void ControllerLED::ClearLEDMappingId(std::string id) {
+    mLEDMappings.erase(id);
+    SaveLEDMappingIdsToConfig();
+}
+
+
 void ControllerLED::ClearLEDMapping(std::string id) {
     mLEDMappings[id]->EraseFromConfig();
     mLEDMappings.erase(id);

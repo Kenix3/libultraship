@@ -41,4 +41,8 @@ bool ControllerRumbleMapping::HighFrequencyIntensityIsDefault() {
 bool ControllerRumbleMapping::LowFrequencyIntensityIsDefault() {
     return mLowFrequencyIntensityPercentage == DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE;
 }
+
+void ControllerRumbleMapping::SetPortIndex(uint8_t portIndex) {
+    mPortIndex = portIndex;
+}
 } // namespace LUS

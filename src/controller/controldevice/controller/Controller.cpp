@@ -184,7 +184,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
     for (auto [bitmask, button] : GetAllButtons()) {
         std::vector<std::string> buttonMappingIdsToRemove;
         for (auto [id, mapping] : button->GetAllButtonMappings()) {
-            if (mapping->GetLUSDeviceIndex() == lusIndex) { 
+            if (mapping->GetLUSDeviceIndex() == lusIndex) {
                 buttonMappingIdsToRemove.push_back(id);
                 
                 mapping->SetPortIndex(newController->GetPortIndex());
@@ -220,13 +220,51 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
         }
     }
 
-    // todo: gyro after implementing multi-gyro
-    // todo: handle multiple gyro mappings because this will clear the one we're moving to
-    // if (GetGyro()->GetGyroMapping()->GetLUSDeviceIndex() == lusIndex) {
-    //     GetGyro()->GetGyroMapping()->SetPortIndex(newController->GetPortIndex());
-    //     GetGyro()->GetGyroMapping()->SaveToConfig();
-    //     newController->GetGyro()->SetGyroMapping()
+    if (GetGyro()->GetGyroMapping()->GetLUSDeviceIndex() == lusIndex) {
+        GetGyro()->GetGyroMapping()->SetPortIndex(newController->GetPortIndex());
+        GetGyro()->GetGyroMapping()->SaveToConfig();
+        
+        auto oldGyroMappingFromNewController = newController->GetGyro()->GetGyroMapping();        
+        if (oldGyroMappingFromNewController != nullptr) {
+            oldGyroMappingFromNewController->SetPortIndex(GetPortIndex());
+            oldGyroMappingFromNewController->SaveToConfig();
+        }
+        newController->GetGyro()->SetGyroMapping(GetGyro()->GetGyroMapping());
+        newController->GetGyro()->SaveGyroMappingIdToConfig();
+        GetGyro()->SetGyroMapping(oldGyroMappingFromNewController);
+        GetGyro()->SaveGyroMappingIdToConfig();
+    }
 
-    // }
+    std::vector<std::string> rumbleMappingIdsToRemove;
+    for (auto [id, mapping] : GetRumble()->GetAllRumbleMappings()) {
+        if (mapping->GetLUSDeviceIndex() == lusIndex) {
+            rumbleMappingIdsToRemove.push_back(id);
+
+            mapping->SetPortIndex(newController->GetPortIndex());
+            mapping->SaveToConfig();
+                
+            newController->GetRumble()->AddRumbleMapping(mapping);
+        }
+    }
+    newController->GetRumble()->SaveRumbleMappingIdsToConfig();
+    for (auto id : rumbleMappingIdsToRemove) {
+        GetRumble()->ClearRumbleMappingId(id);
+    }
+
+    std::vector<std::string> ledMappingIdsToRemove;
+    for (auto [id, mapping] : GetLED()->GetAllLEDMappings()) {
+        if (mapping->GetLUSDeviceIndex() == lusIndex) {
+            ledMappingIdsToRemove.push_back(id);
+
+            mapping->SetPortIndex(newController->GetPortIndex());
+            mapping->SaveToConfig();
+                
+            newController->GetLED()->AddLEDMapping(mapping);
+        }
+    }
+    newController->GetLED()->SaveLEDMappingIdsToConfig();
+    for (auto id : ledMappingIdsToRemove) {
+        GetLED()->ClearLEDMappingId(id);
+    }
 }
 } // namespace LUS

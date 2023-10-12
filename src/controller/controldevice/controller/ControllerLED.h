@@ -15,6 +15,7 @@ class ControllerLED {
 
     std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> GetAllLEDMappings();
     void AddLEDMapping(std::shared_ptr<ControllerLEDMapping> mapping);
+    void ClearLEDMappingId(std::string id);
     void ClearLEDMapping(std::string id);
     void SaveLEDMappingIdsToConfig();
     void ClearAllMappings();
