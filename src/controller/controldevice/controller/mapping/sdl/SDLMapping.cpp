@@ -110,4 +110,22 @@ int32_t SDLMapping::GetJoystickInstanceId() {
 
     return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(mController));
 }
+
+int32_t SDLMapping::GetCurrentSDLDeviceIndex() {
+    if (mController == nullptr) {
+        return -1;
+    }
+
+    for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
+        SDL_Joystick* joystick = SDL_JoystickOpen(i);
+        if (SDL_JoystickInstanceID(joystick) == SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(mController))) {
+            SDL_JoystickClose(joystick);
+            return i;
+        }
+        SDL_JoystickClose(joystick);
+    }
+
+    // didn't find one
+    return -1;
+}
 } // namespace LUS

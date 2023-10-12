@@ -28,6 +28,7 @@ class LUSDeviceIndexMappingManager {
   
   private:
     LUSDeviceIndex GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
+    int32_t GetNewSDLDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
     std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> mLUSDeviceIndexToPhysicalDeviceIndexMappings;
 };
 } // namespace LUS

@@ -15,6 +15,7 @@ class SDLMapping : public ControllerMapping {
     SDLMapping(LUSDeviceIndex lusDeviceIndex);
     ~SDLMapping();
     int32_t GetJoystickInstanceId();
+    int32_t GetCurrentSDLDeviceIndex();
 
   protected:
     bool ControllerLoaded();
