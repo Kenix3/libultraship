@@ -18,6 +18,7 @@ class LUSDeviceIndexMappingManager {
     void SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping);
     void RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index);
     LUSDeviceIndex GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings(); // did this name for the meme
+    // std::vector<int32_t> GetDeviceOrder();
 
     void InitializeMappingsSinglePlayer();
     void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);

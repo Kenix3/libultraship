@@ -4,6 +4,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <vector>
 #include "Context.h"
+#include "ControllerReorderingWindow.h"
 
 namespace LUS {
 LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() {
@@ -11,6 +12,16 @@ LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() {
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 }
+
+// std::vector<int32_t> LUSDeviceIndexMappingManager::GetDeviceOrder() {
+//     auto window = std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", true, "Controller Reordering");
+//     Context::GetInstance()->GetWindow()->GetGui()->AddGuiWindow(window);
+//     while (window->GetSDLIndex() == -1) {
+//         // show the window while we don't have an sdl index
+//     }
+//     Context::GetInstance()->GetWindow()->GetGui()->RemoveGuiWindow("Controller Reordering");
+//     return {0};
+// }
 
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
     uint8_t port = 0;

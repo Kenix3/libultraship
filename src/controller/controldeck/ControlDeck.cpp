@@ -15,7 +15,7 @@
 namespace LUS {
 
 ControlDeck::ControlDeck() : mPads(nullptr), mSinglePlayerMappingMode(false) {
-    for (int32_t i = 0; i < 4; i++) {
+    for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
         mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i)));
     }
     mDeviceIndexMappingManager = std::make_shared<LUSDeviceIndexMappingManager>();
@@ -43,10 +43,15 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     if (mSinglePlayerMappingMode) {
         mDeviceIndexMappingManager->InitializeMappingsSinglePlayer();
     } else {
-        // todo get order
-        // std::vector<int32_t> mappingOrder = {1, 0};
-        std::vector<int32_t> mappingOrder = {0, 1};
-        mDeviceIndexMappingManager->InitializeMappingsMultiplayer(mappingOrder);
+        // todo: if we only have one controller then pass in the one device index to initializemulti
+        // if we have more than one add the reordering window
+
+
+        // mDeviceIndexMappingManager->GetDeviceOrder();
+        // // todo get order
+        // // std::vector<int32_t> mappingOrder = {1, 0};
+        // std::vector<int32_t> mappingOrder = {0, 1};
+        // mDeviceIndexMappingManager->InitializeMappingsMultiplayer(mappingOrder);
     }
 
     // mDeviceIndexMappingManager->InitializeMappings();
