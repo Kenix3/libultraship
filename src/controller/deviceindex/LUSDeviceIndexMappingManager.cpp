@@ -64,10 +64,9 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
             continue;
         }
 
-        auto mapping = GetDeviceIndexMappingFromLUSDeviceIndex(lusIndex);
+        auto mapping = mappings[lusIndex];
         auto sdlMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
 
-        sdlMapping->EraseFromConfig();
         sdlMapping->SetSDLDeviceIndex(sdlIndex);
         SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
         
@@ -96,7 +95,9 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString));
+    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString);
+    deviceIndexMapping->SaveToConfig();
+    SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
     SaveMappingIdsToConfig();
     Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->AddDefaultMappings(lusIndex);
 }

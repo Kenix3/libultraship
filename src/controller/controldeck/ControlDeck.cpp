@@ -29,8 +29,6 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
 
-    // mDeviceIndexMappingManager->InitializeMappings();
-
     for (auto port : mPorts) {
         if (port->GetConnectedController()->HasConfig()) {
             port->GetConnectedController()->ReloadAllMappingsFromConfig();
@@ -41,6 +39,17 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(LUSDeviceIndex::Keyboard);
     }
+
+    if (mSinglePlayerMappingMode) {
+        mDeviceIndexMappingManager->InitializeMappingsSinglePlayer();
+    } else {
+        // todo get order
+        // std::vector<int32_t> mappingOrder = {1, 0};
+        std::vector<int32_t> mappingOrder = {0, 1};
+        mDeviceIndexMappingManager->InitializeMappingsMultiplayer(mappingOrder);
+    }
+
+    // mDeviceIndexMappingManager->InitializeMappings();
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
