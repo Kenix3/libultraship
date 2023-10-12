@@ -57,19 +57,20 @@ int32_t ControllerReorderingWindow::GetSDLIndexFromSDLInput() {
 
 void ControllerReorderingWindow::DrawElement() {
     // if we don't have more than one controller, just close the window
-    int32_t sdlControllerCount = 0;
+    std::vector<int32_t> connectedSdlControllerIndices;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
-            sdlControllerCount++;
+            connectedSdlControllerIndices.push_back(i);
         }
     }
-    if (sdlControllerCount <= 1) {
+    if (connectedSdlControllerIndices.size() <= 1) {
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsMultiplayer(connectedSdlControllerIndices);
         Hide();
         return;
     }
 
     // we have more than one controller, prompt the user for order
-    if (mCurrentPortNumber <= std::min(sdlControllerCount, MAXCONTROLLERS)) {
+    if (mCurrentPortNumber <= std::min(connectedSdlControllerIndices.size(), static_cast<size_t>(MAXCONTROLLERS))) {
         ImGui::OpenPopup("Set Controller");
         if (ImGui::BeginPopupModal("Set Controller", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Press any button or move any axis\non the controller for port %d", mCurrentPortNumber);
