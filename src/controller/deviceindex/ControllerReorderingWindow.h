@@ -14,7 +14,6 @@ class ControllerReorderingWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
     ~ControllerReorderingWindow();
-    int32_t GetSDLIndex();
 
   protected:
     void InitElement() override;
@@ -22,6 +21,8 @@ class ControllerReorderingWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-    int32_t mSDLIndex;
+    int32_t GetSDLIndexFromSDLInput();
+    std::vector<int32_t> mSDLDeviceIndices;
+    uint8_t mCurrentPortNumber;
 };
 } // namespace LUS

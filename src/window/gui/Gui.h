@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 #include "window/gui/ConsoleWindow.h"
 #include "window/gui/InputEditorWindow.h"
+#include "controller/deviceindex/ControllerReorderingWindow.h"
 #include "window/gui/IconsFontAwesome4.h"
 #include "window/gui/GameOverlay.h"
 #include "window/gui/InputViewer.h"

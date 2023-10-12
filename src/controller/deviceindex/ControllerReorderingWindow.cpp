@@ -1,4 +1,7 @@
 #include "ControllerReorderingWindow.h"
+#include <SDL2/SDL.h>
+#include <algorithm>
+#include "Context.h"
 
 namespace LUS {
 
@@ -6,44 +9,86 @@ ControllerReorderingWindow::~ControllerReorderingWindow() {
 }
 
 void ControllerReorderingWindow::InitElement() {
-    mSDLIndex = -1;
+    mSDLDeviceIndices.clear();
+    mCurrentPortNumber = 1;
 }
 
 void ControllerReorderingWindow::UpdateElement() {
 }
 
-void ControllerReorderingWindow::DrawElement() {
-    // loop through and show a "press a button" modal for each controller connected (or total # of ports, whichever is lower)
-    // use MAXCONTROLLERS not hardcoded 4
-    // get a vector of int32_t (sdl index) from the modals
-    // call into InitializeMappingsMultiplayer on the LUSDeviceIndexMappingManager with that vector
-    // maybe have the thing the window calls remove the window? 
-    // maybe just use the cvar window pattern and never remove the window, just do the standard don't show stuff
-
-
-    ImGui::OpenPopup("Delete?");
-    if (ImGui::BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("All those beautiful files will be deleted.\nThis operation cannot be undone!");
-        ImGui::Separator();
-
-        //static int unused_i = 0;
-        //ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
-
-        static bool dont_ask_me_next_time = false;
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-        ImGui::Checkbox("Don't ask me next time", &dont_ask_me_next_time);
-        ImGui::PopStyleVar();
-
-        if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-        ImGui::SetItemDefaultFocus();
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-        ImGui::EndPopup();
+int32_t ControllerReorderingWindow::GetSDLIndexFromSDLInput() {
+    int32_t sdlDeviceIndex = -1;
+    
+    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
+    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            sdlControllers[i] = SDL_GameControllerOpen(i);
+        }
     }
+
+    for (auto [controllerIndex, controller] : sdlControllers) {
+        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+                sdlDeviceIndex = controllerIndex;
+                break;
+            }
+        }
+
+        if (sdlDeviceIndex != -1) {
+            break;
+        }
+
+        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+            const auto axis = static_cast<SDL_GameControllerAxis>(i);
+            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+            if (axisValue < -0.7f || axisValue > 0.7f) {
+                sdlDeviceIndex = controllerIndex;
+                break;
+            }
+        }
+    }
+
+    for (auto [i, controller] : sdlControllers) {
+        SDL_GameControllerClose(controller);
+    }
+
+    return sdlDeviceIndex;
 }
 
-int32_t ControllerReorderingWindow::GetSDLIndex() {
-    return mSDLIndex;
-}
+void ControllerReorderingWindow::DrawElement() {
+    // if we don't have more than one controller, just close the window
+    int32_t sdlControllerCount = 0;
+    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            sdlControllerCount++;
+        }
+    }
+    if (sdlControllerCount <= 1) {
+        Hide();
+        return;
+    }
 
+    // we have more than one controller, prompt the user for order
+    if (mCurrentPortNumber <= std::min(sdlControllerCount, MAXCONTROLLERS)) {
+        ImGui::OpenPopup("Set Controller");
+        if (ImGui::BeginPopupModal("Set Controller", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Press any button or move any axis\non the controller for port %d", mCurrentPortNumber);
+            
+            auto index = GetSDLIndexFromSDLInput();
+            if (index != -1 && std::find(mSDLDeviceIndices.begin(), mSDLDeviceIndices.end(), index) == mSDLDeviceIndices.end()) {
+                mSDLDeviceIndices.push_back(index);
+                mCurrentPortNumber++;
+                ImGui::CloseCurrentPopup();
+            }
+            
+            ImGui::EndPopup();
+        }
+        return;
+    }
+
+    Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsMultiplayer(mSDLDeviceIndices);
+    mSDLDeviceIndices.clear();
+    mCurrentPortNumber = 1;
+    Hide();
+}
 }
