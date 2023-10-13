@@ -17,6 +17,8 @@ enum class TextureType {
     GrayscaleAlpha4bpp = 7,
     GrayscaleAlpha8bpp = 8,
     GrayscaleAlpha16bpp = 9,
+    // Added for sm64 use
+    GrayscaleAlpha1bpp = 10,
 };
 
 class Texture : public Resource<uint8_t> {
