@@ -32,7 +32,7 @@ int SDLAudioPlayer::Buffered(void) {
 }
 
 int SDLAudioPlayer::GetDesiredBuffered(void) {
-    return 2480;
+    return 1100;
 }
 
 void SDLAudioPlayer::Play(const uint8_t* buf, size_t len) {
