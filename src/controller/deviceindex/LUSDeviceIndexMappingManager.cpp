@@ -9,7 +9,7 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
 
 namespace LUS {
-LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() {
+LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false) {
 }
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
@@ -21,6 +21,7 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
         InitializeSDLMappingsForPort(port, sdlIndex);
         port++;
     }
+    mIsInitialized = true;
 }
 
 LUSDeviceIndex LUSDeviceIndexMappingManager::GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
@@ -481,6 +482,10 @@ int32_t LUSDeviceIndexMappingManager::GetNewSDLDeviceIndexFromLUSDeviceIndex(LUS
 }
 
 void LUSDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDeviceIndex) {
+    if (!mIsInitialized) {
+        return;
+    }
+
     if (!SDL_IsGameController(sdlDeviceIndex)) {
         return;
     }

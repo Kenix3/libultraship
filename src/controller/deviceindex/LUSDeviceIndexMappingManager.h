@@ -28,6 +28,7 @@ class LUSDeviceIndexMappingManager {
     void HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId);
   
   private:
+    bool mIsInitialized;
     LUSDeviceIndex GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
     uint8_t GetPortIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
     int32_t GetNewSDLDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
