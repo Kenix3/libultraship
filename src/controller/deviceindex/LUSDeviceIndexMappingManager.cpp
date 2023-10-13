@@ -4,6 +4,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <vector>
 #include "Context.h"
+#include "ControllerDisconnectedWindow.h"
 #include "ControllerReorderingWindow.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
 
@@ -13,16 +14,6 @@ LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() {
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 }
-
-// std::vector<int32_t> LUSDeviceIndexMappingManager::GetDeviceOrder() {
-//     auto window = std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", true, "Controller Reordering");
-//     Context::GetInstance()->GetWindow()->GetGui()->AddGuiWindow(window);
-//     while (window->GetSDLIndex() == -1) {
-//         // show the window while we don't have an sdl index
-//     }
-//     Context::GetInstance()->GetWindow()->GetGui()->RemoveGuiWindow("Controller Reordering");
-//     return {0};
-// }
 
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
     uint8_t port = 0;
@@ -297,6 +288,66 @@ void LUSDeviceIndexMappingManager::RemoveLUSDeviceIndexToPhysicalDeviceIndexMapp
     mLUSDeviceIndexToPhysicalDeviceIndexMappings.erase(index);
 }
 
+uint8_t LUSDeviceIndexMappingManager::GetPortIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId) {
+    for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+        auto controller = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex);
+
+        for (auto [bitmask, button] : controller->GetAllButtons()) {
+            for (auto [id, buttonMapping] : button->GetAllButtonMappings()) {
+                auto sdlButtonMapping = std::dynamic_pointer_cast<SDLMapping>(buttonMapping);
+                if (sdlButtonMapping == nullptr) {
+                    continue;
+                }
+                if (sdlButtonMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                    return portIndex;
+                }
+            }
+        }
+
+        for (auto stick : {controller->GetLeftStick(), controller->GetRightStick()}) {
+            for (auto [direction, axisDirectionMappings] : stick->GetAllAxisDirectionMappings()) {
+                for (auto [id, axisDirectionMapping] : axisDirectionMappings) {
+                    auto sdlAxisDirectionMapping = std::dynamic_pointer_cast<SDLMapping>(axisDirectionMapping);
+                    if (sdlAxisDirectionMapping == nullptr) {
+                        continue;
+                    }
+                    if (sdlAxisDirectionMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                        return portIndex;
+                    }
+                }
+            }
+        }
+
+        auto sdlGyroMapping = std::dynamic_pointer_cast<SDLMapping>(controller->GetGyro()->GetGyroMapping());
+        if (sdlGyroMapping != nullptr && sdlGyroMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+            return portIndex;
+        }
+
+        for (auto [id, rumbleMapping] : controller->GetRumble()->GetAllRumbleMappings()) {
+            auto sdlRumbleMapping = std::dynamic_pointer_cast<SDLMapping>(rumbleMapping);
+            if (sdlRumbleMapping == nullptr) {
+                continue;
+            }
+            if (sdlRumbleMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                return portIndex;
+            }
+        }
+
+        for (auto [id, ledMapping] : controller->GetLED()->GetAllLEDMappings()) {
+            auto sdlLEDMapping = std::dynamic_pointer_cast<SDLMapping>(ledMapping);
+            if (sdlLEDMapping == nullptr) {
+                continue;
+            }
+            if (sdlLEDMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                return portIndex;
+            }
+        }
+    }
+
+    // couldn't find one
+    return UINT8_MAX;
+}
+
 LUSDeviceIndex LUSDeviceIndexMappingManager::GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId) {
     for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
         auto controller = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex);
@@ -429,22 +480,45 @@ int32_t LUSDeviceIndexMappingManager::GetNewSDLDeviceIndexFromLUSDeviceIndex(LUS
     return -1;
 }
 
+void LUSDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDeviceIndex) {
+    if (!SDL_IsGameController(sdlDeviceIndex)) {
+        return;
+    }
+
+    auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
+    if (controllerDisconnectedWindow != nullptr && controllerDisconnectedWindow->IsVisible()) {
+        controllerDisconnectedWindow->SetSDLIndexOfNewController(sdlDeviceIndex);
+        return;
+    }
+    
+    // todo: things when connecting new controllers without disconnect stuff
+}
+
 void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId) {
     auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected = GetLUSDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
 
     for (auto [lusIndex, mapping] : mLUSDeviceIndexToPhysicalDeviceIndexMappings) {
-        if (lusIndex == lusIndexOfPhysicalDeviceThatHasBeenDisconnected) {
+        auto sdlMapping = dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+        if (sdlMapping == nullptr) {
             continue;
         }
 
-        auto sdlMapping = dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
-        if (sdlMapping == nullptr) {
+        if (lusIndex == lusIndexOfPhysicalDeviceThatHasBeenDisconnected) {
+            sdlMapping->SetSDLDeviceIndex(-1);
+            sdlMapping->SaveToConfig();
+            auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
+            if (controllerDisconnectedWindow != nullptr) {
+                controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(GetPortIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId));
+                controllerDisconnectedWindow->Show();
+            }
             continue;
         }
 
         sdlMapping->SetSDLDeviceIndex(GetNewSDLDeviceIndexFromLUSDeviceIndex(lusIndex));
         sdlMapping->SaveToConfig();
     }
+
+    RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(lusIndexOfPhysicalDeviceThatHasBeenDisconnected);
 }
 
 // void ControllerButton::ReloadAllMappingsFromConfig() {

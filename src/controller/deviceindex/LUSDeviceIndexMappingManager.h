@@ -24,10 +24,12 @@ class LUSDeviceIndexMappingManager {
     void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
     void InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex);
     void SaveMappingIdsToConfig();
+    void HandlePhysicalDeviceConnect(int32_t sdlDeviceIndex);
     void HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId);
   
   private:
     LUSDeviceIndex GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
+    uint8_t GetPortIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
     int32_t GetNewSDLDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
     std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> mLUSDeviceIndexToPhysicalDeviceIndexMappings;
 };

@@ -518,7 +518,12 @@ static void gfx_sdl_handle_events(void) {
                 is_running = false;
                 break;
             case SDL_CONTROLLERDEVICEREMOVED:
+                // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the [...] instance id for the SDL_CONTROLLERDEVICEREMOVED [...] event
                 LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceDisconnect(event.cdevice.which);
+                break;
+            case SDL_CONTROLLERDEVICEADDED:
+                // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for the SDL_CONTROLLERDEVICEADDED event
+                LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceConnect(event.cdevice.which);
                 break;
         }
     }
