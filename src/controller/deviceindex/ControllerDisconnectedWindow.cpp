@@ -1,4 +1,5 @@
 #include "ControllerDisconnectedWindow.h"
+#include <Utils/StringHelper.h>
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include "Context.h"
@@ -73,6 +74,12 @@ void ControllerDisconnectedWindow::DrawElement() {
                                    ->GetLUSDeviceIndexFromSDLDeviceIndex(index) == LUSDeviceIndex::Max) {
             Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeSDLMappingsForPort(
                 mPortIndexOfDisconnectedController, index);
+            mPortIndexOfDisconnectedController = UINT8_MAX;
+            ImGui::CloseCurrentPopup();
+            Hide();
+        }
+
+        if (ImGui::Button(StringHelper::Sprintf("Play without controller connected to port %d", mPortIndexOfDisconnectedController + 1).c_str())) {
             mPortIndexOfDisconnectedController = UINT8_MAX;
             ImGui::CloseCurrentPopup();
             Hide();
