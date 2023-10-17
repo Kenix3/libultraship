@@ -492,7 +492,7 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevice
 
     auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
     if (controllerDisconnectedWindow != nullptr && controllerDisconnectedWindow->IsVisible()) {
-        controllerDisconnectedWindow->SetSDLIndexOfNewController(sdlDeviceIndex);
+        // don't try to automap if we are looking at the controller disconnected modal
         return;
     }
     
@@ -524,6 +524,22 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoy
     }
 
     RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(lusIndexOfPhysicalDeviceThatHasBeenDisconnected);
+}
+
+LUSDeviceIndex LUSDeviceIndexMappingManager::GetLUSDeviceIndexFromSDLDeviceIndex(int32_t sdlIndex) {
+    for (auto [lusIndex, mapping] : mLUSDeviceIndexToPhysicalDeviceIndexMappings) {
+        auto sdlMapping = dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+        if (sdlMapping == nullptr) {
+            continue;
+        }
+
+        if (sdlMapping->GetSDLDeviceIndex() == sdlIndex) {
+            return lusIndex;
+        }
+    }
+
+    // didn't find one
+    return LUSDeviceIndex::Max;
 }
 
 // void ControllerButton::ReloadAllMappingsFromConfig() {

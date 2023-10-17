@@ -16,7 +16,6 @@ class ControllerDisconnectedWindow : public GuiWindow {
     using GuiWindow::GuiWindow;
     ~ControllerDisconnectedWindow();
     void SetPortIndexOfDisconnectedController(uint8_t portIndex);
-    void SetSDLIndexOfNewController(int32_t sdlIndex);
 
   protected:
     void InitElement() override;
@@ -24,7 +23,7 @@ class ControllerDisconnectedWindow : public GuiWindow {
     void UpdateElement() override;
   
   private:
+    int32_t GetSDLIndexFromSDLInput();
     uint8_t mPortIndexOfDisconnectedController;
-    int32_t mSDLIndexOfNewController;
 };
 } // namespace LUS
