@@ -98,8 +98,8 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
 }
 
 void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
-    for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick
-                                                                                            )) {
+    for (auto mapping :
+         AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
         AddAxisDirectionMapping(mapping->GetDirection(), mapping);
     }
 
@@ -347,17 +347,16 @@ bool ControllerStick::NotchSnapAngleIsDefault() {
 
 bool ControllerStick::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
     return std::any_of(mAxisDirectionMappings.begin(), mAxisDirectionMappings.end(),
-        [lusIndex](const auto& directionMappings) {
-            return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
-                [lusIndex](const auto& mappingPair) {
-                    return mappingPair.second->GetLUSDeviceIndex() == lusIndex;
-                }
-            );
-        }
-    );
+                       [lusIndex](const auto& directionMappings) {
+                           return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
+                                              [lusIndex](const auto& mappingPair) {
+                                                  return mappingPair.second->GetLUSDeviceIndex() == lusIndex;
+                                              });
+                       });
 }
 
-std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>> ControllerStick::GetAllAxisDirectionMappings() {
+std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
+ControllerStick::GetAllAxisDirectionMappings() {
     return mAxisDirectionMappings;
 }
 

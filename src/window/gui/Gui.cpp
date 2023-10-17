@@ -68,8 +68,10 @@ Gui::Gui() : mNeedsConsoleVariableSave(false) {
 
     AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
     AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
-    AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>("gControllerDisconnectedWindowEnabled", "Controller Disconnected"));
-    AddGuiWindow(std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
+    AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>("gControllerDisconnectedWindowEnabled",
+                                                                "Controller Disconnected"));
+    AddGuiWindow(
+        std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
 }
 

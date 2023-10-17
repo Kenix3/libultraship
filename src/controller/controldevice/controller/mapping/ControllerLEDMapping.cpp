@@ -1,7 +1,8 @@
 #include "ControllerLEDMapping.h"
 
 namespace LUS {
-ControllerLEDMapping::ControllerLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor)
+ControllerLEDMapping::ControllerLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+                                           Color_RGB8 savedColor)
     : ControllerMapping(lusDeviceIndex), mPortIndex(portIndex), mColorSource(colorSource), mSavedColor(savedColor) {
 }
 

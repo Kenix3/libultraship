@@ -7,10 +7,10 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLGyroMapping::SDLGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,
-                               float neutralRoll)
-    : ControllerInputMapping(lusDeviceIndex), ControllerGyroMapping(lusDeviceIndex, portIndex, sensitivity), mNeutralPitch(neutralPitch), SDLMapping(lusDeviceIndex),
-      mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+SDLGyroMapping::SDLGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
+                               float neutralYaw, float neutralRoll)
+    : ControllerInputMapping(lusDeviceIndex), ControllerGyroMapping(lusDeviceIndex, portIndex, sensitivity),
+      mNeutralPitch(neutralPitch), SDLMapping(lusDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
 void SDLGyroMapping::Recalibrate() {
@@ -53,7 +53,8 @@ void SDLGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerInputMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mLUSDeviceIndex);
     CVarSetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);

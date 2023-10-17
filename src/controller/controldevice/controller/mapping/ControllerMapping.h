@@ -15,7 +15,7 @@ class ControllerMapping {
     ~ControllerMapping();
     virtual std::string GetPhysicalDeviceName();
     LUSDeviceIndex GetLUSDeviceIndex();
-  
+
   protected:
     LUSDeviceIndex mLUSDeviceIndex;
 };

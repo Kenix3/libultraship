@@ -3,7 +3,11 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid) : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex), mSDLJoystickGUID(sdlJoystickGuid) {
+LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex,
+                                                                             int32_t sdlDeviceIndex,
+                                                                             std::string sdlJoystickGuid)
+    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
+      mSDLJoystickGUID(sdlJoystickGuid) {
 }
 
 LUSDeviceIndexToSDLDeviceIndexMapping::~LUSDeviceIndexToSDLDeviceIndexMapping() {
@@ -31,7 +35,8 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
                   "LUSDeviceIndexToSDLDeviceIndexMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str(), mSDLDeviceIndex);
-    CVarSetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(), mSDLJoystickGUID.c_str());
+    CVarSetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(),
+                  mSDLJoystickGUID.c_str());
     CVarSave();
 }
 

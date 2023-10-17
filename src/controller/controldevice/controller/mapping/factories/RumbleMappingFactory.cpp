@@ -10,14 +10,17 @@ namespace LUS {
 
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
 RumbleMappingFactory::CreateDefaultSDLRumbleMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex) {
-    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
+    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
+        Context::GetInstance()
+            ->GetControlDeck()
+            ->GetDeviceIndexMappingManager()
+            ->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
     if (sdlIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
     }
 
-    std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = {
-        std::make_shared<SDLRumbleMapping>(lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE)
-    };
+    std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
+        lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
     return mappings;
 }
@@ -52,8 +55,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
             return nullptr;
         }
 
-        return std::make_shared<SDLRumbleMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, lowFrequencyIntensityPercentage,
-                                                  highFrequencyIntensityPercentage);
+        return std::make_shared<SDLRumbleMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
+                                                  lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
     }
 
     return nullptr;
@@ -62,7 +65,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
     std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllersWithRumble;
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
-    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+    for (auto [lusIndex, indexMapping] :
+         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
         auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
         if (sdlIndexMapping == nullptr) {
@@ -88,7 +92,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
     for (auto [lusIndex, controller] : sdlControllersWithRumble) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLRumbleMapping>(lusIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+                mapping =
+                    std::make_shared<SDLRumbleMapping>(lusIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                       DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 break;
             }
         }
@@ -111,7 +117,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                 continue;
             }
 
-            mapping = std::make_shared<SDLRumbleMapping>(lusIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+            mapping = std::make_shared<SDLRumbleMapping>(lusIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                         DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
             break;
         }
     }

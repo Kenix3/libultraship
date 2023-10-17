@@ -53,7 +53,6 @@ void ControllerRumble::ClearRumbleMappingId(std::string id) {
     SaveRumbleMappingIdsToConfig();
 }
 
-
 void ControllerRumble::ClearRumbleMapping(std::string id) {
     mRumbleMappings[id]->EraseFromConfig();
     mRumbleMappings.erase(id);
@@ -126,10 +125,7 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
 }
 
 bool ControllerRumble::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(), 
-        [lusIndex](const auto& mapping) {
-            return mapping.second->GetLUSDeviceIndex() == lusIndex;
-        }
-    );
+    return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(),
+                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
 }
 } // namespace LUS

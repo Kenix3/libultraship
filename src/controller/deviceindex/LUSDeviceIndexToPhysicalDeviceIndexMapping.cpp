@@ -1,7 +1,8 @@
 #include "LUSDeviceIndexToPhysicalDeviceIndexMapping.h"
 
 namespace LUS {
-LUSDeviceIndexToPhysicalDeviceIndexMapping::LUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex) : mLUSDeviceIndex(lusDeviceIndex) {
+LUSDeviceIndexToPhysicalDeviceIndexMapping::LUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex)
+    : mLUSDeviceIndex(lusDeviceIndex) {
 }
 
 LUSDeviceIndexToPhysicalDeviceIndexMapping::~LUSDeviceIndexToPhysicalDeviceIndexMapping() {

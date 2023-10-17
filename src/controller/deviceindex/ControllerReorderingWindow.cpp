@@ -18,7 +18,7 @@ void ControllerReorderingWindow::UpdateElement() {
 
 int32_t ControllerReorderingWindow::GetSDLIndexFromSDLInput() {
     int32_t sdlDeviceIndex = -1;
-    
+
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
@@ -64,7 +64,8 @@ void ControllerReorderingWindow::DrawElement() {
         }
     }
     if (connectedSdlControllerIndices.size() <= 1) {
-        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsMultiplayer(connectedSdlControllerIndices);
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsMultiplayer(
+            connectedSdlControllerIndices);
         Hide();
         return;
     }
@@ -74,22 +75,24 @@ void ControllerReorderingWindow::DrawElement() {
         ImGui::OpenPopup("Set Controller");
         if (ImGui::BeginPopupModal("Set Controller", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Press any button or move any axis\non the controller for port %d", mCurrentPortNumber);
-            
+
             auto index = GetSDLIndexFromSDLInput();
-            if (index != -1 && std::find(mSDLDeviceIndices.begin(), mSDLDeviceIndices.end(), index) == mSDLDeviceIndices.end()) {
+            if (index != -1 &&
+                std::find(mSDLDeviceIndices.begin(), mSDLDeviceIndices.end(), index) == mSDLDeviceIndices.end()) {
                 mSDLDeviceIndices.push_back(index);
                 mCurrentPortNumber++;
                 ImGui::CloseCurrentPopup();
             }
-            
+
             ImGui::EndPopup();
         }
         return;
     }
 
-    Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsMultiplayer(mSDLDeviceIndices);
+    Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsMultiplayer(
+        mSDLDeviceIndices);
     mSDLDeviceIndices.clear();
     mCurrentPortNumber = 1;
     Hide();
 }
-}
+} // namespace LUS

@@ -21,7 +21,7 @@ class ControllerDisconnectedWindow : public GuiWindow {
     void InitElement() override;
     void DrawElement() override;
     void UpdateElement() override;
-  
+
   private:
     int32_t GetSDLIndexFromSDLInput();
     uint8_t mPortIndexOfDisconnectedController;

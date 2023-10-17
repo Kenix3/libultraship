@@ -8,9 +8,11 @@
 #define MAX_SDL_RANGE (float)INT16_MAX
 
 namespace LUS {
-SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
+SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+                                                                 Stick stick, Direction direction,
                                                                  int32_t sdlControllerButton)
-    : ControllerInputMapping(lusDeviceIndex), ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
+    : ControllerInputMapping(lusDeviceIndex),
+      ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
       SDLButtonToAnyMapping(lusDeviceIndex, sdlControllerButton) {
 }
 
@@ -24,8 +26,8 @@ float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 }
 
 std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLB%d", mPortIndex, mStick, mDirection, ControllerInputMapping::mLUSDeviceIndex,
-                                 mControllerButton);
+    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLB%d", mPortIndex, mStick, mDirection,
+                                 ControllerInputMapping::mLUSDeviceIndex, mControllerButton);
 }
 
 void SDLButtonToAxisDirectionMapping::SaveToConfig() {
@@ -34,7 +36,8 @@ void SDLButtonToAxisDirectionMapping::SaveToConfig() {
                   "SDLButtonToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerInputMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }

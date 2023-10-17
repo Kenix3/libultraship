@@ -4,7 +4,8 @@
 #include <sstream>
 
 namespace LUS {
-ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick, Direction direction)
+ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+                                                               Stick stick, Direction direction)
     : ControllerInputMapping(lusDeviceIndex), mPortIndex(portIndex), mStick(stick), mDirection(direction) {
 }
 

@@ -47,7 +47,6 @@ void ControllerLED::ClearLEDMappingId(std::string id) {
     SaveLEDMappingIdsToConfig();
 }
 
-
 void ControllerLED::ClearLEDMapping(std::string id) {
     mLEDMappings[id]->EraseFromConfig();
     mLEDMappings.erase(id);
@@ -108,10 +107,7 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
 }
 
 bool ControllerLED::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    return std::any_of(mLEDMappings.begin(), mLEDMappings.end(), 
-        [lusIndex](const auto& mapping) {
-            return mapping.second->GetLUSDeviceIndex() == lusIndex;
-        }
-    );
+    return std::any_of(mLEDMappings.begin(), mLEDMappings.end(),
+                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
 }
 } // namespace LUS

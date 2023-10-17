@@ -4,7 +4,8 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLLEDMapping::SDLLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor)
+SDLLEDMapping::SDLLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+                             Color_RGB8 savedColor)
     : ControllerLEDMapping(lusDeviceIndex, portIndex, colorSource, savedColor), SDLMapping(lusDeviceIndex) {
 }
 
@@ -35,7 +36,8 @@ std::string SDLLEDMapping::GetLEDMappingId() {
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
     CVarSetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerLEDMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerLEDMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
     CVarSetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
     CVarSave();

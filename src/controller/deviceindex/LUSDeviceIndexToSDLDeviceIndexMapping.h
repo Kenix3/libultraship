@@ -8,7 +8,8 @@ namespace LUS {
 
 class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid);
+    LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex,
+                                          std::string sdlJoystickGuid);
     ~LUSDeviceIndexToSDLDeviceIndexMapping();
     std::string GetMappingId() override;
     std::string GetJoystickGUID();

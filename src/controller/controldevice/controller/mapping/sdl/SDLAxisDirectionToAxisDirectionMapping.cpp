@@ -8,11 +8,13 @@
 #define MAX_SDL_RANGE (float)INT16_MAX
 
 namespace LUS {
-SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick,
+SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex,
+                                                                               uint8_t portIndex, Stick stick,
                                                                                Direction direction,
                                                                                int32_t sdlControllerAxis,
                                                                                int32_t axisDirection)
-    : ControllerInputMapping(lusDeviceIndex), ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
+    : ControllerInputMapping(lusDeviceIndex),
+      ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
       SDLAxisDirectionToAnyMapping(lusDeviceIndex, sdlControllerAxis, axisDirection) {
 }
 
@@ -37,8 +39,9 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
 }
 
 std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mStick, mDirection, ControllerInputMapping::mLUSDeviceIndex,
-                                 mControllerAxis, mAxisDirection == 1 ? "P" : "N");
+    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mStick, mDirection,
+                                 ControllerInputMapping::mLUSDeviceIndex, mControllerAxis,
+                                 mAxisDirection == 1 ? "P" : "N");
 }
 
 void SDLAxisDirectionToAxisDirectionMapping::SaveToConfig() {
@@ -47,7 +50,8 @@ void SDLAxisDirectionToAxisDirectionMapping::SaveToConfig() {
                   "SDLAxisDirectionToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), ControllerInputMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
     CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
     CVarSave();

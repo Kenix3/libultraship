@@ -168,8 +168,7 @@ bool ControllerButton::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbS
 }
 
 void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
-    for (auto mapping :
-            ButtonMappingFactory::CreateDefaultSDLButtonMappings(lusDeviceIndex, mPortIndex, mBitmask)) {
+    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(lusDeviceIndex, mPortIndex, mBitmask)) {
         AddButtonMapping(mapping);
     }
 
@@ -186,10 +185,7 @@ void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
 }
 
 bool ControllerButton::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(), 
-        [lusIndex](const auto& mapping) {
-            return mapping.second->GetLUSDeviceIndex() == lusIndex;
-        }
-    );
+    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(),
+                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
 }
 } // namespace LUS

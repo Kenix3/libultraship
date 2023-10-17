@@ -13,7 +13,11 @@ SDLMapping::~SDLMapping() {
 }
 
 bool SDLMapping::OpenController() {
-    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
+    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
+        LUS::Context::GetInstance()
+            ->GetControlDeck()
+            ->GetDeviceIndexMappingManager()
+            ->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
@@ -84,7 +88,11 @@ bool SDLMapping::UsesXboxLayout() {
 }
 
 int32_t SDLMapping::GetSDLDeviceIndex() {
-    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(LUS::Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
+    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
+        LUS::Context::GetInstance()
+            ->GetControlDeck()
+            ->GetDeviceIndexMappingManager()
+            ->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
@@ -96,7 +104,7 @@ int32_t SDLMapping::GetSDLDeviceIndex() {
 
 std::string SDLMapping::GetSDLDeviceName() {
     if (!ControllerLoaded()) {
-        return StringHelper::Sprintf("Disconnected (%d)", mLUSDeviceIndex);    
+        return StringHelper::Sprintf("Disconnected (%d)", mLUSDeviceIndex);
     }
 
     auto sdlName = SDL_GameControllerName(mController);

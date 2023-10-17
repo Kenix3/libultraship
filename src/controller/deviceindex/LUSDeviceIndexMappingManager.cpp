@@ -26,10 +26,14 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
 
 LUSDeviceIndex LUSDeviceIndexMappingManager::GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
     for (uint8_t lusIndex = LUSDeviceIndex::Blue; lusIndex < LUSDeviceIndex::Max; lusIndex++) {
-        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(1)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(2)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(3)->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex))) {
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(1)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(2)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(3)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex))) {
             continue;
         }
         return static_cast<LUSDeviceIndex>(lusIndex);
@@ -46,7 +50,7 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     char guidString[33]; // SDL_GUID_LENGTH + 1 for null terminator
     SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(sdlIndex), guidString, sizeof(guidString));
-    
+
     // find all lus indices with this guid
     std::map<int32_t, LUSDeviceIndex> matchingGuidLusIndices;
     auto mappings = GetAllDeviceIndexMappingsFromConfig();
@@ -73,9 +77,10 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
         sdlMapping->SetSDLDeviceIndex(sdlIndex);
         SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
-        
+
         // if we have mappings for this LUS device on this port, we're good and don't need to move any mappings
-        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->HasMappingsForLUSDeviceIndex(lusIndex)) {
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->HasMappingsForLUSDeviceIndex(
+                lusIndex)) {
             return;
         }
 
@@ -85,11 +90,13 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
                 continue;
             }
 
-            if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForLUSDeviceIndex(
+                    lusIndex)) {
                 continue;
             }
 
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(
+                Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
             return;
         }
 
@@ -179,16 +186,18 @@ void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
 
     // prompt for use as saved vs use as new
     // if input mappings only exist for one LUS color, then use as saved doesn't need extra prompts
-    // if input mappings exist for multiple LUS colors, then prompt for "which color" 
+    // if input mappings exist for multiple LUS colors, then prompt for "which color"
     // is it possible to throw an imgui modal up with controller input temporarily enabled?
     // use as new set default mappings
-    // only ask for use as saved if we don't have any "active" mappings on the port we're currently trying to map to (start with 1, then 2 etc.) 
-    // - active defined as any non-keyboard input mapping on a port using an LUS index with a non-null deviceindexmapping 
+    // only ask for use as saved if we don't have any "active" mappings on the port we're currently trying to map to
+    // (start with 1, then 2 etc.)
+    // - active defined as any non-keyboard input mapping on a port using an LUS index with a non-null
+    // deviceindexmapping
 
     // prompt for what port
-    // if all ports inactive, only one connected controller, no prompt for which port, just either apply existing or use as new
-    // 
-
+    // if all ports inactive, only one connected controller, no prompt for which port, just either apply existing or use
+    // as new
+    //
 
     // map any remaining controllers to the lowest available LUS index
     for (auto [sdlIndex, sdlGuid] : attachedSdlControllerGuids) {
@@ -197,7 +206,8 @@ void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
                 continue;
             }
 
-            SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid));
+            SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
+                static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid));
             break;
         }
     }
@@ -225,7 +235,8 @@ void LUSDeviceIndexMappingManager::SaveMappingIdsToConfig() {
     CVarSave();
 }
 
-std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id) {
+std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>
+LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id) {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -234,9 +245,11 @@ std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> LUSDeviceIndexMappin
         int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        int32_t sdlDeviceIndex = CVarGetInteger(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t sdlDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        std::string sdlJoystickGuid = CVarGetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(), "");
+        std::string sdlJoystickGuid =
+            CVarGetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(), "");
 
         if (lusDeviceIndex < 0 || sdlDeviceIndex < 0 || sdlJoystickGuid == "") {
             // something about this mapping is invalid
@@ -245,13 +258,15 @@ std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> LUSDeviceIndexMappin
             return nullptr;
         }
 
-        return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid);
+        return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex),
+                                                                       sdlDeviceIndex, sdlJoystickGuid);
     }
 
     return nullptr;
 }
 
-std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> LUSDeviceIndexMappingManager::GetAllDeviceIndexMappingsFromConfig() {
+std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>>
+LUSDeviceIndexMappingManager::GetAllDeviceIndexMappingsFromConfig() {
     std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> mappings;
 
     // todo: this efficently (when we build out cvar array support?)
@@ -269,7 +284,8 @@ std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDevic
     return mappings;
 }
 
-std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> LUSDeviceIndexMappingManager::GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>
+LUSDeviceIndexMappingManager::GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceIndex lusIndex) {
     if (!mLUSDeviceIndexToPhysicalDeviceIndexMappings.contains(lusIndex)) {
         return nullptr;
     }
@@ -277,11 +293,13 @@ std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> LUSDeviceIndexMappin
     return mLUSDeviceIndexToPhysicalDeviceIndexMappings[lusIndex];
 }
 
-std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>> LUSDeviceIndexMappingManager::GetAllDeviceIndexMappings() {
+std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>>
+LUSDeviceIndexMappingManager::GetAllDeviceIndexMappings() {
     return mLUSDeviceIndexToPhysicalDeviceIndexMappings;
 }
 
-void LUSDeviceIndexMappingManager::SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping) {
+void LUSDeviceIndexMappingManager::SetLUSDeviceIndexToPhysicalDeviceIndexMapping(
+    std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> mapping) {
     mLUSDeviceIndexToPhysicalDeviceIndexMappings[mapping->GetLUSDeviceIndex()] = mapping;
 }
 
@@ -305,7 +323,7 @@ uint8_t LUSDeviceIndexMappingManager::GetPortIndexOfDisconnectedPhysicalDevice(i
             }
         }
 
-        for (auto stick : {controller->GetLeftStick(), controller->GetRightStick()}) {
+        for (auto stick : { controller->GetLeftStick(), controller->GetRightStick() }) {
             for (auto [direction, axisDirectionMappings] : stick->GetAllAxisDirectionMappings()) {
                 for (auto [id, axisDirectionMapping] : axisDirectionMappings) {
                     auto sdlAxisDirectionMapping = std::dynamic_pointer_cast<SDLMapping>(axisDirectionMapping);
@@ -349,7 +367,8 @@ uint8_t LUSDeviceIndexMappingManager::GetPortIndexOfDisconnectedPhysicalDevice(i
     return UINT8_MAX;
 }
 
-LUSDeviceIndex LUSDeviceIndexMappingManager::GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId) {
+LUSDeviceIndex
+LUSDeviceIndexMappingManager::GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId) {
     for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
         auto controller = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex);
 
@@ -365,7 +384,7 @@ LUSDeviceIndex LUSDeviceIndexMappingManager::GetLUSDeviceIndexOfDisconnectedPhys
             }
         }
 
-        for (auto stick : {controller->GetLeftStick(), controller->GetRightStick()}) {
+        for (auto stick : { controller->GetLeftStick(), controller->GetRightStick() }) {
             for (auto [direction, axisDirectionMappings] : stick->GetAllAxisDirectionMappings()) {
                 for (auto [id, axisDirectionMapping] : axisDirectionMappings) {
                     auto sdlAxisDirectionMapping = std::dynamic_pointer_cast<SDLMapping>(axisDirectionMapping);
@@ -428,18 +447,18 @@ int32_t LUSDeviceIndexMappingManager::GetNewSDLDeviceIndexFromLUSDeviceIndex(LUS
             }
         }
 
-        for (auto stick : {controller->GetLeftStick(), controller->GetRightStick()}) {
+        for (auto stick : { controller->GetLeftStick(), controller->GetRightStick() }) {
             for (auto [direction, axisDirectionMappings] : stick->GetAllAxisDirectionMappings()) {
                 for (auto [id, axisDirectionMapping] : axisDirectionMappings) {
                     if (axisDirectionMapping->GetLUSDeviceIndex() != lusIndex) {
                         continue;
                     }
-                    
+
                     auto sdlAxisDirectionMapping = std::dynamic_pointer_cast<SDLMapping>(axisDirectionMapping);
                     if (sdlAxisDirectionMapping == nullptr) {
                         continue;
                     }
-                    
+
                     return sdlAxisDirectionMapping->GetCurrentSDLDeviceIndex();
                 }
             }
@@ -490,17 +509,19 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevice
         return;
     }
 
-    auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
+    auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(
+        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
     if (controllerDisconnectedWindow != nullptr && controllerDisconnectedWindow->IsVisible()) {
         // don't try to automap if we are looking at the controller disconnected modal
         return;
     }
-    
+
     // todo: things when connecting new controllers without disconnect stuff
 }
 
 void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId) {
-    auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected = GetLUSDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
+    auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected =
+        GetLUSDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
 
     for (auto [lusIndex, mapping] : mLUSDeviceIndexToPhysicalDeviceIndexMappings) {
         auto sdlMapping = dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
@@ -511,9 +532,11 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoy
         if (lusIndex == lusIndexOfPhysicalDeviceThatHasBeenDisconnected) {
             sdlMapping->SetSDLDeviceIndex(-1);
             sdlMapping->SaveToConfig();
-            auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
+            auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(
+                Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
             if (controllerDisconnectedWindow != nullptr) {
-                controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(GetPortIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId));
+                controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(
+                    GetPortIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId));
                 controllerDisconnectedWindow->Show();
             }
             continue;
@@ -579,14 +602,18 @@ use case: 4 xbox controllers
     - new default mappings added to port 1 for switch and playstation controllers
   - with 1 xbox controller
     - controller reassociates based on guid/sdl index if possible, if sdl id doesn't match it associates with guid alone
-      - i was worried we might have a risk of nonunique mappings here, but if we always match on both sdl index and guid first then even if we update the sdl index when reassociating on guid alone we'll be fine
+      - i was worried we might have a risk of nonunique mappings here, but if we always match on both sdl index and guid
+first then even if we update the sdl index when reassociating on guid alone we'll be fine
 - new controller connected
-  - try to associate based on guid/sdl index, if we can't try to associate based on guid, if we can't add default mappings to port 1
+  - try to associate based on guid/sdl index, if we can't try to associate based on guid, if we can't add default
+mappings to port 1
 - controller disconnected
   - can we use SDL_GameControllerGetAttached to figure out which controller was disconnected?
-  - might be able to do something with deviceinstanceid comparisons, use SDL_JoystickGetDeviceInstanceID(device_index) and SDL_JoystickInstanceID(joystick)
+  - might be able to do something with deviceinstanceid comparisons, use SDL_JoystickGetDeviceInstanceID(device_index)
+and SDL_JoystickInstanceID(joystick)
   - SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller))
-  - we have no idea what controller the player is currently using, but it would be annoying to pause gameplay if an unused controller got disconnected,
-    so i think it makes sense to just show a little alert saying "controllername disconnected"
+  - we have no idea what controller the player is currently using, but it would be annoying to pause gameplay if an
+unused controller got disconnected, so i think it makes sense to just show a little alert saying "controllername
+disconnected"
   - automatically update all lusdeviceindex mappings to have the appropriate sdl device index
 */

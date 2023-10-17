@@ -35,7 +35,8 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
             return nullptr;
         }
 
-        return std::make_shared<SDLLEDMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, colorSource, savedColor);
+        return std::make_shared<SDLLEDMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, colorSource,
+                                               savedColor);
     }
 
     return nullptr;
@@ -44,7 +45,8 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
     std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllersWithLEDs;
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
-    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+    for (auto [lusIndex, indexMapping] :
+         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
         auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
         if (sdlIndexMapping == nullptr) {

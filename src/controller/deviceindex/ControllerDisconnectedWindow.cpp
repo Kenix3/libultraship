@@ -17,7 +17,7 @@ void ControllerDisconnectedWindow::UpdateElement() {
 
 int32_t ControllerDisconnectedWindow::GetSDLIndexFromSDLInput() {
     int32_t sdlDeviceIndex = -1;
-    
+
     std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
@@ -62,16 +62,22 @@ void ControllerDisconnectedWindow::DrawElement() {
 
     ImGui::OpenPopup("Controller Disconnected");
     if (ImGui::BeginPopupModal("Controller Disconnected", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Controller for port %d disconnected.\nPress any button or move any axis\non an unused controller for port %d.", mPortIndexOfDisconnectedController + 1, mPortIndexOfDisconnectedController + 1);
-        
+        ImGui::Text("Controller for port %d disconnected.\nPress any button or move any axis\non an unused controller "
+                    "for port %d.",
+                    mPortIndexOfDisconnectedController + 1, mPortIndexOfDisconnectedController + 1);
+
         auto index = GetSDLIndexFromSDLInput();
-        if (index != -1 && Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetLUSDeviceIndexFromSDLDeviceIndex(index) == LUSDeviceIndex::Max) {
-            Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeSDLMappingsForPort(mPortIndexOfDisconnectedController, index);
+        if (index != -1 && Context::GetInstance()
+                                   ->GetControlDeck()
+                                   ->GetDeviceIndexMappingManager()
+                                   ->GetLUSDeviceIndexFromSDLDeviceIndex(index) == LUSDeviceIndex::Max) {
+            Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeSDLMappingsForPort(
+                mPortIndexOfDisconnectedController, index);
             mPortIndexOfDisconnectedController = UINT8_MAX;
             ImGui::CloseCurrentPopup();
             Hide();
         }
-        
+
         ImGui::EndPopup();
     }
 }
@@ -79,4 +85,4 @@ void ControllerDisconnectedWindow::DrawElement() {
 void ControllerDisconnectedWindow::SetPortIndexOfDisconnectedController(uint8_t portIndex) {
     mPortIndexOfDisconnectedController = portIndex;
 }
-}
+} // namespace LUS

@@ -23,9 +23,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
-            lusDeviceIndex < 0 || sdlControllerAxis == -1 ||
-            (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || lusDeviceIndex < 0 ||
+            sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
@@ -33,7 +32,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         }
 
         return std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
-            static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, stick, static_cast<Direction>(direction), sdlControllerAxis, axisDirection);
+            static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, stick, static_cast<Direction>(direction),
+            sdlControllerAxis, axisDirection);
     }
 
     if (mappingClass == "SDLButtonToAxisDirectionMapping") {
@@ -43,16 +43,17 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
-            lusDeviceIndex < 0 || sdlControllerButton == -1) {
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || lusDeviceIndex < 0 ||
+            sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLButtonToAxisDirectionMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, stick, static_cast<Direction>(direction),
-                                                                sdlControllerButton);
+        return std::make_shared<SDLButtonToAxisDirectionMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
+                                                                 stick, static_cast<Direction>(direction),
+                                                                 sdlControllerButton);
     }
 
     if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
@@ -87,8 +88,13 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick) {
-    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+                                                                   Stick stick) {
+    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
+        Context::GetInstance()
+            ->GetControlDeck()
+            ->GetDeviceIndexMappingManager()
+            ->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
     if (sdlIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>();
     }
@@ -112,7 +118,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
                                                                     Direction direction) {
     std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
-    for (auto [lusIndex, indexMapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+    for (auto [lusIndex, indexMapping] :
+         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
         auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
         if (sdlIndexMapping == nullptr) {
@@ -133,8 +140,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
     for (auto [lusIndex, controller] : sdlControllers) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction,
-                                                                            button);
+                mapping =
+                    std::make_shared<SDLButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, button);
                 break;
             }
         }
@@ -158,7 +165,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
             }
 
             mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction,
-                                                                            axis, axisDirection);
+                                                                               axis, axisDirection);
             break;
         }
     }

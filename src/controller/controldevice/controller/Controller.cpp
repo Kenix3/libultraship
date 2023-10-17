@@ -165,15 +165,13 @@ bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancod
 }
 
 bool Controller::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    return std::any_of(GetAllButtons().begin(), GetAllButtons().end(),
-                        [lusIndex](const auto& button) {
-                            return button.second->HasMappingsForLUSDeviceIndex(lusIndex);
-                        }) || 
-        GetLeftStick()->HasMappingsForLUSDeviceIndex(lusIndex) || 
-        GetRightStick()->HasMappingsForLUSDeviceIndex(lusIndex) || 
-        GetGyro()->HasMappingForLUSDeviceIndex(lusIndex) || 
-        GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex) || 
-        GetLED()->HasMappingsForLUSDeviceIndex(lusIndex);
+    return std::any_of(
+               GetAllButtons().begin(), GetAllButtons().end(),
+               [lusIndex](const auto& button) { return button.second->HasMappingsForLUSDeviceIndex(lusIndex); }) ||
+           GetLeftStick()->HasMappingsForLUSDeviceIndex(lusIndex) ||
+           GetRightStick()->HasMappingsForLUSDeviceIndex(lusIndex) ||
+           GetGyro()->HasMappingForLUSDeviceIndex(lusIndex) || GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex) ||
+           GetLED()->HasMappingsForLUSDeviceIndex(lusIndex);
 }
 
 std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(uint16_t bitmask) {
@@ -186,10 +184,10 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
         for (auto [id, mapping] : button->GetAllButtonMappings()) {
             if (mapping->GetLUSDeviceIndex() == lusIndex) {
                 buttonMappingIdsToRemove.push_back(id);
-                
+
                 mapping->SetPortIndex(newController->GetPortIndex());
                 mapping->SaveToConfig();
-                
+
                 newController->GetButtonByBitmask(bitmask)->AddButtonMapping(mapping);
             }
         }
@@ -199,8 +197,9 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
         }
     }
 
-    for (auto stick : {GetLeftStick(), GetRightStick()}) {
-        auto newControllerStick = stick->LeftOrRightStick() == LEFT_STICK ? newController->GetLeftStick() : newController->GetRightStick();
+    for (auto stick : { GetLeftStick(), GetRightStick() }) {
+        auto newControllerStick =
+            stick->LeftOrRightStick() == LEFT_STICK ? newController->GetLeftStick() : newController->GetRightStick();
         for (auto [direction, mappings] : stick->GetAllAxisDirectionMappings()) {
             std::vector<std::string> axisDirectionMappingIdsToRemove;
             for (auto [id, mapping] : mappings) {
@@ -209,7 +208,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
 
                     mapping->SetPortIndex(newController->GetPortIndex());
                     mapping->SaveToConfig();
-                    
+
                     newControllerStick->AddAxisDirectionMapping(direction, mapping);
                 }
             }
@@ -223,8 +222,8 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
     if (GetGyro()->GetGyroMapping() != nullptr && GetGyro()->GetGyroMapping()->GetLUSDeviceIndex() == lusIndex) {
         GetGyro()->GetGyroMapping()->SetPortIndex(newController->GetPortIndex());
         GetGyro()->GetGyroMapping()->SaveToConfig();
-        
-        auto oldGyroMappingFromNewController = newController->GetGyro()->GetGyroMapping();        
+
+        auto oldGyroMappingFromNewController = newController->GetGyro()->GetGyroMapping();
         if (oldGyroMappingFromNewController != nullptr) {
             oldGyroMappingFromNewController->SetPortIndex(GetPortIndex());
             oldGyroMappingFromNewController->SaveToConfig();
@@ -242,7 +241,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
 
             mapping->SetPortIndex(newController->GetPortIndex());
             mapping->SaveToConfig();
-                
+
             newController->GetRumble()->AddRumbleMapping(mapping);
         }
     }
@@ -258,7 +257,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
 
             mapping->SetPortIndex(newController->GetPortIndex());
             mapping->SaveToConfig();
-                
+
             newController->GetLED()->AddLEDMapping(mapping);
         }
     }
