@@ -528,7 +528,31 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevice
         return;
     }
 
-    // todo: things when connecting new controllers without disconnect stuff
+    if (Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+        // todo: handle single player mode
+    } else {
+        for(uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+            bool portInUse = false;
+            for (auto mapping : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllMappings()) {
+                auto sdlMapping = std::dynamic_pointer_cast<SDLMapping>(mapping);
+                if (sdlMapping == nullptr) {
+                    continue;
+                }
+
+                if (sdlMapping->ControllerLoaded()) {
+                    portInUse = true;
+                    break;
+                }
+            }
+
+            if (portInUse) {
+                continue;
+            }
+
+            InitializeSDLMappingsForPort(portIndex, sdlDeviceIndex);
+            return;
+        }
+    }
 }
 
 void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId) {

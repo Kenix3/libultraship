@@ -17,9 +17,9 @@ class SDLMapping : public ControllerMapping {
     int32_t GetJoystickInstanceId();
     int32_t GetCurrentSDLDeviceIndex();
     bool CloseController();
+    bool ControllerLoaded();
 
   protected:
-    bool ControllerLoaded();
     SDL_GameControllerType GetSDLControllerType();
     bool UsesPlaystationLayout();
     bool UsesSwitchLayout();
