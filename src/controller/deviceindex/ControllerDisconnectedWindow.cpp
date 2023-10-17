@@ -79,7 +79,9 @@ void ControllerDisconnectedWindow::DrawElement() {
             Hide();
         }
 
-        if (ImGui::Button(StringHelper::Sprintf("Play without controller connected to port %d", mPortIndexOfDisconnectedController + 1).c_str())) {
+        if (ImGui::Button(StringHelper::Sprintf("Play without controller connected to port %d",
+                                                mPortIndexOfDisconnectedController + 1)
+                              .c_str())) {
             mPortIndexOfDisconnectedController = UINT8_MAX;
             ImGui::CloseCurrentPopup();
             Hide();
@@ -88,15 +90,15 @@ void ControllerDisconnectedWindow::DrawElement() {
         // todo: do we want the reorder button when we just have one controller connected?
         // the reordering window will skip reordering and will instead just use the connected
         // controller for port 1
-        // 
+        //
         // uint8_t connectedSdlControllerCount = 0;
         // for (auto i = 0; i < SDL_NumJoysticks(); i++) {
         //     if (SDL_IsGameController(i)) {
         //         connectedSdlControllerCount++;
         //     }
         // }
-        
-        if (/*connectedSdlControllerCount > 1 && */ImGui::Button("Reorder all controllers")) {
+
+        if (/*connectedSdlControllerCount > 1 && */ ImGui::Button("Reorder all controllers")) {
             mPortIndexOfDisconnectedController = UINT8_MAX;
             ImGui::CloseCurrentPopup();
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();

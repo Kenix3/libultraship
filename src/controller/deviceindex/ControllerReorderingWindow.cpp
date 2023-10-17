@@ -85,8 +85,12 @@ void ControllerReorderingWindow::DrawElement() {
                 ImGui::CloseCurrentPopup();
             }
 
-            if (mCurrentPortNumber > 1 && ImGui::Button(StringHelper::Sprintf("Play with %d controller%s", mCurrentPortNumber - 1, mCurrentPortNumber > 2 ? "s" : "").c_str())) {
-                mCurrentPortNumber = MAXCONTROLLERS + 1; // stop showing modals, it will be reset to 1 after the mapping init stuff
+            if (mCurrentPortNumber > 1 &&
+                ImGui::Button(StringHelper::Sprintf("Play with %d controller%s", mCurrentPortNumber - 1,
+                                                    mCurrentPortNumber > 2 ? "s" : "")
+                                  .c_str())) {
+                mCurrentPortNumber =
+                    MAXCONTROLLERS + 1; // stop showing modals, it will be reset to 1 after the mapping init stuff
                 ImGui::CloseCurrentPopup();
             }
 
