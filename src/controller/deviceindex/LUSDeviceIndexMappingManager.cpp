@@ -17,6 +17,16 @@ LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 }
 
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
+    for(uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+        for (auto mapping : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllMappings()) {
+            auto sdlMapping = std::dynamic_pointer_cast<SDLMapping>(mapping);
+            if (sdlMapping == nullptr) {
+                continue;
+            }
+
+            sdlMapping->CloseController();
+        }
+    }
     mLUSDeviceIndexToPhysicalDeviceIndexMappings.clear();
     uint8_t port = 0;
     for (auto sdlIndex : sdlIndices) {

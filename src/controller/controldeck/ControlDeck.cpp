@@ -113,4 +113,8 @@ std::shared_ptr<LUSDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMapping
 void ControlDeck::SetSinglePlayerMappingMode(bool singlePlayer) {
     mSinglePlayerMappingMode = singlePlayer;
 }
+
+bool ControlDeck::IsSinglePlayerMappingMode() {
+    return mSinglePlayerMappingMode;
+}
 } // namespace LUS

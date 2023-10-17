@@ -784,6 +784,12 @@ void InputEditorWindow::DrawElement() {
             if (ImGui::Button("Clear All")) {
                 LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(i)->ClearAllMappings();
             }
+            if (!LUS::Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+                ImGui::SameLine();
+                if (ImGui::Button("Reorder controllers")) {
+                    Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
+                }
+            }
 
             UpdateBitmaskToMappingIds(i);
             UpdateStickDirectionToMappingIds(i);

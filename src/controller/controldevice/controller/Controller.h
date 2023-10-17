@@ -44,6 +44,7 @@ class Controller : public ControlDevice {
     void ReadToPad(OSContPad* pad);
     bool HasConfig();
     uint8_t GetPortIndex();
+    std::vector<std::shared_ptr<ControllerMapping>> GetAllMappings();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
     bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);

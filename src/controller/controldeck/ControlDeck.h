@@ -23,6 +23,7 @@ class ControlDeck {
     bool GamepadGameInputBlocked();
     bool KeyboardGameInputBlocked();
     void SetSinglePlayerMappingMode(bool singlePlayer);
+    bool IsSinglePlayerMappingMode();
 
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
 

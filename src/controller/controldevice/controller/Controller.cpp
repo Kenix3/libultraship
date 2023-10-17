@@ -266,4 +266,33 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
         GetLED()->ClearLEDMappingId(id);
     }
 }
+
+std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {
+    std::vector<std::shared_ptr<ControllerMapping>> allMappings;
+    for (auto [bitmask, button] : GetAllButtons()) {
+        for (auto [id, mapping] : button->GetAllButtonMappings()) {
+            allMappings.push_back(mapping);
+        }
+    }
+
+    for (auto stick : { GetLeftStick(), GetRightStick() }) {
+        for (auto [direction, mappings] : stick->GetAllAxisDirectionMappings()) {
+            for (auto [id, mapping] : mappings) {
+                allMappings.push_back(mapping);
+            }
+        }
+    }
+
+    allMappings.push_back(GetGyro()->GetGyroMapping());
+
+    for (auto [id, mapping] : GetRumble()->GetAllRumbleMappings()) {
+        allMappings.push_back(mapping);
+    }
+
+    for (auto [id, mapping] : GetLED()->GetAllLEDMappings()) {
+        allMappings.push_back(mapping);
+    }
+
+    return allMappings;
+}
 } // namespace LUS

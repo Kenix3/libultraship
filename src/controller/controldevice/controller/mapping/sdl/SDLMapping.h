@@ -16,6 +16,7 @@ class SDLMapping : public ControllerMapping {
     ~SDLMapping();
     int32_t GetJoystickInstanceId();
     int32_t GetCurrentSDLDeviceIndex();
+    bool CloseController();
 
   protected:
     bool ControllerLoaded();
@@ -30,6 +31,5 @@ class SDLMapping : public ControllerMapping {
 
   private:
     bool OpenController();
-    bool CloseController();
 };
 } // namespace LUS

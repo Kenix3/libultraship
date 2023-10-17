@@ -1,4 +1,5 @@
 #include "ControllerReorderingWindow.h"
+#include <Utils/StringHelper.h>
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include "Context.h"
@@ -81,6 +82,11 @@ void ControllerReorderingWindow::DrawElement() {
                 std::find(mSDLDeviceIndices.begin(), mSDLDeviceIndices.end(), index) == mSDLDeviceIndices.end()) {
                 mSDLDeviceIndices.push_back(index);
                 mCurrentPortNumber++;
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (mCurrentPortNumber > 1 && ImGui::Button(StringHelper::Sprintf("Play with %d controller%s", mCurrentPortNumber - 1, mCurrentPortNumber > 2 ? "s" : "").c_str())) {
+                mCurrentPortNumber = MAXCONTROLLERS + 1; // stop showing modals, it will be reset to 1 after the mapping init stuff
                 ImGui::CloseCurrentPopup();
             }
 
