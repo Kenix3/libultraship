@@ -7,6 +7,7 @@
 #include "ControllerDisconnectedWindow.h"
 #include "ControllerReorderingWindow.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
+#include <sstream>
 
 namespace LUS {
 LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false) {
