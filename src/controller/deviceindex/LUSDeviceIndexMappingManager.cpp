@@ -17,6 +17,7 @@ LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 }
 
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
+    mLUSDeviceIndexToPhysicalDeviceIndexMappings.clear();
     uint8_t port = 0;
     for (auto sdlIndex : sdlIndices) {
         InitializeSDLMappingsForPort(port, sdlIndex);
