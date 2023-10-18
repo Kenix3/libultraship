@@ -66,16 +66,16 @@ void Window::Init() {
     androidGameMode = true;
 #endif
 
-    mIsFullscreen =
-        LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode || androidGameMode;
+    mIsFullscreen = LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) ||
+                    steamDeckGameMode || androidGameMode;
     mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
     mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
 
     if (mIsFullscreen) {
         mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width",
-                                                                  steamDeckGameMode||androidGameMode ? 1280 : 1920);
+                                                                  steamDeckGameMode || androidGameMode ? 1280 : 1920);
         mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height",
-                                                                   steamDeckGameMode||androidGameMode ? 800 : 1080);
+                                                                   steamDeckGameMode || androidGameMode ? 800 : 1080);
     } else {
         mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);

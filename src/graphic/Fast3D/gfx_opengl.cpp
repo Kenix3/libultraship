@@ -859,7 +859,7 @@ static void gfx_opengl_init(void) {
     glBindVertexArray(opengl_vao);
 #endif
 
-#ifndef __ANDROID__ //not supported on gles
+#ifndef __ANDROID__ // not supported on gles
     glEnable(GL_DEPTH_CLAMP);
 #endif
     glDepthFunc(GL_LEQUAL);
@@ -1026,7 +1026,7 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
         glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
         int x = coordinates.begin()->first;
         int y = coordinates.begin()->second;
-#ifndef __ANDROID__ //not supported on gles. Runs fine without it, but this may cause issues
+#ifndef __ANDROID__ // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(x, fb.invert_y ? fb.height - y : y, 1, 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8,
                      &depth_stencil_value);
 #endif
@@ -1066,7 +1066,7 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, pixel_depth_fb);
         vector<uint32_t> depth_stencil_values(coordinates.size());
-#ifndef __ANDROID__ //not supported on gles. Runs fine without it, but this may cause issues
+#ifndef __ANDROID__ // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(0, 0, coordinates.size(), 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, depth_stencil_values.data());
 #endif
         {
