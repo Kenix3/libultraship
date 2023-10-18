@@ -266,7 +266,7 @@ static void gfx_metal_init(void) {
         struct CoordUniforms {
             uint2 coords[1024];
         };
-        
+
         kernel void depthKernel(depth2d<float, access::read> depth_texture [[ texture(0) ]],
                                      constant CoordUniforms& query_coords [[ buffer(0) ]],
                                      device float* output_values [[ buffer(1) ]],
@@ -905,7 +905,7 @@ void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale) {
     }
 
     if (noise_scale != 0.0f) {
-        mctx.frame_uniforms.noiseScale = 1.0f / noise_scale;
+        mctx.frame_uniforms.noiseScale = (1.0f / noise_scale) * 2.0f;
     }
 
     memcpy(mctx.frame_uniform_buffer->contents(), &mctx.frame_uniforms, sizeof(FrameUniforms));

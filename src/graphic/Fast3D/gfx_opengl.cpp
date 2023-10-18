@@ -963,7 +963,7 @@ void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale) {
     Framebuffer& fb = framebuffers[fb_id];
 
     if (noise_scale != 0.0f) {
-        current_noise_scale = 1.0f / noise_scale;
+        current_noise_scale = (1.0f / noise_scale) * 2.0f;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
     current_framebuffer = fb_id;
