@@ -304,6 +304,12 @@ std::string Context::GetShortName() {
 }
 
 std::string Context::GetAppBundlePath() {
+#if defined(__ANDROID__)
+    const char* externaldir = SDL_AndroidGetExternalStoragePath();
+    if(externaldir != NULL) {
+        return externaldir;
+    }
+#endif
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
@@ -333,6 +339,13 @@ std::string Context::GetAppBundlePath() {
 }
 
 std::string Context::GetAppDirectoryPath(std::string appName) {
+#if defined(__ANDROID__)
+    const char* externaldir = SDL_AndroidGetExternalStoragePath();
+    if(externaldir != NULL) {
+        return externaldir;
+    }
+#endif
+
 #if defined(__linux__) || defined(__APPLE__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {

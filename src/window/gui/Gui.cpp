@@ -100,6 +100,12 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     LUS::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
 #endif
 
+#if defined(__ANDROID__)
+    // Scale everything by 2 for Android
+    ImGui::GetStyle().ScaleAllSizes(2.0f);
+    mImGuiIo->FontGlobalScale = 2.0f;
+#endif
+
 #ifdef __WIIU__
     // Scale everything by 2 for the Wii U
     ImGui::GetStyle().ScaleAllSizes(2.0f);
@@ -184,6 +190,8 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
+#elif __ANDROID__
+            ImGui_ImplOpenGL3_Init("#version 300 es");
 #else
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif

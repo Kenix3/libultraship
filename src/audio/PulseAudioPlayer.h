@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(__linux__) || defined(__BSD__)
+#if (defined(__linux__) && !defined(__ANDROID__)) || defined(__BSD__)
 
 #include "AudioPlayer.h"
 #include <pulse/pulseaudio.h>

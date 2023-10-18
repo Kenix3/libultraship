@@ -385,6 +385,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(libultraship PRIVATE ${PULSEAUDIO_LIBRARY})
 endif()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Android")
+    find_library(OPENGLES_LIBRARY GLESv3)
+    target_link_libraries(libultraship PRIVATE GLESv3)
+endif()
+
 #=================== Compile Options & Defs ===================
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
