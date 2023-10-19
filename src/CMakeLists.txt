@@ -223,6 +223,11 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchImpl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchPerformanceProfiles.h
     )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
+    set(Source_Files__Port
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.cpp
+    )
 endif()
 
 source_group("port" FILES ${Source_Files__Port})

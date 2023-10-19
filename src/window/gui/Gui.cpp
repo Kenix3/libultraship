@@ -42,6 +42,10 @@
 #include "port/switch/SwitchImpl.h"
 #endif
 
+#ifdef __ANDROID__
+#include "port/android/AndroidImpl.h"
+#endif
+
 #ifdef ENABLE_OPENGL
 #include <ImGui/backends/imgui_impl_opengl3.h>
 #include <ImGui/backends/imgui_impl_sdl2.h>
@@ -274,6 +278,9 @@ void Gui::Update(WindowEvent event) {
 
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+#endif
+#ifdef __ANDROID__
+            LUS::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
 #endif
