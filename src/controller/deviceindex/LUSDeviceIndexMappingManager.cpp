@@ -11,6 +11,7 @@
 
 namespace LUS {
 LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false) {
+    UpdateControllerNamesFromConfig();
 }
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
@@ -63,6 +64,7 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     char guidString[33]; // SDL_GUID_LENGTH + 1 for null terminator
     SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(sdlIndex), guidString, sizeof(guidString));
+    std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) ?: "Game Controller";
 
     // find all lus indices with this guid
     std::map<int32_t, LUSDeviceIndex> matchingGuidLusIndices;
@@ -119,7 +121,8 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString);
+    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString, sdlControllerName);
+    mLUSDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     deviceIndexMapping->SaveToConfig();
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
     SaveMappingIdsToConfig();
@@ -219,8 +222,10 @@ void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
                 continue;
             }
 
+            std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) ?: "Game Controller";
             SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-                static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid));
+                static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid, sdlControllerName));
+            mLUSDeviceIndexToSDLControllerNames[static_cast<LUSDeviceIndex>(lusIndex)] = sdlControllerName;
             break;
         }
     }
@@ -264,6 +269,9 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         std::string sdlJoystickGuid =
             CVarGetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(), "");
 
+        std::string sdlControllerName =
+            CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
+
         if (lusDeviceIndex < 0 || sdlDeviceIndex < 0 || sdlJoystickGuid == "") {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -272,7 +280,7 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         }
 
         return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex),
-                                                                       sdlDeviceIndex, sdlJoystickGuid);
+                                                                       sdlDeviceIndex, sdlJoystickGuid, sdlControllerName);
     }
 
     return nullptr;
@@ -304,6 +312,29 @@ LUSDeviceIndexMappingManager::GetDeviceIndexMappingFromLUSDeviceIndex(LUSDeviceI
     }
 
     return mLUSDeviceIndexToPhysicalDeviceIndexMappings[lusIndex];
+}
+
+std::string LUSDeviceIndexMappingManager::GetSDLControllerNameFromLUSDeviceIndex(LUSDeviceIndex index) {
+    return mLUSDeviceIndexToSDLControllerNames[index];
+}
+
+void LUSDeviceIndexMappingManager::UpdateControllerNamesFromConfig() {
+    // todo: this efficently (when we build out cvar array support?)
+    // i don't expect it to really be a problem with the small number of mappings we have
+    // for each controller (especially compared to include/exclude locations in rando), and
+    // the audio editor pattern doesn't work for this because that looks for ids that are either
+    // hardcoded or provided by an otr file
+    std::stringstream mappingIdsStringStream(CVarGetString("gControllers.DeviceMappingIds", ""));
+    std::string mappingIdString;
+    while (getline(mappingIdsStringStream, mappingIdString, ',')) {
+        const std::string mappingCvarKey = "gControllers.DeviceMappings." + mappingIdString;
+        const std::string mappingClass =
+            CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
+
+        if (mappingClass == "LUSDeviceIndexToSDLDeviceIndexMapping") {
+            mLUSDeviceIndexToSDLControllerNames[static_cast<LUSDeviceIndex>(CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1))] = CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
+        }
+    }
 }
 
 std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>>

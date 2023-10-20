@@ -23,7 +23,8 @@ class LUSDeviceIndexMappingManager {
     void RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex index);
     LUSDeviceIndex GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings(); // did this name for the meme
     LUSDeviceIndex GetLUSDeviceIndexFromSDLDeviceIndex(int32_t sdlIndex);
-    // std::vector<int32_t> GetDeviceOrder();
+    std::string GetSDLControllerNameFromLUSDeviceIndex(LUSDeviceIndex index);
+    void UpdateControllerNamesFromConfig();
 
     void InitializeMappingsSinglePlayer();
     void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
@@ -39,5 +40,6 @@ class LUSDeviceIndexMappingManager {
     int32_t GetNewSDLDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
     std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>>
         mLUSDeviceIndexToPhysicalDeviceIndexMappings;
+    std::unordered_map<LUSDeviceIndex, std::string> mLUSDeviceIndexToSDLControllerNames;
 };
 } // namespace LUS

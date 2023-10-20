@@ -31,5 +31,6 @@ class SDLMapping : public ControllerMapping {
 
   private:
     bool OpenController();
+    std::string GetSDLControllerName();
 };
 } // namespace LUS

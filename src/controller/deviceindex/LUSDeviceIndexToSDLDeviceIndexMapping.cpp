@@ -5,9 +5,10 @@
 namespace LUS {
 LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex,
                                                                              int32_t sdlDeviceIndex,
-                                                                             std::string sdlJoystickGuid)
+                                                                             std::string sdlJoystickGuid,
+                                                                             std::string sdlControllerName)
     : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
-      mSDLJoystickGUID(sdlJoystickGuid) {
+      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName) {
 }
 
 LUSDeviceIndexToSDLDeviceIndexMapping::~LUSDeviceIndexToSDLDeviceIndexMapping() {
@@ -25,6 +26,10 @@ std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetJoystickGUID() {
     return mSDLJoystickGUID;
 }
 
+std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLControllerName() {
+    return mSDLControllerName;
+}
+
 std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetMappingId() {
     return StringHelper::Sprintf("LUSI%d-SDLI%d", mLUSDeviceIndex, mSDLDeviceIndex);
 }
@@ -37,6 +42,8 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
     CVarSetInteger(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str(), mSDLDeviceIndex);
     CVarSetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(),
                   mSDLJoystickGUID.c_str());
+    CVarSetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(),
+                  mSDLControllerName.c_str());
     CVarSave();
 }
 
@@ -47,6 +54,7 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str());
 
     CVarSave();
 }

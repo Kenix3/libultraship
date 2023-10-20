@@ -102,13 +102,15 @@ int32_t SDLMapping::GetSDLDeviceIndex() {
     return deviceIndexMapping->GetSDLDeviceIndex();
 }
 
-std::string SDLMapping::GetSDLDeviceName() {
-    if (!ControllerLoaded()) {
-        return StringHelper::Sprintf("Disconnected (%d)", mLUSDeviceIndex);
-    }
+std::string SDLMapping::GetSDLControllerName() {
+    return LUS::Context::GetInstance()
+            ->GetControlDeck()
+            ->GetDeviceIndexMappingManager()
+            ->GetSDLControllerNameFromLUSDeviceIndex(mLUSDeviceIndex);
+}
 
-    auto sdlName = SDL_GameControllerName(mController);
-    return StringHelper::Sprintf("%s (SDL %d)", sdlName != nullptr ? sdlName : "Unknown", GetSDLDeviceIndex());
+std::string SDLMapping::GetSDLDeviceName() {
+    return ControllerLoaded() ? StringHelper::Sprintf("%s (SDL %d)", GetSDLControllerName().c_str(), GetSDLDeviceIndex()) : StringHelper::Sprintf("%s (Disconnected)", GetSDLControllerName().c_str());
 }
 
 int32_t SDLMapping::GetJoystickInstanceId() {
