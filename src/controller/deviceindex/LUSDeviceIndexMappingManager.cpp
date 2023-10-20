@@ -64,7 +64,7 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     char guidString[33]; // SDL_GUID_LENGTH + 1 for null terminator
     SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(sdlIndex), guidString, sizeof(guidString));
-    std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) ?: "Game Controller";
+    std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) != nullptr ? SDL_GameControllerNameForIndex(sdlIndex) : "Game Controller";
 
     // find all lus indices with this guid
     std::map<int32_t, LUSDeviceIndex> matchingGuidLusIndices;
@@ -223,7 +223,7 @@ void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
                 continue;
             }
 
-            std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) ?: "Game Controller";
+            std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) != nullptr ? SDL_GameControllerNameForIndex(sdlIndex) : "Game Controller";
             SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
                 static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid, sdlControllerName));
             mLUSDeviceIndexToSDLControllerNames[static_cast<LUSDeviceIndex>(lusIndex)] = sdlControllerName;
