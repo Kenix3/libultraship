@@ -25,6 +25,5 @@ class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDev
     int32_t mSDLDeviceIndex;
     std::string mSDLJoystickGUID;
     std::string mSDLControllerName;
-    
 };
 } // namespace LUS

@@ -94,7 +94,9 @@ void ControllerDisconnectedWindow::DrawElement() {
             }
         }
 
-        if (ImGui::Button(connectedSdlControllerCount > 1 ? "Reorder all controllers###reorderControllersButton" : "Use connected controller for port 1###reorderControllersButton")) {
+        if (ImGui::Button(connectedSdlControllerCount > 1
+                              ? "Reorder all controllers###reorderControllersButton"
+                              : "Use connected controller for port 1###reorderControllersButton")) {
             mPortIndexOfDisconnectedController = UINT8_MAX;
             ImGui::CloseCurrentPopup();
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();

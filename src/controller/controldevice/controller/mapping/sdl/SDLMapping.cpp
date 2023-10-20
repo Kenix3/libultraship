@@ -104,13 +104,15 @@ int32_t SDLMapping::GetSDLDeviceIndex() {
 
 std::string SDLMapping::GetSDLControllerName() {
     return LUS::Context::GetInstance()
-            ->GetControlDeck()
-            ->GetDeviceIndexMappingManager()
-            ->GetSDLControllerNameFromLUSDeviceIndex(mLUSDeviceIndex);
+        ->GetControlDeck()
+        ->GetDeviceIndexMappingManager()
+        ->GetSDLControllerNameFromLUSDeviceIndex(mLUSDeviceIndex);
 }
 
 std::string SDLMapping::GetSDLDeviceName() {
-    return ControllerLoaded() ? StringHelper::Sprintf("%s (SDL %d)", GetSDLControllerName().c_str(), GetSDLDeviceIndex()) : StringHelper::Sprintf("%s (Disconnected)", GetSDLControllerName().c_str());
+    return ControllerLoaded()
+               ? StringHelper::Sprintf("%s (SDL %d)", GetSDLControllerName().c_str(), GetSDLDeviceIndex())
+               : StringHelper::Sprintf("%s (Disconnected)", GetSDLControllerName().c_str());
 }
 
 int32_t SDLMapping::GetJoystickInstanceId() {

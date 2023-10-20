@@ -121,7 +121,8 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString, sdlControllerName);
+    auto deviceIndexMapping =
+        std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString, sdlControllerName);
     mLUSDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     deviceIndexMapping->SaveToConfig();
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
@@ -279,8 +280,8 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
             return nullptr;
         }
 
-        return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex),
-                                                                       sdlDeviceIndex, sdlJoystickGuid, sdlControllerName);
+        return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
+            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName);
     }
 
     return nullptr;
@@ -332,7 +333,9 @@ void LUSDeviceIndexMappingManager::UpdateControllerNamesFromConfig() {
             CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
         if (mappingClass == "LUSDeviceIndexToSDLDeviceIndexMapping") {
-            mLUSDeviceIndexToSDLControllerNames[static_cast<LUSDeviceIndex>(CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1))] = CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
+            mLUSDeviceIndexToSDLControllerNames[static_cast<LUSDeviceIndex>(
+                CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1))] =
+                CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
         }
     }
 }
