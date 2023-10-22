@@ -139,11 +139,8 @@ if(MSVC)
         )
     elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
         target_compile_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Debug>:
-                /O2;
-                /Ot
-            >
             $<$<CONFIG:Release>:
+                /Oi
                 /Gy
             >
             /permissive-;
