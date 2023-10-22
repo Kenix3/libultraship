@@ -541,14 +541,28 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
                                   ->GetAllRumbleMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
+        // begin hackaround https://github.com/ocornut/imgui/issues/282#issuecomment-123763192
+        // spaces to have background color for text in a tree node 
+        std::string spaces = "";
+        for (size_t i = 0; i < mapping->GetPhysicalDeviceName().length(); i++) {
+            spaces += " ";
+        }
         auto open = ImGui::TreeNode(
-            StringHelper::Sprintf("%s##Rumble%s", mapping->GetPhysicalDeviceName().c_str(), id.c_str()).c_str());
-        // auto open = ImGui::TreeNode(
-        //     StringHelper::Sprintf("###Rumble%s", id.c_str()).c_str());
-        // ImGui::SameLine();
-        // if (ImGui::SmallButton(mapping->GetPhysicalDeviceName().c_str(), )) {
+            StringHelper::Sprintf("%s###Rumble%s", spaces.c_str(), id.c_str()).c_str());
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(30.0f);
+        // end hackaround
+        ImGui::BeginDisabled();
+        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        ImGui::Button(mapping->GetPhysicalDeviceName().c_str());
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+        ImGui::EndDisabled();
 
-        // }
         DrawRemoveRumbleMappingButton(port, id);
         if (open) {
             ImGui::Text("Small Motor Intensity:");
