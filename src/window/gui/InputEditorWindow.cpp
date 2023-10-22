@@ -113,6 +113,34 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_GAMEPAD_PURPLE ImVec4(0.431f, 0.369f, 0.706f, 0.5f)
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
+void InputEditorWindow::GetButtonColorsForLUSDeviceIndex(LUSDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor) {
+    switch (lusIndex) {
+        case LUSDeviceIndex::Keyboard:
+            buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
+            buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
+            break;
+        case LUSDeviceIndex::Blue:
+            buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
+            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
+            break;
+        case LUSDeviceIndex::Red:
+            buttonColor = BUTTON_COLOR_GAMEPAD_RED;
+            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
+            break;
+        case LUSDeviceIndex::Orange:
+            buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
+            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
+            break;
+        case LUSDeviceIndex::Green:
+            buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
+            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
+            break;
+        default:
+            buttonColor = BUTTON_COLOR_GAMEPAD_PURPLE;
+            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED;
+    }
+}
+
 void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::BeginDisabled();
     ImGui::PushStyleColor(ImGuiCol_Button, color);
@@ -158,42 +186,20 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
-    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     switch (mapping->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
-            switch (mapping->GetLUSDeviceIndex()) {
-                case LUSDeviceIndex::Blue:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
-                    break;
-                case LUSDeviceIndex::Red:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_RED;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
-                    break;
-                case LUSDeviceIndex::Orange:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
-                    break;
-                case LUSDeviceIndex::Green:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
-                    break;
-                default:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_PURPLE;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED;
-            }
             break;
         case MAPPING_TYPE_KEYBOARD:
             icon = ICON_FA_KEYBOARD_O;
-            buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
-            buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
             break;
         case MAPPING_TYPE_UNKNOWN:
             icon = ICON_FA_BUG;
             break;
     }
+    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+    GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editButtonMappingButton%s", icon.c_str(),
@@ -311,42 +317,20 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
-    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     switch (mapping->GetMappingType()) {
         case MAPPING_TYPE_GAMEPAD:
             icon = ICON_FA_GAMEPAD;
-            switch (mapping->GetLUSDeviceIndex()) {
-                case LUSDeviceIndex::Blue:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
-                    break;
-                case LUSDeviceIndex::Red:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_RED;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
-                    break;
-                case LUSDeviceIndex::Orange:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
-                    break;
-                case LUSDeviceIndex::Green:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
-                    break;
-                default:
-                    buttonColor = BUTTON_COLOR_GAMEPAD_PURPLE;
-                    buttonHoveredColor = BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED;
-            }
             break;
         case MAPPING_TYPE_KEYBOARD:
             icon = ICON_FA_KEYBOARD_O;
-            buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
-            buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
             break;
         case MAPPING_TYPE_UNKNOWN:
             icon = ICON_FA_BUG;
             break;
     }
+    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+    GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editStickDirectionMappingButton%s", icon.c_str(),
@@ -559,6 +543,12 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         auto open = ImGui::TreeNode(
             StringHelper::Sprintf("%s##Rumble%s", mapping->GetPhysicalDeviceName().c_str(), id.c_str()).c_str());
+        // auto open = ImGui::TreeNode(
+        //     StringHelper::Sprintf("###Rumble%s", id.c_str()).c_str());
+        // ImGui::SameLine();
+        // if (ImGui::SmallButton(mapping->GetPhysicalDeviceName().c_str(), )) {
+
+        // }
         DrawRemoveRumbleMappingButton(port, id);
         if (open) {
             ImGui::Text("Small Motor Intensity:");
