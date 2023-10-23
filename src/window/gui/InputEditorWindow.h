@@ -62,5 +62,6 @@ class InputEditorWindow : public GuiWindow {
     void UpdateStickDirectionToMappingIds(uint8_t port);
 
     void GetButtonColorsForLUSDeviceIndex(LUSDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
+    void DrawPortTab(uint8_t portIndex);
 };
 } // namespace LUS
