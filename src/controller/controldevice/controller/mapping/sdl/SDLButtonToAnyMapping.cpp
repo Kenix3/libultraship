@@ -183,4 +183,8 @@ std::string SDLButtonToAnyMapping::GetXboxButtonName() {
 std::string SDLButtonToAnyMapping::GetPhysicalDeviceName() {
     return GetSDLDeviceName();
 }
+
+bool SDLButtonToAnyMapping::PhysicalDeviceIsConnected() {
+    return ControllerLoaded();
+}
 } // namespace LUS

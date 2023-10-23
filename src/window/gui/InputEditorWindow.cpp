@@ -12,6 +12,8 @@ InputEditorWindow::~InputEditorWindow() {
 
 void InputEditorWindow::InitElement() {
     mGameInputBlockTimer = INT32_MAX;
+    mButtonsBitmasks = {BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT};
+    mDpadBitmasks = {BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT};
 }
 
 #define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
@@ -775,6 +777,172 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
     }
 }
 
+void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16_t> bitmasks) {
+    std::set<LUSDeviceIndex> allLusDeviceIndices;
+    allLusDeviceIndices.insert(LUSDeviceIndex::Keyboard);
+    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+        allLusDeviceIndices.insert(lusIndex);
+    }
+
+    std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    for (auto lusIndex : allLusDeviceIndices) {
+        for (auto [bitmask, button] : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllButtons()) {
+            if (!bitmasks.contains(bitmask)) {
+                continue;
+            }
+
+            if (button->HasMappingsForLUSDeviceIndex(lusIndex)) {
+                for (auto [id, mapping] : button->GetAllButtonMappings()) {
+                    if (mapping->GetLUSDeviceIndex() == lusIndex) {
+                        lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        ImGui::SameLine();
+        if (lusIndex == LUSDeviceIndex::Keyboard) {
+            ImGui::SmallButton(ICON_FA_KEYBOARD_O);
+        } else {
+            ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+        }
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+    }
+}
+
+void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, LUS::Stick stick) {
+    std::set<LUSDeviceIndex> allLusDeviceIndices;
+    allLusDeviceIndices.insert(LUSDeviceIndex::Keyboard);
+    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+        allLusDeviceIndices.insert(lusIndex);
+    }
+
+    std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    for (auto lusIndex : allLusDeviceIndices) {
+        auto controllerStick = stick == Stick::LEFT_STICK ? Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLeftStick() : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRightStick();
+        if (controllerStick->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            for (auto [direction, mappings] : controllerStick->GetAllAxisDirectionMappings()) {
+                bool foundMapping = false;
+                for (auto [id, mapping] : mappings) {
+                    if (mapping->GetLUSDeviceIndex() == lusIndex) {
+                        foundMapping = true;
+                        lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        break;
+                    }
+                }
+                if (foundMapping) {
+                    break;
+                }
+            }
+        }
+    }
+
+    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        ImGui::SameLine();
+        if (lusIndex == LUSDeviceIndex::Keyboard) {
+            ImGui::SmallButton(ICON_FA_KEYBOARD_O);
+        } else {
+            ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+        }
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+    }
+}
+
+void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
+    std::set<LUSDeviceIndex> allLusDeviceIndices;
+    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+        allLusDeviceIndices.insert(lusIndex);
+    }
+
+    std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    for (auto lusIndex : allLusDeviceIndices) {
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            for (auto [id, mapping] : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRumble()->GetAllRumbleMappings()) {
+                if (mapping->GetLUSDeviceIndex() == lusIndex) {
+                    lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                    break;
+                }
+            }
+        }
+    }
+
+    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        ImGui::SameLine();
+        ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+    }
+}
+
+void InputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
+    auto mapping = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetGyro()->GetGyroMapping();
+    if (mapping == nullptr) {
+        return;
+    }
+
+    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+    GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
+    ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+    ImGui::SameLine();
+    ImGui::SmallButton(mapping->PhysicalDeviceIsConnected() ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleColor();
+}
+
+void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
+    std::set<LUSDeviceIndex> allLusDeviceIndices;
+    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+        allLusDeviceIndices.insert(lusIndex);
+    }
+
+    std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    for (auto lusIndex : allLusDeviceIndices) {
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            for (auto [id, mapping] : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLED()->GetAllLEDMappings()) {
+                if (mapping->GetLUSDeviceIndex() == lusIndex) {
+                    lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                    break;
+                }
+            }
+        }
+    }
+
+    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        ImGui::SameLine();
+        ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+    }
+}
+
 void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d###port%d", portIndex + 1, portIndex).c_str())) {
         if (ImGui::Button("Clear All")) {
@@ -790,7 +958,12 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
         UpdateBitmaskToMappingIds(portIndex);
         UpdateStickDirectionToMappingIds(portIndex);
 
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.133f, 0.133f, 0.133f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        
         if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
             DrawButtonLine("A", portIndex, BTN_A, CHIP_COLOR_N64_BLUE);
             DrawButtonLine("B", portIndex, BTN_B, CHIP_COLOR_N64_GREEN);
             DrawButtonLine("Start", portIndex, BTN_START, CHIP_COLOR_N64_RED);
@@ -805,28 +978,58 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
                             CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT,
                             CHIP_COLOR_N64_YELLOW);
+        } else {
+            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
         }
+
         if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_DUP);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_DDOWN);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_DLEFT);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_DRIGHT);
+        } else {
+            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
         }
+
         if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+            DrawAnalogStickDeviceIcons(portIndex, LEFT_STICK);
             DrawStickSection(portIndex, LEFT, 0);
+        } else {
+            DrawAnalogStickDeviceIcons(portIndex, LEFT_STICK);
         }
+
         if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
+            DrawAnalogStickDeviceIcons(portIndex, RIGHT_STICK);
             DrawStickSection(portIndex, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
+        } else {
+            DrawAnalogStickDeviceIcons(portIndex, RIGHT_STICK);
         }
+
         if (ImGui::CollapsingHeader("Rumble")) {
+            DrawRumbleDeviceIcons(portIndex);
             DrawRumbleSection(portIndex);
+        } else {
+            DrawRumbleDeviceIcons(portIndex);
         }
+
         if (ImGui::CollapsingHeader("Gyro")) {
+            DrawGyroDeviceIcons(portIndex);
             DrawGyroSection(portIndex);
+        } else {
+            DrawGyroDeviceIcons(portIndex);
         }
+
         if (ImGui::CollapsingHeader("LEDs")) {
+            DrawLEDDeviceIcons(portIndex);
             DrawLEDSection(portIndex);
+        } else {
+            DrawLEDDeviceIcons(portIndex);
         }
+
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
         ImGui::EndTabItem();
     }
 }

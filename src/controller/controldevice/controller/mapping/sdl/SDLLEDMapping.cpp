@@ -57,4 +57,8 @@ void SDLLEDMapping::EraseFromConfig() {
 std::string SDLLEDMapping::GetPhysicalDeviceName() {
     return GetSDLDeviceName();
 }
+
+bool SDLLEDMapping::PhysicalDeviceIsConnected() {
+    return ControllerLoaded();
+}
 } // namespace LUS

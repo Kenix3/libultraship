@@ -69,4 +69,8 @@ void SDLRumbleMapping::EraseFromConfig() {
 std::string SDLRumbleMapping::GetPhysicalDeviceName() {
     return GetSDLDeviceName();
 }
+
+bool SDLRumbleMapping::PhysicalDeviceIsConnected() {
+    return ControllerLoaded();
+}
 } // namespace LUS

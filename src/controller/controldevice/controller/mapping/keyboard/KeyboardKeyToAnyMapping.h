@@ -11,6 +11,7 @@ class KeyboardKeyToAnyMapping : virtual public ControllerInputMapping {
     std::string GetPhysicalInputName() override;
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
     std::string GetPhysicalDeviceName() override;
+    bool PhysicalDeviceIsConnected() override;
 
   protected:
     KbScancode mKeyboardScancode;

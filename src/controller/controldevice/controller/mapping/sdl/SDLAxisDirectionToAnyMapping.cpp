@@ -59,4 +59,8 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
 std::string SDLAxisDirectionToAnyMapping::GetPhysicalDeviceName() {
     return GetSDLDeviceName();
 }
+
+bool SDLAxisDirectionToAnyMapping::PhysicalDeviceIsConnected() {
+    return ControllerLoaded();
+}
 } // namespace LUS

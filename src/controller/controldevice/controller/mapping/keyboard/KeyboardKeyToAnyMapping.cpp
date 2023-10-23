@@ -42,4 +42,9 @@ bool KeyboardKeyToAnyMapping::ProcessKeyboardEvent(LUS::KbEventType eventType, L
 std::string KeyboardKeyToAnyMapping::GetPhysicalDeviceName() {
     return "Keyboard";
 }
+
+bool KeyboardKeyToAnyMapping::PhysicalDeviceIsConnected() {
+    // todo: handle non-keyboard devices?
+    return true;
+}
 } // namespace LUS

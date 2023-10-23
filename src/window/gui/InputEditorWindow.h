@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <set>
 #include "controller/controldevice/controller/Controller.h"
 
 namespace LUS {
@@ -63,5 +64,12 @@ class InputEditorWindow : public GuiWindow {
 
     void GetButtonColorsForLUSDeviceIndex(LUSDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
     void DrawPortTab(uint8_t portIndex);
+    std::set<uint16_t> mButtonsBitmasks;
+    std::set<uint16_t> mDpadBitmasks;
+    void DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16_t> bitmasks);
+    void DrawAnalogStickDeviceIcons(uint8_t portIndex, LUS::Stick stick);
+    void DrawRumbleDeviceIcons(uint8_t portIndex);
+    void DrawGyroDeviceIcons(uint8_t portIndex);
+    void DrawLEDDeviceIcons(uint8_t portIndex);
 };
 } // namespace LUS
