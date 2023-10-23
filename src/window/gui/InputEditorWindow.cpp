@@ -557,13 +557,12 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
         ImGui::SameLine();
         ImGui::SetCursorPosX(30.0f);
         // end hackaround
-        ImGui::BeginDisabled();
+
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::Button(mapping->GetPhysicalDeviceName().c_str());
         ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-        ImGui::EndDisabled();
+        ImGui::PopItemFlag();
 
         DrawRemoveRumbleMappingButton(port, id);
         if (open) {
@@ -1071,12 +1070,55 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     }
 }
 
+void InputEditorWindow::DrawDevicesTab() {
+    if (ImGui::BeginTabItem("Devices")) {
+        std::map<LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
+        for (auto [lusIndex, mapping] : Context::GetInstance()
+                                            ->GetControlDeck()
+                                            ->GetDeviceIndexMappingManager()
+                                            ->GetAllDeviceIndexMappingsFromConfig()) {
+            auto sdlIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+            if (sdlIndexMapping == nullptr) {
+                continue;
+            }
+
+            indexMappings[lusIndex] = {sdlIndexMapping->GetSDLControllerName(), -1};
+        }
+
+        for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+            auto sdlIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+            if (sdlIndexMapping == nullptr) {
+                continue;
+            }
+
+            indexMappings[lusIndex] = {sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex()};
+        }
+
+        for (auto [lusIndex, info] : indexMappings) {
+            auto [name, sdlIndex] = info;
+            bool connected = sdlIndex != -1;
+
+            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+            GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+            ImGui::Button(StringHelper::Sprintf("%s %s (%s)", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(), connected ? StringHelper::Sprintf("SDL %d", sdlIndex).c_str() : "Disconnected").c_str());
+            ImGui::PopStyleColor();
+            ImGui::PopItemFlag();
+        }
+
+        ImGui::EndTabItem();
+    }
+}
+
 void InputEditorWindow::DrawElement() {
     ImGui::Begin("Controller Configuration", &mIsVisible);
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
     for (uint8_t i = 0; i < 4; i++) {
         DrawPortTab(i);
     }
+    DrawDevicesTab();
     ImGui::EndTabBar();
     ImGui::End();
 }

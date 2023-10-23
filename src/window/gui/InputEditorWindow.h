@@ -64,6 +64,7 @@ class InputEditorWindow : public GuiWindow {
 
     void GetButtonColorsForLUSDeviceIndex(LUSDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
     void DrawPortTab(uint8_t portIndex);
+    void DrawDevicesTab();
     std::set<uint16_t> mButtonsBitmasks;
     std::set<uint16_t> mDpadBitmasks;
     void DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16_t> bitmasks);
