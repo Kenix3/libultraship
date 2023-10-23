@@ -423,10 +423,10 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
 
     ImGui::SameLine();
     ImGui::BeginGroup();
-    DrawStickDirectionLine(ICON_FA_ARROW_LEFT, port, stick, LEFT, color);
-    DrawStickDirectionLine(ICON_FA_ARROW_RIGHT, port, stick, RIGHT, color);
     DrawStickDirectionLine(ICON_FA_ARROW_UP, port, stick, UP, color);
     DrawStickDirectionLine(ICON_FA_ARROW_DOWN, port, stick, DOWN, color);
+    DrawStickDirectionLine(ICON_FA_ARROW_LEFT, port, stick, LEFT, color);
+    DrawStickDirectionLine(ICON_FA_ARROW_RIGHT, port, stick, RIGHT, color);
     ImGui::EndGroup();
     if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
         ImGui::Text("Deadzone:");
