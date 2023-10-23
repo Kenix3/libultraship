@@ -157,10 +157,10 @@ void Controller::ReadToPad(OSContPad* pad) {
 bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
     bool result = false;
     for (auto [bitmask, button] : GetAllButtons()) {
-        result = result || button->ProcessKeyboardEvent(eventType, scancode);
+        result = button->ProcessKeyboardEvent(eventType, scancode) || result;
     }
-    result = result || GetLeftStick()->ProcessKeyboardEvent(eventType, scancode);
-    result = result || GetRightStick()->ProcessKeyboardEvent(eventType, scancode);
+    result = GetLeftStick()->ProcessKeyboardEvent(eventType, scancode) || result;
+    result = GetRightStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     return result;
 }
 
