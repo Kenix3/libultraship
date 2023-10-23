@@ -12,8 +12,8 @@ InputEditorWindow::~InputEditorWindow() {
 
 void InputEditorWindow::InitElement() {
     mGameInputBlockTimer = INT32_MAX;
-    mButtonsBitmasks = {BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT};
-    mDpadBitmasks = {BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT};
+    mButtonsBitmasks = { BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT };
+    mDpadBitmasks = { BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT };
 }
 
 #define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
@@ -115,7 +115,8 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_GAMEPAD_PURPLE ImVec4(0.431f, 0.369f, 0.706f, 0.5f)
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
-void InputEditorWindow::GetButtonColorsForLUSDeviceIndex(LUSDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor) {
+void InputEditorWindow::GetButtonColorsForLUSDeviceIndex(LUSDeviceIndex lusIndex, ImVec4& buttonColor,
+                                                         ImVec4& buttonHoveredColor) {
     switch (lusIndex) {
         case LUSDeviceIndex::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
@@ -547,13 +548,12 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
         GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
         // begin hackaround https://github.com/ocornut/imgui/issues/282#issuecomment-123763192
-        // spaces to have background color for text in a tree node 
+        // spaces to have background color for text in a tree node
         std::string spaces = "";
         for (size_t i = 0; i < mapping->GetPhysicalDeviceName().length(); i++) {
             spaces += " ";
         }
-        auto open = ImGui::TreeNode(
-            StringHelper::Sprintf("%s###Rumble%s", spaces.c_str(), id.c_str()).c_str());
+        auto open = ImGui::TreeNode(StringHelper::Sprintf("%s###Rumble%s", spaces.c_str(), id.c_str()).c_str());
         ImGui::SameLine();
         ImGui::SetCursorPosX(30.0f);
         // end hackaround
@@ -780,13 +780,17 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
 void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16_t> bitmasks) {
     std::set<LUSDeviceIndex> allLusDeviceIndices;
     allLusDeviceIndices.insert(LUSDeviceIndex::Keyboard);
-    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+    for (auto [lusIndex, mapping] : Context::GetInstance()
+                                        ->GetControlDeck()
+                                        ->GetDeviceIndexMappingManager()
+                                        ->GetAllDeviceIndexMappingsFromConfig()) {
         allLusDeviceIndices.insert(lusIndex);
     }
 
     std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
-        for (auto [bitmask, button] : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllButtons()) {
+        for (auto [bitmask, button] :
+             Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllButtons()) {
             if (!bitmasks.contains(bitmask)) {
                 continue;
             }
@@ -794,7 +798,8 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16
             if (button->HasMappingsForLUSDeviceIndex(lusIndex)) {
                 for (auto [id, mapping] : button->GetAllButtonMappings()) {
                     if (mapping->GetLUSDeviceIndex() == lusIndex) {
-                        lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        lusDeviceIndiciesWithMappings.push_back(
+                            std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                         break;
                     }
                 }
@@ -823,20 +828,27 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16
 void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, LUS::Stick stick) {
     std::set<LUSDeviceIndex> allLusDeviceIndices;
     allLusDeviceIndices.insert(LUSDeviceIndex::Keyboard);
-    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+    for (auto [lusIndex, mapping] : Context::GetInstance()
+                                        ->GetControlDeck()
+                                        ->GetDeviceIndexMappingManager()
+                                        ->GetAllDeviceIndexMappingsFromConfig()) {
         allLusDeviceIndices.insert(lusIndex);
     }
 
     std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
-        auto controllerStick = stick == Stick::LEFT_STICK ? Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLeftStick() : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRightStick();
+        auto controllerStick =
+            stick == Stick::LEFT_STICK
+                ? Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLeftStick()
+                : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRightStick();
         if (controllerStick->HasMappingsForLUSDeviceIndex(lusIndex)) {
             for (auto [direction, mappings] : controllerStick->GetAllAxisDirectionMappings()) {
                 bool foundMapping = false;
                 for (auto [id, mapping] : mappings) {
                     if (mapping->GetLUSDeviceIndex() == lusIndex) {
                         foundMapping = true;
-                        lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        lusDeviceIndiciesWithMappings.push_back(
+                            std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                         break;
                     }
                 }
@@ -866,16 +878,28 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, LUS::Stick
 
 void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
     std::set<LUSDeviceIndex> allLusDeviceIndices;
-    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+    for (auto [lusIndex, mapping] : Context::GetInstance()
+                                        ->GetControlDeck()
+                                        ->GetDeviceIndexMappingManager()
+                                        ->GetAllDeviceIndexMappingsFromConfig()) {
         allLusDeviceIndices.insert(lusIndex);
     }
 
     std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
-        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex)) {
-            for (auto [id, mapping] : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRumble()->GetAllRumbleMappings()) {
+        if (Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(portIndex)
+                ->GetRumble()
+                ->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            for (auto [id, mapping] : Context::GetInstance()
+                                          ->GetControlDeck()
+                                          ->GetControllerByPort(portIndex)
+                                          ->GetRumble()
+                                          ->GetAllRumbleMappings()) {
                 if (mapping->GetLUSDeviceIndex() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                    lusDeviceIndiciesWithMappings.push_back(
+                        std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                     break;
                 }
             }
@@ -896,7 +920,8 @@ void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
 }
 
 void InputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
-    auto mapping = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetGyro()->GetGyroMapping();
+    auto mapping =
+        Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetGyro()->GetGyroMapping();
     if (mapping == nullptr) {
         return;
     }
@@ -914,16 +939,28 @@ void InputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
 
 void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
     std::set<LUSDeviceIndex> allLusDeviceIndices;
-    for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()) {
+    for (auto [lusIndex, mapping] : Context::GetInstance()
+                                        ->GetControlDeck()
+                                        ->GetDeviceIndexMappingManager()
+                                        ->GetAllDeviceIndexMappingsFromConfig()) {
         allLusDeviceIndices.insert(lusIndex);
     }
 
     std::vector<std::pair<LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
-        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex)) {
-            for (auto [id, mapping] : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLED()->GetAllLEDMappings()) {
+        if (Context::GetInstance()
+                ->GetControlDeck()
+                ->GetControllerByPort(portIndex)
+                ->GetRumble()
+                ->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            for (auto [id, mapping] : Context::GetInstance()
+                                          ->GetControlDeck()
+                                          ->GetControllerByPort(portIndex)
+                                          ->GetLED()
+                                          ->GetAllLEDMappings()) {
                 if (mapping->GetLUSDeviceIndex() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                    lusDeviceIndiciesWithMappings.push_back(
+                        std::pair<LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                     break;
                 }
             }
@@ -961,7 +998,7 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.133f, 0.133f, 0.133f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-        
+
         if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
             DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
             DrawButtonLine("A", portIndex, BTN_A, CHIP_COLOR_N64_BLUE);
@@ -971,13 +1008,13 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
             DrawButtonLine("R", portIndex, BTN_R);
             DrawButtonLine("Z", portIndex, BTN_Z);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_CUP,
-                            CHIP_COLOR_N64_YELLOW);
+                           CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_CDOWN,
-                            CHIP_COLOR_N64_YELLOW);
+                           CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_CLEFT,
-                            CHIP_COLOR_N64_YELLOW);
+                           CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT,
-                            CHIP_COLOR_N64_YELLOW);
+                           CHIP_COLOR_N64_YELLOW);
         } else {
             DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
         }
