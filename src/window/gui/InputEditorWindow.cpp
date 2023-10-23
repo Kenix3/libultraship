@@ -598,6 +598,7 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
                     mapping->ResetLowFrequencyIntensityToDefault();
                 }
             }
+            ImGui::Dummy(ImVec2(0, 20));
 
             ImGui::TreePop();
         }
