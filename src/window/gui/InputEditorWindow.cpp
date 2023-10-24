@@ -35,9 +35,9 @@ void InputEditorWindow::UpdateElement() {
     }
 }
 
-void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone) {
-    ImGui::BeginChild(label, ImVec2(78, 85), false);
-    ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 10, ImGui::GetCursorPos().y + 10));
+void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone, bool gyro) {
+    ImGui::BeginChild(label, ImVec2(gyro ? 78 : 96, 85), false);
+    ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + gyro ? 10 : 18, ImGui::GetCursorPos().y + gyro ? 10 : 0));
     ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     const ImVec2 cursorScreenPosition = ImGui::GetCursorScreenPos();
@@ -88,6 +88,10 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
                                      joystickCenterpoint.y + joystickIndicatorDistanceFromCenter.y),
                               indicatorRadius, ImColor(34, 51, 76, 255), 7);
 
+    if (!gyro) {
+        ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x - 8, ImGui::GetCursorPos().y + 72));
+        ImGui::Text("X:%3d, Y:%3d", static_cast<int32_t>(stick.x), static_cast<int32_t>(stick.y));
+    }
     ImGui::EndChild();
 }
 
@@ -402,8 +406,12 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
                                                Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine();
-    DrawInputChip(axisDirectionName, color);
-    ImGui::SameLine(62.0f);
+    ImGui::BeginDisabled();
+    ImGui::PushStyleColor(ImGuiCol_Button, color);
+    ImGui::Button(axisDirectionName, ImVec2(26.0f, 0));
+    ImGui::PopStyleColor();
+    ImGui::EndDisabled();
+    ImGui::SameLine(38.0f);
     for (auto id : mStickDirectionToMappingIds[port][stick][direction]) {
         DrawStickDirectionLineEditMappingButton(port, stick, direction, id);
     }
@@ -742,7 +750,7 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         // the preview window expects values in an n64 analog stick range (-85 to 85)
         // so I decided to multiply these by 85/21
         DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(),
-                          ImVec2(sYaw * (85.0f / 21.0f), sPitch * (85.0f / 21.0f)));
+                          ImVec2(sYaw * (85.0f / 21.0f), sPitch * (85.0f / 21.0f)), 0.0f, true);
         ImGui::SameLine();
         ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 8, ImGui::GetCursorPos().y + 8));
 

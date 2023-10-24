@@ -19,7 +19,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawButton(const char* label, int32_t n64Btn, int32_t currentPort, int32_t* btnReading);
 
     void DrawInputChip(const char* buttonName, ImVec4 color);
-    void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0);
+    void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);
     void DrawControllerSchema();
 
   protected:
