@@ -94,7 +94,7 @@ void ControllerDisconnectedWindow::DrawElement() {
             }
         }
 
-        if (ImGui::Button(connectedSdlControllerCount > 1
+        if (connectedSdlControllerCount != 0 && ImGui::Button(connectedSdlControllerCount > 1
                               ? "Reorder all controllers###reorderControllersButton"
                               : "Use connected controller for port 1###reorderControllersButton")) {
             mPortIndexOfDisconnectedController = UINT8_MAX;
