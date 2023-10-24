@@ -69,7 +69,7 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
                                         : "Game Controller";
 
     // find all lus indices with this guid
-    std::map<int32_t, LUSDeviceIndex> matchingGuidLusIndices;
+    std::map<LUSDeviceIndex, int32_t> matchingGuidLusIndices;
     auto mappings = GetAllDeviceIndexMappingsFromConfig();
     for (auto [lusIndex, mapping] : mappings) {
         auto sdlMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
@@ -78,12 +78,12 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
         }
 
         if (sdlMapping->GetJoystickGUID() == guidString) {
-            matchingGuidLusIndices[sdlMapping->GetSDLDeviceIndex()] = lusIndex;
+            matchingGuidLusIndices[lusIndex] = sdlMapping->GetSDLDeviceIndex();
         }
     }
 
     // set this device to the lowest available lus index with this guid
-    for (auto [sdlIndexFromConfig, lusIndex] : matchingGuidLusIndices) {
+    for (auto [lusIndex, sdlIndexFromConfig] : matchingGuidLusIndices) {
         if (GetDeviceIndexMappingFromLUSDeviceIndex(lusIndex) != nullptr) {
             // we already loaded this one
             continue;
