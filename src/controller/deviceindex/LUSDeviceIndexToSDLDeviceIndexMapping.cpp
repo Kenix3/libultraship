@@ -30,10 +30,6 @@ std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLControllerName() {
     return mSDLControllerName;
 }
 
-std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetMappingId() {
-    return StringHelper::Sprintf("LUSI%d-SDLI%d", mLUSDeviceIndex, mSDLDeviceIndex);
-}
-
 void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),

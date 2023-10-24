@@ -10,7 +10,7 @@ class LUSDeviceIndexToPhysicalDeviceIndexMapping {
   public:
     LUSDeviceIndexToPhysicalDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex);
     virtual ~LUSDeviceIndexToPhysicalDeviceIndexMapping();
-    virtual std::string GetMappingId() = 0;
+    std::string GetMappingId();
 
     virtual void SaveToConfig() = 0;
     virtual void EraseFromConfig() = 0;

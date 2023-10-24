@@ -11,7 +11,6 @@ class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDev
     LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex,
                                           std::string sdlJoystickGuid, std::string sdlControllerName);
     ~LUSDeviceIndexToSDLDeviceIndexMapping();
-    std::string GetMappingId() override;
     std::string GetJoystickGUID();
     std::string GetSDLControllerName();
 

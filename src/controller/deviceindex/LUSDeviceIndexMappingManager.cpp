@@ -243,9 +243,21 @@ void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
 
 void LUSDeviceIndexMappingManager::SaveMappingIdsToConfig() {
     // todo: this efficently (when we build out cvar array support?)
-    std::string mappingIdListString = "";
+
+    std::set<std::string> ids;
+    std::stringstream mappingIdsStringStream(CVarGetString("gControllers.DeviceMappingIds", ""));
+    std::string mappingIdString;
+    while (getline(mappingIdsStringStream, mappingIdString, ',')) {
+        ids.insert(mappingIdString);
+    }
+
     for (auto [lusIndex, mapping] : mLUSDeviceIndexToPhysicalDeviceIndexMappings) {
-        mappingIdListString += mapping->GetMappingId();
+        ids.insert(mapping->GetMappingId());
+    }
+
+    std::string mappingIdListString = "";
+    for (auto id : ids) {
+        mappingIdListString += id;
         mappingIdListString += ",";
     }
 
@@ -277,7 +289,7 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         std::string sdlControllerName =
             CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
 
-        if (lusDeviceIndex < 0 || sdlDeviceIndex < 0 || sdlJoystickGuid == "") {
+        if (lusDeviceIndex < 0 || sdlJoystickGuid == "") {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
