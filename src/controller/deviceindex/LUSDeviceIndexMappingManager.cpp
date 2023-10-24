@@ -611,6 +611,20 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoy
     auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected =
         GetLUSDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
 
+    if (lusIndexOfPhysicalDeviceThatHasBeenDisconnected == LUSDeviceIndex::Max) {
+        // for some reason we don't know what device was disconnected, prompt to reorder
+        auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(
+            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
+        if (controllerDisconnectedWindow != nullptr) {
+            // todo: don't use UINT8_MAX-1 to mean we don't know what controller was disconnected
+            controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(UINT8_MAX - 1);
+            controllerDisconnectedWindow->Show();
+        } else {
+            // todo: log error
+        }
+        return;
+    }
+
     for (auto [lusIndex, mapping] : mLUSDeviceIndexToPhysicalDeviceIndexMappings) {
         auto sdlMapping = dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
         if (sdlMapping == nullptr) {

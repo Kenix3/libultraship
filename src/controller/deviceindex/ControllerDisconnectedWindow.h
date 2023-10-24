@@ -23,6 +23,8 @@ class ControllerDisconnectedWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
+    void DrawKnownControllerDisconnected();
+    void DrawUnknownOrMultipleControllersDisconnected();
     int32_t GetSDLIndexFromSDLInput();
     uint8_t mPortIndexOfDisconnectedController;
 };
