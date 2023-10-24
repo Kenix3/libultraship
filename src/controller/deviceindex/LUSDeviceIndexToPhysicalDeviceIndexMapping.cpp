@@ -13,11 +13,14 @@ LUSDeviceIndex LUSDeviceIndexToPhysicalDeviceIndexMapping::GetLUSDeviceIndex() {
 }
 
 std::string LUSDeviceIndexToPhysicalDeviceIndexMapping::GetMappingId() {
-    #define X(name, value) case name: return #name;
-    switch(mLUSDeviceIndex) {
+#define X(name, value) \
+    case name:         \
+        return #name;
+    switch (mLUSDeviceIndex) {
         LUS_DEVICE_INDEX_VALUES
-        default: return "Max";
+        default:
+            return "Max";
     }
-    #undef X
+#undef X
 }
 } // namespace LUS

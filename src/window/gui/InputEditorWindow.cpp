@@ -1082,16 +1082,17 @@ void InputEditorWindow::DrawDevicesTab() {
                 continue;
             }
 
-            indexMappings[lusIndex] = {sdlIndexMapping->GetSDLControllerName(), -1};
+            indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), -1 };
         }
 
-        for (auto [lusIndex, mapping] : Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+        for (auto [lusIndex, mapping] :
+             Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
             auto sdlIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
             if (sdlIndexMapping == nullptr) {
                 continue;
             }
 
-            indexMappings[lusIndex] = {sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex()};
+            indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex() };
         }
 
         for (auto [lusIndex, info] : indexMappings) {
@@ -1103,7 +1104,10 @@ void InputEditorWindow::DrawDevicesTab() {
             GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::Button(StringHelper::Sprintf("%s %s (%s)", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(), connected ? StringHelper::Sprintf("SDL %d", sdlIndex).c_str() : "Disconnected").c_str());
+            ImGui::Button(
+                StringHelper::Sprintf("%s %s (%s)", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(),
+                                      connected ? StringHelper::Sprintf("SDL %d", sdlIndex).c_str() : "Disconnected")
+                    .c_str());
             ImGui::PopStyleColor();
             ImGui::PopItemFlag();
         }

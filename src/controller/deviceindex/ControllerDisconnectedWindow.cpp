@@ -61,10 +61,9 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
                 mPortIndexOfDisconnectedController + 1, mPortIndexOfDisconnectedController + 1);
 
     auto index = GetSDLIndexFromSDLInput();
-    if (index != -1 && Context::GetInstance()
-                                ->GetControlDeck()
-                                ->GetDeviceIndexMappingManager()
-                                ->GetLUSDeviceIndexFromSDLDeviceIndex(index) == LUSDeviceIndex::Max) {
+    if (index != -1 &&
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetLUSDeviceIndexFromSDLDeviceIndex(
+            index) == LUSDeviceIndex::Max) {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeSDLMappingsForPort(
             mPortIndexOfDisconnectedController, index);
         mPortIndexOfDisconnectedController = UINT8_MAX;
@@ -74,7 +73,7 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
 
     if (ImGui::Button(StringHelper::Sprintf("Play without controller connected to port %d",
                                             mPortIndexOfDisconnectedController + 1)
-                            .c_str())) {
+                          .c_str())) {
         mPortIndexOfDisconnectedController = UINT8_MAX;
         ImGui::CloseCurrentPopup();
         Hide();
@@ -87,9 +86,10 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
         }
     }
 
-    if (connectedSdlControllerCount != 0 && ImGui::Button(connectedSdlControllerCount > 1
-                            ? "Reorder all controllers###reorderControllersButton"
-                            : "Use connected controller for port 1###reorderControllersButton")) {
+    if (connectedSdlControllerCount != 0 &&
+        ImGui::Button(connectedSdlControllerCount > 1
+                          ? "Reorder all controllers###reorderControllersButton"
+                          : "Use connected controller for port 1###reorderControllersButton")) {
         mPortIndexOfDisconnectedController = UINT8_MAX;
         ImGui::CloseCurrentPopup();
         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
@@ -107,9 +107,10 @@ void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected(
         }
     }
 
-    if (connectedSdlControllerCount != 0 && ImGui::Button(connectedSdlControllerCount > 1
-                            ? "Reorder all controllers###reorderControllersButton"
-                            : "Use connected controller for port 1###reorderControllersButton")) {
+    if (connectedSdlControllerCount != 0 &&
+        ImGui::Button(connectedSdlControllerCount > 1
+                          ? "Reorder all controllers###reorderControllersButton"
+                          : "Use connected controller for port 1###reorderControllersButton")) {
         mPortIndexOfDisconnectedController = UINT8_MAX;
         ImGui::CloseCurrentPopup();
         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
@@ -141,7 +142,7 @@ void ControllerDisconnectedWindow::SetPortIndexOfDisconnectedController(uint8_t 
         mPortIndexOfDisconnectedController = portIndex;
         return;
     }
-    
+
     // todo: don't use UINT8_MAX-1 to mean multiple controllers disconnected
     mPortIndexOfDisconnectedController = UINT8_MAX - 1;
 }
