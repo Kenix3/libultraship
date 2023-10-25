@@ -6,9 +6,10 @@ namespace LUS {
 LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex,
                                                                              int32_t sdlDeviceIndex,
                                                                              std::string sdlJoystickGuid,
-                                                                             std::string sdlControllerName)
+                                                                             std::string sdlControllerName,
+                                                                             float stickAxisThreshold, float triggerAxisThreshold)
     : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
-      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName) {
+      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName), mStickAxisThreshold(stickAxisThreshold), mTriggerAxisThreshold(triggerAxisThreshold) {
 }
 
 LUSDeviceIndexToSDLDeviceIndexMapping::~LUSDeviceIndexToSDLDeviceIndexMapping() {
@@ -40,6 +41,8 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
                   mSDLJoystickGUID.c_str());
     CVarSetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(),
                   mSDLControllerName.c_str());
+    CVarSetFloat(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str(), mStickAxisThreshold);
+    CVarSetFloat(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str(), mTriggerAxisThreshold);
     CVarSave();
 }
 
@@ -51,6 +54,8 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str());
 
     CVarSave();
 }

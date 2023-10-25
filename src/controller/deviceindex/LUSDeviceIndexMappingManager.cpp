@@ -124,7 +124,7 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
     auto deviceIndexMapping =
-        std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString, sdlControllerName);
+        std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString, sdlControllerName, 7680.0f, 7680.0f);
     mLUSDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     deviceIndexMapping->SaveToConfig();
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
@@ -229,7 +229,7 @@ void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
                                                 ? SDL_GameControllerNameForIndex(sdlIndex)
                                                 : "Game Controller";
             SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-                static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid, sdlControllerName));
+                static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid, sdlControllerName, 7680.0f, 7680.0f));
             mLUSDeviceIndexToSDLControllerNames[static_cast<LUSDeviceIndex>(lusIndex)] = sdlControllerName;
             break;
         }
@@ -289,6 +289,9 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         std::string sdlControllerName =
             CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
 
+        float stickAxisThreshold = CVarGetFloat(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str(), 7680.0f);
+        float triggerAxisThreshold = CVarGetFloat(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str(), 7680.0f);
+
         if (lusDeviceIndex < 0 || sdlJoystickGuid == "") {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -297,7 +300,7 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         }
 
         return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName);
+            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName, stickAxisThreshold, triggerAxisThreshold);
     }
 
     return nullptr;
