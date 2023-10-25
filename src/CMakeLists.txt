@@ -142,6 +142,8 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToPhysicalDeviceIndexMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.h
 )
 
 # if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
