@@ -4,29 +4,24 @@
 #include <cstdint>
 #include <string>
 #include "LUSDeviceIndexToPhysicalDeviceIndexMapping.h"
+#include <padscore/wpad.h>
 
 namespace LUS {
 
-class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
+class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex,
-                                          std::string sdlJoystickGuid, std::string sdlControllerName, float stickAxisThreshold, float triggerAxisThreshold);
-    ~LUSDeviceIndexToSDLDeviceIndexMapping();
-    std::string GetJoystickGUID();
-    std::string GetSDLControllerName();
+    LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t deviceChannel, WPADExtensionType extensionType);
+    ~LUSDeviceIndexToWiiUDeviceIndexMapping();
 
     void SaveToConfig() override;
     void EraseFromConfig() override;
 
-    int32_t GetSDLDeviceIndex();
-    void SetSDLDeviceIndex(int32_t index);
+    int32_t GetDeviceChannel();
+    void SetDeviceChannel(int32_t channel);
 
   private:
-    int32_t mSDLDeviceIndex;
-    std::string mSDLJoystickGUID;
-    std::string mSDLControllerName;
-    float mStickAxisThreshold;
-    float mTriggerAxisThreshold;
+    WPADChan mDeviceChannel;
+    WPADExtensionType mExtensionType;
 };
 } // namespace LUS
 #endif

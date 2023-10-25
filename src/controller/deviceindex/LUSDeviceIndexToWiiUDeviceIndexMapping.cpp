@@ -1,62 +1,40 @@
 #ifdef __WIIU__
-#include "LUSDeviceIndexToSDLDeviceIndexMapping.h"
+#include "LUSDeviceIndexToWiiUDeviceIndexMapping.h"
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex,
-                                                                             int32_t sdlDeviceIndex,
-                                                                             std::string sdlJoystickGuid,
-                                                                             std::string sdlControllerName,
-                                                                             float stickAxisThreshold, float triggerAxisThreshold)
-    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
-      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName), mStickAxisThreshold(stickAxisThreshold), mTriggerAxisThreshold(triggerAxisThreshold) {
+LUSDeviceIndexToWiiUDeviceIndexMapping::LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t deviceChannel, WPADExtensionType extensionType) 
+    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mDeviceChannel(deviceChannel), mExtensionType(extensionType) {}
+
+LUSDeviceIndexToWiiUDeviceIndexMapping::~LUSDeviceIndexToWiiUDeviceIndexMapping() {
 }
 
-LUSDeviceIndexToSDLDeviceIndexMapping::~LUSDeviceIndexToSDLDeviceIndexMapping() {
+int32_t LUSDeviceIndexToWiiUDeviceIndexMapping::GetDeviceChannel() {
+    return mDeviceChannel;
 }
 
-int32_t LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLDeviceIndex() {
-    return mSDLDeviceIndex;
+void LUSDeviceIndexToWiiUDeviceIndexMapping::SetDeviceChannel(int32_t channel) {
+    mDeviceChannel = channel;
 }
 
-void LUSDeviceIndexToSDLDeviceIndexMapping::SetSDLDeviceIndex(int32_t index) {
-    mSDLDeviceIndex = index;
-}
-
-std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetJoystickGUID() {
-    return mSDLJoystickGUID;
-}
-
-std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLControllerName() {
-    return mSDLControllerName;
-}
-
-void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
+void LUSDeviceIndexToWiiUDeviceIndexMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),
-                  "LUSDeviceIndexToSDLDeviceIndexMapping");
+                  "LUSDeviceIndexToWiiUDeviceIndexMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), mLUSDeviceIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str(), mSDLDeviceIndex);
-    CVarSetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(),
-                  mSDLJoystickGUID.c_str());
-    CVarSetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(),
-                  mSDLControllerName.c_str());
-    CVarSetFloat(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str(), mStickAxisThreshold);
-    CVarSetFloat(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str(), mTriggerAxisThreshold);
+    CVarSetInteger(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str(), mDeviceChannel);
+    CVarSetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), mExtensionType);
     CVarSave();
 }
 
-void LUSDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
+void LUSDeviceIndexToWiiUDeviceIndexMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str());
 
     CVarSave();
 }

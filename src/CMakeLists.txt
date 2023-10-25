@@ -146,13 +146,6 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.h
 )
 
-# if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-#     list(APPEND Source_Files__Controller
-#         ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.cpp
-#         ${CMAKE_CURRENT_SOURCE_DIR}/controller/SDLController.h
-#     )
-# endif()
-
 source_group("controller" FILES ${Source_Files__Controller})
 target_sources(libultraship PRIVATE ${Source_Files__Controller})
 
