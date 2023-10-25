@@ -115,6 +115,22 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAnyMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAnyMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAxisDirectionMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAxisDirectionMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAnyMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAnyMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAxisDirectionMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAxisDirectionMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToButtonMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToButtonMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiURumbleMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiURumbleMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/ControllerDisconnectedWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/ControllerDisconnectedWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/ControllerReorderingWindow.cpp

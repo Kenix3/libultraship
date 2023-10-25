@@ -1,7 +1,14 @@
 #include "AxisDirectionMappingFactory.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
+
+#ifdef __WIIU__
+#include "controller/controldevice/controller/mapping/wiiu/WiiUButtonToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAxisDirectionMapping.h"
+#else
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
+#endif
+
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "Context.h"
