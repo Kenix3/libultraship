@@ -20,11 +20,12 @@ void WiiURumbleMapping::StartRumble() {
     }
 
     if (IsGamepad()) {
-
+        int32_t patternSize = sizeof(mRumblePattern) * 8;
+        VPADControlMotor(VPAD_CHAN_0, mRumblePattern, patternSize);
         return;
     }
 
-    WPADControlMotor(mChan, true);
+    WPADControlMotor(GetWiiUDeviceChannel(), true);
 }
 
 void WiiURumbleMapping::StopRumble() {
@@ -33,29 +34,42 @@ void WiiURumbleMapping::StopRumble() {
     }
 
     if (IsGamepad()) {
-
+        VPADControlMotor(VPAD_CHAN_0, mRumblePattern, 0);
         return;
     }
 
-    WPADControlMotor(mChan, false);
+    WPADControlMotor(GetWiiUDeviceChannel(), false);
+}
 
-    SDL_GameControllerRumble(mController, 0, 0, 0);
+void WiiURumbleMapping::SetIntensity(uint8_t intensityPercentage) {
+    if (!IsGamepad()) {
+        intensityPercentage = 100;
+        mLowFrequencyIntensityPercentage = 100;
+        mHighFrequencyIntensityPercentage = 100;
+        return;
+    }
+
+    mLowFrequencyIntensityPercentage = intensityPercentage;
+    mHighFrequencyIntensityPercentage = intensityPercentage;
+
+    memset(mRumblePattern, 0, sizeof(mRumblePattern));
+
+    // distribute wanted amount of bits equally in pattern
+    float scale = ((intensityPercentage / 100.0f) * (1.0f - 0.3f)) + 0.3f;
+    int32_t bitcnt = patternSize * scale;
+    for (int32_t i = 0; i < bitcnt; i++) {
+        int32_t bitpos = ((i * patternSize) / bitcnt) % patternSize;
+        mRumblePattern[bitpos / 8] |= 1 << (bitpos % 8);
+    }
 }
 
 void WiiURumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
-    if (!IsGamepad()) {
-        intensityPercentage = 100;
-    }
-    mLowFrequencyIntensityPercentage = intensityPercentage;
-    mHighFrequencyIntensityPercentage = intensityPercentage;
+    SetIntensity(intensityPercentage);
+
 }
 
 void WiiURumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercentage) {
-    if (!IsGamepad()) {
-        intensityPercentage = 100;
-    }
-    mLowFrequencyIntensityPercentage = intensityPercentage;
-    mHighFrequencyIntensityPercentage = intensityPercentage;
+    SetIntensity(intensityPercentage);
 }
 
 std::string WiiURumbleMapping::GetRumbleMappingId() {
@@ -64,7 +78,7 @@ std::string WiiURumbleMapping::GetRumbleMappingId() {
 
 void WiiURumbleMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
-    CVarSetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "SDLRumbleMapping");
+    CVarSetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "WiiURumbleMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerRumbleMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(),

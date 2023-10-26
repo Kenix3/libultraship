@@ -21,7 +21,7 @@ class WiiURumbleMapping final : public ControllerRumbleMapping, public WiiUMappi
     bool PhysicalDeviceIsConnected() override;
 
   private:
-    float mRumblePatternStrength;
+    void SetIntensity(uint8_t intensityPercentage);
     uint8_t mRumblePattern[15];
 };
 } // namespace LUS
