@@ -7,7 +7,7 @@
 namespace LUS {
 class WiiUButtonToAnyMapping : virtual public ControllerInputMapping, public WiiUMapping {
   public:
-    WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic, int32_t wiiuControllerButton);
+    WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton);
     ~WiiUButtonToAnyMapping();
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;
@@ -16,7 +16,8 @@ class WiiUButtonToAnyMapping : virtual public ControllerInputMapping, public Wii
   protected:
     bool mIsNunchukButton;
     bool mIsClassicControllerButton;
-    int32_t mControllerButton;
+    uint32_t mControllerButton;
+    bool PhysicalButtonIsPressed();
 
   private:
     std::string GetGamepadButtonName();

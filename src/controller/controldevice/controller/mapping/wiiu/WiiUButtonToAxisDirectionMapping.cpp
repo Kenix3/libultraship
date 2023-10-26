@@ -1,5 +1,5 @@
 #ifdef __WIIU__
-#include "SDLButtonToAxisDirectionMapping.h"
+#include "WiiUButtonToAxisDirectionMapping.h"
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
@@ -9,17 +9,17 @@
 #define MAX_SDL_RANGE (float)INT16_MAX
 
 namespace LUS {
-SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+WiiUButtonToAxisDirectionMapping::WiiUButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
                                                                  Stick stick, Direction direction,
-                                                                 int32_t sdlControllerButton)
+                                                                 bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
     : ControllerInputMapping(lusDeviceIndex),
       ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
-      SDLButtonToAnyMapping(lusDeviceIndex, sdlControllerButton) {
+      WiiUButtonToAnyMapping(lusDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
 }
 
 float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (ControllerLoaded() && !Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked() &&
-        SDL_GameControllerGetButton(mController, mControllerButton)) {
+    if (!Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked() &&
+        PhysicalButtonIsPressed()) {
         return MAX_AXIS_RANGE;
     }
 
@@ -27,7 +27,7 @@ float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 }
 
 std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLB%d", mPortIndex, mStick, mDirection,
+    return StringHelper::Sprintf("P%d-S%d-D%d-GP%d-SDLB%d", mPortIndex, mStick, mDirection,
                                  ControllerInputMapping::mLUSDeviceIndex, mControllerButton);
 }
 

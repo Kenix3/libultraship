@@ -5,7 +5,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace LUS {
-WiiUButtonToAnyMapping::WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic, int32_t wiiuControllerButton)
+WiiUButtonToAnyMapping::WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
     : ControllerInputMapping(lusDeviceIndex), WiiUMapping(lusDeviceIndex), mIsNunchukButton(isNunchuk), mControllerButton(wiiuControllerButton) {
 }
 
@@ -261,6 +261,30 @@ std::string WiiUButtonToAnyMapping::GetPhysicalDeviceName() {
 
 bool WiiUButtonToAnyMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
+}
+
+bool WiiUButtonToAnyMapping::PhysicalButtonIsPressed() {
+    if (!ControllerLoaded()) {
+        return false;
+    }
+
+    if (IsGamepad()) {
+        return mWiiUGamepadController->hold & mControllerButton;
+    }
+
+    if (ExtensionType() == WPAD_EXT_PRO_CONTROLLER) {
+        return mController->pro.hold & mControllerButton;
+    }
+
+    if (mIsClassicControllerButton) {
+        return mController->classic.hold & mControllerButton;
+    }
+
+    if (mIsNunchukButton) {
+        return mController->nunchuck.hold & mControllerButton;
+    }
+
+    return mController->hold & mControllerButton;
 }
 } // namespace LUS
 #endif
