@@ -9,7 +9,7 @@
 
 #ifdef __WIIU__
 #include "controller/controldevice/controller/mapping/wiiu/WiiUMapping.h"
-#include "WiiUImpl.h"
+#include "port/wiiu/WiiUImpl.h"
 #else
 #include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
 #endif

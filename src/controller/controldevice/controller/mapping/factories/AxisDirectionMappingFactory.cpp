@@ -21,6 +21,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
+#ifdef __WIIU__
+// todo
+#else
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int32_t lusDeviceIndex =
@@ -78,10 +81,14 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         return std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction),
                                                                    static_cast<KbScancode>(scancode));
     }
+#endif
 
     return nullptr;
 }
 
+#ifdef __WIIU__
+// todo
+#else
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick) {
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
@@ -183,4 +190,5 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
 
     return mapping;
 }
+#endif
 } // namespace LUS

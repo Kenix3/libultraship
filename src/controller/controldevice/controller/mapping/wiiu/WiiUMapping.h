@@ -5,6 +5,8 @@
 #include <memory>
 #include <string>
 #include "controller/controldevice/controller/mapping/ControllerMapping.h"
+#include <vpad/input.h>
+#include <padscore/kpad.h>
 
 namespace LUS {
 enum Axis { X = 0, Y = 1 };
@@ -25,7 +27,6 @@ class WiiUMapping : public ControllerMapping {
     bool IsGamepad();
     int32_t ExtensionType();
 
-  private:
     bool mDeviceConnected;
     std::string GetWiiUControllerName();
 

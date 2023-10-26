@@ -96,7 +96,28 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
                                               std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
+#ifdef __WIIU__
+void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
+    // for (auto mapping :
+    //      AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
+    //     AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    // }
 
+    // if (lusIndex == LUSDeviceIndex::Keyboard) {
+    //     for (auto mapping :
+    //          AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
+    //         AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    //     }
+    // }
+
+    // for (auto [direction, directionMappings] : mAxisDirectionMappings) {
+    //     for (auto [id, mapping] : directionMappings) {
+    //         mapping->SaveToConfig();
+    //     }
+    // }
+    // SaveAxisDirectionMappingIdsToConfig();
+}
+#else
 void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
     for (auto mapping :
          AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
@@ -117,6 +138,7 @@ void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
     }
     SaveAxisDirectionMappingIdsToConfig();
 }
+#endif
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
     auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(mPortIndex, mStick, id);
@@ -233,6 +255,38 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     y = copysign(uy, sy);
 }
 
+#ifdef __WIIU__
+bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
+    return false;
+    // std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
+
+    // mUseKeydownEventToCreateNewMapping = true;
+    // if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
+    //     mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, direction,
+    //                                                                   mKeyboardScancodeForNewMapping);
+    // }
+
+    // if (mapping == nullptr) {
+    //     mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStick, direction);
+    // }
+
+    // if (mapping == nullptr) {
+    //     return false;
+    // }
+
+    // mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
+    // mUseKeydownEventToCreateNewMapping = false;
+
+    // if (id != "") {
+    //     ClearAxisDirectionMapping(direction, id);
+    // }
+
+    // AddAxisDirectionMapping(direction, mapping);
+    // mapping->SaveToConfig();
+    // SaveAxisDirectionMappingIdsToConfig();
+    // return true;
+}
+#else
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
@@ -262,6 +316,7 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     SaveAxisDirectionMappingIdsToConfig();
     return true;
 }
+#endif
 
 std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction,
                                                                                              std::string id) {

@@ -89,46 +89,6 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/LEDMappingFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAnyMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAnyMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAxisDirectionMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAxisDirectionMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAnyMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAnyMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAxisDirectionMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAxisDirectionMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToButtonMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToButtonMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUGyroMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUGyroMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiURumbleMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiURumbleMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/ControllerDisconnectedWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/ControllerDisconnectedWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/ControllerReorderingWindow.cpp
@@ -138,11 +98,61 @@ set(Source_Files__Controller
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexMappingManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToPhysicalDeviceIndexMapping.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToPhysicalDeviceIndexMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.h
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    list(APPEND Source_Files__Controller
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAxisDirectionMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUAxisDirectionToAxisDirectionMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAnyMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAnyMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAxisDirectionMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToAxisDirectionMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToButtonMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUButtonToButtonMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUGyroMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUGyroMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiUMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiURumbleMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/wiiu/WiiURumbleMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.h
+    )
+endif()
+
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    list(APPEND Source_Files__Controller
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAnyMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAnyMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h
+    )
+endif()
 
 source_group("controller" FILES ${Source_Files__Controller})
 target_sources(libultraship PRIVATE ${Source_Files__Controller})
