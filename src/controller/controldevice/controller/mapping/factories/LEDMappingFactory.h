@@ -9,6 +9,8 @@ namespace LUS {
 class LEDMappingFactory {
   public:
     static std::shared_ptr<ControllerLEDMapping> CreateLEDMappingFromConfig(uint8_t portIndex, std::string id);
+    #ifndef __WIIU__
     static std::shared_ptr<ControllerLEDMapping> CreateLEDMappingFromSDLInput(uint8_t portIndex);
+    #endif
 };
 } // namespace LUS

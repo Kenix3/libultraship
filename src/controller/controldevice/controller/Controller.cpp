@@ -154,6 +154,7 @@ void Controller::ReadToPad(OSContPad* pad) {
     }
 }
 
+#ifndef __WIIU__
 bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
     bool result = false;
     for (auto [bitmask, button] : GetAllButtons()) {
@@ -163,6 +164,7 @@ bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancod
     result = GetRightStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     return result;
 }
+#endif
 
 bool Controller::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
     return std::any_of(

@@ -27,6 +27,8 @@ class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDe
 
     bool HasEquivalentExtensionType(int32_t extensionType);
 
+    std::string GetWiiUControllerName();
+
   private:
     bool mIsWiiUGamepad;
     int32_t mDeviceChannel;

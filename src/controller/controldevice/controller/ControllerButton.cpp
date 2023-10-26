@@ -119,6 +119,59 @@ void ControllerButton::UpdatePad(uint16_t& padButtons) {
     }
 }
 
+bool ControllerButton::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(),
+                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
+}
+
+#ifdef __WIIU__
+bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
+    return false;
+    // std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
+
+    // mUseKeydownEventToCreateNewMapping = true;
+    // if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
+    //     mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
+    // }
+
+    // if (mapping == nullptr) {
+    //     mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
+    // }
+
+    // if (mapping == nullptr) {
+    //     return false;
+    // }
+
+    // mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
+    // mUseKeydownEventToCreateNewMapping = false;
+
+    // if (id != "") {
+    //     ClearButtonMapping(id);
+    // }
+
+    // AddButtonMapping(mapping);
+    // mapping->SaveToConfig();
+    // SaveButtonMappingIdsToConfig();
+    // return true;
+}
+
+void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
+    // for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(lusDeviceIndex, mPortIndex, mBitmask)) {
+    //     AddButtonMapping(mapping);
+    // }
+
+    // if (lusDeviceIndex == LUSDeviceIndex::Keyboard) {
+    //     for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
+    //         AddButtonMapping(mapping);
+    //     }
+    // }
+
+    // for (auto [id, mapping] : mButtonMappings) {
+    //     mapping->SaveToConfig();
+    // }
+    // SaveButtonMappingIdsToConfig();
+}
+#else
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
@@ -183,9 +236,5 @@ void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     }
     SaveButtonMappingIdsToConfig();
 }
-
-bool ControllerButton::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
-}
+#endif
 } // namespace LUS

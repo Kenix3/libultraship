@@ -18,7 +18,11 @@
 
 namespace LUS {
 LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false) {
+    #ifdef __WIIU__
+    UpdateExtensionTypesFromConfig();
+    #else
     UpdateControllerNamesFromConfig();
+    #endif
 }
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
@@ -40,7 +44,12 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
     mLUSDeviceIndexToPhysicalDeviceIndexMappings.clear();
     uint8_t port = 0;
     for (auto channel : wiiuDeviceChannels) {
-        InitializeSDLMappingsForPort(port, sdlIndex);
+        // todo: don't just use INT32_MAX to mean gamepad
+        if (channel == INT32_MAX) {
+            InitializeWiiUMappingsForPort(port, true, channel);
+        } else {
+            InitializeWiiUMappingsForPort(port, false, channel);
+        }
         port++;
     }
     mIsInitialized = true;
@@ -48,7 +57,7 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
 
 void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad, int32_t wiiuChannel) {
     KPADError error;
-    KPADStatus* status = LUS::WiiU::GetKPADStatus(wiiuChannel, &kpadError);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<WPADChan>(wiiuChannel), &error);
 
     if (!isGamepad && status == nullptr) {
         return;
@@ -149,6 +158,8 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
+        bool isGamepad = CVarGetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), false);
+
         int32_t wiiuDeviceChannel =
             CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str(), -1);
 
@@ -162,9 +173,8 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
             return nullptr;
         }
 
-        return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName,
-            stickAxisThreshold, triggerAxisThreshold);
+        return std::make_shared<LUSDeviceIndexToWiiUDeviceIndexMapping>(
+            static_cast<LUSDeviceIndex>(lusDeviceIndex), isGamepad, wiiuDeviceChannel, wiiuExtensionType);
     }
 
     return nullptr;
@@ -198,6 +208,18 @@ void LUSDeviceIndexMappingManager::UpdateExtensionTypesFromConfig() {
 
 std::pair<bool, int32_t> LUSDeviceIndexMappingManager::GetWiiUDeviceTypeFromLUSDeviceIndex(LUSDeviceIndex index) {
     return mLUSDeviceIndexToWiiUDeviceTypes[index];
+}
+
+void LUSDeviceIndexMappingManager::HandlePhysicalDevicesChanged() {
+    auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(
+        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
+    if (controllerDisconnectedWindow != nullptr) {
+        // todo: don't use UINT8_MAX-1 to mean we don't know what controller was disconnected
+        controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(UINT8_MAX - 1);
+        controllerDisconnectedWindow->Show();
+    } else {
+        // todo: log error
+    }
 }
 #else
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {

@@ -300,10 +300,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Utils__BinaryTools})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     set(Source_Files__Port
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUController.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUController.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUGamepad.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUGamepad.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUImpl.h
         ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUImpl.cpp
     )

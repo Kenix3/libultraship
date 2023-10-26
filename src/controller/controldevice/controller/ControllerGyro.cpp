@@ -19,6 +19,23 @@ void ControllerGyro::SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mappi
     mGyroMapping = mapping;
 }
 
+#ifdef __WIIU__
+bool ControllerGyro::SetGyroMappingFromRawPress() {
+    return false;
+    // std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
+
+    // mapping = GyroMappingFactory::CreateGyroMappingFromSDLInput(mPortIndex);
+
+    // if (mapping == nullptr) {
+    //     return false;
+    // }
+
+    // SetGyroMapping(mapping);
+    // mapping->SaveToConfig();
+    // SaveGyroMappingIdToConfig();
+    // return true;
+}
+#else
 bool ControllerGyro::SetGyroMappingFromRawPress() {
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
 
@@ -33,6 +50,7 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     SaveGyroMappingIdToConfig();
     return true;
 }
+#endif
 
 void ControllerGyro::UpdatePad(float& x, float& y) {
     if (mGyroMapping == nullptr) {

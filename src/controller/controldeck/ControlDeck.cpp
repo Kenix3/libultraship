@@ -47,6 +47,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     }
 }
 
+#ifndef __WIIU__
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
     bool result = false;
     for (auto port : mPorts) {
@@ -59,6 +60,7 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
 
     return result;
 }
+#endif
 
 bool ControlDeck::AllGameInputBlocked() {
     return !mGameInputBlockers.empty();

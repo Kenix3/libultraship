@@ -25,7 +25,9 @@ class ControlDeck {
     void SetSinglePlayerMappingMode(bool singlePlayer);
     bool IsSinglePlayerMappingMode();
 
+#ifndef __WIIU__
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
+#endif
 
     std::shared_ptr<LUSDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 

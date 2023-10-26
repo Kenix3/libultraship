@@ -40,7 +40,7 @@ bool WiiUMapping::OpenController() {
     }
 
     KPADError error;
-    KPADStatus* status = LUS::WiiU::GetKPADStatus(deviceIndexMapping->GetDeviceChannel(), &error);
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<WPADChan>(deviceIndexMapping->GetDeviceChannel()), &error);
     if (!status || error != KPAD_ERROR_OK) {
         CloseController();
         return false;
@@ -156,7 +156,7 @@ int32_t WiiUMapping::ExtensionType() {
 }
 
 std::string WiiUMapping::GetWiiUDeviceName() {
-    std::string deviceName = GetSDLControllerName();
+    std::string deviceName = GetWiiUControllerName();
 
     if (!ControllerLoaded()) {
         deviceName += " (Disconnected)";
@@ -167,7 +167,7 @@ std::string WiiUMapping::GetWiiUDeviceName() {
         return deviceName;
     }
 
-    return StringHelper::Sprintf("%s (%d)", deviceName.c_str(), GetDeviceChannel() + 1);
+    return StringHelper::Sprintf("%s (%d)", deviceName.c_str(), GetWiiUDeviceChannel() + 1);
 }
 } // namespace LUS
 #endif

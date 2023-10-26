@@ -10,9 +10,13 @@ class RumbleMappingFactory {
   public:
     static std::shared_ptr<ControllerRumbleMapping> CreateRumbleMappingFromConfig(uint8_t portIndex, std::string id);
 
+    #ifdef __WIIU__
+
+    #else
     static std::vector<std::shared_ptr<ControllerRumbleMapping>>
     CreateDefaultSDLRumbleMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex);
 
     static std::shared_ptr<ControllerRumbleMapping> CreateRumbleMappingFromSDLInput(uint8_t portIndex);
+    #endif
 };
 } // namespace LUS

@@ -42,8 +42,6 @@
 #endif
 #ifdef __WIIU__
 #include "port/wiiu/WiiUImpl.h"
-#include "port/wiiu/WiiUController.h"
-#include "port/wiiu/WiiUGamepad.h"
 #endif
 #endif
 #endif

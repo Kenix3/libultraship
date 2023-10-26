@@ -25,7 +25,7 @@ void WiiURumbleMapping::StartRumble() {
         return;
     }
 
-    WPADControlMotor(GetWiiUDeviceChannel(), true);
+    WPADControlMotor(static_cast<WPADChan>(GetWiiUDeviceChannel()), true);
 }
 
 void WiiURumbleMapping::StopRumble() {
@@ -38,7 +38,7 @@ void WiiURumbleMapping::StopRumble() {
         return;
     }
 
-    WPADControlMotor(GetWiiUDeviceChannel(), false);
+    WPADControlMotor(static_cast<WPADChan>(GetWiiUDeviceChannel()), false);
 }
 
 void WiiURumbleMapping::SetIntensity(uint8_t intensityPercentage) {
@@ -52,6 +52,7 @@ void WiiURumbleMapping::SetIntensity(uint8_t intensityPercentage) {
     mLowFrequencyIntensityPercentage = intensityPercentage;
     mHighFrequencyIntensityPercentage = intensityPercentage;
 
+    int32_t patternSize = sizeof(mRumblePattern) * 8;
     memset(mRumblePattern, 0, sizeof(mRumblePattern));
 
     // distribute wanted amount of bits equally in pattern

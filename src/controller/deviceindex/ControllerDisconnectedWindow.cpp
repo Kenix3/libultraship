@@ -60,6 +60,9 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
                 "for port %d.",
                 mPortIndexOfDisconnectedController + 1, mPortIndexOfDisconnectedController + 1);
 
+    #ifdef __WIIU__
+    // todo
+    #else
     auto index = GetSDLIndexFromSDLInput();
     if (index != -1 &&
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetLUSDeviceIndexFromSDLDeviceIndex(
@@ -70,6 +73,7 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
         ImGui::CloseCurrentPopup();
         Hide();
     }
+    #endif
 
     if (ImGui::Button(StringHelper::Sprintf("Play without controller connected to port %d",
                                             mPortIndexOfDisconnectedController + 1)

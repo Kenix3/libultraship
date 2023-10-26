@@ -119,7 +119,7 @@ void Update() {
 
     // rescan devices if connection state changed
     if (rescan) {
-        Context::GetInstance()->GetControlDeck()->ScanDevices();
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDevicesChanged();
     }
 }
 

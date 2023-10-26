@@ -7,6 +7,7 @@
 #include "controller/controldevice/controller/mapping/ControllerMapping.h"
 #include <vpad/input.h>
 #include <padscore/kpad.h>
+#include "port/wiiu/WiiUImpl.h"
 
 namespace LUS {
 enum Axis { X = 0, Y = 1 };

@@ -6,12 +6,12 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-#define WII_U_AXIS_LEFT_STICK_X = 0
-#define WII_U_AXIS_LEFT_STICK_Y = 1
-#define WII_U_AXIS_RIGHT_STICK_X = 2
-#define WII_U_AXIS_RIGHT_STICK_Y = 3
-#define WII_U_AXIS_NUNCHUK_STICK_X = 4
-#define WII_U_AXIS_NUNCHUK_STICK_Y = 5
+#define WII_U_AXIS_LEFT_STICK_X 0
+#define WII_U_AXIS_LEFT_STICK_Y 1
+#define WII_U_AXIS_RIGHT_STICK_X 2
+#define WII_U_AXIS_RIGHT_STICK_Y 3
+#define WII_U_AXIS_NUNCHUK_STICK_X 4
+#define WII_U_AXIS_NUNCHUK_STICK_Y 5
 
 namespace LUS {
 WiiUAxisDirectionToAxisDirectionMapping::WiiUAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex,
@@ -72,17 +72,11 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
             case WPAD_EXT_NUNCHUK:
             case WPAD_EXT_MPLUS_NUNCHUK:
                 switch (mControllerAxis) {
-                    case WII_U_AXIS_LEFT_STICK_X:
-                        wiiUAxisValue = mController->nunchuck.leftStick.x;
+                    case WII_U_AXIS_NUNCHUK_STICK_X:
+                        wiiUAxisValue = mController->nunchuck.stick.x;
                         break;
-                    case WII_U_AXIS_LEFT_STICK_Y:
-                        wiiUAxisValue = mController->nunchuck.leftStick.y;
-                        break;
-                    case WII_U_AXIS_RIGHT_STICK_X:
-                        wiiUAxisValue = mController->nunchuck.rightStick.x;
-                        break;
-                    case WII_U_AXIS_RIGHT_STICK_Y:
-                        wiiUAxisValue = mController->nunchuck.rightStick.y;
+                    case WII_U_AXIS_NUNCHUK_STICK_Y:
+                        wiiUAxisValue = mController->nunchuck.stick.y;
                         break;
                 }
                 break;
@@ -147,26 +141,6 @@ void WiiUAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
 
 uint8_t WiiUAxisDirectionToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
-}
-
-std::string WiiUAxisDirectionToAxisDirectionMapping::GetPhysicalInputName() {
-    if (IsGamepad()) {
-        return GetGamepadButtonName();
-    }
-
-    if (ExtensionType() == WPAD_EXT_PRO_CONTROLLER) {
-        return GetProControllerButtonName();
-    }
-
-    if (mIsClassicControllerButton) {
-        return GetClassicControllerButtonName();
-    }
-
-    if (mIsNunchukButton) {
-        return GetNunchukButtonName();
-    }
-
-    return GetWiiRemoteButtonName();
 }
 
 std::string WiiUAxisDirectionToAxisDirectionMapping::GetPhysicalInputName() {

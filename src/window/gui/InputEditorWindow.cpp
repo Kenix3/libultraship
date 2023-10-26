@@ -1093,6 +1093,54 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     }
 }
 
+#ifdef __WIIU__
+void InputEditorWindow::DrawDevicesTab() {
+    if (ImGui::BeginTabItem("Devices")) {
+        std::map<LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
+        for (auto [lusIndex, mapping] : Context::GetInstance()
+                                            ->GetControlDeck()
+                                            ->GetDeviceIndexMappingManager()
+                                            ->GetAllDeviceIndexMappingsFromConfig()) {
+            auto wiiuIndexMapping = std::static_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
+            if (wiiuIndexMapping == nullptr) {
+                continue;
+            }
+
+            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(), -1 };
+        }
+
+        for (auto [lusIndex, mapping] :
+             Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+            auto wiiuIndexMapping = std::static_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
+            if (wiiuIndexMapping == nullptr) {
+                continue;
+            }
+
+            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(), wiiuIndexMapping->IsWiiUGamepad() ? INT32_MAX : wiiuIndexMapping->GetDeviceChannel() };
+        }
+
+        for (auto [lusIndex, info] : indexMappings) {
+            auto [name, wiiuChannel] = info;
+            bool connected = wiiuChannel != -1;
+            bool isGamepad = wiiuChannel == INT32_MAX;
+
+            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+            GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+            ImGui::Button(
+                StringHelper::Sprintf("%s %s%s", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(),
+                                      !connected ? " (Disconnected)" : isGamepad ? "" : StringHelper::Sprintf(" (%d)", wiiuChannel).c_str())
+                    .c_str());
+            ImGui::PopStyleColor();
+            ImGui::PopItemFlag();
+        }
+
+        ImGui::EndTabItem();
+    }
+}
+#else
 void InputEditorWindow::DrawDevicesTab() {
     if (ImGui::BeginTabItem("Devices")) {
         std::map<LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
@@ -1138,6 +1186,7 @@ void InputEditorWindow::DrawDevicesTab() {
         ImGui::EndTabItem();
     }
 }
+#endif
 
 void InputEditorWindow::DrawElement() {
     ImGui::Begin("Controller Configuration", &mIsVisible);

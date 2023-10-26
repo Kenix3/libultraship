@@ -1,6 +1,11 @@
 #pragma once
 
+#ifdef __WIIU__
+#include "LUSDeviceIndexToWiiUDeviceIndexMapping.h"
+#else
 #include "LUSDeviceIndexToSDLDeviceIndexMapping.h"
+#endif
+
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -17,6 +22,7 @@ class LUSDeviceIndexMappingManager {
     bool IsValidWiiUExtensionType(int32_t extensionType);
     void UpdateExtensionTypesFromConfig();
     std::pair<bool, int32_t> GetWiiUDeviceTypeFromLUSDeviceIndex(LUSDeviceIndex index);
+    void HandlePhysicalDevicesChanged();
 #else
     void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
     void InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex);

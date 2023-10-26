@@ -22,6 +22,9 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
         return nullptr;
     }
 
+    #ifdef __WIIU__
+    // todo
+    #else
     if (mappingClass == "SDLButtonToButtonMapping") {
         int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
@@ -64,10 +67,15 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 
         return std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, static_cast<KbScancode>(scancode));
     }
+    #endif
+
 
     return nullptr;
 }
 
+#ifdef __WIIU__
+// todo
+#else
 std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, uint16_t bitmask) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
@@ -265,4 +273,5 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 
     return mapping;
 }
+#endif
 } // namespace LUS

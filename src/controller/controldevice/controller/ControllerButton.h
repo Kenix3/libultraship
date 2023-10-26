@@ -35,7 +35,9 @@ class ControllerButton {
 
     void UpdatePad(uint16_t& padButtons);
 
+#ifndef __WIIU__
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
+#endif
 
     bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
 

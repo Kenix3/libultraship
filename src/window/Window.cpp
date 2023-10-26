@@ -95,7 +95,9 @@ void Window::Init() {
     gfx_init(mWindowManagerApi, mRenderingApi, LUS::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
              mHeight, mPosX, mPosY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
+    #ifndef __WIIU__
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
+    #endif
     SetTextureFilter((FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
 }
 
@@ -140,6 +142,7 @@ void Window::MainLoop(void (*mainFunction)(void)) {
     mWindowManagerApi->main_loop(mainFunction);
 }
 
+#ifndef __WIIU__
 bool Window::KeyUp(int32_t scancode) {
     if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F11)) {
         Context::GetInstance()->GetWindow()->ToggleFullscreen();
@@ -162,6 +165,7 @@ void Window::AllKeysUp(void) {
     Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
                                                                    KbScancode::LUS_KB_UNKNOWN);
 }
+#endif
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();

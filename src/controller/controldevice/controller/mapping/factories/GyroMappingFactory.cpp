@@ -20,7 +20,9 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         CVarSave();
         return nullptr;
     }
-
+#ifdef __WIIU__
+// todo
+#else
     if (mappingClass == "SDLGyroMapping") {
         int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
@@ -40,10 +42,13 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         return std::make_shared<SDLGyroMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, sensitivity,
                                                 neutralPitch, neutralYaw, neutralRoll);
     }
-
+#endif
     return nullptr;
 }
 
+#ifdef __WIIU__
+// todo
+#else
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromSDLInput(uint8_t portIndex) {
     std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllersWithGyro;
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
@@ -110,4 +115,5 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
 
     return mapping;
 }
+#endif
 } // namespace LUS

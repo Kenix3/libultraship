@@ -67,6 +67,18 @@ void ControllerRumble::ClearAllMappings() {
     SaveRumbleMappingIdsToConfig();
 }
 
+#ifdef __WIIU__
+void ControllerRumble::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
+    // for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(lusDeviceIndex, mPortIndex)) {
+    //     AddRumbleMapping(mapping);
+    // }
+
+    // for (auto [id, mapping] : mRumbleMappings) {
+    //     mapping->SaveToConfig();
+    // }
+    // SaveRumbleMappingIdsToConfig();
+}
+#else
 void ControllerRumble::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(lusDeviceIndex, mPortIndex)) {
         AddRumbleMapping(mapping);
@@ -77,6 +89,7 @@ void ControllerRumble::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     }
     SaveRumbleMappingIdsToConfig();
 }
+#endif
 
 void ControllerRumble::LoadRumbleMappingFromConfig(std::string id) {
     auto mapping = RumbleMappingFactory::CreateRumbleMappingFromConfig(mPortIndex, id);
@@ -109,6 +122,23 @@ std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> Contro
     return mRumbleMappings;
 }
 
+#ifdef __WIIU__
+bool ControllerRumble::AddRumbleMappingFromRawPress() {
+    return false;
+    // std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
+
+    // mapping = RumbleMappingFactory::CreateRumbleMappingFromSDLInput(mPortIndex);
+
+    // if (mapping == nullptr) {
+    //     return false;
+    // }
+
+    // AddRumbleMapping(mapping);
+    // mapping->SaveToConfig();
+    // SaveRumbleMappingIdsToConfig();
+    // return true;
+}
+#else
 bool ControllerRumble::AddRumbleMappingFromRawPress() {
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
@@ -123,6 +153,7 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
     SaveRumbleMappingIdsToConfig();
     return true;
 }
+#endif
 
 bool ControllerRumble::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
     return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(),

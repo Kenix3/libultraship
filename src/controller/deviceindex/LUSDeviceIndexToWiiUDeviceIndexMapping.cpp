@@ -14,7 +14,7 @@ LUSDeviceIndexToWiiUDeviceIndexMapping::LUSDeviceIndexToWiiUDeviceIndexMapping(L
 LUSDeviceIndexToWiiUDeviceIndexMapping::~LUSDeviceIndexToWiiUDeviceIndexMapping() {
 }
 
-bool IsWiiUGamepad() {
+bool LUSDeviceIndexToWiiUDeviceIndexMapping::IsWiiUGamepad() {
     return mIsWiiUGamepad;
 }
 
@@ -49,6 +49,30 @@ bool LUSDeviceIndexToWiiUDeviceIndexMapping::HasEquivalentExtensionType(int32_t 
             return mExtensionType == WPAD_EXT_PRO_CONTROLLER;
         default:
             return false;
+    }
+}
+
+std::string LUSDeviceIndexToWiiUDeviceIndexMapping::GetWiiUControllerName() {
+    if (IsWiiUGamepad()) {
+        return "Wii U Gamepad";
+    }
+
+    switch (GetExtensionType()) {
+        case WPAD_EXT_CORE:
+            return "Wii Remote";
+        case WPAD_EXT_NUNCHUK:
+            return "Wii Remote + Nunchuk";
+        case WPAD_EXT_MPLUS_CLASSIC:
+        case WPAD_EXT_CLASSIC:
+            return "Wii Classic Controller";
+        case WPAD_EXT_MPLUS:
+            return "Motion Plus Wii Remote";
+        case WPAD_EXT_MPLUS_NUNCHUK:
+            return "Motion Plus Wii Remote + Nunchuk";
+        case WPAD_EXT_PRO_CONTROLLER:
+            return "Wii U Pro Controller";
+        default:
+            return "Unknown";
     }
 }
 
