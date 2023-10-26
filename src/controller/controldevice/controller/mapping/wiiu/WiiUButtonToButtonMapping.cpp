@@ -36,7 +36,7 @@ std::string WiiUButtonToButtonMapping::GetButtonMappingId() {
 void WiiUButtonToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
-                  "SDLButtonToButtonMapping");
+                  "WiiUButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerInputMapping::mLUSDeviceIndex);

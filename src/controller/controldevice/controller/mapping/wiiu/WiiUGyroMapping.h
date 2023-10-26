@@ -3,9 +3,9 @@
 #include "WiiUMapping.h"
 
 namespace LUS {
-class SDLGyroMapping final : public ControllerGyroMapping, public WiiUMapping {
+class WiiUGyroMapping final : public ControllerGyroMapping, public WiiUMapping {
   public:
-    SDLGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
+    WiiUGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
                    float neutralYaw, float neutralRoll);
     void UpdatePad(float& x, float& y) override;
     void SaveToConfig() override;

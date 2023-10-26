@@ -12,6 +12,9 @@ class WiiUAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirec
     uint8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
+    std::string GetPhysicalInputName() override;
+    std::string GetPhysicalDeviceName() override;
+    bool PhysicalDeviceIsConnected() override;
 
   private:
     int32_t mControllerAxis;

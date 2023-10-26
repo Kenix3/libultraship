@@ -1,5 +1,5 @@
 #ifdef __WIIU__
-#include "SDLGyroMapping.h"
+#include "WiiUGyroMapping.h"
 #include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 #include <spdlog/spdlog.h>
 #include "Context.h"
@@ -8,52 +8,44 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLGyroMapping::SDLGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
+WiiUGyroMapping::WiiUGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
                                float neutralYaw, float neutralRoll)
     : ControllerInputMapping(lusDeviceIndex), ControllerGyroMapping(lusDeviceIndex, portIndex, sensitivity),
-      mNeutralPitch(neutralPitch), SDLMapping(lusDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+      mNeutralPitch(neutralPitch), WiiUMapping(lusDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
-void SDLGyroMapping::Recalibrate() {
-    if (!ControllerLoaded()) {
+void WiiUGyroMapping::Recalibrate() {
+    if (!IsGamepad() || !ControllerLoaded()) {
         mNeutralPitch = 0;
         mNeutralYaw = 0;
         mNeutralRoll = 0;
         return;
     }
 
-    float gyroData[3];
-    SDL_GameControllerSetSensorEnabled(mController, SDL_SENSOR_GYRO, SDL_TRUE);
-    SDL_GameControllerGetSensorData(mController, SDL_SENSOR_GYRO, gyroData, 3);
-
-    mNeutralPitch = gyroData[0];
-    mNeutralYaw = gyroData[1];
-    mNeutralRoll = gyroData[2];
+    mNeutralPitch = mWiiUGamepadController->gyro.x * -8.0f;
+    mNeutralYaw = mWiiUGamepadController->gyro.z * 8.0f;
+    mNeutralRoll = mWiiUGamepadController->gyro.y * 8.0f;
 }
 
-void SDLGyroMapping::UpdatePad(float& x, float& y) {
-    if (!ControllerLoaded() || Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
+void WiiUGyroMapping::UpdatePad(float& x, float& y) {
+    if (!IsGamepad() || !ControllerLoaded() || Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         x = 0;
         y = 0;
         return;
     }
 
-    float gyroData[3];
-    SDL_GameControllerSetSensorEnabled(mController, SDL_SENSOR_GYRO, SDL_TRUE);
-    SDL_GameControllerGetSensorData(mController, SDL_SENSOR_GYRO, gyroData, 3);
-
-    x = (gyroData[0] - mNeutralPitch) * mSensitivity;
-    y = (gyroData[1] - mNeutralYaw) * mSensitivity;
+    x = ((mWiiUGamepadController->gyro.x * -8.0f) - mNeutralPitch) * mSensitivity;
+    y = ((mWiiUGamepadController->gyro.z * 8.0f) - mNeutralYaw) * mSensitivity;
 }
 
-std::string SDLGyroMapping::GetGyroMappingId() {
+std::string WiiUGyroMapping::GetGyroMappingId() {
     return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mLUSDeviceIndex);
 }
 
-void SDLGyroMapping::SaveToConfig() {
+void WiiUGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
-    CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
+    CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "WiiUGyroMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerInputMapping::mLUSDeviceIndex);
     CVarSetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
@@ -64,7 +56,7 @@ void SDLGyroMapping::SaveToConfig() {
     CVarSave();
 }
 
-void SDLGyroMapping::EraseFromConfig() {
+void WiiUGyroMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
@@ -77,11 +69,11 @@ void SDLGyroMapping::EraseFromConfig() {
     CVarSave();
 }
 
-std::string SDLGyroMapping::GetPhysicalDeviceName() {
-    return GetSDLDeviceName();
+std::string WiiUGyroMapping::GetPhysicalDeviceName() {
+    return GetWiiUDeviceName();
 }
 
-bool SDLGyroMapping::PhysicalDeviceIsConnected() {
+bool WiiUGyroMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
 } // namespace LUS

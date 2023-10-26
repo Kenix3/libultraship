@@ -124,7 +124,7 @@ std::string WiiUAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId()
 void WiiUAxisDirectionToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
-                  "SDLAxisDirectionToAxisDirectionMapping");
+                  "WiiUAxisDirectionToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
@@ -145,8 +145,62 @@ void WiiUAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
     CVarSave();
 }
 
-uint8_t SDLAxisDirectionToAxisDirectionMapping::GetMappingType() {
+uint8_t WiiUAxisDirectionToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
+}
+
+std::string WiiUAxisDirectionToAxisDirectionMapping::GetPhysicalInputName() {
+    if (IsGamepad()) {
+        return GetGamepadButtonName();
+    }
+
+    if (ExtensionType() == WPAD_EXT_PRO_CONTROLLER) {
+        return GetProControllerButtonName();
+    }
+
+    if (mIsClassicControllerButton) {
+        return GetClassicControllerButtonName();
+    }
+
+    if (mIsNunchukButton) {
+        return GetNunchukButtonName();
+    }
+
+    return GetWiiRemoteButtonName();
+}
+
+std::string WiiUAxisDirectionToAxisDirectionMapping::GetPhysicalInputName() {
+    switch (mControllerAxis) {
+        case WII_U_AXIS_LEFT_STICK_X:
+            return StringHelper::Sprintf("Left Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
+        case WII_U_AXIS_LEFT_STICK_Y:
+            return StringHelper::Sprintf("Left Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
+        case WII_U_AXIS_RIGHT_STICK_X:
+            return StringHelper::Sprintf("Right Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
+        case WII_U_AXIS_RIGHT_STICK_Y:
+            return StringHelper::Sprintf("Right Stick %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
+        case WII_U_AXIS_NUNCHUK_STICK_X:
+            return StringHelper::Sprintf("Nunchuk %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
+        case WII_U_AXIS_NUNCHUK_STICK_Y:
+            return StringHelper::Sprintf("Nunchuk %s",
+                                         mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
+    }
+
+    return StringHelper::Sprintf("Axis %d %s", mControllerAxis,
+                                 mAxisDirection == NEGATIVE ? ICON_FA_MINUS : ICON_FA_PLUS);
+}
+
+std::string WiiUAxisDirectionToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return GetWiiUDeviceName();
+}
+
+bool WiiUAxisDirectionToAxisDirectionMapping::PhysicalDeviceIsConnected() {
+    return ControllerLoaded();
 }
 } // namespace LUS
 #endif
