@@ -1,5 +1,5 @@
 #ifdef __WIIU__
-#include "SDLButtonToButtonMapping.h"
+#include "WiiUButtonToButtonMapping.h"
 #include <spdlog/spdlog.h>
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
@@ -7,53 +7,53 @@
 #include "Context.h"
 
 namespace LUS {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
-                                                   int32_t sdlControllerButton)
+WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
+                                                   bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
     : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
-      SDLButtonToAnyMapping(lusDeviceIndex, sdlControllerButton) {
+      WiiUButtonToAnyMapping(lusDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
 }
 
-void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
-    if (!ControllerLoaded()) {
-        return;
-    }
-
+void WiiUButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return;
     }
 
-    if (SDL_GameControllerGetButton(mController, mControllerButton)) {
+    if (PhysicalButtonIsPressed()) {
         padButtons |= mBitmask;
     }
 }
 
-uint8_t SDLButtonToButtonMapping::GetMappingType() {
+uint8_t WiiUButtonToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 
-std::string SDLButtonToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask, ControllerInputMapping::mLUSDeviceIndex,
-                                 mControllerButton);
+std::string WiiUButtonToButtonMapping::GetButtonMappingId() {
+    return StringHelper::Sprintf("P%d-B%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mBitmask, ControllerInputMapping::mLUSDeviceIndex,
+                                 mIsNunchukButton, mIsClassicControllerButton, mControllerButton);
 }
 
-void SDLButtonToButtonMapping::SaveToConfig() {
+void WiiUButtonToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerInputMapping::mLUSDeviceIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(), mIsNunchukButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(), mIsClassicControllerButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }
 
-void SDLButtonToButtonMapping::EraseFromConfig() {
+void WiiUButtonToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str());
     CVarSave();
 }
 } // namespace LUS

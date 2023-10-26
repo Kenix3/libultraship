@@ -1,12 +1,12 @@
 #ifdef __WIIU__
 #include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
-#include "SDLButtonToAnyMapping.h"
+#include "WiiUButtonToAnyMapping.h"
 
 namespace LUS {
-class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public ControllerButtonMapping {
+class WiiUButtonToButtonMapping final : public WiiUButtonToAnyMapping, public ControllerButtonMapping {
   public:
-    SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
-                             int32_t sdlControllerButton);
+    WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
+                             bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton);
     void UpdatePad(uint16_t& padButtons) override;
     uint8_t GetMappingType() override;
     std::string GetButtonMappingId() override;
