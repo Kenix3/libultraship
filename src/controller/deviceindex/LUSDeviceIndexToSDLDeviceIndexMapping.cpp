@@ -3,13 +3,12 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex,
-                                                                             int32_t sdlDeviceIndex,
-                                                                             std::string sdlJoystickGuid,
-                                                                             std::string sdlControllerName,
-                                                                             float stickAxisThreshold, float triggerAxisThreshold)
+LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(
+    LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
+    float stickAxisThreshold, float triggerAxisThreshold)
     : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
-      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName), mStickAxisThreshold(stickAxisThreshold), mTriggerAxisThreshold(triggerAxisThreshold) {
+      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName), mStickAxisThreshold(stickAxisThreshold),
+      mTriggerAxisThreshold(triggerAxisThreshold) {
 }
 
 LUSDeviceIndexToSDLDeviceIndexMapping::~LUSDeviceIndexToSDLDeviceIndexMapping() {
@@ -42,7 +41,8 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(),
                   mSDLControllerName.c_str());
     CVarSetFloat(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str(), mStickAxisThreshold);
-    CVarSetFloat(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str(), mTriggerAxisThreshold);
+    CVarSetFloat(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str(),
+                 mTriggerAxisThreshold);
     CVarSave();
 }
 

@@ -10,7 +10,8 @@ namespace LUS {
 
 class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, bool isGamepad, int32_t deviceChannel, int32_t extensionType);
+    LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, bool isGamepad, int32_t deviceChannel,
+                                           int32_t extensionType);
     ~LUSDeviceIndexToWiiUDeviceIndexMapping();
 
     void SaveToConfig() override;

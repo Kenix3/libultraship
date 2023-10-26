@@ -6,7 +6,7 @@ namespace LUS {
 class WiiUButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public WiiUButtonToAnyMapping {
   public:
     WiiUButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
-                                    bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton);
+                                     bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton);
 
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;

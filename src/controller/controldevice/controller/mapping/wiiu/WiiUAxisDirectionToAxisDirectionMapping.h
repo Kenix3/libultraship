@@ -3,11 +3,10 @@
 #include "WiiUMapping.h"
 
 namespace LUS {
-class WiiUAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirectionMapping,
-                                                     public WiiUMapping {
+class WiiUAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public WiiUMapping {
   public:
     WiiUAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick,
-                                           Direction direction, int32_t wiiuControllerAxis, int32_t axisDirection);
+                                            Direction direction, int32_t wiiuControllerAxis, int32_t axisDirection);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
     uint8_t GetMappingType() override;

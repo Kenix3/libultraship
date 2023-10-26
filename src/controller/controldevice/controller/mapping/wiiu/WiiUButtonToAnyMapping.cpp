@@ -5,8 +5,10 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace LUS {
-WiiUButtonToAnyMapping::WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
-    : ControllerInputMapping(lusDeviceIndex), WiiUMapping(lusDeviceIndex), mIsNunchukButton(isNunchuk), mControllerButton(wiiuControllerButton) {
+WiiUButtonToAnyMapping::WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic,
+                                               uint32_t wiiuControllerButton)
+    : ControllerInputMapping(lusDeviceIndex), WiiUMapping(lusDeviceIndex), mIsNunchukButton(isNunchuk),
+      mControllerButton(wiiuControllerButton) {
 }
 
 WiiUButtonToAnyMapping::~WiiUButtonToAnyMapping() {

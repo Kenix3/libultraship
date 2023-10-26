@@ -8,7 +8,7 @@
 
 namespace LUS {
 WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
-                                                   bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
+                                                     bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
     : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
       WiiUButtonToAnyMapping(lusDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
 }
@@ -28,8 +28,9 @@ uint8_t WiiUButtonToButtonMapping::GetMappingType() {
 }
 
 std::string WiiUButtonToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mBitmask, ControllerInputMapping::mLUSDeviceIndex,
-                                 mIsNunchukButton, mIsClassicControllerButton, mControllerButton);
+    return StringHelper::Sprintf("P%d-B%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mBitmask,
+                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton, mIsClassicControllerButton,
+                                 mControllerButton);
 }
 
 void WiiUButtonToButtonMapping::SaveToConfig() {
@@ -39,8 +40,10 @@ void WiiUButtonToButtonMapping::SaveToConfig() {
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerInputMapping::mLUSDeviceIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(), mIsNunchukButton);
-    CVarSetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(), mIsClassicControllerButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(),
+                   mIsNunchukButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(),
+                   mIsClassicControllerButton);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }

@@ -4,8 +4,12 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-LUSDeviceIndexToWiiUDeviceIndexMapping::LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, bool isGamepad, int32_t deviceChannel, int32_t extensionType) 
-    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mIsWiiUGamepad(isGamepad), mDeviceChannel(deviceChannel), mExtensionType(extensionType) {}
+LUSDeviceIndexToWiiUDeviceIndexMapping::LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex,
+                                                                               bool isGamepad, int32_t deviceChannel,
+                                                                               int32_t extensionType)
+    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mIsWiiUGamepad(isGamepad),
+      mDeviceChannel(deviceChannel), mExtensionType(extensionType) {
+}
 
 LUSDeviceIndexToWiiUDeviceIndexMapping::~LUSDeviceIndexToWiiUDeviceIndexMapping() {
 }
@@ -32,13 +36,13 @@ void LUSDeviceIndexToWiiUDeviceIndexMapping::SetExtensionType(int32_t extensionT
 
 bool LUSDeviceIndexToWiiUDeviceIndexMapping::HasEquivalentExtensionType(int32_t extensionType) {
     switch (extensionType) {
-        case WPAD_EXT_CORE: // Wii Remote with no extension
+        case WPAD_EXT_CORE:  // Wii Remote with no extension
         case WPAD_EXT_MPLUS: // Wii remote with motion plus
             return mExtensionType == WPAD_EXT_CORE || mExtensionType == WPAD_EXT_MPLUS;
-        case WPAD_EXT_NUNCHUK: // Wii Remote with nunchuk
+        case WPAD_EXT_NUNCHUK:       // Wii Remote with nunchuk
         case WPAD_EXT_MPLUS_NUNCHUK: // Wii remote with motion plus and nunchuk
             return mExtensionType == WPAD_EXT_NUNCHUK || mExtensionType == WPAD_EXT_MPLUS_NUNCHUK;
-        case WPAD_EXT_CLASSIC: // Wii Remote with Classic Controller
+        case WPAD_EXT_CLASSIC:       // Wii Remote with Classic Controller
         case WPAD_EXT_MPLUS_CLASSIC: // Wii Remote with motion plus and Classic Controller
             return mExtensionType == WPAD_EXT_CLASSIC || mExtensionType == WPAD_EXT_MPLUS_CLASSIC;
         case WPAD_EXT_PRO_CONTROLLER: // Wii U Pro Controller

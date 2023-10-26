@@ -15,12 +15,13 @@
 
 namespace LUS {
 WiiUAxisDirectionToAxisDirectionMapping::WiiUAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex,
-                                                                               uint8_t portIndex, Stick stick,
-                                                                               Direction direction,
-                                                                               int32_t wiiuControllerAxis, int32_t axisDirection)
+                                                                                 uint8_t portIndex, Stick stick,
+                                                                                 Direction direction,
+                                                                                 int32_t wiiuControllerAxis,
+                                                                                 int32_t axisDirection)
     : ControllerInputMapping(lusDeviceIndex),
-      ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
-      WiiUMapping(lusDeviceIndex), mControllerAxis(wiiuControllerAxis) {
+      ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction), WiiUMapping(lusDeviceIndex),
+      mControllerAxis(wiiuControllerAxis) {
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
 
@@ -101,7 +102,7 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
                         wiiUAxisValue = mController->classic.rightStick.y;
                         break;
                 }
-                break;            
+                break;
         }
     }
 

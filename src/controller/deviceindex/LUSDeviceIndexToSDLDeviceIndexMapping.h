@@ -9,7 +9,8 @@ namespace LUS {
 class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
   public:
     LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex,
-                                          std::string sdlJoystickGuid, std::string sdlControllerName, float stickAxisThreshold, float triggerAxisThreshold);
+                                          std::string sdlJoystickGuid, std::string sdlControllerName,
+                                          float stickAxisThreshold, float triggerAxisThreshold);
     ~LUSDeviceIndexToSDLDeviceIndexMapping();
     std::string GetJoystickGUID();
     std::string GetSDLControllerName();

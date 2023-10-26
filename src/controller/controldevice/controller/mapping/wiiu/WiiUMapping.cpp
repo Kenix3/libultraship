@@ -38,7 +38,7 @@ bool WiiUMapping::OpenController() {
         mWiiUGamepadController = status;
         return true;
     }
-    
+
     KPADError error;
     KPADStatus* status = LUS::WiiU::GetKPADStatus(deviceIndexMapping->GetDeviceChannel(), &error);
     if (!status || error != KPAD_ERROR_OK) {
@@ -110,9 +110,9 @@ int32_t WiiUMapping::GetWiiUDeviceChannel() {
 
 std::string WiiUMapping::GetWiiUControllerName() {
     auto [isGamepad, extensionType] = LUS::Context::GetInstance()
-        ->GetControlDeck()
-        ->GetDeviceIndexMappingManager()
-        ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
+                                          ->GetControlDeck()
+                                          ->GetDeviceIndexMappingManager()
+                                          ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
 
     if (isGamepad) {
         return "Wii U Gamepad";
@@ -139,18 +139,18 @@ std::string WiiUMapping::GetWiiUControllerName() {
 
 bool WiiUMapping::IsGamepad() {
     auto [isGamepad, extensionType] = LUS::Context::GetInstance()
-        ->GetControlDeck()
-        ->GetDeviceIndexMappingManager()
-        ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
+                                          ->GetControlDeck()
+                                          ->GetDeviceIndexMappingManager()
+                                          ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
 
     return isGamepad;
 }
 
 int32_t WiiUMapping::ExtensionType() {
     auto [isGamepad, extensionType] = LUS::Context::GetInstance()
-        ->GetControlDeck()
-        ->GetDeviceIndexMappingManager()
-        ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
+                                          ->GetControlDeck()
+                                          ->GetDeviceIndexMappingManager()
+                                          ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
 
     return extensionType;
 }

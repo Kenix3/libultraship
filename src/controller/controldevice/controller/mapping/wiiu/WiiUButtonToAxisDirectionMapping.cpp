@@ -8,16 +8,15 @@
 
 namespace LUS {
 WiiUButtonToAxisDirectionMapping::WiiUButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
-                                                                 Stick stick, Direction direction,
-                                                                 bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
+                                                                   Stick stick, Direction direction, bool isNunchuk,
+                                                                   bool isClassic, uint32_t wiiuControllerButton)
     : ControllerInputMapping(lusDeviceIndex),
       ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
       WiiUButtonToAnyMapping(lusDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
 }
 
 float WiiUButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (!Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked() &&
-        PhysicalButtonIsPressed()) {
+    if (!Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked() && PhysicalButtonIsPressed()) {
         return MAX_AXIS_RANGE;
     }
 
@@ -26,7 +25,8 @@ float WiiUButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 
 std::string WiiUButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
     return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mStick, mDirection,
-                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton, mIsClassicControllerButton, mControllerButton);
+                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton, mIsClassicControllerButton,
+                                 mControllerButton);
 }
 
 void WiiUButtonToAxisDirectionMapping::SaveToConfig() {
@@ -37,8 +37,10 @@ void WiiUButtonToAxisDirectionMapping::SaveToConfig() {
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerInputMapping::mLUSDeviceIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(), mIsNunchukButton);
-    CVarSetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(), mIsClassicControllerButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(),
+                   mIsNunchukButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(),
+                   mIsClassicControllerButton);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }

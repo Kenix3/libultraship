@@ -115,9 +115,9 @@ void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port
 
     // if we didn't find a mapping, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    auto deviceIndexMapping =
-        std::make_shared<LUSDeviceIndexToWiiUDeviceIndexMapping>(lusIndex, wiiuChannel, isGamepad, !isGamepad ? status->extensionType : -1);
-    mLUSDeviceIndexToWiiUDeviceTypes[lusIndex] = {isGamepad, !isGamepad ? status->extensionType : -1};
+    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToWiiUDeviceIndexMapping>(
+        lusIndex, wiiuChannel, isGamepad, !isGamepad ? status->extensionType : -1);
+    mLUSDeviceIndexToWiiUDeviceTypes[lusIndex] = { isGamepad, !isGamepad ? status->extensionType : -1 };
     deviceIndexMapping->SaveToConfig();
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
     SaveMappingIdsToConfig();
@@ -163,7 +163,8 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         }
 
         return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName, stickAxisThreshold, triggerAxisThreshold);
+            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName,
+            stickAxisThreshold, triggerAxisThreshold);
     }
 
     return nullptr;
@@ -187,11 +188,10 @@ void LUSDeviceIndexMappingManager::UpdateExtensionTypesFromConfig() {
 
         if (mappingClass == "LUSDeviceIndexToWiiUDeviceIndexMapping") {
             mLUSDeviceIndexToWiiUDeviceTypes[static_cast<LUSDeviceIndex>(
-                CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1))] =
-                {
-                    CVarGetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), -1),
-                    CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), -1)
-                };
+                CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1))] = {
+                CVarGetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), -1),
+                CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), -1)
+            };
         }
     }
 }
@@ -287,8 +287,8 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    auto deviceIndexMapping =
-        std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString, sdlControllerName, 7680.0f, 7680.0f);
+    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
+        lusIndex, sdlIndex, guidString, sdlControllerName, 7680.0f, 7680.0f);
     mLUSDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     deviceIndexMapping->SaveToConfig();
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
@@ -315,8 +315,10 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         std::string sdlControllerName =
             CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
 
-        float stickAxisThreshold = CVarGetFloat(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str(), 7680.0f);
-        float triggerAxisThreshold = CVarGetFloat(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str(), 7680.0f);
+        float stickAxisThreshold =
+            CVarGetFloat(StringHelper::Sprintf("%s.StickAxisThreshold", mappingCvarKey.c_str()).c_str(), 7680.0f);
+        float triggerAxisThreshold =
+            CVarGetFloat(StringHelper::Sprintf("%s.TriggerAxisThreshold", mappingCvarKey.c_str()).c_str(), 7680.0f);
 
         if (lusDeviceIndex < 0 || sdlJoystickGuid == "") {
             // something about this mapping is invalid
@@ -326,7 +328,8 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         }
 
         return std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName, stickAxisThreshold, triggerAxisThreshold);
+            static_cast<LUSDeviceIndex>(lusDeviceIndex), sdlDeviceIndex, sdlJoystickGuid, sdlControllerName,
+            stickAxisThreshold, triggerAxisThreshold);
     }
 
     return nullptr;

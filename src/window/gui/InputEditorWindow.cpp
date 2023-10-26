@@ -252,7 +252,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
     // ImGui::SameLine(0, 0);
     // ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     // ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-    // if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
+    // if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str()))
+    // {
     //     LUS::Context::GetInstance()
     //         ->GetControlDeck()
     //         ->GetControllerByPort(port)
