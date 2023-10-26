@@ -10,11 +10,13 @@ namespace LUS {
 
 class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t deviceChannel, WPADExtensionType extensionType);
+    LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, bool isGamepad, int32_t deviceChannel, int32_t extensionType);
     ~LUSDeviceIndexToWiiUDeviceIndexMapping();
 
     void SaveToConfig() override;
     void EraseFromConfig() override;
+
+    bool IsWiiUGamepad();
 
     int32_t GetDeviceChannel();
     void SetDeviceChannel(int32_t channel);
@@ -25,8 +27,9 @@ class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDe
     bool HasEquivalentExtensionType(int32_t extensionType);
 
   private:
-    WPADChan mDeviceChannel;
-    WPADExtensionType mExtensionType;
+    bool mIsWiiUGamepad;
+    int32_t mDeviceChannel;
+    int32_t mExtensionType;
 };
 } // namespace LUS
 #endif

@@ -13,9 +13,10 @@ class LUSDeviceIndexMappingManager {
 
     #ifdef __WIIU__
     void InitializeMappingsMultiplayer(std::vector<int32_t> wiiuDeviceChannels);
-    void InitializeWiiUMappingsForPort(uint8_t n64port, int32_t wiiuChannel);
+    void InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad, int32_t wiiuChannel);
     bool IsValidWiiUExtensionType(int32_t extensionType);
     void UpdateExtensionTypesFromConfig();
+    std::pair<bool, int32_t> GetWiiUDeviceTypeFromLUSDeviceIndex(LUSDeviceIndex index);
     #else
     void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
     void InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex);
@@ -48,7 +49,7 @@ class LUSDeviceIndexMappingManager {
     std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>>
         mLUSDeviceIndexToPhysicalDeviceIndexMappings;
     #ifdef __WIIU__
-    std::unordered_map<LUSDeviceIndex, int32_t> mLUSDeviceIndexToWiiUExtensionTypes;
+    std::unordered_map<LUSDeviceIndex, std::pair<bool, int32_t>> mLUSDeviceIndexToWiiUDeviceTypes;
     #else
     std::unordered_map<LUSDeviceIndex, std::string> mLUSDeviceIndexToSDLControllerNames;
     int32_t GetNewSDLDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);

@@ -4,10 +4,14 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace LUS {
-LUSDeviceIndexToWiiUDeviceIndexMapping::LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t deviceChannel, WPADExtensionType extensionType) 
-    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mDeviceChannel(deviceChannel), mExtensionType(extensionType) {}
+LUSDeviceIndexToWiiUDeviceIndexMapping::LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, bool isGamepad, int32_t deviceChannel, int32_t extensionType) 
+    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mIsWiiUGamepad(isGamepad), mDeviceChannel(deviceChannel), mExtensionType(extensionType) {}
 
 LUSDeviceIndexToWiiUDeviceIndexMapping::~LUSDeviceIndexToWiiUDeviceIndexMapping() {
+}
+
+bool IsWiiUGamepad() {
+    return mIsWiiUGamepad;
 }
 
 int32_t LUSDeviceIndexToWiiUDeviceIndexMapping::GetDeviceChannel() {
@@ -31,8 +35,8 @@ bool LUSDeviceIndexToWiiUDeviceIndexMapping::HasEquivalentExtensionType(int32_t 
         case WPAD_EXT_CORE: // Wii Remote with no extension
         case WPAD_EXT_MPLUS: // Wii remote with motion plus
             return mExtensionType == WPAD_EXT_CORE || mExtensionType == WPAD_EXT_MPLUS;
-        case WPAD_EXT_NUNCHUK: // Wii Remote with nunchuck
-        case WPAD_EXT_MPLUS_NUNCHUK: // Wii remote with motion plus and nunchuck
+        case WPAD_EXT_NUNCHUK: // Wii Remote with nunchuk
+        case WPAD_EXT_MPLUS_NUNCHUK: // Wii remote with motion plus and nunchuk
             return mExtensionType == WPAD_EXT_NUNCHUK || mExtensionType == WPAD_EXT_MPLUS_NUNCHUK;
         case WPAD_EXT_CLASSIC: // Wii Remote with Classic Controller
         case WPAD_EXT_MPLUS_CLASSIC: // Wii Remote with motion plus and Classic Controller
@@ -49,6 +53,7 @@ void LUSDeviceIndexToWiiUDeviceIndexMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),
                   "LUSDeviceIndexToWiiUDeviceIndexMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), mIsWiiUGamepad);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str(), mDeviceChannel);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), mExtensionType);
     CVarSave();
@@ -59,6 +64,7 @@ void LUSDeviceIndexToWiiUDeviceIndexMapping::EraseFromConfig() {
 
     CVarClear(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str());
 

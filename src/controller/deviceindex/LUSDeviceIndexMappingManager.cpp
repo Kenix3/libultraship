@@ -46,15 +46,15 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
     mIsInitialized = true;
 }
 
-void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, int32_t wiiuChannel) {
+void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad, int32_t wiiuChannel) {
     KPADError error;
-    KPADStatus* status = LUS::WiiU::GetKPADStatus(wiiuChannel, &error);
-    if (status == nullptr) {
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(wiiuChannel, &kpadError);
+
+    if (!isGamepad && status == nullptr) {
         return;
     }
 
-    // find all lus indices with a compatable extension type
-    std::map<LUSDeviceIndex, int32_t> matchingExtensionTypeLusIndices;
+    std::vector<LUSDeviceIndex> matchingLusIndices;
     auto mappings = GetAllDeviceIndexMappingsFromConfig();
     for (auto [lusIndex, mapping] : mappings) {
         auto wiiuMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
@@ -62,13 +62,18 @@ void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port
             continue;
         }
 
+        if (isGamepad && wiiuMapping->IsWiiUGamepad()) {
+            matchingLusIndices.push_back(lusIndex);
+            continue;
+        }
+
         if (wiiuMapping->HasEquivalentExtensionType(status->extensionType)) {
-            matchingExtensionTypeLusIndices[lusIndex] = wiiuMapping->GetDeviceChannel();
+            matchingLusIndices.push_back(lusIndex);
         }
     }
 
     // set this device to the lowest available lus index with a compatable extension type
-    for (auto [lusIndex, sdlIndexFromConfig] : matchingExtensionTypeLusIndices) {
+    for (auto lusIndex : matchingLusIndices) {
         if (GetDeviceIndexMappingFromLUSDeviceIndex(lusIndex) != nullptr) {
             // we already loaded this one
             continue;
@@ -77,7 +82,9 @@ void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port
         auto mapping = mappings[lusIndex];
         auto wiiuMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
 
-        wiiuMapping->SetDeviceChannel(wiiuChannel);
+        if (!isGamepad) {
+            wiiuMapping->SetDeviceChannel(wiiuChannel);
+        }
         SetLUSDeviceIndexToPhysicalDeviceIndexMapping(wiiuMapping);
 
         // if we have mappings for this LUS device on this port, we're good and don't need to move any mappings
@@ -106,11 +113,11 @@ void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port
         return;
     }
 
-    // if we didn't find a mapping for this guid, make defaults
+    // if we didn't find a mapping, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
     auto deviceIndexMapping =
-        std::make_shared<LUSDeviceIndexToWiiUDeviceIndexMapping>(lusIndex, wiiuChannel, status->extensionType);
-    mLUSDeviceIndexToWiiUExtensionTypes[lusIndex] = status->extensionType;
+        std::make_shared<LUSDeviceIndexToWiiUDeviceIndexMapping>(lusIndex, wiiuChannel, isGamepad, !isGamepad ? status->extensionType : -1);
+    mLUSDeviceIndexToWiiUDeviceTypes[lusIndex] = {isGamepad, !isGamepad ? status->extensionType : -1};
     deviceIndexMapping->SaveToConfig();
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
     SaveMappingIdsToConfig();
@@ -179,11 +186,18 @@ void LUSDeviceIndexMappingManager::UpdateExtensionTypesFromConfig() {
             CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
         if (mappingClass == "LUSDeviceIndexToWiiUDeviceIndexMapping") {
-            mLUSDeviceIndexToWiiUExtensionTypes[static_cast<LUSDeviceIndex>(
+            mLUSDeviceIndexToWiiUDeviceTypes[static_cast<LUSDeviceIndex>(
                 CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1))] =
-                CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), -1);
+                {
+                    CVarGetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), -1),
+                    CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), -1)
+                };
         }
     }
+}
+
+std::pair<bool, int32_t> LUSDeviceIndexMappingManager::GetWiiUDeviceTypeFromLUSDeviceIndex(LUSDeviceIndex index) {
+    return mLUSDeviceIndexToWiiUDeviceTypes[index];
 }
 #else
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
@@ -219,7 +233,7 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
                                         : "Game Controller";
 
     // find all lus indices with this guid
-    std::map<LUSDeviceIndex, int32_t> matchingGuidLusIndices;
+    std::vector<LUSDeviceIndex> matchingGuidLusIndices;
     auto mappings = GetAllDeviceIndexMappingsFromConfig();
     for (auto [lusIndex, mapping] : mappings) {
         auto sdlMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
@@ -228,12 +242,12 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
         }
 
         if (sdlMapping->GetJoystickGUID() == guidString) {
-            matchingGuidLusIndices[lusIndex] = sdlMapping->GetSDLDeviceIndex();
+            matchingGuidLusIndices.push_back(lusIndex);
         }
     }
 
     // set this device to the lowest available lus index with this guid
-    for (auto [lusIndex, sdlIndexFromConfig] : matchingGuidLusIndices) {
+    for (auto lusIndex : matchingGuidLusIndices) {
         if (GetDeviceIndexMappingFromLUSDeviceIndex(lusIndex) != nullptr) {
             // we already loaded this one
             continue;
