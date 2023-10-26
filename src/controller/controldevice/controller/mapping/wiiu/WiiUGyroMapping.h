@@ -1,9 +1,9 @@
 #ifdef __WIIU__
 #include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
-#include "SDLMapping.h"
+#include "WiiUMapping.h"
 
 namespace LUS {
-class SDLGyroMapping final : public ControllerGyroMapping, public SDLMapping {
+class SDLGyroMapping final : public ControllerGyroMapping, public WiiUMapping {
   public:
     SDLGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
                    float neutralYaw, float neutralRoll);
