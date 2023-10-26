@@ -146,6 +146,15 @@ bool WiiUMapping::IsGamepad() {
     return isGamepad;
 }
 
+int32_t WiiUMapping::ExtensionType() {
+    auto [isGamepad, extensionType] = LUS::Context::GetInstance()
+        ->GetControlDeck()
+        ->GetDeviceIndexMappingManager()
+        ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
+
+    return extensionType;
+}
+
 std::string WiiUMapping::GetWiiUDeviceName() {
     std::string deviceName = GetSDLControllerName();
 
