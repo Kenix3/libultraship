@@ -18,6 +18,32 @@ void LUSDeviceIndexToWiiUDeviceIndexMapping::SetDeviceChannel(int32_t channel) {
     mDeviceChannel = channel;
 }
 
+int32_t LUSDeviceIndexToWiiUDeviceIndexMapping::GetExtensionType() {
+    return mExtensionType;
+}
+
+void LUSDeviceIndexToWiiUDeviceIndexMapping::SetExtensionType(int32_t extensionType) {
+    mExtensionType = extensionType;
+}
+
+bool LUSDeviceIndexToWiiUDeviceIndexMapping::HasEquivalentExtensionType(int32_t extensionType) {
+    switch (extensionType) {
+        case WPAD_EXT_CORE: // Wii Remote with no extension
+        case WPAD_EXT_MPLUS: // Wii remote with motion plus
+            return mExtensionType == WPAD_EXT_CORE || mExtensionType == WPAD_EXT_MPLUS;
+        case WPAD_EXT_NUNCHUK: // Wii Remote with nunchuck
+        case WPAD_EXT_MPLUS_NUNCHUK: // Wii remote with motion plus and nunchuck
+            return mExtensionType == WPAD_EXT_NUNCHUK || mExtensionType == WPAD_EXT_MPLUS_NUNCHUK;
+        case WPAD_EXT_CLASSIC: // Wii Remote with Classic Controller
+        case WPAD_EXT_MPLUS_CLASSIC: // Wii Remote with motion plus and Classic Controller
+            return mExtensionType == WPAD_EXT_CLASSIC || mExtensionType == WPAD_EXT_MPLUS_CLASSIC;
+        case WPAD_EXT_PRO_CONTROLLER: // Wii U Pro Controller
+            return mExtensionType == WPAD_EXT_PRO_CONTROLLER;
+        default:
+            return false;
+    }
+}
+
 void LUSDeviceIndexToWiiUDeviceIndexMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),

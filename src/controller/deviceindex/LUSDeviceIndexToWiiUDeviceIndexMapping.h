@@ -19,6 +19,11 @@ class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDe
     int32_t GetDeviceChannel();
     void SetDeviceChannel(int32_t channel);
 
+    int32_t GetExtensionType();
+    void SetExtensionType(int32_t extensionType);
+
+    bool HasEquivalentExtensionType(int32_t extensionType);
+
   private:
     WPADChan mDeviceChannel;
     WPADExtensionType mExtensionType;

@@ -11,6 +11,14 @@ class LUSDeviceIndexMappingManager {
     LUSDeviceIndexMappingManager();
     ~LUSDeviceIndexMappingManager();
 
+    #ifdef __WIIU__
+    void InitializeMappingsMultiplayer(std::vector<int32_t> wiiuDeviceChannels);
+    void InitializeWiiUMappingsForPort(uint8_t n64port, int32_t wiiuChannel);
+    #else
+    void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
+    void InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex);
+    #endif
+
     std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping> CreateDeviceIndexMappingFromConfig(std::string id);
     std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>>
     GetAllDeviceIndexMappings();
@@ -27,8 +35,8 @@ class LUSDeviceIndexMappingManager {
     void UpdateControllerNamesFromConfig();
 
     void InitializeMappingsSinglePlayer();
-    void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
-    void InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex);
+    
+    
     void SaveMappingIdsToConfig();
     void HandlePhysicalDeviceConnect(int32_t sdlDeviceIndex);
     void HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId);
@@ -40,6 +48,10 @@ class LUSDeviceIndexMappingManager {
     int32_t GetNewSDLDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
     std::unordered_map<LUSDeviceIndex, std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>>
         mLUSDeviceIndexToPhysicalDeviceIndexMappings;
+    #ifdef __WIIU__
+    std::unordered_map<LUSDeviceIndex, int32_t> mLUSDeviceIndexToWiiUExtensionTypes;
+    #else
     std::unordered_map<LUSDeviceIndex, std::string> mLUSDeviceIndexToSDLControllerNames;
+    #endif
 };
 } // namespace LUS

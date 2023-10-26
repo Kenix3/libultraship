@@ -6,7 +6,14 @@
 #include "Context.h"
 #include "ControllerDisconnectedWindow.h"
 #include "ControllerReorderingWindow.h"
+
+#ifdef __WIIU__
+#include "controller/controldevice/controller/mapping/wiiu/WiiUMapping.h"
+#include "WiiUImpl.h"
+#else
 #include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
+#endif
+
 #include <sstream>
 
 namespace LUS {
@@ -17,6 +24,99 @@ LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(fa
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 }
 
+#ifdef __WIIU__
+void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> wiiuDeviceChannels) {
+    for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+        for (auto mapping :
+             Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllMappings()) {
+            auto wiiuMapping = std::dynamic_pointer_cast<WiiUMapping>(mapping);
+            if (wiiuMapping == nullptr) {
+                continue;
+            }
+
+            wiiuMapping->CloseController();
+        }
+    }
+    mLUSDeviceIndexToPhysicalDeviceIndexMappings.clear();
+    uint8_t port = 0;
+    for (auto channel : wiiuDeviceChannels) {
+        InitializeSDLMappingsForPort(port, sdlIndex);
+        port++;
+    }
+    mIsInitialized = true;
+}
+
+void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, int32_t wiiuChannel) {
+    KPADError error;
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(wiiuChannel, &error);
+    if (status == nullptr) {
+        return;
+    }
+
+    // find all lus indices with a compatable extension type
+    std::map<LUSDeviceIndex, int32_t> matchingExtensionTypeLusIndices;
+    auto mappings = GetAllDeviceIndexMappingsFromConfig();
+    for (auto [lusIndex, mapping] : mappings) {
+        auto wiiuMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
+        if (wiiuMapping == nullptr) {
+            continue;
+        }
+
+        if (wiiuMapping->HasEquivalentExtensionType(status->extensionType)) {
+            matchingExtensionTypeLusIndices[lusIndex] = wiiuMapping->GetDeviceChannel();
+        }
+    }
+
+    // set this device to the lowest available lus index with a compatable extension type
+    for (auto [lusIndex, sdlIndexFromConfig] : matchingExtensionTypeLusIndices) {
+        if (GetDeviceIndexMappingFromLUSDeviceIndex(lusIndex) != nullptr) {
+            // we already loaded this one
+            continue;
+        }
+
+        auto mapping = mappings[lusIndex];
+        auto wiiuMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
+
+        wiiuMapping->SetDeviceChannel(wiiuChannel);
+        SetLUSDeviceIndexToPhysicalDeviceIndexMapping(wiiuMapping);
+
+        // if we have mappings for this LUS device on this port, we're good and don't need to move any mappings
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->HasMappingsForLUSDeviceIndex(
+                lusIndex)) {
+            return;
+        }
+
+        // move mappings from other port to this one
+        for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+            if (portIndex == n64port) {
+                continue;
+            }
+
+            if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForLUSDeviceIndex(
+                    lusIndex)) {
+                continue;
+            }
+
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(
+                Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
+            return;
+        }
+
+        // we shouldn't get here
+        return;
+    }
+
+    // if we didn't find a mapping for this guid, make defaults
+    auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
+    auto deviceIndexMapping =
+        std::make_shared<LUSDeviceIndexToWiiUDeviceIndexMapping>(lusIndex, wiiuChannel, status->extensionType);
+    mLUSDeviceIndexToWiiUExtensionTypes[lusIndex] = status->extensionType;
+    deviceIndexMapping->SaveToConfig();
+    SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
+    SaveMappingIdsToConfig();
+    Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->AddDefaultMappings(lusIndex);
+}
+#else
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
     for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
         for (auto mapping :
@@ -36,25 +136,6 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
         port++;
     }
     mIsInitialized = true;
-}
-
-LUSDeviceIndex LUSDeviceIndexMappingManager::GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
-    for (uint8_t lusIndex = LUSDeviceIndex::Blue; lusIndex < LUSDeviceIndex::Max; lusIndex++) {
-        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForLUSDeviceIndex(
-                static_cast<LUSDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(1)->HasMappingsForLUSDeviceIndex(
-                static_cast<LUSDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(2)->HasMappingsForLUSDeviceIndex(
-                static_cast<LUSDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(3)->HasMappingsForLUSDeviceIndex(
-                static_cast<LUSDeviceIndex>(lusIndex))) {
-            continue;
-        }
-        return static_cast<LUSDeviceIndex>(lusIndex);
-    }
-
-    // todo: invalid?
-    return LUSDeviceIndex::Max;
 }
 
 void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex) {
@@ -130,6 +211,26 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
     SaveMappingIdsToConfig();
     Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->AddDefaultMappings(lusIndex);
+}
+#endif
+
+LUSDeviceIndex LUSDeviceIndexMappingManager::GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
+    for (uint8_t lusIndex = LUSDeviceIndex::Blue; lusIndex < LUSDeviceIndex::Max; lusIndex++) {
+        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(1)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(2)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex)) ||
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(3)->HasMappingsForLUSDeviceIndex(
+                static_cast<LUSDeviceIndex>(lusIndex))) {
+            continue;
+        }
+        return static_cast<LUSDeviceIndex>(lusIndex);
+    }
+
+    // todo: invalid?
+    return LUSDeviceIndex::Max;
 }
 
 void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
