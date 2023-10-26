@@ -23,9 +23,15 @@ class ControllerDisconnectedWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-    void DrawKnownControllerDisconnected();
     void DrawUnknownOrMultipleControllersDisconnected();
+    #ifdef __WIIU__
+    int32_t GetWiiUDeviceFromWiiUInput();
+    bool AnyWiiUDevicesAreConnected();
+    #else
+    void DrawKnownControllerDisconnected();
     int32_t GetSDLIndexFromSDLInput();
+    #endif
+
     uint8_t mPortIndexOfDisconnectedController;
 };
 } // namespace LUS
