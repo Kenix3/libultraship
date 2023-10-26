@@ -46,9 +46,9 @@ class Controller : public ControlDevice {
     uint8_t GetPortIndex();
     std::vector<std::shared_ptr<ControllerMapping>> GetAllMappings();
 
-    #ifndef __WIIU__
+#ifndef __WIIU__
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
-    #endif
+#endif
 
     bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
     void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, LUSDeviceIndex lusIndex);

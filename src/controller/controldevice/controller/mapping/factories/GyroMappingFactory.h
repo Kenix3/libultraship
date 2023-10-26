@@ -8,10 +8,10 @@ namespace LUS {
 class GyroMappingFactory {
   public:
     static std::shared_ptr<ControllerGyroMapping> CreateGyroMappingFromConfig(uint8_t portIndex, std::string id);
-    #ifdef __WIIU__
+#ifdef __WIIU__
 
-    #else
+#else
     static std::shared_ptr<ControllerGyroMapping> CreateGyroMappingFromSDLInput(uint8_t portIndex);
-    #endif
+#endif
 };
 } // namespace LUS

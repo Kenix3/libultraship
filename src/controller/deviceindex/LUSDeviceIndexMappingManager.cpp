@@ -18,11 +18,11 @@
 
 namespace LUS {
 LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false) {
-    #ifdef __WIIU__
+#ifdef __WIIU__
     UpdateExtensionTypesFromConfig();
-    #else
+#else
     UpdateControllerNamesFromConfig();
-    #endif
+#endif
 }
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {

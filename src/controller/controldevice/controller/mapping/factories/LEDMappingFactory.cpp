@@ -8,7 +8,7 @@
 
 namespace LUS {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
-    #ifndef __WIIU__
+#ifndef __WIIU__
     const std::string mappingCvarKey = "gControllers.LEDMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -39,7 +39,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
         return std::make_shared<SDLLEDMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, colorSource,
                                                savedColor);
     }
-    #endif
+#endif
 
     return nullptr;
 }

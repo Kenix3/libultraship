@@ -40,7 +40,8 @@ bool WiiUMapping::OpenController() {
     }
 
     KPADError error;
-    KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<WPADChan>(deviceIndexMapping->GetDeviceChannel()), &error);
+    KPADStatus* status =
+        LUS::WiiU::GetKPADStatus(static_cast<WPADChan>(deviceIndexMapping->GetDeviceChannel()), &error);
     if (!status || error != KPAD_ERROR_OK) {
         CloseController();
         return false;

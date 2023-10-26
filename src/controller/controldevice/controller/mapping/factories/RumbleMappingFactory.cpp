@@ -26,9 +26,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
         return nullptr;
     }
 
-    #ifdef __WIIU__
-    // todo
-    #else
+#ifdef __WIIU__
+// todo
+#else
     if (mappingClass == "SDLRumbleMapping") {
         int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
@@ -43,7 +43,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
         return std::make_shared<SDLRumbleMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
                                                   lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
     }
-    #endif
+#endif
 
     return nullptr;
 }

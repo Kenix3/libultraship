@@ -44,9 +44,9 @@ class ControllerStick {
     uint8_t GetNotchSnapAngle();
     bool NotchSnapAngleIsDefault();
 
-    #ifndef __WIIU__
+#ifndef __WIIU__
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
-    #endif
+#endif
 
     bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
     Stick LeftOrRightStick();

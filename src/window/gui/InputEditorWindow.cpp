@@ -1116,7 +1116,9 @@ void InputEditorWindow::DrawDevicesTab() {
                 continue;
             }
 
-            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(), wiiuIndexMapping->IsWiiUGamepad() ? INT32_MAX : wiiuIndexMapping->GetDeviceChannel() };
+            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(),
+                                        wiiuIndexMapping->IsWiiUGamepad() ? INT32_MAX
+                                                                          : wiiuIndexMapping->GetDeviceChannel() };
         }
 
         for (auto [lusIndex, info] : indexMappings) {
@@ -1129,10 +1131,12 @@ void InputEditorWindow::DrawDevicesTab() {
             GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::Button(
-                StringHelper::Sprintf("%s %s%s", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(),
-                                      !connected ? " (Disconnected)" : isGamepad ? "" : StringHelper::Sprintf(" (%d)", wiiuChannel).c_str())
-                    .c_str());
+            ImGui::Button(StringHelper::Sprintf("%s %s%s", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN,
+                                                name.c_str(),
+                                                !connected  ? " (Disconnected)"
+                                                : isGamepad ? ""
+                                                            : StringHelper::Sprintf(" (%d)", wiiuChannel).c_str())
+                              .c_str());
             ImGui::PopStyleColor();
             ImGui::PopItemFlag();
         }
