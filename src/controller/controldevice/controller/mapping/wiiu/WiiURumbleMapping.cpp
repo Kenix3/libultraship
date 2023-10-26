@@ -65,7 +65,6 @@ void WiiURumbleMapping::SetIntensity(uint8_t intensityPercentage) {
 
 void WiiURumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
     SetIntensity(intensityPercentage);
-
 }
 
 void WiiURumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercentage) {
