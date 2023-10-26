@@ -1,5 +1,5 @@
 #ifdef __WIIU__
-#include "SDLMapping.h"
+#include "WiiUMapping.h"
 #include <spdlog/spdlog.h>
 #include "Context.h"
 #include "controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.h"
@@ -14,7 +14,7 @@ WiiUMapping::~WiiUMapping() {
 }
 
 bool WiiUMapping::OpenController() {
-    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
+    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(
         LUS::Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
@@ -22,35 +22,63 @@ bool WiiUMapping::OpenController() {
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
+        CloseController();
+        return false;
+    }
+
+    if (deviceIndexMapping->IsWiiUGamepad()) {
+        VPADReadError error;
+        VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+        if (!status || error == VPAD_READ_INVALID_CONTROLLER) {
+            CloseController();
+            return false;
+        }
+
         mController = nullptr;
+        mWiiUGamepadController = status;
+        return true;
+    }
+    
+    KPADError error;
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(deviceIndexMapping->GetDeviceChannel(), &error);
+    if (!status || error != KPAD_ERROR_OK) {
+        CloseController();
         return false;
     }
 
-    const auto newCont = SDL_GameControllerOpen(deviceIndexMapping->GetSDLDeviceIndex());
+    mController = status;
+    mWiiUGamepadController = nullptr;
 
-    // We failed to load the controller
-    if (newCont == nullptr) {
-        return false;
-    }
-
-    mController = newCont;
     return true;
 }
 
 bool WiiUMapping::CloseController() {
-    if (mController != nullptr && SDL_WasInit(SDL_INIT_GAMECONTROLLER)) {
-        SDL_GameControllerClose(mController);
-    }
     mController = nullptr;
+    mWiiUGamepadController = nullptr;
 
     return true;
 }
 
 bool WiiUMapping::ControllerLoaded() {
-    SDL_GameControllerUpdate();
+    if (IsGamepad()) {
+        // If the controller is disconnected, close it.
+        if (mWiiUGamepadController != nullptr && mWiiUGamepadController->error != VPAD_READ_SUCCESS) {
+            CloseController();
+        }
+
+        // Attempt to load the controller if it's not loaded
+        if (mWiiUGamepadController == nullptr) {
+            // If we failed to load the controller, don't process it.
+            if (!OpenController()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     // If the controller is disconnected, close it.
-    if (mController != nullptr && !SDL_GameControllerGetAttached(mController)) {
+    if (mController != nullptr && mController->error != KPAD_ERROR_OK) {
         CloseController();
     }
 
