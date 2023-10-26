@@ -8,8 +8,8 @@
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-WiiUGyroMapping::WiiUGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
-                               float neutralYaw, float neutralRoll)
+WiiUGyroMapping::WiiUGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity,
+                                 float neutralPitch, float neutralYaw, float neutralRoll)
     : ControllerInputMapping(lusDeviceIndex), ControllerGyroMapping(lusDeviceIndex, portIndex, sensitivity),
       mNeutralPitch(neutralPitch), WiiUMapping(lusDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }

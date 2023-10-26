@@ -23,9 +23,10 @@ class WiiUMapping : public ControllerMapping {
     std::string GetWiiUDeviceName();
     int32_t GetWiiUDeviceChannel();
     bool IsGamepad();
-    int32_t ExtensionType()
+    int32_t ExtensionType();
 
-        private : bool mDeviceConnected;
+  private:
+    bool mDeviceConnected;
     std::string GetWiiUControllerName();
 
     KPADStatus* mController;

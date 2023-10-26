@@ -1,12 +1,12 @@
 #ifdef __WIIU__
 #include "controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
-#include "SDLMapping.h"
+#include "WiiUMapping.h"
 
 namespace LUS {
-class SDLRumbleMapping final : public ControllerRumbleMapping, public SDLMapping {
+class WiiURumbleMapping final : public ControllerRumbleMapping, public WiiUMapping {
   public:
-    SDLRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
-                     uint8_t highFrequencyIntensityPercentage);
+    WiiURumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+                      uint8_t highFrequencyIntensityPercentage);
 
     void StartRumble() override;
     void StopRumble() override;
@@ -21,8 +21,8 @@ class SDLRumbleMapping final : public ControllerRumbleMapping, public SDLMapping
     bool PhysicalDeviceIsConnected() override;
 
   private:
-    uint16_t mLowFrequencyIntensity;
-    uint16_t mHighFrequencyIntensity;
+    float mRumblePatternStrength;
+    uint8_t mRumblePattern[15];
 };
 } // namespace LUS
 #endif

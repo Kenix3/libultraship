@@ -1,50 +1,68 @@
 #ifdef __WIIU__
-#include "SDLRumbleMapping.h"
+#include "WiiURumbleMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 
 namespace LUS {
-SDLRumbleMapping::SDLRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
-                                   uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage)
+WiiURumbleMapping::WiiURumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+                                     uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage)
     : ControllerRumbleMapping(lusDeviceIndex, portIndex, lowFrequencyIntensityPercentage,
                               highFrequencyIntensityPercentage),
-      SDLMapping(lusDeviceIndex) {
+      WiiUMapping(lusDeviceIndex) {
     SetLowFrequencyIntensity(lowFrequencyIntensityPercentage);
     SetHighFrequencyIntensity(highFrequencyIntensityPercentage);
 }
 
-void SDLRumbleMapping::StartRumble() {
+void WiiURumbleMapping::StartRumble() {
     if (!ControllerLoaded()) {
         return;
     }
 
-    SDL_GameControllerRumble(mController, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
+    if (IsGamepad()) {
+
+        return;
+    }
+
+    WPADControlMotor(mChan, true);
 }
 
-void SDLRumbleMapping::StopRumble() {
+void WiiURumbleMapping::StopRumble() {
     if (!ControllerLoaded()) {
         return;
     }
+
+    if (IsGamepad()) {
+
+        return;
+    }
+
+    WPADControlMotor(mChan, false);
 
     SDL_GameControllerRumble(mController, 0, 0, 0);
 }
 
-void SDLRumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
+void WiiURumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
+    if (!IsGamepad()) {
+        intensityPercentage = 100;
+    }
     mLowFrequencyIntensityPercentage = intensityPercentage;
-    mLowFrequencyIntensity = UINT16_MAX * (intensityPercentage / 100.0f);
-}
-
-void SDLRumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercentage) {
     mHighFrequencyIntensityPercentage = intensityPercentage;
-    mHighFrequencyIntensity = UINT16_MAX * (intensityPercentage / 100.0f);
 }
 
-std::string SDLRumbleMapping::GetRumbleMappingId() {
+void WiiURumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercentage) {
+    if (!IsGamepad()) {
+        intensityPercentage = 100;
+    }
+    mLowFrequencyIntensityPercentage = intensityPercentage;
+    mHighFrequencyIntensityPercentage = intensityPercentage;
+}
+
+std::string WiiURumbleMapping::GetRumbleMappingId() {
     return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerRumbleMapping::mLUSDeviceIndex);
 }
 
-void SDLRumbleMapping::SaveToConfig() {
+void WiiURumbleMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
     CVarSetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "SDLRumbleMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
@@ -56,7 +74,7 @@ void SDLRumbleMapping::SaveToConfig() {
     CVarSave();
 }
 
-void SDLRumbleMapping::EraseFromConfig() {
+void WiiURumbleMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str());
@@ -67,11 +85,11 @@ void SDLRumbleMapping::EraseFromConfig() {
     CVarSave();
 }
 
-std::string SDLRumbleMapping::GetPhysicalDeviceName() {
-    return GetSDLDeviceName();
+std::string WiiURumbleMapping::GetPhysicalDeviceName() {
+    return GetWiiUDeviceName();
 }
 
-bool SDLRumbleMapping::PhysicalDeviceIsConnected() {
+bool WiiURumbleMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
 } // namespace LUS

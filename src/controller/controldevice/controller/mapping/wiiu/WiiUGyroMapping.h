@@ -6,7 +6,7 @@ namespace LUS {
 class WiiUGyroMapping final : public ControllerGyroMapping, public WiiUMapping {
   public:
     WiiUGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
-                   float neutralYaw, float neutralRoll);
+                    float neutralYaw, float neutralRoll);
     void UpdatePad(float& x, float& y) override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
