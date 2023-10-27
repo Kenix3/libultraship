@@ -262,31 +262,39 @@ std::string WiiUButtonToAnyMapping::GetPhysicalDeviceName() {
 }
 
 bool WiiUButtonToAnyMapping::PhysicalDeviceIsConnected() {
-    return ControllerLoaded();
+    return WiiUDeviceIsConnected();
 }
 
 bool WiiUButtonToAnyMapping::PhysicalButtonIsPressed() {
-    if (!ControllerLoaded()) {
+    if (IsGamepad()) {
+        VPADReadError error;
+        VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+        if (status == nullptr) {
+            return false;
+        }
+
+        return status->hold & mControllerButton;
+    }
+
+    KPADError error;
+    KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
+    if (status == nullptr || error != KPAD_ERROR_OK) {
         return false;
     }
 
-    if (IsGamepad()) {
-        return mWiiUGamepadController->hold & mControllerButton;
-    }
-
     if (ExtensionType() == WPAD_EXT_PRO_CONTROLLER) {
-        return mController->pro.hold & mControllerButton;
+        return status->pro.hold & mControllerButton;
     }
 
     if (mIsClassicControllerButton) {
-        return mController->classic.hold & mControllerButton;
+        return status->classic.hold & mControllerButton;
     }
 
     if (mIsNunchukButton) {
-        return mController->nunchuck.hold & mControllerButton;
+        return status->nunchuck.hold & mControllerButton;
     }
 
-    return mController->hold & mControllerButton;
+    return status->hold & mControllerButton;
 }
 } // namespace LUS
 #endif

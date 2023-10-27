@@ -21,6 +21,7 @@ static VPADStatus vpadStatus;
 static bool hasKpad[4] = { false };
 static KPADError kpadError[4] = { KPAD_ERROR_OK };
 static KPADStatus kpadStatus[4];
+static uint8_t kpadExtensions[4];
 
 static bool controllersInitialized = false;
 
@@ -106,6 +107,11 @@ void Update() {
         KPADReadEx((KPADChan)i, &kpadStatus[i], 1, &kpadError[i]);
         if (kpadError[i] == KPAD_ERROR_OK && kpadStatus[i].extensionType != 255) {
             if (!hasKpad[i]) {
+                rescan = true;
+            }
+
+            if (kpadStatus[i].extensionType != kpadExtensions[i]) {
+                kpadExtensions[i] = kpadStatus[i].extensionType;
                 rescan = true;
             }
 

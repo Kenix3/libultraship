@@ -15,27 +15,44 @@ WiiUGyroMapping::WiiUGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portInde
 }
 
 void WiiUGyroMapping::Recalibrate() {
-    if (!IsGamepad() || !ControllerLoaded()) {
+    if (!IsGamepad()) {
         mNeutralPitch = 0;
         mNeutralYaw = 0;
         mNeutralRoll = 0;
         return;
     }
 
-    mNeutralPitch = mWiiUGamepadController->gyro.x * -8.0f;
-    mNeutralYaw = mWiiUGamepadController->gyro.z * 8.0f;
-    mNeutralRoll = mWiiUGamepadController->gyro.y * 8.0f;
+    VPADReadError error;
+    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+    if (status == nullptr) {
+        mNeutralPitch = 0;
+        mNeutralYaw = 0;
+        mNeutralRoll = 0;
+        return;
+    }
+
+    mNeutralPitch = status->gyro.x * -8.0f;
+    mNeutralYaw = status->gyro.z * 8.0f;
+    mNeutralRoll = status->gyro.y * 8.0f;
 }
 
 void WiiUGyroMapping::UpdatePad(float& x, float& y) {
-    if (!IsGamepad() || !ControllerLoaded() || Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
+    if (!IsGamepad() || Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         x = 0;
         y = 0;
         return;
     }
 
-    x = ((mWiiUGamepadController->gyro.x * -8.0f) - mNeutralPitch) * mSensitivity;
-    y = ((mWiiUGamepadController->gyro.z * 8.0f) - mNeutralYaw) * mSensitivity;
+    VPADReadError error;
+    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+    if (status == nullptr) {
+        x = 0;
+        y = 0;
+        return;
+    }
+
+    x = ((status->gyro.x * -8.0f) - mNeutralPitch) * mSensitivity;
+    y = ((status->gyro.z * 8.0f) - mNeutralYaw) * mSensitivity;
 }
 
 std::string WiiUGyroMapping::GetGyroMappingId() {
@@ -74,7 +91,7 @@ std::string WiiUGyroMapping::GetPhysicalDeviceName() {
 }
 
 bool WiiUGyroMapping::PhysicalDeviceIsConnected() {
-    return ControllerLoaded();
+    return WiiUDeviceIsConnected();
 }
 } // namespace LUS
 #endif

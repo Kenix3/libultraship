@@ -26,10 +26,6 @@ WiiUAxisDirectionToAxisDirectionMapping::WiiUAxisDirectionToAxisDirectionMapping
 }
 
 float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (!ControllerLoaded()) {
-        return 0.0f;
-    }
-
     if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return 0.0f;
     }
@@ -37,35 +33,51 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
     float wiiUAxisValue = 0.0f;
 
     if (IsGamepad()) {
+        VPADReadError error;
+        VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+        if (status == nullptr) {
+            return 0.0f;
+        }
+
         switch (mControllerAxis) {
             case WII_U_AXIS_LEFT_STICK_X:
-                wiiUAxisValue = mWiiUGamepadController->leftStick.x;
+                wiiUAxisValue = status->leftStick.x;
                 break;
             case WII_U_AXIS_LEFT_STICK_Y:
-                wiiUAxisValue = mWiiUGamepadController->leftStick.y;
+                wiiUAxisValue = status->leftStick.y;
                 break;
             case WII_U_AXIS_RIGHT_STICK_X:
-                wiiUAxisValue = mWiiUGamepadController->rightStick.x;
+                wiiUAxisValue = status->rightStick.x;
                 break;
             case WII_U_AXIS_RIGHT_STICK_Y:
-                wiiUAxisValue = mWiiUGamepadController->rightStick.y;
+                wiiUAxisValue = status->rightStick.y;
                 break;
         }
     } else {
+        KPADError error;
+        KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
+        if (status == nullptr || error != KPAD_ERROR_OK) {
+            return 0.0f;
+        }
+
+        if (status->extensionType != ExtensionType()) {
+            return 0.0f;
+        }
+
         switch (ExtensionType()) {
             case WPAD_EXT_PRO_CONTROLLER:
                 switch (mControllerAxis) {
                     case WII_U_AXIS_LEFT_STICK_X:
-                        wiiUAxisValue = mController->pro.leftStick.x;
+                        wiiUAxisValue = status->pro.leftStick.x;
                         break;
                     case WII_U_AXIS_LEFT_STICK_Y:
-                        wiiUAxisValue = mController->pro.leftStick.y;
+                        wiiUAxisValue = status->pro.leftStick.y;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_X:
-                        wiiUAxisValue = mController->pro.rightStick.x;
+                        wiiUAxisValue = status->pro.rightStick.x;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_Y:
-                        wiiUAxisValue = mController->pro.rightStick.y;
+                        wiiUAxisValue = status->pro.rightStick.y;
                         break;
                 }
                 break;
@@ -73,10 +85,10 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
             case WPAD_EXT_MPLUS_NUNCHUK:
                 switch (mControllerAxis) {
                     case WII_U_AXIS_NUNCHUK_STICK_X:
-                        wiiUAxisValue = mController->nunchuck.stick.x;
+                        wiiUAxisValue = status->nunchuck.stick.x;
                         break;
                     case WII_U_AXIS_NUNCHUK_STICK_Y:
-                        wiiUAxisValue = mController->nunchuck.stick.y;
+                        wiiUAxisValue = status->nunchuck.stick.y;
                         break;
                 }
                 break;
@@ -84,16 +96,16 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
             case WPAD_EXT_MPLUS_CLASSIC:
                 switch (mControllerAxis) {
                     case WII_U_AXIS_LEFT_STICK_X:
-                        wiiUAxisValue = mController->classic.leftStick.x;
+                        wiiUAxisValue = status->classic.leftStick.x;
                         break;
                     case WII_U_AXIS_LEFT_STICK_Y:
-                        wiiUAxisValue = mController->classic.leftStick.y;
+                        wiiUAxisValue = status->classic.leftStick.y;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_X:
-                        wiiUAxisValue = mController->classic.rightStick.x;
+                        wiiUAxisValue = status->classic.rightStick.x;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_Y:
-                        wiiUAxisValue = mController->classic.rightStick.y;
+                        wiiUAxisValue = status->classic.rightStick.y;
                         break;
                 }
                 break;
@@ -174,7 +186,7 @@ std::string WiiUAxisDirectionToAxisDirectionMapping::GetPhysicalDeviceName() {
 }
 
 bool WiiUAxisDirectionToAxisDirectionMapping::PhysicalDeviceIsConnected() {
-    return ControllerLoaded();
+    return WiiUDeviceIsConnected();
 }
 } // namespace LUS
 #endif

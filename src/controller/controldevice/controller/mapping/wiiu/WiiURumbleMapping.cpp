@@ -15,10 +15,6 @@ WiiURumbleMapping::WiiURumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t port
 }
 
 void WiiURumbleMapping::StartRumble() {
-    if (!ControllerLoaded()) {
-        return;
-    }
-
     if (IsGamepad()) {
         int32_t patternSize = sizeof(mRumblePattern) * 8;
         VPADControlMotor(VPAD_CHAN_0, mRumblePattern, patternSize);
@@ -29,10 +25,6 @@ void WiiURumbleMapping::StartRumble() {
 }
 
 void WiiURumbleMapping::StopRumble() {
-    if (!ControllerLoaded()) {
-        return;
-    }
-
     if (IsGamepad()) {
         VPADControlMotor(VPAD_CHAN_0, mRumblePattern, 0);
         return;
@@ -104,7 +96,7 @@ std::string WiiURumbleMapping::GetPhysicalDeviceName() {
 }
 
 bool WiiURumbleMapping::PhysicalDeviceIsConnected() {
-    return ControllerLoaded();
+    return WiiUDeviceIsConnected();
 }
 } // namespace LUS
 #endif

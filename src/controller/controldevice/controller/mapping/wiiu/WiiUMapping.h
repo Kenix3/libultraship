@@ -18,21 +18,13 @@ class WiiUMapping : public ControllerMapping {
     WiiUMapping(LUSDeviceIndex lusDeviceIndex);
     ~WiiUMapping();
 
-    bool OpenController();
-    bool CloseController();
-    bool ControllerLoaded();
-
   protected:
     std::string GetWiiUDeviceName();
     int32_t GetWiiUDeviceChannel();
     bool IsGamepad();
     int32_t ExtensionType();
-
-    bool mDeviceConnected;
     std::string GetWiiUControllerName();
-
-    KPADStatus* mController;
-    VPADStatus* mWiiUGamepadController;
+    bool WiiUDeviceIsConnected();
 };
 } // namespace LUS
 #endif

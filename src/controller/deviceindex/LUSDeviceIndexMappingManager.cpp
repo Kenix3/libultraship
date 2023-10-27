@@ -30,17 +30,17 @@ LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 
 #ifdef __WIIU__
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> wiiuDeviceChannels) {
-    for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
-        for (auto mapping :
-             Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllMappings()) {
-            auto wiiuMapping = std::dynamic_pointer_cast<WiiUMapping>(mapping);
-            if (wiiuMapping == nullptr) {
-                continue;
-            }
+    // for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+    //     for (auto mapping :
+    //          Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllMappings()) {
+    //         auto wiiuMapping = std::dynamic_pointer_cast<WiiUMapping>(mapping);
+    //         if (wiiuMapping == nullptr) {
+    //             continue;
+    //         }
 
-            wiiuMapping->CloseController();
-        }
-    }
+    //         wiiuMapping->CloseController();
+    //     }
+    // }
     mLUSDeviceIndexToPhysicalDeviceIndexMappings.clear();
     uint8_t port = 0;
     for (auto channel : wiiuDeviceChannels) {
@@ -169,7 +169,7 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         int32_t wiiuExtensionType =
             CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (lusDeviceIndex < 0 || !IsValidWiiUExtensionType(wiiuExtensionType)) {
+        if (lusDeviceIndex < 0 || (!isGamepad && !IsValidWiiUExtensionType(wiiuExtensionType))) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
