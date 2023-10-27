@@ -29,8 +29,8 @@ uint8_t WiiUButtonToButtonMapping::GetMappingType() {
 
 std::string WiiUButtonToButtonMapping::GetButtonMappingId() {
     return StringHelper::Sprintf("P%d-B%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mBitmask,
-                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton ? 1 : 0, mIsClassicControllerButton ? 1 : 0,
-                                 mControllerButton);
+                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton ? 1 : 0,
+                                 mIsClassicControllerButton ? 1 : 0, mControllerButton);
 }
 
 void WiiUButtonToButtonMapping::SaveToConfig() {

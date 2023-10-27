@@ -35,12 +35,12 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         }
     }
 
-    #ifndef __WIIU__
+#ifndef __WIIU__
     // if we don't have a config for controller 1, set default keyboard bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(LUSDeviceIndex::Keyboard);
     }
-    #endif
+#endif
 
     if (mSinglePlayerMappingMode) {
         mDeviceIndexMappingManager->InitializeMappingsSinglePlayer();

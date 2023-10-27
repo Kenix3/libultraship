@@ -28,7 +28,26 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     }
 
 #ifdef __WIIU__
-// todo
+    if (mappingClass == "WiiUButtonToButtonMapping") {
+        int32_t lusDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        bool isClassic = CVarGetInteger(
+            StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(), false);
+        bool isNunchuk =
+            CVarGetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(), false);
+        int32_t wiiuControllerButton =
+            CVarGetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), -1);
+
+        if (lusDeviceIndex < 0 || wiiuControllerButton == -1) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return nullptr;
+        }
+
+        return std::make_shared<WiiUButtonToButtonMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
+                                                           bitmask, isNunchuk, isClassic, wiiuControllerButton);
+    }
 #else
     if (mappingClass == "SDLButtonToButtonMapping") {
         int32_t lusDeviceIndex =
@@ -80,7 +99,7 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 #ifdef __WIIU__
 std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
-                                                     uint16_t bitmask) {
+                                                      uint16_t bitmask) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(
@@ -95,60 +114,60 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
     if (wiiuIndexMapping->IsWiiUGamepad()) {
         switch (bitmask) {
             case BTN_A:
-                mappings.push_back(
-                    std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A, false, false, VPAD_BUTTON_A));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A, false,
+                                                                               false, VPAD_BUTTON_A));
                 break;
             case BTN_B:
-                mappings.push_back(
-                    std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B, false, false, VPAD_BUTTON_B));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B, false,
+                                                                               false, VPAD_BUTTON_B));
                 break;
             case BTN_L:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_L,
-                                                                            false, false, VPAD_BUTTON_L));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_L, false,
+                                                                               false, VPAD_BUTTON_L));
                 break;
             case BTN_R:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_R,
-                                                                                    false, false, VPAD_BUTTON_ZR));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_R, false,
+                                                                               false, VPAD_BUTTON_ZR));
                 break;
             case BTN_Z:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_Z,
-                                                                                    false, false, VPAD_BUTTON_ZL));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_Z, false,
+                                                                               false, VPAD_BUTTON_ZL));
                 break;
             case BTN_START:
                 mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_START,
-                                                                            false, false, VPAD_BUTTON_PLUS));
+                                                                               false, false, VPAD_BUTTON_PLUS));
                 break;
             case BTN_CUP:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CUP,
-                                                                                    false, false, VPAD_STICK_R_EMULATION_UP));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                    lusDeviceIndex, portIndex, BTN_CUP, false, false, VPAD_STICK_R_EMULATION_UP));
                 break;
             case BTN_CDOWN:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                    false, false, VPAD_STICK_R_EMULATION_DOWN));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                    lusDeviceIndex, portIndex, BTN_CDOWN, false, false, VPAD_STICK_R_EMULATION_DOWN));
                 break;
             case BTN_CLEFT:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                    false, false, VPAD_STICK_R_EMULATION_LEFT));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                    lusDeviceIndex, portIndex, BTN_CLEFT, false, false, VPAD_STICK_R_EMULATION_LEFT));
                 break;
             case BTN_CRIGHT:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                                    false, false, VPAD_STICK_R_EMULATION_RIGHT));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                    lusDeviceIndex, portIndex, BTN_CRIGHT, false, false, VPAD_STICK_R_EMULATION_RIGHT));
                 break;
             case BTN_DUP:
                 mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DUP,
-                                                                            false, false, VPAD_BUTTON_UP));
+                                                                               false, false, VPAD_BUTTON_UP));
                 break;
             case BTN_DDOWN:
                 mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DDOWN,
-                                                                            false, false, VPAD_BUTTON_DOWN));
+                                                                               false, false, VPAD_BUTTON_DOWN));
                 break;
             case BTN_DLEFT:
                 mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DLEFT,
-                                                                            false, false, VPAD_BUTTON_LEFT));
+                                                                               false, false, VPAD_BUTTON_LEFT));
                 break;
             case BTN_DRIGHT:
                 mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DRIGHT,
-                                                                            false, false, VPAD_BUTTON_RIGHT));
+                                                                               false, false, VPAD_BUTTON_RIGHT));
                 break;
         }
 
@@ -159,60 +178,60 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
         case WPAD_EXT_PRO_CONTROLLER:
             switch (bitmask) {
                 case BTN_A:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A, false, false, WPAD_PRO_BUTTON_A));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A,
+                                                                                   false, false, WPAD_PRO_BUTTON_A));
                     break;
                 case BTN_B:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B, false, false, WPAD_PRO_BUTTON_B));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B,
+                                                                                   false, false, WPAD_PRO_BUTTON_B));
                     break;
                 case BTN_L:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_L,
-                                                                                false, false, WPAD_PRO_TRIGGER_L));
+                                                                                   false, false, WPAD_PRO_TRIGGER_L));
                     break;
                 case BTN_R:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_R,
-                                                                                        false, false, WPAD_PRO_TRIGGER_ZR));
+                                                                                   false, false, WPAD_PRO_TRIGGER_ZR));
                     break;
                 case BTN_Z:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_Z,
-                                                                                        false, false, WPAD_PRO_TRIGGER_ZL));
+                                                                                   false, false, WPAD_PRO_TRIGGER_ZL));
                     break;
                 case BTN_START:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_START,
-                                                                                false, false, WPAD_PRO_BUTTON_PLUS));
+                                                                                   false, false, WPAD_PRO_BUTTON_PLUS));
                     break;
                 case BTN_CUP:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CUP,
-                                                                                        false, false, WPAD_PRO_STICK_R_EMULATION_UP));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CUP, false, false, WPAD_PRO_STICK_R_EMULATION_UP));
                     break;
                 case BTN_CDOWN:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                        false, false, WPAD_PRO_STICK_R_EMULATION_DOWN));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CDOWN, false, false, WPAD_PRO_STICK_R_EMULATION_DOWN));
                     break;
                 case BTN_CLEFT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                        false, false, WPAD_PRO_STICK_R_EMULATION_LEFT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CLEFT, false, false, WPAD_PRO_STICK_R_EMULATION_LEFT));
                     break;
                 case BTN_CRIGHT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                                        false, false, WPAD_PRO_STICK_R_EMULATION_RIGHT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CRIGHT, false, false, WPAD_PRO_STICK_R_EMULATION_RIGHT));
                     break;
                 case BTN_DUP:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DUP,
-                                                                                false, false, WPAD_PRO_BUTTON_UP));
+                                                                                   false, false, WPAD_PRO_BUTTON_UP));
                     break;
                 case BTN_DDOWN:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DDOWN,
-                                                                                false, false, WPAD_PRO_BUTTON_DOWN));
+                                                                                   false, false, WPAD_PRO_BUTTON_DOWN));
                     break;
                 case BTN_DLEFT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DLEFT,
-                                                                                false, false, WPAD_PRO_BUTTON_LEFT));
+                                                                                   false, false, WPAD_PRO_BUTTON_LEFT));
                     break;
                 case BTN_DRIGHT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DRIGHT,
-                                                                                false, false, WPAD_PRO_BUTTON_RIGHT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_DRIGHT, false, false, WPAD_PRO_BUTTON_RIGHT));
                     break;
             }
             return mappings;
@@ -220,60 +239,60 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
         case WPAD_EXT_MPLUS_CLASSIC:
             switch (bitmask) {
                 case BTN_A:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A, false, true, WPAD_CLASSIC_BUTTON_A));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A,
+                                                                                   false, true, WPAD_CLASSIC_BUTTON_A));
                     break;
                 case BTN_B:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B, false, true, WPAD_CLASSIC_BUTTON_B));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B,
+                                                                                   false, true, WPAD_CLASSIC_BUTTON_B));
                     break;
                 case BTN_L:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_L,
-                                                                                false, true, WPAD_CLASSIC_BUTTON_L));
+                                                                                   false, true, WPAD_CLASSIC_BUTTON_L));
                     break;
                 case BTN_R:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_R,
-                                                                                        false, true, WPAD_CLASSIC_BUTTON_ZR));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_R, false, true, WPAD_CLASSIC_BUTTON_ZR));
                     break;
                 case BTN_Z:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_Z,
-                                                                                        false, true, WPAD_CLASSIC_BUTTON_ZL));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_Z, false, true, WPAD_CLASSIC_BUTTON_ZL));
                     break;
                 case BTN_START:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_START,
-                                                                                false, true, WPAD_CLASSIC_BUTTON_PLUS));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_START, false, true, WPAD_CLASSIC_BUTTON_PLUS));
                     break;
                 case BTN_CUP:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CUP,
-                                                                                        false, true, WPAD_CLASSIC_STICK_R_EMULATION_UP));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CUP, false, true, WPAD_CLASSIC_STICK_R_EMULATION_UP));
                     break;
                 case BTN_CDOWN:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                        false, true, WPAD_CLASSIC_STICK_R_EMULATION_DOWN));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CDOWN, false, true, WPAD_CLASSIC_STICK_R_EMULATION_DOWN));
                     break;
                 case BTN_CLEFT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                        false, true, WPAD_CLASSIC_STICK_R_EMULATION_LEFT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CLEFT, false, true, WPAD_CLASSIC_STICK_R_EMULATION_LEFT));
                     break;
                 case BTN_CRIGHT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                                        false, true, WPAD_CLASSIC_STICK_R_EMULATION_RIGHT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CRIGHT, false, true, WPAD_CLASSIC_STICK_R_EMULATION_RIGHT));
                     break;
                 case BTN_DUP:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DUP,
-                                                                                false, true, WPAD_CLASSIC_BUTTON_UP));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_DUP, false, true, WPAD_CLASSIC_BUTTON_UP));
                     break;
                 case BTN_DDOWN:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DDOWN,
-                                                                                false, true, WPAD_CLASSIC_BUTTON_DOWN));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_DDOWN, false, true, WPAD_CLASSIC_BUTTON_DOWN));
                     break;
                 case BTN_DLEFT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DLEFT,
-                                                                                false, true, WPAD_CLASSIC_BUTTON_LEFT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_DLEFT, false, true, WPAD_CLASSIC_BUTTON_LEFT));
                     break;
                 case BTN_DRIGHT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DRIGHT,
-                                                                                false, true, WPAD_CLASSIC_BUTTON_RIGHT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_DRIGHT, false, true, WPAD_CLASSIC_BUTTON_RIGHT));
                     break;
             }
             return mappings;
@@ -281,40 +300,40 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
         case WPAD_EXT_MPLUS_NUNCHUK:
             switch (bitmask) {
                 case BTN_A:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A, false, false, WPAD_BUTTON_A));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A,
+                                                                                   false, false, WPAD_BUTTON_A));
                     break;
                 case BTN_B:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B, false, false, WPAD_BUTTON_B));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B,
+                                                                                   false, false, WPAD_BUTTON_B));
                     break;
                 case BTN_L:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_L,
-                                                                                true, false, WPAD_NUNCHUK_BUTTON_C));
+                                                                                   true, false, WPAD_NUNCHUK_BUTTON_C));
                     break;
                 case BTN_Z:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_Z,
-                                                                                        false, false, WPAD_NUNCHUK_BUTTON_Z));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_Z, false, false, WPAD_NUNCHUK_BUTTON_Z));
                     break;
                 case BTN_START:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_START,
-                                                                                false, false, WPAD_BUTTON_PLUS));
+                                                                                   false, false, WPAD_BUTTON_PLUS));
                     break;
                 case BTN_CUP:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CUP,
-                                                                                        false, false, WPAD_BUTTON_UP));
+                                                                                   false, false, WPAD_BUTTON_UP));
                     break;
                 case BTN_CDOWN:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                        false, false, WPAD_BUTTON_DOWN));
+                                                                                   false, false, WPAD_BUTTON_DOWN));
                     break;
                 case BTN_CLEFT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                        false, false, WPAD_BUTTON_LEFT));
+                                                                                   false, false, WPAD_BUTTON_LEFT));
                     break;
                 case BTN_CRIGHT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                                        false, false, WPAD_BUTTON_RIGHT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_CRIGHT, false, false, WPAD_BUTTON_RIGHT));
                     break;
             }
             return mappings;
@@ -322,40 +341,40 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
         case WPAD_EXT_CORE:
             switch (bitmask) {
                 case BTN_A:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A, false, false, WPAD_BUTTON_A));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_A,
+                                                                                   false, false, WPAD_BUTTON_A));
                     break;
                 case BTN_B:
-                    mappings.push_back(
-                        std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B, false, false, WPAD_BUTTON_B));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_B,
+                                                                                   false, false, WPAD_BUTTON_B));
                     break;
                 case BTN_L:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_L,
-                                                                                false, false, WPAD_BUTTON_2));
+                                                                                   false, false, WPAD_BUTTON_2));
                     break;
                 case BTN_R:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_R,
-                                                                                        false, false, WPAD_BUTTON_1));
+                                                                                   false, false, WPAD_BUTTON_1));
                     break;
                 case BTN_START:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_START,
-                                                                                false, false, WPAD_BUTTON_PLUS));
+                                                                                   false, false, WPAD_BUTTON_PLUS));
                     break;
                 case BTN_DUP:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DUP,
-                                                                                false, false, WPAD_BUTTON_UP));
+                                                                                   false, false, WPAD_BUTTON_UP));
                     break;
                 case BTN_DDOWN:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DDOWN,
-                                                                                false, false, WPAD_BUTTON_DOWN));
+                                                                                   false, false, WPAD_BUTTON_DOWN));
                     break;
                 case BTN_DLEFT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DLEFT,
-                                                                                false, false, WPAD_BUTTON_LEFT));
+                                                                                   false, false, WPAD_BUTTON_LEFT));
                     break;
                 case BTN_DRIGHT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_DRIGHT,
-                                                                                false, false, WPAD_BUTTON_RIGHT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        lusDeviceIndex, portIndex, BTN_DRIGHT, false, false, WPAD_BUTTON_RIGHT));
                     break;
             }
             return mappings;

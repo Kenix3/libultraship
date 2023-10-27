@@ -106,7 +106,7 @@ bool WiiUMapping::WiiUDeviceIsConnected() {
     if (status == nullptr || error != KPAD_ERROR_OK) {
         return false;
     }
-    
+
     return true;
 }
 } // namespace LUS

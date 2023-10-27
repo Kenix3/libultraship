@@ -94,8 +94,7 @@ void ControllerReorderingWindow::DrawElement() {
             ImGui::Text("Press any button or move any axis\non the controller for port %d", mCurrentPortNumber);
 
             auto index = GetWiiUDeviceFromWiiUInput();
-            if (index != -1 &&
-                std::find(mDeviceIndices.begin(), mDeviceIndices.end(), index) == mDeviceIndices.end()) {
+            if (index != -1 && std::find(mDeviceIndices.begin(), mDeviceIndices.end(), index) == mDeviceIndices.end()) {
                 mDeviceIndices.push_back(index);
                 mCurrentPortNumber++;
                 ImGui::CloseCurrentPopup();
@@ -183,8 +182,7 @@ void ControllerReorderingWindow::DrawElement() {
             ImGui::Text("Press any button or move any axis\non the controller for port %d", mCurrentPortNumber);
 
             auto index = GetSDLIndexFromSDLInput();
-            if (index != -1 &&
-                std::find(mDeviceIndices.begin(), mDeviceIndices.end(), index) == mDeviceIndices.end()) {
+            if (index != -1 && std::find(mDeviceIndices.begin(), mDeviceIndices.end(), index) == mDeviceIndices.end()) {
                 mDeviceIndices.push_back(index);
                 mCurrentPortNumber++;
                 ImGui::CloseCurrentPopup();

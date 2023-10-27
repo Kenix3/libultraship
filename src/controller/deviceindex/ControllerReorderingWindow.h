@@ -21,12 +21,12 @@ class ControllerReorderingWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-  #ifdef __WIIU__
+#ifdef __WIIU__
     std::vector<int32_t> GetConnectedWiiUDevices();
     int32_t GetWiiUDeviceFromWiiUInput();
-  #else
+#else
     int32_t GetSDLIndexFromSDLInput();
-  #endif
+#endif
     std::vector<int32_t> mDeviceIndices;
     uint8_t mCurrentPortNumber;
 };
