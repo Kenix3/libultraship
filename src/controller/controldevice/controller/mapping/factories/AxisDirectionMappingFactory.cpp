@@ -101,6 +101,9 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
     return mappings;
 }
 
+#ifdef __WIIU__
+// todo
+#else
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
                                                                    Stick stick) {
@@ -126,6 +129,7 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(LUSDeviceInde
 
     return mappings;
 }
+#endif
 
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, Stick stick,
