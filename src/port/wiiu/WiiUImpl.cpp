@@ -22,6 +22,8 @@ static bool hasKpad[4] = { false };
 static KPADError kpadError[4] = { KPAD_ERROR_OK };
 static KPADStatus kpadStatus[4];
 
+static bool controllersInitialized = false;
+
 #ifdef _DEBUG
 extern "C" {
 void __wrap_abort() {
@@ -118,9 +120,13 @@ void Update() {
     }
 
     // rescan devices if connection state changed
-    if (rescan) {
+    if (controllersInitialized && rescan) {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDevicesChanged();
     }
+}
+
+void SetControllersInitialized() {
+    controllersInitialized = true;
 }
 
 VPADStatus* GetVPADStatus(VPADReadError* error) {

@@ -53,6 +53,9 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
         port++;
     }
     mIsInitialized = true;
+    #ifdef __WIIU__
+    LUS::WiiU::SetControllersInitialized();
+    #endif
 }
 
 void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad, int32_t wiiuChannel) {
