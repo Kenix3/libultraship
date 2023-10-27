@@ -159,18 +159,18 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
 
 #ifdef __WIIU__
 void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected() {
-    ImGui::Text("Controller(s) disconnected.");
+    ImGui::Text("Connected controller(s) have been added/removed/modified.");
 
-    // if (AnyWiiUDevicesAreConnected() &&
-    //     ImGui::Button("Reorder all controllers###reorderControllersButton")) {
-    //     auto reorderingWindow = Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering");
-    //     if (reorderingWindow != nullptr) {
-    //         mPortIndexOfDisconnectedController = UINT8_MAX;
-    //         ImGui::CloseCurrentPopup();
-    //         reorderingWindow->Show();
-    //         Hide();
-    //     }
-    // }
+    if (AnyWiiUDevicesAreConnected() &&
+        ImGui::Button("Reorder controllers###reorderControllersButton")) {
+        auto reorderingWindow = Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering");
+        if (reorderingWindow != nullptr) {
+            mPortIndexOfDisconnectedController = UINT8_MAX;
+            ImGui::CloseCurrentPopup();
+            reorderingWindow->Show();
+            Hide();
+        }
+    }
 }
 #else
 void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected() {
@@ -202,8 +202,8 @@ void ControllerDisconnectedWindow::DrawElement() {
         return;
     }
 
-    ImGui::OpenPopup("Controller Disconnected");
-    if (ImGui::BeginPopupModal("Controller Disconnected", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::OpenPopup("Connected Controllers Changed");
+    if (ImGui::BeginPopupModal("Connected Controllers Changed", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         DrawUnknownOrMultipleControllersDisconnected();
         ImGui::EndPopup();
     }

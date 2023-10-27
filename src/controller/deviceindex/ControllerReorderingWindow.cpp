@@ -70,6 +70,26 @@ int32_t ControllerReorderingWindow::GetWiiUDeviceFromWiiUInput() {
             if (kstatus->hold) {
                 return channel;
             }
+
+            switch (kstatus->extensionType) {
+                case WPAD_EXT_NUNCHUK:
+                case WPAD_EXT_MPLUS_NUNCHUK:
+                    if (kstatus->nunchuck.hold) {
+                        return channel;
+                    }
+                    break;
+                case WPAD_EXT_CLASSIC:
+                case WPAD_EXT_MPLUS_CLASSIC:
+                    if (kstatus->classic.hold) {
+                        return channel;
+                    }
+                    break;
+                case WPAD_EXT_PRO_CONTROLLER:
+                    if (kstatus->pro.hold) {
+                        return channel;
+                    }
+                    break;   
+            }
         }
     }
 
