@@ -29,7 +29,7 @@ uint8_t WiiUButtonToButtonMapping::GetMappingType() {
 
 std::string WiiUButtonToButtonMapping::GetButtonMappingId() {
     return StringHelper::Sprintf("P%d-B%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mBitmask,
-                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton, mIsClassicControllerButton,
+                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton ? 1 : 0, mIsClassicControllerButton ? 1 : 0,
                                  mControllerButton);
 }
 
@@ -41,9 +41,9 @@ void WiiUButtonToButtonMapping::SaveToConfig() {
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerInputMapping::mLUSDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(),
-                   mIsNunchukButton);
+                   mIsNunchukButton ? 1 : 0);
     CVarSetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(),
-                   mIsClassicControllerButton);
+                   mIsClassicControllerButton ? 1 : 0);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }
