@@ -60,7 +60,7 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
 
 void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad, int32_t wiiuChannel) {
     KPADError error;
-    KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<WPADChan>(wiiuChannel), &error);
+    KPADStatus* status = !isGamepad ? LUS::WiiU::GetKPADStatus(static_cast<WPADChan>(wiiuChannel), &error) : nullptr;
 
     if (!isGamepad && status == nullptr) {
         return;

@@ -156,20 +156,14 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std:
 }
 
 void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
-    // for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(lusDeviceIndex, mPortIndex, mBitmask)) {
-    //     AddButtonMapping(mapping);
-    // }
+    for (auto mapping : ButtonMappingFactory::CreateDefaultWiiUButtonMappings(lusDeviceIndex, mPortIndex, mBitmask)) {
+        AddButtonMapping(mapping);
+    }
 
-    // if (lusDeviceIndex == LUSDeviceIndex::Keyboard) {
-    //     for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
-    //         AddButtonMapping(mapping);
-    //     }
-    // }
-
-    // for (auto [id, mapping] : mButtonMappings) {
-    //     mapping->SaveToConfig();
-    // }
-    // SaveButtonMappingIdsToConfig();
+    for (auto [id, mapping] : mButtonMappings) {
+        mapping->SaveToConfig();
+    }
+    SaveButtonMappingIdsToConfig();
 }
 #else
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
