@@ -284,6 +284,20 @@ void Gui::Update(WindowEvent event) {
     }
 }
 
+bool Gui::ImGuiGamepadNavigationEnabled() {
+    return mImGuiIo->ConfigFlags & ImGuiConfigFlags_NavEnableGamepad;
+}
+
+void Gui::BlockImGuiGamepadNavigation() {
+    mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+}
+
+void Gui::UnblockImGuiGamepadNavigation() {
+    if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+        mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    }
+}
+
 void Gui::DrawMenu() {
     LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();

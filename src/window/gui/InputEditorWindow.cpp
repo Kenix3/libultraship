@@ -12,6 +12,8 @@ InputEditorWindow::~InputEditorWindow() {
 
 void InputEditorWindow::InitElement() {
     mGameInputBlockTimer = INT32_MAX;
+    mMappingInputBlockTimer = INT32_MAX;
+    
     mButtonsBitmasks = { BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT };
     mDpadBitmasks = { BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT };
 }
@@ -23,6 +25,15 @@ void InputEditorWindow::UpdateElement() {
 
         // continue to block input for a third of a second after getting the mapping
         mGameInputBlockTimer = ImGui::GetIO().Framerate / 3;
+
+        if (mMappingInputBlockTimer != INT32_MAX) {
+            mMappingInputBlockTimer--;
+            if (mMappingInputBlockTimer <= 0) {
+                mMappingInputBlockTimer = INT32_MAX;
+            }
+        }
+
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->BlockImGuiGamepadNavigation();
     } else {
         if (mGameInputBlockTimer != INT32_MAX) {
             mGameInputBlockTimer--;
@@ -32,6 +43,14 @@ void InputEditorWindow::UpdateElement() {
                 mGameInputBlockTimer = INT32_MAX;
             }
         }
+
+        if (LUS::Context::GetInstance()->GetWindow()->GetGui()->ImGuiGamepadNavigationEnabled()) {
+            mMappingInputBlockTimer = ImGui::GetIO().Framerate / 3;
+        } else {
+            mMappingInputBlockTimer = INT32_MAX;
+        }
+
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->UnblockImGuiGamepadNavigation();
     }
 }
 
@@ -170,7 +189,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
             ImGui::CloseCurrentPopup();
         }
         // todo: figure out why optional params (using id = "" in the definition) wasn't working
-        if (LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetButton(bitmask)
@@ -225,7 +244,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
-        if (LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetButton(bitmask)
@@ -296,7 +315,7 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
             ImGui::CloseCurrentPopup();
         }
         if (stick == LEFT) {
-            if (LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -304,7 +323,7 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
                 ImGui::CloseCurrentPopup();
             }
         } else {
-            if (LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -373,7 +392,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
         }
 
         if (stick == LEFT) {
-            if (LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -381,7 +400,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
                 ImGui::CloseCurrentPopup();
             }
         } else {
-            if (LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -548,7 +567,7 @@ void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetRumble()
@@ -658,7 +677,7 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetLED()
@@ -733,7 +752,7 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetGyro()

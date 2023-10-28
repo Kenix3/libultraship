@@ -84,6 +84,9 @@ class Gui {
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
     void LoadTexture(const std::string& name, const std::string& path);
+    bool ImGuiGamepadNavigationEnabled();
+    void BlockImGuiGamepadNavigation();
+    void UnblockImGuiGamepadNavigation();
 
   protected:
     void ImGuiWMInit();
