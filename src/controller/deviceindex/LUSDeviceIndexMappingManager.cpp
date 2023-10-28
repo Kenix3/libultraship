@@ -295,7 +295,8 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
             return;
         }
 
-        // we shouldn't get here
+        // we have a device index mapping but no button/axis/etc. mappings, make defaults
+        Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->AddDefaultMappings(lusIndex);
         return;
     }
 
