@@ -13,7 +13,7 @@ InputEditorWindow::~InputEditorWindow() {
 void InputEditorWindow::InitElement() {
     mGameInputBlockTimer = INT32_MAX;
     mMappingInputBlockTimer = INT32_MAX;
-    
+
     mButtonsBitmasks = { BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT };
     mDpadBitmasks = { BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT };
 }
@@ -190,10 +190,10 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
         }
         // todo: figure out why optional params (using id = "" in the definition) wasn't working
         if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(port)
-                ->GetButton(bitmask)
-                ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
+                                                        ->GetControlDeck()
+                                                        ->GetControllerByPort(port)
+                                                        ->GetButton(bitmask)
+                                                        ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -245,10 +245,10 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
             ImGui::CloseCurrentPopup();
         }
         if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(port)
-                ->GetButton(bitmask)
-                ->AddOrEditButtonMappingFromRawPress(bitmask, id)) {
+                                                        ->GetControlDeck()
+                                                        ->GetControllerByPort(port)
+                                                        ->GetButton(bitmask)
+                                                        ->AddOrEditButtonMappingFromRawPress(bitmask, id)) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -315,7 +315,8 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
             ImGui::CloseCurrentPopup();
         }
         if (stick == LEFT) {
-            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX &&
+                LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -323,7 +324,8 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
                 ImGui::CloseCurrentPopup();
             }
         } else {
-            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX &&
+                LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -392,7 +394,8 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
         }
 
         if (stick == LEFT) {
-            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX &&
+                LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -400,7 +403,8 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
                 ImGui::CloseCurrentPopup();
             }
         } else {
-            if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+            if (mMappingInputBlockTimer == INT32_MAX &&
+                LUS::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -568,10 +572,10 @@ void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
         }
 
         if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(port)
-                ->GetRumble()
-                ->AddRumbleMappingFromRawPress()) {
+                                                        ->GetControlDeck()
+                                                        ->GetControllerByPort(port)
+                                                        ->GetRumble()
+                                                        ->AddRumbleMappingFromRawPress()) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -678,10 +682,10 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
         }
 
         if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(port)
-                ->GetLED()
-                ->AddLEDMappingFromRawPress()) {
+                                                        ->GetControlDeck()
+                                                        ->GetControllerByPort(port)
+                                                        ->GetLED()
+                                                        ->AddLEDMappingFromRawPress()) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -753,10 +757,10 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
         }
 
         if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(port)
-                ->GetGyro()
-                ->SetGyroMappingFromRawPress()) {
+                                                        ->GetControlDeck()
+                                                        ->GetControllerByPort(port)
+                                                        ->GetGyro()
+                                                        ->SetGyroMappingFromRawPress()) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
