@@ -313,13 +313,11 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
             StringHelper::Sprintf("%s###addStickDirectionMappingButton%d-%d-%d", ICON_FA_PLUS, port, stick, direction)
                 .c_str(),
             ImVec2(20.0f, 0.0f))) {
-        ImGui::OpenPopup(
-            popupId.c_str());
+        ImGui::OpenPopup(popupId.c_str());
     };
     ImGui::PopStyleVar();
 
-    if (ImGui::BeginPopup(
-            popupId.c_str())) {
+    if (ImGui::BeginPopup(popupId.c_str())) {
         mInputEditorPopupOpen = true;
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto add mapping");
         if (ImGui::Button("Cancel")) {
