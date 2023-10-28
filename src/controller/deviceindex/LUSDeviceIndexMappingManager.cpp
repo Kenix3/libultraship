@@ -30,17 +30,6 @@ LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
 
 #ifdef __WIIU__
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> wiiuDeviceChannels) {
-    // for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
-    //     for (auto mapping :
-    //          Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllMappings()) {
-    //         auto wiiuMapping = std::dynamic_pointer_cast<WiiUMapping>(mapping);
-    //         if (wiiuMapping == nullptr) {
-    //             continue;
-    //         }
-
-    //         wiiuMapping->CloseController();
-    //     }
-    // }
     mLUSDeviceIndexToPhysicalDeviceIndexMappings.clear();
     uint8_t port = 0;
     for (auto channel : wiiuDeviceChannels) {
@@ -53,9 +42,7 @@ void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int
         port++;
     }
     mIsInitialized = true;
-#ifdef __WIIU__
     LUS::WiiU::SetControllersInitialized();
-#endif
 }
 
 void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad, int32_t wiiuChannel) {
@@ -74,10 +61,12 @@ void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port
             continue;
         }
 
-        if (isGamepad && wiiuMapping->IsWiiUGamepad()) {
-            matchingLusIndices.push_back(lusIndex);
+        if (isGamepad) {
+            if (wiiuMapping->IsWiiUGamepad()) {
+                matchingLusIndices.push_back(lusIndex);
+            }
             continue;
-        }
+        } 
 
         if (wiiuMapping->HasEquivalentExtensionType(status->extensionType)) {
             matchingLusIndices.push_back(lusIndex);
