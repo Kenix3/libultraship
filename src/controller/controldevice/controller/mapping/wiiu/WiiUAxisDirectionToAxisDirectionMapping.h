@@ -2,6 +2,13 @@
 #include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "WiiUMapping.h"
 
+#define WII_U_AXIS_LEFT_STICK_X 0
+#define WII_U_AXIS_LEFT_STICK_Y 1
+#define WII_U_AXIS_RIGHT_STICK_X 2
+#define WII_U_AXIS_RIGHT_STICK_Y 3
+#define WII_U_AXIS_NUNCHUK_STICK_X 4
+#define WII_U_AXIS_NUNCHUK_STICK_Y 5
+
 namespace LUS {
 class WiiUAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public WiiUMapping {
   public:

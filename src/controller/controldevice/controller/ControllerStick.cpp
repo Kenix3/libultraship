@@ -98,24 +98,17 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
 }
 #ifdef __WIIU__
 void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
-    // for (auto mapping :
-    //      AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
-    //     AddAxisDirectionMapping(mapping->GetDirection(), mapping);
-    // }
+    for (auto mapping :
+         AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
+        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    }
 
-    // if (lusIndex == LUSDeviceIndex::Keyboard) {
-    //     for (auto mapping :
-    //          AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
-    //         AddAxisDirectionMapping(mapping->GetDirection(), mapping);
-    //     }
-    // }
-
-    // for (auto [direction, directionMappings] : mAxisDirectionMappings) {
-    //     for (auto [id, mapping] : directionMappings) {
-    //         mapping->SaveToConfig();
-    //     }
-    // }
-    // SaveAxisDirectionMappingIdsToConfig();
+    for (auto [direction, directionMappings] : mAxisDirectionMappings) {
+        for (auto [id, mapping] : directionMappings) {
+            mapping->SaveToConfig();
+        }
+    }
+    SaveAxisDirectionMappingIdsToConfig();
 }
 #else
 void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {

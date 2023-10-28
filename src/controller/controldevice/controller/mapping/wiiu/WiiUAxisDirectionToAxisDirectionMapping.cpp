@@ -6,13 +6,6 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-#define WII_U_AXIS_LEFT_STICK_X 0
-#define WII_U_AXIS_LEFT_STICK_Y 1
-#define WII_U_AXIS_RIGHT_STICK_X 2
-#define WII_U_AXIS_RIGHT_STICK_Y 3
-#define WII_U_AXIS_NUNCHUK_STICK_X 4
-#define WII_U_AXIS_NUNCHUK_STICK_Y 5
-
 namespace LUS {
 WiiUAxisDirectionToAxisDirectionMapping::WiiUAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex,
                                                                                  uint8_t portIndex, Stick stick,
@@ -44,13 +37,13 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
                 wiiUAxisValue = status->leftStick.x;
                 break;
             case WII_U_AXIS_LEFT_STICK_Y:
-                wiiUAxisValue = status->leftStick.y;
+                wiiUAxisValue = status->leftStick.y * -1.0;
                 break;
             case WII_U_AXIS_RIGHT_STICK_X:
                 wiiUAxisValue = status->rightStick.x;
                 break;
             case WII_U_AXIS_RIGHT_STICK_Y:
-                wiiUAxisValue = status->rightStick.y;
+                wiiUAxisValue = status->rightStick.y * -1.0;
                 break;
         }
     } else {
@@ -71,13 +64,13 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
                         wiiUAxisValue = status->pro.leftStick.x;
                         break;
                     case WII_U_AXIS_LEFT_STICK_Y:
-                        wiiUAxisValue = status->pro.leftStick.y;
+                        wiiUAxisValue = status->pro.leftStick.y * -1.0;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_X:
                         wiiUAxisValue = status->pro.rightStick.x;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_Y:
-                        wiiUAxisValue = status->pro.rightStick.y;
+                        wiiUAxisValue = status->pro.rightStick.y * -1.0;
                         break;
                 }
                 break;
@@ -88,7 +81,7 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
                         wiiUAxisValue = status->nunchuck.stick.x;
                         break;
                     case WII_U_AXIS_NUNCHUK_STICK_Y:
-                        wiiUAxisValue = status->nunchuck.stick.y;
+                        wiiUAxisValue = status->nunchuck.stick.y * -1.0;
                         break;
                 }
                 break;
@@ -99,13 +92,13 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
                         wiiUAxisValue = status->classic.leftStick.x;
                         break;
                     case WII_U_AXIS_LEFT_STICK_Y:
-                        wiiUAxisValue = status->classic.leftStick.y;
+                        wiiUAxisValue = status->classic.leftStick.y * -1.0;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_X:
                         wiiUAxisValue = status->classic.rightStick.x;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_Y:
-                        wiiUAxisValue = status->classic.rightStick.y;
+                        wiiUAxisValue = status->classic.rightStick.y * -1.0;
                         break;
                 }
                 break;
