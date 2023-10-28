@@ -13,6 +13,7 @@ InputEditorWindow::~InputEditorWindow() {
 void InputEditorWindow::InitElement() {
     mGameInputBlockTimer = INT32_MAX;
     mMappingInputBlockTimer = INT32_MAX;
+    mInputEditorPopupOpen = false;
 
     mButtonsBitmasks = { BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT };
     mDpadBitmasks = { BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT };
@@ -20,7 +21,7 @@ void InputEditorWindow::InitElement() {
 
 #define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
 void InputEditorWindow::UpdateElement() {
-    if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
+    if (mInputEditorPopupOpen && ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
         LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
 
         // continue to block input for a third of a second after getting the mapping
@@ -177,15 +178,18 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
 
 void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    auto popupId = StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask);
     if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(),
                       ImVec2(20.0f, 0.0f))) {
-        ImGui::OpenPopup(StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask).c_str());
+        ImGui::OpenPopup(popupId.c_str());
     };
     ImGui::PopStyleVar();
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask).c_str())) {
+    if (ImGui::BeginPopup(popupId.c_str())) {
+        mInputEditorPopupOpen = true;
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto add mapping");
         if (ImGui::Button("Cancel")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         // todo: figure out why optional params (using id = "" in the definition) wasn't working
@@ -194,6 +198,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
                                                         ->GetControllerByPort(port)
                                                         ->GetButton(bitmask)
                                                         ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -228,10 +233,11 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
     GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+    auto popupId = StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str());
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editButtonMappingButton%s", icon.c_str(),
                                             mapping->GetPhysicalInputName().c_str(), id.c_str())
                           .c_str())) {
-        ImGui::OpenPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str()).c_str());
+        ImGui::OpenPopup(popupId.c_str());
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
         ImGui::SetTooltip(mapping->GetPhysicalDeviceName().c_str());
@@ -239,9 +245,11 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str()).c_str())) {
+    if (ImGui::BeginPopup(popupId.c_str())) {
+        mInputEditorPopupOpen = true;
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto edit mapping");
         if (ImGui::Button("Cancel")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
@@ -249,6 +257,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
                                                         ->GetControllerByPort(port)
                                                         ->GetButton(bitmask)
                                                         ->AddOrEditButtonMappingFromRawPress(bitmask, id)) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -299,19 +308,22 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uin
 
 void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    auto popupId = StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction);
     if (ImGui::Button(
             StringHelper::Sprintf("%s###addStickDirectionMappingButton%d-%d-%d", ICON_FA_PLUS, port, stick, direction)
                 .c_str(),
             ImVec2(20.0f, 0.0f))) {
         ImGui::OpenPopup(
-            StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction).c_str());
+            popupId.c_str());
     };
     ImGui::PopStyleVar();
 
     if (ImGui::BeginPopup(
-            StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction).c_str())) {
+            popupId.c_str())) {
+        mInputEditorPopupOpen = true;
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto add mapping");
         if (ImGui::Button("Cancel")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         if (stick == LEFT) {
@@ -321,6 +333,7 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
                     ->AddOrEditAxisDirectionMappingFromRawPress(direction, "")) {
+                mInputEditorPopupOpen = false;
                 ImGui::CloseCurrentPopup();
             }
         } else {
@@ -376,10 +389,11 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
     GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+    auto popupId = StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str());
     if (ImGui::Button(StringHelper::Sprintf("%s %s ###editStickDirectionMappingButton%s", icon.c_str(),
                                             mapping->GetPhysicalInputName().c_str(), id.c_str())
                           .c_str())) {
-        ImGui::OpenPopup(StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str()).c_str());
+        ImGui::OpenPopup(popupId.c_str());
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
         ImGui::SetTooltip(mapping->GetPhysicalDeviceName().c_str());
@@ -387,9 +401,11 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str()).c_str())) {
+    if (ImGui::BeginPopup(popupId.c_str())) {
+        mInputEditorPopupOpen = true;
         ImGui::Text("Press any button,\nmove any axis,\nor press any key\nto edit mapping");
         if (ImGui::Button("Cancel")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
 
@@ -400,6 +416,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
                     ->AddOrEditAxisDirectionMappingFromRawPress(direction, id)) {
+                mInputEditorPopupOpen = false;
                 ImGui::CloseCurrentPopup();
             }
         } else {
@@ -559,15 +576,18 @@ void InputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string 
 void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    auto popupId = StringHelper::Sprintf("addRumbleMappingPopup##%d", port);
     if (ImGui::Button(StringHelper::Sprintf("%s###addRumbleMapping%d", ICON_FA_PLUS, port).c_str(),
                       ImVec2(20.0f, 20.0f))) {
-        ImGui::OpenPopup(StringHelper::Sprintf("addRumbleMappingPopup##%d", port).c_str());
+        ImGui::OpenPopup(popupId.c_str());
     }
     ImGui::PopStyleVar();
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("addRumbleMappingPopup##%d", port).c_str())) {
+    if (ImGui::BeginPopup(popupId.c_str())) {
+        mInputEditorPopupOpen = true;
         ImGui::Text("Press any button\nor move any axis\nto add rumble device");
         if (ImGui::Button("Cancel")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
 
@@ -576,6 +596,7 @@ void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
                                                         ->GetControllerByPort(port)
                                                         ->GetRumble()
                                                         ->AddRumbleMappingFromRawPress()) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -669,15 +690,18 @@ void InputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::string id)
 void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    auto popupId = StringHelper::Sprintf("addLEDMappingPopup##%d", port);
     if (ImGui::Button(StringHelper::Sprintf("%s###addLEDMapping%d", ICON_FA_PLUS, port).c_str(),
                       ImVec2(20.0f, 20.0f))) {
-        ImGui::OpenPopup(StringHelper::Sprintf("addLEDMappingPopup##%d", port).c_str());
+        ImGui::OpenPopup(popupId.c_str());
     }
     ImGui::PopStyleVar();
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("addLEDMappingPopup##%d", port).c_str())) {
+    if (ImGui::BeginPopup(popupId.c_str())) {
+        mInputEditorPopupOpen = true;
         ImGui::Text("Press any button\nor move any axis\nto add LED device");
         if (ImGui::Button("Cancel")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
 
@@ -686,6 +710,7 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
                                                         ->GetControllerByPort(port)
                                                         ->GetLED()
                                                         ->AddLEDMappingFromRawPress()) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -744,15 +769,18 @@ void InputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::string id
 void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
     ImGui::SameLine();
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    auto popupId = StringHelper::Sprintf("addGyroMappingPopup##%d", port);
     if (ImGui::Button(StringHelper::Sprintf("%s###addGyroMapping%d", ICON_FA_PLUS, port).c_str(),
                       ImVec2(20.0f, 20.0f))) {
-        ImGui::OpenPopup(StringHelper::Sprintf("addGyroMappingPopup##%d", port).c_str());
+        ImGui::OpenPopup(popupId.c_str());
     }
     ImGui::PopStyleVar();
 
-    if (ImGui::BeginPopup(StringHelper::Sprintf("addGyroMappingPopup##%d", port).c_str())) {
+    if (ImGui::BeginPopup(popupId.c_str())) {
+        mInputEditorPopupOpen = true;
         ImGui::Text("Press any button\nor move any axis\nto add gyro device");
         if (ImGui::Button("Cancel")) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
 
@@ -761,6 +789,7 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
                                                         ->GetControllerByPort(port)
                                                         ->GetGyro()
                                                         ->SetGyroMappingFromRawPress()) {
+            mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
