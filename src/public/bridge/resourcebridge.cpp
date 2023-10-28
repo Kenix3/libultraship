@@ -60,6 +60,9 @@ uint8_t ResourceGetIsCustomByCrc(uint64_t crc) {
 }
 
 void* ResourceGetDataByName(const char* name) {
+    if(strcmp(name, "__OTR__misc/link_animation/gPlayerAnim_link_normal_wait_free_Data") == 0) {
+        int bp = 5;
+    }
     auto resource = ResourceLoad(name);
 
     if (resource == nullptr) {
