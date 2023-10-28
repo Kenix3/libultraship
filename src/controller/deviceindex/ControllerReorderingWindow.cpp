@@ -88,7 +88,7 @@ int32_t ControllerReorderingWindow::GetWiiUDeviceFromWiiUInput() {
                     if (kstatus->pro.hold) {
                         return channel;
                     }
-                    break;   
+                    break;
             }
         }
     }

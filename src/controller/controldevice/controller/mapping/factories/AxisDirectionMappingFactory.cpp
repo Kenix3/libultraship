@@ -48,8 +48,10 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int32_t lusDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
-        bool isClassic = CVarGetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(), false);
-        bool isNunchuk = CVarGetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(), false);
+        bool isClassic = CVarGetInteger(
+            StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(), false);
+        bool isNunchuk =
+            CVarGetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(), false);
         int32_t wiiuControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
@@ -61,9 +63,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<WiiUButtonToAxisDirectionMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
-                                                                 stick, static_cast<Direction>(direction),
-                                                                 isNunchuk, isClassic, wiiuControllerButton);
+        return std::make_shared<WiiUButtonToAxisDirectionMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex),
+                                                                  portIndex, stick, static_cast<Direction>(direction),
+                                                                  isNunchuk, isClassic, wiiuControllerButton);
     }
 #else
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
@@ -131,7 +133,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 #ifdef __WIIU__
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
-                                                                   Stick stick) {
+                                                                    Stick stick) {
     auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
@@ -141,37 +143,35 @@ AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(LUSDeviceInd
         return std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>();
     }
 
-    if (wiiuIndexMapping->GetExtensionType() == WPAD_EXT_CORE || wiiuIndexMapping->GetExtensionType() == WPAD_EXT_MPLUS) {
+    if (wiiuIndexMapping->GetExtensionType() == WPAD_EXT_CORE ||
+        wiiuIndexMapping->GetExtensionType() == WPAD_EXT_MPLUS) {
         return std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>();
     }
 
-    if (wiiuIndexMapping->GetExtensionType() == WPAD_EXT_NUNCHUK || wiiuIndexMapping->GetExtensionType() == WPAD_EXT_MPLUS_NUNCHUK) {
+    if (wiiuIndexMapping->GetExtensionType() == WPAD_EXT_NUNCHUK ||
+        wiiuIndexMapping->GetExtensionType() == WPAD_EXT_MPLUS_NUNCHUK) {
         if (stick == RIGHT_STICK) {
             return std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>();
         }
 
         std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, LEFT,
-                                                                    4, -1),
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, RIGHT,
-                                                                    4, 1),
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, UP,
-                                                                    5, -1),
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, DOWN,
-                                                                    5, 1)
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, LEFT, 4, -1),
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, RIGHT, 4, 1),
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, UP, 5, -1),
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, DOWN, 5, 1)
         };
         return mappings;
     }
 
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
         std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, LEFT,
-                                                                stick == LEFT_STICK ? 0 : 2, -1),
+                                                                  stick == LEFT_STICK ? 0 : 2, -1),
         std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, RIGHT,
-                                                                stick == LEFT_STICK ? 0 : 2, 1),
+                                                                  stick == LEFT_STICK ? 0 : 2, 1),
         std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, UP,
-                                                                stick == LEFT_STICK ? 1 : 3, -1),
+                                                                  stick == LEFT_STICK ? 1 : 3, -1),
         std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, DOWN,
-                                                                stick == LEFT_STICK ? 1 : 3, 1)
+                                                                  stick == LEFT_STICK ? 1 : 3, 1)
     };
     return mappings;
 }

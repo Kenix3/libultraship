@@ -66,7 +66,7 @@ void LUSDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port
                 matchingLusIndices.push_back(lusIndex);
             }
             continue;
-        } 
+        }
 
         if (wiiuMapping->HasEquivalentExtensionType(status->extensionType)) {
             matchingLusIndices.push_back(lusIndex);

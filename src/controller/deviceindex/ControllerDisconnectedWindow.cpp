@@ -161,8 +161,7 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
 void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected() {
     ImGui::Text("Connected controller(s) have been added/removed/modified.");
 
-    if (AnyWiiUDevicesAreConnected() &&
-        ImGui::Button("Reorder controllers###reorderControllersButton")) {
+    if (AnyWiiUDevicesAreConnected() && ImGui::Button("Reorder controllers###reorderControllersButton")) {
         auto reorderingWindow = Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering");
         if (reorderingWindow != nullptr) {
             mPortIndexOfDisconnectedController = UINT8_MAX;
