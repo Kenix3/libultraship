@@ -250,7 +250,8 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
 
 #ifdef __WIIU__
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
-    std::shared_ptr<ControllerAxisDirectionMapping> mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(mPortIndex, mStick, direction);
+    std::shared_ptr<ControllerAxisDirectionMapping> mapping =
+        AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(mPortIndex, mStick, direction);
 
     if (mapping == nullptr) {
         return false;

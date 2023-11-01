@@ -178,7 +178,7 @@ AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(LUSDeviceInd
 
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t portIndex, Stick stick,
-                                                                    Direction direction) {
+                                                                     Direction direction) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
@@ -203,23 +203,32 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
 
                 switch (i) {
                     case VPAD_STICK_L_EMULATION_LEFT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 0, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 0, -1);
                     case VPAD_STICK_L_EMULATION_RIGHT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 0, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 0, 1);
                     case VPAD_STICK_L_EMULATION_UP:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 1, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 1, -1);
                     case VPAD_STICK_L_EMULATION_DOWN:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 1, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 1, 1);
                     case VPAD_STICK_R_EMULATION_LEFT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 2, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 2, -1);
                     case VPAD_STICK_R_EMULATION_RIGHT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 2, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 2, 1);
                     case VPAD_STICK_R_EMULATION_UP:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 3, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 3, -1);
                     case VPAD_STICK_R_EMULATION_DOWN:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 3, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 3, 1);
                     default:
-                        return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, false, false, i);
+                        return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction,
+                                                                                  false, false, i);
                 }
             }
 
@@ -227,7 +236,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
         }
 
         KPADError kerror;
-        KPADStatus* kstatus = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
+        KPADStatus* kstatus =
+            LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
 
         if (kstatus == nullptr || kerror != KPAD_ERROR_OK) {
             continue;
@@ -241,23 +251,32 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
 
                 switch (i) {
                     case WPAD_PRO_STICK_L_EMULATION_LEFT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 0, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 0, -1);
                     case WPAD_PRO_STICK_L_EMULATION_RIGHT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 0, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 0, 1);
                     case WPAD_PRO_STICK_L_EMULATION_UP:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 1, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 1, -1);
                     case WPAD_PRO_STICK_L_EMULATION_DOWN:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 1, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 1, 1);
                     case WPAD_PRO_STICK_R_EMULATION_LEFT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 2, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 2, -1);
                     case WPAD_PRO_STICK_R_EMULATION_RIGHT:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 2, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 2, 1);
                     case WPAD_PRO_STICK_R_EMULATION_UP:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 3, -1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 3, -1);
                     case WPAD_PRO_STICK_R_EMULATION_DOWN:
-                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 3, 1);
+                        return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                         direction, 3, 1);
                     default:
-                        return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, false, false, i);
+                        return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction,
+                                                                                  false, false, i);
                 }
             }
 
@@ -265,28 +284,35 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
         }
 
         volatile auto exttypeblarg = wiiuIndexMapping->GetExtensionType();
-        volatile auto nunblarg = kstatus->nunchuck; 
+        volatile auto nunblarg = kstatus->nunchuck;
 
         switch (wiiuIndexMapping->GetExtensionType()) {
             case WPAD_EXT_NUNCHUK:
             case WPAD_EXT_MPLUS_NUNCHUK:
-                for (auto i : {WPAD_NUNCHUK_STICK_EMULATION_LEFT, WPAD_NUNCHUK_STICK_EMULATION_RIGHT, WPAD_NUNCHUK_STICK_EMULATION_DOWN, WPAD_NUNCHUK_STICK_EMULATION_UP, WPAD_NUNCHUK_BUTTON_Z, WPAD_NUNCHUK_BUTTON_C}) {
+                for (auto i : { WPAD_NUNCHUK_STICK_EMULATION_LEFT, WPAD_NUNCHUK_STICK_EMULATION_RIGHT,
+                                WPAD_NUNCHUK_STICK_EMULATION_DOWN, WPAD_NUNCHUK_STICK_EMULATION_UP,
+                                WPAD_NUNCHUK_BUTTON_Z, WPAD_NUNCHUK_BUTTON_C }) {
                     if (!(kstatus->nunchuck.hold & i)) {
                         continue;
                     }
 
                     switch (i) {
                         case WPAD_NUNCHUK_STICK_EMULATION_LEFT:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 4, -1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 4, -1);
                         case WPAD_NUNCHUK_STICK_EMULATION_RIGHT:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 4, 1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 4, 1);
                         case WPAD_NUNCHUK_STICK_EMULATION_DOWN:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 5, 1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 5, 1);
                         case WPAD_NUNCHUK_STICK_EMULATION_UP:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 5, -1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 5, -1);
                         default:
                             // todo: figure out why held nunchuk buttons aren't getting set
-                            return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, true, false, i);
+                            return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                      direction, true, false, i);
                     }
                 }
                 break;
@@ -299,34 +325,46 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
 
                     switch (i) {
                         case WPAD_CLASSIC_STICK_L_EMULATION_LEFT:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 0, -1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 0, -1);
                         case WPAD_CLASSIC_STICK_L_EMULATION_RIGHT:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 0, 1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 0, 1);
                         case WPAD_CLASSIC_STICK_L_EMULATION_UP:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 1, -1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 1, -1);
                         case WPAD_CLASSIC_STICK_L_EMULATION_DOWN:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 1, 1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 1, 1);
                         case WPAD_CLASSIC_STICK_R_EMULATION_LEFT:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 2, -1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 2, -1);
                         case WPAD_CLASSIC_STICK_R_EMULATION_RIGHT:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 2, 1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 2, 1);
                         case WPAD_CLASSIC_STICK_R_EMULATION_UP:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 3, -1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 3, -1);
                         case WPAD_CLASSIC_STICK_R_EMULATION_DOWN:
-                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, 3, 1);
+                            return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                             direction, 3, 1);
                         default:
-                            return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, false, true, i);
+                            return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick,
+                                                                                      direction, false, true, i);
                     }
                 }
                 break;
         }
 
-        for (auto i : {WPAD_BUTTON_LEFT, WPAD_BUTTON_RIGHT, WPAD_BUTTON_DOWN, WPAD_BUTTON_UP, WPAD_BUTTON_PLUS, WPAD_BUTTON_2, WPAD_BUTTON_1, WPAD_BUTTON_B, WPAD_BUTTON_A, WPAD_BUTTON_MINUS, WPAD_BUTTON_Z, WPAD_BUTTON_C, WPAD_BUTTON_HOME}) {
+        for (auto i : { WPAD_BUTTON_LEFT, WPAD_BUTTON_RIGHT, WPAD_BUTTON_DOWN, WPAD_BUTTON_UP, WPAD_BUTTON_PLUS,
+                        WPAD_BUTTON_2, WPAD_BUTTON_1, WPAD_BUTTON_B, WPAD_BUTTON_A, WPAD_BUTTON_MINUS, WPAD_BUTTON_Z,
+                        WPAD_BUTTON_C, WPAD_BUTTON_HOME }) {
             if (!(kstatus->hold & i)) {
                 continue;
             }
 
-            return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, false, false, i);
+            return std::make_shared<WiiUButtonToAxisDirectionMapping>(lusIndex, portIndex, stick, direction, false,
+                                                                      false, i);
         }
     }
 

@@ -174,16 +174,16 @@ void Update() {
                     break;
                 case WPAD_EXT_NUNCHUK:
                 case WPAD_EXT_MPLUS_NUNCHUK:
-                    if(kpadStatus[i].nunchuck.stick.x < -0.7f) {
+                    if (kpadStatus[i].nunchuck.stick.x < -0.7f) {
                         kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_LEFT;
                     }
-                    if(kpadStatus[i].nunchuck.stick.x > 0.7f) {
+                    if (kpadStatus[i].nunchuck.stick.x > 0.7f) {
                         kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_RIGHT;
                     }
-                    if(kpadStatus[i].nunchuck.stick.y > 0.7f) {
+                    if (kpadStatus[i].nunchuck.stick.y > 0.7f) {
                         kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_UP;
                     }
-                    if(kpadStatus[i].nunchuck.stick.y < -0.7f) {
+                    if (kpadStatus[i].nunchuck.stick.y < -0.7f) {
                         kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_DOWN;
                     }
                     break;
