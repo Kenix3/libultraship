@@ -92,13 +92,13 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
                         wiiUAxisValue = status->classic.leftStick.x;
                         break;
                     case WII_U_AXIS_LEFT_STICK_Y:
-                        wiiUAxisValue = status->classic.leftStick.y * -1.0;
+                        wiiUAxisValue = status->classic.leftStick.y;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_X:
                         wiiUAxisValue = status->classic.rightStick.x;
                         break;
                     case WII_U_AXIS_RIGHT_STICK_Y:
-                        wiiUAxisValue = status->classic.rightStick.y * -1.0;
+                        wiiUAxisValue = status->classic.rightStick.y;
                         break;
                 }
                 break;

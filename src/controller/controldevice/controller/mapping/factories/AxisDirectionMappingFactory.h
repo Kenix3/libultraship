@@ -15,8 +15,8 @@ class AxisDirectionMappingFactory {
     static std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
     CreateDefaultWiiUAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick);
 
-    // static std::shared_ptr<ControllerAxisDirectionMapping>
-    // CreateAxisDirectionMappingFromWiiUInput(uint8_t portIndex, Stick stick, Direction direction);
+    static std::shared_ptr<ControllerAxisDirectionMapping>
+    CreateAxisDirectionMappingFromWiiUInput(uint8_t portIndex, Stick stick, Direction direction);
 #else
     static std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
     CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick);

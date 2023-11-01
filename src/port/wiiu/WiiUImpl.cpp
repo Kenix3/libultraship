@@ -115,6 +115,80 @@ void Update() {
                 rescan = true;
             }
 
+            // set emulated stick button bits so all controllers behave like the gamepad does
+            switch (kpadStatus[i].extensionType) {
+                case WPAD_EXT_PRO_CONTROLLER:
+                    if (kpadStatus[i].pro.leftStick.x > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].pro.leftStick.x < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].pro.leftStick.y > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].pro.leftStick.y < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_DOWN;
+                    }
+
+                    if (kpadStatus[i].pro.rightStick.x > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].pro.rightStick.x < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].pro.rightStick.y > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].pro.rightStick.y < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_DOWN;
+                    }
+                    break;
+                case WPAD_EXT_CLASSIC:
+                case WPAD_EXT_MPLUS_CLASSIC:
+                    if (kpadStatus[i].classic.leftStick.x > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].classic.leftStick.x < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].classic.leftStick.y < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].classic.leftStick.y > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_DOWN;
+                    }
+
+                    if (kpadStatus[i].classic.rightStick.x > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].classic.rightStick.x < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].classic.rightStick.y > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].classic.rightStick.y < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_DOWN;
+                    }
+                    break;
+                case WPAD_EXT_NUNCHUK:
+                case WPAD_EXT_MPLUS_NUNCHUK:
+                    if(kpadStatus[i].nunchuck.stick.x < -0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_LEFT;
+                    }
+                    if(kpadStatus[i].nunchuck.stick.x > 0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_RIGHT;
+                    }
+                    if(kpadStatus[i].nunchuck.stick.y > 0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_UP;
+                    }
+                    if(kpadStatus[i].nunchuck.stick.y < -0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_DOWN;
+                    }
+                    break;
+            }
+
             hasKpad[i] = true;
         } else if (kpadError[i] != KPAD_ERROR_NO_SAMPLES) {
             if (hasKpad[i]) {

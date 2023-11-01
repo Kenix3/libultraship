@@ -250,34 +250,20 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
 
 #ifdef __WIIU__
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
-    return false;
-    // std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
+    std::shared_ptr<ControllerAxisDirectionMapping> mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(mPortIndex, mStick, direction);
 
-    // mUseKeydownEventToCreateNewMapping = true;
-    // if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
-    //     mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStick, direction,
-    //                                                                   mKeyboardScancodeForNewMapping);
-    // }
+    if (mapping == nullptr) {
+        return false;
+    }
 
-    // if (mapping == nullptr) {
-    //     mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStick, direction);
-    // }
+    if (id != "") {
+        ClearAxisDirectionMapping(direction, id);
+    }
 
-    // if (mapping == nullptr) {
-    //     return false;
-    // }
-
-    // mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
-    // mUseKeydownEventToCreateNewMapping = false;
-
-    // if (id != "") {
-    //     ClearAxisDirectionMapping(direction, id);
-    // }
-
-    // AddAxisDirectionMapping(direction, mapping);
-    // mapping->SaveToConfig();
-    // SaveAxisDirectionMappingIdsToConfig();
-    // return true;
+    AddAxisDirectionMapping(direction, mapping);
+    mapping->SaveToConfig();
+    SaveAxisDirectionMappingIdsToConfig();
+    return true;
 }
 #else
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
