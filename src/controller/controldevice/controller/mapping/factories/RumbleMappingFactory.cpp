@@ -43,7 +43,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
         }
 
         return std::make_shared<WiiURumbleMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
-                                                  lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
+                                                   lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
     }
 #else
     if (mappingClass == "SDLRumbleMapping") {
@@ -105,7 +105,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                     continue;
                 }
 
-                return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+                return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                                                           DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                           DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
             }
 
             continue;
@@ -125,7 +127,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                     continue;
                 }
 
-                return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+                return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                                                           DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                           DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
             }
 
             continue;
@@ -141,7 +145,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                         continue;
                     }
 
-                    return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+                    return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                                                               DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                               DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 }
                 break;
             case WPAD_EXT_CLASSIC:
@@ -151,7 +157,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                         continue;
                     }
 
-                    return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+                    return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                                                               DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                               DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 }
                 break;
         }
@@ -163,7 +171,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                 continue;
             }
 
-            return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+            return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                                                       DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                       DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
         }
     }
 
