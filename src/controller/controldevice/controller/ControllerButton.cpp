@@ -126,33 +126,21 @@ bool ControllerButton::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
 
 #ifdef __WIIU__
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
-    return false;
-    // std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
+    std::shared_ptr<ControllerButtonMapping> mapping =
+        ButtonMappingFactory::CreateButtonMappingFromWiiUInput(mPortIndex, bitmask);
 
-    // mUseKeydownEventToCreateNewMapping = true;
-    // if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
-    //     mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
-    // }
+    if (mapping == nullptr) {
+        return false;
+    }
 
-    // if (mapping == nullptr) {
-    //     mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
-    // }
+    if (id != "") {
+        ClearButtonMapping(id);
+    }
 
-    // if (mapping == nullptr) {
-    //     return false;
-    // }
-
-    // mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
-    // mUseKeydownEventToCreateNewMapping = false;
-
-    // if (id != "") {
-    //     ClearButtonMapping(id);
-    // }
-
-    // AddButtonMapping(mapping);
-    // mapping->SaveToConfig();
-    // SaveButtonMappingIdsToConfig();
-    // return true;
+    AddButtonMapping(mapping);
+    mapping->SaveToConfig();
+    SaveButtonMappingIdsToConfig();
+    return true;
 }
 
 void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {

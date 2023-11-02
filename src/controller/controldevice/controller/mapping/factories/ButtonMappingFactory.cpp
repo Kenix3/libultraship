@@ -382,6 +382,97 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
             return mappings;
     }
 }
+
+std::shared_ptr<ControllerButtonMapping>
+ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex, uint16_t bitmask) {
+    std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
+    for (auto [lusDeviceIndex, indexMapping] :
+         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+        auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
+
+        if (wiiuIndexMapping == nullptr) {
+            continue;
+        }
+
+        if (wiiuIndexMapping->IsWiiUGamepad()) {
+            VPADReadError verror;
+            VPADStatus* vstatus = LUS::WiiU::GetVPADStatus(&verror);
+
+            if (vstatus == nullptr || verror != VPAD_READ_SUCCESS) {
+                continue;
+            }
+
+            for (uint32_t i = VPAD_BUTTON_SYNC; i <= VPAD_STICK_L_EMULATION_LEFT; i <<= 1) {
+                if (!(vstatus->hold & i)) {
+                    continue;
+                }
+
+                return std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, bitmask, false, false, i);
+            }
+
+            continue;
+        }
+
+        KPADError kerror;
+        KPADStatus* kstatus =
+            LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
+
+        if (kstatus == nullptr || kerror != KPAD_ERROR_OK) {
+            continue;
+        }
+
+        if (wiiuIndexMapping->GetExtensionType() == WPAD_EXT_PRO_CONTROLLER) {
+            for (uint32_t i = WPAD_PRO_BUTTON_UP; i <= WPAD_PRO_STICK_R_EMULATION_UP; i <<= 1) {
+                if (!(kstatus->pro.hold & i)) {
+                    continue;
+                }
+
+                return std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, bitmask, false, false, i);
+            }
+
+            continue;
+        }
+
+        switch (wiiuIndexMapping->GetExtensionType()) {
+            case WPAD_EXT_NUNCHUK:
+            case WPAD_EXT_MPLUS_NUNCHUK:
+                for (auto i : { WPAD_NUNCHUK_STICK_EMULATION_LEFT, WPAD_NUNCHUK_STICK_EMULATION_RIGHT,
+                                WPAD_NUNCHUK_STICK_EMULATION_DOWN, WPAD_NUNCHUK_STICK_EMULATION_UP,
+                                WPAD_NUNCHUK_BUTTON_Z, WPAD_NUNCHUK_BUTTON_C }) {
+                    if (!(kstatus->nunchuck.hold & i)) {
+                        continue;
+                    }
+
+                    return std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, bitmask, true, false,
+                                                                       i);
+                }
+                break;
+            case WPAD_EXT_CLASSIC:
+            case WPAD_EXT_MPLUS_CLASSIC:
+                for (uint32_t i = WPAD_CLASSIC_BUTTON_UP; i <= WPAD_CLASSIC_STICK_R_EMULATION_UP; i <<= 1) {
+                    if (!(kstatus->classic.hold & i)) {
+                        continue;
+                    }
+
+                    return std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, bitmask, false, true,
+                                                                       i);
+                }
+                break;
+        }
+
+        for (auto i : { WPAD_BUTTON_LEFT, WPAD_BUTTON_RIGHT, WPAD_BUTTON_DOWN, WPAD_BUTTON_UP, WPAD_BUTTON_PLUS,
+                        WPAD_BUTTON_2, WPAD_BUTTON_1, WPAD_BUTTON_B, WPAD_BUTTON_A, WPAD_BUTTON_MINUS, WPAD_BUTTON_Z,
+                        WPAD_BUTTON_C, WPAD_BUTTON_HOME }) {
+            if (!(kstatus->hold & i)) {
+                continue;
+            }
+
+            return std::make_shared<WiiUButtonToButtonMapping>(lusDeviceIndex, portIndex, bitmask, false, false, i);
+        }
+    }
+
+    return nullptr;
+}
 #else
 std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, uint16_t bitmask) {

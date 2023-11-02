@@ -283,9 +283,6 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
             continue;
         }
 
-        volatile auto exttypeblarg = wiiuIndexMapping->GetExtensionType();
-        volatile auto nunblarg = kstatus->nunchuck;
-
         switch (wiiuIndexMapping->GetExtensionType()) {
             case WPAD_EXT_NUNCHUK:
             case WPAD_EXT_MPLUS_NUNCHUK:
