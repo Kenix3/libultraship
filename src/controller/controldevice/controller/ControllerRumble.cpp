@@ -69,14 +69,14 @@ void ControllerRumble::ClearAllMappings() {
 
 #ifdef __WIIU__
 void ControllerRumble::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
-    // for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(lusDeviceIndex, mPortIndex)) {
-    //     AddRumbleMapping(mapping);
-    // }
+    for (auto mapping : RumbleMappingFactory::CreateDefaultWiiURumbleMappings(lusDeviceIndex, mPortIndex)) {
+        AddRumbleMapping(mapping);
+    }
 
-    // for (auto [id, mapping] : mRumbleMappings) {
-    //     mapping->SaveToConfig();
-    // }
-    // SaveRumbleMappingIdsToConfig();
+    for (auto [id, mapping] : mRumbleMappings) {
+        mapping->SaveToConfig();
+    }
+    SaveRumbleMappingIdsToConfig();
 }
 #else
 void ControllerRumble::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
@@ -124,19 +124,18 @@ std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> Contro
 
 #ifdef __WIIU__
 bool ControllerRumble::AddRumbleMappingFromRawPress() {
-    return false;
-    // std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
+    std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
-    // mapping = RumbleMappingFactory::CreateRumbleMappingFromSDLInput(mPortIndex);
+    mapping = RumbleMappingFactory::CreateRumbleMappingFromWiiUInput(mPortIndex);
 
-    // if (mapping == nullptr) {
-    //     return false;
-    // }
+    if (mapping == nullptr) {
+        return false;
+    }
 
-    // AddRumbleMapping(mapping);
-    // mapping->SaveToConfig();
-    // SaveRumbleMappingIdsToConfig();
-    // return true;
+    AddRumbleMapping(mapping);
+    mapping->SaveToConfig();
+    SaveRumbleMappingIdsToConfig();
+    return true;
 }
 #else
 bool ControllerRumble::AddRumbleMappingFromRawPress() {

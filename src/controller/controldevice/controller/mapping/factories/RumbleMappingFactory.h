@@ -11,7 +11,9 @@ class RumbleMappingFactory {
     static std::shared_ptr<ControllerRumbleMapping> CreateRumbleMappingFromConfig(uint8_t portIndex, std::string id);
 
 #ifdef __WIIU__
-
+    static std::vector<std::shared_ptr<ControllerRumbleMapping>>
+    CreateDefaultWiiURumbleMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex);
+    static std::shared_ptr<ControllerRumbleMapping> CreateRumbleMappingFromWiiUInput(uint8_t portIndex);
 #else
     static std::vector<std::shared_ptr<ControllerRumbleMapping>>
     CreateDefaultSDLRumbleMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex);
