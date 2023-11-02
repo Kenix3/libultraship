@@ -179,7 +179,6 @@ AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(LUSDeviceInd
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t portIndex, Stick stick,
                                                                      Direction direction) {
-    std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
         auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);

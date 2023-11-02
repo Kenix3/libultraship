@@ -383,9 +383,8 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
     }
 }
 
-std::shared_ptr<ControllerButtonMapping>
-ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex, uint16_t bitmask) {
-    std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
+std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex,
+                                                                                                uint16_t bitmask) {
     for (auto [lusDeviceIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
         auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);

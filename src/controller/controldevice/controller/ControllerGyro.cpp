@@ -21,19 +21,18 @@ void ControllerGyro::SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mappi
 
 #ifdef __WIIU__
 bool ControllerGyro::SetGyroMappingFromRawPress() {
-    return false;
-    // std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
+    std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
 
-    // mapping = GyroMappingFactory::CreateGyroMappingFromSDLInput(mPortIndex);
+    mapping = GyroMappingFactory::CreateGyroMappingFromWiiUInput(mPortIndex);
 
-    // if (mapping == nullptr) {
-    //     return false;
-    // }
+    if (mapping == nullptr) {
+        return false;
+    }
 
-    // SetGyroMapping(mapping);
-    // mapping->SaveToConfig();
-    // SaveGyroMappingIdToConfig();
-    // return true;
+    SetGyroMapping(mapping);
+    mapping->SaveToConfig();
+    SaveGyroMappingIdToConfig();
+    return true;
 }
 #else
 bool ControllerGyro::SetGyroMappingFromRawPress() {
