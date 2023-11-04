@@ -42,11 +42,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     }
 #endif
 
-    if (mSinglePlayerMappingMode) {
-        mDeviceIndexMappingManager->InitializeMappingsSinglePlayer();
-    } else {
-        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
-    }
+    Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
 }
 
 #ifndef __WIIU__

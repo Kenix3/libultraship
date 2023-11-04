@@ -279,20 +279,22 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
             return;
         }
 
-        // move mappings from other port to this one
-        for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
-            if (portIndex == n64port) {
-                continue;
-            }
+        if (!Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+            // move mappings from other port to this one
+            for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
+                if (portIndex == n64port) {
+                    continue;
+                }
 
-            if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForLUSDeviceIndex(
-                    lusIndex)) {
-                continue;
-            }
+                if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForLUSDeviceIndex(
+                        lusIndex)) {
+                    continue;
+                }
 
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(
-                Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
-            return;
+                Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(
+                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
+                return;
+            }
         }
 
         // we have a device index mapping but no button/axis/etc. mappings, make defaults
@@ -351,112 +353,28 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
 }
 
 void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
-    // find all currently attached physical devices and map their guids to sdl index
-    std::unordered_map<int32_t, std::string> attachedSdlControllerGuids;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (!SDL_IsGameController(i)) {
-            continue;
-        }
-
-        char guidString[33]; // SDL_GUID_LENGTH + 1 for null terminator
-        SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), guidString, sizeof(guidString));
-        attachedSdlControllerGuids[i] = guidString;
-    }
-
-    // map all controllers where the sdl index and sdl guid match what's saved in the config
-    std::vector<int32_t> sdlIndicesToRemove;
-    std::vector<LUSDeviceIndex> lusIndicesToRemove;
-    auto mappings = GetAllDeviceIndexMappingsFromConfig();
-    for (auto [lusIndex, mapping] : mappings) {
-        auto sdlMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+    for (auto mapping :
+            Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->GetAllMappings()) {
+        auto sdlMapping = std::dynamic_pointer_cast<SDLMapping>(mapping);
         if (sdlMapping == nullptr) {
             continue;
         }
 
-        if (attachedSdlControllerGuids[sdlMapping->GetSDLDeviceIndex()] == sdlMapping->GetJoystickGUID()) {
-            SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
-            sdlIndicesToRemove.push_back(sdlMapping->GetSDLDeviceIndex());
-            lusIndicesToRemove.push_back(sdlMapping->GetLUSDeviceIndex());
-        }
+        sdlMapping->CloseController();
     }
-    for (auto index : sdlIndicesToRemove) {
-        attachedSdlControllerGuids.erase(index);
-    }
-    for (auto index : lusIndicesToRemove) {
-        mappings.erase(index);
-    }
-    sdlIndicesToRemove.clear();
-    lusIndicesToRemove.clear();
 
-    // map all controllers where just the sdl guid matches what's saved in the config
-    for (auto [sdlIndex, sdlGuid] : attachedSdlControllerGuids) {
-        // do a nested loop here to ensure we map the lowest sdl index and don't double map
-        for (auto [lusIndex, mapping] : mappings) {
-            auto sdlMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
-            if (sdlMapping == nullptr) {
-                continue;
-            }
-
-            if (sdlGuid == sdlMapping->GetJoystickGUID()) {
-                sdlMapping->EraseFromConfig();
-                sdlMapping->SetSDLDeviceIndex(sdlIndex);
-                SetLUSDeviceIndexToPhysicalDeviceIndexMapping(sdlMapping);
-                sdlIndicesToRemove.push_back(sdlMapping->GetSDLDeviceIndex());
-                lusIndicesToRemove.push_back(sdlMapping->GetLUSDeviceIndex());
-                break;
-            }
-        }
-        for (auto index : lusIndicesToRemove) {
-            mappings.erase(index);
-        }
-        lusIndicesToRemove.clear();
-    }
-    for (auto index : sdlIndicesToRemove) {
-        attachedSdlControllerGuids.erase(index);
-    }
-    sdlIndicesToRemove.clear();
-
-    // todo: check to see if we've satisfied port 1 mappings
-    // if we haven't, pause the game and prompt the player
-    // not sure if we want to prompt for every LUS index with a mapping on port 1,
-    // just the index with the most mappings, or just the lowest index
-
-    // prompt for use as saved vs use as new
-    // if input mappings only exist for one LUS color, then use as saved doesn't need extra prompts
-    // if input mappings exist for multiple LUS colors, then prompt for "which color"
-    // is it possible to throw an imgui modal up with controller input temporarily enabled?
-    // use as new set default mappings
-    // only ask for use as saved if we don't have any "active" mappings on the port we're currently trying to map to
-    // (start with 1, then 2 etc.)
-    // - active defined as any non-keyboard input mapping on a port using an LUS index with a non-null
-    // deviceindexmapping
-
-    // prompt for what port
-    // if all ports inactive, only one connected controller, no prompt for which port, just either apply existing or use
-    // as new
-    //
-
-    // map any remaining controllers to the lowest available LUS index
-    for (auto [sdlIndex, sdlGuid] : attachedSdlControllerGuids) {
-        for (uint8_t lusIndex = LUSDeviceIndex::Blue; lusIndex < LUSDeviceIndex::Max; lusIndex++) {
-            if (GetDeviceIndexMappingFromLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex)) != nullptr) {
-                continue;
-            }
-
-            std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) != nullptr
-                                                ? SDL_GameControllerNameForIndex(sdlIndex)
-                                                : "Game Controller";
-            SetLUSDeviceIndexToPhysicalDeviceIndexMapping(std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-                static_cast<LUSDeviceIndex>(lusIndex), sdlIndex, sdlGuid, sdlControllerName, 7680.0f, 7680.0f));
-            mLUSDeviceIndexToSDLControllerNames[static_cast<LUSDeviceIndex>(lusIndex)] = sdlControllerName;
-            break;
+    std::vector<int32_t> connectedSdlControllerIndices;
+    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            connectedSdlControllerIndices.push_back(i);
         }
     }
 
-    for (auto [id, mapping] : mLUSDeviceIndexToPhysicalDeviceIndexMappings) {
-        mapping->SaveToConfig();
+    mLUSDeviceIndexToPhysicalDeviceIndexMappings.clear();
+    for (auto sdlIndex : connectedSdlControllerIndices) {
+        InitializeSDLMappingsForPort(0, sdlIndex);
     }
-    SaveMappingIdsToConfig();
+    mIsInitialized = true;
 }
 
 void LUSDeviceIndexMappingManager::UpdateControllerNamesFromConfig() {
@@ -573,7 +491,8 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevice
     }
 
     if (Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
-        // todo: handle single player mode
+        InitializeSDLMappingsForPort(0, sdlDeviceIndex);
+        return;
     } else {
         for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
             bool portInUse = false;
@@ -601,6 +520,51 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevice
 }
 
 void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId) {
+    if (Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+        HandlePhysicalDeviceDisconnectSinglePlayer(sdlJoystickInstanceId);
+    } else {
+        HandlePhysicalDeviceDisconnectMultiplayer(sdlJoystickInstanceId);
+    }
+}
+
+void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectSinglePlayer(int32_t sdlJoystickInstanceId) {
+    auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected =
+        GetLUSDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
+
+    if (lusIndexOfPhysicalDeviceThatHasBeenDisconnected == LUSDeviceIndex::Max) {
+        // for some reason we don't know what device was disconnected
+        Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(5, true, "Unknown device disconnected");
+        return;
+    }
+
+    for (auto [lusIndex, mapping] : mLUSDeviceIndexToPhysicalDeviceIndexMappings) {
+        auto sdlMapping = dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+        if (sdlMapping == nullptr) {
+            continue;
+        }
+
+        if (lusIndex == lusIndexOfPhysicalDeviceThatHasBeenDisconnected) {
+            sdlMapping->SetSDLDeviceIndex(-1);
+            sdlMapping->SaveToConfig();
+            continue;
+        }
+
+        sdlMapping->SetSDLDeviceIndex(GetNewSDLDeviceIndexFromLUSDeviceIndex(lusIndex));
+        sdlMapping->SaveToConfig();
+    }
+
+    if(Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig().count(lusIndexOfPhysicalDeviceThatHasBeenDisconnected) > 0) {
+        auto deviceMapping = Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()[lusIndexOfPhysicalDeviceThatHasBeenDisconnected];
+        auto sdlIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(deviceMapping);
+        if (sdlIndexMapping != nullptr) {
+            Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(5, true, "%s disconnected", sdlIndexMapping->GetSDLControllerName().c_str());
+        }
+    }
+
+    RemoveLUSDeviceIndexToPhysicalDeviceIndexMapping(lusIndexOfPhysicalDeviceThatHasBeenDisconnected);
+}
+
+void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectMultiplayer(int32_t sdlJoystickInstanceId) {
     auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected =
         GetLUSDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
 

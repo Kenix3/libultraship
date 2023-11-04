@@ -61,6 +61,8 @@ class LUSDeviceIndexMappingManager {
     int32_t GetNewSDLDeviceIndexFromLUSDeviceIndex(LUSDeviceIndex lusIndex);
     LUSDeviceIndex GetLUSDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
     uint8_t GetPortIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
+    void HandlePhysicalDeviceDisconnectSinglePlayer(int32_t sdlJoystickInstanceId);
+    void HandlePhysicalDeviceDisconnectMultiplayer(int32_t sdlJoystickInstanceId);
 #endif
 };
 } // namespace LUS

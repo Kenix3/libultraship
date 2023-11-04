@@ -181,6 +181,12 @@ int32_t ControllerReorderingWindow::GetSDLIndexFromSDLInput() {
 }
 
 void ControllerReorderingWindow::DrawElement() {
+    if (Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsSinglePlayer();
+        Hide();
+        return;
+    }
+
     // if we don't have more than one controller, just close the window
     std::vector<int32_t> connectedSdlControllerIndices;
     for (auto i = 0; i < SDL_NumJoysticks(); i++) {

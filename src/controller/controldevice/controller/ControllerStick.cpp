@@ -286,6 +286,9 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     AddAxisDirectionMapping(direction, mapping);
     mapping->SaveToConfig();
     SaveAxisDirectionMappingIdsToConfig();
+    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    CVarSetInteger(hasConfigCvarKey.c_str(), true);
+    CVarSave();
     return true;
 }
 #else
@@ -316,6 +319,9 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     AddAxisDirectionMapping(direction, mapping);
     mapping->SaveToConfig();
     SaveAxisDirectionMappingIdsToConfig();
+    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    CVarSetInteger(hasConfigCvarKey.c_str(), true);
+    CVarSave();
     return true;
 }
 #endif
