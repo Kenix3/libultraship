@@ -286,13 +286,18 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
                     continue;
                 }
 
-                if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForLUSDeviceIndex(
-                        lusIndex)) {
+                if (!Context::GetInstance()
+                         ->GetControlDeck()
+                         ->GetControllerByPort(portIndex)
+                         ->HasMappingsForLUSDeviceIndex(lusIndex)) {
                     continue;
                 }
 
-                Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(
-                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
+                Context::GetInstance()
+                    ->GetControlDeck()
+                    ->GetControllerByPort(portIndex)
+                    ->MoveMappingsToDifferentController(
+                        Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
                 return;
             }
         }
@@ -353,8 +358,7 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
 }
 
 void LUSDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
-    for (auto mapping :
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->GetAllMappings()) {
+    for (auto mapping : Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->GetAllMappings()) {
         auto sdlMapping = std::dynamic_pointer_cast<SDLMapping>(mapping);
         if (sdlMapping == nullptr) {
             continue;
@@ -533,7 +537,8 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectSinglePlayer(in
 
     if (lusIndexOfPhysicalDeviceThatHasBeenDisconnected == LUSDeviceIndex::Max) {
         // for some reason we don't know what device was disconnected
-        Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(5, true, "Unknown device disconnected");
+        Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(
+            5, true, "Unknown device disconnected");
         return;
     }
 
@@ -553,11 +558,20 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectSinglePlayer(in
         sdlMapping->SaveToConfig();
     }
 
-    if(Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig().count(lusIndexOfPhysicalDeviceThatHasBeenDisconnected) > 0) {
-        auto deviceMapping = Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappingsFromConfig()[lusIndexOfPhysicalDeviceThatHasBeenDisconnected];
+    if (Context::GetInstance()
+            ->GetControlDeck()
+            ->GetDeviceIndexMappingManager()
+            ->GetAllDeviceIndexMappingsFromConfig()
+            .count(lusIndexOfPhysicalDeviceThatHasBeenDisconnected) > 0) {
+        auto deviceMapping =
+            Context::GetInstance()
+                ->GetControlDeck()
+                ->GetDeviceIndexMappingManager()
+                ->GetAllDeviceIndexMappingsFromConfig()[lusIndexOfPhysicalDeviceThatHasBeenDisconnected];
         auto sdlIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(deviceMapping);
         if (sdlIndexMapping != nullptr) {
-            Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(5, true, "%s disconnected", sdlIndexMapping->GetSDLControllerName().c_str());
+            Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(
+                5, true, "%s disconnected", sdlIndexMapping->GetSDLControllerName().c_str());
         }
     }
 
