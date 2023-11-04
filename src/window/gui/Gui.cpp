@@ -42,6 +42,10 @@
 #include "port/switch/SwitchImpl.h"
 #endif
 
+#ifdef __ANDROID__
+#include "port/android/AndroidImpl.h"
+#endif
+
 #ifdef ENABLE_OPENGL
 #include <ImGui/backends/imgui_impl_opengl3.h>
 #include <ImGui/backends/imgui_impl_sdl2.h>
@@ -98,6 +102,12 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
 #ifdef __SWITCH__
     LUS::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
+#endif
+
+#if defined(__ANDROID__)
+    // Scale everything by 2 for Android
+    ImGui::GetStyle().ScaleAllSizes(2.0f);
+    mImGuiIo->FontGlobalScale = 2.0f;
 #endif
 
 #ifdef __WIIU__
@@ -184,6 +194,8 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
+#elif __ANDROID__
+            ImGui_ImplOpenGL3_Init("#version 300 es");
 #else
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif
@@ -266,6 +278,9 @@ void Gui::Update(WindowEvent event) {
 
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+#endif
+#ifdef __ANDROID__
+            LUS::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
 #endif
