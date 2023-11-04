@@ -1170,7 +1170,18 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d###port%d", portIndex + 1, portIndex).c_str())) {
         if (ImGui::Button("Clear All")) {
-            LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappings();
+            ImGui::OpenPopup("Clear All##clearAllPopup");
+        }
+        if (ImGui::BeginPopupModal("Clear All##clearAllPopup", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("This will clear all mappings for port %d.\n\nContinue?", portIndex + 1);
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::Button("Clear All")) {
+                LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappings();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
         DrawSetDefaultsButton(portIndex);
         if (!LUS::Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
