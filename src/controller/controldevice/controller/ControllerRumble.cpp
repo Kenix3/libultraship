@@ -75,7 +75,7 @@ void ControllerRumble::ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex) 
             mappingIdsToRemove.push_back(id);
         }
     }
-    
+
     for (auto id : mappingIdsToRemove) {
         auto it = mRumbleMappings.find(id);
         if (it != mRumbleMappings.end()) {

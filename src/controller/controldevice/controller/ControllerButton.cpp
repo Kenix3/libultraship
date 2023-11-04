@@ -120,7 +120,6 @@ void ControllerButton::ClearAllButtonMappingsForDevice(LUSDeviceIndex lusDeviceI
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
-        
     }
 
     for (auto id : mappingIdsToRemove) {

@@ -272,7 +272,10 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
 
 #ifndef __WIIU__
     auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<SDLAxisDirectionToButtonMapping>(mapping);
-    auto indexMapping = Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(mapping->GetLUSDeviceIndex());
+    auto indexMapping = Context::GetInstance()
+                            ->GetControlDeck()
+                            ->GetDeviceIndexMappingManager()
+                            ->GetDeviceIndexMappingFromLUSDeviceIndex(mapping->GetLUSDeviceIndex());
     auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
     if (sdlIndexMapping != nullptr && sdlAxisDirectionToButtonMapping != nullptr) {
@@ -303,7 +306,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
 
                 int32_t stickAxisThreshold = sdlIndexMapping->GetStickAxisThresholdPercentage();
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Stick Axis Threshold%s", id.c_str()).c_str(),
-                                    &stickAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+                                     &stickAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                     sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold);
                     sdlIndexMapping->SaveToConfig();
                 }
@@ -315,7 +318,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
 
                 int32_t triggerAxisThreshold = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Trigger Axis Threshold%s", id.c_str()).c_str(),
-                                    &triggerAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+                                     &triggerAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
                     sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
                     sdlIndexMapping->SaveToConfig();
                 }
@@ -1137,21 +1140,26 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
             GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-            if(ImGui::Button(
-                StringHelper::Sprintf("%s %s (%s)", ICON_FA_GAMEPAD, name.c_str(), StringHelper::Sprintf("SDL %d", sdlIndex).c_str()).c_str())) {
+            if (ImGui::Button(StringHelper::Sprintf("%s %s (%s)", ICON_FA_GAMEPAD, name.c_str(),
+                                                    StringHelper::Sprintf("SDL %d", sdlIndex).c_str())
+                                  .c_str())) {
                 ImGui::OpenPopup(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str());
             }
             ImGui::PopStyleColor();
             ImGui::PopStyleColor();
-            if (ImGui::BeginPopupModal(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-                ImGui::Text("This will clear all existing mappings for\n%s (SDL %d) on port %d.\n\nContinue?", name.c_str(), sdlIndex, portIndex + 1);
+            if (ImGui::BeginPopupModal(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str(), NULL,
+                                       ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("This will clear all existing mappings for\n%s (SDL %d) on port %d.\n\nContinue?",
+                            name.c_str(), sdlIndex, portIndex + 1);
                 if (ImGui::Button("Cancel")) {
                     shouldClose = true;
                     ImGui::CloseCurrentPopup();
                 }
                 if (ImGui::Button("Set defaults")) {
-                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappingsForDevice(lusIndex);
-                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(lusIndex);
+                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappingsForDevice(
+                        lusIndex);
+                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
+                        lusIndex);
                     shouldClose = true;
                     ImGui::CloseCurrentPopup();
                 }

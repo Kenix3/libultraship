@@ -302,8 +302,8 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestLUSDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(
-        lusIndex, sdlIndex, guidString, sdlControllerName, 25, 25);
+    auto deviceIndexMapping = std::make_shared<LUSDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString,
+                                                                                      sdlControllerName, 25, 25);
     mLUSDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     deviceIndexMapping->SaveToConfig();
     SetLUSDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
@@ -330,10 +330,10 @@ LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id)
         std::string sdlControllerName =
             CVarGetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(), "");
 
-        int32_t stickAxisThreshold =
-            CVarGetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(), 25);
-        int32_t triggerAxisThreshold =
-            CVarGetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(), 25);
+        int32_t stickAxisThreshold = CVarGetInteger(
+            StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(), 25);
+        int32_t triggerAxisThreshold = CVarGetInteger(
+            StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(), 25);
 
         if (lusDeviceIndex < 0 || sdlJoystickGuid == "") {
             // something about this mapping is invalid

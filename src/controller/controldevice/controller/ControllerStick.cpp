@@ -54,7 +54,7 @@ void ControllerStick::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
             }
         }
     }
-    
+
     for (auto id : mappingIdsToRemove) {
         for (auto [direction, directionMappings] : mAxisDirectionMappings) {
             auto it = directionMappings.find(id);

@@ -7,7 +7,8 @@ LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(
     LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
     int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage)
     : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
-      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName), mStickAxisThresholdPercentage(stickAxisThresholdPercentage),
+      mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName),
+      mStickAxisThresholdPercentage(stickAxisThresholdPercentage),
       mTriggerAxisThresholdPercentage(triggerAxisThresholdPercentage) {
 }
 
@@ -56,9 +57,10 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
                   mSDLJoystickGUID.c_str());
     CVarSetString(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str(),
                   mSDLControllerName.c_str());
-    CVarSetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(), mStickAxisThresholdPercentage);
+    CVarSetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+                   mStickAxisThresholdPercentage);
     CVarSetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
-                 mTriggerAxisThresholdPercentage);
+                   mTriggerAxisThresholdPercentage);
     CVarSave();
 }
 
