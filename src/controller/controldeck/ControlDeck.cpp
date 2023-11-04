@@ -7,11 +7,6 @@
 #include <imgui.h>
 #include "controller/deviceindex/LUSDeviceIndexMappingManager.h"
 
-// #ifdef __WIIU__
-// #include "port/wiiu/WiiUGamepad.h"
-// #include "port/wiiu/WiiUController.h"
-// #endif
-
 namespace LUS {
 
 ControlDeck::ControlDeck() : mPads(nullptr), mSinglePlayerMappingMode(false) {
