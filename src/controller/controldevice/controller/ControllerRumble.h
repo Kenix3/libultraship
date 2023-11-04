@@ -19,6 +19,7 @@ class ControllerRumble {
     void ClearRumbleMapping(std::string id);
     void SaveRumbleMappingIdsToConfig();
     void ClearAllMappings();
+    void ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
     void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
     void LoadRumbleMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();

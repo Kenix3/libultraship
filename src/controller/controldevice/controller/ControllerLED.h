@@ -19,6 +19,7 @@ class ControllerLED {
     void ClearLEDMapping(std::string id);
     void SaveLEDMappingIdsToConfig();
     void ClearAllMappings();
+    void ClearAllMappingsForDevice(LUSDeviceIndex lusIndex);
     void LoadLEDMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();
 

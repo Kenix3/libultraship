@@ -74,5 +74,6 @@ class InputEditorWindow : public GuiWindow {
     void DrawGyroDeviceIcons(uint8_t portIndex);
     void DrawLEDDeviceIcons(uint8_t portIndex);
     bool mInputEditorPopupOpen;
+    void DrawSetDefaultsButton(uint8_t portIndex);
 };
 } // namespace LUS

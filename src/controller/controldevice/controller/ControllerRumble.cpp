@@ -67,6 +67,24 @@ void ControllerRumble::ClearAllMappings() {
     SaveRumbleMappingIdsToConfig();
 }
 
+void ControllerRumble::ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex) {
+    std::vector<std::string> mappingIdsToRemove;
+    for (auto [id, mapping] : mRumbleMappings) {
+        if (mapping->GetLUSDeviceIndex() == lusDeviceIndex) {
+            mapping->EraseFromConfig();
+            mappingIdsToRemove.push_back(id);
+        }
+    }
+    
+    for (auto id : mappingIdsToRemove) {
+        auto it = mRumbleMappings.find(id);
+        if (it != mRumbleMappings.end()) {
+            mRumbleMappings.erase(it);
+        }
+    }
+    SaveRumbleMappingIdsToConfig();
+}
+
 #ifdef __WIIU__
 void ControllerRumble::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     for (auto mapping : RumbleMappingFactory::CreateDefaultWiiURumbleMappings(lusDeviceIndex, mPortIndex)) {

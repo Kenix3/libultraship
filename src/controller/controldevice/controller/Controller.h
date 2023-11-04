@@ -32,6 +32,7 @@ class Controller : public ControlDevice {
     void Disconnect();
 
     void ClearAllMappings();
+    void ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
     void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
     std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> GetAllButtons();
     std::shared_ptr<ControllerButton> GetButtonByBitmask(uint16_t bitmask);

@@ -113,6 +113,25 @@ void ControllerButton::ClearAllButtonMappings() {
     SaveButtonMappingIdsToConfig();
 }
 
+void ControllerButton::ClearAllButtonMappingsForDevice(LUSDeviceIndex lusDeviceIndex) {
+    std::vector<std::string> mappingIdsToRemove;
+    for (auto [id, mapping] : mButtonMappings) {
+        if (mapping->GetLUSDeviceIndex() == lusDeviceIndex) {
+            mapping->EraseFromConfig();
+            mappingIdsToRemove.push_back(id);
+        }
+        
+    }
+
+    for (auto id : mappingIdsToRemove) {
+        auto it = mButtonMappings.find(id);
+        if (it != mButtonMappings.end()) {
+            mButtonMappings.erase(it);
+        }
+    }
+    SaveButtonMappingIdsToConfig();
+}
+
 void ControllerButton::UpdatePad(uint16_t& padButtons) {
     for (const auto& [id, mapping] : mButtonMappings) {
         mapping->UpdatePad(padButtons);

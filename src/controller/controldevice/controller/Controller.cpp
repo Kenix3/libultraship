@@ -78,6 +78,22 @@ void Controller::ClearAllMappings() {
     GetLED()->ClearAllMappings();
 }
 
+void Controller::ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex) {
+    for (auto [bitmask, button] : GetAllButtons()) {
+        button->ClearAllButtonMappingsForDevice(lusDeviceIndex);
+    }
+    GetLeftStick()->ClearAllMappingsForDevice(lusDeviceIndex);
+    GetRightStick()->ClearAllMappingsForDevice(lusDeviceIndex);
+
+    auto gyroMapping = GetGyro()->GetGyroMapping();
+    if (gyroMapping != nullptr && gyroMapping->GetLUSDeviceIndex() == lusDeviceIndex) {
+        GetGyro()->ClearGyroMapping();
+    }
+
+    GetRumble()->ClearAllMappingsForDevice(lusDeviceIndex);
+    GetLED()->ClearAllMappingsForDevice(lusDeviceIndex);
+}
+
 void Controller::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         button->AddDefaultMappings(lusDeviceIndex);

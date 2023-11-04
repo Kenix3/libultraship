@@ -61,6 +61,25 @@ void ControllerLED::ClearAllMappings() {
     SaveLEDMappingIdsToConfig();
 }
 
+
+void ControllerLED::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
+    std::vector<std::string> mappingIdsToRemove;
+    for (auto [id, mapping] : mLEDMappings) {
+        if (mapping->GetLUSDeviceIndex() == lusIndex) {
+            mapping->EraseFromConfig();
+            mappingIdsToRemove.push_back(id);
+        }
+    }
+    
+    for (auto id : mappingIdsToRemove) {
+        auto it = mLEDMappings.find(id);
+        if (it != mLEDMappings.end()) {
+            mLEDMappings.erase(it);
+        }
+    }
+    SaveLEDMappingIdsToConfig();
+}
+
 void ControllerLED::LoadLEDMappingFromConfig(std::string id) {
     auto mapping = LEDMappingFactory::CreateLEDMappingFromConfig(mPortIndex, id);
 

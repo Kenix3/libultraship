@@ -20,6 +20,7 @@ class ControllerStick {
     void AddDefaultMappings(LUSDeviceIndex lusIndex);
 
     void ClearAllMappings();
+    void ClearAllMappingsForDevice(LUSDeviceIndex lusIndex);
     void UpdatePad(int8_t& x, int8_t& y);
     std::shared_ptr<ControllerAxisDirectionMapping> GetAxisDirectionMappingById(Direction direction, std::string id);
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>

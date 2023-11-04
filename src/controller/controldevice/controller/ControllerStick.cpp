@@ -44,6 +44,28 @@ void ControllerStick::ClearAllMappings() {
     SetNotchSnapAngle(0);
 }
 
+void ControllerStick::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
+    std::vector<std::string> mappingIdsToRemove;
+    for (auto [direction, directionMappings] : mAxisDirectionMappings) {
+        for (auto [id, mapping] : directionMappings) {
+            if (mapping->GetLUSDeviceIndex() == lusIndex) {
+                mapping->EraseFromConfig();
+                mappingIdsToRemove.push_back(id);
+            }
+        }
+    }
+    
+    for (auto id : mappingIdsToRemove) {
+        for (auto [direction, directionMappings] : mAxisDirectionMappings) {
+            auto it = directionMappings.find(id);
+            if (it != directionMappings.end()) {
+                directionMappings.erase(it);
+            }
+        }
+    }
+    SaveAxisDirectionMappingIdsToConfig();
+}
+
 // todo: where should this live?
 std::unordered_map<Stick, std::string> stickToConfigStickName = { { LEFT_STICK, "LeftStick" },
                                                                   { RIGHT_STICK, "RightStick" } };

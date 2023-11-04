@@ -30,6 +30,7 @@ class ControllerButton {
     void SaveButtonMappingIdsToConfig();
     void ReloadAllMappingsFromConfig();
     void ClearAllButtonMappings();
+    void ClearAllButtonMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
 
     bool AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id);
 

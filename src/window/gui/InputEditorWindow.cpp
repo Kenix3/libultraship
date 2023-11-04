@@ -1107,11 +1107,72 @@ void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
     }
 }
 
+void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    auto popupId = StringHelper::Sprintf("setDefaultsPopup##%d", portIndex);
+    if (ImGui::Button(StringHelper::Sprintf("Set defaults...##%d", portIndex).c_str())) {
+        ImGui::OpenPopup(popupId.c_str());
+    }
+    ImGui::PopStyleVar();
+
+    if (ImGui::BeginPopup(popupId.c_str())) {
+        std::map<LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
+        for (auto [lusIndex, mapping] :
+             Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+            auto sdlIndexMapping = std::static_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
+            if (sdlIndexMapping == nullptr) {
+                continue;
+            }
+
+            indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex() };
+        }
+
+        bool shouldClose = false;
+        for (auto [lusIndex, info] : indexMappings) {
+            auto [name, sdlIndex] = info;
+
+            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+            GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+            if(ImGui::Button(
+                StringHelper::Sprintf("%s %s (%s)", ICON_FA_GAMEPAD, name.c_str(), StringHelper::Sprintf("SDL %d", sdlIndex).c_str()).c_str())) {
+                ImGui::OpenPopup(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str());
+            }
+            ImGui::PopStyleColor();
+            ImGui::PopStyleColor();
+            if (ImGui::BeginPopupModal(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("This will clear all existing mappings for\n%s (SDL %d) on port %d.\n\nContinue?", name.c_str(), sdlIndex, portIndex + 1);
+                if (ImGui::Button("Cancel")) {
+                    shouldClose = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                if (ImGui::Button("Set defaults")) {
+                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappingsForDevice(lusIndex);
+                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(lusIndex);
+                    shouldClose = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+        }
+
+        if (ImGui::Button("Cancel") || shouldClose) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+}
+
 void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d###port%d", portIndex + 1, portIndex).c_str())) {
         if (ImGui::Button("Clear All")) {
             LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappings();
         }
+        DrawSetDefaultsButton(portIndex);
         if (!LUS::Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
             ImGui::SameLine();
             if (ImGui::Button("Reorder controllers")) {
