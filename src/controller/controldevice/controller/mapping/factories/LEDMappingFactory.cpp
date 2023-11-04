@@ -1,5 +1,7 @@
 #include "LEDMappingFactory.h"
+#ifndef __WIIU__
 #include "controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h"
+#endif
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
