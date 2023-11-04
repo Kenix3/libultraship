@@ -1232,7 +1232,8 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
                 continue;
             }
 
-            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(), wiiuIndexMapping->IsWiiUGamepad() ? INT32_MAX
+            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(),
+                                        wiiuIndexMapping->IsWiiUGamepad() ? INT32_MAX
                                                                           : wiiuIndexMapping->GetDeviceChannel() };
         }
 
@@ -1247,19 +1248,17 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
 
-            auto fancyName = StringHelper::Sprintf("%s%s",
-                                                name.c_str(),
-                                                isGamepad ? ""
-                                                            : StringHelper::Sprintf(" (%d)", wiiuChannel).c_str());
-            if(ImGui::Button(StringHelper::Sprintf("%s %s", ICON_FA_GAMEPAD, fancyName.c_str()).c_str())) {
+            auto fancyName = StringHelper::Sprintf(
+                "%s%s", name.c_str(), isGamepad ? "" : StringHelper::Sprintf(" (%d)", wiiuChannel).c_str());
+            if (ImGui::Button(StringHelper::Sprintf("%s %s", ICON_FA_GAMEPAD, fancyName.c_str()).c_str())) {
                 ImGui::OpenPopup(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str());
             }
             ImGui::PopStyleColor();
             ImGui::PopStyleColor();
             if (ImGui::BeginPopupModal(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str(), NULL,
                                        ImGuiWindowFlags_AlwaysAutoResize)) {
-                ImGui::Text("This will clear all existing mappings for\n%s on port %d.\n\nContinue?",
-                            fancyName.c_str(), portIndex + 1);
+                ImGui::Text("This will clear all existing mappings for\n%s on port %d.\n\nContinue?", fancyName.c_str(),
+                            portIndex + 1);
                 if (ImGui::Button("Cancel")) {
                     shouldClose = true;
                     ImGui::CloseCurrentPopup();
