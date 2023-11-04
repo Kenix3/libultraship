@@ -11,6 +11,8 @@ class SDLAxisDirectionToAnyMapping : virtual public ControllerInputMapping, publ
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;
     bool PhysicalDeviceIsConnected() override;
+    bool AxisIsTrigger();
+    bool AxisIsStick();
 
   protected:
     SDL_GameControllerAxis mControllerAxis;

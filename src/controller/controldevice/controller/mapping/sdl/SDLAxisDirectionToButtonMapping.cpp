@@ -23,8 +23,19 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
     }
 
     const auto axisValue = SDL_GameControllerGetAxis(mController, mControllerAxis);
-    auto axisMinValue = 7680.0f;
+    int32_t axisThresholdPercentage = 25;
+    auto indexMapping = Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(ControllerInputMapping::mLUSDeviceIndex);
+    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+    
+    if (sdlIndexMapping != nullptr) {
+        if (AxisIsStick()) {
+            axisThresholdPercentage = sdlIndexMapping->GetStickAxisThresholdPercentage();
+        } else if (AxisIsTrigger()) {
+            axisThresholdPercentage = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
+        }
+    }
 
+    auto axisMinValue = SDL_JOYSTICK_AXIS_MAX * (axisThresholdPercentage / 100.0f);
     if ((mAxisDirection == POSITIVE && axisValue > axisMinValue) ||
         (mAxisDirection == NEGATIVE && axisValue < -axisMinValue)) {
         padButtons |= mBitmask;

@@ -63,4 +63,17 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalDeviceName() {
 bool SDLAxisDirectionToAnyMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
+
+bool SDLAxisDirectionToAnyMapping::AxisIsTrigger() {
+    return
+    mControllerAxis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ||
+    mControllerAxis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
+}
+
+bool SDLAxisDirectionToAnyMapping::AxisIsStick() {
+    return mControllerAxis == SDL_CONTROLLER_AXIS_LEFTX ||
+    mControllerAxis == SDL_CONTROLLER_AXIS_LEFTY ||
+    mControllerAxis == SDL_CONTROLLER_AXIS_RIGHTX ||
+    mControllerAxis == SDL_CONTROLLER_AXIS_RIGHTY;
+}
 } // namespace LUS

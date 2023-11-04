@@ -4,6 +4,10 @@
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 
+#ifndef __WIIU__
+#include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
+#endif
+
 namespace LUS {
 
 InputEditorWindow::~InputEditorWindow() {
@@ -265,6 +269,71 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
 
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
+
+#ifndef __WIIU__
+    auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<SDLAxisDirectionToButtonMapping>(mapping);
+    auto indexMapping = Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetDeviceIndexMappingFromLUSDeviceIndex(mapping->GetLUSDeviceIndex());
+    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+
+    if (sdlIndexMapping != nullptr && sdlAxisDirectionToButtonMapping != nullptr) {
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        auto popupId = StringHelper::Sprintf("editAxisThresholdPopup##%s", id.c_str());
+
+        if (ImGui::Button(StringHelper::Sprintf("%s###editAxisThresholdButton%s", ICON_FA_COG, id.c_str()).c_str())) {
+            ImGui::OpenPopup(popupId.c_str());
+        }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
+            ImGui::SetTooltip("Edit axis threshold");
+        }
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+
+        if (ImGui::BeginPopup(popupId.c_str())) {
+            mInputEditorPopupOpen = true;
+            ImGui::Text("Axis Threshold");
+
+            if (sdlAxisDirectionToButtonMapping->AxisIsStick()) {
+                ImGui::Text("Stick axis threshold:");
+                ImGui::SetNextItemWidth(160.0f);
+
+                int32_t stickAxisThreshold = sdlIndexMapping->GetStickAxisThresholdPercentage();
+                if (ImGui::SliderInt(StringHelper::Sprintf("##Stick Axis Threshold%s", id.c_str()).c_str(),
+                                    &stickAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+                    sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold);
+                    sdlIndexMapping->SaveToConfig();
+                }
+            }
+
+            if (sdlAxisDirectionToButtonMapping->AxisIsTrigger()) {
+                ImGui::Text("Trigger axis threshold:");
+                ImGui::SetNextItemWidth(160.0f);
+
+                int32_t triggerAxisThreshold = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
+                if (ImGui::SliderInt(StringHelper::Sprintf("##Trigger Axis Threshold%s", id.c_str()).c_str(),
+                                    &triggerAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+                    sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
+                    sdlIndexMapping->SaveToConfig();
+                }
+            }
+
+            if (ImGui::Button("Close")) {
+                mInputEditorPopupOpen = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::SameLine(0, 0);
+    }
+#endif
+
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
