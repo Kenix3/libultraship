@@ -539,6 +539,7 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectSinglePlayer(in
         // for some reason we don't know what device was disconnected
         Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(
             5, true, "Unknown device disconnected");
+        InitializeMappingsSinglePlayer();
         return;
     }
 
