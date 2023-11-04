@@ -57,7 +57,6 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
 
 std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact) {
     // Check for and remove the OTR signature
-    SPDLOG_TRACE("LOAD RESOURCE PROCESS {}", filePath);
     if (filePath == "misc/link_animation/gPlayerAnim_link_normal_wait_free_Data") {
         int bp = 5;
     }

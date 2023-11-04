@@ -343,6 +343,7 @@
 #define G_TEXTURE_GEN 0x00040000
 #define G_TEXTURE_GEN_LINEAR 0x00080000
 #define G_LOD 0x00100000 /* NOT IMPLEMENTED */
+#define G_LIGHTING_POSITIONAL 0x00400000
 #if (defined(F3DEX_GBI) || defined(F3DLP_GBI))
 #define G_CLIPPING 0x00800000
 #else
@@ -1271,6 +1272,15 @@ typedef struct {
 } Light_t;
 
 typedef struct {
+    unsigned char col[3];
+    unsigned char unk3;
+    unsigned char colc[3];
+    unsigned char unk7;
+    short pos[3];
+    unsigned char unkE;
+} PointLight_t;
+
+typedef struct {
     unsigned char col[3]; /* ambient light value (rgba) */
     char pad1;
     unsigned char colc[3]; /* copy of ambient light value (rgba) */
@@ -1283,6 +1293,7 @@ typedef struct {
 
 typedef union {
     Light_t l;
+    PointLight_t p;
     long long int force_structure_alignment[2];
 } Light;
 
@@ -2784,6 +2795,9 @@ typedef union {
 #define gDPSetAlphaDither(pkt, mode) gSPSetOtherMode(pkt, G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 2, mode)
 #define gsDPSetAlphaDither(mode) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 2, mode)
 #endif
+
+#define gDPSetDither(pkt, mode) gSPSetOtherMode(pkt, G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 4, mode)
+
 
 /* 'blendmask' is not supported anymore.
  * The bits are reserved for future use.
