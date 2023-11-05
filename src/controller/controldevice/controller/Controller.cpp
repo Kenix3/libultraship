@@ -120,10 +120,6 @@ void Controller::ReloadAllMappingsFromConfig() {
 void Controller::ReadToPad(OSContPad* pad) {
     OSContPad padToBuffer = { 0 };
 
-#ifndef __WIIU__
-    SDL_PumpEvents();
-#endif
-
     // Button Inputs
     int32_t blarg = 3;
     for (auto [bitmask, button] : mButtons) {

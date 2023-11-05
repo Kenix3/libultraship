@@ -479,61 +479,53 @@ static void gfx_sdl_onkeyup(int scancode) {
     }
 }
 
+static void gfx_sdl_handle_single_event(SDL_Event& event) {
+    LUS::WindowEvent event_impl;
+    event_impl.Sdl = { &event };
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
+    switch (event.type) {
+#ifndef TARGET_WEB
+        // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
+        case SDL_KEYDOWN:
+            gfx_sdl_onkeydown(event.key.keysym.scancode);
+            break;
+        case SDL_KEYUP:
+            gfx_sdl_onkeyup(event.key.keysym.scancode);
+            break;
+#endif
+        case SDL_WINDOWEVENT:
+            if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+#ifdef __SWITCH__
+                LUS::Switch::GetDisplaySize(&window_width, &window_height);
+#else
+                SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+#endif
+            } else if (event.window.event == SDL_WINDOWEVENT_CLOSE &&
+                        event.window.windowID == SDL_GetWindowID(wnd)) {
+                // We listen specifically for main window close because closing main window
+                // on macOS does not trigger SDL_Quit.
+                is_running = false;
+            }
+            break;
+        case SDL_DROPFILE:
+            CVarSetString("gDroppedFile", event.drop.file);
+            CVarSetInteger("gNewFileDropped", 1);
+            CVarSave();
+            break;
+        case SDL_QUIT:
+            is_running = false;
+            break;
+    }
+}
+
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        LUS::WindowEvent event_impl;
-        event_impl.Sdl = { &event };
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
-        switch (event.type) {
-#ifndef TARGET_WEB
-            // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
-            case SDL_KEYDOWN:
-                gfx_sdl_onkeydown(event.key.keysym.scancode);
-                break;
-            case SDL_KEYUP:
-                gfx_sdl_onkeyup(event.key.keysym.scancode);
-                break;
-#endif
-            case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-#ifdef __SWITCH__
-                    LUS::Switch::GetDisplaySize(&window_width, &window_height);
-#else
-                    SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
-#endif
-                } else if (event.window.event == SDL_WINDOWEVENT_CLOSE &&
-                           event.window.windowID == SDL_GetWindowID(wnd)) {
-                    // We listen specifically for main window close because closing main window
-                    // on macOS does not trigger SDL_Quit.
-                    is_running = false;
-                }
-                break;
-            case SDL_DROPFILE:
-                CVarSetString("gDroppedFile", event.drop.file);
-                CVarSetInteger("gNewFileDropped", 1);
-                CVarSave();
-                break;
-            case SDL_QUIT:
-                is_running = false;
-                break;
-            case SDL_CONTROLLERDEVICEREMOVED:
-                // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the [...] instance id for the
-                // SDL_CONTROLLERDEVICEREMOVED [...] event
-                LUS::Context::GetInstance()
-                    ->GetControlDeck()
-                    ->GetDeviceIndexMappingManager()
-                    ->HandlePhysicalDeviceDisconnect(event.cdevice.which);
-                break;
-            case SDL_CONTROLLERDEVICEADDED:
-                // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for
-                // the SDL_CONTROLLERDEVICEADDED event
-                LUS::Context::GetInstance()
-                    ->GetControlDeck()
-                    ->GetDeviceIndexMappingManager()
-                    ->HandlePhysicalDeviceConnect(event.cdevice.which);
-                break;
-        }
+    SDL_PumpEvents();
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_CONTROLLERDEVICEADDED - 1) > 0) {
+        gfx_sdl_handle_single_event(event);
+    }
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
+        gfx_sdl_handle_single_event(event);
     }
 }
 
