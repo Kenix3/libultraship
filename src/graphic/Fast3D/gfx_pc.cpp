@@ -817,7 +817,15 @@ static void import_texture_ci4(int tile, bool importReplacement) {
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes;
     uint32_t pal_idx = rdp.texture_tile[tile].palette;                           // 0-15
-    const uint8_t* palette = rdp.palettes[pal_idx / 8] + (pal_idx % 8) * 16 * 2; // 16 pixel entries, 16 bits each
+    
+    uint8_t* palette = nullptr;
+    //const uint8_t* palette = rdp.palettes[pal_idx / 8] + (pal_idx % 8) * 16 * 2; // 16 pixel entries, 16 bits each
+
+    if (pal_idx > 7)
+        palette = (uint8_t*)rdp.palettes[pal_idx / 8]; // 16 pixel entries, 16 bits each
+    else
+        palette = (uint8_t*)(rdp.palettes[pal_idx / 8] + (pal_idx % 8) * 16 * 2);
+
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
@@ -1913,7 +1921,8 @@ static void gfx_dp_set_scissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32
 }
 
 static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const char* texPath,
-                                     uint32_t texFlags, RawTexMetadata rawTexMetdata, const void* addr) {
+                                     uint32_t texFlags, RawTexMetadata rawTexMetdata, const void* addr) 
+{
     rdp.texture_to_load.addr = (const uint8_t*)addr;
     rdp.texture_to_load.siz = size;
     rdp.texture_to_load.width = width;
@@ -1925,7 +1934,7 @@ static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t t
                             uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks,
                             uint32_t shifts) {
     // OTRTODO:
-    // SUPPORT_CHECK(tmem == 0 || tmem == 256);
+    //SUPPORT_CHECK(tmem == 0 || tmem == 256);
 
     if (cms == G_TX_WRAP && masks == G_TX_NOMASK) {
         cms = G_TX_CLAMP;
@@ -1943,14 +1952,11 @@ static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t t
     rdp.texture_tile[tile].shiftt = shiftt;
     rdp.texture_tile[tile].line_size_bytes = line * 8;
 
-    if (rdp.texture_tile[tile].line_size_bytes > 15000) {
-        int bp = 0;
-    }
-
     rdp.texture_tile[tile].tmem = tmem;
     // rdp.texture_tile[tile].tmem_index = tmem / 256; // tmem is the 64-bit word offset, so 256 words means 2 kB
-    rdp.texture_tile[tile].tmem_index =
-        tmem != 0; // assume one texture is loaded at address 0 and another texture at any other address
+    
+    rdp.texture_tile[tile].tmem_index = tmem != 0; // assume one texture is loaded at address 0 and another texture at any other address
+    
     rdp.textures_changed[0] = true;
     rdp.textures_changed[1] = true;
 }
@@ -1970,6 +1976,7 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
     // BENTODO
     //SUPPORT_CHECK((rdp.texture_tile[tile].tmem == 256 && (high_index <= 127 || high_index == 255)) ||
     //              (rdp.texture_tile[tile].tmem == 384 && high_index == 127));
+
 
     if (rdp.texture_tile[tile].tmem == 256) {
         rdp.palettes[0] = rdp.texture_to_load.addr;
