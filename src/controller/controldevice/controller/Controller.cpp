@@ -181,13 +181,28 @@ bool Controller::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancod
 #endif
 
 bool Controller::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
-    return std::any_of(
-               GetAllButtons().begin(), GetAllButtons().end(),
-               [lusIndex](const auto& button) { return button.second->HasMappingsForLUSDeviceIndex(lusIndex); }) ||
-           GetLeftStick()->HasMappingsForLUSDeviceIndex(lusIndex) ||
-           GetRightStick()->HasMappingsForLUSDeviceIndex(lusIndex) ||
-           GetGyro()->HasMappingForLUSDeviceIndex(lusIndex) || GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex) ||
-           GetLED()->HasMappingsForLUSDeviceIndex(lusIndex);
+    for (auto [bitmask, button] : GetAllButtons()) {
+        if (button->HasMappingsForLUSDeviceIndex(lusIndex)) {
+            return true;
+        }
+    }
+    if (GetLeftStick()->HasMappingsForLUSDeviceIndex(lusIndex)) {
+        return true;
+    }
+    if (GetRightStick()->HasMappingsForLUSDeviceIndex(lusIndex)) {
+        return true;
+    }
+    if (GetGyro()->HasMappingForLUSDeviceIndex(lusIndex)) {
+        return true;
+    }
+    if (GetRumble()->HasMappingsForLUSDeviceIndex(lusIndex)) {
+        return true;
+    }
+    if (GetLED()->HasMappingsForLUSDeviceIndex(lusIndex)) {
+        return true;
+    }
+ 
+    return false;
 }
 
 std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(uint16_t bitmask) {
