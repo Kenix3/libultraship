@@ -201,7 +201,7 @@ bool Controller::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
     if (GetLED()->HasMappingsForLUSDeviceIndex(lusIndex)) {
         return true;
     }
- 
+
     return false;
 }
 
