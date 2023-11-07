@@ -68,12 +68,6 @@ int32_t ControllerDisconnectedWindow::GetWiiUDeviceFromWiiUInput() {
             // todo: don't just use INT32_MAX to mean gamepad
             return INT32_MAX;
         }
-        // todo: use this for getting buttons,
-        // for (uint32_t i = VPAD_BUTTON_SYNC; i <= VPAD_STICK_L_EMULATION_LEFT; i <<= 1) {
-        //     if (vstatus->hold == i) {
-
-        //     }
-        // }
     }
 
     for (int32_t channel = 0; channel < 4; channel++) {
