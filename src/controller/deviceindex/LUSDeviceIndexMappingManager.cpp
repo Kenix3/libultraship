@@ -17,19 +17,15 @@
 #include <sstream>
 
 namespace LUS {
-LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false), mSDLControllerConnectionEventThreadRunning(false) {
+LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false) {
 #ifdef __WIIU__
     UpdateExtensionTypesFromConfig();
 #else
     UpdateControllerNamesFromConfig();
-    SDLControllerConnectionEventThreadInit();
 #endif
 }
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
-    #ifndef __WIIU__
-    SDLControllerConnectionEventThreadExit();
-    #endif
 }
 
 #ifdef __WIIU__
@@ -218,41 +214,6 @@ void LUSDeviceIndexMappingManager::HandlePhysicalDevicesChanged() {
     }
 }
 #else
-void LUSDeviceIndexMappingManager::SDLControllerConnectionEventThread() {
-    while (mSDLControllerConnectionEventThreadRunning) {
-        SDL_PumpEvents();
-        SDL_Event event;
-        if (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEADDED) > 0) {
-            // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for
-            // the SDL_CONTROLLERDEVICEADDED event
-            HandlePhysicalDeviceConnect(event.cdevice.which);
-        }
-
-        if (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED, SDL_CONTROLLERDEVICEREMOVED) > 0) {
-            // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the [...] instance id for the
-            // SDL_CONTROLLERDEVICEREMOVED [...] event
-            HandlePhysicalDeviceDisconnect(event.cdevice.which);
-        }
-    }
-}
-
-void LUSDeviceIndexMappingManager::SDLControllerConnectionEventThreadInit() {
-    if (!mSDLControllerConnectionEventThreadRunning) {
-        mSDLControllerConnectionEventThreadRunning = true;
-        mSDLControllerConnectionEventThread = std::thread(&LUSDeviceIndexMappingManager::SDLControllerConnectionEventThread, this);
-    }
-}
-
-void LUSDeviceIndexMappingManager::SDLControllerConnectionEventThreadExit() {
-    // Tell the thread to stop
-    {
-        mSDLControllerConnectionEventThreadRunning = false;
-    }
-
-    // Wait until the thread quits
-    mSDLControllerConnectionEventThread.join();
-}
-
 void LUSDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
     for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
         for (auto mapping :
