@@ -6,7 +6,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <DbgHelp.h>
-
+#include <errhandlingapi.h>
 #include <inttypes.h>
 #include <excpt.h>
 
@@ -266,7 +266,7 @@ void CrashHandler::PrintRegisters(CONTEXT* ctx) {
 
     sprintf_s(regBuff, std::size(regBuff), "EFLAGS: 0x%08lX", ctx->EFlags);
     AppendLine(regBuff);
-#elif WINDOWS_32_BIT
+#elif defined(WINDOWS_32_BIT)
     sprintf_s(regBuff, std::size(regBuff), "EDI: 0x%08lX", ctx->Edi);
     AppendLine(regBuff);
 
@@ -308,7 +308,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
 #if defined(_M_AMD64)
     STACKFRAME64 stack;
     memset(&stack, 0, sizeof(STACKFRAME64));
-#elif WINDOWS_32_BIT
+#elif defined(WINDOWS_32_BIT)
     STACKFRAME stack;
     memset(&stack, 0, sizeof(STACKFRAME));
     stack.AddrPC.Offset = (*ctx).Eip;
@@ -338,7 +338,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     constexpr DWORD machineType =
 #if defined(_M_AMD64)
         IMAGE_FILE_MACHINE_AMD64;
-#elif WINDOWS_32_BIT
+#elif defined(WINDOWS_32_BIT)
         IMAGE_FILE_MACHINE_I386;
 #endif
 
@@ -355,7 +355,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
 #if defined(_M_AMD64)
         IMAGEHLP_LINE64 line;
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-#elif WINDOWS_32_BIT
+#elif defined(WINDOWS_32_BIT)
         IMAGEHLP_LINE line;
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
 #endif
@@ -389,7 +389,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     spdlog::shutdown();
 }
 
-extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {
+extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
     char exceptionString[20];
     std::shared_ptr<CrashHandler> crashHandler = LUS::Context::GetInstance()->GetCrashHandler();
 
@@ -428,7 +428,7 @@ CrashHandler::CrashHandler() {
     sigaction(SIGTERM, &shutdownAction, nullptr);
     sigaction(SIGQUIT, &shutdownAction, nullptr);
     sigaction(SIGKILL, &shutdownAction, nullptr);
-#elif _WIN32
+#elif defined(_WIN32)
     SetUnhandledExceptionFilter(seh_filter);
 #endif
 }

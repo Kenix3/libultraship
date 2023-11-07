@@ -17,11 +17,6 @@ void Audio::InitAudioPlayer() {
             mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
             break;
 #endif
-#if defined(__linux) && !defined(__ANDROID__)
-        case AudioBackend::PULSE:
-            mAudioPlayer = std::make_shared<PulseAudioPlayer>();
-            break;
-#endif
         default:
             mAudioPlayer = std::make_shared<SDLAudioPlayer>();
     }

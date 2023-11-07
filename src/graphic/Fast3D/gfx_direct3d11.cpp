@@ -891,7 +891,7 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             if (desc1.Width != width || desc1.Height != height) {
                 fb.render_target_view.Reset();
                 tex.texture.Reset();
-                ThrowIfFailed(swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc1.Flags));
+                ThrowIfFailed(swap_chain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, desc1.Flags));
             }
             ThrowIfFailed(
                 swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)tex.texture.ReleaseAndGetAddressOf()));

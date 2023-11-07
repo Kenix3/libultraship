@@ -377,14 +377,16 @@ void InputEditorWindow::DrawControllerSchema() {
     DrawButton("Left", BTN_CLEFT, mCurrentPort, &mBtnReading);
     DrawButton("Right", BTN_CRIGHT, mCurrentPort, &mBtnReading);
     ImGui::Dummy(ImVec2(0, 5));
-#ifdef __SWITCH__
-    EndGroupPanel(isKeyboard ? 53.0f : 122.0f);
-#else
-    EndGroupPanel(isKeyboard ? 53.0f : 94.0f);
-#endif
+    EndGroupPanel(0.0f);
 
     ImGui::SetCursorPosX(cursor.x);
-    ImGui::SameLine();
+#ifdef __SWITCH__
+    ImGui::SetCursorPosY(cursor.y + 167);
+#elif defined(__WIIU__)
+    ImGui::SetCursorPosY(cursor.y + 120 * 2);
+#else
+    ImGui::SetCursorPosY(cursor.y + 120);
+#endif
 
     BeginGroupPanel("Options", ImVec2(158, 20));
     float cursorX = ImGui::GetCursorPosX() + 5;
@@ -427,6 +429,7 @@ void InputEditorWindow::DrawControllerSchema() {
                 "%s", "How near in degrees to a virtual notch angle you have to be for it to snap to nearest notch");
         }
 
+        ImGui::SetCursorPosX(cursorX);
         if (ImGui::Checkbox("Stick Deadzones For Buttons", &profile->UseStickDeadzoneForButtons)) {
             Context::GetInstance()->GetControlDeck()->SaveSettings();
         }
@@ -455,10 +458,10 @@ void InputEditorWindow::DrawElement() {
     ImVec2 maxSize = ImVec2(2200, 505);
 #elif defined(__WIIU__)
     ImVec2 minSize = ImVec2(641 * 2, 250 * 2);
-    ImVec2 maxSize = ImVec2(1200 * 2, 330 * 2);
+    ImVec2 maxSize = ImVec2(1200 * 2, 360 * 2);
 #else
     ImVec2 minSize = ImVec2(641, 250);
-    ImVec2 maxSize = ImVec2(1200, 330);
+    ImVec2 maxSize = ImVec2(1200, 360);
 #endif
 
     ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
