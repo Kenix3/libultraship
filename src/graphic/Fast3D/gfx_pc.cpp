@@ -1390,10 +1390,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             cross = -cross;
         }
 
+#ifdef F3DEX_GBI_2
         // If inverted culling is requested, negate the cross
         if ((rsp.extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
             cross = -cross;
         }
+#endif
 
         switch (rsp.geometry_mode & G_CULL_BOTH) {
             case G_CULL_FRONT:
@@ -2480,23 +2482,29 @@ static void gfx_run_dl(Gfx* cmd) {
         uint32_t opcode = cmd->words.w0 >> 24;
         // uint32_t opcode = cmd->words.w0 & 0xFF;
 
-        // if (markerOn)
-        // printf("OP: %02X\n", opcode);
+         if (markerOn)
+             SPDLOG_INFO("OP: {:X}", opcode);
+
+#ifndef _WIN32
+#define case case (uint8_t)
+#endif
 
         switch (opcode) {
                 // RSP commands:
+#ifdef F3DEX_GBI_2
             case G_LOAD_UCODE:
                 rsp.fog_mul = 0;
                 rsp.fog_offset = 0;
                 break;
+#endif
             case G_MARKER: {
                 cmd++;
 
                 ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                // uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-                // ResourceMgr_GetNameByCRC(hash, dlName);
+                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                 SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
                 // lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
 #endif
 
@@ -2581,11 +2589,11 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
             case G_VTX:
 #ifdef F3DEX_GBI_2
-                gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (const Vtx*)seg_addr(cmd->words.w1));
+                gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (const Vtx*) seg_addr(cmd->words.w1));
 #elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
-                gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, seg_addr(cmd->words.w1));
+                gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, (const Vtx*) seg_addr(cmd->words.w1));
 #else
-                gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), seg_addr(cmd->words.w1));
+                gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), (const Vtx*) seg_addr(cmd->words.w1));
 #endif
                 break;
             case G_VTX_OTR_HASH: {
@@ -2617,6 +2625,11 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd->words.w1 = (uintptr_t)vtx;
 
                         gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
+                        if(markerOn) {
+                            SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(12, 8), C0(1, 7) - C0(12, 8));
+                            SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(10, 6), C0(16, 8) / 2);
+                            SPDLOG_INFO("gfx_sp_vertex: {} {}", (C0(0, 16)) / sizeof(Vtx), C0(16, 4));
+                        }
                         cmd++;
                     }
                 }
@@ -2651,9 +2664,11 @@ static void gfx_run_dl(Gfx* cmd) {
                     --cmd; // increase after break
                 }
             } break;
+#ifdef F3DEX_GBI_2
             case G_MODIFYVTX:
                 gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), cmd->words.w1);
                 break;
+#endif
             case G_DL:
                 if (C0(16, 1) == 0) {
                     // Push return address
@@ -2723,7 +2738,8 @@ static void gfx_run_dl(Gfx* cmd) {
             } break;
             case (uint8_t)G_ENDDL:
 
-                // if (markerOn)
+                 if (markerOn)
+                     SPDLOG_INFO("END DL");
                 // printf("END DL ON MARKER\n");
 
                 markerOn = false;
@@ -2749,6 +2765,8 @@ static void gfx_run_dl(Gfx* cmd) {
             case (uint8_t)G_TRI1:
 #ifdef F3DEX_GBI_2
                 gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
+                if (markerOn)
+                    SPDLOG_INFO("gfx_sp_tri1({}, {}, {}, false)", C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2);
 #elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
                 gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
 #else
@@ -3072,6 +3090,13 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
             case G_EXTRAGEOMETRYMODE:
                 gfx_sp_extra_geometry_mode(~C0(0, 24), cmd->words.w1);
+                break;
+            case G_RDPTILESYNC:
+            case G_RDPPIPESYNC:
+                break;
+            default:
+                if (markerOn)
+                    SPDLOG_INFO("Unknown GBI command: {:#x}", cmd->words.w0);
                 break;
         }
         ++cmd;

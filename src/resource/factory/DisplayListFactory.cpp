@@ -73,7 +73,7 @@ void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
             displayList->Instructions.push_back(command);
         }
 
-        if (opcode == G_ENDDL) {
+        if (opcode == (uint8_t) G_ENDDL) {
             break;
         }
     }
@@ -228,7 +228,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                 int offset = strtol(fName.c_str() + 1, NULL, 16);
                 g = gsSPMatrix(offset | 1, paramInt);
             } else {
-                g = { gsSPMatrix(0, paramInt) };
+                g = gsSPMatrix(0, paramInt);
 
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_MTX_OTR2 << 24);
@@ -342,9 +342,10 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             g.words.w1 |= v01 << 16;
             g.words.w1 |= v02 << 0;
         } else if (childName == "Triangles2") {
-            g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
-                               child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
-                               child->IntAttribute("V12"), child->IntAttribute("Flag1"));
+            // OTRTODO: Implement
+//            g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
+//                               child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
+//                               child->IntAttribute("V12"), child->IntAttribute("Flag1"));
         } else if (childName == "LoadVertices") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
@@ -399,9 +400,9 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
             if (fName[0] == '>' && fName[1] == '0' && (fName[2] == 'x' || fName[2] == 'X')) {
                 uint32_t seg = std::stoul(fName.substr(1), nullptr, 16);
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, seg | 1) };
+                g = gsDPSetTextureImage(fmtVal, sizVal, width + 1, seg | 1);
             } else {
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, 0) };
+                g = gsDPSetTextureImage(fmtVal, sizVal, width + 1, 0);
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
                 g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
@@ -844,7 +845,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             }
 
-            g = { gsDPSetTextureImage(fmt, siz, width + 1, 0) };
+            g = gsDPSetTextureImage(fmt, siz, width + 1, 0);
             g.words.w0 &= 0x00FFFFFF;
             g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
             g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
@@ -903,7 +904,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             std::string dlPath = (char*)child->Attribute("Path");
             if (dlPath[0] == '>' && dlPath[1] == '0' && (dlPath[2] == 'x' || dlPath[2] == 'X')) {
                 uint32_t seg = std::stoul(dlPath.substr(1), nullptr, 16);
-                g = { gsSPBranchListOTRHash(seg | 1) };
+                g = gsSPBranchListOTRHash(seg | 1);
             } else {
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
                 strcpy(dlPath2, dlPath.c_str());
@@ -914,7 +915,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             std::string dlPath = (char*)child->Attribute("Path");
             if (dlPath[0] == '>' && dlPath[1] == '0' && (dlPath[2] == 'x' || dlPath[2] == 'X')) {
                 uint32_t seg = std::stoul(dlPath.substr(1), nullptr, 16);
-                g = { gsSPDisplayList(seg | 1) };
+                g = gsSPDisplayList(seg | 1);
             } else {
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
                 strcpy(dlPath2, dlPath.c_str());
