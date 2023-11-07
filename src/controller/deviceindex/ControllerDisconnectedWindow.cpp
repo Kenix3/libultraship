@@ -19,21 +19,23 @@ void ControllerDisconnectedWindow::InitElement() {
 }
 
 void ControllerDisconnectedWindow::UpdateElement() {
-    #ifndef __WIIU__
+#ifndef __WIIU__
     SDL_PumpEvents();
     SDL_Event event;
     if (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEADDED) > 0) {
         // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for
         // the SDL_CONTROLLERDEVICEADDED event
-        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceConnect(event.cdevice.which);
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceConnect(
+            event.cdevice.which);
     }
 
     if (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED, SDL_CONTROLLERDEVICEREMOVED) > 0) {
         // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the [...] instance id for the
         // SDL_CONTROLLERDEVICEREMOVED [...] event
-        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceDisconnect(event.cdevice.which);
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceDisconnect(
+            event.cdevice.which);
     }
-    #endif
+#endif
 }
 
 #ifdef __WIIU__
