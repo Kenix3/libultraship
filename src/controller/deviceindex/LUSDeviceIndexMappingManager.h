@@ -4,6 +4,7 @@
 #include "LUSDeviceIndexToWiiUDeviceIndexMapping.h"
 #else
 #include "LUSDeviceIndexToSDLDeviceIndexMapping.h"
+#include <thread>
 #endif
 
 #include <unordered_map>
@@ -63,6 +64,11 @@ class LUSDeviceIndexMappingManager {
     uint8_t GetPortIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId);
     void HandlePhysicalDeviceDisconnectSinglePlayer(int32_t sdlJoystickInstanceId);
     void HandlePhysicalDeviceDisconnectMultiplayer(int32_t sdlJoystickInstanceId);
+    bool mSDLControllerConnectionEventThreadRunning;
+    std::thread mSDLControllerConnectionEventThread;
+    void SDLControllerConnectionEventThread();
+    void SDLControllerConnectionEventThreadInit();
+    void SDLControllerConnectionEventThreadExit();
 #endif
 };
 } // namespace LUS
