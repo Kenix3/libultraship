@@ -17,7 +17,8 @@
 #include <sstream>
 
 namespace LUS {
-LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(false), mSDLControllerConnectionEventThreadRunning(false) {
+LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager()
+    : mIsInitialized(false), mSDLControllerConnectionEventThreadRunning(false) {
 #ifdef __WIIU__
     UpdateExtensionTypesFromConfig();
 #else
@@ -27,9 +28,9 @@ LUSDeviceIndexMappingManager::LUSDeviceIndexMappingManager() : mIsInitialized(fa
 }
 
 LUSDeviceIndexMappingManager::~LUSDeviceIndexMappingManager() {
-    #ifndef __WIIU__
+#ifndef __WIIU__
     SDLControllerConnectionEventThreadExit();
-    #endif
+#endif
 }
 
 #ifdef __WIIU__
@@ -239,15 +240,14 @@ void LUSDeviceIndexMappingManager::SDLControllerConnectionEventThread() {
 void LUSDeviceIndexMappingManager::SDLControllerConnectionEventThreadInit() {
     if (!mSDLControllerConnectionEventThreadRunning) {
         mSDLControllerConnectionEventThreadRunning = true;
-        mSDLControllerConnectionEventThread = std::thread(&LUSDeviceIndexMappingManager::SDLControllerConnectionEventThread, this);
+        mSDLControllerConnectionEventThread =
+            std::thread(&LUSDeviceIndexMappingManager::SDLControllerConnectionEventThread, this);
     }
 }
 
 void LUSDeviceIndexMappingManager::SDLControllerConnectionEventThreadExit() {
     // Tell the thread to stop
-    {
-        mSDLControllerConnectionEventThreadRunning = false;
-    }
+    { mSDLControllerConnectionEventThreadRunning = false; }
 
     // Wait until the thread quits
     mSDLControllerConnectionEventThread.join();
