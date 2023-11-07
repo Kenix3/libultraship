@@ -1,8 +1,6 @@
 name: build-validation
 on:
   push:
-    branches:
-      - 'main'
   pull_request:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

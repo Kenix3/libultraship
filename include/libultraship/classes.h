@@ -28,9 +28,7 @@
 #include "utils/binarytools/BinaryWriter.h"
 #include "audio/Audio.h"
 #include "audio/AudioPlayer.h"
-#if defined(__linux__) || defined(__BSD__)
-#include "audio/PulseAudioPlayer.h"
-#elif defined(_WIN32)
+#if defined(_WIN32)
 #include "audio/WasapiAudioPlayer.h"
 #endif
 #include "audio/SDLAudioPlayer.h"

@@ -29,16 +29,11 @@ set(Source_Files__Audio
 	${CMAKE_CURRENT_SOURCE_DIR}/audio/AudioPlayer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/SDLAudioPlayer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.cpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/WasapiAudioPlayer.h)
     list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/WasapiAudioPlayer.cpp)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.h)
-    list(APPEND Source_Files__Audio ${CMAKE_CURRENT_SOURCE_DIR}/audio/PulseAudioPlayer.cpp)
 endif()
 
 source_group("audio" FILES ${Source_Files__Audio})
@@ -217,7 +212,7 @@ set(Source_Files__Log
     ${CMAKE_CURRENT_SOURCE_DIR}/log/luslog.cpp
 )
 
-source_group("Log" FILES ${Source_Files__Log})
+source_group("log" FILES ${Source_Files__Log})
 
 target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
 
