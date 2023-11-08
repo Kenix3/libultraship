@@ -21,6 +21,9 @@ static VPADStatus vpadStatus;
 static bool hasKpad[4] = { false };
 static KPADError kpadError[4] = { KPAD_ERROR_OK };
 static KPADStatus kpadStatus[4];
+static uint8_t kpadExtensions[4];
+
+static bool controllersInitialized = false;
 
 #ifdef _DEBUG
 extern "C" {
@@ -107,6 +110,85 @@ void Update() {
                 rescan = true;
             }
 
+            if (kpadStatus[i].extensionType != kpadExtensions[i]) {
+                kpadExtensions[i] = kpadStatus[i].extensionType;
+                rescan = true;
+            }
+
+            // set emulated stick button bits so all controllers behave like the gamepad does
+            switch (kpadStatus[i].extensionType) {
+                case WPAD_EXT_PRO_CONTROLLER:
+                    if (kpadStatus[i].pro.leftStick.x > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].pro.leftStick.x < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].pro.leftStick.y > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].pro.leftStick.y < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_L_EMULATION_DOWN;
+                    }
+
+                    if (kpadStatus[i].pro.rightStick.x > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].pro.rightStick.x < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].pro.rightStick.y > 0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].pro.rightStick.y < -0.7f) {
+                        kpadStatus[i].pro.hold |= WPAD_PRO_STICK_R_EMULATION_DOWN;
+                    }
+                    break;
+                case WPAD_EXT_CLASSIC:
+                case WPAD_EXT_MPLUS_CLASSIC:
+                    if (kpadStatus[i].classic.leftStick.x > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].classic.leftStick.x < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].classic.leftStick.y < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].classic.leftStick.y > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_L_EMULATION_DOWN;
+                    }
+
+                    if (kpadStatus[i].classic.rightStick.x > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].classic.rightStick.x < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].classic.rightStick.y > 0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].classic.rightStick.y < -0.7f) {
+                        kpadStatus[i].classic.hold |= WPAD_CLASSIC_STICK_R_EMULATION_DOWN;
+                    }
+                    break;
+                case WPAD_EXT_NUNCHUK:
+                case WPAD_EXT_MPLUS_NUNCHUK:
+                    if (kpadStatus[i].nunchuck.stick.x < -0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_LEFT;
+                    }
+                    if (kpadStatus[i].nunchuck.stick.x > 0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_RIGHT;
+                    }
+                    if (kpadStatus[i].nunchuck.stick.y > 0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_UP;
+                    }
+                    if (kpadStatus[i].nunchuck.stick.y < -0.7f) {
+                        kpadStatus[i].nunchuck.hold |= WPAD_NUNCHUK_STICK_EMULATION_DOWN;
+                    }
+                    break;
+            }
+
             hasKpad[i] = true;
         } else if (kpadError[i] != KPAD_ERROR_NO_SAMPLES) {
             if (hasKpad[i]) {
@@ -118,9 +200,13 @@ void Update() {
     }
 
     // rescan devices if connection state changed
-    if (rescan) {
-        Context::GetInstance()->GetControlDeck()->ScanDevices();
+    if (controllersInitialized && rescan) {
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDevicesChanged();
     }
+}
+
+void SetControllersInitialized() {
+    controllersInitialized = true;
 }
 
 VPADStatus* GetVPADStatus(VPADReadError* error) {

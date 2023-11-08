@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 #include "config/Config.h"
 #include "resource/ResourceManager.h"
-#include "controller/ControlDeck.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "debug/CrashHandler.h"
 #include "audio/Audio.h"
 #include "window/Window.h"
