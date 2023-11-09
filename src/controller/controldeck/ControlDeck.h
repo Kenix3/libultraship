@@ -10,7 +10,7 @@ namespace LUS {
 
 class ControlDeck {
   public:
-    ControlDeck();
+    ControlDeck(std::vector<uint16_t> additionalBitmasks);
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);

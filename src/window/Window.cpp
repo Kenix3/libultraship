@@ -25,7 +25,7 @@
 
 namespace LUS {
 
-Window::Window() {
+Window::Window(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mIsFullscreen = false;
@@ -33,7 +33,7 @@ Window::Window() {
     mHeight = 240;
     mPosX = 100;
     mPosY = 100;
-    mGui = std::make_shared<Gui>();
+    mGui = std::make_shared<Gui>(customInputEditorWindow);
 }
 
 Window::~Window() {

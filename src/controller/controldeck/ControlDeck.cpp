@@ -9,10 +9,11 @@
 
 namespace LUS {
 
-ControlDeck::ControlDeck() : mPads(nullptr), mSinglePlayerMappingMode(false) {
+ControlDeck::ControlDeck(std::vector<uint16_t> additionalBitmasks) : mPads(nullptr), mSinglePlayerMappingMode(false) {
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i)));
+        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
     }
+
     mDeviceIndexMappingManager = std::make_shared<LUSDeviceIndexMappingManager>();
 }
 

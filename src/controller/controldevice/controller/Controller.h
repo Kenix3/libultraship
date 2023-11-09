@@ -22,7 +22,7 @@ namespace LUS {
 
 class Controller : public ControlDevice {
   public:
-    Controller(uint8_t portIndex);
+    Controller(uint8_t portIndex, std::vector<uint16_t> additionalBitmasks);
     ~Controller();
 
     void ReloadAllMappingsFromConfig();

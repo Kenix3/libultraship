@@ -212,12 +212,12 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 #endif
 }
 
-void Context::InitControlDeck() {
+void Context::InitControlDeck(std::vector<uint16_t> additionalBitmasks) {
     if (GetControlDeck() != nullptr) {
         return;
     }
 
-    mControlDeck = std::make_shared<ControlDeck>();
+    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks);
 }
 
 void Context::InitCrashHandler() {
@@ -246,12 +246,12 @@ void Context::InitConsole() {
     GetConsole()->Init();
 }
 
-void Context::InitWindow() {
+void Context::InitWindow(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     if (GetWindow() != nullptr) {
         return;
     }
 
-    mWindow = std::make_shared<Window>();
+    mWindow = std::make_shared<Window>(customInputEditorWindow);
     GetWindow()->Init();
 }
 
