@@ -22,6 +22,9 @@
 #include "window/gui/StatsWindow.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/controldevice/controller/Controller.h"
+#ifndef __WIIU__
+#include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
+#endif
 #include "controller/controldeck/ControlDeck.h"
 #include "utils/binarytools/BinaryReader.h"
 #include "utils/binarytools/MemoryStream.h"
