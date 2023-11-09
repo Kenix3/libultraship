@@ -487,24 +487,24 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     ATOM winclass = RegisterClassExW(&wcex);
 
-    run_as_dpi_aware([&]() {
-        // We need to be dpi aware when calculating the size
-        RECT wr = { 0, 0, width, height };
-        AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
-        dxgi.current_width = wr.right - wr.left;
-        dxgi.current_height = wr.bottom - wr.top;
-        dxgi.monitor_list = GetMonitorList();
-        dxgi.posX = posX;
-        dxgi.posY = posY;
-        if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
-                                dxgi.h_Monitor)) {
-            dxgi.posX = 100;
-            dxgi.posY = 100;
-        }
+    // run_as_dpi_aware([&]() {
+    //  We need to be dpi aware when calculating the size
+    RECT wr = { 0, 0, width, height };
+    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+    dxgi.current_width = wr.right - wr.left;
+    dxgi.current_height = wr.bottom - wr.top;
+    dxgi.monitor_list = GetMonitorList();
+    dxgi.posX = posX;
+    dxgi.posY = posY;
+    if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                            dxgi.h_Monitor)) {
+        dxgi.posX = 100;
+        dxgi.posY = 100;
+    }
 
-        dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
-                                   dxgi.current_width, dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
-    });
+    dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
+                               dxgi.current_width, dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
+    // });
 
     load_dxgi_library();
 
