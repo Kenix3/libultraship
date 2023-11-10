@@ -15,8 +15,11 @@
 
 namespace LUS {
 
-Controller::Controller(uint8_t portIndex) : ControlDevice(portIndex) {
+Controller::Controller(uint8_t portIndex, std::vector<uint16_t> additionalBitmasks) : ControlDevice(portIndex) {
     for (auto bitmask : { BUTTON_BITMASKS }) {
+        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
+    }
+    for (auto bitmask : additionalBitmasks) {
         mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
     }
     mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK);
@@ -24,6 +27,9 @@ Controller::Controller(uint8_t portIndex) : ControlDevice(portIndex) {
     mGyro = std::make_shared<ControllerGyro>(portIndex);
     mRumble = std::make_shared<ControllerRumble>(portIndex);
     mLED = std::make_shared<ControllerLED>(portIndex);
+}
+
+Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}) {
 }
 
 Controller::~Controller() {

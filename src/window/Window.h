@@ -18,6 +18,7 @@ class Window {
 
   public:
     Window();
+    Window(std::shared_ptr<GuiWindow> customInputEditorWindow);
     ~Window();
 
     void MainLoop(void (*mainFunction)(void));
