@@ -29,6 +29,9 @@ Controller::Controller(uint8_t portIndex, std::vector<uint16_t> additionalBitmas
     mLED = std::make_shared<ControllerLED>(portIndex);
 }
 
+Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}) {
+}
+
 Controller::~Controller() {
     SPDLOG_TRACE("destruct controller");
 }
