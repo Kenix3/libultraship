@@ -51,7 +51,7 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
         auto controller = port->GetConnectedController();
 
         if (controller != nullptr) {
-            result = result || controller->ProcessKeyboardEvent(eventType, scancode);
+            result = controller->ProcessKeyboardEvent(eventType, scancode) || result;
         }
     }
 
