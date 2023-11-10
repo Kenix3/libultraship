@@ -61,6 +61,7 @@ typedef union {
 
 class Gui {
   public:
+    Gui();
     Gui(std::shared_ptr<GuiWindow> customInputEditorWindow);
     ~Gui();
 

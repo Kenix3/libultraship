@@ -79,6 +79,9 @@ Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVari
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
 }
 
+Gui::Gui() : Gui(nullptr) {
+}
+
 Gui::~Gui() {
     SPDLOG_TRACE("destruct gui");
 }
