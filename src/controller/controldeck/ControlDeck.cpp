@@ -17,6 +17,9 @@ ControlDeck::ControlDeck(std::vector<uint16_t> additionalBitmasks) : mPads(nullp
     mDeviceIndexMappingManager = std::make_shared<LUSDeviceIndexMappingManager>();
 }
 
+ControlDeck::ControlDeck() : ControlDeck::ControlDeck(std::vector<uint16_t>()) {
+}
+
 ControlDeck::~ControlDeck() {
     SPDLOG_TRACE("destruct control deck");
 }
