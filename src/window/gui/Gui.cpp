@@ -194,7 +194,7 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
-#elif __ANDROID__
+#elif USE_OPENGLES
             ImGui_ImplOpenGL3_Init("#version 300 es");
 #else
             ImGui_ImplOpenGL3_Init("#version 120");
