@@ -415,6 +415,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
         $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+        $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
     )
 else ()
     target_compile_definitions(libultraship PRIVATE
