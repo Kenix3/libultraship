@@ -36,6 +36,9 @@ Window::Window(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     mGui = std::make_shared<Gui>(customInputEditorWindow);
 }
 
+Window::Window() : Window(nullptr) {
+}
+
 Window::~Window() {
     gfx_destroy();
     SPDLOG_DEBUG("destruct window");

@@ -17,6 +17,7 @@ class Window {
     friend class Context;
 
   public:
+    Window();
     Window(std::shared_ptr<GuiWindow> customInputEditorWindow);
     ~Window();
 
