@@ -42,6 +42,8 @@ using namespace Microsoft::WRL; // For ComPtr
 
 static struct {
     HWND h_wnd;
+    bool in_paint;
+    bool recursive_paint_detected;
 
     // These four only apply in windowed mode.
     uint32_t current_width, current_height; // Width and height of client areas
@@ -382,6 +384,24 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
                 dxgi.is_running = false;
             }
             break;
+
+        case WM_PAINT:
+            if (dxgi.in_paint) {
+                dxgi.recursive_paint_detected = true;
+                return DefWindowProcW(h_wnd, message, w_param, l_param);
+            } else {
+                if (dxgi.run_one_game_iter != nullptr) {
+                    dxgi.in_paint = true;
+                    dxgi.run_one_game_iter();
+                    dxgi.in_paint = false;
+                    if (dxgi.recursive_paint_detected) {
+                        dxgi.recursive_paint_detected = false;
+                        InvalidateRect(h_wnd, nullptr, false);
+                        UpdateWindow(h_wnd);
+                    }
+                }
+            }
+
         case WM_ACTIVATEAPP:
             if (dxgi.on_all_keys_up != nullptr) {
                 dxgi.on_all_keys_up();
@@ -541,9 +561,15 @@ static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), b
 
 static void gfx_dxgi_main_loop(void (*run_one_game_iter)(void)) {
     dxgi.run_one_game_iter = run_one_game_iter;
+    MSG msg;
+    while (GetMessage(&msg, nullptr, 0, 0) && dxgi.is_running) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    /* dxgi.run_one_game_iter = run_one_game_iter;
     while (dxgi.is_running) {
         dxgi.run_one_game_iter();
-    }
+    }*/
 }
 
 static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
@@ -554,7 +580,7 @@ static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* 
 }
 
 static void gfx_dxgi_handle_events(void) {
-    MSG msg;
+    /* MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
             dxgi.is_running = false;
@@ -562,7 +588,7 @@ static void gfx_dxgi_handle_events(void) {
         }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-    }
+    }*/
 }
 
 static uint64_t qpc_to_ns(uint64_t qpc) {
