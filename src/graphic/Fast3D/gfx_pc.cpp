@@ -2471,7 +2471,7 @@ static inline void* seg_addr(uintptr_t w1) {
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
 uintptr_t clearMtx;
-
+extern "C" char* ResourceMgr_GetNameByCRC(uint64_t crc, char* alloc);
 static void gfx_run_dl(Gfx* cmd) {
     // puts("dl");
     int dummy = 0;
@@ -2500,9 +2500,10 @@ static void gfx_run_dl(Gfx* cmd) {
                 ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                // uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-                // ResourceMgr_GetNameByCRC(hash, dlName);
-                // lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
+                 //uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                 //const char* str = ResourceGetNameByCrc(hash);
+                 //memcpy(dlName, str, strlen(str)); 
+                 //lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
 #endif
 
                 markerOn = true;
@@ -2516,7 +2517,17 @@ static void gfx_run_dl(Gfx* cmd) {
                     gfx_texture_cache_delete((const uint8_t*)texAddr);
                 }
             } break;
-            case G_NOOP:
+            case G_NOOP: {
+                break;
+                char* file = (char*)cmd->words.w1;
+                int line = cmd->words.w0 & 0xFFFF;
+                int magic = (cmd->words.w0 >> 16) & 0xFF;
+                if (magic == 7) {
+                    lusprintf(__FILE__, __LINE__, 6, "OPEN DISPS: %s : %d\n", file, line);
+                } else if (magic == 8) {
+                    lusprintf(__FILE__, __LINE__, 6, "CLOSE DISPS: %s : %d\n", file, line);
+                }
+            }
                 break;
             case G_MTX: {
                 uintptr_t mtxAddr = cmd->words.w1;
@@ -2729,7 +2740,7 @@ static void gfx_run_dl(Gfx* cmd) {
             case (uint8_t)G_ENDDL:
 
                 // if (markerOn)
-                // printf("END DL ON MARKER\n");
+                //lusprintf("END DL ON MARKER\n");
 
                 markerOn = false;
                 return;
