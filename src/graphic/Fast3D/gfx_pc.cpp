@@ -2482,8 +2482,8 @@ static void gfx_run_dl(Gfx* cmd) {
         uint32_t opcode = cmd->words.w0 >> 24;
         // uint32_t opcode = cmd->words.w0 & 0xFF;
 
-         if (markerOn)
-             SPDLOG_INFO("OP: {:X}", opcode);
+         // if (markerOn)
+         //     SPDLOG_INFO("OP: {:X}", opcode);
 
 #ifndef _WIN32
 #define case case (uint8_t)
