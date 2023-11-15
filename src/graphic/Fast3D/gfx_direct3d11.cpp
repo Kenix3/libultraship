@@ -170,7 +170,7 @@ static void create_depth_stencil_objects(uint32_t width, uint32_t height, uint32
     texture_desc.ArraySize = 1;
     texture_desc.Format =
         d3d.feature_level >= D3D_FEATURE_LEVEL_10_0 ? DXGI_FORMAT_R32_TYPELESS : DXGI_FORMAT_R24G8_TYPELESS;
-    texture_desc.SampleDesc.Count = msaa_count;
+    texture_desc.SampleDesc.Count = d3d.feature_level >= D3D_FEATURE_LEVEL_10_1 ? msaa_count : 1;
     texture_desc.SampleDesc.Quality = 0;
     texture_desc.Usage = D3D11_USAGE_DEFAULT;
     texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | (srv != nullptr ? D3D11_BIND_SHADER_RESOURCE : 0);
@@ -875,7 +875,7 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             texture_desc.MiscFlags = 0;
             texture_desc.ArraySize = 1;
             texture_desc.MipLevels = 1;
-            texture_desc.SampleDesc.Count = msaa_level;
+            texture_desc.SampleDesc.Count = d3d.feature_level >= D3D_FEATURE_LEVEL_10_1 ? msaa_level : 1;
             texture_desc.SampleDesc.Quality = 0;
 
             ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, tex.texture.ReleaseAndGetAddressOf()));
@@ -1036,7 +1036,7 @@ gfx_d3d11_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
 
     D3D11_MAPPED_SUBRESOURCE ms;
 
-    if (fb.msaa_level > 1 && d3d.compute_shader_msaa.Get() == nullptr) {
+    if (fb.msaa_level > 1 && d3d.feature_level >= D3D_FEATURE_LEVEL_10_1 && d3d.compute_shader_msaa.Get() == nullptr) {
         ThrowIfFailed(d3d.device->CreateComputeShader(d3d.compute_shader_msaa_blob->GetBufferPointer(),
                                                       d3d.compute_shader_msaa_blob->GetBufferSize(), nullptr,
                                                       d3d.compute_shader_msaa.GetAddressOf()));
