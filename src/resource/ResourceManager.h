@@ -43,7 +43,8 @@ class ResourceManager {
     std::shared_ptr<std::vector<std::string>> FindLoadedFiles(const std::string& searchMask);
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectory(const std::string& searchMask);
-    bool OtrSignatureCheck(const char* fileName);
+
+    static bool OtrSignatureCheck(const char* fileName);
 
   protected:
     std::shared_ptr<File> LoadFileProcess(const std::string& filePath);

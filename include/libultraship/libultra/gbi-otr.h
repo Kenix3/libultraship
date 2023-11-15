@@ -26,6 +26,8 @@
 #define G_SETINTENSITY 0x40
 #define G_SETFILTERING 0x41
 
+#define _DW(macro) { macro }
+
 #define gDPFillWideRectangle(pkt, ulx, uly, lrx, lry)                           \
 {                                                                           \
     Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                             \
