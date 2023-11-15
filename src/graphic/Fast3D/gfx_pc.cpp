@@ -48,11 +48,11 @@ using namespace std;
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
-#define SCALE_5_8(VAL_) (((VAL_)*0xFF) / 0x1F)
+#define SCALE_5_8(VAL_) (((VAL_) * 0xFF) / 0x1F)
 #define SCALE_8_5(VAL_) ((((VAL_) + 4) * 0x1F) / 0xFF)
-#define SCALE_4_8(VAL_) ((VAL_)*0x11)
+#define SCALE_4_8(VAL_) ((VAL_) * 0x11)
 #define SCALE_8_4(VAL_) ((VAL_) / 0x11)
-#define SCALE_3_8(VAL_) ((VAL_)*0x24)
+#define SCALE_3_8(VAL_) ((VAL_) * 0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
 // SCREEN_WIDTH and SCREEN_HEIGHT are defined in the headerfile
@@ -1454,7 +1454,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool invisible =
         (rdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = rdp.grayscale;
-    bool use_alpha = use_2cyc ? (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) && (rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16) : (rdp.other_mode_l & (3 << 18)) == G_BL_1MA;
+    bool use_alpha = use_2cyc ? (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
+                                    (rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16)
+                              : (rdp.other_mode_l & (3 << 18)) == G_BL_1MA;
 
     if (texture_edge) {
         use_alpha = true;
@@ -1496,7 +1498,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     if (rdp.loaded_texture[1].blended) {
         cc_options |= (uint64_t)SHADER_OPT_TEXEL1_BLEND;
     }
-    if(rdp.filtering){
+    if (rdp.filtering) {
         cc_options |= (uint64_t)SHADER_OPT_DISABLE_FILTERING;
     }
 
@@ -2482,15 +2484,15 @@ static void gfx_run_dl(Gfx* cmd) {
         uint32_t opcode = cmd->words.w0 >> 24;
         // uint32_t opcode = cmd->words.w0 & 0xFF;
 
-         // if (markerOn)
-         //     SPDLOG_INFO("OP: {:X}", opcode);
+        // if (markerOn)
+        //     SPDLOG_INFO("OP: {:X}", opcode);
 
 #ifndef _WIN32
 #define case case (uint8_t)
 #endif
 
         switch (opcode) {
-                // RSP commands:
+            // RSP commands:
 #ifdef F3DEX_GBI_2
             case G_LOAD_UCODE:
                 rsp.fog_mul = 0;
@@ -2503,8 +2505,8 @@ static void gfx_run_dl(Gfx* cmd) {
                 ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-                 SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
+                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
                 // lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
 #endif
 
@@ -2589,11 +2591,11 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
             case G_VTX:
 #ifdef F3DEX_GBI_2
-                gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (const Vtx*) seg_addr(cmd->words.w1));
+                gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (const Vtx*)seg_addr(cmd->words.w1));
 #elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
-                gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, (const Vtx*) seg_addr(cmd->words.w1));
+                gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, (const Vtx*)seg_addr(cmd->words.w1));
 #else
-                gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), (const Vtx*) seg_addr(cmd->words.w1));
+                gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), (const Vtx*)seg_addr(cmd->words.w1));
 #endif
                 break;
             case G_VTX_OTR_HASH: {
@@ -2625,7 +2627,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd->words.w1 = (uintptr_t)vtx;
 
                         gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
-                        if(markerOn) {
+                        if (markerOn) {
                             SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(12, 8), C0(1, 7) - C0(12, 8));
                             SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(10, 6), C0(16, 8) / 2);
                             SPDLOG_INFO("gfx_sp_vertex: {} {}", (C0(0, 16)) / sizeof(Vtx), C0(16, 4));
@@ -2738,8 +2740,8 @@ static void gfx_run_dl(Gfx* cmd) {
             } break;
             case (uint8_t)G_ENDDL:
 
-                 if (markerOn)
-                     SPDLOG_INFO("END DL");
+                if (markerOn)
+                    SPDLOG_INFO("END DL");
                 // printf("END DL ON MARKER\n");
 
                 markerOn = false;
@@ -2812,7 +2814,7 @@ static void gfx_run_dl(Gfx* cmd) {
                         std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
                             LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
-                        if(tex == nullptr) {
+                        if (tex == nullptr) {
                             SPDLOG_ERROR("G_SETTIMG: Texture is null");
                             break;
                         }

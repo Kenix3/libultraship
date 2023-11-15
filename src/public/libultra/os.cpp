@@ -4,7 +4,7 @@
 extern "C" {
 uint8_t __osMaxControllers = MAXCONTROLLERS;
 
-int32_t osContInit(OSMesgQueue *mq, uint8_t *controllerBits, OSContStatus *status) {
+int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status) {
     *controllerBits = 0;
 
 #ifndef __WIIU__
@@ -29,11 +29,11 @@ int32_t osContInit(OSMesgQueue *mq, uint8_t *controllerBits, OSContStatus *statu
     return 0;
 }
 
-int32_t osContStartReadData(OSMesgQueue *mesg) {
+int32_t osContStartReadData(OSMesgQueue* mesg) {
     return 0;
 }
 
-void osContGetReadData(OSContPad *pad) {
+void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
     LUS::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
@@ -45,6 +45,6 @@ uint64_t osGetTime(void) {
 
 uint32_t osGetCount(void) {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
-            .count();
+        .count();
 }
 }

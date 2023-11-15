@@ -36,8 +36,8 @@ enum class ResourceType {
     SOH_SceneCommand = 0x4F52434D,    // ORCM
 
     // SM64
-    SAnim = 0x414E494D,       // ANIM
-    SDialog = 0x53444C47,     // SDLG
-    Dictionary = 0x44494354,  // DICT
+    SAnim = 0x414E494D,      // ANIM
+    SDialog = 0x53444C47,    // SDLG
+    Dictionary = 0x44494354, // DICT
 };
 } // namespace LUS

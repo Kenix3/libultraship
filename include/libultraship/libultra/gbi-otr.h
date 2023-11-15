@@ -26,49 +26,50 @@
 #define G_SETINTENSITY 0x40
 #define G_SETFILTERING 0x41
 
-#define _DW(macro) { macro }
+#define _DW(macro) \
+    { macro }
 
 #define gDPFillWideRectangle(pkt, ulx, uly, lrx, lry)                           \
-{                                                                           \
-    Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                             \
-    _g0->words.w0 = _SHIFTL(G_FILLWIDERECT, 24, 8) | _SHIFTL((lrx), 2, 22); \
-    _g0->words.w1 = _SHIFTL((lry), 2, 22);                                  \
-    _g1->words.w0 = _SHIFTL((ulx), 2, 22);                                  \
-    _g1->words.w1 = _SHIFTL((uly), 2, 22);                                  \
-}
+    {                                                                           \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                             \
+        _g0->words.w0 = _SHIFTL(G_FILLWIDERECT, 24, 8) | _SHIFTL((lrx), 2, 22); \
+        _g0->words.w1 = _SHIFTL((lry), 2, 22);                                  \
+        _g1->words.w0 = _SHIFTL((ulx), 2, 22);                                  \
+        _g1->words.w1 = _SHIFTL((uly), 2, 22);                                  \
+    }
 
 #define gSPWideTextureRectangle(pkt, xl, yl, xh, yh, tile, s, t, dsdx, dtdy)   \
-{                                                                          \
-    Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt), *_g2 = (Gfx*)(pkt);        \
-                                                                            \
-    _g0->words.w0 = _SHIFTL(G_TEXRECT_WIDE, 24, 8) | _SHIFTL((xh), 0, 24); \
-    _g0->words.w1 = _SHIFTL((yh), 0, 24);                                  \
-    _g1->words.w0 = (_SHIFTL(tile, 24, 3) | _SHIFTL((xl), 0, 24));         \
-    _g1->words.w1 = _SHIFTL((yl), 0, 24);                                  \
-    _g2->words.w0 = (_SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16));              \
-    _g2->words.w1 = (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16));        \
-}
+    {                                                                          \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt), *_g2 = (Gfx*)(pkt);        \
+                                                                               \
+        _g0->words.w0 = _SHIFTL(G_TEXRECT_WIDE, 24, 8) | _SHIFTL((xh), 0, 24); \
+        _g0->words.w1 = _SHIFTL((yh), 0, 24);                                  \
+        _g1->words.w0 = (_SHIFTL(tile, 24, 3) | _SHIFTL((xl), 0, 24));         \
+        _g1->words.w1 = _SHIFTL((yl), 0, 24);                                  \
+        _g2->words.w0 = (_SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16));              \
+        _g2->words.w1 = (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16));        \
+    }
 
 #define gsSPWideTextureRectangle(xl, yl, xh, yh, tile, s, t, dsdx, dtdy)                         \
-{ {                                                                                          \
-    (_SHIFTL(G_TEXRECT_WIDE, 24, 8) | _SHIFTL((xh), 0, 24)),                                 \
-    _SHIFTL((yh), 0, 24),                                                                    \
-} },                                                                                         \
-    { {                                                                                      \
-        (_SHIFTL((tile), 24, 3) | _SHIFTL((xl), 0, 24)),                                     \
-        _SHIFTL((yl), 0, 24),                                                                \
-    } },                                                                                     \
-{                                                                                            \
-    { _SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16), _SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16) } \
-}
+    { {                                                                                          \
+        (_SHIFTL(G_TEXRECT_WIDE, 24, 8) | _SHIFTL((xh), 0, 24)),                                 \
+        _SHIFTL((yh), 0, 24),                                                                    \
+    } },                                                                                         \
+        { {                                                                                      \
+            (_SHIFTL((tile), 24, 3) | _SHIFTL((xl), 0, 24)),                                     \
+            _SHIFTL((yl), 0, 24),                                                                \
+        } },                                                                                     \
+    {                                                                                            \
+        { _SHIFTL(s, 16, 16) | _SHIFTL(t, 0, 16), _SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16) } \
+    }
 
 #define gSPExtraGeometryMode(pkt, c, s)                                                 \
-_DW({                                                                               \
-    Gfx* _g = (Gfx*)(pkt);                                                          \
-                                                                                    \
-    _g->words.w0 = _SHIFTL(G_EXTRAGEOMETRYMODE, 24, 8) | _SHIFTL(~(u32)(c), 0, 24); \
-    _g->words.w1 = (u32)(s);                                                        \
-})
+    _DW({                                                                               \
+        Gfx* _g = (Gfx*)(pkt);                                                          \
+                                                                                        \
+        _g->words.w0 = _SHIFTL(G_EXTRAGEOMETRYMODE, 24, 8) | _SHIFTL(~(u32)(c), 0, 24); \
+        _g->words.w1 = (u32)(s);                                                        \
+    })
 
 #define gSPSetExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), 0, word)
 #define gSPClearExtraGeometryMode(pkt, word) gSPExtraGeometryMode((pkt), word, 0)
@@ -111,7 +112,7 @@ _DW({                                                                           
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gSPDisableFiltering(pkt, state)                       \
+#define gSPDisableFiltering(pkt, state)                \
     {                                                  \
         Gfx* _g = (Gfx*)(pkt);                         \
                                                        \

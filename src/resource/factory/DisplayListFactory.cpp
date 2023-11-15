@@ -73,7 +73,7 @@ void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
             displayList->Instructions.push_back(command);
         }
 
-        if (opcode == (uint8_t) G_ENDDL) {
+        if (opcode == (uint8_t)G_ENDDL) {
             break;
         }
     }
@@ -343,9 +343,11 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
             g.words.w1 |= v02 << 0;
         } else if (childName == "Triangles2") {
             // OTRTODO: Implement
-//            g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
-//                               child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
-//                               child->IntAttribute("V12"), child->IntAttribute("Flag1"));
+            //            g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"),
+            //            child->IntAttribute("V02"),
+            //                               child->IntAttribute("Flag0"), child->IntAttribute("V10"),
+            //                               child->IntAttribute("V11"), child->IntAttribute("V12"),
+            //                               child->IntAttribute("Flag1"));
         } else if (childName == "LoadVertices") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;

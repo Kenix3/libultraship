@@ -1,6 +1,7 @@
 #include "libultraship/libultraship.h"
 
-std::map<OSMesgQueue*, std::pair<std::shared_ptr<std::mutex>, std::shared_ptr<std::condition_variable>>> __lusMesgLockMap;
+std::map<OSMesgQueue*, std::pair<std::shared_ptr<std::mutex>, std::shared_ptr<std::condition_variable>>>
+    __lusMesgLockMap;
 
 extern "C" {
 
@@ -13,7 +14,7 @@ __OSEventState __osEventStateTab[OS_NUM_EVENTS] = { 0 };
 #define MQ_MUTEX(mq) (*__lusMesgLockMap[mq].first)
 #define MQ_CVAR(mq) (*__lusMesgLockMap[mq].second)
 
-void osCreateMesgQueue(OSMesgQueue * mq, OSMesg* msgBuf, int32_t count) {
+void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msgBuf, int32_t count) {
 
     mq->validCount = 0;
     mq->first = 0;
@@ -28,7 +29,7 @@ void osCreateMesgQueue(OSMesgQueue * mq, OSMesg* msgBuf, int32_t count) {
 
 int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
 
-    //mq is not initialised by osCreateMesgQueue
+    // mq is not initialised by osCreateMesgQueue
     if (!__lusMesgLockMap.contains(mq))
         return -1;
 

@@ -13,5 +13,4 @@ void osWritebackDCache(void* p, int32_t x) {
 
 void osInvalDCache(void* p, int32_t l) {
 }
-
 }

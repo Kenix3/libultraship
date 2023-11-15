@@ -53,5 +53,4 @@ void osViSetXScale(float a) {
 
 void osViSetYScale(float a) {
 }
-
 }

@@ -55,11 +55,11 @@ typedef struct OSMesgQueue {
 #ifdef __cplusplus
 extern "C" {
 #endif
-void osCreateMesgQueue(OSMesgQueue *mq, OSMesg *msgBuf, int32_t count);
-int32_t osSendMesg(OSMesgQueue *mq, OSMesg msg, int32_t flag);
-int32_t osJamMesg(OSMesgQueue *mq, OSMesg msg, int32_t flag);
-int32_t osRecvMesg(OSMesgQueue *mq, OSMesg *msg, int32_t flag);
-void osSetEventMesg(OSEvent event, OSMesgQueue *mq, OSMesg msg);
+void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msgBuf, int32_t count);
+int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag);
+int32_t osJamMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag);
+int32_t osRecvMesg(OSMesgQueue* mq, OSMesg* msg, int32_t flag);
+void osSetEventMesg(OSEvent event, OSMesgQueue* mq, OSMesg msg);
 #ifdef __cplusplus
 }
 #endif
