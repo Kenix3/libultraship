@@ -401,6 +401,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
                     }
                 }
             }
+            break;
 
         case WM_ACTIVATEAPP:
             if (dxgi.on_all_keys_up != nullptr) {
