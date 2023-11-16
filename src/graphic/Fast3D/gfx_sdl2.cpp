@@ -540,7 +540,8 @@ static bool gfx_sdl_start_frame(void) {
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
     const uint64_t qpc_freq = SDL_GetPerformanceFrequency();
-    return qpc / qpc_freq * 10000000 + qpc % qpc_freq * 10000000 / qpc_freq;
+    qpc *= 10000000;
+    return qpc / qpc_freq;
 }
 
 static inline void sync_framerate_with_timer(void) {
