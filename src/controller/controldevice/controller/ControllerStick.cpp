@@ -11,14 +11,14 @@
 #include <sstream>
 #include <algorithm>
 
-#define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
-#define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
-
 // for some reason windows isn't seeing M_PI
 // this is copied from my system's math.h
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+#define M_TAU 2 * M_PI
+#define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace LUS {
 ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
@@ -223,11 +223,11 @@ float ControllerStick::GetAxisDirectionValue(Direction direction) {
 }
 
 void ControllerStick::Process(int8_t& x, int8_t& y) {
-    auto sx = GetAxisDirectionValue(RIGHT) - GetAxisDirectionValue(LEFT);
-    auto sy = GetAxisDirectionValue(UP) - GetAxisDirectionValue(DOWN);
+    double sx = GetAxisDirectionValue(RIGHT) - GetAxisDirectionValue(LEFT);
+    double sy = GetAxisDirectionValue(UP) - GetAxisDirectionValue(DOWN);
 
-    auto ux = fabs(sx);
-    auto uy = fabs(sy);
+    double ux = fabs(sx);
+    double uy = fabs(sy);
 
     // create scaled circular dead-zone
     auto len = sqrt(ux * ux + uy * uy);
@@ -240,6 +240,10 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     }
     ux *= len;
     uy *= len;
+
+    if (ux != 0.0) {
+        int bp = 0;
+    }
 
     // bound diagonals to an octagonal range {-69 ... +69}
     if (ux != 0.0 && uy != 0.0) {
@@ -258,11 +262,11 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
 
     const double distance = std::sqrt((ux * ux) + (uy * uy)) / MAX_AXIS_RANGE;
     if (distance >= MINIMUM_RADIUS_TO_MAP_NOTCH) {
-        auto angle = atan2(uy, ux) + M_TAU;
+        auto angle = std::atan2(uy, ux) + M_TAU;
         auto newAngle = GetClosestNotch(angle, notchProximityValRadians);
 
-        ux = cos(newAngle) * distance * MAX_AXIS_RANGE;
-        uy = sin(newAngle) * distance * MAX_AXIS_RANGE;
+        ux = std::cos(newAngle) * distance * MAX_AXIS_RANGE;
+        uy = std::sin(newAngle) * distance * MAX_AXIS_RANGE;
     }
 
     // assign back to original sign
