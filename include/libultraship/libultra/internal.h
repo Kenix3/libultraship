@@ -18,7 +18,13 @@ typedef struct {
     /* 0x04 */ OSMesg msg;
 } __OSEventState; // size = 0x08
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern OSMgrArgs __osPiDevMgr;
 extern __OSEventState __osEventStateTab[];
+#ifdef __cplusplus
+}
+#endif
 
 #endif

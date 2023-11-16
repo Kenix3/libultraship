@@ -3,7 +3,7 @@
 #ifndef ULTRA64_CONTROLLER_H
 #define ULTRA64_CONTROLLER_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 #define SIAccessQueueSize 2
 #define BLOCKSIZE 32

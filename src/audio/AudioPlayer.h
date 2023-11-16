@@ -18,7 +18,7 @@ class AudioPlayer {
     bool IsInitialized(void);
 
     constexpr int GetSampleRate() const {
-        return 44100;
+        return 32000;
     }
 
   protected:

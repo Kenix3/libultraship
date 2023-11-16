@@ -415,7 +415,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(fs_buf, &fs_len, "    return fract(sin(random) * 143758.5453);");
     append_line(fs_buf, &fs_len, "}");
 
-    if (current_filter_mode == FILTER_THREE_POINT) {
+    if (current_filter_mode == FILTER_THREE_POINT && !cc_features.opt_filtering) {
 #if __APPLE__
         append_line(fs_buf, &fs_len, "#define TEX_OFFSET(off) texture(tex, texCoord - (off)/texSize)");
 #else
@@ -963,7 +963,7 @@ void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale) {
     Framebuffer& fb = framebuffers[fb_id];
 
     if (noise_scale != 0.0f) {
-        current_noise_scale = 1.0f / noise_scale;
+        current_noise_scale = (1.0f / noise_scale) * 2.0f;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
     current_framebuffer = fb_id;

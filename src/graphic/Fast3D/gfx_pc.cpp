@@ -48,11 +48,11 @@ using namespace std;
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
-#define SCALE_5_8(VAL_) (((VAL_)*0xFF) / 0x1F)
+#define SCALE_5_8(VAL_) (((VAL_) * 0xFF) / 0x1F)
 #define SCALE_8_5(VAL_) ((((VAL_) + 4) * 0x1F) / 0xFF)
-#define SCALE_4_8(VAL_) ((VAL_)*0x11)
+#define SCALE_4_8(VAL_) ((VAL_) * 0x11)
 #define SCALE_8_4(VAL_) ((VAL_) / 0x11)
-#define SCALE_3_8(VAL_) ((VAL_)*0x24)
+#define SCALE_3_8(VAL_) ((VAL_) * 0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
 // SCREEN_WIDTH and SCREEN_HEIGHT are defined in the headerfile
@@ -171,6 +171,7 @@ static struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     bool grayscale;
+    bool filtering;
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
@@ -597,6 +598,11 @@ static void import_texture_rgba16(int tile, bool importReplacement) {
             ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
                   ->second.replacementData
             : rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        return;
+    }
+
     uint32_t size_bytes = rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -1384,10 +1390,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             cross = -cross;
         }
 
+#ifdef F3DEX_GBI_2
         // If inverted culling is requested, negate the cross
         if ((rsp.extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
             cross = -cross;
         }
+#endif
 
         switch (rsp.geometry_mode & G_CULL_BOTH) {
             case G_CULL_FRONT:
@@ -1438,16 +1446,17 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
     uint64_t cc_id = rdp.combine_mode;
     uint64_t cc_options = 0;
-    bool use_alpha =
-        (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) && (rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16);
     bool use_fog = (rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = (rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
-    bool use_2cyc = (rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
+    bool use_2cyc = (rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) >= G_CYC_2CYCLE;
     bool alpha_threshold = (rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
     bool invisible =
         (rdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = rdp.grayscale;
+    bool use_alpha = use_2cyc ? (rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
+                                    (rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16)
+                              : (rdp.other_mode_l & (3 << 18)) == G_BL_1MA;
 
     if (texture_edge) {
         use_alpha = true;
@@ -1488,6 +1497,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
     if (rdp.loaded_texture[1].blended) {
         cc_options |= (uint64_t)SHADER_OPT_TEXEL1_BLEND;
+    }
+    if (rdp.filtering) {
+        cc_options |= (uint64_t)SHADER_OPT_DISABLE_FILTERING;
     }
 
     // If we are not using alpha, clear the alpha components of the combiner as they have no effect
@@ -2473,22 +2485,28 @@ static void gfx_run_dl(Gfx* cmd) {
         // uint32_t opcode = cmd->words.w0 & 0xFF;
 
         // if (markerOn)
-        // printf("OP: %02X\n", opcode);
+        //     SPDLOG_INFO("OP: {:X}", opcode);
+
+#ifndef _WIN32
+#define case case (uint8_t)
+#endif
 
         switch (opcode) {
-                // RSP commands:
+            // RSP commands:
+#ifdef F3DEX_GBI_2
             case G_LOAD_UCODE:
                 rsp.fog_mul = 0;
                 rsp.fog_offset = 0;
                 break;
+#endif
             case G_MARKER: {
                 cmd++;
 
                 ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                // uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-                // ResourceMgr_GetNameByCRC(hash, dlName);
+                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
                 // lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
 #endif
 
@@ -2575,9 +2593,9 @@ static void gfx_run_dl(Gfx* cmd) {
 #ifdef F3DEX_GBI_2
                 gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (const Vtx*)seg_addr(cmd->words.w1));
 #elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
-                gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, seg_addr(cmd->words.w1));
+                gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, (const Vtx*)seg_addr(cmd->words.w1));
 #else
-                gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), seg_addr(cmd->words.w1));
+                gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), (const Vtx*)seg_addr(cmd->words.w1));
 #endif
                 break;
             case G_VTX_OTR_HASH: {
@@ -2609,6 +2627,11 @@ static void gfx_run_dl(Gfx* cmd) {
                         cmd->words.w1 = (uintptr_t)vtx;
 
                         gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
+                        if (markerOn) {
+                            SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(12, 8), C0(1, 7) - C0(12, 8));
+                            SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(10, 6), C0(16, 8) / 2);
+                            SPDLOG_INFO("gfx_sp_vertex: {} {}", (C0(0, 16)) / sizeof(Vtx), C0(16, 4));
+                        }
                         cmd++;
                     }
                 }
@@ -2643,9 +2666,11 @@ static void gfx_run_dl(Gfx* cmd) {
                     --cmd; // increase after break
                 }
             } break;
+#ifdef F3DEX_GBI_2
             case G_MODIFYVTX:
                 gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), cmd->words.w1);
                 break;
+#endif
             case G_DL:
                 if (C0(16, 1) == 0) {
                     // Push return address
@@ -2715,7 +2740,8 @@ static void gfx_run_dl(Gfx* cmd) {
             } break;
             case (uint8_t)G_ENDDL:
 
-                // if (markerOn)
+                if (markerOn)
+                    SPDLOG_INFO("END DL");
                 // printf("END DL ON MARKER\n");
 
                 markerOn = false;
@@ -2741,6 +2767,8 @@ static void gfx_run_dl(Gfx* cmd) {
             case (uint8_t)G_TRI1:
 #ifdef F3DEX_GBI_2
                 gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
+                if (markerOn)
+                    SPDLOG_INFO("gfx_sp_tri1({}, {}, {}, false)", C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2);
 #elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
                 gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
 #else
@@ -2785,6 +2813,11 @@ static void gfx_run_dl(Gfx* cmd) {
                     if (gfx_check_image_signature(imgData) == 1) {
                         std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
                             LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+
+                        if (tex == nullptr) {
+                            SPDLOG_ERROR("G_SETTIMG: Texture is null");
+                            break;
+                        }
 
                         i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
                         texFlags = tex->Flags;
@@ -2918,6 +2951,10 @@ static void gfx_run_dl(Gfx* cmd) {
             }
             case G_SETGRAYSCALE: {
                 rdp.grayscale = cmd->words.w1;
+                break;
+            }
+            case G_SETFILTERING: {
+                rdp.filtering = cmd->words.w1;
                 break;
             }
             case G_LOADBLOCK:
@@ -3055,6 +3092,13 @@ static void gfx_run_dl(Gfx* cmd) {
                 break;
             case G_EXTRAGEOMETRYMODE:
                 gfx_sp_extra_geometry_mode(~C0(0, 24), cmd->words.w1);
+                break;
+            case G_RDPTILESYNC:
+            case G_RDPPIPESYNC:
+                break;
+            default:
+                if (markerOn)
+                    SPDLOG_INFO("Unknown GBI command: {:#x}", cmd->words.w0);
                 break;
         }
         ++cmd;

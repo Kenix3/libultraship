@@ -163,6 +163,8 @@ double LUS::BinaryReader::ReadDouble() {
     return result;
 }
 
+#ifdef USE_ZAPD
+
 ZAPDUtils::Vec3f LUS::BinaryReader::ReadVec3f() {
     return ZAPDUtils::Vec3f();
 }
@@ -182,6 +184,8 @@ ZAPDUtils::Vec2f LUS::BinaryReader::ReadVec2f() {
 Color3b LUS::BinaryReader::ReadColor3b() {
     return Color3b();
 }
+
+#endif
 
 std::string LUS::BinaryReader::ReadString() {
     std::string res;

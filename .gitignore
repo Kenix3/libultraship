@@ -334,6 +334,10 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+src/install_config.h
+# Removed jsonConfig and jsonConfigVersion
+extern/nlohmann-json/*_jsonConfig*
+
 !libultraship/Lib/**
 libultraship/DebugObj/*
 build/
@@ -346,3 +350,15 @@ ZAPDUtils.lib
 .vs/
 .idea/
 cmake-build-**
+cmake_install.cmake
+*.a
+*.o
+*.pc
+*.vcxproj
+*.sln
+*.filters
+*.stamp
+*.depend
+*.lib
+*.tlog
+*.recipe
