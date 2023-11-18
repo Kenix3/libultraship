@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 #include "config/Config.h"
 #include "resource/ResourceManager.h"
-#include "controller/ControlDeck.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "debug/CrashHandler.h"
 #include "audio/Audio.h"
 #include "window/Window.h"
@@ -57,11 +57,11 @@ class Context {
     void InitConsoleVariables();
     void InitResourceManager(const std::vector<std::string>& otrFiles = {},
                              const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
-    void InitControlDeck();
+    void InitControlDeck(std::vector<uint16_t> additionalBitmasks = {});
     void InitCrashHandler();
     void InitAudio();
     void InitConsole();
-    void InitWindow();
+    void InitWindow(std::shared_ptr<GuiWindow> customInputEditorWindow = nullptr);
 
   protected:
     Context() = default;

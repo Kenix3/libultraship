@@ -10,6 +10,8 @@
 #include <SDL2/SDL.h>
 #include "window/gui/ConsoleWindow.h"
 #include "window/gui/InputEditorWindow.h"
+#include "controller/deviceindex/ControllerDisconnectedWindow.h"
+#include "controller/deviceindex/ControllerReorderingWindow.h"
 #include "window/gui/IconsFontAwesome4.h"
 #include "window/gui/GameOverlay.h"
 #include "window/gui/InputViewer.h"
@@ -60,6 +62,7 @@ typedef union {
 class Gui {
   public:
     Gui();
+    Gui(std::shared_ptr<GuiWindow> customInputEditorWindow);
     ~Gui();
 
     void Init(GuiWindowInitData windowImpl);
@@ -82,6 +85,9 @@ class Gui {
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
     void LoadTexture(const std::string& name, const std::string& path);
+    bool ImGuiGamepadNavigationEnabled();
+    void BlockImGuiGamepadNavigation();
+    void UnblockImGuiGamepadNavigation();
 
   protected:
     void ImGuiWMInit();

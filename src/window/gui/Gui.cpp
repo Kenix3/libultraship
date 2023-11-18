@@ -66,13 +66,24 @@ namespace LUS {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
-Gui::Gui() : mNeedsConsoleVariableSave(false) {
+Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
     mInputViewer = std::make_shared<InputViewer>();
 
     AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
-    AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
+    if (customInputEditorWindow == nullptr) {
+        AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
+    } else {
+        AddGuiWindow(customInputEditorWindow);
+    }
+    AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>("gControllerDisconnectedWindowEnabled",
+                                                                "Controller Disconnected"));
+    AddGuiWindow(
+        std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
+}
+
+Gui::Gui() : Gui(nullptr) {
 }
 
 Gui::~Gui() {
@@ -295,6 +306,20 @@ void Gui::Update(WindowEvent event) {
     }
 }
 
+bool Gui::ImGuiGamepadNavigationEnabled() {
+    return mImGuiIo->ConfigFlags & ImGuiConfigFlags_NavEnableGamepad;
+}
+
+void Gui::BlockImGuiGamepadNavigation() {
+    mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+}
+
+void Gui::UnblockImGuiGamepadNavigation() {
+    if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+        mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    }
+}
+
 void Gui::DrawMenu() {
     LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
@@ -343,7 +368,6 @@ void Gui::DrawMenu() {
         if (wnd->IsFullscreen()) {
             Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
         }
-        Context::GetInstance()->GetControlDeck()->SaveSettings();
         if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {

@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include "public/bridge/consolevariablebridge.h"
-#include "controller/KeyboardController.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "graphic/Fast3D/gfx_sdl.h"
 #include "graphic/Fast3D/gfx_dxgi.h"
@@ -13,7 +12,7 @@
 #include "graphic/Fast3D/gfx_wiiu.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
-#include "controller/KeyboardScancodes.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "Context.h"
 
 #ifdef __APPLE__
@@ -26,7 +25,7 @@
 
 namespace LUS {
 
-Window::Window() {
+Window::Window(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mIsFullscreen = false;
@@ -34,7 +33,10 @@ Window::Window() {
     mHeight = 240;
     mPosX = 100;
     mPosY = 100;
-    mGui = std::make_shared<Gui>();
+    mGui = std::make_shared<Gui>(customInputEditorWindow);
+}
+
+Window::Window() : Window(nullptr) {
 }
 
 Window::~Window() {
@@ -101,7 +103,9 @@ void Window::Init() {
     gfx_init(mWindowManagerApi, mRenderingApi, LUS::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
              mHeight, mPosX, mPosY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
+#ifndef __WIIU__
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
+#endif
     SetTextureFilter((FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
 }
 
@@ -146,50 +150,30 @@ void Window::MainLoop(void (*mainFunction)(void)) {
     mWindowManagerApi->main_loop(mainFunction);
 }
 
+#ifndef __WIIU__
 bool Window::KeyUp(int32_t scancode) {
     if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F11)) {
         Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
     Context::GetInstance()->GetWindow()->SetLastScancode(-1);
-
-    bool isProcessed = false;
-    auto controlDeck = Context::GetInstance()->GetControlDeck();
-    const auto pad = dynamic_cast<KeyboardController*>(
-        controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
-    if (pad != nullptr) {
-        if (pad->ReleaseButton(scancode)) {
-            isProcessed = true;
-        }
-    }
-
-    return isProcessed;
+    return Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_KEY_UP,
+                                                                          static_cast<KbScancode>(scancode));
 }
 
 bool Window::KeyDown(int32_t scancode) {
-    bool isProcessed = false;
-    auto controlDeck = Context::GetInstance()->GetControlDeck();
-    const auto pad = dynamic_cast<KeyboardController*>(
-        controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
-    if (pad != nullptr) {
-        if (pad->PressButton(scancode)) {
-            isProcessed = true;
-        }
-    }
-
+    bool isProcessed = Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(
+        KbEventType::LUS_KB_EVENT_KEY_DOWN, static_cast<KbScancode>(scancode));
     Context::GetInstance()->GetWindow()->SetLastScancode(scancode);
 
     return isProcessed;
 }
 
 void Window::AllKeysUp(void) {
-    auto controlDeck = Context::GetInstance()->GetControlDeck();
-    const auto pad = dynamic_cast<KeyboardController*>(
-        controlDeck->GetDeviceFromDeviceIndex(controlDeck->GetNumDevices() - 2).get());
-    if (pad != nullptr) {
-        pad->ReleaseAllButtons();
-    }
+    Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
+                                                                   KbScancode::LUS_KB_UNKNOWN);
 }
+#endif
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
