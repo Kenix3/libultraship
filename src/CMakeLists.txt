@@ -2,6 +2,7 @@ add_library(libultraship STATIC)
 set_target_properties(libultraship PROPERTIES PREFIX "")
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+option(USE_OPENGLES "Enable GLES3" OFF)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
@@ -304,6 +305,11 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchImpl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchPerformanceProfiles.h
     )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
+    set(Source_Files__Port
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.cpp
+    )
 endif()
 
 source_group("port" FILES ${Source_Files__Port})
@@ -466,6 +472,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(libultraship PRIVATE ${PULSEAUDIO_LIBRARY})
 endif()
 
+if (USE_OPENGLES)
+    find_library(OPENGLES_LIBRARY GLESv3)
+    target_link_libraries(libultraship PRIVATE GLESv3)
+endif()
+
 #=================== Compile Options & Defs ===================
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -490,6 +501,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
         $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+        $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
     )
 else ()
     target_compile_definitions(libultraship PRIVATE

@@ -72,7 +72,7 @@ void CrashHandler::PrintCommon() {
     SPDLOG_CRITICAL(mOutBuffer);
 }
 
-#if (__linux__)
+#if defined(__linux__) && !defined(__ANDROID__)
 void CrashHandler::PrintRegisters(ucontext_t* ctx) {
     char regbuffer[30];
     AppendLine("Registers:");
@@ -410,7 +410,7 @@ extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
 
 CrashHandler::CrashHandler() {
     mOutBuffer = new char[gMaxBufferSize];
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__ANDROID__)
     struct sigaction action;
     struct sigaction shutdownAction;
 

@@ -34,6 +34,9 @@
 #elif __SWITCH__
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
+#elif USE_OPENGLES
+#include <SDL2/SDL.h>
+#include <GLES3/gl3.h>
 #else
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
@@ -73,7 +76,7 @@ struct Framebuffer {
 
 static map<pair<uint64_t, uint32_t>, struct ShaderProgram> shader_program_pool;
 static GLuint opengl_vbo;
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
 static GLuint opengl_vao;
 #endif
 static bool current_depth_mask;
@@ -255,8 +258,11 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     size_t num_floats = 4;
 
     // Vertex shader
-#ifdef __APPLE__
+#if defined(__APPLE__)
     append_line(vs_buf, &vs_len, "#version 410 core");
+    append_line(vs_buf, &vs_len, "in vec4 aVtxPos;");
+#elif defined(USE_OPENGLES)
+    append_line(vs_buf, &vs_len, "#version 300 es");
     append_line(vs_buf, &vs_len, "in vec4 aVtxPos;");
 #else
     append_line(vs_buf, &vs_len, "#version 110");
@@ -264,7 +270,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 #endif
     for (int i = 0; i < 2; i++) {
         if (cc_features.used_textures[i]) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
             vs_len += sprintf(vs_buf + vs_len, "in vec2 aTexCoord%d;\n", i);
             vs_len += sprintf(vs_buf + vs_len, "out vec2 vTexCoord%d;\n", i);
 #else
@@ -274,7 +280,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
             num_floats += 2;
             for (int j = 0; j < 2; j++) {
                 if (cc_features.clamp[i][j]) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
                     vs_len += sprintf(vs_buf + vs_len, "in float aTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
                     vs_len += sprintf(vs_buf + vs_len, "out float vTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
 #else
@@ -287,7 +293,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         }
     }
     if (cc_features.opt_fog) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(vs_buf, &vs_len, "in vec4 aFog;");
         append_line(vs_buf, &vs_len, "out vec4 vFog;");
 #else
@@ -298,7 +304,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_grayscale) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(vs_buf, &vs_len, "in vec4 aGrayscaleColor;");
         append_line(vs_buf, &vs_len, "out vec4 vGrayscaleColor;");
 #else
@@ -309,7 +315,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     for (int i = 0; i < cc_features.num_inputs; i++) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         vs_len += sprintf(vs_buf + vs_len, "in vec%d aInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
         vs_len += sprintf(vs_buf + vs_len, "out vec%d vInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
 #else
@@ -343,22 +349,24 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(vs_buf, &vs_len, "}");
 
     // Fragment shader
-#ifdef __APPLE__
+#if defined(__APPLE__)
     append_line(fs_buf, &fs_len, "#version 410 core");
+#elif defined(USE_OPENGLES)
+    append_line(fs_buf, &fs_len, "#version 300 es");
+    append_line(fs_buf, &fs_len, "precision mediump float;");
 #else
     append_line(fs_buf, &fs_len, "#version 130");
 #endif
-    // append_line(fs_buf, &fs_len, "precision mediump float;");
     for (int i = 0; i < 2; i++) {
         if (cc_features.used_textures[i]) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
             fs_len += sprintf(fs_buf + fs_len, "in vec2 vTexCoord%d;\n", i);
 #else
             fs_len += sprintf(fs_buf + fs_len, "varying vec2 vTexCoord%d;\n", i);
 #endif
             for (int j = 0; j < 2; j++) {
                 if (cc_features.clamp[i][j]) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
                     fs_len += sprintf(fs_buf + fs_len, "in float vTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
 #else
                     fs_len += sprintf(fs_buf + fs_len, "varying float vTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
@@ -368,21 +376,21 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         }
     }
     if (cc_features.opt_fog) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(fs_buf, &fs_len, "in vec4 vFog;");
 #else
         append_line(fs_buf, &fs_len, "varying vec4 vFog;");
 #endif
     }
     if (cc_features.opt_grayscale) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(fs_buf, &fs_len, "in vec4 vGrayscaleColor;");
 #else
         append_line(fs_buf, &fs_len, "varying vec4 vGrayscaleColor;");
 #endif
     }
     for (int i = 0; i < cc_features.num_inputs; i++) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         fs_len += sprintf(fs_buf + fs_len, "in vec%d vInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
 #else
         fs_len += sprintf(fs_buf + fs_len, "varying vec%d vInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
@@ -416,7 +424,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(fs_buf, &fs_len, "}");
 
     if (current_filter_mode == FILTER_THREE_POINT) {
-#if __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(fs_buf, &fs_len, "#define TEX_OFFSET(off) texture(tex, texCoord - (off)/texSize)");
 #else
         append_line(fs_buf, &fs_len, "#define TEX_OFFSET(off) texture2D(tex, texCoord - (off)/texSize)");
@@ -434,7 +442,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "}");
     } else {
         append_line(fs_buf, &fs_len, "vec4 hookTexture2D(in sampler2D tex, in vec2 uv, in vec2 texSize) {");
-#if __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(fs_buf, &fs_len, "    return texture(tex, uv);");
 #else
         append_line(fs_buf, &fs_len, "    return texture2D(tex, uv);");
@@ -442,7 +450,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "}");
     }
 
-#if __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
     append_line(fs_buf, &fs_len, "out vec4 outColor;");
 #endif
 
@@ -456,7 +464,11 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         if (cc_features.used_textures[i]) {
             bool s = cc_features.clamp[i][0], t = cc_features.clamp[i][1];
 
+#if defined(USE_OPENGLES)
+            fs_len += sprintf(fs_buf + fs_len, "vec2 texSize%d = vec2(textureSize(uTex%d, 0));\n", i, i);
+#else
             fs_len += sprintf(fs_buf + fs_len, "vec2 texSize%d = textureSize(uTex%d, 0);\n", i, i);
+#endif
 
             if (!s && !t) {
                 fs_len += sprintf(fs_buf + fs_len, "vec2 vTexCoordAdj%d = vTexCoord%d;\n", i, i);
@@ -482,8 +494,11 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
             fs_len += sprintf(fs_buf + fs_len, "vec4 texVal%d = hookTexture2D(uTex%d, vTexCoordAdj%d, texSize%d);\n", i,
                               i, i, i);
             if (cc_features.used_masks[i]) {
+#ifdef USE_OPENGLES
+                fs_len += sprintf(fs_buf + fs_len, "vec2 maskSize%d = vec2(textureSize(uTexMask%d, 0));\n", i, i);
+#else
                 fs_len += sprintf(fs_buf + fs_len, "vec2 maskSize%d = textureSize(uTexMask%d, 0);\n", i, i);
-
+#endif
                 fs_len +=
                     sprintf(fs_buf + fs_len,
                             "vec4 maskVal%d = hookTexture2D(uTexMask%d, vTexCoordAdj%d, maskSize%d);\n", i, i, i, i);
@@ -557,13 +572,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         if (cc_features.opt_invisible) {
             append_line(fs_buf, &fs_len, "texel.a = 0.0;");
         }
-#if __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(fs_buf, &fs_len, "outColor = texel;");
 #else
         append_line(fs_buf, &fs_len, "gl_FragColor = texel;");
 #endif
     } else {
-#if __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(fs_buf, &fs_len, "outColor = vec4(texel, 1.0);");
 #else
         append_line(fs_buf, &fs_len, "gl_FragColor = vec4(texel, 1.0);");
@@ -674,6 +689,9 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     prg->num_floats = num_floats;
     prg->num_attribs = cnt;
 
+    prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
+    prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
+
     gfx_opengl_load_shader(prg);
 
     if (cc_features.used_textures[0]) {
@@ -700,9 +718,6 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         GLint sampler_location = glGetUniformLocation(shader_program, "uTexBlend1");
         glUniform1i(sampler_location, 5);
     }
-
-    prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
-    prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
 
     return prg;
 }
@@ -737,7 +752,7 @@ static void gfx_opengl_upload_texture(const uint8_t* rgba32_buf, uint32_t width,
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
 }
 
-#ifdef __SWITCH__
+#if defined(__SWITCH__) || defined(USE_OPENGLES)
 #define GL_MIRROR_CLAMP_TO_EDGE 0x8743
 #endif
 
@@ -832,19 +847,21 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
 }
 
 static void gfx_opengl_init(void) {
-#ifndef __SWITCH__
+#if !defined(__SWITCH__) && !defined(USE_OPENGLES)
     glewInit();
 #endif
 
     glGenBuffers(1, &opengl_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENGLES)
     glGenVertexArrays(1, &opengl_vao);
     glBindVertexArray(opengl_vao);
 #endif
 
+#ifndef USE_OPENGLES // not supported on gles
     glEnable(GL_DEPTH_CLAMP);
+#endif
     glDepthFunc(GL_LEQUAL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -1009,8 +1026,10 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
         glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
         int x = coordinates.begin()->first;
         int y = coordinates.begin()->second;
+#ifndef USE_OPENGLES // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(x, fb.invert_y ? fb.height - y : y, 1, 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8,
                      &depth_stencil_value);
+#endif
         res.emplace(*coordinates.begin(), (depth_stencil_value >> 18) << 2);
     } else {
         if (pixel_depth_rb_size < coordinates.size()) {
@@ -1047,8 +1066,9 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, pixel_depth_fb);
         vector<uint32_t> depth_stencil_values(coordinates.size());
+#ifndef USE_OPENGLES // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(0, 0, coordinates.size(), 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, depth_stencil_values.data());
-
+#endif
         {
             size_t i = 0;
             for (const auto& coord : coordinates) {
