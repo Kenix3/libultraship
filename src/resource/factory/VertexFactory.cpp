@@ -64,8 +64,6 @@ void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
         data.v.cn[1] = reader->ReadUByte();
         data.v.cn[2] = reader->ReadUByte();
         data.v.cn[3] = reader->ReadUByte();
-        SPDLOG_TRACE("Vertex: {}, {}, {}, {}, {}, {}, {}, {}, {}, {}", data.v.ob[0], data.v.ob[1], data.v.ob[2],
-                     data.v.flag, data.v.tc[0], data.v.tc[1], data.v.cn[0], data.v.cn[1], data.v.cn[2], data.v.cn[3]);
         vertex->VertexList.push_back(data);
     }
 }

@@ -2505,12 +2505,12 @@ static void gfx_run_dl(Gfx* cmd) {
                 ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-                SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
+                // uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                // SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
                 // lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
 #endif
 
-                markerOn = true;
+                // markerOn = true;
             } break;
             case G_INVALTEXCACHE: {
                 uintptr_t texAddr = cmd->words.w1;
