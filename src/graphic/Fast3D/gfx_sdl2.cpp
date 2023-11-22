@@ -291,8 +291,11 @@ static int target_fps = 60;
 static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     switch (message) {
         case WM_GETDPISCALEDSIZE:
+            // Something is wrong with SDLs original implementation of WM_GETDPISCALEDSIZE, so pass it to the default
+            // system window procedure instead.
             return DefWindowProc(h_wnd, message, w_param, l_param);
         default:
+            // Pass anything else to SDLs original window procedure.
             return CallWindowProc((WNDPROC)SDL_WndProc, h_wnd, message, w_param, l_param);
     }
     return 0;
@@ -361,6 +364,8 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
 #ifdef _WIN32
+    // Get Windows window handle and use it to subclass the window procedure.
+    // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
     SDL_GetWindowWMInfo(wnd, &wmInfo);
