@@ -29,7 +29,11 @@ void StatsWindow::DrawElement() {
 #else
     ImGui::Text("Platform: Unknown");
 #endif
-    ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", 1000.0f / framerate, framerate);
+    if (framerate != 0.0f) {
+        ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", 1000.0f / framerate, framerate);
+    } else {
+        ImGui::Text("Status: ? ms/frame (0.0 FPS)");
+    }
     ImGui::End();
     ImGui::PopStyleColor();
 }
