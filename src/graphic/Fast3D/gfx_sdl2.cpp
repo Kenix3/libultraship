@@ -43,6 +43,7 @@
 #ifdef _WIN32
 #include <WTypesbase.h>
 #include <Windows.h>
+#include <SDL_syswm.h>
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
@@ -61,6 +62,7 @@ static void (*on_fullscreen_changed_callback)(bool is_now_fullscreen);
 static bool (*on_key_down_callback)(int scancode);
 static bool (*on_key_up_callback)(int scancode);
 static void (*on_all_keys_up_callback)(void);
+LONG_PTR SDL_WndProc;
 
 const SDL_Scancode lus_to_sdl_table[] = {
     SDL_SCANCODE_UNKNOWN,
@@ -285,6 +287,16 @@ static int target_fps = 60;
 #define FRAME_INTERVAL_US_NUMERATOR 1000000
 #define FRAME_INTERVAL_US_DENOMINATOR (target_fps)
 
+static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
+    switch (message) {
+        case WM_GETDPISCALEDSIZE:
+            return DefWindowProc(h_wnd, message, w_param, l_param);
+        default:
+            return CallWindowProc((WNDPROC)SDL_WndProc, h_wnd, message, w_param, l_param);
+    }
+    return 0;
+};
+
 static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
                          uint32_t height, int32_t posX, int32_t posY) {
     window_width = width;
@@ -346,6 +358,13 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
+#ifdef _WIN32
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    SDL_GetWindowWMInfo(wnd, &wmInfo);
+    HWND hwnd = wmInfo.info.win.window;
+    SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
+#endif
     LUS::GuiWindowInitData window_impl;
 
     int display_in_use = SDL_GetWindowDisplayIndex(wnd);
