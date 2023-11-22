@@ -2481,11 +2481,11 @@ static void gfx_run_dl(Gfx* cmd) {
     uint64_t ourHash = -1;
 
     for (;;) {
-        uint32_t opcode = cmd->words.w0 >> 24;
+        uint8_t opcode = cmd->words.w0 >> 24;
         // uint32_t opcode = cmd->words.w0 & 0xFF;
 
-        // if (markerOn)
-        //     SPDLOG_INFO("OP: {:X}", opcode);
+        if (markerOn)
+            SPDLOG_INFO("OP: {:X}", opcode);
 
 #ifndef _WIN32
 #define case case (uint8_t)
@@ -2505,12 +2505,12 @@ static void gfx_run_dl(Gfx* cmd) {
                 ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
 #if _DEBUG
-                // uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-                // SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
+                uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+                SPDLOG_INFO("G_MARKER: {}", ResourceGetNameByCrc(hash));
                 // lusprintf(__FILE__, __LINE__, 6, "G_MARKER: %s\n", dlName);
 #endif
 
-                // markerOn = true;
+                markerOn = true;
             } break;
             case G_INVALTEXCACHE: {
                 uintptr_t texAddr = cmd->words.w1;
@@ -2568,6 +2568,19 @@ static void gfx_run_dl(Gfx* cmd) {
                 gfx_sp_pop_matrix(1);
 #endif
                 break;
+            case G_MOVEMEM_OTR_HASH: {
+#ifdef F3DEX_GBI_2
+                auto idx = C0(0, 8);
+                auto offset = C0(8, 8) * 8;
+#else
+                auto idx = C0(16, 8);
+                auto offset = 0;
+#endif
+                cmd++;
+                uint64_t hash = (static_cast<uint64_t>(cmd->words.w0) << 32) + cmd->words.w1;
+                gfx_sp_movemem(idx, offset, ResourceGetDataByCrc(hash));
+                break;
+            }
             case G_MOVEMEM:
 #ifdef F3DEX_GBI_2
                 gfx_sp_movemem(C0(0, 8), C0(8, 8) * 8, seg_addr(cmd->words.w1));
@@ -2629,8 +2642,6 @@ static void gfx_run_dl(Gfx* cmd) {
                         gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), vtx);
                         if (markerOn) {
                             SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(12, 8), C0(1, 7) - C0(12, 8));
-                            SPDLOG_INFO("gfx_sp_vertex: {} {}", C0(10, 6), C0(16, 8) / 2);
-                            SPDLOG_INFO("gfx_sp_vertex: {} {}", (C0(0, 16)) / sizeof(Vtx), C0(16, 4));
                         }
                         cmd++;
                     }

@@ -4,6 +4,7 @@
 #include "Resource.h"
 #include "File.h"
 #include "Context.h"
+#include "LightsFactory.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/binarytools/BinaryReader.h"
 #include "factory/TextureFactory.h"
@@ -25,6 +26,7 @@ ResourceLoader::~ResourceLoader() {
 void ResourceLoader::RegisterGlobalResourceFactories() {
     RegisterResourceFactory(ResourceType::Texture, "Texture", std::make_shared<TextureFactory>());
     RegisterResourceFactory(ResourceType::Vertex, "Vertex", std::make_shared<VertexFactory>());
+    RegisterResourceFactory(ResourceType::Lights, "Lights", std::make_shared<LightsFactory>());
     RegisterResourceFactory(ResourceType::DisplayList, "DisplayList", std::make_shared<DisplayListFactory>());
     RegisterResourceFactory(ResourceType::Matrix, "Matrix", std::make_shared<MatrixFactory>());
     RegisterResourceFactory(ResourceType::Array, "Array", std::make_shared<ArrayFactory>());

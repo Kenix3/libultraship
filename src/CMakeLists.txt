@@ -338,6 +338,8 @@ set(Source_Files__Resource__Types
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Array.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Blob.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Blob.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Light.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Light.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/DisplayList.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/DisplayList.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Matrix.cpp
@@ -354,6 +356,8 @@ set(Source_Files__Resource__Factories
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/ArrayFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/BlobFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/BlobFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/LightsFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/LightsFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayListFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/DisplayListFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/MatrixFactory.cpp

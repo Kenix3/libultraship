@@ -19,6 +19,7 @@
 #define G_MTX_OTR 0x36
 #define G_TEXRECT_WIDE 0x37
 #define G_FILLWIDERECT 0x38
+#define G_MOVEMEM_OTR_HASH 0x42
 
 /* GFX Effects */
 #define G_SETGRAYSCALE 0x39
