@@ -1911,7 +1911,7 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
             word_size_shift = 2;
             break;
     }
-    uint32_t orig_size_bytes = word_size_shift > 0 ? (lrs + 1) << word_size_shift : (lrs + 1) >> (-word_size_shift);
+    uint32_t orig_size_bytes = word_size_shift > 0 ? (lrs + 1) << word_size_shift : (lrs + 1) >> (-(int64_t)word_size_shift);
     uint32_t size_bytes = orig_size_bytes;
     if (g_rdp.texture_to_load.raw_tex_metadata.h_byte_scale != 1 ||
         g_rdp.texture_to_load.raw_tex_metadata.v_pixel_scale != 1) {
@@ -2360,7 +2360,6 @@ static inline void* seg_addr(uintptr_t w1) {
         uint32_t segNum = (w1 >> 24);
 
         uint32_t offset = w1 & 0x00FFFFFE;
-        // offset = 0; // Cursed Malon bug
 
         if (gSegmentPointers[segNum] != 0) {
             return (void*)(gSegmentPointers[segNum] + offset);
@@ -2421,8 +2420,11 @@ void GfxExecStack::call(Gfx* caller, Gfx* callee) {
 
 Gfx* GfxExecStack::ret() {
     Gfx* cmd = cmd_stack.top();
+
     cmd_stack.pop();
-    gfx_path.pop_back();
+    if (!gfx_path.empty()) {
+        gfx_path.pop_back();
+    }
 
     while (cmd_stack.size() > 0 && cmd_stack.top() == nullptr) {
         cmd_stack.pop();
@@ -2437,7 +2439,7 @@ static void gfx_step(GfxExecStack& exec_stack) {
     uint32_t opcode = cmd->words.w0 >> 24;
 
     // if (markerOn)
-    // printf("OP: %02X\n", opcode);
+     //printf("OP: %016X\n", cmd0->force_structure_alignment);
 
     switch (opcode) {
             // RSP commands:
@@ -2450,51 +2452,10 @@ static void gfx_step(GfxExecStack& exec_stack) {
 
             // ourHash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
 
-            // #if _DEBUG
             {
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 std::string dlName = ResourceGetNameByCrc(hash);
-                // fprintf(stderr, "G_MARKER: %s\n", dlName.c_str());
-                // if (!GfxDebuggerIsDebugging() &&
-                //     strstr(dlName.c_str(), "objects/gameplay_keep/gameplay_keep_DL_020B30") != nullptr) {
-                //     GfxDebuggerRequestDebugging();
-                //     exec_stack.stop();
-
-                //     // cmd = exec_stack.ret();
-                //     return;
-                // }
-                // if (!GfxDebuggerIsDebugging() &&
-                //     strstr(dlName.c_str(), "objects/gameplay_keep/gEffFire1DL") != nullptr) {
-                //     GfxDebuggerRequestDebugging();
-                //     exec_stack.stop();
-
-                //     // cmd = exec_stack.ret();
-                //     return;
-                // }
-                // if (!GfxDebuggerIsDebugging() &&
-                //     strstr(dlName.c_str(), "objects/gameplay_keep/gEffFire2DL") != nullptr) {
-                //     GfxDebuggerRequestDebugging();
-                //     exec_stack.stop();
-
-                //     // cmd = exec_stack.ret();
-                //     return;
-                // }
-                // if (!GfxDebuggerIsDebugging() &&
-                //     strstr(dlName.c_str(), "objects/object_gi_reserve00/gGiMoonsTearGlowDL")) {
-                //     GfxDebuggerRequestDebugging();
-                //     exec_stack.stop();
-                //     return;
-                // }
-                // if (false && !GfxDebuggerIsDebugging() &&
-                //     strstr(dlName.c_str(), "objects/gameplay_keep/gameplay_keep_DL_020B30") != nullptr) {
-                //     GfxDebuggerRequestDebugging();
-                //     exec_stack.stop();
-                //     // cmd = cmd_stack.top();
-                //     // cmd_stack.pop();
-                //     return;
-                // }
             }
-            // #endif
 
             markerOn = true;
         } break;
@@ -2515,17 +2476,8 @@ static void gfx_step(GfxExecStack& exec_stack) {
                 exec_stack.openDisp(filename, l);
             } else if (p == 8) {
                 if (exec_stack.disp_stack.size() == 0) {
-                    // fprintf(stderr, "CLOSE WITHOUT OPEN %s:%d\n", filename, l);
+                    SPDLOG_WARN("CLOSE_DISPS without matching open {}:{}", p, l); 
                 } else {
-                    // auto old = exec_stack.disp_stack[exec_stack.disp_stack.size() - 1];
-
-                    // if (strcmp(old.file, filename)) {
-                    //     fprintf(stderr, "DISP DOESNT MATCH: %s:%d vs %s:%d\n", old.file, old.line, filename, l);
-                    //     for (size_t i = 0; i < exec_stack.disp_stack.size(); i++) {
-                    //         fprintf(stderr, "%s:%d\n", exec_stack.disp_stack[i].file, exec_stack.disp_stack[i].line);
-                    //     }
-                    //     exec_stack.stop();
-                    // }
                     exec_stack.closeDisp();
                 }
             }
@@ -3238,29 +3190,19 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     rendering_state.scissor = {};
 
     auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
-    if (!GfxDebuggerIsDebugging() || true) {
-        // gfx_run_dl(commands);
         g_exec_stack.start(commands);
-        // int i = 0;
         while (!g_exec_stack.cmd_stack.empty()) {
             auto cmd = g_exec_stack.cmd_stack.top();
 
             if (GfxDebuggerIsDebugging()) {
                 g_exec_stack.gfx_path.push_back(cmd);
                 if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
-                    // fprintf(stderr, "BREAK: ");
-                    // for (size_t j = 0; j < g_exec_stack.gfx_path.size(); j++) {
-                    //     fprintf(stderr, "/%p", g_exec_stack.gfx_path[j]);
-                    // }
-                    // fprintf(stderr, "\n");
-                    // if (i >= 4)
                     break;
                 }
                 g_exec_stack.gfx_path.pop_back();
             }
             gfx_step(g_exec_stack);
         }
-    }
     gfx_flush();
     gfxFramebuffer = 0;
     currentDir = std::stack<std::string>();

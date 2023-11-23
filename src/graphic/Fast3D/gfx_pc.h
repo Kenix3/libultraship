@@ -81,7 +81,7 @@ struct GfxExecStack {
         int line;
     };
     // stack for OpenDisp/CloseDisps
-    std::vector<CodeDisp> disp_stack;
+    std::vector<CodeDisp> disp_stack{};
 
     void start(Gfx* dlist);
     void stop();
