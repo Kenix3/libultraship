@@ -2,7 +2,7 @@ add_library(libultraship STATIC)
 set_target_properties(libultraship PROPERTIES PREFIX "")
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 # Need to set C11 for libgfxd (_Alignas)
-set_property(TARGET libultraship PROPERTY_C_STANDARD 11)
+set_property(TARGET libultraship PROPERTY C_STANDARD 11)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
