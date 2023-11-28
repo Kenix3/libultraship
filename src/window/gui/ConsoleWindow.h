@@ -26,6 +26,7 @@ class ConsoleWindow : public GuiWindow {
     void SendErrorMessage(const std::string& str);
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, ...);
     std::string GetCurrentChannel();
+    void ClearBindings();
 
   protected:
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
