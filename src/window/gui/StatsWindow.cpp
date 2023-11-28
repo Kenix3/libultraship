@@ -13,6 +13,7 @@ void StatsWindow::InitElement() {
 
 void StatsWindow::DrawElement() {
     const float framerate = ImGui::GetIO().Framerate;
+    const float deltatime = ImGui::GetIO().DeltaTime;
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
     ImGui::Begin("Debug Stats", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
 
@@ -29,7 +30,7 @@ void StatsWindow::DrawElement() {
 #else
     ImGui::Text("Platform: Unknown");
 #endif
-    ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", 1000.0f / framerate, framerate);
+    ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", deltatime * 1000.0f, framerate);
     ImGui::End();
     ImGui::PopStyleColor();
 }
