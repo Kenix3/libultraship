@@ -613,4 +613,9 @@ void ConsoleWindow::ClearLogs() {
 std::string ConsoleWindow::GetCurrentChannel() {
     return mCurrentChannel;
 }
+
+void ConsoleWindow::ClearBindings() {
+    mBindings.clear();
+    mBindingToggle.clear();
+}
 } // namespace LUS
