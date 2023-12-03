@@ -534,12 +534,12 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, ";");
 
         if (c == 0) {
-            append_str(fs_buf, &fs_len, "texel = WRAP(texel, -1.01, 1.01);");
+            append_str(fs_buf, &fs_len, "texel.rgb = WRAP(texel.rgb, -1.01, 1.01);");
         }
     }
 
-    append_str(fs_buf, &fs_len, "texel = WRAP(texel, -0.51, 1.51);");
-    append_str(fs_buf, &fs_len, "texel = clamp(texel, 0.0, 1.0);");
+    append_str(fs_buf, &fs_len, "texel.rgb = WRAP(texel.rgb, -0.51, 1.51);");
+    append_str(fs_buf, &fs_len, "texel.rgb = clamp(texel.rgb, 0.0, 1.0);");
     // TODO discard if alpha is 0?
     if (cc_features.opt_fog) {
         if (cc_features.opt_alpha) {
