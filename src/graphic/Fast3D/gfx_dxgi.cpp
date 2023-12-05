@@ -593,13 +593,11 @@ static void gfx_dxgi_handle_events(void) {
 }
 
 static uint64_t qpc_to_ns(uint64_t qpc) {
-    qpc *= 1000000000;
-    return qpc / dxgi.qpc_freq;
+    return qpc / dxgi.qpc_freq * 1000000000 + qpc % dxgi.qpc_freq * 1000000000 / dxgi.qpc_freq;
 }
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
-    qpc *= 10000000;
-    return qpc / dxgi.qpc_freq;
+    return qpc / dxgi.qpc_freq * 10000000 + qpc % dxgi.qpc_freq * 10000000 / dxgi.qpc_freq;
 }
 
 static bool gfx_dxgi_start_frame(void) {
