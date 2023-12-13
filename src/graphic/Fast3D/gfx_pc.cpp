@@ -901,10 +901,10 @@ static void import_texture_raw(int tile, bool importReplacement) {
     // if texture type is CI4 or CI8 we need to apply tlut to it
     switch (type) {
         case LUS::TextureType::Palette4bpp:
-            import_texture_ci4(tile, false);
+            import_texture_ci4(tile, importReplacement);
             return;
         case LUS::TextureType::Palette8bpp:
-            import_texture_ci8(tile, false);
+            import_texture_ci8(tile, importReplacement);
             return;
         default:
             break;
@@ -1565,6 +1565,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             if (linear_filter != rendering_state.textures[i]->second.linear_filter ||
                 cms != rendering_state.textures[i]->second.cms || cmt != rendering_state.textures[i]->second.cmt) {
                 gfx_flush();
+
+                // Set the same sampler params on the blended texture. Needed for opengl.
+                if (rdp.loaded_texture[i].blended) {
+                    gfx_rapi->set_sampler_parameters(SHADER_FIRST_REPLACEMENT_TEXTURE + i, linear_filter, cms, cmt);
+                }
+
                 gfx_rapi->set_sampler_parameters(i, linear_filter, cms, cmt);
                 rendering_state.textures[i]->second.linear_filter = linear_filter;
                 rendering_state.textures[i]->second.cms = cms;
