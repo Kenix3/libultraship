@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include "gfx_cc.h"
 
-MTL::VertexDescriptor* gfx_metal_build_shader(char buf[4096], size_t& num_floats, const CCFeatures& cc_features,
+MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats, const CCFeatures& cc_features,
                                               bool three_point_filtering);
 
 #endif /* GFX_METAL_SHADER_H */
