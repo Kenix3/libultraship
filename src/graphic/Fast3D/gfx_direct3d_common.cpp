@@ -402,7 +402,7 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         append_line(buf, &len, ";");
 
         if (c == 0) {
-            append_str(buf, &len, "texel = WRAP(texel, -1.01, 1.01);");
+            append_str(buf, &len, "texel.rgb = WRAP(texel.rgb, -1.01, 1.01);");
         }
     }
 
@@ -410,8 +410,8 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         append_line(buf, &len, "    if (texel.a > 0.19) texel.a = 1.0; else discard;");
     }
 
-    append_str(buf, &len, "texel = WRAP(texel, -0.51, 1.51);");
-    append_str(buf, &len, "texel = clamp(texel, 0.0, 1.0);");
+    append_str(buf, &len, "texel.rgb = WRAP(texel.rgb, -0.51, 1.51);");
+    append_str(buf, &len, "texel.rgb = clamp(texel.rgb, 0.0, 1.0);");
     // TODO discard if alpha is 0?
     if (cc_features.opt_fog) {
         if (cc_features.opt_alpha) {
