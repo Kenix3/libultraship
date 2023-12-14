@@ -253,6 +253,13 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
     append_line(buf, &len, "}");
     // end vertex shader
 
+    append_line(buf, &len, "float3 mod(float3 a, float3 b) {");
+    append_line(
+        buf, &len,
+        "    return float3(a.x - b.x * floor(a.x / b.x), a.y - b.y * floor(a.y / b.y), a.z - b.z * floor(a.z / b.z));");
+    append_line(buf, &len, "}");
+    append_line(buf, &len, "#define WRAP(x, low, high) mod((x)-(low), (high)-(low)) + (low)");
+
     // fragment shader
     if (three_point_filtering) {
         append_line(
@@ -387,7 +394,14 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
                            cc_features.do_mix[c][0], cc_features.opt_alpha, false, cc_features.opt_alpha);
         }
         append_line(buf, &len, ";");
+
+        if (c == 0) {
+            append_str(buf, &len, "texel.xyz = WRAP(texel.xyz, -1.01, 1.01);");
+        }
     }
+
+    append_str(buf, &len, "texel.xyz = WRAP(texel.xyz, -0.51, 1.51);");
+    append_str(buf, &len, "texel.xyz = clamp(texel.xyz, 0.0, 1.0);");
 
     if (cc_features.opt_fog) {
         if (cc_features.opt_alpha) {
