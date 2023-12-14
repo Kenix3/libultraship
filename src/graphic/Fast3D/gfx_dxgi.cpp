@@ -775,6 +775,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
             do {
                 YieldProcessor();
                 QueryPerformanceCounter(&t);
+                t.QuadPart = qpc_to_100ns(t.QuadPart);
             } while (t.QuadPart < next);
         }
     }
