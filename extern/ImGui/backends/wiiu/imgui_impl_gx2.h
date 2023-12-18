@@ -1,5 +1,8 @@
 // dear imgui: Renderer Backend for the Nintendo Wii U using GX2
 #pragma once
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include "imgui.h"      // IMGUI_IMPL_API
 
 // GX2 Texture / contains a texture and sampler
