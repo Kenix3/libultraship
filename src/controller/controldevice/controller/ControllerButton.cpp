@@ -18,13 +18,43 @@ ControllerButton::ControllerButton(uint8_t portIndex, uint16_t bitmask)
 ControllerButton::~ControllerButton() {
 }
 
-// todo: where should this live?
-std::unordered_map<uint16_t, std::string> buttonBitmaskToConfigButtonName = {
-    { BTN_A, "A" },     { BTN_B, "B" },         { BTN_L, "L" },         { BTN_R, "R" },
-    { BTN_Z, "Z" },     { BTN_START, "Start" }, { BTN_CLEFT, "CLeft" }, { BTN_CRIGHT, "CRight" },
-    { BTN_CUP, "CUp" }, { BTN_CDOWN, "CDown" }, { BTN_DLEFT, "DLeft" }, { BTN_DRIGHT, "DRight" },
-    { BTN_DUP, "DUp" }, { BTN_DDOWN, "DDown" }
-};
+std::string ControllerButton::GetConfigNameFromBitmask(uint16_t bitmask) {
+    switch (bitmask) {
+        case BTN_A:
+            return "A";
+        case BTN_B:
+            return "B";
+        case BTN_L:
+            return "L";
+        case BTN_R:
+            return "R";
+        case BTN_Z:
+            return "Z";
+        case BTN_START:
+            return "Start";
+        case BTN_CLEFT:
+            return "CLeft";
+        case BTN_CRIGHT:
+            return "CRight";
+        case BTN_CUP:
+            return "CUp";
+        case BTN_CDOWN:
+            return "CDown";
+        case BTN_DLEFT:
+            return "DLeft";
+        case BTN_DRIGHT:
+            return "DRight";
+        case BTN_DUP:
+            return "DUp";
+        case BTN_DDOWN:
+            return "DDown";
+        default:
+            // if we don't have a name for this bitmask,
+            // which happens with additionalBitmasks provided by ports,
+            // return the stringified bitmask
+            return std::to_string(bitmask);
+    }
+}
 
 std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> ControllerButton::GetAllButtonMappings() {
     return mButtonMappings;
@@ -75,9 +105,8 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
         buttonMappingIdListString += ",";
     }
 
-    const std::string buttonMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              buttonBitmaskToConfigButtonName[mBitmask].c_str());
+    const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf(
+        "gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, GetConfigNameFromBitmask(mBitmask).c_str());
     if (buttonMappingIdListString == "") {
         CVarClear(buttonMappingIdsCvarKey.c_str());
     } else {
@@ -95,9 +124,8 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    const std::string buttonMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              buttonBitmaskToConfigButtonName[mBitmask].c_str());
+    const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf(
+        "gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, GetConfigNameFromBitmask(mBitmask).c_str());
     std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
