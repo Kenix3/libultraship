@@ -444,6 +444,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_include_directories(${PROJECT_NAME} PRIVATE
         ${DEVKITPRO}/portlibs/wiiu/include/
     )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
+    find_package(OpenGL)
+    target_include_directories(${PROJECT_NAME} PRIVATE {OPENGL_INCLUDE_DIR})
 endif()
 
 #=================== Linking ===================
