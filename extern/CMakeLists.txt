@@ -98,6 +98,9 @@ target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVA
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/metal-cpp)
     target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
+    find_package(X11)
+    target_include_directories(ImGui PRIVATE ${X11_INCLUDE_DIR})
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
