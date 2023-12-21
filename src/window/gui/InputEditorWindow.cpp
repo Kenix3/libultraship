@@ -548,6 +548,21 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
     DrawStickDirectionLine(ICON_FA_ARROW_RIGHT, port, stick, RIGHT, color);
     ImGui::EndGroup();
     if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
+        ImGui::Text("Sensitivity:");
+        ImGui::SetNextItemWidth(160.0f);
+
+        int32_t sensitivityPercentage = controllerStick->GetSensitivityPercentage();
+        if (ImGui::SliderInt(StringHelper::Sprintf("##Sensitivity%d", id).c_str(), &sensitivityPercentage, 0, 200,
+                             "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+            controllerStick->SetSensitivity(sensitivityPercentage);
+        }
+        if (!controllerStick->SensitivityIsDefault()) {
+            ImGui::SameLine();
+            if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetStickSensitivity%d", id).c_str())) {
+                controllerStick->ResetSensitivityToDefault();
+            }
+        }
+
         ImGui::Text("Deadzone:");
         ImGui::SetNextItemWidth(160.0f);
 
