@@ -24,7 +24,9 @@ namespace LUS {
 ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
     : mPortIndex(portIndex), mStick(stick), mUseKeydownEventToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN) {
-    mDeadzonePercentage = 20;
+    mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
+    mSensitivity = 1.0f;
+    mDeadzonePercentage = DEFAULT_STICK_DEADZONE_PERCENTAGE;
     mDeadzone = 17.0f;
     mNotchSnapAngle = 0;
 }
@@ -186,10 +188,15 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
         }
     }
 
+    SetSensitivity(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.SensitivityPercentage", mPortIndex + 1,
+                                                        stickToConfigStickName[mStick].c_str())
+                                      .c_str(),
+                                  DEFAULT_STICK_SENSITIVITY_PERCENTAGE));
+
     SetDeadzone(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1,
                                                      stickToConfigStickName[mStick].c_str())
                                    .c_str(),
-                               20));
+                               DEFAULT_STICK_DEADZONE_PERCENTAGE));
 
     SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
                                                            stickToConfigStickName[mStick].c_str())
@@ -226,8 +233,8 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     auto sx = GetAxisDirectionValue(RIGHT) - GetAxisDirectionValue(LEFT);
     auto sy = GetAxisDirectionValue(UP) - GetAxisDirectionValue(DOWN);
 
-    auto ux = fabs(sx);
-    auto uy = fabs(sy);
+    auto ux = fabs(sx) * mSensitivity;
+    auto uy = fabs(sy) * mSensitivity;
 
     // create scaled circular dead-zone
     auto len = sqrt(ux * ux + uy * uy);
@@ -366,6 +373,28 @@ bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbSc
     return result;
 }
 #endif
+
+void ControllerStick::SetSensitivity(uint8_t sensitivityPercentage) {
+    mSensitivityPercentage = sensitivityPercentage;
+    mSensitivity = sensitivityPercentage / 100.0f;
+    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.SensitivityPercentage", mPortIndex + 1,
+                                         stickToConfigStickName[mStick].c_str())
+                       .c_str(),
+                   mSensitivityPercentage);
+    CVarSave();
+}
+
+void ControllerStick::ResetSensitivityToDefault() {
+    SetSensitivity(DEFAULT_STICK_SENSITIVITY_PERCENTAGE);
+}
+
+uint8_t ControllerStick::GetSensitivityPercentage() {
+    return mSensitivityPercentage;
+}
+
+bool ControllerStick::SensitivityIsDefault() {
+    return mSensitivityPercentage == DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
+}
 
 void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     mDeadzonePercentage = deadzonePercentage;
