@@ -612,15 +612,15 @@ void Gui::StartFrame() {
     ImVec2 pos = ImVec2(0, 0);
     if (CVarGetInteger("gLowResMode", 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
-        pos = ImVec2(size.x / 2 - sw / 2, 0);
+        pos = ImVec2(floor(size.x / 2 - sw / 2), 0);
         size = ImVec2(sw, size.y);
     } else if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
         if (!CVarGetInteger("gAdvancedResolution.PixelPerfectMode", 0)) {
             if (!CVarGetInteger("gAdvancedResolution.IgnoreAspectCorrection", 0)) {
                 float sWdth = size.y * gfx_current_dimensions.width / gfx_current_dimensions.height;
                 float sHght = size.x * gfx_current_dimensions.height / gfx_current_dimensions.width;
-                float sPosX = size.x / 2 - sWdth / 2;
-                float sPosY = size.y / 2 - sHght / 2;
+                float sPosX = floor(size.x / 2.0f - sWdth / 2.0f);
+                float sPosY = floor(size.y / 2.0f - sHght / 2.0f);
                 if (sPosY < 0.0f) { // pillarbox
                     sPosY = 0.0f;   // clamp y position
                     sHght = size.y; // reset height
@@ -634,8 +634,8 @@ void Gui::StartFrame() {
             }
         } else { // in pixel perfect mode it's much easier
             const int factor = GetIntegerScaleFactor();
-            float sPosX = size.x / 2 - (gfx_current_dimensions.width * factor) / 2;
-            float sPosY = size.y / 2 - (gfx_current_dimensions.height * factor) / 2;
+            float sPosX = floor(size.x / 2.0f - (gfx_current_dimensions.width * factor) / 2.0f);
+            float sPosY = floor(size.y / 2.0f - (gfx_current_dimensions.height * factor) / 2.0f);
             pos = ImVec2(sPosX, sPosY);
             size = ImVec2(float(gfx_current_dimensions.width) * factor, float(gfx_current_dimensions.height) * factor);
         }
