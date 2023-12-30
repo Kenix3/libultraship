@@ -570,7 +570,7 @@ static std::string gfx_get_base_texture_path(const std::string& path) {
     return path;
 }
 
-static void gfx_texture_cache_delete(const uint8_t* orig_addr) {
+void gfx_texture_cache_delete(const uint8_t* orig_addr) {
     while (gfx_texture_cache.map.bucket_count() > 0) {
         TextureCacheKey key = { orig_addr, { 0 }, 0, 0 }; // bucket index only depends on the address
         size_t bucket = gfx_texture_cache.map.bucket(key);
