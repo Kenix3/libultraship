@@ -4,7 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <string>
 
 namespace LUS {
@@ -56,6 +56,6 @@ class ConsoleVariable {
     void LoadLegacy();
 
   private:
-    std::map<std::string, std::shared_ptr<CVar>, std::less<>> mVariables;
+    std::unordered_map<std::string, std::shared_ptr<CVar>> mVariables;
 };
 } // namespace LUS
