@@ -3341,3 +3341,11 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
 
     masked_textures[name] = MaskedTextureEntry{ mask, replacement };
 }
+
+void gfx_unregister_blended_texture(const char* name) {
+    if (gfx_check_image_signature(name)) {
+        name += 7;
+    }
+
+    masked_textures.erase(name);
+}
