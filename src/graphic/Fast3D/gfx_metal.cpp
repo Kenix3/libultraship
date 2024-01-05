@@ -654,10 +654,10 @@ void gfx_metal_end_frame(void) {
         fb.has_ended_encoding = false;
         fb.has_bounded_vertex_buffer = false;
         fb.has_bounded_fragment_buffer = false;
-        fb.last_bound_textures[0] = nullptr;
-        fb.last_bound_textures[1] = nullptr;
-        fb.last_bound_samplers[0] = nullptr;
-        fb.last_bound_samplers[1] = nullptr;
+        for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
+            fb.last_bound_textures[i] = nullptr;
+            fb.last_bound_samplers[i] = nullptr;
+        }
         fb.last_depth_test = -1;
         fb.last_depth_mask = -1;
         fb.last_zmode_decal = -1;
