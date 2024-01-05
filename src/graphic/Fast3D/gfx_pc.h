@@ -82,6 +82,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 void gfx_end_frame(void);
 void gfx_set_target_fps(int);
 void gfx_set_maximum_frame_latency(int latency);
+void gfx_texture_cache_delete(const uint8_t* orig_addr);
 extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height);
 void gfx_get_pixel_depth_prepare(float x, float y);
@@ -89,5 +90,6 @@ uint16_t gfx_get_pixel_depth(float x, float y);
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* replacement = nullptr);
+void gfx_unregister_blended_texture(const char* name);
 
 #endif
