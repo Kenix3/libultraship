@@ -7,7 +7,7 @@
 
 #define MAXCONTROLLERS 4
 
-// /* Buttons */
+/* Buttons */
 #define BTN_CRIGHT 0x00001
 #define BTN_CLEFT 0x00002
 #define BTN_CDOWN 0x00004
