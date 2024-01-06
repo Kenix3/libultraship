@@ -37,7 +37,6 @@
 #include "gfx_metal_shader.h"
 
 #include "libultraship/libultra/gbi.h"
-// #include "libultraship/libultra/abi.h"
 #include "public/bridge/consolevariablebridge.h"
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
