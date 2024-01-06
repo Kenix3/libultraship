@@ -3,23 +3,6 @@
 
 #include "types.h"
 
-// #define OS_PRIORITY_MAX 255
-// #define OS_PRIORITY_VIMGR 254
-// #define OS_PRIORITY_RMON 250
-// #define OS_PRIORITY_RMONSPIN 200
-// #define OS_PRIORITY_PIMGR 150
-// #define OS_PRIORITY_SIMGR 140
-// #define OS_PRIORITY_APPMAX 127
-// #define OS_PRIORITY_IDLE 0
-
-// #define OS_STATE_STOPPED 1
-// #define OS_STATE_RUNNABLE 2
-// #define OS_STATE_RUNNING 4
-// #define OS_STATE_WAITING 8
-
-// #define OS_FLAG_CPU_BREAK 1
-// #define OS_FLAG_FAULT 2
-
 typedef s32 OSPri;
 typedef s32 OSId;
 
