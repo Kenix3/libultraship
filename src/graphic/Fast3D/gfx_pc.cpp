@@ -1476,7 +1476,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                 gfx_flush();
 
                 // Set the same sampler params on the blended texture. Needed for opengl.
-                if (rdp.loaded_texture[i].blended) {
+                if (g_rdp.loaded_texture[i].blended) {
                     gfx_rapi->set_sampler_parameters(SHADER_FIRST_REPLACEMENT_TEXTURE + i, linear_filter, cms, cmt);
                 }
 
