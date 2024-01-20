@@ -25,11 +25,42 @@ std::string SDLButtonToAnyMapping::GetPhysicalInputName() {
         return GetXboxButtonName();
     }
 
+    if (UsesGameCubeLayout()) {
+        return GetGameCubeButtonName();
+    }
+
     return GetGenericButtonName();
 }
 
 std::string SDLButtonToAnyMapping::GetGenericButtonName() {
     return StringHelper::Sprintf("B%d", mControllerButton);
+}
+
+std::string SDLButtonToAnyMapping::GetGameCubeButtonName() {
+    switch (mControllerButton) {
+        case SDL_CONTROLLER_BUTTON_A:
+            return "A";
+        case SDL_CONTROLLER_BUTTON_B:
+            return "B";
+        case SDL_CONTROLLER_BUTTON_X:
+            return "X";
+        case SDL_CONTROLLER_BUTTON_Y:
+            return "Y";
+        case SDL_CONTROLLER_BUTTON_START:
+            return "Start";
+        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+            return "Z";
+        case SDL_CONTROLLER_BUTTON_DPAD_UP:
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_UP);
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_DOWN);
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_LEFT);
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_RIGHT);
+    }
+
+    return GetGenericButtonName();
 }
 
 std::string SDLButtonToAnyMapping::GetPlaystationButtonName() {

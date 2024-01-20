@@ -21,9 +21,12 @@ class SDLMapping : public ControllerMapping {
 
   protected:
     SDL_GameControllerType GetSDLControllerType();
+    uint16_t GetSDLControllerVendorId();
+    uint16_t GetSDLControllerProductId();
     bool UsesPlaystationLayout();
     bool UsesSwitchLayout();
     bool UsesXboxLayout();
+    bool UsesGameCubeLayout();
     std::string GetSDLDeviceName();
     int32_t GetSDLDeviceIndex();
 
