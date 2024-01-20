@@ -592,7 +592,7 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceInd
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(lusDeviceIndex, portIndex, BTN_CLEFT,
                                                                                  SDL_CONTROLLER_AXIS_RIGHTX, -1));
             if (isGameCube) {
-                mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CDOWN,
+                mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CLEFT,
                                             SDL_CONTROLLER_BUTTON_Y));
             }
             break;
@@ -600,7 +600,7 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceInd
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(lusDeviceIndex, portIndex, BTN_CRIGHT,
                                                                                  SDL_CONTROLLER_AXIS_RIGHTX, 1));
             if (isGameCube) {
-                mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CDOWN,
+                mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(lusDeviceIndex, portIndex, BTN_CRIGHT,
                                             SDL_CONTROLLER_BUTTON_X));
             }
             break;
