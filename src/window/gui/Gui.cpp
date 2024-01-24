@@ -68,7 +68,6 @@ namespace LUS {
 
 Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
-    mInputViewer = std::make_shared<InputViewer>();
 
     AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
     if (customInputEditorWindow == nullptr) {
@@ -452,7 +451,6 @@ void Gui::DrawMenu() {
     }
 
     GetGameOverlay()->Draw();
-    GetInputViewer()->Draw();
 }
 
 void Gui::ImGuiBackendNewFrame() {
@@ -823,10 +821,6 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
 
 std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
-}
-
-std::shared_ptr<InputViewer> Gui::GetInputViewer() {
-    return mInputViewer;
 }
 
 void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {

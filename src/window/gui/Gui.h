@@ -14,7 +14,6 @@
 #include "controller/deviceindex/ControllerReorderingWindow.h"
 #include "window/gui/IconsFontAwesome4.h"
 #include "window/gui/GameOverlay.h"
-#include "window/gui/InputViewer.h"
 #include "window/gui/StatsWindow.h"
 #include "window/gui/GuiWindow.h"
 #include "window/gui/GuiMenuBar.h"
@@ -81,7 +80,6 @@ class Gui {
     bool SupportsViewports();
     std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
     std::shared_ptr<GameOverlay> GetGameOverlay();
-    std::shared_ptr<InputViewer> GetInputViewer();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
     void LoadTexture(const std::string& name, const std::string& path);
@@ -110,7 +108,6 @@ class Gui {
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;
     std::shared_ptr<GameOverlay> mGameOverlay;
-    std::shared_ptr<InputViewer> mInputViewer;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::map<std::string, GuiTexture> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
