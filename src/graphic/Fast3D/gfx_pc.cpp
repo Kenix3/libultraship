@@ -2354,6 +2354,49 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
                              false);
 }
 
+static void gfx_s2dex_bg_1cyc(uObjBg* bg) {
+    uintptr_t data = (uintptr_t)bg->b.imagePtr;
+
+    uint32_t texFlags = 0;
+    RawTexMetadata rawTexMetadata = {};
+
+    if ((bool)gfx_check_image_signature((char*)data)) {
+        std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
+            LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+        texFlags = tex->Flags;
+        rawTexMetadata.width = tex->Width;
+        rawTexMetadata.height = tex->Height;
+        rawTexMetadata.h_byte_scale = tex->HByteScale;
+        rawTexMetadata.v_pixel_scale = tex->VPixelScale;
+        rawTexMetadata.type = tex->Type;
+        rawTexMetadata.resource = tex;
+        data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+    }
+
+    // TODO: Implement bg scaling correctly
+    s16 uls = bg->b.imageX >> 2;
+    s16 lrs = bg->b.imageW >> 2;
+
+    s16 dsdxRect = 1 << 10;
+    s16 ulsRect = bg->b.imageX << 3;
+    // Flip flag only flips horizontally
+    if (bg->b.imageFlip == G_BG_FLAG_FLIPS) {
+        dsdxRect = -dsdxRect;
+        ulsRect = (bg->b.imageW - bg->b.imageX) << 3;
+    }
+
+    gfx_dp_set_texture_image(bg->b.imageFmt, bg->b.imageSiz, bg->b.imageW >> 2, nullptr, texFlags, rawTexMetadata,
+                             (void*)data);
+    gfx_dp_set_tile(bg->b.imageFmt, bg->b.imageSiz, 0, 0, G_TX_LOADTILE, 0, 0, 0, 0, 0, 0, 0);
+    gfx_dp_load_block(G_TX_LOADTILE, 0, 0, (bg->b.imageW * bg->b.imageH >> 4) - 1, 0);
+    gfx_dp_set_tile(bg->b.imageFmt, bg->b.imageSiz, (((lrs - uls) * bg->b.imageSiz) + 7) >> 3, 0, G_TX_RENDERTILE,
+                    bg->b.imagePal, 0, 0, 0, 0, 0, 0);
+    gfx_dp_set_tile_size(G_TX_RENDERTILE, 0, 0, bg->b.imageW, bg->b.imageH);
+
+    gfx_dp_texture_rectangle(bg->b.frameX, bg->b.frameY, bg->b.frameW, bg->b.frameH, G_TX_RENDERTILE, ulsRect,
+                             bg->b.imageY << 3, dsdxRect, 1 << 10, false);
+}
+
 static inline void* seg_addr(uintptr_t w1) {
     // Segmented?
     if (w1 & 1) {
@@ -3038,6 +3081,9 @@ static void gfx_step(GfxExecStack& exec_stack) {
                 gfx_s2dex_bg_copy((uObjBg*)cmd->words.w1); // not seg_addr here it seems
             }
 
+            break;
+        case G_BG_1CYC:
+            gfx_s2dex_bg_1cyc((uObjBg*)cmd->words.w1);
             break;
         case G_EXTRAGEOMETRYMODE:
             gfx_sp_extra_geometry_mode(~C0(0, 24), cmd->words.w1);
