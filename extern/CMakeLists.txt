@@ -119,7 +119,12 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(GLEW REQUIRED)
-    target_link_libraries(ImGui PUBLIC ${OPENGL_glx_LIBRARY} ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
+    if (DEFINED USE_OPENGLES)
+        target_link_libraries(ImGui PUBLIC ${OPENGL_GLESv2_LIBRARY} GLEW::GLEW)
+        add_compile_definitions(IMGUI_IMPL_OPENGL_ES3)
+    else()
+        target_link_libraries(ImGui PUBLIC ${OPENGL_glx_LIBRARY} ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
+    endif()
 endif()
 
 #=================== tinyxml2 ===================

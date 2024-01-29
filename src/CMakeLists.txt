@@ -473,8 +473,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if (USE_OPENGLES)
-    find_library(OPENGLES_LIBRARY GLESv3)
-    target_link_libraries(libultraship PRIVATE GLESv3)
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        find_library(OPENGLES_LIBRARY GLESv2)
+        target_link_libraries(libultraship PRIVATE GLESv2)
+    else()
+        find_library(OPENGLES_LIBRARY GLESv3)
+        target_link_libraries(libultraship PRIVATE GLESv3)
+    endif()
 endif()
 
 #=================== Compile Options & Defs ===================
