@@ -17,16 +17,16 @@ SDLAxisDirectionToAnyMapping::~SDLAxisDirectionToAnyMapping() {
 std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
     switch (mControllerAxis) {
         case SDL_CONTROLLER_AXIS_LEFTX:
-            return StringHelper::Sprintf("Left Stick %s",
+            return StringHelper::Sprintf(UsesGameCubeLayout() ? "Analog Stick %s" : "Left Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_AXIS_LEFTY:
-            return StringHelper::Sprintf("Left Stick %s",
+            return StringHelper::Sprintf(UsesGameCubeLayout() ? "Analog Stick %s" : "Left Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_AXIS_RIGHTX:
-            return StringHelper::Sprintf("Right Stick %s",
+            return StringHelper::Sprintf(UsesGameCubeLayout() ? "C Stick %s" : "Left Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_AXIS_RIGHTY:
-            return StringHelper::Sprintf("Right Stick %s",
+            return StringHelper::Sprintf(UsesGameCubeLayout() ? "C Stick %s" : "Left Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
             if (UsesPlaystationLayout()) {
@@ -38,6 +38,9 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
             if (UsesXboxLayout()) {
                 return "LT";
             }
+            if (UsesGameCubeLayout()) {
+                return "L";
+            }
             break;
         case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
             if (UsesPlaystationLayout()) {
@@ -48,6 +51,9 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
             }
             if (UsesXboxLayout()) {
                 return "RT";
+            }
+            if (UsesGameCubeLayout()) {
+                return "R";
             }
             break;
     }

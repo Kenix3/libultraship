@@ -19,6 +19,7 @@ class SDLButtonToAnyMapping : virtual public ControllerInputMapping, public SDLM
     std::string GetPlaystationButtonName();
     std::string GetSwitchButtonName();
     std::string GetXboxButtonName();
+    std::string GetGameCubeButtonName();
     std::string GetGenericButtonName();
 };
 } // namespace LUS

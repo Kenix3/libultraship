@@ -72,6 +72,22 @@ SDL_GameControllerType SDLMapping::GetSDLControllerType() {
     return SDL_GameControllerGetType(mController);
 }
 
+uint16_t SDLMapping::GetSDLControllerVendorId() {
+    if (!ControllerLoaded()) {
+        return 0;
+    }
+
+    return SDL_GameControllerGetVendor(mController);
+}
+
+uint16_t SDLMapping::GetSDLControllerProductId() {
+    if (!ControllerLoaded()) {
+        return 0;
+    }
+
+    return SDL_GameControllerGetProduct(mController);
+}
+
 bool SDLMapping::UsesPlaystationLayout() {
     auto type = GetSDLControllerType();
     return type == SDL_CONTROLLER_TYPE_PS3 || type == SDL_CONTROLLER_TYPE_PS4 || type == SDL_CONTROLLER_TYPE_PS5;
@@ -89,6 +105,13 @@ bool SDLMapping::UsesSwitchLayout() {
 bool SDLMapping::UsesXboxLayout() {
     auto type = GetSDLControllerType();
     return type == SDL_CONTROLLER_TYPE_XBOX360 || type == SDL_CONTROLLER_TYPE_XBOXONE;
+}
+
+bool SDLMapping::UsesGameCubeLayout() {
+    auto vid = GetSDLControllerVendorId();
+    auto pid = GetSDLControllerProductId();
+
+    return vid == 0x57e && pid == 0x337;
 }
 
 int32_t SDLMapping::GetSDLDeviceIndex() {
