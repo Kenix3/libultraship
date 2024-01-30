@@ -5,6 +5,7 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "install_config.h"
+#include "debug/GfxDebugger.h"
 
 #ifdef __APPLE__
 #include "utils/OSXFolderManager.h"
@@ -82,6 +83,7 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConsole();
     InitWindow();
     InitAudio();
+    InitGfxDebugger();
 }
 
 void Context::InitLogging() {
@@ -237,6 +239,14 @@ void Context::InitAudio() {
     GetAudio()->Init();
 }
 
+void Context::InitGfxDebugger() {
+    if (GetGfxDebugger() != nullptr) {
+        return;
+    }
+
+    mGfxDebugger = std::make_shared<GfxDebugger>();
+}
+
 void Context::InitConsole() {
     if (GetConsole() != nullptr) {
         return;
@@ -289,6 +299,10 @@ std::shared_ptr<Console> Context::GetConsole() {
 
 std::shared_ptr<Audio> Context::GetAudio() {
     return mAudio;
+}
+
+std::shared_ptr<GfxDebugger> Context::GetGfxDebugger() {
+    return mGfxDebugger;
 }
 
 std::string Context::GetConfigFilePath() {

@@ -1,3 +1,4 @@
+include(FetchContent)
 add_library(libultraship STATIC)
 set_target_properties(libultraship PROPERTIES PREFIX "")
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
@@ -188,6 +189,8 @@ set(Source_Files__Public__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/windowbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxdebuggerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxdebuggerbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controllerbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controllerbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/consolevariablebridge.h
@@ -206,6 +209,8 @@ set(Source_Files__Debug
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/CrashHandler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/Console.h
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/Console.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/GfxDebugger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/GfxDebugger.h
 )
 
 source_group("debug" FILES ${Source_Files__Debug})
@@ -254,6 +259,8 @@ set(Source_Files__Window__Gui
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiElement.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GfxDebuggerWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GfxDebuggerWindow.h
 )
 
 source_group("window/gui" FILES ${Source_Files__Window__Gui})
@@ -436,11 +443,32 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
 endif()
 
+#=================== libgfxd ===================
+
+FetchContent_Declare(
+    libgfxd
+    GIT_REPOSITORY https://github.com/glankk/libgfxd.git
+    GIT_TAG 96fd3b849f38b3a7c7b7f3ff03c5921d328e6cdf
+)
+
+FetchContent_GetProperties(libgfxd)
+
+if(NOT libgfxd_POPULATED)
+    FetchContent_Populate(libgfxd)
+    set(LGFXD_SRC gfxd.c uc_f3d.c uc_f3db.c uc_f3dex.c uc_f3dexb.c uc_f3dex2.c)
+    foreach (LGFXD_FILE ${LGFXD_SRC})
+        list(APPEND LGFXD_FILES "${libgfxd_SOURCE_DIR}/${LGFXD_FILE}")
+    endforeach()
+endif()
+
+source_group("Source Files\\Libraries\\libgfxd" FILES ${LGFXD_FILES})
+
+target_sources(libultraship PRIVATE ${libgfxd_SOURCE_DIR} ${LGFXD_FILES})
 
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../../ZAPDTR/lib/libgfxd
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 

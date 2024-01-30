@@ -81,7 +81,19 @@ public:
 
 	static void WriteAllText(const fs::path& filePath, const std::string& text)
 	{
+            try {
+                std::filesystem::create_directories(filePath.parent_path().string());
+			} catch (std::filesystem::filesystem_error const& ex) {
+                std::cout << "what():  " << ex.what() << '\n'
+                          << "path1(): " << ex.path1() << '\n'
+                          << "path2(): " << ex.path2() << '\n'
+                          << "code().value():    " << ex.code().value() << '\n'
+                          << "code().message():  " << ex.code().message() << '\n'
+                          << "code().category(): " << ex.code().category().name() << '\n';
+            }
 		std::ofstream file(filePath, std::ios::out);
+		
+            
 		file.write(text.c_str(), text.size());
 	}
 };

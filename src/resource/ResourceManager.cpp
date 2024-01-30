@@ -59,7 +59,11 @@ bool ResourceManager::DidLoadSuccessfully() {
 }
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {
+    if (filePath == "objects/gameplay_keep/gPlayerAnim_link_normal_wait_free") {
+        int bp = 5;
+    }
     auto file = mArchive->LoadFile(filePath, true);
+    
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->Path);
     } else {
@@ -70,6 +74,9 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
 
 std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact) {
     // Check for and remove the OTR signature
+    if (filePath == "misc/link_animation/gPlayerAnim_link_normal_wait_free_Data") {
+        int bp = 5;
+    }
     if (OtrSignatureCheck(filePath.c_str())) {
         const auto newFilePath = filePath.substr(7);
         return LoadResourceProcess(newFilePath);
@@ -163,6 +170,9 @@ std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
 
 std::shared_future<std::shared_ptr<IResource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
                                                                                   bool loadExact, bool priority) {
+    if (filePath == "misc/link_animation/gPlayerAnim_link_normal_wait_free_Data") {
+        int bp = 5;
+    }
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
@@ -187,7 +197,7 @@ std::shared_future<std::shared_ptr<IResource>> ResourceManager::LoadResourceAsyn
 }
 
 std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact) {
-    auto resource = LoadResourceAsync(filePath, loadExact, true).get();
+    auto resource = LoadResourceProcess(filePath, true); // LoadResourceAsync(filePath, loadExact, true).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
     }
