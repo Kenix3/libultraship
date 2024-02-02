@@ -465,11 +465,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${METAL} ${QUARTZCORE} ${CMAKE_DL_LIBS})
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(PulseAudio)
-    target_link_libraries(libultraship PRIVATE ${PULSEAUDIO_LIBRARY})
-endif()
-
 if (USE_OPENGLES)
     if (CMAKE_SYSTEM_NAME STREQUAL "Android")
         find_library(OPENGLES_LIBRARY GLESv3)
