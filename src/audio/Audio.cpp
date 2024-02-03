@@ -37,9 +37,6 @@ void Audio::Init() {
 #ifdef _WIN32
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
 #endif
-#ifdef __linux
-    mAvailableAudioBackends->push_back(AudioBackend::PULSE);
-#endif
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
 
     SetAudioBackend(Context::GetInstance()->GetConfig()->GetAudioBackend());

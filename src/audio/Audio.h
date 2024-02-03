@@ -6,7 +6,7 @@
 #include "audio/AudioPlayer.h"
 
 namespace LUS {
-enum class AudioBackend { WASAPI, PULSE, SDL };
+enum class AudioBackend { WASAPI, SDL };
 
 class Audio {
   public:
