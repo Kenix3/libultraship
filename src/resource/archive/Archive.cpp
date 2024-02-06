@@ -60,10 +60,10 @@ std::shared_ptr<std::unordered_map<uint64_t, std::string>> Archive::ListFiles() 
 std::shared_ptr<std::unordered_map<uint64_t, std::string>> Archive::ListFiles(const std::string& filter) {
     auto result = std::make_shared<std::unordered_map<uint64_t, std::string>>();
 
-    std::copy_if(mHashes->begin(), mHashes->end(), std::inserter(*result, result->begin()), 
-    [filter](const std::pair<const int64_t, const std::string&> entry) {
-        return SFileCheckWildCard(entry.second.c_str(), filter.c_str());
-    });
+    std::copy_if(mHashes->begin(), mHashes->end(), std::inserter(*result, result->begin()),
+                 [filter](const std::pair<const int64_t, const std::string&> entry) {
+                     return SFileCheckWildCard(entry.second.c_str(), filter.c_str());
+                 });
 
     return result;
 }
@@ -122,11 +122,11 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
 
         // Split out the header for reading.
         if (fileToLoadMeta != nullptr) {
-            fileToLoad->Buffer = std::make_shared<std::vector<char>>(fileToLoad->Buffer->begin(),
-                                                                     fileToLoad->Buffer->end());
+            fileToLoad->Buffer =
+                std::make_shared<std::vector<char>>(fileToLoad->Buffer->begin(), fileToLoad->Buffer->end());
         } else {
-            auto headerBuffer = std::make_shared<std::vector<char>>(
-                fileToLoad->Buffer->begin(), fileToLoad->Buffer->begin() + OTR_HEADER_SIZE);
+            auto headerBuffer = std::make_shared<std::vector<char>>(fileToLoad->Buffer->begin(),
+                                                                    fileToLoad->Buffer->begin() + OTR_HEADER_SIZE);
 
             if (headerBuffer->size() < OTR_HEADER_SIZE) {
                 SPDLOG_ERROR("Failed to parse ResourceInitData, buffer size too small. File: {}. Got {} bytes and "
@@ -197,13 +197,13 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataBinary(const std:
     // Unique asset ID
     resourceInitData->Id = headerReader->ReadUInt64();
     // Reserved
-    //reader->ReadUInt32();
+    // reader->ReadUInt32();
     // ROM CRC
-    //reader->ReadUInt64();
+    // reader->ReadUInt64();
     // ROM Enum
-    //reader->ReadUInt32();
+    // reader->ReadUInt32();
     // Reserved for future file format versions...
-    //reader->Seek(OTR_HEADER_SIZE, SeekOffsetType::Start);
+    // reader->Seek(OTR_HEADER_SIZE, SeekOffsetType::Start);
     // OTR HEADER END
 
     headerReader->Seek(0, SeekOffsetType::Start);

@@ -16,11 +16,9 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
 ArchiveManager::ArchiveManager() : ArchiveManager(std::vector<std::string>()) {
-    
 }
 
 ArchiveManager::ArchiveManager(const std::vector<std::string>& archivePaths) : ArchiveManager(archivePaths, {}) {
-    
 }
 
 ArchiveManager::ArchiveManager(const std::vector<std::string>& archivePaths,
@@ -70,14 +68,12 @@ std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::s
     auto list = ListFiles();
     auto result = std::make_shared<std::vector<std::string>>();
 
-    std::copy_if(list->begin(), list->end(), std::back_inserter(*result),
-    [filter](const std::string& filePath) {
+    std::copy_if(list->begin(), list->end(), std::back_inserter(*result), [filter](const std::string& filePath) {
         return SFileCheckWildCard(filePath.c_str(), filter.c_str());
     });
 
     return result;
 }
-
 
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles() {
     auto list = std::make_shared<std::vector<std::string>>();
@@ -168,7 +164,8 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     }
 
     if (!mValidGameVersions.empty() && !mValidGameVersions.contains(archive->GetGameVersion())) {
-        SPDLOG_WARN("Attempting to add Archive at {} with invalid Game Version {} to Archive Manager", archive->GetPath(), archive->GetGameVersion());
+        SPDLOG_WARN("Attempting to add Archive at {} with invalid Game Version {} to Archive Manager",
+                    archive->GetPath(), archive->GetGameVersion());
         return nullptr;
     }
 

@@ -82,7 +82,8 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fi
     }
 
     if (result == nullptr) {
-        SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", fileToLoad->InitData->Type, fileToLoad->InitData->Path);
+        SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", fileToLoad->InitData->Type,
+                     fileToLoad->InitData->Path);
     }
 
     return result;
