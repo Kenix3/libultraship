@@ -4,7 +4,7 @@
 #ifndef _LIBULTRASHIP_CLASSES_H
 #define _LIBULTRASHIP_CLASSES_H
 
-#include "resource/Archive.h"
+#include "resource/archive/Archive.h"
 #include "resource/ResourceManager.h"
 #include "Context.h"
 #include "window/Window.h"

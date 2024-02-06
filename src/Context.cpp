@@ -5,6 +5,7 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "install_config.h"
+#include <tchar.h>
 
 #ifdef __APPLE__
 #include "utils/OSXFolderManager.h"
@@ -161,7 +162,11 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = mConfig->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
-        mResourceManager = std::make_shared<ResourceManager>(mMainPath, mPatchesPath, validHashes, reservedThreadCount);
+        std::vector<std::string> paths = std::vector<std::string>();
+        paths.push_back(mMainPath);
+        paths.push_back(mPatchesPath);
+
+        mResourceManager = std::make_shared<ResourceManager>(paths, validHashes, reservedThreadCount);
     } else {
         mResourceManager = std::make_shared<ResourceManager>(otrFiles, validHashes, reservedThreadCount);
     }

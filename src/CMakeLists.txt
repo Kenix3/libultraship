@@ -226,8 +226,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Port})
 #=================== Resource ===================
 
 set(Source_Files__Resource
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/Archive.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/File.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/Resource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceType.h
@@ -272,7 +270,20 @@ set(Source_Files__Resource__Factories
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.h
 )
 source_group("resource/factory" FILES ${Source_Files__Resource__Factories})
-target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories})
+
+set(Source_Files__Resource__Archive
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/Archive.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/Archive.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/OtrArchive.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/OtrArchive.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/O2rArchive.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/O2rArchive.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/ArchiveManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/archive/ArchiveManager.cpp
+)
+source_group("resource/archive" FILES ${Source_Files__Resource__Archive})
+
+target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories} ${Source_Files__Resource__Archive})
 
 #=================== Graphic ===================
 

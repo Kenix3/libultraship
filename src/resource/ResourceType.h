@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 namespace LUS {
 
 enum class ResourceType {
@@ -31,5 +33,31 @@ enum class ResourceType {
     SOH_AudioSequence = 0x4F534551,   // OSEQ
     SOH_Background = 0x4F424749,      // OBGI
     SOH_SceneCommand = 0x4F52434D,    // ORCM
+};
+
+inline std::unordered_map<std::string, uint32_t> mFactoriesTypes{
+    { "None", static_cast<uint32_t>(ResourceType::None) },
+    { "Archive", static_cast<uint32_t>(ResourceType::Archive) },
+    { "DisplayList", static_cast<uint32_t>(ResourceType::DisplayList) },
+    { "Vertex", static_cast<uint32_t>(ResourceType::Vertex) },
+    { "Matrix", static_cast<uint32_t>(ResourceType::Matrix) },
+    { "Array", static_cast<uint32_t>(ResourceType::Array) },
+    { "Blob", static_cast<uint32_t>(ResourceType::Blob) },
+    { "Texture", static_cast<uint32_t>(ResourceType::Texture) },
+    { "SOH_Animation", static_cast<uint32_t>(ResourceType::SOH_Animation) },
+    { "SOH_PlayerAnimation", static_cast<uint32_t>(ResourceType::SOH_PlayerAnimation) },
+    { "SOH_Room", static_cast<uint32_t>(ResourceType::SOH_Room) },
+    { "SOH_CollisionHeader", static_cast<uint32_t>(ResourceType::SOH_CollisionHeader) },
+    { "SOH_Skeleton", static_cast<uint32_t>(ResourceType::SOH_Skeleton) },
+    { "SOH_SkeletonLimb", static_cast<uint32_t>(ResourceType::SOH_SkeletonLimb) },
+    { "SOH_Path", static_cast<uint32_t>(ResourceType::SOH_Path) },
+    { "SOH_Cutscene", static_cast<uint32_t>(ResourceType::SOH_Cutscene) },
+    { "SOH_Text", static_cast<uint32_t>(ResourceType::SOH_Text) },
+    { "SOH_Audio", static_cast<uint32_t>(ResourceType::SOH_Audio) },
+    { "SOH_AudioSample", static_cast<uint32_t>(ResourceType::SOH_AudioSample) },
+    { "SOH_AudioSoundFont", static_cast<uint32_t>(ResourceType::SOH_AudioSoundFont) },
+    { "SOH_AudioSequence", static_cast<uint32_t>(ResourceType::SOH_AudioSequence) },
+    { "SOH_Background", static_cast<uint32_t>(ResourceType::SOH_Background) },
+    { "SOH_SceneCommand", static_cast<uint32_t>(ResourceType::SOH_SceneCommand) },
 };
 } // namespace LUS

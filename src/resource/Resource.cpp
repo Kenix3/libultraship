@@ -1,6 +1,5 @@
 #include "Resource.h"
 #include <spdlog/spdlog.h>
-#include "libultraship/libultra/gbi.h"
 
 namespace LUS {
 IResource::IResource(std::shared_ptr<ResourceInitData> initData) : mInitData(initData) {

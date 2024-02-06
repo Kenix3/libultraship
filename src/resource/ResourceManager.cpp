@@ -1,41 +1,24 @@
 #include "ResourceManager.h"
 #include <spdlog/spdlog.h>
-#include "File.h"
-#include "Archive.h"
+#include "resource/File.h"
+#include "resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
+// TODO: Delete me and find an implementation
 // Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
 // NOLINTNEXTLINE
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
 
-ResourceManager::ResourceManager(const std::string& mainPath, const std::string& patchesPath,
-                                 const std::unordered_set<uint32_t>& validHashes, int32_t reservedThreadCount) {
-    mResourceLoader = std::make_shared<ResourceLoader>();
-    mArchive = std::make_shared<Archive>(mainPath, patchesPath, validHashes, false);
-#if defined(__SWITCH__) || defined(__WIIU__)
-    size_t threadCount = 1;
-#else
-    // the extra `- 1` is because we reserve an extra thread for spdlog
-    size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
-#endif
-    mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
-
-    if (!DidLoadSuccessfully()) {
-        // Nothing ever unpauses the thread pool since nothing will ever try to load the archive again.
-        mThreadPool->pause();
-    }
-}
-
 ResourceManager::ResourceManager(const std::vector<std::string>& otrFiles,
                                  const std::unordered_set<uint32_t>& validHashes, int32_t reservedThreadCount) {
     mResourceLoader = std::make_shared<ResourceLoader>();
-    mArchive = std::make_shared<Archive>(otrFiles, validHashes, false);
+    mArchiveManager = std::make_shared<ArchiveManager>(otrFiles, validHashes);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else
@@ -55,13 +38,13 @@ ResourceManager::~ResourceManager() {
 }
 
 bool ResourceManager::DidLoadSuccessfully() {
-    return mArchive != nullptr && mArchive->IsMainMPQValid();
+    return mArchiveManager != nullptr && mArchiveManager->IsArchiveLoaded();
 }
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {
-    auto file = mArchive->LoadFile(filePath, true);
+    auto file = mArchiveManager->LoadFile(filePath);
     if (file != nullptr) {
-        SPDLOG_TRACE("Loaded File {} on ResourceManager", file->Path);
+        SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
     } else {
         SPDLOG_TRACE("Could not load File {} in ResourceManager", filePath);
     }
@@ -249,7 +232,7 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
 ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
-    auto fileList = GetArchive()->ListFiles(searchMask);
+    auto fileList = GetArchiveManager()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
@@ -274,21 +257,8 @@ std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadDi
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::string>> ResourceManager::FindLoadedFiles(const std::string& searchMask) {
-    const char* wildCard = searchMask.c_str();
-    auto list = std::make_shared<std::vector<std::string>>();
-
-    for (const auto& [key, value] : mResourceCache) {
-        if (SFileCheckWildCard(key.c_str(), wildCard)) {
-            list->push_back(key);
-        }
-    }
-
-    return list;
-}
-
 void ResourceManager::DirtyDirectory(const std::string& searchMask) {
-    auto list = FindLoadedFiles(searchMask);
+    auto list = GetArchiveManager()->ListFiles(searchMask);
 
     for (const auto& key : *list.get()) {
         auto resource = GetCachedResource(key);
@@ -302,15 +272,15 @@ void ResourceManager::DirtyDirectory(const std::string& searchMask) {
 }
 
 void ResourceManager::UnloadDirectory(const std::string& searchMask) {
-    auto list = FindLoadedFiles(searchMask);
+    auto list = GetArchiveManager()->ListFiles(searchMask);
 
     for (const auto& key : *list.get()) {
         UnloadResource(key);
     }
 }
 
-std::shared_ptr<Archive> ResourceManager::GetArchive() {
-    return mArchive;
+std::shared_ptr<ArchiveManager> ResourceManager::GetArchiveManager() {
+    return mArchiveManager;
 }
 
 std::shared_ptr<ResourceLoader> ResourceManager::GetResourceLoader() {
