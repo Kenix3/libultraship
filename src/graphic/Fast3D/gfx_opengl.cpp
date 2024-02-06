@@ -29,7 +29,6 @@
 #include "SDL_opengl.h"
 #elif __APPLE__
 #include <SDL2/SDL.h>
-#define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengl.h>
 #elif __SWITCH__
 #include <SDL2/SDL.h>
