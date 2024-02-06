@@ -29,6 +29,7 @@ class Archive {
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles(const std::string& filter);
     bool HasFile(const std::string& filePath);
     bool HasFile(uint64_t hash);
+    bool HasGameVersion();
     uint32_t GetGameVersion();
     const std::string& GetPath();
     bool IsLoaded();
@@ -53,6 +54,7 @@ class Archive {
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();
 
     bool mIsLoaded;
+    bool mHasGameVersion;
     uint32_t mGameVersion;
     std::string mPath;
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> mHashes;

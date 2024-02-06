@@ -14,8 +14,8 @@ class Archive;
 class ArchiveManager {
   public:
     ArchiveManager();
-    ArchiveManager(const std::vector<std::string>& archivePaths);
-    ArchiveManager(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validGameVersions);
+    void Init(const std::vector<std::string>& archivePaths);
+    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validGameVersions);
     ~ArchiveManager();
 
     bool IsArchiveLoaded();
@@ -28,7 +28,7 @@ class ArchiveManager {
     std::vector<uint32_t> GetGameVersions();
     std::vector<std::shared_ptr<Archive>> GetArchives();
     void SetArchives(const std::vector<std::shared_ptr<Archive>>& archives);
-    const std::string& HashToString(uint64_t hash);
+    const std::string* HashToString(uint64_t hash) const;
     bool IsGameVersionValid(uint32_t gameVersion);
 
   protected:

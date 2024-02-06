@@ -15,15 +15,16 @@
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
-ArchiveManager::ArchiveManager() : ArchiveManager(std::vector<std::string>()) {
+ArchiveManager::ArchiveManager() {
 }
 
-ArchiveManager::ArchiveManager(const std::vector<std::string>& archivePaths) : ArchiveManager(archivePaths, {}) {
+void ArchiveManager::Init(const std::vector<std::string>& archivePaths) {
+    Init(archivePaths, {});
 }
 
-ArchiveManager::ArchiveManager(const std::vector<std::string>& archivePaths,
-                               const std::unordered_set<uint32_t>& validGameVersions)
-    : mValidGameVersions(validGameVersions) {
+void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
+                               const std::unordered_set<uint32_t>& validGameVersions) {
+    mValidGameVersions = validGameVersions;
     auto archives = GetArchiveListInPaths(archivePaths);
     for (const auto archive : archives) {
         AddArchive(archive);
@@ -39,6 +40,10 @@ bool ArchiveManager::IsArchiveLoaded() {
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath) {
+    if (filePath == "") {
+        return nullptr;
+    }
+
     const auto archive = mFileToArchive[CRC64(filePath.c_str())];
     if (archive == nullptr) {
         return nullptr;
@@ -105,9 +110,9 @@ void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& ar
     }
 }
 
-const std::string& ArchiveManager::HashToString(uint64_t hash) {
+const std::string* ArchiveManager::HashToString(uint64_t hash) const {
     auto it = mHashes.find(hash);
-    return it != mHashes.end() ? it->second : "";
+    return it != mHashes.end() ? &it->second : nullptr;
 }
 
 std::vector<std::string> ArchiveManager::GetArchiveListInPaths(const std::vector<std::string>& archivePaths) {
@@ -148,6 +153,7 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
         archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath));
+        archive->Load();
     } else {
         // Not recognized file extension, trying with o2r
         SPDLOG_WARN("File extension \"{}\" not recognized, trying to create an o2r archive.", extension);
@@ -172,12 +178,12 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     SPDLOG_INFO("Adding Archive {} to Archive Manager", archive->GetPath());
 
     mArchives.push_back(archive);
-    mGameVersions.push_back(archive->GetGameVersion());
+    if (archive->HasGameVersion()) {
+        mGameVersions.push_back(archive->GetGameVersion());
+    }
     const auto fileList = archive->ListFiles();
-    for (size_t i = 0; i < fileList->size(); i++) {
-        const auto file = fileList->operator[](i);
-        const auto hash = CRC64(file.c_str());
-        mHashes[hash] = file;
+    for (auto& [hash, filename]: *fileList.get()) {
+        mHashes[hash] = filename;
         mFileToArchive[hash] = archive;
     }
     return archive;

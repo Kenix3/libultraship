@@ -15,7 +15,7 @@
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
-Archive::Archive(const std::string& path) : mGameVersion(UNKNOWN_GAME_VERSION), mPath(path), mIsLoaded(false) {
+Archive::Archive(const std::string& path) : mHasGameVersion(false), mGameVersion(UNKNOWN_GAME_VERSION), mPath(path), mIsLoaded(false) {
     mHashes = std::make_shared<std::unordered_map<uint64_t, std::string>>();
 }
 
@@ -29,6 +29,7 @@ void Archive::Load() {
     auto t = LoadFileRaw("version");
     bool isGameVersionValid = false;
     if (t != nullptr && t->IsLoaded) {
+        mHasGameVersion = true;
         auto stream = std::make_shared<MemoryStream>(t->Buffer->data(), t->Buffer->size());
         auto reader = std::make_shared<BinaryReader>(stream);
         LUS::Endianness endianness = (Endianness)reader->ReadUByte();
@@ -42,7 +43,7 @@ void Archive::Load() {
         }
     }
 
-    SetLoaded(opened && isGameVersionValid);
+    SetLoaded(opened && (!mHasGameVersion || isGameVersionValid));
 
     if (!IsLoaded()) {
         Unload();
@@ -74,6 +75,10 @@ bool Archive::HasFile(const std::string& filePath) {
 
 bool Archive::HasFile(uint64_t hash) {
     return mHashes->count(hash) > 0;
+}
+
+bool Archive::HasGameVersion() {
+    return mHasGameVersion;
 }
 
 uint32_t Archive::GetGameVersion() {
@@ -156,7 +161,8 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
 }
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
-    return LoadFile(Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash));
+    const std::string& filePath = *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+    return LoadFile(filePath);
 }
 
 std::shared_ptr<ResourceInitData> Archive::CreateDefaultResourceInitData() {
