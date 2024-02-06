@@ -54,7 +54,8 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
 }
 
 std::shared_ptr<File> OtrArchive::LoadFileRaw(uint64_t hash) {
-    const std::string& filePath = *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+    const std::string& filePath =
+        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
     return LoadFileRaw(filePath);
 }
 

@@ -23,7 +23,7 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths) {
 }
 
 void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
-                               const std::unordered_set<uint32_t>& validGameVersions) {
+                          const std::unordered_set<uint32_t>& validGameVersions) {
     mValidGameVersions = validGameVersions;
     auto archives = GetArchiveListInPaths(archivePaths);
     for (const auto archive : archives) {
@@ -182,7 +182,7 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
         mGameVersions.push_back(archive->GetGameVersion());
     }
     const auto fileList = archive->ListFiles();
-    for (auto& [hash, filename]: *fileList.get()) {
+    for (auto& [hash, filename] : *fileList.get()) {
         mHashes[hash] = filename;
         mFileToArchive[hash] = archive;
     }

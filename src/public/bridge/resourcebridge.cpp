@@ -26,7 +26,8 @@ uint64_t ResourceGetCrcByName(const char* name) {
 }
 
 const char* ResourceGetNameByCrc(uint64_t crc) {
-    const std::string* hashStr = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(crc);
+    const std::string* hashStr =
+        LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(crc);
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 

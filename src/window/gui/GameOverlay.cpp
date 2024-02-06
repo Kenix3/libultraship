@@ -157,72 +157,73 @@ void GameOverlay::DrawSettings() {
 }
 
 void GameOverlay::Draw() {
-//     const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    //     const ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-//     ImGui::SetNextWindowPos(viewport->Pos, ImGuiCond_Always);
-//     ImGui::SetNextWindowSize(viewport->Size, ImGuiCond_Always);
-//     ImGui::Begin("GameOverlay", nullptr,
-//                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-//                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
-//                      ImGuiWindowFlags_NoInputs);
+    //     ImGui::SetNextWindowPos(viewport->Pos, ImGuiCond_Always);
+    //     ImGui::SetNextWindowSize(viewport->Size, ImGuiCond_Always);
+    //     ImGui::Begin("GameOverlay", nullptr,
+    //                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+    //                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar |
+    //                      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
 
-//     CleanupNotifications();
+    //     CleanupNotifications();
 
-//     float textY = 50;
-//     float notY = 0;
+    //     float textY = 50;
+    //     float notY = 0;
 
-//     for (auto& [key, overlay] : mRegisteredOverlays) {
+    //     for (auto& [key, overlay] : mRegisteredOverlays) {
 
-//         if (overlay.Type == OverlayType::TEXT) {
-//             const char* text = overlay.Value.c_str();
-//             const auto var = CVarGet(text);
-//             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    //         if (overlay.Type == OverlayType::TEXT) {
+    //             const char* text = overlay.Value.c_str();
+    //             const auto var = CVarGet(text);
+    //             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-//             switch (var->Type) {
-//                 case ConsoleVariableType::Float:
+    //             switch (var->Type) {
+    //                 case ConsoleVariableType::Float:
 
-//                     TextDraw(30, textY, true, color, "%s %.2f", text, var->Float);
-//                     break;
-//                 case ConsoleVariableType::Integer:
-//                     TextDraw(30, textY, true, color, "%s %d", text, var->Integer);
-//                     break;
-//                 case ConsoleVariableType::String:
-//                     TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
-//                     break;
-//                 case ConsoleVariableType::Color:
-//                     TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text, var->Color.r, var->Color.g,
-//                              var->Color.b, var->Color.a);
-//                     break;
-//                 case ConsoleVariableType::Color24:
-//                     TextDraw(30, textY, true, color, "%s (%u, %u, %u)", text, var->Color24.r, var->Color24.g,
-//                              var->Color24.b);
-//                     break;
-//             }
+    //                     TextDraw(30, textY, true, color, "%s %.2f", text, var->Float);
+    //                     break;
+    //                 case ConsoleVariableType::Integer:
+    //                     TextDraw(30, textY, true, color, "%s %d", text, var->Integer);
+    //                     break;
+    //                 case ConsoleVariableType::String:
+    //                     TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
+    //                     break;
+    //                 case ConsoleVariableType::Color:
+    //                     TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text, var->Color.r, var->Color.g,
+    //                              var->Color.b, var->Color.a);
+    //                     break;
+    //                 case ConsoleVariableType::Color24:
+    //                     TextDraw(30, textY, true, color, "%s (%u, %u, %u)", text, var->Color24.r, var->Color24.g,
+    //                              var->Color24.b);
+    //                     break;
+    //             }
 
-//             free((void*)text);
-//             textY += 30;
-//         }
+    //             free((void*)text);
+    //             textY += 30;
+    //         }
 
-//         if (overlay.Type == OverlayType::NOTIFICATION && overlay.duration > 0) {
-//             const char* text = overlay.Value.c_str();
-//             const float duration = overlay.duration / overlay.fadeTime;
+    //         if (overlay.Type == OverlayType::NOTIFICATION && overlay.duration > 0) {
+    //             const char* text = overlay.Value.c_str();
+    //             const float duration = overlay.duration / overlay.fadeTime;
 
-//             const ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, duration);
-// #if defined(__WIIU__) || defined(__ANDROID__)
-//             const float textWidth = GetStringWidth(overlay.Value.c_str()) * 2.0f;
-//             const float textOffset = 40.0f * 2.0f;
-// #else
-//             const float textWidth = GetStringWidth(overlay.Value.c_str());
-//             const float textOffset = 40.0f;
-// #endif
+    //             const ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, duration);
+    // #if defined(__WIIU__) || defined(__ANDROID__)
+    //             const float textWidth = GetStringWidth(overlay.Value.c_str()) * 2.0f;
+    //             const float textOffset = 40.0f * 2.0f;
+    // #else
+    //             const float textWidth = GetStringWidth(overlay.Value.c_str());
+    //             const float textOffset = 40.0f;
+    // #endif
 
-//             TextDraw(GetScreenWidth() - textWidth - textOffset, GetScreenHeight() - textOffset - notY, true, color,
-//                      text);
-//             notY += 30;
-//             overlay.duration -= .05f;
-//         }
-//     }
+    //             TextDraw(GetScreenWidth() - textWidth - textOffset, GetScreenHeight() - textOffset - notY, true,
+    //             color,
+    //                      text);
+    //             notY += 30;
+    //             overlay.duration -= .05f;
+    //         }
+    //     }
 
-//     ImGui::End();
+    //     ImGui::End();
 }
 } // namespace LUS

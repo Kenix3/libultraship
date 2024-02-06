@@ -15,7 +15,8 @@
 extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
-Archive::Archive(const std::string& path) : mHasGameVersion(false), mGameVersion(UNKNOWN_GAME_VERSION), mPath(path), mIsLoaded(false) {
+Archive::Archive(const std::string& path)
+    : mHasGameVersion(false), mGameVersion(UNKNOWN_GAME_VERSION), mPath(path), mIsLoaded(false) {
     mHashes = std::make_shared<std::unordered_map<uint64_t, std::string>>();
 }
 
@@ -161,7 +162,8 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
 }
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
-    const std::string& filePath = *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+    const std::string& filePath =
+        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 

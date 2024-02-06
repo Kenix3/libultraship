@@ -23,7 +23,7 @@ class ResourceManager {
   public:
     ResourceManager();
     void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
-                    int32_t reservedThreadCount = 1);
+              int32_t reservedThreadCount = 1);
     ~ResourceManager();
 
     bool DidLoadSuccessfully();
