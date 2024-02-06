@@ -42,6 +42,10 @@
 #include "port/switch/SwitchImpl.h"
 #endif
 
+#ifdef __ANDROID__
+#include "port/android/AndroidImpl.h"
+#endif
+
 #ifdef ENABLE_OPENGL
 #include <ImGui/backends/imgui_impl_opengl3.h>
 #include <ImGui/backends/imgui_impl_sdl2.h>
@@ -62,13 +66,23 @@ namespace LUS {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
-Gui::Gui() : mNeedsConsoleVariableSave(false) {
+Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
-    mInputViewer = std::make_shared<InputViewer>();
 
     AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
-    AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
+    if (customInputEditorWindow == nullptr) {
+        AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
+    } else {
+        AddGuiWindow(customInputEditorWindow);
+    }
+    AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>("gControllerDisconnectedWindowEnabled",
+                                                                "Controller Disconnected"));
+    AddGuiWindow(
+        std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
+}
+
+Gui::Gui() : Gui(nullptr) {
 }
 
 Gui::~Gui() {
@@ -98,6 +112,12 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
 #ifdef __SWITCH__
     LUS::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
+#endif
+
+#if defined(__ANDROID__)
+    // Scale everything by 2 for Android
+    ImGui::GetStyle().ScaleAllSizes(2.0f);
+    mImGuiIo->FontGlobalScale = 2.0f;
 #endif
 
 #ifdef __WIIU__
@@ -184,6 +204,8 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
+#elif USE_OPENGLES
+            ImGui_ImplOpenGL3_Init("#version 300 es");
 #else
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif
@@ -267,6 +289,9 @@ void Gui::Update(WindowEvent event) {
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
+#ifdef __ANDROID__
+            LUS::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+#endif
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -277,6 +302,20 @@ void Gui::Update(WindowEvent event) {
 #endif
         default:
             break;
+    }
+}
+
+bool Gui::ImGuiGamepadNavigationEnabled() {
+    return mImGuiIo->ConfigFlags & ImGuiConfigFlags_NavEnableGamepad;
+}
+
+void Gui::BlockImGuiGamepadNavigation() {
+    mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+}
+
+void Gui::UnblockImGuiGamepadNavigation() {
+    if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+        mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
 }
 
@@ -328,7 +367,6 @@ void Gui::DrawMenu() {
         if (wnd->IsFullscreen()) {
             Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
         }
-        Context::GetInstance()->GetControlDeck()->SaveSettings();
         if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
@@ -413,7 +451,6 @@ void Gui::DrawMenu() {
     }
 
     GetGameOverlay()->Draw();
-    GetInputViewer()->Draw();
 }
 
 void Gui::ImGuiBackendNewFrame() {
@@ -490,8 +527,8 @@ void Gui::ApplyResolutionChanges() {
         newHeight = verticalPixelCount;
     } else { // Use the window's resolution
         if (aspectRatioIsEnabled) {
-            if (((float)gfx_current_game_window_viewport.width / gfx_current_game_window_viewport.height) >
-                (aspectRatioX / aspectRatioY)) {
+            if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+                (aspectRatioY / aspectRatioX)) {
                 // when pillarboxed
                 newWidth = uint32_t(float(gfx_current_dimensions.height / aspectRatioY) * aspectRatioX);
             } else { // when letterboxed
@@ -518,21 +555,70 @@ void Gui::ApplyResolutionChanges() {
     // centring the image is done in Gui::StartFrame().
 }
 
+int16_t Gui::GetIntegerScaleFactor() {
+    if (!CVarGetInteger("gAdvancedResolution.IntegerScale.FitAutomatically", 0)) {
+        int16_t factor = CVarGetInteger("gAdvancedResolution.IntegerScale.Factor", 1);
+
+        if (CVarGetInteger("gAdvancedResolution.IntegerScale.NeverExceedBounds", 1)) {
+            // Screen bounds take priority over whatever Factor is set to.
+
+            // The same comparison as below, but checked against the configured factor
+            if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+                ((float)gfx_current_dimensions.height / gfx_current_dimensions.width)) {
+                if (factor > gfx_current_game_window_viewport.height / gfx_current_dimensions.height) {
+                    // Scale to window height
+                    factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
+                }
+            } else {
+                if (factor > gfx_current_game_window_viewport.width / gfx_current_dimensions.width) {
+                    // Scale to window width
+                    factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
+                }
+            }
+        }
+
+        if (factor < 1) {
+            factor = 1;
+        }
+        return factor;
+    } else { // Skip the preferred value and automatically determine from window size
+        int16_t factor = 1;
+
+        // Compare aspect ratios of game framebuffer and GUI
+        if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
+            ((float)gfx_current_dimensions.height / gfx_current_dimensions.width)) {
+            // Scale to window height
+            factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
+        } else {
+            // Scale to window width
+            factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
+        }
+
+        // Add screen bounds offset, if set.
+        factor += CVarGetInteger("gAdvancedResolution.IntegerScale.ExceedBoundsBy", 0);
+
+        if (factor < 1) {
+            factor = 1;
+        }
+        return factor;
+    }
+}
+
 void Gui::StartFrame() {
     const ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     if (CVarGetInteger("gLowResMode", 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
-        pos = ImVec2(size.x / 2 - sw / 2, 0);
+        pos = ImVec2(floor(size.x / 2 - sw / 2), 0);
         size = ImVec2(sw, size.y);
     } else if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
         if (!CVarGetInteger("gAdvancedResolution.PixelPerfectMode", 0)) {
             if (!CVarGetInteger("gAdvancedResolution.IgnoreAspectCorrection", 0)) {
                 float sWdth = size.y * gfx_current_dimensions.width / gfx_current_dimensions.height;
                 float sHght = size.x * gfx_current_dimensions.height / gfx_current_dimensions.width;
-                float sPosX = size.x / 2 - sWdth / 2;
-                float sPosY = size.y / 2 - sHght / 2;
+                float sPosX = floor(size.x / 2.0f - sWdth / 2.0f);
+                float sPosY = floor(size.y / 2.0f - sHght / 2.0f);
                 if (sPosY < 0.0f) { // pillarbox
                     sPosY = 0.0f;   // clamp y position
                     sHght = size.y; // reset height
@@ -545,9 +631,9 @@ void Gui::StartFrame() {
                 size = ImVec2(sWdth, sHght);
             }
         } else { // in pixel perfect mode it's much easier
-            const int factor = CVarGetInteger("gAdvancedResolution.IntegerScaleFactor", 1);
-            float sPosX = size.x / 2 - (gfx_current_dimensions.width * factor) / 2;
-            float sPosY = size.y / 2 - (gfx_current_dimensions.height * factor) / 2;
+            const int factor = GetIntegerScaleFactor();
+            float sPosX = floor(size.x / 2.0f - (gfx_current_dimensions.width * factor) / 2.0f);
+            float sPosY = floor(size.y / 2.0f - (gfx_current_dimensions.height * factor) / 2.0f);
             pos = ImVec2(sPosX, sPosY);
             size = ImVec2(float(gfx_current_dimensions.width) * factor, float(gfx_current_dimensions.height) * factor);
         }
@@ -603,6 +689,10 @@ ImTextureID Gui::GetTextureById(int32_t id) {
 
 ImTextureID Gui::GetTextureByName(const std::string& name) {
     return GetTextureById(mGuiTextures[name].RendererTextureId);
+}
+
+ImVec2 Gui::GetTextureSize(const std::string& name) {
+    return ImVec2(mGuiTextures[name].Width, mGuiTextures[name].Height);
 }
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
@@ -735,10 +825,6 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
 
 std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
-}
-
-std::shared_ptr<InputViewer> Gui::GetInputViewer() {
-    return mInputViewer;
 }
 
 void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {

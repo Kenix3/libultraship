@@ -1,5 +1,11 @@
 #include "libultraship/libultraship.h"
 #include <SDL2/SDL.h>
+#include <ratio>
+
+// Establish a chrono duration for the N64 46.875MHz clock rate
+typedef std::ratio<3000, 64> n64ClockRatio;
+typedef std::ratio_divide<std::micro, n64ClockRatio> n64CycleRate;
+typedef std::chrono::duration<long long, n64CycleRate> n64CycleRateDuration;
 
 extern "C" {
 uint8_t __osMaxControllers = MAXCONTROLLERS;
@@ -39,12 +45,16 @@ void osContGetReadData(OSContPad* pad) {
     LUS::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
 }
 
+// Returns the OS time matching the N64 46.875MHz cycle rate
+// LUSTODO: This should be adjusted to return the time since "boot"
 uint64_t osGetTime(void) {
-    return std::chrono::steady_clock::now().time_since_epoch().count();
+    return std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 }
 
+// Returns the CPU clock count matching the N64 46.875Mhz cycle rate
 uint32_t osGetCount(void) {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+    return std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
 

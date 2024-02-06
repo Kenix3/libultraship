@@ -1,4 +1,7 @@
 // dear imgui: Platform Backend for the Wii U
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_impl_wiiu.h"

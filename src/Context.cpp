@@ -1,5 +1,5 @@
 #include "Context.h"
-#include "controller/KeyboardScancodes.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include <iostream>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -55,6 +55,19 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string name, const s
     return GetInstance();
 }
 
+std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string name, const std::string shortName,
+                                                              const std::string configFilePath) {
+    if (mContext.expired()) {
+        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
+        mContext = shared;
+        return shared;
+    }
+
+    SPDLOG_DEBUG("Trying to create an uninitialized context when it already exists. Returning existing.");
+
+    return GetInstance();
+}
+
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
     : mName(std::move(name)), mShortName(std::move(shortName)), mConfigFilePath(std::move(configFilePath)) {
 }
@@ -73,6 +86,10 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
 }
 
 void Context::InitLogging() {
+    if (GetLogger() != nullptr) {
+        return;
+    }
+
     try {
         // Setup Logging
         spdlog::init_thread_pool(8192, 1);
@@ -150,17 +167,29 @@ void Context::InitLogging() {
 }
 
 void Context::InitConfiguration() {
+    if (GetConfig() != nullptr) {
+        return;
+    }
+
     mConfig = std::make_shared<Config>(GetPathRelativeToAppDirectory(GetConfigFilePath()));
 }
 
 void Context::InitConsoleVariables() {
+    if (GetConsoleVariables() != nullptr) {
+        return;
+    }
+
     mConsoleVariables = std::make_shared<ConsoleVariable>();
 }
 
 void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
                                   const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
+    if (GetResourceManager() != nullptr) {
+        return;
+    }
+
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
-    mPatchesPath = mConfig->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+    mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
         std::vector<std::string> paths = std::vector<std::string>();
         paths.push_back(mMainPath);
@@ -171,7 +200,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
         mResourceManager = std::make_shared<ResourceManager>(otrFiles, validHashes, reservedThreadCount);
     }
 
-    if (!mResourceManager->DidLoadSuccessfully()) {
+    if (!GetResourceManager()->DidLoadSuccessfully()) {
 #if defined(__SWITCH__)
         printf("Main OTR file not found!\n");
 #elif defined(__WIIU__)
@@ -188,26 +217,46 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 #endif
 }
 
-void Context::InitControlDeck() {
-    mControlDeck = std::make_shared<ControlDeck>();
+void Context::InitControlDeck(std::vector<uint16_t> additionalBitmasks) {
+    if (GetControlDeck() != nullptr) {
+        return;
+    }
+
+    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks);
 }
 
 void Context::InitCrashHandler() {
+    if (GetCrashHandler() != nullptr) {
+        return;
+    }
+
     mCrashHandler = std::make_shared<CrashHandler>();
 }
 
 void Context::InitAudio() {
+    if (GetAudio() != nullptr) {
+        return;
+    }
+
     mAudio = std::make_shared<Audio>();
-    mAudio->Init();
+    GetAudio()->Init();
 }
 
 void Context::InitConsole() {
+    if (GetConsole() != nullptr) {
+        return;
+    }
+
     mConsole = std::make_shared<Console>();
     GetConsole()->Init();
 }
 
-void Context::InitWindow() {
-    mWindow = std::make_shared<Window>();
+void Context::InitWindow(std::shared_ptr<GuiWindow> customInputEditorWindow) {
+    if (GetWindow() != nullptr) {
+        return;
+    }
+
+    mWindow = std::make_shared<Window>(customInputEditorWindow);
     GetWindow()->Init();
 }
 
@@ -260,6 +309,12 @@ std::string Context::GetShortName() {
 }
 
 std::string Context::GetAppBundlePath() {
+#if defined(__ANDROID__)
+    const char* externaldir = SDL_AndroidGetExternalStoragePath();
+    if (externaldir != NULL) {
+        return externaldir;
+    }
+#endif
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
@@ -289,6 +344,13 @@ std::string Context::GetAppBundlePath() {
 }
 
 std::string Context::GetAppDirectoryPath(std::string appName) {
+#if defined(__ANDROID__)
+    const char* externaldir = SDL_AndroidGetExternalStoragePath();
+    if (externaldir != NULL) {
+        return externaldir;
+    }
+#endif
+
 #if defined(__linux__) || defined(__APPLE__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {

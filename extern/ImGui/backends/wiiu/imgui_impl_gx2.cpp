@@ -1,4 +1,7 @@
 // dear imgui: Renderer Backend for the Nintendo Wii U using GX2
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include "imgui.h"
 #include "imgui_impl_gx2.h"
 #include <stdio.h>

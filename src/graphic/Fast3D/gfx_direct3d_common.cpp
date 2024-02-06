@@ -350,6 +350,19 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
                 }
                 len += sprintf(buf + len, "    } else {\r\n");
                 len += sprintf(buf + len, "        texVal%d = g_texture%d.Sample(g_sampler%d, tc%d);\r\n", i, i, i, i);
+                if (cc_features.used_masks[i]) {
+                    if (cc_features.used_blend[i]) {
+                        len += sprintf(buf + len,
+                                       "        float4 blendVal%d = g_textureBlend%d.Sample(g_sampler%d, tc%d);\r\n", i,
+                                       i, i, i);
+                    } else {
+                        len += sprintf(buf + len, "        float4 blendVal%d = float4(0, 0, 0, 0);\r\n", i);
+                    }
+                    len += sprintf(buf + len,
+                                   "        texVal%d = lerp(texVal%d, blendVal%d, "
+                                   "g_textureMask%d.Sample(g_sampler%d, tc%d).a);\r\n",
+                                   i, i, i, i, i, i);
+                }
                 len += sprintf(buf + len, "    }\r\n");
             } else {
                 len +=
@@ -389,7 +402,7 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         append_line(buf, &len, ";");
 
         if (c == 0) {
-            append_str(buf, &len, "texel = WRAP(texel, -1.01, 1.01);");
+            append_str(buf, &len, "texel.rgb = WRAP(texel.rgb, -1.01, 1.01);");
         }
     }
 
@@ -397,8 +410,8 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         append_line(buf, &len, "    if (texel.a > 0.19) texel.a = 1.0; else discard;");
     }
 
-    append_str(buf, &len, "texel = WRAP(texel, -0.51, 1.51);");
-    append_str(buf, &len, "texel = clamp(texel, 0.0, 1.0);");
+    append_str(buf, &len, "texel.rgb = WRAP(texel.rgb, -0.51, 1.51);");
+    append_str(buf, &len, "texel.rgb = clamp(texel.rgb, 0.0, 1.0);");
     // TODO discard if alpha is 0?
     if (cc_features.opt_fog) {
         if (cc_features.opt_alpha) {

@@ -42,8 +42,6 @@ using namespace Microsoft::WRL; // For ComPtr
 
 static struct {
     HWND h_wnd;
-    bool in_paint;
-    bool recursive_paint_detected;
 
     // These four only apply in windowed mode.
     uint32_t current_width, current_height; // Width and height of client areas
@@ -97,58 +95,6 @@ static void load_dxgi_library(void) {
     dxgi.dxgi_module = LoadLibraryW(L"dxgi.dll");
     *(FARPROC*)&dxgi.CreateDXGIFactory1 = GetProcAddress(dxgi.dxgi_module, "CreateDXGIFactory1");
     *(FARPROC*)&dxgi.CreateDXGIFactory2 = GetProcAddress(dxgi.dxgi_module, "CreateDXGIFactory2");
-}
-
-template <typename Fun> static void run_as_dpi_aware(Fun f) {
-    // Make sure Windows 8.1 or newer doesn't upscale/downscale the rendered images.
-    // This is an issue on Windows 8.1 and newer where moving around the window
-    // between different monitors having different scaling settings will
-    // by default result in the DirectX image will also be scaled accordingly.
-    // The resulting scale factor is the curent monitor's scale factor divided by
-    // the initial monitor's scale factor. Setting per-monitor aware disables scaling.
-
-    // On Windows 10 1607 and later, that is solved by setting the awarenenss per window,
-    // which is done by using SetThreadDpiAwarenessContext before and after creating
-    // any window. When the message handler runs, the corresponding context also applies.
-
-    // From windef.h, missing in MinGW.
-    DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
-#define DPI_AWARENESS_CONTEXT_UNAWARE ((DPI_AWARENESS_CONTEXT)-1)
-#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE ((DPI_AWARENESS_CONTEXT)-2)
-#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE ((DPI_AWARENESS_CONTEXT)-3)
-#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
-#define DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED ((DPI_AWARENESS_CONTEXT)-5)
-
-    DPI_AWARENESS_CONTEXT(WINAPI * SetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT dpiContext);
-    *(FARPROC*)&SetThreadDpiAwarenessContext =
-        GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetThreadDpiAwarenessContext");
-    DPI_AWARENESS_CONTEXT old_awareness_context = nullptr;
-    if (SetThreadDpiAwarenessContext != nullptr) {
-        old_awareness_context = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-    } else {
-        // Solution for Windows 8.1 and newer, but before Windows 10 1607.
-        // SetProcessDpiAwareness must be called before any drawing related API is called.
-        if (!dxgi.process_dpi_awareness_done) {
-            HMODULE shcore_module = LoadLibraryW(L"SHCore.dll");
-            if (shcore_module != nullptr) {
-                HRESULT(WINAPI * SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS value);
-                *(FARPROC*)&SetProcessDpiAwareness = GetProcAddress(shcore_module, "SetProcessDpiAwareness");
-                if (SetProcessDpiAwareness != nullptr) {
-                    SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
-                    // Ignore result, will fail if already called or manifest already specifies dpi awareness.
-                }
-                FreeLibrary(shcore_module);
-            }
-            dxgi.process_dpi_awareness_done = true;
-        }
-    }
-
-    f();
-
-    // Restore the old context
-    if (SetThreadDpiAwarenessContext != nullptr && old_awareness_context != nullptr) {
-        SetThreadDpiAwarenessContext(old_awareness_context);
-    }
 }
 
 static void apply_maximum_frame_latency(bool first) {
@@ -375,24 +321,23 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
                 GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             }
             break;
-        case WM_DESTROY:
-            PostQuitMessage(0);
+        case WM_CLOSE:
+            dxgi.is_running = false;
             break;
-        case WM_PAINT:
-            if (dxgi.in_paint) {
-                dxgi.recursive_paint_detected = true;
-                return DefWindowProcW(h_wnd, message, w_param, l_param);
-            } else {
-                if (dxgi.run_one_game_iter != nullptr) {
-                    dxgi.in_paint = true;
-                    dxgi.run_one_game_iter();
-                    dxgi.in_paint = false;
-                    if (dxgi.recursive_paint_detected) {
-                        dxgi.recursive_paint_detected = false;
-                        InvalidateRect(h_wnd, nullptr, false);
-                        UpdateWindow(h_wnd);
-                    }
-                }
+        case WM_DPICHANGED: {
+            RECT* const prcNewWindow = (RECT*)l_param;
+            SetWindowPos(h_wnd, NULL, prcNewWindow->left, prcNewWindow->top, prcNewWindow->right - prcNewWindow->left,
+                         prcNewWindow->bottom - prcNewWindow->top, SWP_NOZORDER | SWP_NOACTIVATE);
+            dxgi.posX = prcNewWindow->left;
+            dxgi.posY = prcNewWindow->top;
+            dxgi.current_width = prcNewWindow->right - prcNewWindow->left;
+            dxgi.current_height = prcNewWindow->bottom - prcNewWindow->top;
+            break;
+        }
+        case WM_ENDSESSION:
+            // This hopefully gives the game a chance to shut down, before windows kills it.
+            if (w_param == TRUE) {
+                dxgi.is_running = false;
             }
             break;
         case WM_ACTIVATEAPP:
@@ -469,24 +414,21 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     ATOM winclass = RegisterClassExW(&wcex);
 
-    run_as_dpi_aware([&]() {
-        // We need to be dpi aware when calculating the size
-        RECT wr = { 0, 0, width, height };
-        AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
-        dxgi.current_width = wr.right - wr.left;
-        dxgi.current_height = wr.bottom - wr.top;
-        dxgi.monitor_list = GetMonitorList();
-        dxgi.posX = posX;
-        dxgi.posY = posY;
-        if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
-                                dxgi.h_Monitor)) {
-            dxgi.posX = 100;
-            dxgi.posY = 100;
-        }
+    RECT wr = { 0, 0, width, height };
+    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+    dxgi.current_width = wr.right - wr.left;
+    dxgi.current_height = wr.bottom - wr.top;
+    dxgi.monitor_list = GetMonitorList();
+    dxgi.posX = posX;
+    dxgi.posY = posY;
+    if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                            dxgi.h_Monitor)) {
+        dxgi.posX = 100;
+        dxgi.posY = 100;
+    }
 
-        dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
-                                   dxgi.current_width, dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
-    });
+    dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
+                               dxgi.current_width, dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
 
     load_dxgi_library();
 
@@ -554,11 +496,8 @@ static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), b
 
 static void gfx_dxgi_main_loop(void (*run_one_game_iter)(void)) {
     dxgi.run_one_game_iter = run_one_game_iter;
-
-    MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0) && dxgi.is_running) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+    while (dxgi.is_running) {
+        dxgi.run_one_game_iter();
     }
 }
 
@@ -570,19 +509,25 @@ static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* 
 }
 
 static void gfx_dxgi_handle_events(void) {
-    /*MSG msg;
+    MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) {
+            dxgi.is_running = false;
+            break;
+        }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-    }*/
+    }
 }
 
 static uint64_t qpc_to_ns(uint64_t qpc) {
-    return qpc / dxgi.qpc_freq * 1000000000 + qpc % dxgi.qpc_freq * 1000000000 / dxgi.qpc_freq;
+    qpc *= 1000000000;
+    return qpc / dxgi.qpc_freq;
 }
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
-    return qpc / dxgi.qpc_freq * 10000000 + qpc % dxgi.qpc_freq * 10000000 / dxgi.qpc_freq;
+    qpc *= 10000000;
+    return qpc / dxgi.qpc_freq;
 }
 
 static bool gfx_dxgi_start_frame(void) {
@@ -760,6 +705,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
             do {
                 YieldProcessor();
                 QueryPerformanceCounter(&t);
+                t.QuadPart = qpc_to_100ns(t.QuadPart);
             } while (t.QuadPart < next);
         }
     }
@@ -899,14 +845,8 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     }
     swap_chain_desc.SampleDesc.Count = 1;
 
-    run_as_dpi_aware([&]() {
-        // When setting size for the buffers, the values that DXGI puts into the desc (that can later be retrieved by
-        // GetDesc1) have been divided by the current scaling factor. By making this call dpi aware, no division will be
-        // performed. The same goes for IDXGISwapChain::ResizeBuffers(), however that function is currently only called
-        // from the message handler.
-        ThrowIfFailed(dxgi.factory->CreateSwapChainForHwnd(device, dxgi.h_wnd, &swap_chain_desc, nullptr, nullptr,
-                                                           &dxgi.swap_chain));
-    });
+    ThrowIfFailed(
+        dxgi.factory->CreateSwapChainForHwnd(device, dxgi.h_wnd, &swap_chain_desc, nullptr, nullptr, &dxgi.swap_chain));
     ThrowIfFailed(dxgi.factory->MakeWindowAssociation(dxgi.h_wnd, DXGI_MWA_NO_ALT_ENTER));
 
     apply_maximum_frame_latency(true);
