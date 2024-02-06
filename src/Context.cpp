@@ -5,7 +5,10 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "install_config.h"
+
+#ifdef _WIN32
 #include <tchar.h>
+#endif
 
 #ifdef __APPLE__
 #include "utils/OSXFolderManager.h"
