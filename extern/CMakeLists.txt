@@ -109,9 +109,11 @@ else()
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_link_libraries(ImGui PUBLIC opengl32)
+    find_package(GLEW REQUIRED)
+    target_link_libraries(ImGui PUBLIC opengl32 GLEW::GLEW)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY})
+    find_package(GLEW REQUIRED)
+    target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
     set_target_properties(ImGui PROPERTIES
         XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
     )
