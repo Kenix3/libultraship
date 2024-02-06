@@ -21,7 +21,7 @@
 
 #ifdef _MSC_VER
 #include <SDL2/SDL.h>
-// #define GL_GLEXT_PROTOTYPES 1
+#define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengl.h>
 #elif FOR_WINDOWS
 #include "SDL.h"
