@@ -86,20 +86,24 @@ void GameOverlay::CleanupNotifications() {
 }
 
 float GameOverlay::GetScreenWidth() {
+    return 0;
     // const ImGuiViewport* viewport = ImGui::GetMainViewport();
     // return viewport->Size.x;
 }
 
 float GameOverlay::GetScreenHeight() {
+    return 0;
     // const ImGuiViewport* viewport = ImGui::GetMainViewport();
     // return viewport->Size.y;
 }
 
 float GameOverlay::GetStringWidth(const char* text) {
+    return 0;
     // return CalculateTextSize(text).x;
 }
 
 ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, bool shortenText, float wrapWidth) {
+    return ImVec2(0, 0);
     // ImGuiContext& g = *GImGui;
 
     // const char* textDisplayEnd;
