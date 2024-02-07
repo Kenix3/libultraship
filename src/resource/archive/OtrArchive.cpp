@@ -74,6 +74,7 @@ bool OtrArchive::LoadRaw() {
     } else {
         SPDLOG_ERROR("Failed to load mpq file \"{}\"", GetPath());
         mHandle = nullptr;
+        return false;
     }
 
     // Generate the file list by reading the list file.
