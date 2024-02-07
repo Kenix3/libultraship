@@ -64,6 +64,16 @@ std::shared_ptr<ResourceInitData> OtrArchive::LoadFileMeta(uint64_t hash) {
     return nullptr;
 }
 
+// i think there's a way to get the SFileCreateArchive symbol to link
+// by using --whole-archive or something but i'm really lost trying to
+// figure that out. it isn't a problem when just building OTRExporter
+// for the ExtractAssets target in SoH (that works without this), but when
+// trying to build SoH itself this symbol is not found. this is a stupid
+// hack to get it to build.
+void OtrArchive::BlargBecauseLinker() {
+    SFileCreateArchive("", 0, 0, nullptr);
+}
+
 bool OtrArchive::LoadRaw() {
     const bool opened = SFileOpenArchive(GetPath().c_str(), 0, MPQ_OPEN_READ_ONLY, &mHandle);
     if (opened) {
