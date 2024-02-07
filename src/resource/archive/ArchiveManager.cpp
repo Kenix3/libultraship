@@ -33,6 +33,7 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
 
 ArchiveManager::~ArchiveManager() {
     SPDLOG_TRACE("destruct archive manager");
+    SetArchives({});
 }
 
 bool ArchiveManager::IsArchiveLoaded() {
@@ -123,11 +124,17 @@ std::vector<std::shared_ptr<Archive>> ArchiveManager::GetArchives() {
 }
 
 void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& archives) {
+    for (const auto& archive : mArchives) {
+        archive->Unload();
+    }
     mArchives.clear();
     mGameVersions.clear();
     mHashes.clear();
     mFileToArchive.clear();
     for (const auto& archive : archives) {
+        if (!archive->IsLoaded()) {
+            archive->Load();
+        }
         AddArchive(archive);
     }
 }
