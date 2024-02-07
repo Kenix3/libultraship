@@ -61,6 +61,28 @@ std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash) {
     return archive->LoadFile(hash);
 }
 
+std::shared_ptr<File> ArchiveManager::LoadFileRaw(const std::string& filePath) {
+    if (filePath == "") {
+        return nullptr;
+    }
+
+    const auto archive = mFileToArchive[CRC64(filePath.c_str())];
+    if (archive == nullptr) {
+        return nullptr;
+    }
+
+    return archive->LoadFileRaw(filePath);
+}
+
+std::shared_ptr<File> ArchiveManager::LoadFileRaw(uint64_t hash) {
+    const auto archive = mFileToArchive[hash];
+    if (archive == nullptr) {
+        return nullptr;
+    }
+
+    return archive->LoadFileRaw(hash);
+}
+
 bool ArchiveManager::HasFile(const std::string& filePath) {
     return HasFile(CRC64(filePath.c_str()));
 }

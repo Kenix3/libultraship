@@ -17,7 +17,7 @@ GameOverlay::~GameOverlay() {
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
-    std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path);
+    std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
     if (font->IsLoaded) {
         // TODO: Nothing is ever unloading the font or this fontData array.
         char* fontData = new char[font->Buffer->size()];
