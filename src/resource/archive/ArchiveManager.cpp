@@ -153,13 +153,13 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
         archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath));
-        archive->Load();
     } else {
         // Not recognized file extension, trying with o2r
         SPDLOG_WARN("File extension \"{}\" not recognized, trying to create an o2r archive.", extension);
         archive = std::make_shared<O2rArchive>(archivePath);
     }
 
+    archive->Load();
     return AddArchive(archive);
 }
 

@@ -71,7 +71,6 @@ bool OtrArchive::LoadRaw() {
     const bool opened = SFileOpenArchive(GetPath().c_str(), 0, MPQ_OPEN_READ_ONLY, &mHandle);
     if (opened) {
         SPDLOG_INFO("Opened mpq file \"{}\"", GetPath());
-        // SFileCloseArchive(mHandle);
     } else {
         SPDLOG_ERROR("Failed to load mpq file \"{}\"", GetPath());
         mHandle = nullptr;
