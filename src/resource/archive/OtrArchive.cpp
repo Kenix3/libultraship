@@ -24,8 +24,6 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
     }
 
     auto fileToLoad = std::make_shared<File>();
-    fileToLoad->InitData = std::make_shared<ResourceInitData>();
-    fileToLoad->InitData->Path = filePath;
     DWORD fileSize = SFileGetFileSize(fileHandle, 0);
     DWORD readBytes;
     fileToLoad->Buffer = std::make_shared<std::vector<char>>(fileSize);
