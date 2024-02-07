@@ -34,17 +34,18 @@ class Archive {
     const std::string& GetPath();
     bool IsLoaded();
 
+    virtual bool LoadRaw() = 0;
+    virtual bool UnloadRaw() = 0;
+    virtual std::shared_ptr<File> LoadFileRaw(const std::string& filePath) = 0;
+    virtual std::shared_ptr<File> LoadFileRaw(uint64_t hash) = 0;
+
   protected:
     static std::shared_ptr<ResourceInitData> ReadResourceInitDataBinary(const std::string& filePath,
                                                                         std::shared_ptr<BinaryReader> headerReader);
     static std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
                                                                      std::shared_ptr<tinyxml2::XMLDocument> document);
-    virtual std::shared_ptr<File> LoadFileRaw(const std::string& filePath) = 0;
-    virtual std::shared_ptr<File> LoadFileRaw(uint64_t hash) = 0;
     virtual std::shared_ptr<ResourceInitData> LoadFileMeta(const std::string& filePath) = 0;
     virtual std::shared_ptr<ResourceInitData> LoadFileMeta(uint64_t hash) = 0;
-    virtual bool LoadRaw() = 0;
-    virtual bool UnloadRaw() = 0;
 
     void SetLoaded(bool isLoaded);
     void SetGameVersion(uint32_t gameVersion);

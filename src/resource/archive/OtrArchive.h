@@ -24,14 +24,14 @@ class OtrArchive : virtual public Archive {
     OtrArchive(const std::string& archivePath);
     ~OtrArchive();
 
-  protected:
-    std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
-    std::shared_ptr<File> LoadFileRaw(uint64_t hash);
-    std::shared_ptr<ResourceInitData> LoadFileMeta(const std::string& filePath);
-    std::shared_ptr<ResourceInitData> LoadFileMeta(uint64_t hash);
-
     bool LoadRaw();
     bool UnloadRaw();
+    std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
+    std::shared_ptr<File> LoadFileRaw(uint64_t hash);
+
+  protected:
+    std::shared_ptr<ResourceInitData> LoadFileMeta(const std::string& filePath);
+    std::shared_ptr<ResourceInitData> LoadFileMeta(uint64_t hash);
 
   private:
     HANDLE mHandle;
