@@ -28,8 +28,7 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
     fileToLoad->InitData->Path = filePath;
     DWORD fileSize = SFileGetFileSize(fileHandle, 0);
     DWORD readBytes;
-    fileToLoad->Buffer = std::make_shared<std::vector<char>>();
-    fileToLoad->Buffer->resize(fileSize);
+    fileToLoad->Buffer = std::make_shared<std::vector<char>>(fileSize);
     bool readFileSuccess = SFileReadFile(fileHandle, fileToLoad->Buffer->data(), fileSize, &readBytes, NULL);
 
     if (!readFileSuccess) {
