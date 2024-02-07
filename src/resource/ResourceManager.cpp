@@ -15,10 +15,14 @@ extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
 
-ResourceManager::ResourceManager(const std::vector<std::string>& otrFiles,
-                                 const std::unordered_set<uint32_t>& validHashes, int32_t reservedThreadCount) {
+ResourceManager::ResourceManager() {
+}
+
+void ResourceManager::Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
+                           int32_t reservedThreadCount) {
     mResourceLoader = std::make_shared<ResourceLoader>();
-    mArchiveManager = std::make_shared<ArchiveManager>(otrFiles, validHashes);
+    mArchiveManager = std::make_shared<ArchiveManager>();
+    GetArchiveManager()->Init(otrFiles, validHashes);
 #if defined(__SWITCH__) || defined(__WIIU__)
     size_t threadCount = 1;
 #else

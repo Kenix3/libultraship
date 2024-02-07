@@ -24,10 +24,9 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
     }
 
     auto fileToLoad = std::make_shared<File>();
-    fileToLoad->InitData->Path = filePath;
     DWORD fileSize = SFileGetFileSize(fileHandle, 0);
     DWORD readBytes;
-    fileToLoad->Buffer->resize(fileSize);
+    fileToLoad->Buffer = std::make_shared<std::vector<char>>(fileSize);
     bool readFileSuccess = SFileReadFile(fileHandle, fileToLoad->Buffer->data(), fileSize, &readBytes, NULL);
 
     if (!readFileSuccess) {
@@ -52,7 +51,9 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
 }
 
 std::shared_ptr<File> OtrArchive::LoadFileRaw(uint64_t hash) {
-    return LoadFileRaw(Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash));
+    const std::string& filePath =
+        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+    return LoadFileRaw(filePath);
 }
 
 std::shared_ptr<ResourceInitData> OtrArchive::LoadFileMeta(const std::string& filePath) {
@@ -67,10 +68,10 @@ bool OtrArchive::LoadRaw() {
     const bool opened = SFileOpenArchive(GetPath().c_str(), 0, MPQ_OPEN_READ_ONLY, &mHandle);
     if (opened) {
         SPDLOG_INFO("Opened mpq file \"{}\"", GetPath());
-        SFileCloseArchive(mHandle);
     } else {
         SPDLOG_ERROR("Failed to load mpq file \"{}\"", GetPath());
         mHandle = nullptr;
+        return false;
     }
 
     // Generate the file list by reading the list file.

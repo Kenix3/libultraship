@@ -198,9 +198,11 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
         paths.push_back(mMainPath);
         paths.push_back(mPatchesPath);
 
-        mResourceManager = std::make_shared<ResourceManager>(paths, validHashes, reservedThreadCount);
+        mResourceManager = std::make_shared<ResourceManager>();
+        GetResourceManager()->Init(paths, validHashes, reservedThreadCount);
     } else {
-        mResourceManager = std::make_shared<ResourceManager>(otrFiles, validHashes, reservedThreadCount);
+        mResourceManager = std::make_shared<ResourceManager>();
+        GetResourceManager()->Init(otrFiles, validHashes, reservedThreadCount);
     }
 
     if (!GetResourceManager()->DidLoadSuccessfully()) {
