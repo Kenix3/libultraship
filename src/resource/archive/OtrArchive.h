@@ -29,8 +29,6 @@ class OtrArchive : virtual public Archive {
     std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
-    void BlargBecauseLinker();
-
   protected:
     std::shared_ptr<ResourceInitData> LoadFileMeta(const std::string& filePath);
     std::shared_ptr<ResourceInitData> LoadFileMeta(uint64_t hash);
