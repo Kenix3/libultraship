@@ -1021,7 +1021,9 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
 
     Framebuffer& fb = framebuffers[fb_id];
 
-    if (coordinates.size() == 1) {
+    // When looking up one value and the framebuffer is single-sampled, we can read pixels directly
+    // Otherwise we need to blit first to a new buffer then read it
+    if (coordinates.size() == 1 && fb.msaa_level <= 1) {
         uint32_t depth_stencil_value;
         glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
         int x = coordinates.begin()->first;

@@ -302,6 +302,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
     if (use_opengl) {
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     } else {
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
