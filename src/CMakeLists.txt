@@ -457,7 +457,11 @@ endif()
 
 #=================== Linking ===================
 
-target_link_libraries(libultraship PUBLIC "$<LINK_LIBRARY:WHOLE_ARCHIVE,storm>")
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS" AND NOT CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+    target_link_libraries(libultraship PUBLIC "$<LINK_LIBRARY:WHOLE_ARCHIVE,storm>")
+else()
+    target_link_libraries(libultraship PUBLIC storm)
+endif()
 target_link_libraries(libultraship
     PRIVATE StrHash64
     PUBLIC ZAPDUtils ImGui tinyxml2 nlohmann_json::nlohmann_json
