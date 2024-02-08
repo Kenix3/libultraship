@@ -887,7 +887,7 @@ bool WINAPI SFileFinishFile(HANDLE hFile)
 
 bool WINAPI SFileAddFileEx(
     HANDLE hMpq,
-    const TCHAR * szFileName,
+    const char * szFileName,
     const char * szArchivedName,
     DWORD dwFlags,
     DWORD dwCompression,            // Compression of the first sector
@@ -1025,7 +1025,7 @@ bool WINAPI SFileAddFileEx(
 }
 
 // Adds a data file into the archive
-bool WINAPI SFileAddFile(HANDLE hMpq, const TCHAR * szFileName, const char * szArchivedName, DWORD dwFlags)
+bool WINAPI SFileAddFile(HANDLE hMpq, const char * szFileName, const char * szArchivedName, DWORD dwFlags)
 {
     return SFileAddFileEx(hMpq,
                           szFileName,
@@ -1036,7 +1036,7 @@ bool WINAPI SFileAddFile(HANDLE hMpq, const TCHAR * szFileName, const char * szA
 }
 
 // Adds a WAVE file into the archive
-bool WINAPI SFileAddWave(HANDLE hMpq, const TCHAR * szFileName, const char * szArchivedName, DWORD dwFlags, DWORD dwQuality)
+bool WINAPI SFileAddWave(HANDLE hMpq, const char * szFileName, const char * szArchivedName, DWORD dwFlags, DWORD dwQuality)
 {
     DWORD dwCompression = 0;
 

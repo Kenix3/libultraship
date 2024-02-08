@@ -410,7 +410,7 @@ typedef DWORD (*HASH_STRING)(const char * szFileName, DWORD dwHashType);
 typedef enum _SFileInfoClass
 {
     // Info classes for archives
-    SFileMpqFileName,                       // Name of the archive file (TCHAR [])
+    SFileMpqFileName,                       // Name of the archive file (char [])
     SFileMpqStreamBitmap,                   // Array of bits, each bit means availability of one block (BYTE [])
     SFileMpqUserDataOffset,                 // Offset of the user data header (ULONGLONG)
     SFileMpqUserDataHeader,                 // Raw (unfixed) user data header (TMPQUserData)
@@ -452,7 +452,7 @@ typedef enum _SFileInfoClass
     SFileMpqFlags,                          // Nonzero if the MPQ is read only (DWORD)
 
     // Info classes for files
-    SFileInfoPatchChain,                    // Chain of patches where the file is (TCHAR [])
+    SFileInfoPatchChain,                    // Chain of patches where the file is (char [])
     SFileInfoFileEntry,                     // The file entry for the file (TFileEntry)
     SFileInfoHashEntry,                     // Hash table entry for the file (TMPQHash)
     SFileInfoHashIndex,                     // Index of the hash table entry (DWORD)
@@ -965,10 +965,10 @@ struct TStreamBitmap
 };
 
 // UNICODE versions of the file access functions
-TFileStream * FileStream_CreateFile(const TCHAR * szFileName, DWORD dwStreamFlags);
-TFileStream * FileStream_OpenFile(const TCHAR * szFileName, DWORD dwStreamFlags);
-const TCHAR * FileStream_GetFileName(TFileStream * pStream);
-size_t FileStream_Prefix(const TCHAR * szFileName, DWORD * pdwProvider);
+TFileStream * FileStream_CreateFile(const char * szFileName, DWORD dwStreamFlags);
+TFileStream * FileStream_OpenFile(const char * szFileName, DWORD dwStreamFlags);
+const char * FileStream_GetFileName(TFileStream * pStream);
+size_t FileStream_Prefix(const char * szFileName, DWORD * pdwProvider);
 
 bool FileStream_SetCallback(TFileStream * pStream, SFILE_DOWNLOAD_CALLBACK pfnCallback, void * pvUserData);
 
@@ -1015,9 +1015,9 @@ LCID   WINAPI SFileSetLocale(LCID lcFileLocale);
 //-----------------------------------------------------------------------------
 // Functions for archive manipulation
 
-bool   WINAPI SFileOpenArchive(const TCHAR * szMpqName, DWORD dwPriority, DWORD dwFlags, HANDLE * phMpq);
-bool   WINAPI SFileCreateArchive(const TCHAR * szMpqName, DWORD dwCreateFlags, DWORD dwMaxFileCount, HANDLE * phMpq);
-bool   WINAPI SFileCreateArchive2(const TCHAR * szMpqName, PSFILE_CREATE_MPQ pCreateInfo, HANDLE * phMpq);
+bool   WINAPI SFileOpenArchive(const char * szMpqName, DWORD dwPriority, DWORD dwFlags, HANDLE * phMpq);
+bool   WINAPI SFileCreateArchive(const char * szMpqName, DWORD dwCreateFlags, DWORD dwMaxFileCount, HANDLE * phMpq);
+bool   WINAPI SFileCreateArchive2(const char * szMpqName, PSFILE_CREATE_MPQ pCreateInfo, HANDLE * phMpq);
 
 bool   WINAPI SFileSetDownloadCallback(HANDLE hMpq, SFILE_DOWNLOAD_CALLBACK DownloadCB, void * pvUserData);
 bool   WINAPI SFileFlushArchive(HANDLE hMpq);
@@ -1026,11 +1026,11 @@ bool   WINAPI SFileCloseArchive(HANDLE hMpq);
 // Adds another listfile into MPQ. The currently added listfile(s) remain,
 // so you can use this API to combining more listfiles.
 // Note that this function is internally called by SFileFindFirstFile
-DWORD  WINAPI SFileAddListFile(HANDLE hMpq, const TCHAR * szListFile);
+DWORD  WINAPI SFileAddListFile(HANDLE hMpq, const char * szListFile);
 
 // Archive compacting
 bool   WINAPI SFileSetCompactCallback(HANDLE hMpq, SFILE_COMPACT_CALLBACK CompactCB, void * pvUserData);
-bool   WINAPI SFileCompactArchive(HANDLE hMpq, const TCHAR * szListFile, bool bReserved);
+bool   WINAPI SFileCompactArchive(HANDLE hMpq, const char * szListFile, bool bReserved);
 
 // Changing the maximum file count
 DWORD  WINAPI SFileGetMaxFileCount(HANDLE hMpq);
@@ -1044,7 +1044,7 @@ bool   WINAPI SFileUpdateFileAttributes(HANDLE hMpq, const char * szFileName);
 //-----------------------------------------------------------------------------
 // Functions for manipulation with patch archives
 
-bool   WINAPI SFileOpenPatchArchive(HANDLE hMpq, const TCHAR * szPatchMpqName, const char * szPatchPathPrefix, DWORD dwFlags);
+bool   WINAPI SFileOpenPatchArchive(HANDLE hMpq, const char * szPatchMpqName, const char * szPatchPathPrefix, DWORD dwFlags);
 bool   WINAPI SFileIsPatchedArchive(HANDLE hMpq);
 
 //-----------------------------------------------------------------------------
@@ -1064,7 +1064,7 @@ bool   WINAPI SFileGetFileName(HANDLE hFile, char * szFileName);
 bool   WINAPI SFileFreeFileInfo(void * pvFileInfo, SFileInfoClass InfoClass);
 
 // High-level extract function
-bool   WINAPI SFileExtractFile(HANDLE hMpq, const char * szToExtract, const TCHAR * szExtracted, DWORD dwSearchScope);
+bool   WINAPI SFileExtractFile(HANDLE hMpq, const char * szToExtract, const char * szExtracted, DWORD dwSearchScope);
 
 //-----------------------------------------------------------------------------
 // Functions for file and archive verification
@@ -1086,11 +1086,11 @@ DWORD  WINAPI SFileVerifyArchive(HANDLE hMpq);
 //-----------------------------------------------------------------------------
 // Functions for file searching
 
-HANDLE WINAPI SFileFindFirstFile(HANDLE hMpq, const char * szMask, SFILE_FIND_DATA * lpFindFileData, const TCHAR * szListFile);
+HANDLE WINAPI SFileFindFirstFile(HANDLE hMpq, const char * szMask, SFILE_FIND_DATA * lpFindFileData, const char * szListFile);
 bool   WINAPI SFileFindNextFile(HANDLE hFind, SFILE_FIND_DATA * lpFindFileData);
 bool   WINAPI SFileFindClose(HANDLE hFind);
 
-HANDLE WINAPI SListFileFindFirstFile(HANDLE hMpq, const TCHAR * szListFile, const char * szMask, SFILE_FIND_DATA * lpFindFileData);
+HANDLE WINAPI SListFileFindFirstFile(HANDLE hMpq, const char * szListFile, const char * szMask, SFILE_FIND_DATA * lpFindFileData);
 bool   WINAPI SListFileFindNextFile(HANDLE hFind, SFILE_FIND_DATA * lpFindFileData);
 bool   WINAPI SListFileFindClose(HANDLE hFind);
 
@@ -1104,9 +1104,9 @@ bool   WINAPI SFileCreateFile(HANDLE hMpq, const char * szArchivedName, ULONGLON
 bool   WINAPI SFileWriteFile(HANDLE hFile, const void * pvData, DWORD dwSize, DWORD dwCompression);
 bool   WINAPI SFileFinishFile(HANDLE hFile);
 
-bool   WINAPI SFileAddFileEx(HANDLE hMpq, const TCHAR * szFileName, const char * szArchivedName, DWORD dwFlags, DWORD dwCompression, DWORD dwCompressionNext);
-bool   WINAPI SFileAddFile(HANDLE hMpq, const TCHAR * szFileName, const char * szArchivedName, DWORD dwFlags);
-bool   WINAPI SFileAddWave(HANDLE hMpq, const TCHAR * szFileName, const char * szArchivedName, DWORD dwFlags, DWORD dwQuality);
+bool   WINAPI SFileAddFileEx(HANDLE hMpq, const char * szFileName, const char * szArchivedName, DWORD dwFlags, DWORD dwCompression, DWORD dwCompressionNext);
+bool   WINAPI SFileAddFile(HANDLE hMpq, const char * szFileName, const char * szArchivedName, DWORD dwFlags);
+bool   WINAPI SFileAddWave(HANDLE hMpq, const char * szFileName, const char * szArchivedName, DWORD dwFlags, DWORD dwQuality);
 bool   WINAPI SFileRemoveFile(HANDLE hMpq, const char * szFileName, DWORD dwSearchScope);
 bool   WINAPI SFileRenameFile(HANDLE hMpq, const char * szOldFileName, const char * szNewFileName);
 bool   WINAPI SFileSetFileLocale(HANDLE hFile, LCID lcNewLocale);

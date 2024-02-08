@@ -149,10 +149,10 @@ void StringCreatePseudoFileName(char * szBuffer, size_t cchMaxChars, unsigned in
 
 //-----------------------------------------------------------------------------
 // Utility functions (UNICODE) only exist in the ANSI version of the library
-// In ANSI builds, TCHAR = char, so we don't need these functions implemented
+// In ANSI builds, char = char, so we don't need these functions implemented
 
 #if 0
-void StringCopy(TCHAR * szTarget, size_t cchTarget, const char * szSource)
+void StringCopy(char * szTarget, size_t cchTarget, const char * szSource)
 {
     if(cchTarget > 0)
     {
@@ -166,7 +166,7 @@ void StringCopy(TCHAR * szTarget, size_t cchTarget, const char * szSource)
     }
 }
 
-void StringCopy(char * szTarget, size_t cchTarget, const TCHAR * szSource)
+void StringCopy(char * szTarget, size_t cchTarget, const char * szSource)
 {
     if(cchTarget > 0)
     {
@@ -180,7 +180,7 @@ void StringCopy(char * szTarget, size_t cchTarget, const TCHAR * szSource)
     }
 }
 
-void StringCopy(TCHAR * szTarget, size_t cchTarget, const TCHAR * szSource)
+void StringCopy(char * szTarget, size_t cchTarget, const char * szSource)
 {
     if(cchTarget > 0)
     {
@@ -189,12 +189,12 @@ void StringCopy(TCHAR * szTarget, size_t cchTarget, const TCHAR * szSource)
         if(cchSource >= cchTarget)
             cchSource = cchTarget - 1;
 
-        memcpy(szTarget, szSource, cchSource * sizeof(TCHAR));
+        memcpy(szTarget, szSource, cchSource * sizeof(char));
         szTarget[cchSource] = 0;
     }
 }
 
-void StringCat(TCHAR * szTarget, size_t cchTargetMax, const TCHAR * szSource)
+void StringCat(char * szTarget, size_t cchTargetMax, const char * szSource)
 {
     // Get the current length of the target
     size_t cchTarget = _tcslen(szTarget);

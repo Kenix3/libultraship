@@ -157,7 +157,7 @@ static bool GetInfo_PatchChain(TMPQFile * hf, void * pvFileInfo, DWORD cbFileInf
         cchCharsNeeded += _tcslen(FileStream_GetFileName(hfTemp->ha->pStream)) + 1;
 
     // Verify whether the caller gave us valid buffer with enough size
-    if(!GetInfo_BufferCheck(pvFileInfo, cbFileInfo, (DWORD)(cchCharsNeeded * sizeof(TCHAR)), pcbLengthNeeded))
+    if(!GetInfo_BufferCheck(pvFileInfo, cbFileInfo, (DWORD)(cchCharsNeeded * sizeof(char)), pcbLengthNeeded))
         return false;
 
     // Copy each patch name
@@ -168,7 +168,7 @@ static bool GetInfo_PatchChain(TMPQFile * hf, void * pvFileInfo, DWORD cbFileInf
         nLength = _tcslen(szPatchName) + 1;
 
         // Copy the file name
-        memcpy(szFileInfo, szPatchName, nLength * sizeof(TCHAR));
+        memcpy(szFileInfo, szPatchName, nLength * sizeof(char));
         szFileInfo += nLength;
     }
 
@@ -194,7 +194,7 @@ bool WINAPI SFileGetFileInfo(
     LPDWORD pcbLengthNeeded)
 {
     MPQ_SIGNATURE_INFO SignatureInfo;
-    const TCHAR * szSrcFileInfo;
+    const char * szSrcFileInfo;
     TMPQArchive * ha = NULL;
     TFileEntry * pFileEntry = NULL;
     TMPQHeader * pHeader = NULL;
@@ -224,7 +224,7 @@ bool WINAPI SFileGetFileInfo(
     {
         case SFileMpqFileName:
             szSrcFileInfo = FileStream_GetFileName(ha->pStream);
-            cbSrcFileInfo = (DWORD)((_tcslen(szSrcFileInfo) + 1) * sizeof(TCHAR));
+            cbSrcFileInfo = (DWORD)((_tcslen(szSrcFileInfo) + 1) * sizeof(char));
             return GetInfo(pvFileInfo, cbFileInfo, szSrcFileInfo, cbSrcFileInfo, pcbLengthNeeded);
 
         case SFileMpqStreamBitmap:
@@ -595,7 +595,7 @@ bool WINAPI SFileGetFileName(HANDLE hFile, char * szFileName)
         {
             if(szFileName != NULL)
             {
-                const TCHAR * szStreamName = FileStream_GetFileName(hf->pStream);
+                const char * szStreamName = FileStream_GetFileName(hf->pStream);
                 StringCopy(szFileName, MAX_PATH, szStreamName);
             }
             dwErrCode = ERROR_SUCCESS;

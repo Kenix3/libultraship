@@ -223,7 +223,7 @@ LCID WINAPI SFileSetLocale(LCID lcFileLocale)
 //   phMpq      - Pointer to store open archive handle
 
 bool WINAPI SFileOpenArchive(
-    const TCHAR * szMpqName,
+    const char * szMpqName,
     DWORD dwPriority,
     DWORD dwFlags,
     HANDLE * phMpq)

@@ -69,7 +69,7 @@ static DWORD WriteNakedMPQHeader(TMPQArchive * ha)
 //-----------------------------------------------------------------------------
 // Creates a new MPQ archive.
 
-bool WINAPI SFileCreateArchive(const TCHAR * szMpqName, DWORD dwCreateFlags, DWORD dwMaxFileCount, HANDLE * phMpq)
+bool WINAPI SFileCreateArchive(const char * szMpqName, DWORD dwCreateFlags, DWORD dwMaxFileCount, HANDLE * phMpq)
 {
     SFILE_CREATE_MPQ CreateInfo;
 
@@ -98,7 +98,7 @@ bool WINAPI SFileCreateArchive(const TCHAR * szMpqName, DWORD dwCreateFlags, DWO
     return SFileCreateArchive2(szMpqName, &CreateInfo, phMpq);
 }
 
-bool WINAPI SFileCreateArchive2(const TCHAR * szMpqName, PSFILE_CREATE_MPQ pCreateInfo, HANDLE * phMpq)
+bool WINAPI SFileCreateArchive2(const char * szMpqName, PSFILE_CREATE_MPQ pCreateInfo, HANDLE * phMpq)
 {
     TFileStream * pStream = NULL;           // File stream
     TMPQArchive * ha = NULL;                // MPQ archive handle

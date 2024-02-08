@@ -66,22 +66,22 @@ typedef struct _LINE_INFO
 
 #ifdef STORMLIB_WINDOWS
 #define WORK_PATH_ROOT _T("\\Multimedia\\MPQs")
-static const TCHAR szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (TCHAR)0x65B0, (TCHAR)0x5EFA, (TCHAR)0x6587, (TCHAR)0x4EF6, (TCHAR)0x5939, 0 };
+static const char szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (char)0x65B0, (char)0x5EFA, (char)0x6587, (char)0x4EF6, (char)0x5939, 0 };
 #endif
 
 #ifdef STORMLIB_LINUX
 #define WORK_PATH_ROOT "/media/ladik/CascStorages/MPQs"
-static const TCHAR szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (TCHAR)0xe6, (TCHAR)0x96, (TCHAR)0xB0, (TCHAR)0xE5, (TCHAR)0xBB, (TCHAR)0xBA, (TCHAR)0xE6, (TCHAR)0x96, (TCHAR)0x87, (TCHAR)0xE4, (TCHAR)0xBB, (TCHAR)0xB6, (TCHAR)0xE5, (TCHAR)0xA4, (TCHAR)0xB9, 0 };
+static const char szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (char)0xe6, (char)0x96, (char)0xB0, (char)0xE5, (char)0xBB, (char)0xBA, (char)0xE6, (char)0x96, (char)0x87, (char)0xE4, (char)0xBB, (char)0xB6, (char)0xE5, (char)0xA4, (char)0xB9, 0 };
 #endif
 
 #ifdef STORMLIB_MAC
 #define WORK_PATH_ROOT "/home/sam/StormLib/test"
-static const TCHAR szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (TCHAR)0xe6, (TCHAR)0x96, (TCHAR)0xB0, (TCHAR)0xE5, (TCHAR)0xBB, (TCHAR)0xBA, (TCHAR)0xE6, (TCHAR)0x96, (TCHAR)0x87, (TCHAR)0xE4, (TCHAR)0xBB, (TCHAR)0xB6, (TCHAR)0xE5, (TCHAR)0xA4, (TCHAR)0xB9, 0 };
+static const char szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (char)0xe6, (char)0x96, (char)0xB0, (char)0xE5, (char)0xBB, (char)0xBA, (char)0xE6, (char)0x96, (char)0x87, (char)0xE4, (char)0xBB, (char)0xB6, (char)0xE5, (char)0xA4, (char)0xB9, 0 };
 #endif
 
 #ifdef STORMLIB_HAIKU
 #define WORK_PATH_ROOT "~/StormLib/test"
-static const TCHAR szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (TCHAR)0xe6, (TCHAR)0x96, (TCHAR)0xB0, (TCHAR)0xE5, (TCHAR)0xBB, (TCHAR)0xBA, (TCHAR)0xE6, (TCHAR)0x96, (TCHAR)0x87, (TCHAR)0xE4, (TCHAR)0xBB, (TCHAR)0xB6, (TCHAR)0xE5, (TCHAR)0xA4, (TCHAR)0xB9, 0 };
+static const char szListFileDir[] = { '1', '9', '9', '5', ' ', '-', ' ', 'T', 'e', 's', 't', ' ', 'M', 'P', 'Q', 's', '\\', 'l', 'i', 's', 't', 'f', 'i', 'l', 'e', 's', '-', (char)0xe6, (char)0x96, (char)0xB0, (char)0xE5, (char)0xBB, (char)0xBA, (char)0xE6, (char)0x96, (char)0x87, (char)0xE4, (char)0xBB, (char)0xB6, (char)0xE5, (char)0xA4, (char)0xB9, 0 };
 #endif
 
 // Global for the work MPQ
@@ -301,15 +301,15 @@ static LPCTSTR PatchList_HS_6898_enGB[] =
 // Definition of the path separator
 #ifdef STORMLIB_WINDOWS
 static LPCTSTR g_szPathSeparator = _T("\\");
-static const TCHAR PATH_SEPARATOR = _T('\\');       // Path separator for Windows platforms
+static const char PATH_SEPARATOR = _T('\\');       // Path separator for Windows platforms
 #else
 static LPCSTR g_szPathSeparator = "/";
-static const TCHAR PATH_SEPARATOR = '/';            // Path separator for Non-Windows platforms
+static const char PATH_SEPARATOR = '/';            // Path separator for Non-Windows platforms
 #endif
 
 // This must be the directory where our test MPQs are stored.
 // We also expect a subdirectory named
-static TCHAR szMpqDirectory[MAX_PATH+1];
+static char szMpqDirectory[MAX_PATH+1];
 size_t cchMpqDirectory = 0;
 
 template <typename XCHAR>
@@ -496,19 +496,19 @@ static void CopyPathPart(char * szBuffer, LPCSTR szPath)
 
 static bool CopyStringAndVerifyConversion(
     LPCTSTR szFoundFile,
-    TCHAR * szBufferT,
+    char * szBufferT,
     char * szBufferA,
     size_t cchMaxChars)
 {
-    // Convert the TCHAR name to ANSI name
+    // Convert the char name to ANSI name
     StringCopy(szBufferA, cchMaxChars, szFoundFile);
     StringCopy(szBufferT, cchMaxChars, szBufferA);
 
-    // Compare both TCHAR strings
+    // Compare both char strings
     return (_tcsicmp(szBufferT, szFoundFile) == 0) ? true : false;
 }
 
-static size_t ConvertSha1ToText(const unsigned char * sha1_digest, TCHAR * szSha1Text)
+static size_t ConvertSha1ToText(const unsigned char * sha1_digest, char * szSha1Text)
 {
     LPCSTR szTable = "0123456789abcdef";
 
@@ -523,9 +523,9 @@ static size_t ConvertSha1ToText(const unsigned char * sha1_digest, TCHAR * szSha
     return (SHA1_DIGEST_SIZE * 2);
 }
 
-static void CreateFullPathName(TCHAR * szBuffer, size_t cchBuffer, LPCTSTR szSubDir, LPCTSTR szNamePart1, LPCTSTR szNamePart2 = NULL)
+static void CreateFullPathName(char * szBuffer, size_t cchBuffer, LPCTSTR szSubDir, LPCTSTR szNamePart1, LPCTSTR szNamePart2 = NULL)
 {
-    TCHAR * szSaveBuffer = szBuffer;
+    char * szSaveBuffer = szBuffer;
     size_t nPrefixLength = 0;
     size_t nLength;
     DWORD dwProvider = 0;
@@ -606,14 +606,14 @@ static void CreateFullPathName(TCHAR * szBuffer, size_t cchBuffer, LPCTSTR szSub
 #if 0
 static void CreateFullPathName(char * szBuffer, size_t cchBuffer, LPCTSTR szSubDir, LPCTSTR szNamePart1, LPCTSTR szNamePart2 = NULL)
 {
-    TCHAR szFullPathT[MAX_PATH];
+    char szFullPathT[MAX_PATH];
 
     CreateFullPathName(szFullPathT, _countof(szFullPathT), szSubDir, szNamePart1, szNamePart2);
     StringCopy(szBuffer, cchBuffer, szFullPathT);
 }
 #endif
 
-static DWORD CalculateFileSha1(TLogHelper * pLogger, LPCTSTR szFullPath, TCHAR * szFileSha1)
+static DWORD CalculateFileSha1(TLogHelper * pLogger, LPCTSTR szFullPath, char * szFileSha1)
 {
     TFileStream * pStream;
     unsigned char sha1_digest[SHA1_DIGEST_SIZE];
@@ -692,7 +692,7 @@ static HANDLE InitDirectorySearch(LPCTSTR szDirectory)
 
     WIN32_FIND_DATA wf;
     HANDLE hFind;
-    TCHAR szSearchMask[MAX_PATH];
+    char szSearchMask[MAX_PATH];
 
     // Construct the directory mask
     _stprintf(szSearchMask, _T("%s\\*"), szDirectory);
@@ -711,12 +711,12 @@ static HANDLE InitDirectorySearch(LPCTSTR szDirectory)
 #endif
 }
 
-static bool SearchDirectory(HANDLE hFind, TCHAR * szDirEntry, size_t cchDirEntry, bool & IsDirectory)
+static bool SearchDirectory(HANDLE hFind, char * szDirEntry, size_t cchDirEntry, bool & IsDirectory)
 {
 #ifdef STORMLIB_WINDOWS
 
     WIN32_FIND_DATA wf;
-    TCHAR szDirEntryT[MAX_PATH];
+    char szDirEntryT[MAX_PATH];
     char szDirEntryA[MAX_PATH];
 
     __SearchNextEntry:
@@ -766,12 +766,12 @@ static void FreeDirectorySearch(HANDLE hFind)
 #endif
 }
 
-static DWORD FindFilesInternal(FIND_FILE_CALLBACK pfnTest, TCHAR * szDirectory)
+static DWORD FindFilesInternal(FIND_FILE_CALLBACK pfnTest, char * szDirectory)
 {
-    TCHAR * szPlainName;
+    char * szPlainName;
     HANDLE hFind;
     size_t nLength;
-    TCHAR szDirEntry[MAX_PATH];
+    char szDirEntry[MAX_PATH];
     bool IsDirectory = false;
     DWORD dwErrCode = ERROR_SUCCESS;
 
@@ -819,17 +819,17 @@ static DWORD FindFilesInternal(FIND_FILE_CALLBACK pfnTest, TCHAR * szDirectory)
 
 static DWORD FindFiles(FIND_FILE_CALLBACK pfnFindFile, LPCTSTR szSubDirectory)
 {
-    TCHAR szWorkBuff[MAX_PATH];
+    char szWorkBuff[MAX_PATH];
 
     CreateFullPathName(szWorkBuff, _countof(szWorkBuff), szSubDirectory, NULL);
     return FindFilesInternal(pfnFindFile, szWorkBuff);
 }
 
-static DWORD InitializeMpqDirectory(TCHAR * argv[], int argc)
+static DWORD InitializeMpqDirectory(char * argv[], int argc)
 {
     TLogHelper Logger("InitWorkDir");
     TFileStream * pStream;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     LPCTSTR szWhereFrom = _T("default");
     LPCTSTR szDirName = WORK_PATH_ROOT;
 
@@ -884,9 +884,9 @@ static DWORD InitializeMpqDirectory(TCHAR * argv[], int argc)
 
 static DWORD GetFilePatchCount(TLogHelper * pLogger, HANDLE hMpq, LPCSTR szFileName)
 {
-    TCHAR * szPatchName;
+    char * szPatchName;
     HANDLE hFile;
-    TCHAR szPatchChain[0x400];
+    char szPatchChain[0x400];
     DWORD dwErrCode = ERROR_SUCCESS;
     int nPatchCount = 0;
 
@@ -961,10 +961,10 @@ static DWORD VerifyFilePatchCount(TLogHelper * pLogger, HANDLE hMpq, LPCSTR szFi
     return ERROR_SUCCESS;
 }
 
-static DWORD CreateEmptyFile(TLogHelper * pLogger, LPCTSTR szPlainName, ULONGLONG FileSize, TCHAR * szBuffer)
+static DWORD CreateEmptyFile(TLogHelper * pLogger, LPCTSTR szPlainName, ULONGLONG FileSize, char * szBuffer)
 {
     TFileStream * pStream;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
 
     // Notify the user
     pLogger->PrintProgress(_T("Creating empty file %s ..."), szPlainName);
@@ -1152,7 +1152,7 @@ static DWORD CreateFileCopy(
     TLogHelper * pLogger,
     LPCTSTR szPlainName,
     LPCTSTR szFileCopy,
-    TCHAR * szBuffer = NULL,
+    char * szBuffer = NULL,
     size_t cchBuffer = 0,
     ULONGLONG PreMpqDataSize = 0,
     ULONGLONG UserDataSize = 0)
@@ -1161,8 +1161,8 @@ static DWORD CreateFileCopy(
     TFileStream * pStream2;             // Target file
     ULONGLONG ByteOffset = 0;
     ULONGLONG FileSize = 0;
-    TCHAR szFileName1[MAX_PATH];
-    TCHAR szFileName2[MAX_PATH];
+    char szFileName1[MAX_PATH];
+    char szFileName2[MAX_PATH];
     DWORD dwErrCode = ERROR_SUCCESS;
 
     // Notify the user
@@ -1232,13 +1232,13 @@ static DWORD CreateFileCopy(
 
 static DWORD CreateMasterAndMirrorPaths(
     TLogHelper * pLogger,
-    TCHAR * szMirrorPath,
-    TCHAR * szMasterPath,
+    char * szMirrorPath,
+    char * szMasterPath,
     LPCTSTR szMirrorName,
     LPCTSTR szMasterName,
     bool bCopyMirrorFile)
 {
-    TCHAR szCopyPath[MAX_PATH];
+    char szCopyPath[MAX_PATH];
     DWORD dwErrCode = ERROR_SUCCESS;
 
     // Always delete the mirror file
@@ -1636,7 +1636,7 @@ static DWORD SearchArchive(
     HANDLE hFind;
     DWORD dwFileCount = 0;
     hash_state md5state;
-    TCHAR szListFile[MAX_PATH] = _T("");
+    char szListFile[MAX_PATH] = _T("");
     char szMostPatched[MAX_PATH] = "";
     DWORD dwErrCode = ERROR_SUCCESS;
     bool bIgnoreOpedwErrCodes = (dwSearchFlags & SEARCH_FLAG_IGNORE_ERRORS) ? true : false;
@@ -1727,8 +1727,8 @@ static DWORD SearchArchive(
 static DWORD CreateNewArchive(TLogHelper * pLogger, LPCTSTR szPlainName, DWORD dwCreateFlags, DWORD dwMaxFileCount, HANDLE * phMpq)
 {
     HANDLE hMpq = NULL;
-    TCHAR szMpqName[MAX_PATH];
-    TCHAR szFullPath[MAX_PATH];
+    char szMpqName[MAX_PATH];
+    char szFullPath[MAX_PATH];
 
     // Make sure that the MPQ is deleted
     CreateFullPathName(szFullPath, _countof(szFullPath), NULL, szPlainName);
@@ -1752,8 +1752,8 @@ static DWORD CreateNewArchive_V2(TLogHelper * pLogger, LPCTSTR szPlainName, DWOR
 {
     SFILE_CREATE_MPQ CreateInfo;
     HANDLE hMpq = NULL;
-    TCHAR szMpqName[MAX_PATH];
-    TCHAR szFullPath[MAX_PATH];
+    char szMpqName[MAX_PATH];
+    char szFullPath[MAX_PATH];
 
     // Make sure that the MPQ is deleted
     CreateFullPathName(szFullPath, _countof(szFullPath), NULL, szPlainName);
@@ -1793,8 +1793,8 @@ static DWORD CreateNewArchiveU(TLogHelper * pLogger, const wchar_t * szPlainName
 {
 #if 0
     HANDLE hMpq = NULL;
-    TCHAR szMpqName[MAX_PATH+1];
-    TCHAR szFullPath[MAX_PATH];
+    char szMpqName[MAX_PATH+1];
+    char szFullPath[MAX_PATH];
 
     // Construct the full UNICODE name
     CreateFullPathName(szFullPath, _countof(szFullPath), NULL, _T("StormLibTest_"));
@@ -1869,7 +1869,7 @@ static DWORD OpenExistingArchive(TLogHelper * pLogger, LPCTSTR szFullPath, DWORD
 
 static DWORD OpenPatchArchive(TLogHelper * pLogger, HANDLE hMpq, LPCTSTR szFullPath)
 {
-    TCHAR szPatchName[MAX_PATH];
+    char szPatchName[MAX_PATH];
     DWORD dwErrCode = ERROR_SUCCESS;
 
     pLogger->PrintProgress(_T("Adding patch %s ..."), GetShortPlainName(szFullPath));
@@ -1883,7 +1883,7 @@ static DWORD OpenPatchArchive(TLogHelper * pLogger, HANDLE hMpq, LPCTSTR szFullP
 static DWORD OpenExistingArchiveWithCopy(TLogHelper * pLogger, LPCTSTR szFileName, LPCTSTR szCopyName, HANDLE * phMpq)
 {
     DWORD dwFlags = 0;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     DWORD dwErrCode = ERROR_SUCCESS;
 
     // We expect MPQ directory to be already prepared by InitializeMpqDirectory
@@ -1920,7 +1920,7 @@ static DWORD OpenExistingArchiveWithCopy(TLogHelper * pLogger, LPCTSTR szFileNam
 static DWORD OpenPatchedArchive(TLogHelper * pLogger, HANDLE * phMpq, LPCTSTR PatchList[])
 {
     HANDLE hMpq = NULL;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     DWORD dwErrCode = ERROR_SUCCESS;
 
     // The first file is expected to be valid
@@ -2005,7 +2005,7 @@ static DWORD AddLocalFileToMpq(
     DWORD dwCompression = 0,
     bool bMustSucceed = false)
 {
-    TCHAR szFileName[MAX_PATH];
+    char szFileName[MAX_PATH];
     DWORD dwVerifyResult;
 
     // Notify the user
@@ -2210,7 +2210,7 @@ static DWORD TestOnLocalListFile(LPCTSTR szPlainName)
     HANDLE hFind;
     DWORD dwFileSizeHi = 0;
     DWORD dwFileSizeLo = 0;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     char szFileName1[MAX_PATH];
     char szFileName2[MAX_PATH];
     int nFileCount = 0;
@@ -2282,8 +2282,8 @@ static DWORD TestReadFile_MasterMirror(LPCTSTR szMirrorName, LPCTSTR szMasterNam
     TFileStream * pStream1;                     // Master file
     TFileStream * pStream2;                     // Mirror file
     TLogHelper Logger("OpenMirrorFile", szMirrorName);
-    TCHAR szMirrorPath[MAX_PATH + MAX_PATH];
-    TCHAR szMasterPath[MAX_PATH];
+    char szMirrorPath[MAX_PATH + MAX_PATH];
+    char szMasterPath[MAX_PATH];
     DWORD dwProvider = 0;
     int nIterations = 0x10000;
     DWORD dwErrCode;
@@ -2329,7 +2329,7 @@ static DWORD TestFileStreamOperations(LPCTSTR szPlainName, DWORD dwStreamFlags)
     TLogHelper Logger("FileStreamTest", szPlainName);
     ULONGLONG ByteOffset;
     ULONGLONG FileSize = 0;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     DWORD dwRequiredFlags = 0;
     BYTE Buffer[0x10];
     DWORD dwErrCode = ERROR_SUCCESS;
@@ -2515,7 +2515,7 @@ static DWORD TestArchive(
     DWORD dwCrc32 = 0;
     DWORD dwExpectedFileCount = 0;
     DWORD dwMpqFlags = 0;
-    TCHAR szFullName[MAX_PATH];
+    char szFullName[MAX_PATH];
     LCID lcFileLocale = 0;
     BYTE ObtainedMD5[MD5_DIGEST_SIZE] = {0};
     bool bIgnoreOpedwErrCodes = false;
@@ -2666,7 +2666,7 @@ static DWORD TestOpenArchive_WillFail(LPCTSTR szPlainName)
 {
     TLogHelper Logger("FailMpqTest", szPlainName);
     HANDLE hMpq = NULL;
-    TCHAR szMpqName[MAX_PATH];
+    char szMpqName[MAX_PATH];
     char szFullPath[MAX_PATH];
 
     // Create the full path name for the archive
@@ -2687,7 +2687,7 @@ static DWORD TestOpenArchive_Corrupt(LPCTSTR szPlainName)
 {
     TLogHelper Logger("OpenCorruptMpqTest", szPlainName);
     HANDLE hMpq = NULL;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
 
     // Copy the archive so we won't fuck up the original one
     CreateFullPathName(szFullPath, _countof(szFullPath), szMpqSubDir, szPlainName);
@@ -2753,7 +2753,7 @@ static DWORD TestOpenArchive_ReadOnly(LPCTSTR szPlainName, bool bReadOnly)
     TLogHelper Logger("ReadOnlyTest", szPlainName);
     LPCTSTR szCopyName;
     HANDLE hMpq = NULL;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     DWORD dwFlags = bReadOnly ? MPQ_OPEN_READ_ONLY : 0;;
     int nExpectedError;
     DWORD dwErrCode;
@@ -2877,8 +2877,8 @@ static DWORD TestOpenArchive_MasterMirror(LPCTSTR szMirrorName, LPCTSTR szMaster
     HANDLE hFile = NULL;
     HANDLE hMpq = NULL;
     DWORD dwVerifyResult;
-    TCHAR szMirrorPath[MAX_PATH + MAX_PATH];   // Combined name
-    TCHAR szMasterPath[MAX_PATH];              // Original (server) name
+    char szMirrorPath[MAX_PATH + MAX_PATH];   // Combined name
+    char szMasterPath[MAX_PATH];              // Original (server) name
     DWORD dwErrCode;
 
     // Create both paths
@@ -3081,7 +3081,7 @@ static DWORD TestOpenArchive_CompactArchive(LPCTSTR szPlainName, LPCTSTR szCopyN
 	HANDLE hMpq;
     DWORD dwFileCount1 = 0;
     DWORD dwFileCount2 = 0;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     BYTE FileHash1[MD5_DIGEST_SIZE];
     BYTE FileHash2[MD5_DIGEST_SIZE];
     DWORD dwErrCode;
@@ -3156,9 +3156,9 @@ static DWORD TestOpenArchive_CompactArchive(LPCTSTR szPlainName, LPCTSTR szCopyN
 static DWORD ForEachFile_VerifyFileChecksum(LPCTSTR szFullPath)
 {
     TFileData * pFileData;
-    TCHAR * szExtension;
-    TCHAR szShaFileName[MAX_PATH+1];
-    TCHAR szSha1Text[0x40];
+    char * szExtension;
+    char szShaFileName[MAX_PATH+1];
+    char szSha1Text[0x40];
     char szSha1TextA[0x40];
     DWORD dwErrCode = ERROR_SUCCESS;
 
@@ -3444,7 +3444,7 @@ static DWORD TestCreateArchive_TestGaps(LPCTSTR szPlainName)
     ULONGLONG ByteOffset2 = 0xEEEEEEEE;
     HANDLE hMpq = NULL;
     HANDLE hFile = NULL;
-    TCHAR szFullPath[MAX_PATH];
+    char szFullPath[MAX_PATH];
     DWORD dwErrCode = ERROR_SUCCESS;
 
     // Create new MPQ
@@ -3843,9 +3843,9 @@ static DWORD TestCreateArchive_FileFlagTest(LPCTSTR szPlainName)
 {
     TLogHelper Logger("FileFlagTest", szPlainName);
     HANDLE hMpq = NULL;                 // Handle of created archive
-    TCHAR szFileName1[MAX_PATH];
-    TCHAR szFileName2[MAX_PATH];
-    TCHAR szFullPath[MAX_PATH];
+    char szFileName1[MAX_PATH];
+    char szFileName2[MAX_PATH];
+    char szFullPath[MAX_PATH];
     LPCSTR szMiddleFile = "FileTest_10.exe";
     LCID LocaleIDs[] = {0x000, 0x405, 0x406, 0x407};
     char szArchivedName[MAX_PATH];
@@ -4000,7 +4000,7 @@ static DWORD TestCreateArchive_WaveCompressionsTest(LPCTSTR szPlainName, LPCTSTR
 {
     TLogHelper Logger("CompressionsTest", szPlainName);
     HANDLE hMpq = NULL;                 // Handle of created archive
-    TCHAR szFileName[MAX_PATH];          // Source file to be added
+    char szFileName[MAX_PATH];          // Source file to be added
     char szArchivedName[MAX_PATH];
     DWORD dwCmprCount = sizeof(WaveCompressions) / sizeof(DWORD);
     DWORD dwAddedFiles = 0;
@@ -4152,7 +4152,7 @@ static DWORD TestCreateArchive_BigArchive(LPCTSTR szPlainName)
 {
     TLogHelper Logger("BigMpqTest", szPlainName);
     HANDLE hMpq = NULL;                 // Handle of created archive
-    TCHAR szLocalFileName[MAX_PATH];
+    char szLocalFileName[MAX_PATH];
     char szArchivedName[MAX_PATH];
     DWORD dwMaxFileCount = 0x20;
     DWORD dwAddedCount = 0;
@@ -4207,8 +4207,8 @@ static DWORD TestModifyArchive_ReplaceFile(LPCTSTR szMpqPlainName, LPCTSTR szFil
 {
     TLogHelper Logger("ModifyTest", szMpqPlainName);
     HANDLE hMpq = NULL;
-    TCHAR szFileFullName[MAX_PATH];
-    TCHAR szMpqFullName[MAX_PATH];
+    char szFileFullName[MAX_PATH];
+    char szMpqFullName[MAX_PATH];
     char szArchivedName[MAX_PATH];
     size_t nOffset = 0;
     DWORD dwErrCode;
@@ -4424,7 +4424,7 @@ static const TEST_INFO Patched_Mpqs[] =
 //-----------------------------------------------------------------------------
 // Main
 
-int _tmain(int argc, TCHAR * argv[])
+int _tmain(int argc, char * argv[])
 {
     DWORD dwErrCode = ERROR_SUCCESS;
 

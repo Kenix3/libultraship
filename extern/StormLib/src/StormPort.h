@@ -341,7 +341,7 @@
   typedef unsigned long long ULONGLONG;
   typedef void         * HANDLE;
   typedef void         * LPOVERLAPPED; // Unsupported on Linux and Mac
-  typedef char           TCHAR;
+  typedef char           char;
   typedef unsigned int   LCID;
   typedef LONG         * PLONG;
   typedef DWORD        * LPDWORD;

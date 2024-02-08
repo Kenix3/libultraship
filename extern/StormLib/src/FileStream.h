@@ -24,7 +24,7 @@ typedef bool (*STREAM_CREATE)(
 
 typedef bool (*STREAM_OPEN)(
     struct TFileStream * pStream,       // Pointer to an unopened stream
-    const TCHAR * szFileName,           // Pointer to file name to be open
+    const char * szFileName,           // Pointer to file name to be open
     DWORD dwStreamFlags                 // Stream flags
     );
 
@@ -179,7 +179,7 @@ struct TFileStream
 
     // Stream provider data
     TFileStream * pMaster;                  // Master stream (e.g. MPQ on a web server)
-    TCHAR * szFileName;                     // File name (self-relative pointer)
+    char * szFileName;                     // File name (self-relative pointer)
 
     ULONGLONG StreamSize;                   // Stream size (can be less than file size)
     ULONGLONG StreamPos;                    // Stream position

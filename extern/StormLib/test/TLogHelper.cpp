@@ -16,17 +16,17 @@ class TLogHelper
 {
     public:
 
-    TLogHelper(const char * szNewMainTitle = NULL, const TCHAR * szNewSubTitle1 = NULL, const TCHAR * szNewSubTitle2 = NULL);
+    TLogHelper(const char * szNewMainTitle = NULL, const char * szNewSubTitle1 = NULL, const char * szNewSubTitle2 = NULL);
     ~TLogHelper();
 
 #if 0
-    // TCHAR-based functions. They are only needed on UNICODE builds.
-    // On ANSI builds is TCHAR = char, so we don't need them at all
-    int  PrintWithClreol(const TCHAR * szFormat, va_list argList, bool bPrintPrefix, bool bPrintLastError, bool bPrintEndOfLine);
-    void PrintProgress(const TCHAR * szFormat, ...);
-    void PrintMessage(const TCHAR * szFormat, ...);
-    int  PrintErrorVa(const TCHAR * szFormat, ...);
-    int  PrintError(const TCHAR * szFormat, const TCHAR * szFileName = NULL);
+    // char-based functions. They are only needed on UNICODE builds.
+    // On ANSI builds is char = char, so we don't need them at all
+    int  PrintWithClreol(const char * szFormat, va_list argList, bool bPrintPrefix, bool bPrintLastError, bool bPrintEndOfLine);
+    void PrintProgress(const char * szFormat, ...);
+    void PrintMessage(const char * szFormat, ...);
+    int  PrintErrorVa(const char * szFormat, ...);
+    int  PrintError(const char * szFormat, const char * szFileName = NULL);
 #endif  // defined(UNICODE) || defined(UNICODE)
 
     // ANSI functions
@@ -47,14 +47,14 @@ class TLogHelper
     protected:
 
 #if 0
-    TCHAR * CopyFormatCharacter(TCHAR * szBuffer, const TCHAR *& szFormat);
+    char * CopyFormatCharacter(char * szBuffer, const char *& szFormat);
 #endif
     char * CopyFormatCharacter(char * szBuffer, const char *& szFormat);
     int  GetConsoleWidth();
 
     const char  * szMainTitle;                      // Title of the text (usually name)
-    const TCHAR * szSubTitle1;                      // Title of the text (can be name of the tested file)
-    const TCHAR * szSubTitle2;                      // Title of the text (can be name of the tested file)
+    const char * szSubTitle1;                      // Title of the text (can be name of the tested file)
+    const char * szSubTitle2;                      // Title of the text (can be name of the tested file)
     size_t nTextLength;                             // Length of the previous progress message
     bool bMessagePrinted;
 };
@@ -78,9 +78,9 @@ class TLogHelper
 // Constructor and destructor
 
 
-TLogHelper::TLogHelper(const char * szNewMainTitle, const TCHAR * szNewSubTitle1, const TCHAR * szNewSubTitle2)
+TLogHelper::TLogHelper(const char * szNewMainTitle, const char * szNewSubTitle1, const char * szNewSubTitle2)
 {
-    TCHAR szMainTitleT[0x80];
+    char szMainTitleT[0x80];
 
     UserString = "";
     UserCount = 1;
@@ -126,15 +126,15 @@ TLogHelper::~TLogHelper()
 }
 
 //-----------------------------------------------------------------------------
-// TCHAR-based functions. They are only needed on UNICODE builds.
-// On ANSI builds is TCHAR = char, so we don't need them at all
+// char-based functions. They are only needed on UNICODE builds.
+// On ANSI builds is char = char, so we don't need them at all
 
 #if 0
-int TLogHelper::PrintWithClreol(const TCHAR * szFormat, va_list argList, bool bPrintPrefix, bool bPrintLastError, bool bPrintEndOfLine)
+int TLogHelper::PrintWithClreol(const char * szFormat, va_list argList, bool bPrintPrefix, bool bPrintLastError, bool bPrintEndOfLine)
 {
-    TCHAR szFormatBuff[0x200];
-    TCHAR szMessage[0x200];
-    TCHAR * szBuffer = szFormatBuff;
+    char szFormatBuff[0x200];
+    char szMessage[0x200];
+    char * szBuffer = szFormatBuff;
     int nRemainingWidth;
     int nConsoleWidth = GetConsoleWidth();
     int nLength = 0;
@@ -198,7 +198,7 @@ int TLogHelper::PrintWithClreol(const TCHAR * szFormat, va_list argList, bool bP
     return nError;
 }
 
-void TLogHelper::PrintProgress(const TCHAR * szFormat, ...)
+void TLogHelper::PrintProgress(const char * szFormat, ...)
 {
     va_list argList;
 
@@ -207,7 +207,7 @@ void TLogHelper::PrintProgress(const TCHAR * szFormat, ...)
     va_end(argList);
 }
 
-void TLogHelper::PrintMessage(const TCHAR * szFormat, ...)
+void TLogHelper::PrintMessage(const char * szFormat, ...)
 {
     va_list argList;
 
@@ -216,7 +216,7 @@ void TLogHelper::PrintMessage(const TCHAR * szFormat, ...)
     va_end(argList);
 }
 
-int TLogHelper::PrintErrorVa(const TCHAR * szFormat, ...)
+int TLogHelper::PrintErrorVa(const char * szFormat, ...)
 {
     va_list argList;
     int nResult;
@@ -228,7 +228,7 @@ int TLogHelper::PrintErrorVa(const TCHAR * szFormat, ...)
     return nResult;
 }
 
-int TLogHelper::PrintError(const TCHAR * szFormat, const TCHAR * szFileName)
+int TLogHelper::PrintError(const char * szFormat, const char * szFileName)
 {
     return PrintErrorVa(szFormat, szFileName);
 }
@@ -347,7 +347,7 @@ DWORD TLogHelper::PrintVerdict(DWORD dwErrCode)
 {
     LPCTSTR szSaveSubTitle1 = szSubTitle1;
     LPCTSTR szSaveSubTitle2 = szSubTitle2;
-    TCHAR szSaveMainTitle[0x80];
+    char szSaveMainTitle[0x80];
 
     // Set both to NULL so they won't be printed
     StringCopy(szSaveMainTitle, _countof(szSaveMainTitle), szMainTitle);
@@ -384,7 +384,7 @@ DWORD TLogHelper::PrintVerdict(DWORD dwErrCode)
 // Protected functions
 
 #if 0
-TCHAR * TLogHelper::CopyFormatCharacter(TCHAR * szBuffer, const TCHAR *& szFormat)
+char * TLogHelper::CopyFormatCharacter(char * szBuffer, const char *& szFormat)
 {
 //  static LPCTSTR szStringFormat = _T("\"%s\"");
     static LPCTSTR szStringFormat = _T("%s");

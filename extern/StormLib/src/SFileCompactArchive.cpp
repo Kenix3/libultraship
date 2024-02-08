@@ -46,7 +46,7 @@ static DWORD CheckIfAllFilesKnown(TMPQArchive * ha)
     return dwErrCode;
 }
 
-static DWORD CheckIfAllKeysKnown(TMPQArchive * ha, const TCHAR * szListFile, LPDWORD pFileKeys)
+static DWORD CheckIfAllKeysKnown(TMPQArchive * ha, const char * szListFile, LPDWORD pFileKeys)
 {
     TFileEntry * pFileTableEnd = ha->pFileTable + ha->dwFileTableSize;
     TFileEntry * pFileEntry;
@@ -523,14 +523,14 @@ bool WINAPI SFileSetCompactCallback(HANDLE hMpq, SFILE_COMPACT_CALLBACK pfnCompa
     return true;
 }
 
-bool WINAPI SFileCompactArchive(HANDLE hMpq, const TCHAR * szListFile, bool /* bReserved */)
+bool WINAPI SFileCompactArchive(HANDLE hMpq, const char * szListFile, bool /* bReserved */)
 {
     TFileStream * pTempStream = NULL;
     TMPQArchive * ha = (TMPQArchive *)hMpq;
     ULONGLONG ByteOffset;
     ULONGLONG ByteCount;
     LPDWORD pFileKeys = NULL;
-    TCHAR szTempFile[MAX_PATH+1] = _T("");
+    char szTempFile[MAX_PATH+1] = _T("");
     DWORD dwErrCode = ERROR_SUCCESS;
 
     // Test the valid parameters

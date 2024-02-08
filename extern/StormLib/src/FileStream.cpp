@@ -132,7 +132,7 @@ static bool BaseFile_Create(TFileStream * pStream)
     return true;
 }
 
-static bool BaseFile_Open(TFileStream * pStream, const TCHAR * szFileName, DWORD dwStreamFlags)
+static bool BaseFile_Open(TFileStream * pStream, const char * szFileName, DWORD dwStreamFlags)
 {
 #ifdef STORMLIB_WINDOWS
     {
@@ -669,7 +669,7 @@ static void BaseMap_Init(TFileStream * pStream)
 //-----------------------------------------------------------------------------
 // Local functions - base HTTP file support
 
-static const TCHAR * BaseHttp_ExtractServerName(const TCHAR * szFileName, TCHAR * szServerName)
+static const char * BaseHttp_ExtractServerName(const char * szFileName, char * szServerName)
 {
     // Check for HTTP
     if(!_tcsnicmp(szFileName, _T("http://"), 7))
@@ -692,7 +692,7 @@ static const TCHAR * BaseHttp_ExtractServerName(const TCHAR * szFileName, TCHAR 
     return szFileName;
 }
 
-static bool BaseHttp_Open(TFileStream * pStream, const TCHAR * szFileName, DWORD dwStreamFlags)
+static bool BaseHttp_Open(TFileStream * pStream, const char * szFileName, DWORD dwStreamFlags)
 {
 #ifdef STORMLIB_WINDOWS
 
@@ -714,7 +714,7 @@ static bool BaseHttp_Open(TFileStream * pStream, const TCHAR * szFileName, DWORD
                                                 0);
     if(pStream->Base.Http.hInternet != NULL)
     {
-        TCHAR szServerName[MAX_PATH];
+        char szServerName[MAX_PATH];
         DWORD dwFlags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_NO_UI | INTERNET_FLAG_NO_CACHE_WRITE;
 
         // Initiate connection with the server
@@ -739,7 +739,7 @@ static bool BaseHttp_Open(TFileStream * pStream, const TCHAR * szFileName, DWORD
                     DWORD dwFileSize = 0;
                     DWORD dwDataSize;
                     DWORD dwIndex = 0;
-                    TCHAR StatusCode[0x08];
+                    char StatusCode[0x08];
 
                     // Check if the file succeeded to open
                     dwDataSize = sizeof(StatusCode);
@@ -816,7 +816,7 @@ static bool BaseHttp_Read(
         HINTERNET hRequest;
         LPCTSTR szFileName;
         LPBYTE pbBuffer = (LPBYTE)pvBuffer;
-        TCHAR szRangeRequest[0x80];
+        char szRangeRequest[0x80];
         DWORD dwStartOffset = (DWORD)ByteOffset;
         DWORD dwEndOffset = dwStartOffset + dwBytesToRead;
 
@@ -1090,13 +1090,13 @@ static STREAM_INIT StreamBaseInit[4] =
 // The stream structure is created as flat block, variable length
 // The file name is placed after the end of the stream structure data
 static TFileStream * AllocateFileStream(
-    const TCHAR * szFileName,
+    const char * szFileName,
     size_t StreamSize,
     DWORD dwStreamFlags)
 {
     TFileStream * pMaster = NULL;
     TFileStream * pStream;
-    const TCHAR * szNextFile = szFileName;
+    const char * szNextFile = szFileName;
     size_t FileNameSize;
 
     // Sanity check
@@ -1107,7 +1107,7 @@ static TFileStream * AllocateFileStream(
     // In that case, we use the part after "*" as master file name
     while(szNextFile[0] != 0 && szNextFile[0] != _T('*'))
         szNextFile++;
-    FileNameSize = (size_t)((szNextFile - szFileName) * sizeof(TCHAR));
+    FileNameSize = (size_t)((szNextFile - szFileName) * sizeof(char));
 
     // If we have a next file, we need to open it as master stream
     // Note that we don't care if the master stream exists or not,
@@ -1126,7 +1126,7 @@ static TFileStream * AllocateFileStream(
     }
 
     // Allocate the stream structure for the given stream type
-    pStream = (TFileStream *)STORM_ALLOC(BYTE, StreamSize + FileNameSize + sizeof(TCHAR));
+    pStream = (TFileStream *)STORM_ALLOC(BYTE, StreamSize + FileNameSize + sizeof(char));
     if(pStream != NULL)
     {
         // Zero the entire structure
@@ -1135,9 +1135,9 @@ static TFileStream * AllocateFileStream(
         pStream->dwFlags = dwStreamFlags;
 
         // Initialize the file name
-        pStream->szFileName = (TCHAR *)((BYTE *)pStream + StreamSize);
+        pStream->szFileName = (char *)((BYTE *)pStream + StreamSize);
         memcpy(pStream->szFileName, szFileName, FileNameSize);
-        pStream->szFileName[FileNameSize / sizeof(TCHAR)] = 0;
+        pStream->szFileName[FileNameSize / sizeof(char)] = 0;
 
         // Initialize the stream functions
         StreamBaseInit[dwStreamFlags & 0x03](pStream);
@@ -1440,7 +1440,7 @@ static bool FlatStream_CreateMirror(TBlockStream * pStream)
     return true;
 }
 
-static TFileStream * FlatStream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
+static TFileStream * FlatStream_Open(const char * szFileName, DWORD dwStreamFlags)
 {
     TBlockStream * pStream;
     ULONGLONG ByteOffset = 0;
@@ -1860,7 +1860,7 @@ static bool PartStream_CreateMirror(TBlockStream * pStream)
 }
 
 
-static TFileStream * PartStream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
+static TFileStream * PartStream_Open(const char * szFileName, DWORD dwStreamFlags)
 {
     TBlockStream * pStream;
 
@@ -2177,7 +2177,7 @@ static bool MpqeStream_BlockRead(
     return true;
 }
 
-static TFileStream * MpqeStream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
+static TFileStream * MpqeStream_Open(const char * szFileName, DWORD dwStreamFlags)
 {
     TEncryptedStream * pStream;
 
@@ -2306,14 +2306,14 @@ static void Block4Stream_Close(TBlockStream * pStream)
     return;
 }
 
-static TFileStream * Block4Stream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
+static TFileStream * Block4Stream_Open(const char * szFileName, DWORD dwStreamFlags)
 {
     TBaseProviderData * NewBaseArray = NULL;
     ULONGLONG RemainderBlock;
     ULONGLONG BlockCount;
     ULONGLONG FileSize;
     TBlockStream * pStream;
-    TCHAR * szNameBuff;
+    char * szNameBuff;
     size_t nNameLength;
     DWORD dwBaseFiles = 0;
     DWORD dwBaseFlags;
@@ -2340,7 +2340,7 @@ static TFileStream * Block4Stream_Open(const TCHAR * szFileName, DWORD dwStreamF
     pStream->BlockRead     = (BLOCK_READ)Block4Stream_BlockRead;
 
     // Allocate work space for numeric names
-    szNameBuff = STORM_ALLOC(TCHAR, nNameLength + 4);
+    szNameBuff = STORM_ALLOC(char, nNameLength + 4);
     if(szNameBuff != NULL)
     {
         // Set the base flags
@@ -2441,7 +2441,7 @@ static TFileStream * Block4Stream_Open(const TCHAR * szFileName, DWORD dwStreamF
  */
 
 TFileStream * FileStream_CreateFile(
-    const TCHAR * szFileName,
+    const char * szFileName,
     DWORD dwStreamFlags)
 {
     TFileStream * pStream;
@@ -2497,7 +2497,7 @@ TFileStream * FileStream_CreateFile(
  */
 
 TFileStream * FileStream_OpenFile(
-    const TCHAR * szFileName,
+    const char * szFileName,
     DWORD dwStreamFlags)
 {
     DWORD dwProvider = dwStreamFlags & STREAM_PROVIDERS_MASK;
@@ -2533,7 +2533,7 @@ TFileStream * FileStream_OpenFile(
  *
  * \a pStream Pointer to an open stream
  */
-const TCHAR * FileStream_GetFileName(TFileStream * pStream)
+const char * FileStream_GetFileName(TFileStream * pStream)
 {
     assert(pStream != NULL);
     return pStream->szFileName;
@@ -2546,7 +2546,7 @@ const TCHAR * FileStream_GetFileName(TFileStream * pStream)
  * \a pdwStreamProvider Pointer to a DWORD variable that receives stream provider (STREAM_PROVIDER_XXX)
  */
 
-size_t FileStream_Prefix(const TCHAR * szFileName, DWORD * pdwProvider)
+size_t FileStream_Prefix(const char * szFileName, DWORD * pdwProvider)
 {
     size_t nPrefixLength1 = 0;
     size_t nPrefixLength2 = 0;

@@ -144,7 +144,7 @@ static TListFileCache * CreateListFileCache(
 
 static TListFileCache * CreateListFileCache(
     HANDLE hMpq,
-    const TCHAR * szListFile,
+    const char * szListFile,
     const char * szWildCard,
     DWORD dwMaxSize,
     DWORD dwFlags)
@@ -532,7 +532,7 @@ DWORD SListFileSaveToMpq(TMPQArchive * ha)
 static DWORD SFileAddArbitraryListFile(
     TMPQArchive * ha,
     HANDLE hMpq,
-    const TCHAR * szListFile,
+    const char * szListFile,
     DWORD dwMaxSize)
 {
     TListFileCache * pCache = NULL;
@@ -637,7 +637,7 @@ static bool DoListFileSearch(TListFileCache * pCache, SFILE_FIND_DATA * lpFindFi
 // File functions
 
 // Adds a listfile into the MPQ archive.
-DWORD WINAPI SFileAddListFile(HANDLE hMpq, const TCHAR * szListFile)
+DWORD WINAPI SFileAddListFile(HANDLE hMpq, const char * szListFile)
 {
     TMPQArchive * ha = (TMPQArchive *)hMpq;
     DWORD dwErrCode = ERROR_SUCCESS;
@@ -666,7 +666,7 @@ DWORD WINAPI SFileAddListFile(HANDLE hMpq, const TCHAR * szListFile)
 //-----------------------------------------------------------------------------
 // Enumerating files in listfile
 
-HANDLE WINAPI SListFileFindFirstFile(HANDLE hMpq, const TCHAR * szListFile, const char * szMask, SFILE_FIND_DATA * lpFindFileData)
+HANDLE WINAPI SListFileFindFirstFile(HANDLE hMpq, const char * szListFile, const char * szMask, SFILE_FIND_DATA * lpFindFileData)
 {
     TListFileCache * pCache = NULL;
 

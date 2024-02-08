@@ -72,7 +72,7 @@ static bool OpenLocalFile(const char * szFileName, HANDLE * PtrFile)
 {
     TFileStream * pStream;
     TMPQFile * hf = NULL;
-    TCHAR szFileNameT[MAX_PATH];
+    char szFileNameT[MAX_PATH];
 
     // Convert the file name to UNICODE (if needed)
     StringCopy(szFileNameT, _countof(szFileNameT), szFileName);

@@ -576,10 +576,10 @@ static bool FindPatchPrefix_WoW_13164_13623(TMPQArchive * haBase, TMPQArchive * 
 
 static bool CheckPatchPrefix_SC2_ArchiveName(
     TMPQArchive * haPatch,
-    const TCHAR * szPathPtr,
-    const TCHAR * szSeparator,
-    const TCHAR * szPathEnd,
-    const TCHAR * szExpectedString,
+    const char * szPathPtr,
+    const char * szSeparator,
+    const char * szPathEnd,
+    const char * szExpectedString,
     size_t cchExpectedString)
 {
     char szPatchPrefix[MAX_SC2_PATCH_PREFIX+0x41];
@@ -611,10 +611,10 @@ static bool CheckPatchPrefix_SC2_ArchiveName(
 
 static bool FindPatchPrefix_SC2_ArchiveName(TMPQArchive * haBase, TMPQArchive * haPatch)
 {
-    const TCHAR * szPathBegin = FileStream_GetFileName(haBase->pStream);
-    const TCHAR * szSeparator = NULL;
-    const TCHAR * szPathEnd = szPathBegin + _tcslen(szPathBegin);
-    const TCHAR * szPathPtr;
+    const char * szPathBegin = FileStream_GetFileName(haBase->pStream);
+    const char * szSeparator = NULL;
+    const char * szPathEnd = szPathBegin + _tcslen(szPathBegin);
+    const char * szPathPtr;
     int nSlashCount = 0;
     int nDotCount = 0;
 
@@ -671,7 +671,7 @@ static bool FindPatchPrefix_SC2_ArchiveName(TMPQArchive * haBase, TMPQArchive * 
 // Patch Prefix : Mods\Core.SC2Mod\Base.SC2Data
 //
 
-static bool ExtractPatchPrefixFromFile(const TCHAR * szHelperFile, char * szPatchPrefix, size_t nMaxChars, size_t * PtrLength)
+static bool ExtractPatchPrefixFromFile(const char * szHelperFile, char * szPatchPrefix, size_t nMaxChars, size_t * PtrLength)
 {
     TFileStream * pStream;
     ULONGLONG FileSize = 0;
@@ -730,7 +730,7 @@ static bool ExtractPatchPrefixFromFile(const TCHAR * szHelperFile, char * szPatc
 
 static bool FindPatchPrefix_SC2_HelperFile(TMPQArchive * haBase, TMPQArchive * haPatch)
 {
-    TCHAR szHelperFile[MAX_PATH+1];
+    char szHelperFile[MAX_PATH+1];
     char szPatchPrefix[MAX_SC2_PATCH_PREFIX+0x41];
     size_t nLength = 0;
     bool bResult = false;
@@ -1087,7 +1087,7 @@ void Patch_Finalize(TMPQPatcher * pPatcher)
 
 bool WINAPI SFileOpenPatchArchive(
     HANDLE hMpq,
-    const TCHAR * szPatchMpqName,
+    const char * szPatchMpqName,
     const char * szPatchPathPrefix,
     DWORD dwFlags)
 {

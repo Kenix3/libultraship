@@ -140,10 +140,10 @@ static bool decode_base64_key(const char * szKeyBase64, rsa_key * key)
 }
 
 static void GetPlainAnsiFileName(
-    const TCHAR * szFileName,
+    const char * szFileName,
     char * szPlainName)
 {
-    const TCHAR * szPlainNameT = GetPlainFileName(szFileName);
+    const char * szPlainNameT = GetPlainFileName(szFileName);
 
     // Convert the plain name to ANSI
     while(*szPlainNameT != 0)
