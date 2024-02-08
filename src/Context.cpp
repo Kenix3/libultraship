@@ -6,6 +6,10 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "install_config.h"
 
+#ifdef _WIN32
+#include <tchar.h>
+#endif
+
 #ifdef __APPLE__
 #include "utils/OSXFolderManager.h"
 #elif defined(__SWITCH__)
@@ -190,9 +194,15 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (otrFiles.empty()) {
-        mResourceManager = std::make_shared<ResourceManager>(mMainPath, mPatchesPath, validHashes, reservedThreadCount);
+        std::vector<std::string> paths = std::vector<std::string>();
+        paths.push_back(mMainPath);
+        paths.push_back(mPatchesPath);
+
+        mResourceManager = std::make_shared<ResourceManager>();
+        GetResourceManager()->Init(paths, validHashes, reservedThreadCount);
     } else {
-        mResourceManager = std::make_shared<ResourceManager>(otrFiles, validHashes, reservedThreadCount);
+        mResourceManager = std::make_shared<ResourceManager>();
+        GetResourceManager()->Init(otrFiles, validHashes, reservedThreadCount);
     }
 
     if (!GetResourceManager()->DidLoadSuccessfully()) {

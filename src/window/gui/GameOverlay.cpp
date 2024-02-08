@@ -2,7 +2,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "resource/File.h"
-#include "resource/Archive.h"
+#include "resource/archive/Archive.h"
 #include "resource/ResourceManager.h"
 #include "Context.h"
 #include <Utils/StringHelper.h>
@@ -17,13 +17,12 @@ GameOverlay::~GameOverlay() {
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
-    std::shared_ptr<Archive> base = Context::GetInstance()->GetResourceManager()->GetArchive();
-    std::shared_ptr<File> font = base->LoadFile(path, false);
+    std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
     if (font->IsLoaded) {
         // TODO: Nothing is ever unloading the font or this fontData array.
-        char* fontData = new char[font->Buffer.size()];
-        memcpy(fontData, font->Buffer.data(), font->Buffer.size());
-        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer.size(), fontSize);
+        char* fontData = new char[font->Buffer->size()];
+        memcpy(fontData, font->Buffer->data(), font->Buffer->size());
+        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer->size(), fontSize);
     }
 }
 

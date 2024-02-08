@@ -26,7 +26,8 @@ uint64_t ResourceGetCrcByName(const char* name) {
 }
 
 const char* ResourceGetNameByCrc(uint64_t crc) {
-    const std::string* hashStr = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->HashToString(crc);
+    const std::string* hashStr =
+        LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(crc);
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 
@@ -146,7 +147,7 @@ size_t ResourceGetTexSizeByCrc(uint64_t crc) {
 }
 
 void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
-    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
+    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
@@ -156,7 +157,7 @@ void ResourceLoadDirectoryAsync(const char* name) {
 }
 
 uint32_t ResourceHasGameVersion(uint32_t hash) {
-    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions();
+    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 

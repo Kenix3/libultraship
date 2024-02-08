@@ -238,7 +238,7 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
     asset.RendererTextureId = api->new_texture();
     asset.Width = 0;
     asset.Height = 0;
-    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer.data()), res->Buffer.size(),
+    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer->data()), res->Buffer->size(),
                                              &asset.Width, &asset.Height, nullptr, 4);
 
     if (imgData == nullptr) {

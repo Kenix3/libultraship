@@ -6,7 +6,6 @@
 #include "stdint.h"
 
 #ifdef __cplusplus
-#include "resource/Archive.h"
 #include "resource/type/Texture.h"
 #include "resource/Resource.h"
 

@@ -35,13 +35,10 @@ void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
     texture->Type = (TextureType)reader->ReadUInt32();
     texture->Width = reader->ReadUInt32();
     texture->Height = reader->ReadUInt32();
+    texture->ImageDataSize = reader->ReadUInt32();
+    texture->ImageData = new uint8_t[texture->ImageDataSize];
 
-    uint32_t dataSize = reader->ReadUInt32();
-
-    texture->ImageDataSize = dataSize;
-    texture->ImageData = new uint8_t[dataSize];
-
-    reader->Read((char*)texture->ImageData, dataSize);
+    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
 }
 
 void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
@@ -54,12 +51,9 @@ void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
     texture->Flags = reader->ReadUInt32();
     texture->HByteScale = reader->ReadFloat();
     texture->VPixelScale = reader->ReadFloat();
+    texture->ImageDataSize = reader->ReadUInt32();
+    texture->ImageData = new uint8_t[texture->ImageDataSize];
 
-    uint32_t dataSize = reader->ReadUInt32();
-
-    texture->ImageDataSize = dataSize;
-    texture->ImageData = new uint8_t[dataSize];
-
-    reader->Read((char*)texture->ImageData, dataSize);
+    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
 }
 } // namespace LUS

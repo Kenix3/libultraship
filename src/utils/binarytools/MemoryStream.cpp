@@ -6,15 +6,21 @@
 #endif
 
 LUS::MemoryStream::MemoryStream() {
-    mBuffer = std::vector<char>();
+    mBuffer = std::make_shared<std::vector<char>>();
     // mBuffer.reserve(1024 * 16);
     mBufferSize = 0;
     mBaseAddress = 0;
 }
 
 LUS::MemoryStream::MemoryStream(char* nBuffer, size_t nBufferSize) : MemoryStream() {
-    mBuffer = std::vector<char>(nBuffer, nBuffer + nBufferSize);
+    mBuffer = std::make_shared<std::vector<char>>(nBuffer, nBuffer + nBufferSize);
     mBufferSize = nBufferSize;
+    mBaseAddress = 0;
+}
+
+LUS::MemoryStream::MemoryStream(std::shared_ptr<std::vector<char>> buffer) : MemoryStream() {
+    mBuffer = buffer;
+    mBufferSize = buffer->size();
     mBaseAddress = 0;
 }
 
@@ -22,7 +28,7 @@ LUS::MemoryStream::~MemoryStream() {
 }
 
 uint64_t LUS::MemoryStream::GetLength() {
-    return mBuffer.size();
+    return mBuffer->size();
 }
 
 void LUS::MemoryStream::Seek(int32_t offset, SeekOffsetType seekType) {
@@ -38,42 +44,42 @@ void LUS::MemoryStream::Seek(int32_t offset, SeekOffsetType seekType) {
 std::unique_ptr<char[]> LUS::MemoryStream::Read(size_t length) {
     std::unique_ptr<char[]> result = std::make_unique<char[]>(length);
 
-    memcpy_s(result.get(), length, &mBuffer[mBaseAddress], length);
+    memcpy_s(result.get(), length, &mBuffer->at(mBaseAddress), length);
     mBaseAddress += length;
 
     return result;
 }
 
 void LUS::MemoryStream::Read(const char* dest, size_t length) {
-    memcpy_s((void*)dest, length, &mBuffer[mBaseAddress], length);
+    memcpy_s((void*)dest, length, &mBuffer->at(mBaseAddress), length);
     mBaseAddress += length;
 }
 
 int8_t LUS::MemoryStream::ReadByte() {
-    return mBuffer[mBaseAddress++];
+    return mBuffer->at(mBaseAddress++);
 }
 
 void LUS::MemoryStream::Write(char* srcBuffer, size_t length) {
-    if (mBaseAddress + length >= mBuffer.size()) {
-        mBuffer.resize(mBaseAddress + length);
+    if (mBaseAddress + length >= mBuffer->size()) {
+        mBuffer->resize(mBaseAddress + length);
         mBufferSize += length;
     }
 
-    memcpy_s(&mBuffer[mBaseAddress], length, srcBuffer, length);
+    memcpy_s(&((*mBuffer)[mBaseAddress]), length, srcBuffer, length);
     mBaseAddress += length;
 }
 
 void LUS::MemoryStream::WriteByte(int8_t value) {
-    if (mBaseAddress >= mBuffer.size()) {
-        mBuffer.resize(mBaseAddress + 1);
+    if (mBaseAddress >= mBuffer->size()) {
+        mBuffer->resize(mBaseAddress + 1);
         mBufferSize = mBaseAddress;
     }
 
-    mBuffer[mBaseAddress++] = value;
+    mBuffer->at(mBaseAddress++) = value;
 }
 
 std::vector<char> LUS::MemoryStream::ToVector() {
-    return mBuffer;
+    return *mBuffer;
 }
 
 void LUS::MemoryStream::Flush() {

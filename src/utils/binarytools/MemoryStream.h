@@ -9,6 +9,7 @@ class MemoryStream : public Stream {
   public:
     MemoryStream();
     MemoryStream(char* nBuffer, size_t nBufferSize);
+    MemoryStream(std::shared_ptr<std::vector<char>> buffer);
     ~MemoryStream();
 
     uint64_t GetLength() override;
@@ -28,7 +29,7 @@ class MemoryStream : public Stream {
     void Close() override;
 
   protected:
-    std::vector<char> mBuffer;
+    std::shared_ptr<std::vector<char>> mBuffer;
     std::size_t mBufferSize;
 };
 } // namespace LUS

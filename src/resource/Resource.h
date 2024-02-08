@@ -1,20 +1,9 @@
 #pragma once
 
-#include <stdint.h>
-#include "ResourceType.h"
-#include "utils/binarytools/BinaryWriter.h"
+#include "resource/File.h"
 
 namespace LUS {
 class ResourceManager;
-
-struct ResourceInitData {
-    std::string Path;
-    Endianness ByteOrder;
-    ResourceType Type;
-    int32_t ResourceVersion;
-    uint64_t Id;
-    bool IsCustom;
-};
 
 class IResource {
   public:

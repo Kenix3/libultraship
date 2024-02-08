@@ -15,15 +15,13 @@ class ResourceLoader {
     ~ResourceLoader();
 
     std::shared_ptr<IResource> LoadResource(std::shared_ptr<File> fileToLoad);
-    bool RegisterResourceFactory(ResourceType resourceType, std::string resourceTypeXML,
-                                 std::shared_ptr<ResourceFactory> factory);
+    bool RegisterResourceFactory(uint32_t resourceType, std::shared_ptr<ResourceFactory> factory);
+    uint32_t GetVersionFromString(const std::string& version);
 
   protected:
     void RegisterGlobalResourceFactories();
 
   private:
-    std::unordered_map<ResourceType, std::shared_ptr<ResourceFactory>> mFactories;
-    std::unordered_map<std::string, std::shared_ptr<ResourceFactory>> mFactoriesStr;
-    std::unordered_map<std::string, ResourceType> mFactoriesTypes;
+    std::unordered_map<uint32_t, std::shared_ptr<ResourceFactory>> mFactories;
 };
 } // namespace LUS
