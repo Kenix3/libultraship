@@ -151,7 +151,7 @@ void StringCreatePseudoFileName(char * szBuffer, size_t cchMaxChars, unsigned in
 // Utility functions (UNICODE) only exist in the ANSI version of the library
 // In ANSI builds, TCHAR = char, so we don't need these functions implemented
 
-#ifdef _UNICODE
+#if 0
 void StringCopy(TCHAR * szTarget, size_t cchTarget, const char * szSource)
 {
     if(cchTarget > 0)

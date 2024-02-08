@@ -108,7 +108,7 @@ extern "C" {
 #if defined(_MSC_VER) && !defined(STORMLIB_NO_AUTO_LINK)
   #ifndef WDK_BUILD
     #ifdef _DEBUG                                 // DEBUG VERSIONS
-      #ifndef _UNICODE
+      #if 1
         #ifdef _DLL
           #pragma comment(lib, "StormLibDAD.lib") // Debug Ansi CRT-DLL version
         #else
@@ -122,7 +122,7 @@ extern "C" {
         #endif
       #endif
     #else                                         // RELEASE VERSIONS
-      #ifndef _UNICODE
+      #if 1
         #ifdef _DLL
           #pragma comment(lib, "StormLibRAD.lib") // Release Ansi CRT-DLL version
         #else

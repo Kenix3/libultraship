@@ -603,7 +603,7 @@ static void CreateFullPathName(TCHAR * szBuffer, size_t cchBuffer, LPCTSTR szSub
     }
 }
 
-#ifdef _UNICODE
+#if 0
 static void CreateFullPathName(char * szBuffer, size_t cchBuffer, LPCTSTR szSubDir, LPCTSTR szNamePart1, LPCTSTR szNamePart2 = NULL)
 {
     TCHAR szFullPathT[MAX_PATH];
@@ -1791,7 +1791,7 @@ static DWORD CreateNewArchive_V2(TLogHelper * pLogger, LPCTSTR szPlainName, DWOR
 // Creates new archive with UNICODE name. Adds prefix to the name
 static DWORD CreateNewArchiveU(TLogHelper * pLogger, const wchar_t * szPlainName, DWORD dwCreateFlags, DWORD dwMaxFileCount)
 {
-#ifdef _UNICODE
+#if 0
     HANDLE hMpq = NULL;
     TCHAR szMpqName[MAX_PATH+1];
     TCHAR szFullPath[MAX_PATH];

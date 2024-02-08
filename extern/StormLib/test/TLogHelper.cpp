@@ -19,7 +19,7 @@ class TLogHelper
     TLogHelper(const char * szNewMainTitle = NULL, const TCHAR * szNewSubTitle1 = NULL, const TCHAR * szNewSubTitle2 = NULL);
     ~TLogHelper();
 
-#if defined(UNICODE) || defined(UNICODE)
+#if 0
     // TCHAR-based functions. They are only needed on UNICODE builds.
     // On ANSI builds is TCHAR = char, so we don't need them at all
     int  PrintWithClreol(const TCHAR * szFormat, va_list argList, bool bPrintPrefix, bool bPrintLastError, bool bPrintEndOfLine);
@@ -46,7 +46,7 @@ class TLogHelper
 
     protected:
 
-#if defined(UNICODE) || defined(UNICODE)
+#if 0
     TCHAR * CopyFormatCharacter(TCHAR * szBuffer, const TCHAR *& szFormat);
 #endif
     char * CopyFormatCharacter(char * szBuffer, const char *& szFormat);
@@ -129,7 +129,7 @@ TLogHelper::~TLogHelper()
 // TCHAR-based functions. They are only needed on UNICODE builds.
 // On ANSI builds is TCHAR = char, so we don't need them at all
 
-#if defined(UNICODE) || defined(UNICODE)
+#if 0
 int TLogHelper::PrintWithClreol(const TCHAR * szFormat, va_list argList, bool bPrintPrefix, bool bPrintLastError, bool bPrintEndOfLine)
 {
     TCHAR szFormatBuff[0x200];
@@ -383,7 +383,7 @@ DWORD TLogHelper::PrintVerdict(DWORD dwErrCode)
 //-----------------------------------------------------------------------------
 // Protected functions
 
-#ifdef _UNICODE
+#if 0
 TCHAR * TLogHelper::CopyFormatCharacter(TCHAR * szBuffer, const TCHAR *& szFormat)
 {
 //  static LPCTSTR szStringFormat = _T("\"%s\"");

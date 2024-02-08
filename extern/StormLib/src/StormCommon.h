@@ -193,7 +193,7 @@ char * StringCopy(char * szTarget, size_t cchTarget, const char * szSource);
 void StringCat(char * szTarget, size_t cchTargetMax, const char * szSource);
 void StringCreatePseudoFileName(char * szBuffer, size_t cchMaxChars, unsigned int nIndex, const char * szExtension);
 
-#ifdef _UNICODE
+#if 0
 void StringCopy(TCHAR * szTarget, size_t cchTarget, const char * szSource);
 void StringCopy(char * szTarget, size_t cchTarget, const TCHAR * szSource);
 void StringCopy(TCHAR * szTarget, size_t cchTarget, const TCHAR * szSource);
