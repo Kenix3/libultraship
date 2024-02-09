@@ -1,52 +1,49 @@
 #include "resource/factory/ArrayFactory.h"
 #include "resource/type/Array.h"
-#include "resource/readerbox/BinaryReaderBox.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> ResourceFactoryBinaryArrayV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
-    if (binaryReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryBinaryArrayV0::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = binaryReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
+    if (file->Reader == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
         return nullptr;
     }
 
-    auto array = std::make_shared<Array>(initData);
+    auto array = std::make_shared<Array>(file->InitData);
 
-    uint32_t dataSize = reader->ReadUInt32();
+    uint32_t dataSize = file->Reader->ReadUInt32();
 
-    array->ArrayType = (ArrayResourceType)reader->ReadUInt32();
-    array->ArrayCount = reader->ReadUInt32();
+    array->ArrayType = (ArrayResourceType)file->Reader->ReadUInt32();
+    array->ArrayCount = file->Reader->ReadUInt32();
 
     for (uint32_t i = 0; i < array->ArrayCount; i++) {
         if (array->ArrayType == ArrayResourceType::Vertex) {
             // OTRTODO: Implement Vertex arrays as just a vertex resource.
             Vtx data;
-            data.v.ob[0] = reader->ReadInt16();
-            data.v.ob[1] = reader->ReadInt16();
-            data.v.ob[2] = reader->ReadInt16();
-            data.v.flag = reader->ReadUInt16();
-            data.v.tc[0] = reader->ReadInt16();
-            data.v.tc[1] = reader->ReadInt16();
-            data.v.cn[0] = reader->ReadUByte();
-            data.v.cn[1] = reader->ReadUByte();
-            data.v.cn[2] = reader->ReadUByte();
-            data.v.cn[3] = reader->ReadUByte();
+            data.v.ob[0] = file->Reader->ReadInt16();
+            data.v.ob[1] = file->Reader->ReadInt16();
+            data.v.ob[2] = file->Reader->ReadInt16();
+            data.v.flag = file->Reader->ReadUInt16();
+            data.v.tc[0] = file->Reader->ReadInt16();
+            data.v.tc[1] = file->Reader->ReadInt16();
+            data.v.cn[0] = file->Reader->ReadUByte();
+            data.v.cn[1] = file->Reader->ReadUByte();
+            data.v.cn[2] = file->Reader->ReadUByte();
+            data.v.cn[3] = file->Reader->ReadUByte();
             array->Vertices.push_back(data);
         } else {
-            array->ArrayScalarType = (ScalarType)reader->ReadUInt32();
+            array->ArrayScalarType = (ScalarType)file->Reader->ReadUInt32();
 
             int iter = 1;
 
             if (array->ArrayType == ArrayResourceType::Vector) {
-                iter = reader->ReadUInt32();
+                iter = file->Reader->ReadUInt32();
             }
 
             for (int k = 0; k < iter; k++) {
@@ -54,10 +51,10 @@ std::shared_ptr<IResource> ResourceFactoryBinaryArrayV0::ReadResource(std::share
 
                 switch (array->ArrayScalarType) {
                     case ScalarType::ZSCALAR_S16:
-                        data.s16 = reader->ReadInt16();
+                        data.s16 = file->Reader->ReadInt16();
                         break;
                     case ScalarType::ZSCALAR_U16:
-                        data.u16 = reader->ReadUInt16();
+                        data.u16 = file->Reader->ReadUInt16();
                         break;
                     default:
                         // OTRTODO: IMPLEMENT OTHER TYPES!

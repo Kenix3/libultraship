@@ -87,53 +87,12 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fi
         return result;
     }
 
-    // call method to get factory based on factorykey (generate using params)
-    // make a method that takes in a string instead of an int for the type too
-    // make those protected
-
-
-
     auto factory = GetFactory(fileToLoad->InitData->Format, fileToLoad->InitData->Type, fileToLoad->InitData->ResourceVersion);
     if (factory == nullptr) {
         SPDLOG_ERROR("Failed to load resource: Factory does not exist ({} - {})", fileToLoad->InitData->Type,
                      fileToLoad->InitData->Path);
     }
 
-    // todo: figure out a better way to handle this
-    // probably just have it so ReadReasource takes in the pointer to fileToLoad directly
-    switch (fileToLoad->InitData->Format) {
-        case RESOURCE_FORMAT_BINARY:
-            factory->ReadResource(fileToLoad->InitData, std::make_shared<BinaryReaderBox>())
-        case RESOURCE_FORMAT_XML:
-
-        default:
-            SPDLOG_ERROR("invalid resource format {}", fileToLoad->InitData->Format);
-            return nullptr;
-    }
-
-    if (fileToLoad->InitData->IsXml) {
-        if (fileToLoad->XmlDocument == nullptr) {
-            SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", fileToLoad->InitData->Type,
-                         fileToLoad->InitData->Path);
-            return result;
-        }
-
-        result = factory->ReadResourceXML(fileToLoad->InitData, fileToLoad->XmlDocument->FirstChildElement());
-    } else {
-        if (fileToLoad->Reader == nullptr) {
-            SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", fileToLoad->InitData->Type,
-                         fileToLoad->InitData->Path);
-            return result;
-        }
-
-        result = factory->ReadResource(fileToLoad->InitData, fileToLoad->Reader);
-    }
-
-    if (result == nullptr) {
-        SPDLOG_ERROR("Failed to load resource of type {} \"{}\"", fileToLoad->InitData->Type,
-                     fileToLoad->InitData->Path);
-    }
-
-    return result;
+    return factory->ReadResource(fileToLoad);
 }
 } // namespace LUS

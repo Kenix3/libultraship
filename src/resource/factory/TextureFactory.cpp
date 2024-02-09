@@ -5,59 +5,55 @@
 
 namespace LUS {
 
-std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
-    if (binaryReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = binaryReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
+    if (file->Reader == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
         return nullptr;
     }
 
-    auto texture = std::make_shared<Texture>(initData);
+    auto texture = std::make_shared<Texture>(file->InitData);
 
-    texture->Type = (TextureType)reader->ReadUInt32();
-    texture->Width = reader->ReadUInt32();
-    texture->Height = reader->ReadUInt32();
-    texture->ImageDataSize = reader->ReadUInt32();
+    texture->Type = (TextureType)file->Reader->ReadUInt32();
+    texture->Width = file->Reader->ReadUInt32();
+    texture->Height = file->Reader->ReadUInt32();
+    texture->ImageDataSize = file->Reader->ReadUInt32();
     texture->ImageData = new uint8_t[texture->ImageDataSize];
 
-    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+    file->Reader->Read((char*)texture->ImageData, texture->ImageDataSize);
 
     return texture;
 }
 
-std::shared_ptr<IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
-    if (binaryReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = binaryReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
+    if (file->Reader == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
         return nullptr;
     }
 
-    auto texture = std::make_shared<Texture>(initData);
+    auto texture = std::make_shared<Texture>(file->InitData);
 
-    texture->Type = (TextureType)reader->ReadUInt32();
-    texture->Width = reader->ReadUInt32();
-    texture->Height = reader->ReadUInt32();
-    texture->Flags = reader->ReadUInt32();
-    texture->HByteScale = reader->ReadFloat();
-    texture->VPixelScale = reader->ReadFloat();
-    texture->ImageDataSize = reader->ReadUInt32();
+    texture->Type = (TextureType)file->Reader->ReadUInt32();
+    texture->Width = file->Reader->ReadUInt32();
+    texture->Height = file->Reader->ReadUInt32();
+    texture->Flags = file->Reader->ReadUInt32();
+    texture->HByteScale = file->Reader->ReadFloat();
+    texture->VPixelScale = file->Reader->ReadFloat();
+    texture->ImageDataSize = file->Reader->ReadUInt32();
     texture->ImageData = new uint8_t[texture->ImageDataSize];
 
-    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+    file->Reader->Read((char*)texture->ImageData, texture->ImageDataSize);
 
     return texture;
 }

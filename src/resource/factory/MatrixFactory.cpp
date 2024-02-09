@@ -4,25 +4,23 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> ResourceFactoryBinaryMatrixV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
-    if (binaryReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryBinaryMatrixV0::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = binaryReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
+    if (file->Reader == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
         return nullptr;
     }
 
-    auto matrix = std::make_shared<Matrix>(initData);
+    auto matrix = std::make_shared<Matrix>(file->InitData);
 
     for (size_t i = 0; i < 4; i++) {
         for (size_t j = 0; j < 4; j++) {
-            matrix->Matrx.m[i][j] = reader->ReadInt32();
+            matrix->Matrx.m[i][j] = file->Reader->ReadInt32();
         }
     }
 

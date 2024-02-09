@@ -130,30 +130,28 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
     return G_CCMUX_1;
 }
 
-std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
-    if (binaryReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = binaryReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
+    if (file->Reader == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
         return nullptr;
     }
 
-    auto displayList = std::make_shared<DisplayList>(initData);
+    auto displayList = std::make_shared<DisplayList>(file->InitData);
 
-    while (reader->GetBaseAddress() % 8 != 0) {
-        reader->ReadInt8();
+    while (file->Reader->GetBaseAddress() % 8 != 0) {
+        file->Reader->ReadInt8();
     }
 
     while (true) {
         Gfx command;
-        command.words.w0 = reader->ReadUInt32();
-        command.words.w1 = reader->ReadUInt32();
+        command.words.w0 = file->Reader->ReadUInt32();
+        command.words.w1 = file->Reader->ReadUInt32();
 
         displayList->Instructions.push_back(command);
 
@@ -162,8 +160,8 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
         // These are 128-bit commands, so read an extra 64 bits...
         if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
             opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR) {
-            command.words.w0 = reader->ReadUInt32();
-            command.words.w1 = reader->ReadUInt32();
+            command.words.w0 = file->Reader->ReadUInt32();
+            command.words.w1 = file->Reader->ReadUInt32();
 
             displayList->Instructions.push_back(command);
         }
@@ -176,23 +174,22 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
     return displayList;
 }
 
-std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto xmlReaderBox = std::dynamic_pointer_cast<XMLReaderBox>(readerBox);
-    if (xmlReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be an XMLReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_XML) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = xmlReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
-        return nullptr;
+    if (file->XmlDocument == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
+        return result;
     }
 
-    auto dl = std::make_shared<DisplayList>(initData);
 
-    auto child = reader->FirstChildElement()->FirstChildElement();
+    auto dl = std::make_shared<DisplayList>(file->InitData);
+
+    auto child = file->XmlDocument->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();

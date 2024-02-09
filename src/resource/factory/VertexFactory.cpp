@@ -5,17 +5,15 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
-    if (binaryReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = binaryReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
+    if (file->Reader == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
         return nullptr;
     }
 
@@ -42,23 +40,21 @@ std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shar
     return vertex;
 }
 
-std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<ReaderBox> readerBox) {
-    auto xmlReaderBox = std::dynamic_pointer_cast<XMLReaderBox>(readerBox);
-    if (xmlReaderBox == nullptr) {
-        SPDLOG_ERROR("ReaderBox must be an XMLReaderBox.");
+std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_XML) {
+        SPDLOG_ERROR("resource file format does not match factory format.");
         return nullptr;
     }
 
-    auto reader = xmlReaderBox->GetReader();
-    if (reader == nullptr) {
-        SPDLOG_ERROR("null reader in box.");
-        return nullptr;
+    if (file->XmlDocument == nullptr) {
+        SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", file->InitData->Type,
+                        file->InitData->Path);
+        return result;
     }
 
     auto vertex = std::make_shared<Vertex>(initData);
 
-    auto child = reader->FirstChildElement()->FirstChildElement();
+    auto child = file->XmlDocument->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();

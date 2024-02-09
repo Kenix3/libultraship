@@ -11,13 +11,11 @@ class ResourceFactoryDisplayList : public ResourceFactory {
 
 class ResourceFactoryBinaryDisplayListV0 : public ResourceFactoryDisplayList {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                            std::shared_ptr<ReaderBox> readerBox) override;
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
 
 class ResourceFactoryXMLDisplayListV0 : public ResourceFactoryDisplayList {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                            std::shared_ptr<ReaderBox> readerBox) override;  
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;  
 };
 } // namespace LUS
