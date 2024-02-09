@@ -4,14 +4,9 @@
 #include "resource/ResourceFactory.h"
 
 namespace LUS {
-class ArrayFactory : public ResourceFactory {
+class ResourceFactoryBinaryArrayV0 : public ResourceFactory {
   public:
     std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                            std::shared_ptr<BinaryReader> reader) override;
-};
-
-class ArrayFactoryV0 : public ResourceVersionFactory {
-  public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) override;
+                                            std::shared_ptr<ReaderBox> readerBox) override;
 };
 } // namespace LUS

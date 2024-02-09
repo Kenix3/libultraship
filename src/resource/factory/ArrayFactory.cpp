@@ -1,32 +1,26 @@
 #include "resource/factory/ArrayFactory.h"
 #include "resource/type/Array.h"
+#include "resource/readerbox/BinaryReaderBox.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> ArrayFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                      std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Array>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<ArrayFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Array with version {}", resource->GetInitData()->ResourceVersion);
+std::shared_ptr<IResource> ResourceFactoryBinaryArrayV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                        std::shared_ptr<ReaderBox> readerBox) {
+    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
+    if (binaryReaderBox == nullptr) {
+        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
         return nullptr;
     }
 
-    factory->ParseFileBinary(reader, resource);
+    auto reader = binaryReaderBox->GetReader();
+    if (reader == nullptr) {
+        SPDLOG_ERROR("null reader in box.");
+        return nullptr;
+    }
 
-    return resource;
-}
+    auto array = std::make_shared<Array>(initData);
 
-void ArrayFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Array> array = std::static_pointer_cast<Array>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, array);
+    uint32_t dataSize = reader->ReadUInt32();
 
     array->ArrayType = (ArrayResourceType)reader->ReadUInt32();
     array->ArrayCount = reader->ReadUInt32();
@@ -74,5 +68,7 @@ void ArrayFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::
             }
         }
     }
+
+    return array;
 }
 } // namespace LUS
