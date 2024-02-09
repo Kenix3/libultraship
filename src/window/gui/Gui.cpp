@@ -229,13 +229,10 @@ void Gui::ImGuiBackendInit() {
     }
 }
 
-void Gui::LoadTexture(const std::string& name, const std::string& path) {
-    // TODO: Nothing ever unloads the texture from Fast3D here.
-    GfxRenderingAPI* api = gfx_get_current_rendering_api();
-    const auto res = Context::GetInstance()->GetResourceManager()->LoadFile(path);
+void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& path) {
+    const auto res = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
 
     GuiTexture asset;
-    asset.RendererTextureId = api->new_texture();
     asset.Width = 0;
     asset.Height = 0;
     uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer->data()), res->Buffer->size(),
@@ -246,6 +243,10 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
         return;
     }
 
+    GfxRenderingAPI* api = gfx_get_current_rendering_api();
+
+    // TODO: Nothing ever unloads the texture from Fast3D here.
+    asset.RendererTextureId = api->new_texture();
     api->select_texture(0, asset.RendererTextureId);
     api->set_sampler_parameters(0, false, 0, 0);
     api->upload_texture(imgData, asset.Width, asset.Height);
