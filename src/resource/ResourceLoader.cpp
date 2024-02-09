@@ -23,6 +23,7 @@ ResourceLoader::~ResourceLoader() {
 }
 
 void ResourceLoader::RegisterGlobalResourceFactories() {
+    // include strings so we register types for mResourceTypes
     RegisterResourceFactory(static_cast<uint32_t>(ResourceType::Texture), std::make_shared<TextureFactory>());
     RegisterResourceFactory(static_cast<uint32_t>(ResourceType::Vertex), std::make_shared<VertexFactory>());
     RegisterResourceFactory(static_cast<uint32_t>(ResourceType::DisplayList), std::make_shared<DisplayListFactory>());
@@ -31,17 +32,19 @@ void ResourceLoader::RegisterGlobalResourceFactories() {
     RegisterResourceFactory(static_cast<uint32_t>(ResourceType::Blob), std::make_shared<BlobFactory>());
 }
 
-bool ResourceLoader::RegisterResourceFactory(uint32_t resourceType, std::shared_ptr<ResourceFactory> factory) {
-    if (mFactories.contains(resourceType)) {
+bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format, std::string typeName, uint32_t type, uint32_t version) {
+    if (mResourceTypes.contains(typeName)) {
         return false;
     }
+    mResourceTypes[typeName] = type;
 
-    mFactories[resourceType] = factory;
+    ResourceFactoryKey key = {resourceFormat: format,  resourceType: type, resourceVersion: version};
+    if (mFactories.contains(key)) {
+        return false;
+    }
+    mFactories[key] = factory;
+
     return true;
-}
-
-uint32_t ResourceLoader::GetVersionFromString(const std::string& version) {
-    return mFactoriesTypes[version];
 }
 
 std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
@@ -56,6 +59,10 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fi
         SPDLOG_ERROR("Failed to load resource: ResourceInitData not loaded");
         return result;
     }
+
+    // call method to get factory based on factorykey (generate using params)
+    // make a method that takes in a string instead of an int for the type too
+    // make those protected
 
     auto factory = mFactories[fileToLoad->InitData->Type];
     if (factory == nullptr) {

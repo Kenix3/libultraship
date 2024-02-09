@@ -1,12 +1,28 @@
 #include "resource/factory/TextureFactory.h"
 #include "resource/type/Texture.h"
+#include "resource/readerbox/BinaryReaderBox.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {
 
-std::shared_ptr<IResource> TextureFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Texture>(initData);
+std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                        std::shared_ptr<ReaderBox> readerBox) {
+    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
+    if (binaryReaderBox == nullptr) {
+        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
+        return nullptr;
+    }
+
+    auto reader = binaryReaderBox->GetReader();
+    if (reader == nullptr) {
+        SPDLOG_ERROR("null reader in box.");
+        return nullptr;
+    }
+
+    auto texture = std::make_shared<Texture>(initData);
+
+
+
     std::shared_ptr<ResourceVersionFactory> factory = nullptr;
 
     switch (resource->GetInitData()->ResourceVersion) {
@@ -29,7 +45,7 @@ std::shared_ptr<IResource> TextureFactory::ReadResource(std::shared_ptr<Resource
 }
 
 void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Texture> texture = std::static_pointer_cast<Texture>(resource);
+    // std::shared_ptr<Texture> texture = std::static_pointer_cast<Texture>(resource);
     ResourceVersionFactory::ParseFileBinary(reader, texture);
 
     texture->Type = (TextureType)reader->ReadUInt32();

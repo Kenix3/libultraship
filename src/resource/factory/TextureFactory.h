@@ -2,21 +2,19 @@
 
 #include "resource/Resource.h"
 #include "resource/ResourceFactory.h"
+#include "resource/readerbox/BinaryReaderBox.h"
 
 namespace LUS {
-class TextureFactory : public ResourceFactory {
+// ResourceFactoryXMLDisplayListV0
+class ResourceFactoryBinaryTextureV0 : public ResourceFactory {
   public:
     std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                            std::shared_ptr<BinaryReader> reader) override;
+                                            std::shared_ptr<ReaderBox> readerBox) override;
 };
 
-class TextureFactoryV0 : public ResourceVersionFactory {
+class ResourceFactoryBinaryTextureV1 : public ResourceFactory {
   public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) override;
-};
-
-class TextureFactoryV1 : public ResourceVersionFactory {
-  public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) override;
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                            std::shared_ptr<ReaderBox> readerBox) override;  
 };
 } // namespace LUS

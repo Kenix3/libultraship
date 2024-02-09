@@ -36,7 +36,7 @@ enum class ResourceType {
     SOH_SceneCommand = 0x4F52434D,    // ORCM
 };
 
-inline std::unordered_map<std::string, uint32_t> mFactoriesTypes{
+inline std::unordered_map<std::string, uint32_t> mResourceTypes {
     { "None", static_cast<uint32_t>(ResourceType::None) },
     { "Archive", static_cast<uint32_t>(ResourceType::Archive) },
     { "DisplayList", static_cast<uint32_t>(ResourceType::DisplayList) },

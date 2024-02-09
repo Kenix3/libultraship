@@ -19,4 +19,9 @@ class DisplayListFactoryV0 : public ResourceVersionFactory {
 
     uint32_t GetCombineLERPValue(std::string valStr);
 };
+
+// XMLDisplayListV0
+// XMLDisplayListV0Factory
+// ResourceFactoryXMLDisplayListV0
+
 } // namespace LUS
