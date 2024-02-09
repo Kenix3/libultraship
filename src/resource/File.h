@@ -11,6 +11,9 @@
 namespace LUS {
 class Archive;
 
+#define RESOURCE_FORMAT_BINARY 0
+#define RESOURCE_FORMAT_XML 1
+
 struct ResourceInitData {
     std::string Path;
     Endianness ByteOrder;
@@ -18,7 +21,7 @@ struct ResourceInitData {
     int32_t ResourceVersion;
     uint64_t Id;
     bool IsCustom;
-    bool IsXml;
+    uint32_t Format;
 };
 
 struct File {

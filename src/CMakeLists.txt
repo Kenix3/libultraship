@@ -325,7 +325,6 @@ set(Source_Files__Resource
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.cpp
 )
 source_group("resource" FILES ${Source_Files__Resource})
 

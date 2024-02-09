@@ -233,7 +233,7 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataXml(const std::st
     resourceInitData->IsXml = true;
 
     auto root = document->FirstChildElement();
-    resourceInitData->Type = mFactoriesTypes[root->Name()];
+    resourceInitData->Type = Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(root->Name());
     resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
     return resourceInitData;
