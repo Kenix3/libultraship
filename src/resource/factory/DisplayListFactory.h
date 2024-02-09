@@ -4,24 +4,20 @@
 #include "resource/ResourceFactory.h"
 
 namespace LUS {
-class DisplayListFactory : public ResourceFactory {
-  public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                            std::shared_ptr<BinaryReader> reader) override;
-    std::shared_ptr<IResource> ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
-                                               tinyxml2::XMLElement* reader) override;
-};
-
-class DisplayListFactoryV0 : public ResourceVersionFactory {
-  public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) override;
-    void ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<IResource> resource) override;
-
+class ResourceFactoryDisplayList : public ResourceFactory {
+  protected:
     uint32_t GetCombineLERPValue(std::string valStr);
 };
 
-// XMLDisplayListV0
-// XMLDisplayListV0Factory
-// ResourceFactoryXMLDisplayListV0
+class ResourceFactoryBinaryDisplayListV0 : public ResourceFactoryDisplayList {
+  public:
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                            std::shared_ptr<ReaderBox> readerBox) override;
+};
 
+class ResourceFactoryXMLDisplayListV0 : public ResourceFactoryDisplayList {
+  public:
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                            std::shared_ptr<ReaderBox> readerBox) override;  
+};
 } // namespace LUS

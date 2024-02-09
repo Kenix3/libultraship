@@ -1,55 +1,27 @@
 #include "resource/factory/DisplayListFactory.h"
 #include "resource/type/DisplayList.h"
+#include "resource/readerbox/BinaryReaderBox.h"
+#include "resource/readerbox/XMLReaderBox.h"
 #include "spdlog/spdlog.h"
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
 namespace LUS {
-std::shared_ptr<IResource> DisplayListFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                            std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<DisplayList>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<DisplayListFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->GetInitData()->ResourceVersion);
+std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                        std::shared_ptr<ReaderBox> readerBox) {
+    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
+    if (binaryReaderBox == nullptr) {
+        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
         return nullptr;
     }
 
-    factory->ParseFileBinary(reader, resource);
-
-    return resource;
-}
-
-std::shared_ptr<IResource> DisplayListFactory::ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
-                                                               tinyxml2::XMLElement* reader) {
-    auto resource = std::make_shared<DisplayList>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<DisplayListFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->GetInitData()->ResourceVersion);
+    auto reader = binaryReaderBox->GetReader();
+    if (reader == nullptr) {
+        SPDLOG_ERROR("null reader in box.");
         return nullptr;
     }
 
-    factory->ParseFileXML(reader, resource);
-
-    return resource;
-}
-
-void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<DisplayList> displayList = std::static_pointer_cast<DisplayList>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, displayList);
+    auto displayList = std::make_shared<DisplayList>(initData);
 
     while (reader->GetBaseAddress() % 8 != 0) {
         reader->ReadInt8();
@@ -77,60 +49,25 @@ void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
             break;
         }
     }
+
+    return displayList;
 }
 
-std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", G_RM_ZB_OPA_SURF },
-                                                          { "G_RM_AA_ZB_OPA_SURF", G_RM_AA_ZB_OPA_SURF },
-                                                          { "G_RM_AA_ZB_OPA_DECAL", G_RM_AA_ZB_OPA_DECAL },
-                                                          { "G_RM_AA_ZB_OPA_INTER", G_RM_AA_ZB_OPA_INTER },
-                                                          { "G_RM_AA_ZB_TEX_EDGE", G_RM_AA_ZB_TEX_EDGE },
-                                                          { "G_RM_AA_ZB_XLU_SURF", G_RM_AA_ZB_XLU_SURF },
-                                                          { "G_RM_AA_ZB_XLU_DECAL", G_RM_AA_ZB_XLU_DECAL },
-                                                          { "G_RM_AA_ZB_XLU_INTER", G_RM_AA_ZB_XLU_INTER },
-                                                          { "G_RM_FOG_SHADE_A", G_RM_FOG_SHADE_A },
-                                                          { "G_RM_FOG_PRIM_A", G_RM_FOG_PRIM_A },
-                                                          { "G_RM_PASS", G_RM_PASS },
-                                                          { "G_RM_ADD", G_RM_ADD },
-                                                          { "G_RM_NOOP", G_RM_NOOP },
-                                                          { "G_RM_ZB_OPA_SURF", G_RM_ZB_OPA_SURF },
-                                                          { "G_RM_ZB_OPA_DECAL", G_RM_ZB_OPA_DECAL },
-                                                          { "G_RM_ZB_XLU_SURF", G_RM_ZB_XLU_SURF },
-                                                          { "G_RM_ZB_XLU_DECAL", G_RM_ZB_XLU_DECAL },
-                                                          { "G_RM_OPA_SURF", G_RM_OPA_SURF },
-                                                          { "G_RM_ZB_CLD_SURF", G_RM_ZB_CLD_SURF },
-                                                          { "G_RM_ZB_OPA_SURF2", G_RM_ZB_OPA_SURF2 },
-                                                          { "G_RM_AA_ZB_OPA_SURF2", G_RM_AA_ZB_OPA_SURF2 },
-                                                          { "G_RM_AA_ZB_OPA_DECAL2", G_RM_AA_ZB_OPA_DECAL2 },
-                                                          { "G_RM_AA_ZB_OPA_INTER2", G_RM_AA_ZB_OPA_INTER2 },
-                                                          { "G_RM_AA_ZB_TEX_EDGE2", G_RM_AA_ZB_TEX_EDGE2 },
-                                                          { "G_RM_AA_ZB_XLU_SURF2", G_RM_AA_ZB_XLU_SURF2 },
-                                                          { "G_RM_AA_ZB_XLU_DECAL2", G_RM_AA_ZB_XLU_DECAL2 },
-                                                          { "G_RM_AA_ZB_XLU_INTER2", G_RM_AA_ZB_XLU_INTER2 },
-                                                          { "G_RM_ADD2", G_RM_ADD2 },
-                                                          { "G_RM_ZB_OPA_SURF2", G_RM_ZB_OPA_SURF2 },
-                                                          { "G_RM_ZB_OPA_DECAL2", G_RM_ZB_OPA_DECAL2 },
-                                                          { "G_RM_ZB_XLU_SURF2", G_RM_ZB_XLU_SURF2 },
-                                                          { "G_RM_ZB_XLU_DECAL2", G_RM_ZB_XLU_DECAL2 },
-                                                          { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 } };
+std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                        std::shared_ptr<ReaderBox> readerBox) {
+    auto xmlReaderBox = std::dynamic_pointer_cast<XMLReaderBox>(readerBox);
+    if (xmlReaderBox == nullptr) {
+        SPDLOG_ERROR("ReaderBox must be an XMLReaderBox.");
+        return nullptr;
+    }
 
-static Gfx GsSpVertexOtR2P1(char* filePathPtr) {
-    Gfx g;
-    g.words.w0 = G_VTX_OTR_FILEPATH << 24;
-    g.words.w1 = (uintptr_t)filePathPtr;
+    auto reader = xmlReaderBox->GetReader();
+    if (reader == nullptr) {
+        SPDLOG_ERROR("null reader in box.");
+        return nullptr;
+    }
 
-    return g;
-}
-
-static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
-    Gfx g;
-    g.words.w0 = (uintptr_t)vtxCnt;
-    g.words.w1 = (uintptr_t)((vtxBufOffset << 16) | vtxDataOffset);
-
-    return g;
-}
-
-void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<DisplayList> dl = std::static_pointer_cast<DisplayList>(resource);
+    auto dl = std::make_shared<DisplayList>(initData);
 
     auto child = reader->FirstChildElement();
 
@@ -1031,9 +968,61 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
         child = child->NextSiblingElement();
     }
+
+    return displayList;
 }
 
-uint32_t DisplayListFactoryV0::GetCombineLERPValue(std::string valStr) {
+std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", G_RM_ZB_OPA_SURF },
+                                                          { "G_RM_AA_ZB_OPA_SURF", G_RM_AA_ZB_OPA_SURF },
+                                                          { "G_RM_AA_ZB_OPA_DECAL", G_RM_AA_ZB_OPA_DECAL },
+                                                          { "G_RM_AA_ZB_OPA_INTER", G_RM_AA_ZB_OPA_INTER },
+                                                          { "G_RM_AA_ZB_TEX_EDGE", G_RM_AA_ZB_TEX_EDGE },
+                                                          { "G_RM_AA_ZB_XLU_SURF", G_RM_AA_ZB_XLU_SURF },
+                                                          { "G_RM_AA_ZB_XLU_DECAL", G_RM_AA_ZB_XLU_DECAL },
+                                                          { "G_RM_AA_ZB_XLU_INTER", G_RM_AA_ZB_XLU_INTER },
+                                                          { "G_RM_FOG_SHADE_A", G_RM_FOG_SHADE_A },
+                                                          { "G_RM_FOG_PRIM_A", G_RM_FOG_PRIM_A },
+                                                          { "G_RM_PASS", G_RM_PASS },
+                                                          { "G_RM_ADD", G_RM_ADD },
+                                                          { "G_RM_NOOP", G_RM_NOOP },
+                                                          { "G_RM_ZB_OPA_SURF", G_RM_ZB_OPA_SURF },
+                                                          { "G_RM_ZB_OPA_DECAL", G_RM_ZB_OPA_DECAL },
+                                                          { "G_RM_ZB_XLU_SURF", G_RM_ZB_XLU_SURF },
+                                                          { "G_RM_ZB_XLU_DECAL", G_RM_ZB_XLU_DECAL },
+                                                          { "G_RM_OPA_SURF", G_RM_OPA_SURF },
+                                                          { "G_RM_ZB_CLD_SURF", G_RM_ZB_CLD_SURF },
+                                                          { "G_RM_ZB_OPA_SURF2", G_RM_ZB_OPA_SURF2 },
+                                                          { "G_RM_AA_ZB_OPA_SURF2", G_RM_AA_ZB_OPA_SURF2 },
+                                                          { "G_RM_AA_ZB_OPA_DECAL2", G_RM_AA_ZB_OPA_DECAL2 },
+                                                          { "G_RM_AA_ZB_OPA_INTER2", G_RM_AA_ZB_OPA_INTER2 },
+                                                          { "G_RM_AA_ZB_TEX_EDGE2", G_RM_AA_ZB_TEX_EDGE2 },
+                                                          { "G_RM_AA_ZB_XLU_SURF2", G_RM_AA_ZB_XLU_SURF2 },
+                                                          { "G_RM_AA_ZB_XLU_DECAL2", G_RM_AA_ZB_XLU_DECAL2 },
+                                                          { "G_RM_AA_ZB_XLU_INTER2", G_RM_AA_ZB_XLU_INTER2 },
+                                                          { "G_RM_ADD2", G_RM_ADD2 },
+                                                          { "G_RM_ZB_OPA_SURF2", G_RM_ZB_OPA_SURF2 },
+                                                          { "G_RM_ZB_OPA_DECAL2", G_RM_ZB_OPA_DECAL2 },
+                                                          { "G_RM_ZB_XLU_SURF2", G_RM_ZB_XLU_SURF2 },
+                                                          { "G_RM_ZB_XLU_DECAL2", G_RM_ZB_XLU_DECAL2 },
+                                                          { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 } };
+
+static Gfx GsSpVertexOtR2P1(char* filePathPtr) {
+    Gfx g;
+    g.words.w0 = G_VTX_OTR_FILEPATH << 24;
+    g.words.w1 = (uintptr_t)filePathPtr;
+
+    return g;
+}
+
+static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
+    Gfx g;
+    g.words.w0 = (uintptr_t)vtxCnt;
+    g.words.w1 = (uintptr_t)((vtxBufOffset << 16) | vtxDataOffset);
+
+    return g;
+}
+
+uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
     std::string strings[] = { "G_CCMUX_COMBINED",
                               "G_CCMUX_TEXEL0",
                               "G_CCMUX_TEXEL1",
