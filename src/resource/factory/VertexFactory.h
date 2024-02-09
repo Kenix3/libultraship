@@ -4,18 +4,15 @@
 #include "resource/ResourceFactory.h"
 
 namespace LUS {
-
-class VertexFactory : public ResourceFactory {
+class ResourceFactoryBinaryVertexV0 : public ResourceFactory {
   public:
     std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                            std::shared_ptr<BinaryReader> reader) override;
-    std::shared_ptr<IResource> ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
-                                               tinyxml2::XMLElement* reader);
+                                            std::shared_ptr<ReaderBox> readerBox) override;
 };
 
-class VertexFactoryV0 : public ResourceVersionFactory {
+class ResourceFactoryXMLVertexV0 : public ResourceFactory {
   public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) override;
-    void ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<IResource> resource) override;
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                            std::shared_ptr<ReaderBox> readerBox) override;  
 };
 } // namespace LUS
