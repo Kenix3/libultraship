@@ -1,6 +1,5 @@
 #include "resource/factory/MatrixFactory.h"
 #include "resource/type/Matrix.h"
-#include "resource/readerbox/BinaryReaderBox.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {

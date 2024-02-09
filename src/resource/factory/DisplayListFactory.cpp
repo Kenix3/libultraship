@@ -1,7 +1,5 @@
 #include "resource/factory/DisplayListFactory.h"
 #include "resource/type/DisplayList.h"
-#include "resource/readerbox/BinaryReaderBox.h"
-#include "resource/readerbox/XMLReaderBox.h"
 #include "spdlog/spdlog.h"
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
@@ -183,7 +181,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
     if (file->XmlDocument == nullptr) {
         SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", file->InitData->Type,
                         file->InitData->Path);
-        return result;
+        return nullptr;
     }
 
 

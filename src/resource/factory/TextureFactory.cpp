@@ -1,6 +1,5 @@
 #include "resource/factory/TextureFactory.h"
 #include "resource/type/Texture.h"
-#include "resource/readerbox/BinaryReaderBox.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {

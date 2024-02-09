@@ -372,14 +372,7 @@ set(Source_Files__Resource__Archive
 )
 source_group("resource/archive" FILES ${Source_Files__Resource__Archive})
 
-set(Source_Files__Resource__ReaderBox
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/readerbox/ReaderBox.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/readerbox/BinaryReaderBox.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/readerbox/XMLReaderBox.h
-)
-source_group("resource/readerbox" FILES ${Source_Files__Resource__ReaderBox})
-
-target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories} ${Source_Files__Resource__Archive} ${Source_Files__Resource__ReaderBox})
+target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories} ${Source_Files__Resource__Archive})
 
 #=================== Graphic ===================
 

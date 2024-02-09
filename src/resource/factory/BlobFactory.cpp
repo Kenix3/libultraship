@@ -1,6 +1,5 @@
 #include "resource/factory/BlobFactory.h"
 #include "resource/type/Blob.h"
-#include "resource/readerbox/BinaryReaderBox.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {
