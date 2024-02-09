@@ -192,7 +192,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
 
     auto dl = std::make_shared<DisplayList>(initData);
 
-    auto child = reader->FirstChildElement();
+    auto child = reader->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();

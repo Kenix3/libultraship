@@ -173,7 +173,7 @@ std::shared_ptr<ResourceInitData> Archive::CreateDefaultResourceInitData() {
     resourceInitData->Type = static_cast<uint32_t>(ResourceType::None);
     resourceInitData->ResourceVersion = -1;
     resourceInitData->IsCustom = false;
-    resourceInitData->IsXml = false;
+    resourceInitData->Format = RESOURCE_FORMAT_BINARY;
     resourceInitData->ByteOrder = Endianness::Native;
     return resourceInitData;
 }
@@ -230,7 +230,7 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataXml(const std::st
 
     // XML
     resourceInitData->IsCustom = true;
-    resourceInitData->IsXml = true;
+    resourceInitData->Format = RESOURCE_FORMAT_XML;
 
     auto root = document->FirstChildElement();
     resourceInitData->Type = Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(root->Name());

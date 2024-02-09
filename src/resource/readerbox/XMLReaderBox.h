@@ -5,10 +5,10 @@
 namespace LUS {
 class XMLReaderBox : public ReaderBox {
     public:
-        XMLReaderBox(std::shared_ptr<tinyxml2::XMLElement> reader) {
+        XMLReaderBox(std::shared_ptr<tinyxml2::XMLDocument> reader) {
             mReader = reader;
         };
-        std::shared_ptr<tinyxml2::XMLElement> GetReader() {
+        std::shared_ptr<tinyxml2::XMLDocument> GetReader() {
             return mReader;
         };
         ~XMLReaderBox() {
@@ -16,6 +16,6 @@ class XMLReaderBox : public ReaderBox {
         };
 
     private:
-        std::shared_ptr<tinyxml2::XMLElement> mReader;
+        std::shared_ptr<tinyxml2::XMLDocument> mReader;
 };
 } // namespace LUS

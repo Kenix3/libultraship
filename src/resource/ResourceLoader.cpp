@@ -93,10 +93,22 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fi
 
 
 
-    auto factory = GetFactory(fileToLoad->InitData->IsXml) mFactories[fileToLoad->InitData->Type];
+    auto factory = GetFactory(fileToLoad->InitData->Format, fileToLoad->InitData->Type, fileToLoad->InitData->ResourceVersion);
     if (factory == nullptr) {
         SPDLOG_ERROR("Failed to load resource: Factory does not exist ({} - {})", fileToLoad->InitData->Type,
                      fileToLoad->InitData->Path);
+    }
+
+    // todo: figure out a better way to handle this
+    // probably just have it so ReadReasource takes in the pointer to fileToLoad directly
+    switch (fileToLoad->InitData->Format) {
+        case RESOURCE_FORMAT_BINARY:
+            factory->ReadResource(fileToLoad->InitData, std::make_shared<BinaryReaderBox>())
+        case RESOURCE_FORMAT_XML:
+
+        default:
+            SPDLOG_ERROR("invalid resource format {}", fileToLoad->InitData->Format);
+            return nullptr;
     }
 
     if (fileToLoad->InitData->IsXml) {

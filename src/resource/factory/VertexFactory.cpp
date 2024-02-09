@@ -58,7 +58,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_
 
     auto vertex = std::make_shared<Vertex>(initData);
 
-    auto child = reader->FirstChildElement();
+    auto child = reader->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();
