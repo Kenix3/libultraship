@@ -1,32 +1,24 @@
 #include "resource/factory/BlobFactory.h"
 #include "resource/type/Blob.h"
+#include "resource/readerbox/BinaryReaderBox.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> BlobFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                     std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Blob>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<BlobFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Blob with version {}", resource->GetInitData()->ResourceVersion);
+std::shared_ptr<IResource> ResourceFactoryBinaryBlobV0::ReadResource(std::shared_ptr<ResourceInitData> initData,
+                                                        std::shared_ptr<ReaderBox> readerBox) {
+    auto binaryReaderBox = std::dynamic_pointer_cast<BinaryReaderBox>(readerBox);
+    if (binaryReaderBox == nullptr) {
+        SPDLOG_ERROR("ReaderBox must be a BinaryReaderBox.");
         return nullptr;
     }
 
-    factory->ParseFileBinary(reader, resource);
+    auto reader = binaryReaderBox->GetReader();
+    if (reader == nullptr) {
+        SPDLOG_ERROR("null reader in box.");
+        return nullptr;
+    }
 
-    return resource;
-}
-
-void BlobFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Blob> blob = std::static_pointer_cast<Blob>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, blob);
+    auto blob = std::make_shared<Blob>(initData);
 
     uint32_t dataSize = reader->ReadUInt32();
 
@@ -35,5 +27,7 @@ void BlobFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::s
     for (uint32_t i = 0; i < dataSize; i++) {
         blob->Data.push_back(reader->ReadUByte());
     }
+
+    return blob;
 }
 } // namespace LUS
