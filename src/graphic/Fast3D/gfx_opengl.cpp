@@ -20,9 +20,11 @@
 #endif
 
 #ifdef _MSC_VER
+
 #include <SDL2/SDL.h>
 // #define GL_GLEXT_PROTOTYPES 1
 #include <GL/glew.h>
+
 #elif FOR_WINDOWS
 #include <GL/glew.h>
 #include "SDL.h"
