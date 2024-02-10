@@ -13,6 +13,16 @@ struct ResourceFactoryKey {
   uint32_t resourceFormat;
   uint32_t resourceType;
   uint32_t resourceVersion;
+
+  bool operator==(const ResourceFactoryKey& o) const {
+    return (resourceFormat == o.resourceFormat) && (resourceType == o.resourceType) && (resourceVersion == o.resourceVersion);
+  }
+};
+
+struct ResourceFactoryKeyHash {
+    std::size_t operator()(const ResourceFactoryKey& key) const {
+        return std::hash<int>()(key.resourceFormat) ^ std::hash<int>()(key.resourceType) ^ std::hash<int>()(key.resourceVersion);
+    }
 };
 
 class ResourceLoader {
@@ -32,6 +42,6 @@ class ResourceLoader {
 
   private:
     std::unordered_map<std::string, uint32_t> mResourceTypes;
-    std::unordered_map<ResourceFactoryKey, std::shared_ptr<ResourceFactory>> mFactories;
+    std::unordered_map<ResourceFactoryKey, std::shared_ptr<ResourceFactory>, ResourceFactoryKeyHash> mFactories;
 };
 } // namespace LUS
