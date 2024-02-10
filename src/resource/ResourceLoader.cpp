@@ -94,4 +94,8 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fi
 
     return factory->ReadResource(fileToLoad);
 }
+
+uint32_t ResourceLoader::GetResourceType(const std::string& type) {
+    return mResourceTypes.contains(type) ? mResourceTypes[type] : static_cast<uint32_t>(ResourceType::None);
+}
 } // namespace LUS
