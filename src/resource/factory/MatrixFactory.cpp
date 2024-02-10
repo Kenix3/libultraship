@@ -4,7 +4,7 @@
 
 namespace LUS {
 std::shared_ptr<IResource> ResourceFactoryBinaryMatrixV0::ReadResource(std::shared_ptr<File> file) {
-    if (!FileHasValidFormatAndReader()) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 

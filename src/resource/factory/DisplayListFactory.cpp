@@ -129,7 +129,7 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
 }
 
 std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<File> file) {
-    if (!FileHasValidFormatAndReader()) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
@@ -166,7 +166,7 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
 }
 
 std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<File> file) {
-    if (!FileHasValidFormatAndReader()) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 

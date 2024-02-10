@@ -4,7 +4,7 @@
 
 namespace LUS {
 std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<File> file) {
-    if (!FileHasValidFormatAndReader()) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
@@ -32,7 +32,7 @@ std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shar
 }
 
 std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_ptr<File> file) {
-    if (!FileHasValidFormatAndReader()) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
