@@ -74,22 +74,25 @@ std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, std
 }
 
 std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
-    std::shared_ptr<IResource> result = nullptr;
-
     if (fileToLoad == nullptr) {
         SPDLOG_ERROR("Failed to load resource: File not loaded");
-        return result;
+        return nullptr;
     }
 
     if (fileToLoad->InitData == nullptr) {
         SPDLOG_ERROR("Failed to load resource: ResourceInitData not loaded");
-        return result;
+        return nullptr;
     }
 
     auto factory = GetFactory(fileToLoad->InitData->Format, fileToLoad->InitData->Type, fileToLoad->InitData->ResourceVersion);
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: Factory does not exist ({} - {})", fileToLoad->InitData->Type,
-                     fileToLoad->InitData->Path);
+        SPDLOG_ERROR("Failed to load resource: Factory does not exist.\n" \
+                     "Path: {}\n" \
+                     "Type: {}\n" \
+                     "Format: {}\n" \
+                     "Version: {}",
+                     fileToLoad->InitData->Path, fileToLoad->InitData->Type, fileToLoad->InitData->Format, fileToLoad->InitData->ResourceVersion);
+        return nullptr;
     }
 
     return factory->ReadResource(fileToLoad);
