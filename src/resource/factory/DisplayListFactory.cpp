@@ -129,14 +129,7 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
 }
 
 std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<File> file) {
-    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
-        SPDLOG_ERROR("resource file format does not match factory format.");
-        return nullptr;
-    }
-
-    if (file->Reader == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
-                        file->InitData->Path);
+    if (!FileHasValidFormatAndReader()) {
         return nullptr;
     }
 
@@ -173,17 +166,9 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
 }
 
 std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<File> file) {
-    if (file->InitData->Format != RESOURCE_FORMAT_XML) {
-        SPDLOG_ERROR("resource file format does not match factory format.");
+    if (!FileHasValidFormatAndReader()) {
         return nullptr;
     }
-
-    if (file->XmlDocument == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", file->InitData->Type,
-                        file->InitData->Path);
-        return nullptr;
-    }
-
 
     auto dl = std::make_shared<DisplayList>(file->InitData);
 

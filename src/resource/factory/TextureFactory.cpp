@@ -5,14 +5,7 @@
 namespace LUS {
 
 std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<File> file) {
-    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
-        SPDLOG_ERROR("resource file format does not match factory format.");
-        return nullptr;
-    }
-
-    if (file->Reader == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
-                        file->InitData->Path);
+    if (!FileHasValidFormatAndReader()) {
         return nullptr;
     }
 
@@ -30,16 +23,9 @@ std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::sha
 }
 
 std::shared_ptr<IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<File> file) {
-    if (file->InitData->Format != RESOURCE_FORMAT_BINARY) {
-        SPDLOG_ERROR("resource file format does not match factory format.");
-        return nullptr;
-    }
-
-    if (file->Reader == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
-                        file->InitData->Path);
-        return nullptr;
-    }
+if (!FileHasValidFormatAndReader()) {
+    return nullptr;
+}
 
     auto texture = std::make_shared<Texture>(file->InitData);
 

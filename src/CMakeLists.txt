@@ -325,6 +325,10 @@ set(Source_Files__Resource
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactoryBinary.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactoryBinary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactoryXML.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/ResourceFactoryXML.cpp
 )
 source_group("resource" FILES ${Source_Files__Resource})
 

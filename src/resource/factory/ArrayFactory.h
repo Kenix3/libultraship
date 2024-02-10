@@ -1,10 +1,10 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "resource/ResourceFactory.h"
+#include "resource/BinaryResourceFactory.h"
 
 namespace LUS {
-class ResourceFactoryBinaryArrayV0 : public ResourceFactory {
+class ResourceFactoryBinaryArrayV0 : public ResourceFactoryBinary {
   public:
     std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
