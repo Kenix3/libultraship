@@ -687,11 +687,21 @@ ImTextureID Gui::GetTextureById(int32_t id) {
     return reinterpret_cast<ImTextureID>(id);
 }
 
+bool Gui::HasTextureByName(const std::string& name) {
+    return mGuiTextures.contains(name);
+}
+
 ImTextureID Gui::GetTextureByName(const std::string& name) {
+    if (!Gui::HasTextureByName(name)) {
+        return nullptr;
+    }
     return GetTextureById(mGuiTextures[name].RendererTextureId);
 }
 
 ImVec2 Gui::GetTextureSize(const std::string& name) {
+    if (!Gui::HasTextureByName(name)) {
+        return ImVec2(0, 0);
+    }
     return ImVec2(mGuiTextures[name].Width, mGuiTextures[name].Height);
 }
 
