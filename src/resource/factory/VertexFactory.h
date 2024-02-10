@@ -1,8 +1,8 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "resource/BinaryResourceFactory.h"
-#include "resource/XMLResourceFactory.h"
+#include "resource/ResourceFactoryBinary.h"
+#include "resource/ResourceFactoryXML.h"
 
 namespace LUS {
 class ResourceFactoryBinaryVertexV0 : public ResourceFactoryBinary {
