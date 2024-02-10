@@ -10,8 +10,6 @@ std::shared_ptr<IResource> ResourceFactoryBinaryArrayV0::ReadResource(std::share
 
     auto array = std::make_shared<Array>(file->InitData);
 
-    uint32_t dataSize = file->Reader->ReadUInt32();
-
     array->ArrayType = (ArrayResourceType)file->Reader->ReadUInt32();
     array->ArrayCount = file->Reader->ReadUInt32();
 
