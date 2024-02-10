@@ -16,15 +16,11 @@
 #define FOR_WINDOWS 0
 #endif
 
-#if FOR_WINDOWS
-#include <GL/glew.h>
-#include "SDL.h"
-#define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
-#elif __APPLE__
-#include <SDL.h>
+#ifdef __APPLE__
 #include "gfx_metal.h"
-#elif __SWITCH__
+#endif
+
+#ifdef __SWITCH__
 #include <SDL2/SDL.h>
 #include <switch.h>
 #include <glad/glad.h>

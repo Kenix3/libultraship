@@ -19,18 +19,10 @@
 #define FOR_WINDOWS 0
 #endif
 
-#ifdef _MSC_VER
-#include <SDL2/SDL.h>
-// #define GL_GLEXT_PROTOTYPES 1
-#include <GL/glew.h>
-#elif FOR_WINDOWS
-#include <GL/glew.h>
+#ifdef FOR_WINDOWS
 #include "SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
 #include "SDL_opengl.h"
-#elif __APPLE__
-#include <SDL2/SDL.h>
-#include <GL/glew.h>
 #elif __SWITCH__
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
@@ -846,10 +838,6 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
 }
 
 static void gfx_opengl_init(void) {
-#if !defined(__SWITCH__) && !defined(__linux__)
-    glewInit();
-#endif
-
     glGenBuffers(1, &opengl_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
 
