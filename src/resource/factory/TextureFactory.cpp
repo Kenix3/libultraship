@@ -23,9 +23,9 @@ std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::sha
 }
 
 std::shared_ptr<IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<File> file) {
-if (!FileHasValidFormatAndReader(file)) {
-    return nullptr;
-}
+    if (!FileHasValidFormatAndReader(file)) {
+        return nullptr;
+    }
 
     auto texture = std::make_shared<Texture>(file->InitData);
 

@@ -9,8 +9,7 @@ bool ResourceFactoryBinary::FileHasValidFormatAndReader(std::shared_ptr<File> fi
     }
 
     if (file->Reader == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type,
-                        file->InitData->Path);
+        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", file->InitData->Type, file->InitData->Path);
         return false;
     }
 

@@ -11,6 +11,6 @@ class ResourceFactoryBinaryTextureV0 : public ResourceFactoryBinary {
 
 class ResourceFactoryBinaryTextureV1 : public ResourceFactoryBinary {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;  
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
 } // namespace LUS

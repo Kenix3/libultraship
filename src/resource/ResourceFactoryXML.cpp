@@ -10,7 +10,7 @@ bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<File> file)
 
     if (file->XmlDocument == nullptr) {
         SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", file->InitData->Type,
-                        file->InitData->Path);
+                     file->InitData->Path);
         return false;
     }
 

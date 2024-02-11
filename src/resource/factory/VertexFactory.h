@@ -12,6 +12,6 @@ class ResourceFactoryBinaryVertexV0 : public ResourceFactoryBinary {
 
 class ResourceFactoryXMLVertexV0 : public ResourceFactoryXML {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;  
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
 } // namespace LUS

@@ -10,18 +10,20 @@ namespace LUS {
 struct File;
 
 struct ResourceFactoryKey {
-  uint32_t resourceFormat;
-  uint32_t resourceType;
-  uint32_t resourceVersion;
+    uint32_t resourceFormat;
+    uint32_t resourceType;
+    uint32_t resourceVersion;
 
-  bool operator==(const ResourceFactoryKey& o) const {
-    return (resourceFormat == o.resourceFormat) && (resourceType == o.resourceType) && (resourceVersion == o.resourceVersion);
-  }
+    bool operator==(const ResourceFactoryKey& o) const {
+        return (resourceFormat == o.resourceFormat) && (resourceType == o.resourceType) &&
+               (resourceVersion == o.resourceVersion);
+    }
 };
 
 struct ResourceFactoryKeyHash {
     std::size_t operator()(const ResourceFactoryKey& key) const {
-        return std::hash<int>()(key.resourceFormat) ^ std::hash<int>()(key.resourceType) ^ std::hash<int>()(key.resourceVersion);
+        return std::hash<int>()(key.resourceFormat) ^ std::hash<int>()(key.resourceType) ^
+               std::hash<int>()(key.resourceVersion);
     }
 };
 
@@ -31,7 +33,8 @@ class ResourceLoader {
     ~ResourceLoader();
 
     std::shared_ptr<IResource> LoadResource(std::shared_ptr<File> fileToLoad);
-    bool RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format, std::string typeName, uint32_t type, uint32_t version);
+    bool RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format, std::string typeName,
+                                 uint32_t type, uint32_t version);
 
     uint32_t GetResourceType(const std::string& type);
 

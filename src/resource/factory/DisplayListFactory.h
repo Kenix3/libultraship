@@ -17,6 +17,6 @@ class ResourceFactoryBinaryDisplayListV0 : public ResourceFactoryDisplayList, pu
 
 class ResourceFactoryXMLDisplayListV0 : public ResourceFactoryDisplayList, public ResourceFactoryXML {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;  
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
 } // namespace LUS
