@@ -54,7 +54,7 @@ bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> fa
         mResourceTypes[typeName] = type;
     }
 
-    ResourceFactoryKey key = { format, type, version };
+    ResourceFactoryKey key{ .resourceFormat = format, .resourceType = type, .resourceVersion = version };
     if (mFactories.contains(key)) {
         SPDLOG_ERROR("Failed to register resource factory: factory with key {}{}{} already exists", format, type,
                      version);
@@ -66,7 +66,7 @@ bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> fa
 }
 
 std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, uint32_t type, uint32_t version) {
-    ResourceFactoryKey key = { format, type, version };
+    ResourceFactoryKey key{ .resourceFormat = format, .resourceType = type, .resourceVersion = version };
     if (!mFactories.contains(key)) {
         SPDLOG_ERROR("Could not find resource factory with key {}{}{}", format, type, version);
         return nullptr;
