@@ -10,14 +10,15 @@ std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::sha
     }
 
     auto texture = std::make_shared<Texture>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
-    texture->Type = (TextureType)file->Reader->ReadUInt32();
-    texture->Width = file->Reader->ReadUInt32();
-    texture->Height = file->Reader->ReadUInt32();
-    texture->ImageDataSize = file->Reader->ReadUInt32();
+    texture->Type = (TextureType)reader->ReadUInt32();
+    texture->Width = reader->ReadUInt32();
+    texture->Height = reader->ReadUInt32();
+    texture->ImageDataSize = reader->ReadUInt32();
     texture->ImageData = new uint8_t[texture->ImageDataSize];
 
-    file->Reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
 
     return texture;
 }
@@ -28,17 +29,18 @@ std::shared_ptr<IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::sha
     }
 
     auto texture = std::make_shared<Texture>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
-    texture->Type = (TextureType)file->Reader->ReadUInt32();
-    texture->Width = file->Reader->ReadUInt32();
-    texture->Height = file->Reader->ReadUInt32();
-    texture->Flags = file->Reader->ReadUInt32();
-    texture->HByteScale = file->Reader->ReadFloat();
-    texture->VPixelScale = file->Reader->ReadFloat();
-    texture->ImageDataSize = file->Reader->ReadUInt32();
+    texture->Type = (TextureType)reader->ReadUInt32();
+    texture->Width = reader->ReadUInt32();
+    texture->Height = reader->ReadUInt32();
+    texture->Flags = reader->ReadUInt32();
+    texture->HByteScale = reader->ReadFloat();
+    texture->VPixelScale = reader->ReadFloat();
+    texture->ImageDataSize = reader->ReadUInt32();
     texture->ImageData = new uint8_t[texture->ImageDataSize];
 
-    file->Reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
 
     return texture;
 }

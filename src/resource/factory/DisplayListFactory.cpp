@@ -134,15 +134,16 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
     }
 
     auto displayList = std::make_shared<DisplayList>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
-    while (file->Reader->GetBaseAddress() % 8 != 0) {
-        file->Reader->ReadInt8();
+    while (reader->GetBaseAddress() % 8 != 0) {
+        reader->ReadInt8();
     }
 
     while (true) {
         Gfx command;
-        command.words.w0 = file->Reader->ReadUInt32();
-        command.words.w1 = file->Reader->ReadUInt32();
+        command.words.w0 = reader->ReadUInt32();
+        command.words.w1 = reader->ReadUInt32();
 
         displayList->Instructions.push_back(command);
 
@@ -151,8 +152,8 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
         // These are 128-bit commands, so read an extra 64 bits...
         if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
             opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR) {
-            command.words.w0 = file->Reader->ReadUInt32();
-            command.words.w1 = file->Reader->ReadUInt32();
+            command.words.w0 = reader->ReadUInt32();
+            command.words.w1 = reader->ReadUInt32();
 
             displayList->Instructions.push_back(command);
         }
@@ -171,8 +172,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
     }
 
     auto dl = std::make_shared<DisplayList>(file->InitData);
-
-    auto child = file->XmlDocument->FirstChildElement()->FirstChildElement();
+    auto child = std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();

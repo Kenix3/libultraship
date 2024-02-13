@@ -9,22 +9,23 @@ std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shar
     }
 
     auto vertex = std::make_shared<Vertex>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
-    uint32_t count = file->Reader->ReadUInt32();
+    uint32_t count = reader->ReadUInt32();
     vertex->VertexList.reserve(count);
 
     for (uint32_t i = 0; i < count; i++) {
         Vtx data;
-        data.v.ob[0] = file->Reader->ReadInt16();
-        data.v.ob[1] = file->Reader->ReadInt16();
-        data.v.ob[2] = file->Reader->ReadInt16();
-        data.v.flag = file->Reader->ReadUInt16();
-        data.v.tc[0] = file->Reader->ReadInt16();
-        data.v.tc[1] = file->Reader->ReadInt16();
-        data.v.cn[0] = file->Reader->ReadUByte();
-        data.v.cn[1] = file->Reader->ReadUByte();
-        data.v.cn[2] = file->Reader->ReadUByte();
-        data.v.cn[3] = file->Reader->ReadUByte();
+        data.v.ob[0] = reader->ReadInt16();
+        data.v.ob[1] = reader->ReadInt16();
+        data.v.ob[2] = reader->ReadInt16();
+        data.v.flag = reader->ReadUInt16();
+        data.v.tc[0] = reader->ReadInt16();
+        data.v.tc[1] = reader->ReadInt16();
+        data.v.cn[0] = reader->ReadUByte();
+        data.v.cn[1] = reader->ReadUByte();
+        data.v.cn[2] = reader->ReadUByte();
+        data.v.cn[3] = reader->ReadUByte();
         vertex->VertexList.push_back(data);
     }
 
@@ -38,7 +39,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_
 
     auto vertex = std::make_shared<Vertex>(file->InitData);
 
-    auto child = file->XmlDocument->FirstChildElement()->FirstChildElement();
+    auto child = std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();

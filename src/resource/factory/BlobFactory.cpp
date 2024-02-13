@@ -9,13 +9,14 @@ std::shared_ptr<IResource> ResourceFactoryBinaryBlobV0::ReadResource(std::shared
     }
 
     auto blob = std::make_shared<Blob>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
-    uint32_t dataSize = file->Reader->ReadUInt32();
+    uint32_t dataSize = reader->ReadUInt32();
 
     blob->Data.reserve(dataSize);
 
     for (uint32_t i = 0; i < dataSize; i++) {
-        blob->Data.push_back(file->Reader->ReadUByte());
+        blob->Data.push_back(reader->ReadUByte());
     }
 
     return blob;

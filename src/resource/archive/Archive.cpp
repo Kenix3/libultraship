@@ -114,14 +114,16 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
         // File is XML
         // Read the xml document
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
-        auto reader = fileToLoad->Reader = std::make_shared<BinaryReader>(stream);
-        fileToLoad->XmlDocument = std::make_shared<tinyxml2::XMLDocument>();
-        fileToLoad->XmlDocument->Parse(reader->ReadCString().data());
-        if (fileToLoad->XmlDocument->Error()) {
-            SPDLOG_ERROR("Failed to parse XML file {}. Error: {}", filePath, fileToLoad->XmlDocument->ErrorStr());
+        auto binaryReader = std::make_shared<BinaryReader>(stream);
+        fileToLoad->Reader = std::make_shared<tinyxml2::XMLDocument>();
+        auto xmlReader = std::get<std::shared_ptr<tinyxml2::XMLDocument>>(fileToLoad->Reader);
+
+        xmlReader->Parse(binaryReader->ReadCString().data());
+        if (xmlReader->Error()) {
+            SPDLOG_ERROR("Failed to parse XML file {}. Error: {}", filePath, xmlReader->ErrorStr());
             return nullptr;
         }
-        fileToLoad->InitData = ReadResourceInitDataXml(filePath, fileToLoad->XmlDocument);
+        fileToLoad->InitData = ReadResourceInitDataXml(filePath, xmlReader);
     } else {
         // File is Binary
         auto fileToLoadMeta = LoadFileMeta(filePath);
@@ -155,7 +157,8 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
         fileToLoad->Reader = std::make_shared<BinaryReader>(stream);
 
         fileToLoad->InitData = fileToLoadMeta;
-        fileToLoad->Reader->SetEndianness(fileToLoad->InitData->ByteOrder);
+        auto binaryReader = std::get<std::shared_ptr<BinaryReader>>(fileToLoad->Reader);
+        binaryReader->SetEndianness(fileToLoad->InitData->ByteOrder);
     }
 
     return fileToLoad;

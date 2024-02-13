@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <variant>
 #include <vector>
 #include <memory>
 #include <stdint.h>
@@ -28,8 +29,7 @@ struct File {
     std::shared_ptr<Archive> Parent;
     std::shared_ptr<ResourceInitData> InitData;
     std::shared_ptr<std::vector<char>> Buffer;
-    std::shared_ptr<tinyxml2::XMLDocument> XmlDocument;
-    std::shared_ptr<BinaryReader> Reader;
+    std::variant<std::shared_ptr<tinyxml2::XMLDocument>, std::shared_ptr<BinaryReader>> Reader;
     bool IsLoaded = false;
 };
 } // namespace LUS

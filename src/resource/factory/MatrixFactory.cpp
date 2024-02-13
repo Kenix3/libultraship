@@ -9,10 +9,11 @@ std::shared_ptr<IResource> ResourceFactoryBinaryMatrixV0::ReadResource(std::shar
     }
 
     auto matrix = std::make_shared<Matrix>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
     for (size_t i = 0; i < 4; i++) {
         for (size_t j = 0; j < 4; j++) {
-            matrix->Matrx.m[i][j] = file->Reader->ReadInt32();
+            matrix->Matrx.m[i][j] = reader->ReadInt32();
         }
     }
 
