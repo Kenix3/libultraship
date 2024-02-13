@@ -39,7 +39,8 @@ std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_
 
     auto vertex = std::make_shared<Vertex>(file->InitData);
 
-    auto child = std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
+    auto child =
+        std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();
