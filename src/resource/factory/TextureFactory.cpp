@@ -4,33 +4,13 @@
 
 namespace LUS {
 
-std::shared_ptr<IResource> TextureFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                        std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Texture>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<TextureFactoryV0>();
-            break;
-        case 1:
-            factory = std::make_shared<TextureFactoryV1>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Texture with version {}", resource->GetInitData()->ResourceVersion);
+std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<File> file) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
-    factory->ParseFileBinary(reader, resource);
-
-    return resource;
-}
-
-void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Texture> texture = std::static_pointer_cast<Texture>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, texture);
+    auto texture = std::make_shared<Texture>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
     texture->Type = (TextureType)reader->ReadUInt32();
     texture->Width = reader->ReadUInt32();
@@ -39,11 +19,17 @@ void TextureFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
     texture->ImageData = new uint8_t[texture->ImageDataSize];
 
     reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+
+    return texture;
 }
 
-void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Texture> texture = std::static_pointer_cast<Texture>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, texture);
+std::shared_ptr<IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<File> file) {
+    if (!FileHasValidFormatAndReader(file)) {
+        return nullptr;
+    }
+
+    auto texture = std::make_shared<Texture>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
     texture->Type = (TextureType)reader->ReadUInt32();
     texture->Width = reader->ReadUInt32();
@@ -55,5 +41,7 @@ void TextureFactoryV1::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std
     texture->ImageData = new uint8_t[texture->ImageDataSize];
 
     reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+
+    return texture;
 }
 } // namespace LUS

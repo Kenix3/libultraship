@@ -5,80 +5,6 @@
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
 namespace LUS {
-std::shared_ptr<IResource> DisplayListFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                            std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<DisplayList>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<DisplayListFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->GetInitData()->ResourceVersion);
-        return nullptr;
-    }
-
-    factory->ParseFileBinary(reader, resource);
-
-    return resource;
-}
-
-std::shared_ptr<IResource> DisplayListFactory::ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
-                                                               tinyxml2::XMLElement* reader) {
-    auto resource = std::make_shared<DisplayList>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<DisplayListFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load DisplayList with version {}", resource->GetInitData()->ResourceVersion);
-        return nullptr;
-    }
-
-    factory->ParseFileXML(reader, resource);
-
-    return resource;
-}
-
-void DisplayListFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<DisplayList> displayList = std::static_pointer_cast<DisplayList>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, displayList);
-
-    while (reader->GetBaseAddress() % 8 != 0) {
-        reader->ReadInt8();
-    }
-
-    while (true) {
-        Gfx command;
-        command.words.w0 = reader->ReadUInt32();
-        command.words.w1 = reader->ReadUInt32();
-
-        displayList->Instructions.push_back(command);
-
-        uint8_t opcode = (uint8_t)(command.words.w0 >> 24);
-
-        // These are 128-bit commands, so read an extra 64 bits...
-        if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
-            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR) {
-            command.words.w0 = reader->ReadUInt32();
-            command.words.w1 = reader->ReadUInt32();
-
-            displayList->Instructions.push_back(command);
-        }
-
-        if (opcode == G_ENDDL) {
-            break;
-        }
-    }
-}
-
 std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", G_RM_ZB_OPA_SURF },
                                                           { "G_RM_AA_ZB_OPA_SURF", G_RM_AA_ZB_OPA_SURF },
                                                           { "G_RM_AA_ZB_OPA_DECAL", G_RM_AA_ZB_OPA_DECAL },
@@ -129,10 +55,125 @@ static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
     return g;
 }
 
-void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<DisplayList> dl = std::static_pointer_cast<DisplayList>(resource);
+uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
+    std::string strings[] = { "G_CCMUX_COMBINED",
+                              "G_CCMUX_TEXEL0",
+                              "G_CCMUX_TEXEL1",
+                              "G_CCMUX_PRIMITIVE",
+                              "G_CCMUX_SHADE",
+                              "G_CCMUX_ENVIRONMENT",
+                              "G_CCMUX_1",
+                              "G_CCMUX_NOISE",
+                              "G_CCMUX_0",
+                              "G_CCMUX_CENTER",
+                              "G_CCMUX_K4",
+                              "G_CCMUX_SCALE",
+                              "G_CCMUX_COMBINED_ALPHA",
+                              "G_CCMUX_TEXEL0_ALPHA",
+                              "G_CCMUX_TEXEL1_ALPHA",
+                              "G_CCMUX_PRIMITIVE_ALPHA",
+                              "G_CCMUX_SHADE_ALPHA",
+                              "G_CCMUX_ENV_ALPHA",
+                              "G_CCMUX_LOD_FRACTION",
+                              "G_CCMUX_PRIM_LOD_FRAC",
+                              "G_CCMUX_K5",
+                              "G_ACMUX_COMBINED",
+                              "G_ACMUX_TEXEL0",
+                              "G_ACMUX_TEXEL1",
+                              "G_ACMUX_PRIMITIVE",
+                              "G_ACMUX_SHADE",
+                              "G_ACMUX_ENVIRONMENT",
+                              "G_ACMUX_1",
+                              "G_ACMUX_0",
+                              "G_ACMUX_LOD_FRACTION",
+                              "G_ACMUX_PRIM_LOD_FRAC" };
+    uint32_t values[] = { G_CCMUX_COMBINED,
+                          G_CCMUX_TEXEL0,
+                          G_CCMUX_TEXEL1,
+                          G_CCMUX_PRIMITIVE,
+                          G_CCMUX_SHADE,
+                          G_CCMUX_ENVIRONMENT,
+                          G_CCMUX_1,
+                          G_CCMUX_NOISE,
+                          G_CCMUX_0,
+                          G_CCMUX_CENTER,
+                          G_CCMUX_K4,
+                          G_CCMUX_SCALE,
+                          G_CCMUX_COMBINED_ALPHA,
+                          G_CCMUX_TEXEL0_ALPHA,
+                          G_CCMUX_TEXEL1_ALPHA,
+                          G_CCMUX_PRIMITIVE_ALPHA,
+                          G_CCMUX_SHADE_ALPHA,
+                          G_CCMUX_ENV_ALPHA,
+                          G_CCMUX_LOD_FRACTION,
+                          G_CCMUX_PRIM_LOD_FRAC,
+                          G_CCMUX_K5,
+                          G_ACMUX_COMBINED,
+                          G_ACMUX_TEXEL0,
+                          G_ACMUX_TEXEL1,
+                          G_ACMUX_PRIMITIVE,
+                          G_ACMUX_SHADE,
+                          G_ACMUX_ENVIRONMENT,
+                          G_ACMUX_1,
+                          G_ACMUX_0,
+                          G_ACMUX_LOD_FRACTION,
+                          G_ACMUX_PRIM_LOD_FRAC };
 
-    auto child = reader->FirstChildElement();
+    for (int i = 0; i < ARRAY_COUNT(values); i++) {
+        if (valStr == strings[i]) {
+            return values[i];
+        }
+    }
+
+    return G_CCMUX_1;
+}
+
+std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<File> file) {
+    if (!FileHasValidFormatAndReader(file)) {
+        return nullptr;
+    }
+
+    auto displayList = std::make_shared<DisplayList>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
+
+    while (reader->GetBaseAddress() % 8 != 0) {
+        reader->ReadInt8();
+    }
+
+    while (true) {
+        Gfx command;
+        command.words.w0 = reader->ReadUInt32();
+        command.words.w1 = reader->ReadUInt32();
+
+        displayList->Instructions.push_back(command);
+
+        uint8_t opcode = (uint8_t)(command.words.w0 >> 24);
+
+        // These are 128-bit commands, so read an extra 64 bits...
+        if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
+            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR) {
+            command.words.w0 = reader->ReadUInt32();
+            command.words.w1 = reader->ReadUInt32();
+
+            displayList->Instructions.push_back(command);
+        }
+
+        if (opcode == G_ENDDL) {
+            break;
+        }
+    }
+
+    return displayList;
+}
+
+std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<File> file) {
+    if (!FileHasValidFormatAndReader(file)) {
+        return nullptr;
+    }
+
+    auto dl = std::make_shared<DisplayList>(file->InitData);
+    auto child =
+        std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();
@@ -1031,79 +1072,7 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
         child = child->NextSiblingElement();
     }
+
+    return dl;
 }
-
-uint32_t DisplayListFactoryV0::GetCombineLERPValue(std::string valStr) {
-    std::string strings[] = { "G_CCMUX_COMBINED",
-                              "G_CCMUX_TEXEL0",
-                              "G_CCMUX_TEXEL1",
-                              "G_CCMUX_PRIMITIVE",
-                              "G_CCMUX_SHADE",
-                              "G_CCMUX_ENVIRONMENT",
-                              "G_CCMUX_1",
-                              "G_CCMUX_NOISE",
-                              "G_CCMUX_0",
-                              "G_CCMUX_CENTER",
-                              "G_CCMUX_K4",
-                              "G_CCMUX_SCALE",
-                              "G_CCMUX_COMBINED_ALPHA",
-                              "G_CCMUX_TEXEL0_ALPHA",
-                              "G_CCMUX_TEXEL1_ALPHA",
-                              "G_CCMUX_PRIMITIVE_ALPHA",
-                              "G_CCMUX_SHADE_ALPHA",
-                              "G_CCMUX_ENV_ALPHA",
-                              "G_CCMUX_LOD_FRACTION",
-                              "G_CCMUX_PRIM_LOD_FRAC",
-                              "G_CCMUX_K5",
-                              "G_ACMUX_COMBINED",
-                              "G_ACMUX_TEXEL0",
-                              "G_ACMUX_TEXEL1",
-                              "G_ACMUX_PRIMITIVE",
-                              "G_ACMUX_SHADE",
-                              "G_ACMUX_ENVIRONMENT",
-                              "G_ACMUX_1",
-                              "G_ACMUX_0",
-                              "G_ACMUX_LOD_FRACTION",
-                              "G_ACMUX_PRIM_LOD_FRAC" };
-    uint32_t values[] = { G_CCMUX_COMBINED,
-                          G_CCMUX_TEXEL0,
-                          G_CCMUX_TEXEL1,
-                          G_CCMUX_PRIMITIVE,
-                          G_CCMUX_SHADE,
-                          G_CCMUX_ENVIRONMENT,
-                          G_CCMUX_1,
-                          G_CCMUX_NOISE,
-                          G_CCMUX_0,
-                          G_CCMUX_CENTER,
-                          G_CCMUX_K4,
-                          G_CCMUX_SCALE,
-                          G_CCMUX_COMBINED_ALPHA,
-                          G_CCMUX_TEXEL0_ALPHA,
-                          G_CCMUX_TEXEL1_ALPHA,
-                          G_CCMUX_PRIMITIVE_ALPHA,
-                          G_CCMUX_SHADE_ALPHA,
-                          G_CCMUX_ENV_ALPHA,
-                          G_CCMUX_LOD_FRACTION,
-                          G_CCMUX_PRIM_LOD_FRAC,
-                          G_CCMUX_K5,
-                          G_ACMUX_COMBINED,
-                          G_ACMUX_TEXEL0,
-                          G_ACMUX_TEXEL1,
-                          G_ACMUX_PRIMITIVE,
-                          G_ACMUX_SHADE,
-                          G_ACMUX_ENVIRONMENT,
-                          G_ACMUX_1,
-                          G_ACMUX_0,
-                          G_ACMUX_LOD_FRACTION,
-                          G_ACMUX_PRIM_LOD_FRAC };
-
-    for (int i = 0; i < ARRAY_COUNT(values); i++) {
-        if (valStr == strings[i]) {
-            return values[i];
-        }
-    }
-
-    return G_CCMUX_1;
-}
-
 } // namespace LUS

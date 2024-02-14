@@ -3,51 +3,13 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> VertexFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                       std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Vertex>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<VertexFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->GetInitData()->ResourceVersion);
+std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<File> file) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
-    factory->ParseFileBinary(reader, resource);
-
-    return resource;
-}
-
-std::shared_ptr<IResource> VertexFactory::ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
-                                                          tinyxml2::XMLElement* reader) {
-    auto resource = std::make_shared<Vertex>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<VertexFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Vertex with version {}", resource->GetInitData()->ResourceVersion);
-        return nullptr;
-    }
-
-    factory->ParseFileXML(reader, resource);
-
-    return resource;
-}
-
-void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Vertex> vertex = std::static_pointer_cast<Vertex>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, vertex);
+    auto vertex = std::make_shared<Vertex>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
     uint32_t count = reader->ReadUInt32();
     vertex->VertexList.reserve(count);
@@ -66,10 +28,19 @@ void VertexFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std:
         data.v.cn[3] = reader->ReadUByte();
         vertex->VertexList.push_back(data);
     }
+
+    return vertex;
 }
-void LUS::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Vertex> vertex = std::static_pointer_cast<Vertex>(resource);
-    auto child = reader->FirstChildElement();
+
+std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_ptr<File> file) {
+    if (!FileHasValidFormatAndReader(file)) {
+        return nullptr;
+    }
+
+    auto vertex = std::make_shared<Vertex>(file->InitData);
+
+    auto child =
+        std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
 
     while (child != nullptr) {
         std::string childName = child->Name();
@@ -92,5 +63,7 @@ void LUS::VertexFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
         child = child->NextSiblingElement();
     }
+
+    return vertex;
 }
 } // namespace LUS

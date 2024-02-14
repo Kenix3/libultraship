@@ -3,30 +3,13 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> ArrayFactory::ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                                      std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<Array>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-        case 0:
-            factory = std::make_shared<ArrayFactoryV0>();
-            break;
-    }
-
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load Array with version {}", resource->GetInitData()->ResourceVersion);
+std::shared_ptr<IResource> ResourceFactoryBinaryArrayV0::ReadResource(std::shared_ptr<File> file) {
+    if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
-    factory->ParseFileBinary(reader, resource);
-
-    return resource;
-}
-
-void ArrayFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) {
-    std::shared_ptr<Array> array = std::static_pointer_cast<Array>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, array);
+    auto array = std::make_shared<Array>(file->InitData);
+    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
     array->ArrayType = (ArrayResourceType)reader->ReadUInt32();
     array->ArrayCount = reader->ReadUInt32();
@@ -74,5 +57,7 @@ void ArrayFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::
             }
         }
     }
+
+    return array;
 }
 } // namespace LUS

@@ -114,14 +114,16 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
         // File is XML
         // Read the xml document
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
-        auto reader = fileToLoad->Reader = std::make_shared<BinaryReader>(stream);
-        fileToLoad->XmlDocument = std::make_shared<tinyxml2::XMLDocument>();
-        fileToLoad->XmlDocument->Parse(reader->ReadCString().data());
-        if (fileToLoad->XmlDocument->Error()) {
-            SPDLOG_ERROR("Failed to parse XML file {}. Error: {}", filePath, fileToLoad->XmlDocument->ErrorStr());
+        auto binaryReader = std::make_shared<BinaryReader>(stream);
+        fileToLoad->Reader = std::make_shared<tinyxml2::XMLDocument>();
+        auto xmlReader = std::get<std::shared_ptr<tinyxml2::XMLDocument>>(fileToLoad->Reader);
+
+        xmlReader->Parse(binaryReader->ReadCString().data());
+        if (xmlReader->Error()) {
+            SPDLOG_ERROR("Failed to parse XML file {}. Error: {}", filePath, xmlReader->ErrorStr());
             return nullptr;
         }
-        fileToLoad->InitData = ReadResourceInitDataXml(filePath, fileToLoad->XmlDocument);
+        fileToLoad->InitData = ReadResourceInitDataXml(filePath, xmlReader);
     } else {
         // File is Binary
         auto fileToLoadMeta = LoadFileMeta(filePath);
@@ -155,7 +157,8 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
         fileToLoad->Reader = std::make_shared<BinaryReader>(stream);
 
         fileToLoad->InitData = fileToLoadMeta;
-        fileToLoad->Reader->SetEndianness(fileToLoad->InitData->ByteOrder);
+        auto binaryReader = std::get<std::shared_ptr<BinaryReader>>(fileToLoad->Reader);
+        binaryReader->SetEndianness(fileToLoad->InitData->ByteOrder);
     }
 
     return fileToLoad;
@@ -173,7 +176,7 @@ std::shared_ptr<ResourceInitData> Archive::CreateDefaultResourceInitData() {
     resourceInitData->Type = static_cast<uint32_t>(ResourceType::None);
     resourceInitData->ResourceVersion = -1;
     resourceInitData->IsCustom = false;
-    resourceInitData->IsXml = false;
+    resourceInitData->Format = RESOURCE_FORMAT_BINARY;
     resourceInitData->ByteOrder = Endianness::Native;
     return resourceInitData;
 }
@@ -230,10 +233,11 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataXml(const std::st
 
     // XML
     resourceInitData->IsCustom = true;
-    resourceInitData->IsXml = true;
+    resourceInitData->Format = RESOURCE_FORMAT_XML;
 
     auto root = document->FirstChildElement();
-    resourceInitData->Type = mFactoriesTypes[root->Name()];
+    resourceInitData->Type =
+        Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(root->Name());
     resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
     return resourceInitData;

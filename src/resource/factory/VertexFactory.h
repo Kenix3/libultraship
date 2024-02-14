@@ -1,21 +1,17 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "resource/ResourceFactory.h"
+#include "resource/ResourceFactoryBinary.h"
+#include "resource/ResourceFactoryXML.h"
 
 namespace LUS {
-
-class VertexFactory : public ResourceFactory {
+class ResourceFactoryBinaryVertexV0 : public ResourceFactoryBinary {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<ResourceInitData> initData,
-                                            std::shared_ptr<BinaryReader> reader) override;
-    std::shared_ptr<IResource> ReadResourceXML(std::shared_ptr<ResourceInitData> initData,
-                                               tinyxml2::XMLElement* reader);
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
 
-class VertexFactoryV0 : public ResourceVersionFactory {
+class ResourceFactoryXMLVertexV0 : public ResourceFactoryXML {
   public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) override;
-    void ParseFileXML(tinyxml2::XMLElement* reader, std::shared_ptr<IResource> resource) override;
+    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
 } // namespace LUS
