@@ -1134,6 +1134,14 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
         float w = v->ob[0] * g_rsp.MP_matrix[0][3] + v->ob[1] * g_rsp.MP_matrix[1][3] +
                   v->ob[2] * g_rsp.MP_matrix[2][3] + g_rsp.MP_matrix[3][3];
 
+        float world_pos[3];
+        if (g_rsp.geometry_mode & G_LIGHTING_POSITIONAL) {
+            float (*mtx)[4] = g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1];
+            world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
+            world_pos[1] = v->ob[0] * mtx[0][1] + v->ob[1] * mtx[1][1] + v->ob[2] * mtx[2][1] + mtx[3][1];
+            world_pos[2] = v->ob[0] * mtx[0][2] + v->ob[1] * mtx[1][2] + v->ob[2] * mtx[2][2] + mtx[3][2];
+        }
+
         x = gfx_adjust_x_for_aspect_ratio(x);
 
         short U = v->tc[0] * g_rsp.texture_scaling_factor.s >> 16;
@@ -1142,7 +1150,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
         if (g_rsp.geometry_mode & G_LIGHTING) {
             if (g_rsp.lights_changed) {
                 for (int i = 0; i < g_rsp.current_num_lights - 1; i++) {
-                    calculate_normal_dir(&g_rsp.current_lights[i], g_rsp.current_lights_coeffs[i]);
+                    calculate_normal_dir(&g_rsp.current_lights[i].l, g_rsp.current_lights_coeffs[i]);
                 }
                 /*static const Light_t lookat_x = {{0, 0, 0}, 0, {0, 0, 0}, 0, {127, 0, 0}, 0};
                 static const Light_t lookat_y = {{0, 0, 0}, 0, {0, 0, 0}, 0, {0, 127, 0}, 0};*/
@@ -1151,20 +1159,49 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
                 g_rsp.lights_changed = false;
             }
 
-            int r = g_rsp.current_lights[g_rsp.current_num_lights - 1].col[0];
-            int g = g_rsp.current_lights[g_rsp.current_num_lights - 1].col[1];
-            int b = g_rsp.current_lights[g_rsp.current_num_lights - 1].col[2];
+            int r = g_rsp.current_lights[g_rsp.current_num_lights - 1].l.col[0];
+            int g = g_rsp.current_lights[g_rsp.current_num_lights - 1].l.col[1];
+            int b = g_rsp.current_lights[g_rsp.current_num_lights - 1].l.col[2];
 
             for (int i = 0; i < g_rsp.current_num_lights - 1; i++) {
                 float intensity = 0;
-                intensity += vn->n[0] * g_rsp.current_lights_coeffs[i][0];
-                intensity += vn->n[1] * g_rsp.current_lights_coeffs[i][1];
-                intensity += vn->n[2] * g_rsp.current_lights_coeffs[i][2];
-                intensity /= 127.0f;
+                if ((g_rsp.geometry_mode & G_LIGHTING_POSITIONAL) && (g_rsp.current_lights[i].p.unk3 != 0)) {
+                    // Calculate distance from the light to the vertex
+                    float dist_vec[3] = { g_rsp.current_lights[i].p.pos[0] - world_pos[0], g_rsp.current_lights[i].p.pos[1] - world_pos[1], g_rsp.current_lights[i].p.pos[2] - world_pos[2] };
+                    float dist_sq = dist_vec[0] * dist_vec[0] + dist_vec[1] * dist_vec[1] + dist_vec[2] * dist_vec[2] * 2; // The *2 comes from GLideN64, unsure of why it does it
+                    float dist = sqrt(dist_sq);
+
+                    // Transform distance vector (which acts as a direction light vector) into model's space
+                    float light_model[3];
+                    gfx_transposed_matrix_mul(light_model, dist_vec, g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1]);
+
+                    // Calculate intensity for each axis using standard formula for intensity
+                    float light_intensity[3];
+                    for (int light_i = 0; light_i < 3; light_i++) {
+                        light_intensity[light_i] = 4.0f * light_model[light_i] / dist_sq;
+                        light_intensity[light_i] = clamp(light_intensity[light_i], -1.0f, 1.0f);
+                    }
+
+                    // Adjust intensity based on surface normal and sum up total
+                    float total_intensity = light_intensity[0] * vn->n[0] + light_intensity[1] * vn->n[1] + light_intensity[2] * vn->n[2];
+                    total_intensity = clamp(total_intensity, -1.0f, 1.0f);
+
+                    // Attenuate intensity based on attenuation values.
+                    // Example formula found at https://ogldev.org/www/tutorial20/tutorial20.html
+                    // Specific coefficients for MM's microcode sourced from GLideN64 https://github.com/gonetz/GLideN64/blob/3b43a13a80dfc2eb6357673440b335e54eaa3896/src/gSP.cpp#L636
+                    float distf = floorf(dist);
+                    float attenuation = (distf * g_rsp.current_lights[i].p.unk7 * 2.0f + distf * distf * g_rsp.current_lights[i].p.unkE / 8.0f) / (float)0xFFFF + 1.0f;
+                    intensity = total_intensity / attenuation;
+                } else {
+                    intensity += vn->n[0] * g_rsp.current_lights_coeffs[i][0];
+                    intensity += vn->n[1] * g_rsp.current_lights_coeffs[i][1];
+                    intensity += vn->n[2] * g_rsp.current_lights_coeffs[i][2];
+                    intensity /= 127.0f;
+                }
                 if (intensity > 0.0f) {
-                    r += intensity * g_rsp.current_lights[i].col[0];
-                    g += intensity * g_rsp.current_lights[i].col[1];
-                    b += intensity * g_rsp.current_lights[i].col[2];
+                    r += intensity * g_rsp.current_lights[i].l.col[0];
+                    g += intensity * g_rsp.current_lights[i].l.col[1];
+                    b += intensity * g_rsp.current_lights[i].l.col[2];
                 }
             }
 
@@ -1754,9 +1791,9 @@ static void gfx_sp_movemem(uint8_t index, uint8_t offset, const void* data) {
             int lightidx = offset / 24 - 2;
             if (lightidx >= 0 && lightidx <= MAX_LIGHTS) { // skip lookat
                 // NOTE: reads out of bounds if it is an ambient light
-                memcpy(g_rsp.current_lights + lightidx, data, sizeof(Light_t));
+                memcpy(g_rsp.current_lights + lightidx, data, sizeof(Light));
             } else if (lightidx < 0) {
-                memcpy(g_rsp.lookat + offset / 24, data, sizeof(Light_t));
+                memcpy(g_rsp.lookat + offset / 24, data, sizeof(Light_t)); // TODO Light?
             }
             break;
         }

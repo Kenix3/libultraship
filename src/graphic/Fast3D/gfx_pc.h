@@ -125,7 +125,7 @@ struct RSP {
     float P_matrix[4][4];
 
     Light_t lookat[2];
-    Light_t current_lights[MAX_LIGHTS + 1];
+    Light current_lights[MAX_LIGHTS + 1];
     float current_lights_coeffs[MAX_LIGHTS][3];
     float current_lookat_coeffs[2][3]; // lookat_x, lookat_y
     uint8_t current_num_lights;        // includes ambient light
