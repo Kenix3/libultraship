@@ -9,6 +9,7 @@
 
 namespace LUS {
 OtrArchive::OtrArchive(const std::string& archivePath) : Archive(archivePath) {
+    mHandle = nullptr;
 }
 
 OtrArchive::~OtrArchive() {
@@ -16,6 +17,11 @@ OtrArchive::~OtrArchive() {
 }
 
 std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
+    if (mHandle == nullptr) {
+        SPDLOG_TRACE("Failed to open file {} from mpq archive {}. Archive not open.", filePath, GetPath());
+        return nullptr;
+    }
+
     HANDLE fileHandle;
     bool attempt = SFileOpenFileEx(mHandle, filePath.c_str(), 0, &fileHandle);
     if (!attempt) {

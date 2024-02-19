@@ -19,8 +19,7 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(uint64_t hash) {
 
 std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
     if (mZipArchive == nullptr) {
-        SPDLOG_TRACE("Failed to open zip archive  {}.", GetPath());
-        SPDLOG_TRACE("Failed to open file {} from mpq archive  {}.", filePath, GetPath());
+        SPDLOG_TRACE("Failed to open file {} from zip archive {}. Archive not open.", filePath, GetPath());
         return nullptr;
     }
 
