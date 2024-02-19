@@ -8,6 +8,7 @@
 #include "resource/ResourceLoader.h"
 #include "utils/binarytools/MemoryStream.h"
 #include <StrHash64.h>
+#include <nlohmann/json.hpp>
 
 // TODO: Delete me and find an implementation
 // Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
@@ -107,7 +108,30 @@ void Archive::AddFile(const std::string& filePath) {
 }
 
 std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath, std::shared_ptr<File> metaFileToLoad) {
+    auto initData = CreateDefaultResourceInitData();
 
+    // just using metaFileToLoad->Buffer->data() leads to garbage at the end
+    // that causes nlohmann to fail parsing, following the pattern used for
+    // xml resolves that issue
+    auto stream = std::make_shared<MemoryStream>(metaFileToLoad->Buffer);
+    auto binaryReader = std::make_shared<BinaryReader>(stream);
+    auto parsed = nlohmann::json::parse(binaryReader->ReadCString());
+
+    if (parsed.contains("path")) {
+        initData->Path = parsed["path"];
+    } else {
+        initData->Path = filePath;
+    }
+
+    auto formatString = parsed["format"];
+    if (formatString == "XML") {
+        initData->Format = RESOURCE_FORMAT_XML;
+    }
+    
+    initData->Type = Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(parsed["type"]);
+    initData->ResourceVersion = parsed["version"];
+    
+    return initData;
 }
 
 std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath, std::shared_ptr<File> fileToLoad) {

@@ -87,7 +87,11 @@ bool OtrArchive::LoadRaw() {
         std::string_view line = lines[i].substr(0, lines[i].length() - 1); // Trim \r
         std::string lineStr = std::string(line);
 
-        AddFile(lineStr);
+        if (lineStr.length() > 5 && lineStr.substr(lineStr.length() - 5) == ".meta") {
+            AddFile(lineStr.substr(0, lineStr.length() - 5));
+        } else {
+            AddFile(lineStr);
+        }
     }
 
     return opened;
