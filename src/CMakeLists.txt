@@ -466,7 +466,7 @@ else()
     target_link_libraries(libultraship PUBLIC storm)
 endif()
 target_link_libraries(libultraship
-    PRIVATE StrHash64 
+    PRIVATE StrHash64
     PUBLIC ZAPDUtils ImGui tinyxml2 nlohmann_json::nlohmann_json
 )
 
