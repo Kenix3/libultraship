@@ -53,8 +53,10 @@ class Archive {
 
   private:
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();
-    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath, std::shared_ptr<File> metaFileToLoad);
-    std::shared_ptr<ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath, std::shared_ptr<File> fileToLoad);
+    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
+                                                           std::shared_ptr<File> metaFileToLoad);
+    std::shared_ptr<ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                 std::shared_ptr<File> fileToLoad);
     std::shared_ptr<BinaryReader> CreateBinaryReader(std::shared_ptr<File> fileToLoad);
     std::shared_ptr<tinyxml2::XMLDocument> CreateXMLReader(std::shared_ptr<File> fileToLoad);
 

@@ -107,7 +107,8 @@ void Archive::AddFile(const std::string& filePath) {
     (*mHashes)[CRC64(filePath.c_str())] = filePath;
 }
 
-std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath, std::shared_ptr<File> metaFileToLoad) {
+std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath,
+                                                                std::shared_ptr<File> metaFileToLoad) {
     auto initData = CreateDefaultResourceInitData();
 
     // just using metaFileToLoad->Buffer->data() leads to garbage at the end
@@ -127,14 +128,15 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::strin
     if (formatString == "XML") {
         initData->Format = RESOURCE_FORMAT_XML;
     }
-    
+
     initData->Type = Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(parsed["type"]);
     initData->ResourceVersion = parsed["version"];
-    
+
     return initData;
 }
 
-std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath, std::shared_ptr<File> fileToLoad) {
+std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                      std::shared_ptr<File> fileToLoad) {
     // Determine if file is binary or XML...
     if (fileToLoad->Buffer->at(0) == '<') {
         // File is XML
@@ -156,15 +158,15 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std:
 
         if (headerBuffer->size() < OTR_HEADER_SIZE) {
             SPDLOG_ERROR("Failed to parse ResourceInitData, buffer size too small. File: {}. Got {} bytes and "
-                            "needed {} bytes.",
-                            filePath, headerBuffer->size(), OTR_HEADER_SIZE);
+                         "needed {} bytes.",
+                         filePath, headerBuffer->size(), OTR_HEADER_SIZE);
             return nullptr;
         }
 
         // Factories expect the buffer to not include the header,
         // so we need to remove it from the buffer on the file
         fileToLoad->Buffer = std::make_shared<std::vector<char>>(fileToLoad->Buffer->begin() + OTR_HEADER_SIZE,
-                                                                    fileToLoad->Buffer->end());
+                                                                 fileToLoad->Buffer->end());
 
         // Create a reader for the header buffer
         auto headerStream = std::make_shared<MemoryStream>(headerBuffer);
