@@ -18,7 +18,6 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(uint64_t hash) {
 }
 
 std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
-    mZipArchive = zip_open(GetPath().c_str(), ZIP_RDONLY, nullptr);
     if (mZipArchive == nullptr) {
         SPDLOG_TRACE("Failed to open zip archive  {}.", GetPath());
         SPDLOG_TRACE("Failed to open file {} from mpq archive  {}.", filePath, GetPath());
@@ -28,7 +27,6 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
     int zipEntryIndex = zip_name_locate(mZipArchive, filePath.c_str(), 0);
     if (zipEntryIndex < 0) {
         SPDLOG_TRACE("Failed to find file {} in zip archive  {}.", filePath, GetPath());
-        UnloadRaw();
         return nullptr;
     }
 
@@ -36,14 +34,12 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
     zip_stat_init(&zipEntryStat);
     if (zip_stat_index(mZipArchive, zipEntryIndex, 0, &zipEntryStat) != 0) {
         SPDLOG_TRACE("Failed to get entry information for file {} in zip archive  {}.", filePath, GetPath());
-        UnloadRaw();
         return nullptr;
     }
 
     struct zip_file* zipEntryFile = zip_fopen_index(mZipArchive, zipEntryIndex, 0);
     if (!zipEntryFile) {
         SPDLOG_TRACE("Failed to open file {} in zip archive  {}.", filePath, GetPath());
-        UnloadRaw();
         return nullptr;
     }
 
@@ -61,11 +57,10 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
     fileToLoad->Parent = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(std::move(*this)));
     fileToLoad->IsLoaded = true;
 
-    UnloadRaw();
     return fileToLoad;
 }
 
-bool O2rArchive::LoadRaw() {
+bool O2rArchive::Open() {
     mZipArchive = zip_open(GetPath().c_str(), ZIP_RDONLY, nullptr);
     if (mZipArchive == nullptr) {
         SPDLOG_ERROR("Failed to load zip file \"{}\"", GetPath());
@@ -79,10 +74,10 @@ bool O2rArchive::LoadRaw() {
         AddFile(zipEntryName);
     }
 
-    return UnloadRaw();
+    return true;
 }
 
-bool O2rArchive::UnloadRaw() {
+bool O2rArchive::Close() {
     if (zip_close(mZipArchive) == -1) {
         SPDLOG_ERROR("Failed to close zip file \"{}\"", GetPath());
         return false;

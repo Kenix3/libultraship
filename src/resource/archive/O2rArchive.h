@@ -20,8 +20,8 @@ class O2rArchive : virtual public Archive {
     O2rArchive(const std::string& archivePath);
     ~O2rArchive();
 
-    bool LoadRaw();
-    bool UnloadRaw();
+    bool Open();
+    bool Close();
     std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
