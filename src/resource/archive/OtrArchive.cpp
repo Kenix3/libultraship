@@ -9,6 +9,7 @@
 
 namespace LUS {
 OtrArchive::OtrArchive(const std::string& archivePath) : Archive(archivePath) {
+    mHandle = nullptr;
 }
 
 OtrArchive::~OtrArchive() {
@@ -16,6 +17,11 @@ OtrArchive::~OtrArchive() {
 }
 
 std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
+    if (mHandle == nullptr) {
+        SPDLOG_TRACE("Failed to open file {} from mpq archive {}. Archive not open.", filePath, GetPath());
+        return nullptr;
+    }
+
     HANDLE fileHandle;
     bool attempt = SFileOpenFileEx(mHandle, filePath.c_str(), 0, &fileHandle);
     if (!attempt) {
@@ -56,7 +62,7 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(uint64_t hash) {
     return LoadFileRaw(filePath);
 }
 
-bool OtrArchive::LoadRaw() {
+bool OtrArchive::Open() {
     const bool opened = SFileOpenArchive(GetPath().c_str(), 0, MPQ_OPEN_READ_ONLY, &mHandle);
     if (opened) {
         SPDLOG_INFO("Opened mpq file \"{}\"", GetPath());
@@ -79,13 +85,13 @@ bool OtrArchive::LoadRaw() {
         std::string_view line = lines[i].substr(0, lines[i].length() - 1); // Trim \r
         std::string lineStr = std::string(line);
 
-        AddFile(lineStr);
+        IndexFile(lineStr);
     }
 
     return opened;
 }
 
-bool OtrArchive::UnloadRaw() {
+bool OtrArchive::Close() {
     bool closed = SFileCloseArchive(mHandle);
     if (!closed) {
         SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mHandle);

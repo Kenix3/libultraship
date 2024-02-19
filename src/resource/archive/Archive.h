@@ -34,15 +34,15 @@ class Archive {
     const std::string& GetPath();
     bool IsLoaded();
 
-    virtual bool LoadRaw() = 0;
-    virtual bool UnloadRaw() = 0;
+    virtual bool Open() = 0;
+    virtual bool Close() = 0;
     virtual std::shared_ptr<File> LoadFileRaw(const std::string& filePath) = 0;
     virtual std::shared_ptr<File> LoadFileRaw(uint64_t hash) = 0;
 
   protected:
     void SetLoaded(bool isLoaded);
     void SetGameVersion(uint32_t gameVersion);
-    void AddFile(const std::string& filePath);
+    void IndexFile(const std::string& filePath);
 
   private:
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();

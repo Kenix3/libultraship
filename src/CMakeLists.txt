@@ -470,6 +470,9 @@ target_link_libraries(libultraship
     PUBLIC ZAPDUtils ImGui tinyxml2 nlohmann_json::nlohmann_json
 )
 
+find_package(libzip REQUIRED)
+target_link_libraries(libultraship PRIVATE libzip::zip)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)

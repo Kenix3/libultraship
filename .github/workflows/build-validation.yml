@@ -11,7 +11,7 @@ jobs:
     steps:
     - name: Install dependencies
       run: |
-        brew install sdl2 libpng glew ninja
+        brew install sdl2 libpng glew ninja libzip
     - uses: actions/checkout@v2
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
@@ -34,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev ninja-build
+        sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build
     - uses: actions/checkout@v2
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2

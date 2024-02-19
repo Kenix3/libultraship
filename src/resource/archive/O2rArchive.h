@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <string>
 
+#include "zip.h"
+
 #include "resource/File.h"
 #include "resource/Resource.h"
 #include "resource/archive/Archive.h"
@@ -18,12 +20,13 @@ class O2rArchive : virtual public Archive {
     O2rArchive(const std::string& archivePath);
     ~O2rArchive();
 
-    bool LoadRaw();
-    bool UnloadRaw();
+    bool Open();
+    bool Close();
     std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
   protected:
   private:
+    zip_t* mZipArchive;
 };
 } // namespace LUS

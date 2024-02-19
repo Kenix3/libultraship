@@ -24,8 +24,8 @@ class OtrArchive : virtual public Archive {
     OtrArchive(const std::string& archivePath);
     ~OtrArchive();
 
-    bool LoadRaw();
-    bool UnloadRaw();
+    bool Open();
+    bool Close();
     std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
