@@ -26,7 +26,7 @@ Archive::~Archive() {
 }
 
 void Archive::Load() {
-    bool opened = LoadRaw();
+    bool opened = Open();
 
     auto t = LoadFileRaw("version");
     bool isGameVersionValid = false;

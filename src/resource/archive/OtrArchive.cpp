@@ -62,7 +62,7 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(uint64_t hash) {
     return LoadFileRaw(filePath);
 }
 
-bool OtrArchive::LoadRaw() {
+bool OtrArchive::Open() {
     const bool opened = SFileOpenArchive(GetPath().c_str(), 0, MPQ_OPEN_READ_ONLY, &mHandle);
     if (opened) {
         SPDLOG_INFO("Opened mpq file \"{}\"", GetPath());
@@ -91,7 +91,7 @@ bool OtrArchive::LoadRaw() {
     return opened;
 }
 
-bool OtrArchive::UnloadRaw() {
+bool OtrArchive::Close() {
     bool closed = SFileCloseArchive(mHandle);
     if (!closed) {
         SPDLOG_ERROR("({}) Failed to close mpq {}", GetLastError(), mHandle);
