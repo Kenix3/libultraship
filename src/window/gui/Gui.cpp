@@ -232,6 +232,15 @@ void Gui::ImGuiBackendInit() {
 void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& path) {
     const auto res = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
 
+    if (!res) {
+        SPDLOG_ERROR("Failed to load resource");
+        return;
+    }
+    if (!res->Buffer || res->Buffer->empty()) {
+        SPDLOG_ERROR("Buffer is null or empty");
+        return;
+    }
+
     GuiTexture asset;
     asset.Width = 0;
     asset.Height = 0;
