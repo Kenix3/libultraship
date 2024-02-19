@@ -70,7 +70,7 @@ bool O2rArchive::Open() {
     for (auto i = 0; i < zipNumEntries; i++) {
         auto zipEntryName = zip_get_name(mZipArchive, i, 0);
 
-        AddFile(zipEntryName);
+        IndexFile(zipEntryName);
     }
 
     return true;

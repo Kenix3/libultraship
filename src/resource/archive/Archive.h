@@ -42,7 +42,7 @@ class Archive {
   protected:
     void SetLoaded(bool isLoaded);
     void SetGameVersion(uint32_t gameVersion);
-    void AddFile(const std::string& filePath);
+    void IndexFile(const std::string& filePath);
 
   private:
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();

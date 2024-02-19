@@ -104,9 +104,9 @@ void Archive::SetGameVersion(uint32_t gameVersion) {
     mGameVersion = gameVersion;
 }
 
-void Archive::AddFile(const std::string& filePath) {
+void Archive::IndexFile(const std::string& filePath) {
     if (filePath.length() > 5 && filePath.substr(filePath.length() - 5) == ".meta") {
-        AddFile(filePath.substr(0, filePath.length() - 5));
+        IndexFile(filePath.substr(0, filePath.length() - 5));
         return;
     }
 

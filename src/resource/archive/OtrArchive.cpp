@@ -85,7 +85,7 @@ bool OtrArchive::Open() {
         std::string_view line = lines[i].substr(0, lines[i].length() - 1); // Trim \r
         std::string lineStr = std::string(line);
 
-        AddFile(lineStr);
+        IndexFile(lineStr);
     }
 
     return opened;
