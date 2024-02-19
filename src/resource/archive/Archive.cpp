@@ -172,15 +172,22 @@ std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<
 }
 
 std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
-    auto fileToLoad = LoadFileRaw(filePath);
-
     auto metaFilePath = filePath + ".meta";
     auto metaFileToLoad = LoadFileRaw(metaFilePath);
 
+    std::shared_ptr<File> fileToLoad = nullptr;
     if (metaFileToLoad != nullptr) {
-        fileToLoad->InitData = ReadResourceInitData(filePath, metaFileToLoad);
+        auto initData = ReadResourceInitData(filePath, metaFileToLoad);
+        fileToLoad = LoadFileRaw(initData->Path);
+        fileToLoad->InitData = initData;
     } else {
+        fileToLoad = LoadFileRaw(filePath);
         fileToLoad->InitData = ReadResourceInitDataLegacy(filePath, fileToLoad);
+    }
+
+    if (fileToLoad == nullptr) {
+        SPDLOG_ERROR("Failed to load file at path {}.", filePath);
+        return nullptr;
     }
 
     switch (fileToLoad->InitData->Format) {
