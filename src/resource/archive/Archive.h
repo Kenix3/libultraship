@@ -40,19 +40,22 @@ class Archive {
     virtual std::shared_ptr<File> LoadFileRaw(uint64_t hash) = 0;
 
   protected:
-    static std::shared_ptr<ResourceInitData> ReadResourceInitDataBinary(const std::string& filePath,
-                                                                        std::shared_ptr<BinaryReader> headerReader);
-    static std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
-                                                                     std::shared_ptr<tinyxml2::XMLDocument> document);
-    virtual std::shared_ptr<ResourceInitData> LoadFileMeta(const std::string& filePath) = 0;
-    virtual std::shared_ptr<ResourceInitData> LoadFileMeta(uint64_t hash) = 0;
-
     void SetLoaded(bool isLoaded);
     void SetGameVersion(uint32_t gameVersion);
     void AddFile(const std::string& filePath);
 
   private:
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();
+    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
+                                                           std::shared_ptr<File> metaFileToLoad);
+    std::shared_ptr<ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                 std::shared_ptr<File> fileToLoad);
+    static std::shared_ptr<ResourceInitData> ReadResourceInitDataBinary(const std::string& filePath,
+                                                                        std::shared_ptr<BinaryReader> headerReader);
+    static std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
+                                                                     std::shared_ptr<tinyxml2::XMLDocument> document);
+    std::shared_ptr<BinaryReader> CreateBinaryReader(std::shared_ptr<File> fileToLoad);
+    std::shared_ptr<tinyxml2::XMLDocument> CreateXMLReader(std::shared_ptr<File> fileToLoad);
 
     bool mIsLoaded;
     bool mHasGameVersion;

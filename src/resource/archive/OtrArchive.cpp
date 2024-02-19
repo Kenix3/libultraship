@@ -56,14 +56,6 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(uint64_t hash) {
     return LoadFileRaw(filePath);
 }
 
-std::shared_ptr<ResourceInitData> OtrArchive::LoadFileMeta(const std::string& filePath) {
-    return nullptr;
-}
-
-std::shared_ptr<ResourceInitData> OtrArchive::LoadFileMeta(uint64_t hash) {
-    return nullptr;
-}
-
 bool OtrArchive::LoadRaw() {
     const bool opened = SFileOpenArchive(GetPath().c_str(), 0, MPQ_OPEN_READ_ONLY, &mHandle);
     if (opened) {
