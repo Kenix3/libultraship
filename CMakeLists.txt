@@ -27,7 +27,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND USE_AUTO_VCPKG)
 	endif()
 
     vcpkg_bootstrap()
-    vcpkg_install_packages(zlib bzip2 sdl2 glew)
+    vcpkg_install_packages(zlib bzip2 sdl2 glew libzip)
 endif()
 
 add_subdirectory("extern")

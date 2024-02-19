@@ -1,5 +1,6 @@
 #include "O2rArchive.h"
 
+#include "Context.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {
@@ -11,28 +12,83 @@ O2rArchive::~O2rArchive() {
 }
 
 std::shared_ptr<File> O2rArchive::LoadFileRaw(uint64_t hash) {
-    return nullptr;
+    const std::string& filePath =
+        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+    return LoadFileRaw(filePath);
 }
 
 std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
-    return nullptr;
-}
+    mZipArchive = zip_open(GetPath().c_str(), ZIP_RDONLY, nullptr);
+    if (mZipArchive == nullptr) {
+        SPDLOG_TRACE("Failed to open zip archive  {}.", GetPath());
+        SPDLOG_TRACE("Failed to open file {} from mpq archive  {}.", filePath, GetPath());
+        return nullptr;
+    }
 
-std::shared_ptr<ResourceInitData> O2rArchive::LoadFileMeta(const std::string& filePath) {
-    // Search for file with .meta postfix.
-    // If exists, return a ResourceInitData with that data parsed out. Else return a default ResourceInitData
-    return nullptr;
-}
+    int zipEntryIndex = zip_name_locate(mZipArchive, filePath.c_str(), 0);
+    if (zipEntryIndex < 0) {
+        SPDLOG_TRACE("Failed to find file {} in zip archive  {}.", filePath, GetPath());
+        UnloadRaw();
+        return nullptr;
+    }
 
-std::shared_ptr<ResourceInitData> O2rArchive::LoadFileMeta(uint64_t hash) {
-    return nullptr;
+    struct zip_stat zipEntryStat;
+    zip_stat_init(&zipEntryStat);
+    if (zip_stat_index(mZipArchive, zipEntryIndex, 0, &zipEntryStat) != 0) {
+        SPDLOG_TRACE("Failed to get entry information for file {} in zip archive  {}.", filePath, GetPath());
+        UnloadRaw();
+        return nullptr;
+    }
+
+    struct zip_file* zipEntryFile = zip_fopen_index(mZipArchive, zipEntryIndex, 0);
+    if (!zipEntryFile) {
+        SPDLOG_TRACE("Failed to open file {} in zip archive  {}.", filePath, GetPath());
+        UnloadRaw();
+        return nullptr;
+    }
+
+    auto fileToLoad = std::make_shared<File>();
+    fileToLoad->Buffer = std::make_shared<std::vector<char>>(zipEntryStat.size);
+
+
+    if (zip_fread(zipEntryFile, fileToLoad->Buffer->data(), zipEntryStat.size) < 0) {
+        SPDLOG_TRACE("Error reading file {} in zip archive  {}.", filePath, GetPath());
+    }
+
+    if (zip_fclose(zipEntryFile) != 0) {
+        SPDLOG_TRACE("Error closing file {} in zip archive  {}.", filePath, GetPath());
+    }
+
+    fileToLoad->Parent = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(std::move(*this)));
+    fileToLoad->IsLoaded = true;
+
+    UnloadRaw();
+    return fileToLoad;
 }
 
 bool O2rArchive::LoadRaw() {
-    return false;
+    mZipArchive = zip_open(GetPath().c_str(), ZIP_RDONLY, nullptr);
+    if (mZipArchive == nullptr) {
+        SPDLOG_ERROR("Failed to load zip file \"{}\"", GetPath());
+        return false;
+    }
+
+    auto zipNumEntries = zip_get_num_entries(mZipArchive, 0);
+    for (auto i = 0; i < zipNumEntries; i++) {
+        auto zipEntryName = zip_get_name(mZipArchive, i, 0);
+
+        AddFile(zipEntryName);
+    }
+
+    return UnloadRaw();
 }
 
 bool O2rArchive::UnloadRaw() {
-    return false;
+    if (zip_close(mZipArchive) == -1) {
+        SPDLOG_ERROR("Failed to close zip file \"{}\"", GetPath());
+        return false;
+    }
+
+    return true;
 }
 } // namespace LUS
