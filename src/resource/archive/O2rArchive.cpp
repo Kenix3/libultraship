@@ -23,7 +23,7 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
         return nullptr;
     }
 
-    int zipEntryIndex = zip_name_locate(mZipArchive, filePath.c_str(), 0);
+    auto zipEntryIndex = zip_name_locate(mZipArchive, filePath.c_str(), 0);
     if (zipEntryIndex < 0) {
         SPDLOG_TRACE("Failed to find file {} in zip archive  {}.", filePath, GetPath());
         return nullptr;
