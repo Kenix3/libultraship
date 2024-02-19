@@ -50,7 +50,6 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
     auto fileToLoad = std::make_shared<File>();
     fileToLoad->Buffer = std::make_shared<std::vector<char>>(zipEntryStat.size);
 
-
     if (zip_fread(zipEntryFile, fileToLoad->Buffer->data(), zipEntryStat.size) < 0) {
         SPDLOG_TRACE("Error reading file {} in zip archive  {}.", filePath, GetPath());
     }

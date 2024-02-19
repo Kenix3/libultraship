@@ -30,7 +30,6 @@ class OtrArchive : virtual public Archive {
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
   protected:
-
   private:
     HANDLE mHandle;
 };
