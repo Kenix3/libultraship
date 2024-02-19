@@ -23,10 +23,10 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
             return StringHelper::Sprintf(UsesGameCubeLayout() ? "Analog Stick %s" : "Left Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_AXIS_RIGHTX:
-            return StringHelper::Sprintf(UsesGameCubeLayout() ? "C Stick %s" : "Left Stick %s",
+            return StringHelper::Sprintf(UsesGameCubeLayout() ? "C Stick %s" : "Right Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_LEFT : ICON_FA_ARROW_RIGHT);
         case SDL_CONTROLLER_AXIS_RIGHTY:
-            return StringHelper::Sprintf(UsesGameCubeLayout() ? "C Stick %s" : "Left Stick %s",
+            return StringHelper::Sprintf(UsesGameCubeLayout() ? "C Stick %s" : "Right Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
             if (UsesPlaystationLayout()) {
