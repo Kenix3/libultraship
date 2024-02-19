@@ -53,6 +53,7 @@ void Archive::Load() {
 }
 
 void Archive::Unload() {
+    UnloadRaw();
     SetLoaded(false);
 }
 
