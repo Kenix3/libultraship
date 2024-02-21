@@ -45,12 +45,7 @@ std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath) {
         return nullptr;
     }
 
-    const auto archive = mFileToArchive[CRC64(filePath.c_str())];
-    if (archive == nullptr) {
-        return nullptr;
-    }
-
-    return archive->LoadFile(filePath);
+    return LoadFile(CRC64(filePath.c_str()));
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash) {
@@ -59,7 +54,9 @@ std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash) {
         return nullptr;
     }
 
-    return archive->LoadFile(hash);
+    auto file = archive->LoadFile(hash);
+    file->Parent = archive;
+    return file;
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFileRaw(const std::string& filePath) {
@@ -67,12 +64,7 @@ std::shared_ptr<File> ArchiveManager::LoadFileRaw(const std::string& filePath) {
         return nullptr;
     }
 
-    const auto archive = mFileToArchive[CRC64(filePath.c_str())];
-    if (archive == nullptr) {
-        return nullptr;
-    }
-
-    return archive->LoadFileRaw(filePath);
+    return LoadFileRaw(CRC64(filePath.c_str()));
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFileRaw(uint64_t hash) {
@@ -81,7 +73,9 @@ std::shared_ptr<File> ArchiveManager::LoadFileRaw(uint64_t hash) {
         return nullptr;
     }
 
-    return archive->LoadFileRaw(hash);
+    auto file = archive->LoadFileRaw(hash);
+    file->Parent = archive;
+    return file;
 }
 
 bool ArchiveManager::HasFile(const std::string& filePath) {

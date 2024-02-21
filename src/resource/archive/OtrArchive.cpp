@@ -50,7 +50,6 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
         SPDLOG_ERROR("({}) Failed to close file {} from mpq archive {}", GetLastError(), filePath, GetPath());
     }
 
-    fileToLoad->Parent = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(std::move(*this)));
     fileToLoad->IsLoaded = true;
 
     return fileToLoad;

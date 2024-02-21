@@ -53,7 +53,6 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
         SPDLOG_TRACE("Error closing file {} in zip archive  {}.", filePath, GetPath());
     }
 
-    fileToLoad->Parent = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(std::move(*this)));
     fileToLoad->IsLoaded = true;
 
     return fileToLoad;
