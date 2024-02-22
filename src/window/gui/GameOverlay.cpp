@@ -16,6 +16,7 @@ GameOverlay::~GameOverlay() {
 }
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
+    // font resource type in gui
     ImGuiIO& io = ImGui::GetIO();
     std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
     if (font->IsLoaded) {
