@@ -74,7 +74,6 @@ void CrashHandler::PrintCommon() {
 
 #if defined(__linux__) && !defined(__ANDROID__)
 void CrashHandler::PrintRegisters(ucontext_t* ctx) {
-    #if 0
     char regbuffer[30];
     AppendLine("Registers:");
 #if defined(__x86_64__)
@@ -136,7 +135,6 @@ void CrashHandler::PrintRegisters(ucontext_t* ctx) {
     snprintf(regbuffer, std::size(regbuffer), "EFL: 0x%08lX", ctx->uc_mcontext.gregs[REG_EFL]);
     AppendLine(regbuffer);
 #endif
-    #endif
 }
 
 static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
@@ -217,7 +215,6 @@ static void ShutdownHandler(int sig, siginfo_t* sigInfo, void* data) {
 void CrashHandler::PrintRegisters(CONTEXT* ctx) {
     AppendLine("Registers: ");
     char regBuff[25];
-    #if 0
 #if defined(_M_AMD64)
     sprintf_s(regBuff, std::size(regBuff), "RAX: 0x%016llX", ctx->Rax);
     AppendLine(regBuff);
@@ -297,11 +294,9 @@ void CrashHandler::PrintRegisters(CONTEXT* ctx) {
     sprintf_s(regBuff, std::size(regBuff), "EIP: 0x%08lX", ctx->Eip);
     AppendLine(regBuff);
 #endif
-    #endif
 }
 
 void CrashHandler::PrintStack(CONTEXT* ctx) {
-    #if 0
     BOOL result;
     HANDLE process;
     HANDLE thread;
@@ -392,7 +387,6 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     PrintCommon();
     LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
-    #endif
 }
 
 extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
@@ -415,7 +409,6 @@ extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
 #endif
 
 CrashHandler::CrashHandler() {
-    #if 0
     mOutBuffer = new char[gMaxBufferSize];
 #if defined(__linux__) && !defined(__ANDROID__)
     struct sigaction action;
@@ -438,7 +431,6 @@ CrashHandler::CrashHandler() {
 #elif defined(_WIN32)
     SetUnhandledExceptionFilter(seh_filter);
 #endif
-    #endif
 }
 
 CrashHandler::CrashHandler(CrashHandlerCallback callback) {
