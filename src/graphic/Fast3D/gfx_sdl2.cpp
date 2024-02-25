@@ -284,6 +284,11 @@ static int target_fps = 60;
 #define FRAME_INTERVAL_US_NUMERATOR 1000000
 #define FRAME_INTERVAL_US_DENOMINATOR (target_fps)
 
+static void gfx_sdl_close(void) {
+    SDL_RestoreWindow(wnd); // Restore window before closing, so normal window pos and size is saved
+    is_running = false;
+}
+
 #ifdef _WIN32
 static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     switch (message) {
@@ -291,6 +296,12 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
             // Something is wrong with SDLs original implementation of WM_GETDPISCALEDSIZE, so pass it to the default
             // system window procedure instead.
             return DefWindowProc(h_wnd, message, w_param, l_param);
+        case WM_ENDSESSION:
+            // Apparently SDL2 does not handle this
+            if (w_param == TRUE) {
+                gfx_sdl_close();
+            }
+            break;
         default:
             // Pass anything else to SDLs original window procedure.
             return CallWindowProc((WNDPROC)SDL_WndProc, h_wnd, message, w_param, l_param);
@@ -420,10 +431,6 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 }
 
-static void gfx_sdl_close() {
-    is_running = false;
-}
-
 static void gfx_sdl_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
     on_fullscreen_changed_callback = on_fullscreen_changed;
 }
@@ -538,7 +545,7 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             } else if (event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(wnd)) {
                 // We listen specifically for main window close because closing main window
                 // on macOS does not trigger SDL_Quit.
-                is_running = false;
+                gfx_sdl_close();
             }
             break;
         case SDL_DROPFILE:
@@ -547,7 +554,7 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             break;
         case SDL_QUIT:
-            is_running = false;
+            gfx_sdl_close();
             break;
     }
 }
