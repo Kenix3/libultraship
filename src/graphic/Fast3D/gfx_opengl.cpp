@@ -999,9 +999,15 @@ void gfx_opengl_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
     Framebuffer& fb_src = framebuffers[fb_id_source];
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_dst.fbo);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_src.fbo);
+
+    // Disabled for blit
+    glDisable(GL_SCISSOR_TEST);
+
     glBlitFramebuffer(0, 0, fb_src.width, fb_src.height, 0, 0, fb_dst.width, fb_dst.height, GL_COLOR_BUFFER_BIT,
                       GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer);
+
+    glEnable(GL_SCISSOR_TEST);
 }
 
 void* gfx_opengl_get_framebuffer_texture_id(int fb_id) {
@@ -1012,6 +1018,78 @@ void gfx_opengl_select_texture_fb(int fb_id) {
     // glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_2D, framebuffers[fb_id].clrbuf);
+}
+
+void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id) {
+    if (fb_dst_id >= (int)framebuffers.size() || fb_src_id >= (int)framebuffers.size()) {
+        return;
+    }
+
+    Framebuffer& src = framebuffers[fb_src_id];
+    const Framebuffer& dst = framebuffers[fb_dst_id];
+
+    // Skip copying framebuffers that don't have the same width
+    if (src.width != dst.width) {
+        return;
+    }
+
+    int srcX0, srcY0, srcX1, srcY1;
+    int dstX0, dstY0, dstX1, dstY1;
+
+    dstX0 = dstY0 = 0;
+    dstX1 = dst.width;
+    dstY1 = dst.height;
+
+    srcX0 = 0;
+    srcY0 = 0;
+    srcX1 = src.width;
+    srcY1 = src.height;
+
+    // Account for source framebuffer having the menu bar open
+    if (src.height >= dst.height) {
+        srcY1 -= src.height - dst.height;
+    }
+
+    // flip vertically as openGLs origin is in the bottom left when compared to Fast3D
+    if (src.invert_y != dst.invert_y) {
+        std::swap(dstY0, dstY1);
+    }
+
+    // Disabled for blit
+    glDisable(GL_SCISSOR_TEST);
+
+    // For msaa enabled buffers we can't perform a scaled blit to a simple sample buffer
+    // First do an unscaled blit to main buffer to resolve the sample data
+    if (src.height != dst.height && src.width != dst.width && src.msaa_level > 1) {
+        // Since frambuffer 0 is considered the final single sample resolve for the MSAA buffer,
+        // and is only needed at the end of a frame, we can temporarily use it here without causing issues
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, src.width, src.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+        // Switch source buffer to the single sample
+        fb_src_id = 0;
+        src = framebuffers[0];
+    }
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst.fbo);
+
+    // The 0 buffer is a double buffer so we need to choose the back to avoid imgui elements
+    if (fb_src_id == 0) {
+        glReadBuffer(GL_BACK);
+    } else {
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+    }
+
+    glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[current_framebuffer].fbo);
+
+    glReadBuffer(GL_BACK);
+
+    glEnable(GL_SCISSOR_TEST);
 }
 
 static std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
@@ -1118,6 +1196,7 @@ struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
                                           gfx_opengl_create_framebuffer,
                                           gfx_opengl_update_framebuffer_parameters,
                                           gfx_opengl_start_draw_to_framebuffer,
+                                          gfx_opengl_copy_framebuffer,
                                           gfx_opengl_clear_framebuffer,
                                           gfx_opengl_resolve_msaa_color_buffer,
                                           gfx_opengl_get_pixel_depth,

@@ -184,6 +184,8 @@
 // RDP Cmd
 #define G_SETGRAYSCALE 0x39
 #define G_EXTRAGEOMETRYMODE 0x3a
+#define G_COPYFB 0x3b
+#define G_IMAGERECT 0x3c
 #define G_SETINTENSITY 0x40
 
 /*
@@ -2643,20 +2645,34 @@ typedef union {
 #define gsSPInvalidateTexCache() \
     { _SHIFTL(G_INVALTEXCACHE, 24, 8), 0 }
 
-#define gsSPSetFB(pkt, fb)                      \
-    {                                           \
-        Gfx* _g = (Gfx*)(pkt);                  \
-                                                \
-        _g->words.w0 = _SHIFTL(G_SETFB, 24, 8); \
-        _g->words.w1 = fb;                      \
-    }
+#define gSPSetFB(pkt, f, s, w, i) gSetImage(pkt, G_SETFB, f, s, w, i)
 
-#define gsSPResetFB(pkt)                          \
+#define gSPResetFB(pkt)                           \
     {                                             \
         Gfx* _g = (Gfx*)(pkt);                    \
                                                   \
         _g->words.w0 = _SHIFTL(G_RESETFB, 24, 8); \
         _g->words.w1 = 0;                         \
+    }
+
+#define gDPCopyFB(pkt, dst, src, once, copiedPtr)                                                                    \
+    {                                                                                                                \
+        Gfx* _g = (Gfx*)(pkt);                                                                                       \
+                                                                                                                     \
+        _g->words.w0 = _SHIFTL(G_COPYFB, 24, 8) | _SHIFTL(dst, 11, 11) | _SHIFTL(src, 0, 11) | _SHIFTL(once, 22, 1); \
+        _g->words.w1 = (uintptr_t)copiedPtr;                                                                         \
+    }
+
+#define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \
+    {                                                                        \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt), *_g2 = (Gfx*)(pkt);      \
+                                                                             \
+        _g0->words.w0 = _SHIFTL(G_IMAGERECT, 24, 8) | _SHIFTL((tile), 0, 3); \
+        _g0->words.w1 = _SHIFTL((iw), 16, 16) | _SHIFTL((ih), 0, 16);        \
+        _g1->words.w0 = _SHIFTL((x0), 16, 16) | _SHIFTL((y0), 0, 16);        \
+        _g1->words.w1 = _SHIFTL((s0), 16, 16) | _SHIFTL((t0), 0, 16);        \
+        _g2->words.w0 = _SHIFTL((x1), 16, 16) | _SHIFTL((y1), 0, 16);        \
+        _g2->words.w1 = _SHIFTL((s1), 16, 16) | _SHIFTL((t1), 0, 16);        \
     }
 
 #define gSPGrayscale(pkt, state)                       \

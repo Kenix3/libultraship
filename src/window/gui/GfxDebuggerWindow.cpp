@@ -95,6 +95,8 @@ static const char* GetOpName(uint32_t op) {
         CASE(G_RDPTILESYNC);
         CASE(G_SPNOOP);
         CASE(G_CULLDL);
+        CASE(G_IMAGERECT);
+        CASE(G_COPYFB);
         default:
             return nullptr;
             // return "UNKNOWN";
@@ -274,6 +276,25 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
             case G_TEXRECT: {
                 simple_node(cmd, opcode);
                 cmd += 3;
+                break;
+            }
+
+            case G_IMAGERECT: {
+                node_with_text(cmd0, fmt::format("G_IMAGERECT"));
+                cmd += 3;
+                break;
+            }
+
+            case G_SETTIMG_FB: {
+                node_with_text(cmd0, fmt::format("G_SETTIMG_FB: src {}", cmd->words.w1));
+                cmd++;
+                break;
+            }
+
+            case G_COPYFB: {
+                node_with_text(cmd0, fmt::format("G_COPYFB: src {}, dest {}, new frames only {}", C0(0, 11), C0(11, 11),
+                                                 C0(22, 1)));
+                cmd++;
                 break;
             }
 
