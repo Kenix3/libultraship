@@ -6,6 +6,7 @@ set_property(TARGET libultraship PROPERTY C_STANDARD 11)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
+option(GFX_DEBUG_DISASSEMBLER "Enable libgfxd" OFF)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
@@ -261,27 +262,27 @@ set(Source_Files__Window__Gui
 source_group("window/gui" FILES ${Source_Files__Window__Gui})
 target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
 
+if (GFX_DEBUG_DISASSEMBLER)
+    set(Header_Files__Libraries__libgfxd
+        "../../ZAPDTR/lib/libgfxd/gbi.h"
+        "../../ZAPDTR/lib/libgfxd/gfxd.h"
+        "../../ZAPDTR/lib/libgfxd/priv.h"
+    )
+    source_group("Header Files\\Libraries\\libgfxd" FILES ${Header_Files__Libraries__libgfxd})
 
-set(Header_Files__Libraries__libgfxd
-    "../../ZAPDTR/lib/libgfxd/gbi.h"
-    "../../ZAPDTR/lib/libgfxd/gfxd.h"
-    "../../ZAPDTR/lib/libgfxd/priv.h"
-)
-source_group("Header Files\\Libraries\\libgfxd" FILES ${Header_Files__Libraries__libgfxd})
+    set(Source_Files__Libraries__libgfxd
+        "../../ZAPDTR/lib/libgfxd/gfxd.c"
+        "../../ZAPDTR/lib/libgfxd/uc.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3d.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3db.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3dex.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3dex2.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3dexb.c"
+    )
+    source_group("Source Files\\Libraries\\libgfxd" FILES ${Source_Files__Libraries__libgfxd})
 
-set(Source_Files__Libraries__libgfxd
-    "../../ZAPDTR/lib/libgfxd/gfxd.c"
-    "../../ZAPDTR/lib/libgfxd/uc.c"
-    "../../ZAPDTR/lib/libgfxd/uc_f3d.c"
-    "../../ZAPDTR/lib/libgfxd/uc_f3db.c"
-    "../../ZAPDTR/lib/libgfxd/uc_f3dex.c"
-    "../../ZAPDTR/lib/libgfxd/uc_f3dex2.c"
-    "../../ZAPDTR/lib/libgfxd/uc_f3dexb.c"
-)
-source_group("Source Files\\Libraries\\libgfxd" FILES ${Source_Files__Libraries__libgfxd})
-
-
-target_sources(libultraship PRIVATE ${Header_Files__Libraries__libgfxd} ${Source_Files__Libraries__libgfxd})
+    target_sources(libultraship PRIVATE ${Header_Files__Libraries__libgfxd} ${Source_Files__Libraries__libgfxd})
+endif()
 
 #=================== Utils ===================
 
@@ -479,7 +480,7 @@ endif()
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../../ZAPDTR/lib/libgfxd
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR} $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:${CMAKE_CURRENT_SOURCE_DIR}/../../ZAPDTR/lib/libgfxd>
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 
@@ -553,6 +554,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
         $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
         $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
+        $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
     )
 else ()
     target_compile_definitions(libultraship PRIVATE

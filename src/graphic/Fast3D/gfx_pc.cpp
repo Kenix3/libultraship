@@ -1136,7 +1136,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
 
         float world_pos[3];
         if (g_rsp.geometry_mode & G_LIGHTING_POSITIONAL) {
-            float (*mtx)[4] = g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1];
+            float(*mtx)[4] = g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1];
             world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
             world_pos[1] = v->ob[0] * mtx[0][1] + v->ob[1] * mtx[1][1] + v->ob[2] * mtx[2][1] + mtx[3][1];
             world_pos[2] = v->ob[0] * mtx[0][2] + v->ob[1] * mtx[1][2] + v->ob[2] * mtx[2][2] + mtx[3][2];
@@ -1167,13 +1167,18 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
                 float intensity = 0;
                 if ((g_rsp.geometry_mode & G_LIGHTING_POSITIONAL) && (g_rsp.current_lights[i].p.unk3 != 0)) {
                     // Calculate distance from the light to the vertex
-                    float dist_vec[3] = { g_rsp.current_lights[i].p.pos[0] - world_pos[0], g_rsp.current_lights[i].p.pos[1] - world_pos[1], g_rsp.current_lights[i].p.pos[2] - world_pos[2] };
-                    float dist_sq = dist_vec[0] * dist_vec[0] + dist_vec[1] * dist_vec[1] + dist_vec[2] * dist_vec[2] * 2; // The *2 comes from GLideN64, unsure of why it does it
+                    float dist_vec[3] = { g_rsp.current_lights[i].p.pos[0] - world_pos[0],
+                                          g_rsp.current_lights[i].p.pos[1] - world_pos[1],
+                                          g_rsp.current_lights[i].p.pos[2] - world_pos[2] };
+                    float dist_sq =
+                        dist_vec[0] * dist_vec[0] + dist_vec[1] * dist_vec[1] +
+                        dist_vec[2] * dist_vec[2] * 2; // The *2 comes from GLideN64, unsure of why it does it
                     float dist = sqrt(dist_sq);
 
                     // Transform distance vector (which acts as a direction light vector) into model's space
                     float light_model[3];
-                    gfx_transposed_matrix_mul(light_model, dist_vec, g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1]);
+                    gfx_transposed_matrix_mul(light_model, dist_vec,
+                                              g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1]);
 
                     // Calculate intensity for each axis using standard formula for intensity
                     float light_intensity[3];
@@ -1183,14 +1188,19 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
                     }
 
                     // Adjust intensity based on surface normal and sum up total
-                    float total_intensity = light_intensity[0] * vn->n[0] + light_intensity[1] * vn->n[1] + light_intensity[2] * vn->n[2];
+                    float total_intensity =
+                        light_intensity[0] * vn->n[0] + light_intensity[1] * vn->n[1] + light_intensity[2] * vn->n[2];
                     total_intensity = clamp(total_intensity, -1.0f, 1.0f);
 
                     // Attenuate intensity based on attenuation values.
                     // Example formula found at https://ogldev.org/www/tutorial20/tutorial20.html
-                    // Specific coefficients for MM's microcode sourced from GLideN64 https://github.com/gonetz/GLideN64/blob/3b43a13a80dfc2eb6357673440b335e54eaa3896/src/gSP.cpp#L636
+                    // Specific coefficients for MM's microcode sourced from GLideN64
+                    // https://github.com/gonetz/GLideN64/blob/3b43a13a80dfc2eb6357673440b335e54eaa3896/src/gSP.cpp#L636
                     float distf = floorf(dist);
-                    float attenuation = (distf * g_rsp.current_lights[i].p.unk7 * 2.0f + distf * distf * g_rsp.current_lights[i].p.unkE / 8.0f) / (float)0xFFFF + 1.0f;
+                    float attenuation = (distf * g_rsp.current_lights[i].p.unk7 * 2.0f +
+                                         distf * distf * g_rsp.current_lights[i].p.unkE / 8.0f) /
+                                            (float)0xFFFF +
+                                        1.0f;
                     intensity = total_intensity / attenuation;
                 } else {
                     intensity += vn->n[0] * g_rsp.current_lights_coeffs[i][0];
@@ -1948,7 +1958,8 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
             word_size_shift = 2;
             break;
     }
-    uint32_t orig_size_bytes = word_size_shift > 0 ? (lrs + 1) << word_size_shift : (lrs + 1) >> (-(int64_t)word_size_shift);
+    uint32_t orig_size_bytes =
+        word_size_shift > 0 ? (lrs + 1) << word_size_shift : (lrs + 1) >> (-(int64_t)word_size_shift);
     uint32_t size_bytes = orig_size_bytes;
     if (g_rdp.texture_to_load.raw_tex_metadata.h_byte_scale != 1 ||
         g_rdp.texture_to_load.raw_tex_metadata.v_pixel_scale != 1) {
@@ -2569,7 +2580,7 @@ static void gfx_step(GfxExecStack& exec_stack) {
     uint32_t opcode = cmd->words.w0 >> 24;
 
     // if (markerOn)
-     //printf("OP: %016X\n", cmd0->force_structure_alignment);
+    // printf("OP: %016X\n", cmd0->force_structure_alignment);
 
     switch (opcode) {
             // RSP commands:
@@ -2606,7 +2617,7 @@ static void gfx_step(GfxExecStack& exec_stack) {
                 exec_stack.openDisp(filename, l);
             } else if (p == 8) {
                 if (exec_stack.disp_stack.size() == 0) {
-                    SPDLOG_WARN("CLOSE_DISPS without matching open {}:{}", p, l); 
+                    SPDLOG_WARN("CLOSE_DISPS without matching open {}:{}", p, l);
                 } else {
                     exec_stack.closeDisp();
                 }
@@ -3356,19 +3367,19 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     rendering_state.scissor = {};
 
     auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
-        g_exec_stack.start(commands);
-        while (!g_exec_stack.cmd_stack.empty()) {
-            auto cmd = g_exec_stack.cmd_stack.top();
+    g_exec_stack.start(commands);
+    while (!g_exec_stack.cmd_stack.empty()) {
+        auto cmd = g_exec_stack.cmd_stack.top();
 
-            if (GfxDebuggerIsDebugging()) {
-                g_exec_stack.gfx_path.push_back(cmd);
-                if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
-                    break;
-                }
-                g_exec_stack.gfx_path.pop_back();
+        if (GfxDebuggerIsDebugging()) {
+            g_exec_stack.gfx_path.push_back(cmd);
+            if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
+                break;
             }
-            gfx_step(g_exec_stack);
+            g_exec_stack.gfx_path.pop_back();
         }
+        gfx_step(g_exec_stack);
+    }
     gfx_flush();
     gfxFramebuffer = 0;
     currentDir = std::stack<std::string>();
