@@ -1094,6 +1094,7 @@ static void gfx_sp_pop_matrix(uint32_t count) {
             }
         }
     }
+    g_rsp.lights_changed = true;
 }
 
 static float gfx_adjust_x_for_aspect_ratio(float x) {
