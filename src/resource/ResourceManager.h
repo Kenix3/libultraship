@@ -29,8 +29,6 @@ class ResourceManager {
     bool DidLoadSuccessfully();
     std::shared_ptr<ArchiveManager> GetArchiveManager();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
-    std::shared_future<std::shared_ptr<File>> LoadFileAsync(const std::string& filePath, bool priority = false);
-    std::shared_ptr<File> LoadFile(const std::string& filePath);
     std::shared_ptr<IResource> GetCachedResource(const std::string& filePath, bool loadExact = false);
     std::shared_ptr<IResource> LoadResource(const std::string& filePath, bool loadExact = false, std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<IResource> LoadResourceProcess(const std::string& filePath, bool loadExact = false, std::shared_ptr<ResourceInitData> initData = nullptr);

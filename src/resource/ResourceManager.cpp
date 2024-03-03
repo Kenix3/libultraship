@@ -136,18 +136,6 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
     return resource;
 }
 
-std::shared_future<std::shared_ptr<File>> ResourceManager::LoadFileAsync(const std::string& filePath, bool priority) {
-    if (priority) {
-        return mThreadPool->submit_front(&ResourceManager::LoadFileProcess, this, filePath).share();
-    } else {
-        return mThreadPool->submit_back(&ResourceManager::LoadFileProcess, this, filePath).share();
-    }
-}
-
-std::shared_ptr<File> ResourceManager::LoadFile(const std::string& filePath) {
-    return LoadFileAsync(filePath, true).get();
-}
-
 std::shared_future<std::shared_ptr<IResource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
                                                                                   bool loadExact, bool priority, std::shared_ptr<ResourceInitData> initData) {
     // Check for and remove the OTR signature
