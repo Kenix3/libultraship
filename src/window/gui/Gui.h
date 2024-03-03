@@ -18,6 +18,7 @@
 #include "window/gui/GuiWindow.h"
 #include "window/gui/GuiMenuBar.h"
 #include "libultraship/libultra/controller.h"
+#include "window/gui/resource/GuiTextureResource.h"
 
 namespace LUS {
 
@@ -100,12 +101,6 @@ class Gui {
     int16_t GetIntegerScaleFactor();
 
   private:
-    struct GuiTexture {
-        uint32_t RendererTextureId;
-        int32_t Width;
-        int32_t Height;
-    };
-
     GuiWindowInitData mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;

@@ -251,6 +251,10 @@ set(Source_Files__Window__Gui
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/Font.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/FontFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/FontFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/GuiTextureResource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/GuiTextureResource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/GuiTextureResourceFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/GuiTextureResourceFactory.cpp
 )
 
 source_group("window/gui" FILES ${Source_Files__Window__Gui})
