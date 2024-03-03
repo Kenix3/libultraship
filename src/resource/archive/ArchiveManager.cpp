@@ -40,7 +40,8 @@ bool ArchiveManager::IsArchiveLoaded() {
     return !mArchives.empty();
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath,
+                                               std::shared_ptr<ResourceInitData> initData) {
     if (filePath == "") {
         return nullptr;
     }

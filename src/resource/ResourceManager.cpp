@@ -45,7 +45,8 @@ bool ResourceManager::DidLoadSuccessfully() {
     return mArchiveManager != nullptr && mArchiveManager->IsArchiveLoaded();
 }
 
-std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath, std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath,
+                                                       std::shared_ptr<ResourceInitData> initData) {
     auto file = mArchiveManager->LoadFile(filePath, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
@@ -55,7 +56,8 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     return file;
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact, std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact,
+                                                                std::shared_ptr<ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         const auto newFilePath = filePath.substr(7);
@@ -136,8 +138,9 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
     return resource;
 }
 
-std::shared_future<std::shared_ptr<IResource>> ResourceManager::LoadResourceAsync(const std::string& filePath,
-                                                                                  bool loadExact, bool priority, std::shared_ptr<ResourceInitData> initData) {
+std::shared_future<std::shared_ptr<IResource>>
+ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, bool priority,
+                                   std::shared_ptr<ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
@@ -161,7 +164,8 @@ std::shared_future<std::shared_ptr<IResource>> ResourceManager::LoadResourceAsyn
     }
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact, std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
+                                                         std::shared_ptr<ResourceInitData> initData) {
     auto resource = LoadResourceAsync(filePath, loadExact, true, initData).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
