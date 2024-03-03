@@ -18,7 +18,6 @@ GameOverlay::~GameOverlay() {
 }
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
-    // font resource type in gui
     ImGuiIO& io = ImGui::GetIO();
     auto initData = std::make_shared<ResourceInitData>();
     initData->Format = RESOURCE_FORMAT_BINARY;
@@ -28,13 +27,6 @@ void GameOverlay::LoadFont(const std::string& name, const std::string& path, flo
     if (font != nullptr) {
         mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data.data(), font->Data.size(), fontSize);
     }
-    // std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
-    // if (font->IsLoaded) {
-    //     // TODO: Nothing is ever unloading the font or this fontData array.
-    //     char* fontData = new char[font->Buffer->size()];
-    //     memcpy(fontData, font->Buffer->data(), font->Buffer->size());
-    //     mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer->size(), fontSize);
-    // }
 }
 
 void GameOverlay::TextDraw(float x, float y, bool shadow, ImVec4 color, const char* fmt, ...) {
