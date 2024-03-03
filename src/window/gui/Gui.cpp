@@ -230,6 +230,7 @@ void Gui::ImGuiBackendInit() {
 }
 
 void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& path) {
+    // GuiTexture (put in Gui)
     const auto res = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
 
     if (!res) {
