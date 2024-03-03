@@ -1,5 +1,5 @@
-#include "resource/factory/FontFactory.h"
-#include "resource/type/Font.h"
+#include "window/gui/resource/FontFactory.h"
+#include "window/gui/resource/Font.h"
 #include "spdlog/spdlog.h"
 
 namespace LUS {
