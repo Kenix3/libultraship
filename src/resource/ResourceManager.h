@@ -29,14 +29,14 @@ class ResourceManager {
     bool DidLoadSuccessfully();
     std::shared_ptr<ArchiveManager> GetArchiveManager();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
-    std::shared_future<std::shared_ptr<File>> LoadFileAsync(const std::string& filePath, bool priority = false);
-    std::shared_ptr<File> LoadFile(const std::string& filePath);
+    // std::shared_future<std::shared_ptr<File>> LoadFileAsync(const std::string& filePath, bool priority = false);
+    // std::shared_ptr<File> LoadFile(const std::string& filePath);
     std::shared_ptr<IResource> GetCachedResource(const std::string& filePath, bool loadExact = false);
-    std::shared_ptr<IResource> LoadResource(const std::string& filePath, bool loadExact = false);
-    std::shared_ptr<IResource> LoadResourceProcess(const std::string& filePath, bool loadExact = false);
+    std::shared_ptr<IResource> LoadResource(const std::string& filePath, bool loadExact = false, std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<IResource> LoadResourceProcess(const std::string& filePath, bool loadExact = false, std::shared_ptr<ResourceInitData> initData = nullptr);
     size_t UnloadResource(const std::string& filePath);
     std::shared_future<std::shared_ptr<IResource>> LoadResourceAsync(const std::string& filePath,
-                                                                     bool loadExact = false, bool priority = false);
+                                                                     bool loadExact = false, bool priority = false, std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
     LoadDirectoryAsync(const std::string& searchMask, bool priority = false);
@@ -45,7 +45,7 @@ class ResourceManager {
     bool OtrSignatureCheck(const char* fileName);
 
   protected:
-    std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
+    std::shared_ptr<File> LoadFileProcess(const std::string& filePath, std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath,
                                                                            bool loadExact = false);

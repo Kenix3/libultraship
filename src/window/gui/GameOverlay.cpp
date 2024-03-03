@@ -2,6 +2,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "resource/File.h"
+#include "resource/type/Font.h"
 #include "resource/archive/Archive.h"
 #include "resource/ResourceManager.h"
 #include "Context.h"
@@ -18,13 +19,21 @@ GameOverlay::~GameOverlay() {
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     // font resource type in gui
     ImGuiIO& io = ImGui::GetIO();
-    std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
-    if (font->IsLoaded) {
-        // TODO: Nothing is ever unloading the font or this fontData array.
-        char* fontData = new char[font->Buffer->size()];
-        memcpy(fontData, font->Buffer->data(), font->Buffer->size());
-        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer->size(), fontSize);
+    auto initData = std::make_shared<ResourceInitData>();
+    initData->Format = RESOURCE_FORMAT_BINARY;
+    initData->Type = static_cast<uint32_t>(ResourceType::Font);
+    initData->ResourceVersion = 0;
+    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
+    if (font != nullptr) {
+        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data.data(), font->Data.size(), fontSize);
     }
+    // std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
+    // if (font->IsLoaded) {
+    //     // TODO: Nothing is ever unloading the font or this fontData array.
+    //     char* fontData = new char[font->Buffer->size()];
+    //     memcpy(fontData, font->Buffer->data(), font->Buffer->size());
+    //     mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer->size(), fontSize);
+    // }
 }
 
 void GameOverlay::TextDraw(float x, float y, bool shadow, ImVec4 color, const char* fmt, ...) {

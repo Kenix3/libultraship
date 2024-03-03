@@ -40,7 +40,7 @@ bool ArchiveManager::IsArchiveLoaded() {
     return !mArchives.empty();
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath) {
+std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData) {
     if (filePath == "") {
         return nullptr;
     }
@@ -50,39 +50,41 @@ std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath) {
         return nullptr;
     }
 
-    return archive->LoadFile(filePath);
+    return archive->LoadFile(filePath, initData);
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash) {
+std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
     const auto archive = mFileToArchive[hash];
     if (archive == nullptr) {
         return nullptr;
     }
 
-    return archive->LoadFile(hash);
+    return archive->LoadFile(hash, initData);
 }
 
-// std::shared_ptr<File> ArchiveManager::LoadFileRaw(const std::string& filePath) {
-//     if (filePath == "") {
-//         return nullptr;
-//     }
+//TODO remove
+std::shared_ptr<File> ArchiveManager::LoadFileRaw(const std::string& filePath) {
+    if (filePath == "") {
+        return nullptr;
+    }
 
-//     const auto archive = mFileToArchive[CRC64(filePath.c_str())];
-//     if (archive == nullptr) {
-//         return nullptr;
-//     }
+    const auto archive = mFileToArchive[CRC64(filePath.c_str())];
+    if (archive == nullptr) {
+        return nullptr;
+    }
 
-//     return archive->LoadFileRaw(filePath);
-// }
+    return archive->LoadFileRaw(filePath);
+}
 
-// std::shared_ptr<File> ArchiveManager::LoadFileRaw(uint64_t hash) {
-//     const auto archive = mFileToArchive[hash];
-//     if (archive == nullptr) {
-//         return nullptr;
-//     }
+std::shared_ptr<File> ArchiveManager::LoadFileRaw(uint64_t hash) {
+    const auto archive = mFileToArchive[hash];
+    if (archive == nullptr) {
+        return nullptr;
+    }
 
-//     return archive->LoadFileRaw(hash);
-// }
+    return archive->LoadFileRaw(hash);
+}
+//ENDTODO
 
 bool ArchiveManager::HasFile(const std::string& filePath) {
     return HasFile(CRC64(filePath.c_str()));
