@@ -152,8 +152,8 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     GetGameOverlay()->Init();
 
     Context::GetInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-    std::make_shared<ResourceFactoryBinaryGuiTextureV0>(), RESOURCE_FORMAT_BINARY, "GuiTexture",
-    static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
+        std::make_shared<ResourceFactoryBinaryGuiTextureV0>(), RESOURCE_FORMAT_BINARY, "GuiTexture",
+        static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
 
     ImGuiWMInit();
     ImGuiBackendInit();
@@ -239,7 +239,8 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     initData->Format = RESOURCE_FORMAT_BINARY;
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE);
     initData->ResourceVersion = 0;
-    auto guiTexture = std::static_pointer_cast<GuiTexture>(Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
+    auto guiTexture = std::static_pointer_cast<GuiTexture>(
+        Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
 
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
 

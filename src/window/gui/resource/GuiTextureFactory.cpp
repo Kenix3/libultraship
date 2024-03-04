@@ -14,8 +14,9 @@ std::shared_ptr<IResource> ResourceFactoryBinaryGuiTextureV0::ReadResource(std::
     guiTexture->DataSize = file->Buffer->size();
     guiTexture->Metadata.Width = 0;
     guiTexture->Metadata.Height = 0;
-    guiTexture->Data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(file->Buffer->data()), guiTexture->DataSize,
-                                            &guiTexture->Metadata.Width, &guiTexture->Metadata.Height, nullptr, 4);
+    guiTexture->Data =
+        stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(file->Buffer->data()), guiTexture->DataSize,
+                              &guiTexture->Metadata.Width, &guiTexture->Metadata.Height, nullptr, 4);
 
     if (guiTexture->Data == nullptr) {
         SPDLOG_ERROR("Error loading imgui texture {}", stbi_failure_reason());

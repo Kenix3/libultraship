@@ -4,7 +4,7 @@
 #include <stb/stb_image.h>
 
 namespace LUS {
-#define RESOURCE_TYPE_GUI_TEXTURE 0x47544558 //GTEX
+#define RESOURCE_TYPE_GUI_TEXTURE 0x47544558 // GTEX
 
 struct GuiTextureMetadata {
     uint32_t RendererTextureId;
