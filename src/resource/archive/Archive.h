@@ -23,8 +23,9 @@ class Archive {
     void Load();
     void Unload();
 
-    virtual std::shared_ptr<File> LoadFile(const std::string& filePath);
-    virtual std::shared_ptr<File> LoadFile(uint64_t hash);
+    virtual std::shared_ptr<File> LoadFile(const std::string& filePath,
+                                           std::shared_ptr<ResourceInitData> initData = nullptr);
+    virtual std::shared_ptr<File> LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles();
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles(const std::string& filter);
     bool HasFile(const std::string& filePath);
