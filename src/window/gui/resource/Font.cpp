@@ -4,11 +4,17 @@ namespace LUS {
 Font::Font() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
+Font::~Font() {
+    if (Data != nullptr) {
+        delete Data;
+    }
+}
+
 void* Font::GetPointer() {
-    return Data.data();
+    return Data;
 }
 
 size_t Font::GetPointerSize() {
-    return Data.size() * sizeof(char);
+    return DataSize * sizeof(char);
 }
 } // namespace LUS
