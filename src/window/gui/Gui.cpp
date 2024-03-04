@@ -240,28 +240,6 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE);
     initData->ResourceVersion = 0;
     auto guiTexture = std::static_pointer_cast<GuiTexture>(Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
-    // const auto res = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path, initData);
-
-    // if (!res) {
-    //     SPDLOG_ERROR("Failed to load resource");
-    //     return;
-    // }
-    // if (!res->Buffer || res->Buffer->empty()) {
-    //     SPDLOG_ERROR("Buffer is null or empty");
-    //     return;
-    // }
-
-    // GuiTexture asset;
-    // asset.Width = 0;
-    // asset.Height = 0;
-    // uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer->data()), res->Buffer->size(),
-    //                                          &asset.Width, &asset.Height, nullptr, 4);
-
-
-    // if (imgData == nullptr) {
-    //     SPDLOG_ERROR("Error loading imgui texture {}", stbi_failure_reason());
-    //     return;
-    // }
 
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
 
@@ -272,19 +250,6 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     api->upload_texture(guiTexture->Data, guiTexture->Metadata.Width, guiTexture->Metadata.Height);
 
     mGuiTextures[name] = guiTexture->Metadata;
-    // stbi_image_free(imgData);
-
-    // auto initData = std::make_shared<ResourceInitData>();
-    // initData->Format = RESOURCE_FORMAT_BINARY;
-    // initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE);
-    // initData->ResourceVersion = 0;
-    // auto guiTextureResource =  std::static_pointer_cast<GuiTextureResource>(Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
-
-    // if (guiTextureResource == nullptr) {
-    //     return;
-    // }
-
-    // mGuiTextures[name] = guiTextureResource->GuiTextureData;
 }
 
 bool Gui::SupportsViewports() {
