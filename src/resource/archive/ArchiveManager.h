@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stdint.h>
+#include "resource/File.h"
 
 namespace LUS {
 struct File;
@@ -19,8 +20,8 @@ class ArchiveManager {
     ~ArchiveManager();
 
     bool IsArchiveLoaded();
-    std::shared_ptr<File> LoadFile(const std::string& filePath);
-    std::shared_ptr<File> LoadFile(uint64_t hash);
+    std::shared_ptr<File> LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<File> LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
     bool HasFile(const std::string& filePath);

@@ -203,18 +203,24 @@ std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<
     return xmlReader;
 }
 
-std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
-    auto metaFilePath = filePath + ".meta";
-    auto metaFileToLoad = LoadFileRaw(metaFilePath);
-
+std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData) {
     std::shared_ptr<File> fileToLoad = nullptr;
-    if (metaFileToLoad != nullptr) {
-        auto initData = ReadResourceInitData(filePath, metaFileToLoad);
-        fileToLoad = LoadFileRaw(initData->Path);
+
+    if (initData != nullptr) {
+        fileToLoad = LoadFileRaw(filePath);
         fileToLoad->InitData = initData;
     } else {
-        fileToLoad = LoadFileRaw(filePath);
-        fileToLoad->InitData = ReadResourceInitDataLegacy(filePath, fileToLoad);
+        auto metaFilePath = filePath + ".meta";
+        auto metaFileToLoad = LoadFileRaw(metaFilePath);
+
+        if (metaFileToLoad != nullptr) {
+            auto initDataFromMetaFile = ReadResourceInitData(filePath, metaFileToLoad);
+            fileToLoad = LoadFileRaw(initDataFromMetaFile->Path);
+            fileToLoad->InitData = initDataFromMetaFile;
+        } else {
+            fileToLoad = LoadFileRaw(filePath);
+            fileToLoad->InitData = ReadResourceInitDataLegacy(filePath, fileToLoad);
+        }
     }
 
     if (fileToLoad == nullptr) {
@@ -234,10 +240,10 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath) {
     return fileToLoad;
 }
 
-std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
+std::shared_ptr<File> Archive::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
     const std::string& filePath =
         *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
-    return LoadFile(filePath);
+    return LoadFile(filePath, initData);
 }
 
 std::shared_ptr<ResourceInitData> Archive::CreateDefaultResourceInitData() {

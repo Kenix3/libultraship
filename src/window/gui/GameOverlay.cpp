@@ -2,6 +2,8 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "resource/File.h"
+#include "window/gui/resource/Font.h"
+#include "window/gui/resource/FontFactory.h"
 #include "resource/archive/Archive.h"
 #include "resource/ResourceManager.h"
 #include "Context.h"
@@ -17,12 +19,14 @@ GameOverlay::~GameOverlay() {
 
 void GameOverlay::LoadFont(const std::string& name, const std::string& path, float fontSize) {
     ImGuiIO& io = ImGui::GetIO();
-    std::shared_ptr<File> font = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
-    if (font->IsLoaded) {
-        // TODO: Nothing is ever unloading the font or this fontData array.
-        char* fontData = new char[font->Buffer->size()];
-        memcpy(fontData, font->Buffer->data(), font->Buffer->size());
-        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontData, font->Buffer->size(), fontSize);
+    auto initData = std::make_shared<ResourceInitData>();
+    initData->Format = RESOURCE_FORMAT_BINARY;
+    initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
+    initData->ResourceVersion = 0;
+    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
+        Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
+    if (font != nullptr) {
+        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
     }
 }
 
@@ -127,6 +131,9 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
 }
 
 void GameOverlay::Init() {
+    Context::GetInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
+        std::make_shared<ResourceFactoryBinaryFontV0>(), RESOURCE_FORMAT_BINARY, "Font",
+        static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
     LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
     LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);
     const std::string defaultFont = mFonts.begin()->first;
