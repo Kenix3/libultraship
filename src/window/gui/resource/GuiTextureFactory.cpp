@@ -22,16 +22,6 @@ std::shared_ptr<IResource> ResourceFactoryBinaryGuiTextureV0::ReadResource(std::
         return nullptr;
     }
 
-    // GfxRenderingAPI* api = gfx_get_current_rendering_api();
-
-    // // TODO: Nothing ever unloads the texture from Fast3D here.
-    // guiTextureResource->GuiTextureData.RendererTextureId = api->new_texture();
-    // api->select_texture(0, guiTextureResource->GuiTextureData.RendererTextureId);
-    // api->set_sampler_parameters(0, false, 0, 0);
-    // api->upload_texture(/* guiTextureResource->ImageData.data() */ imgData, guiTextureResource->GuiTextureData.Width, guiTextureResource->GuiTextureData.Height);
-
-    // stbi_image_free(imgData);
-
     return guiTexture;
 }
 } // namespace LUS
