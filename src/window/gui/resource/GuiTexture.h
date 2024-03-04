@@ -1,26 +1,29 @@
 #pragma once
 
 #include "resource/Resource.h"
+#include <stb/stb_image.h>
 
 namespace LUS {
 #define RESOURCE_TYPE_GUI_TEXTURE 0x47544558 //GTEX
 
-struct GuiTexture {
+struct GuiTextureMetadata {
     uint32_t RendererTextureId;
     int32_t Width;
     int32_t Height;
 };
 
-class GuiTextureResource : public Resource<void> {
+class GuiTexture : public Resource<void> {
   public:
     using Resource::Resource;
 
-    GuiTextureResource();
+    GuiTexture();
+    ~GuiTexture();
 
     void* GetPointer() override;
     size_t GetPointerSize() override;
 
-    std::vector<uint8_t> ImageData;
-    GuiTexture GuiTextureData;
+    uint8_t* Data;
+    size_t DataSize;
+    GuiTextureMetadata Metadata;
 };
 }; // namespace LUS

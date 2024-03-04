@@ -4,7 +4,7 @@
 #include "resource/ResourceFactoryBinary.h"
 
 namespace LUS {
-class ResourceFactoryBinaryGuiTextureResourceV0 : public ResourceFactoryBinary {
+class ResourceFactoryBinaryGuiTextureV0 : public ResourceFactoryBinary {
   public:
     std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
