@@ -118,7 +118,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    if (DEFINED USE_OPENGLES)
+    if (USE_OPENGLES)
         target_link_libraries(ImGui PUBLIC ${OPENGL_GLESv2_LIBRARY})
         add_compile_definitions(IMGUI_IMPL_OPENGL_ES3)
     else()
