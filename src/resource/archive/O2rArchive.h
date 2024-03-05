@@ -22,10 +22,11 @@ class O2rArchive : virtual public Archive {
 
     bool Open();
     bool Close();
+
+  protected:
     std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
-  protected:
   private:
     zip_t* mZipArchive;
 };
