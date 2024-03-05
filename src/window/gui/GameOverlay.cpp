@@ -26,7 +26,7 @@ void GameOverlay::LoadFont(const std::string& name, const std::string& path, flo
     std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
         Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
     if (font != nullptr) {
-        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data.data(), font->Data.size(), fontSize);
+        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
     }
 }
 
