@@ -16,10 +16,6 @@ std::shared_ptr<IResource> ResourceFactoryBinaryFontV0::ReadResource(std::shared
     font->Data = new char[font->DataSize];
     reader->Read(font->Data, font->DataSize);
 
-    // for (uint32_t i = 0; i < dataSize; i++) {
-    //     font->Data.push_back(reader->ReadChar());
-    // }
-
     return font;
 }
 } // namespace LUS

@@ -18,6 +18,7 @@
 #include "window/gui/GuiWindow.h"
 #include "window/gui/GuiMenuBar.h"
 #include "libultraship/libultra/controller.h"
+#include "window/gui/resource/GuiTexture.h"
 
 namespace LUS {
 
@@ -100,18 +101,12 @@ class Gui {
     int16_t GetIntegerScaleFactor();
 
   private:
-    struct GuiTexture {
-        uint32_t RendererTextureId;
-        int32_t Width;
-        int32_t Height;
-    };
-
     GuiWindowInitData mImpl;
     ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
-    std::map<std::string, GuiTexture> mGuiTextures;
+    std::map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
 };
 } // namespace LUS
