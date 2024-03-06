@@ -167,7 +167,7 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
 
 std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
                                                          std::shared_ptr<ResourceInitData> initData) {
-    auto resource = LoadResourceProcess(filePath, loadExact, initData); // LoadResourceAsync(filePath, loadExact, true, initData).get();
+    auto resource =  LoadResourceAsync(filePath, loadExact, true, initData).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
     }
