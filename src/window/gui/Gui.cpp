@@ -15,6 +15,7 @@
 #include "resource/File.h"
 #include <stb/stb_image.h>
 #include "window/gui/Fonts.h"
+#include "window/gui/resource/GuiTextureFactory.h"
 
 #include "window/gui/GfxDebuggerWindow.h"
 
@@ -154,6 +155,10 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     GetGuiWindow("GfxDebuggerWindow")->Init();
     GetGameOverlay()->Init();
 
+    Context::GetInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
+        std::make_shared<ResourceFactoryBinaryGuiTextureV0>(), RESOURCE_FORMAT_BINARY, "GuiTexture",
+        static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
+
     ImGuiWMInit();
     ImGuiBackendInit();
 #ifdef __SWITCH__
@@ -234,38 +239,22 @@ void Gui::ImGuiBackendInit() {
 }
 
 void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& path) {
-    const auto res = Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFileRaw(path);
-
-    if (!res) {
-        SPDLOG_ERROR("Failed to load resource");
-        return;
-    }
-    if (!res->Buffer || res->Buffer->empty()) {
-        SPDLOG_ERROR("Buffer is null or empty");
-        return;
-    }
-
-    GuiTexture asset;
-    asset.Width = 0;
-    asset.Height = 0;
-    uint8_t* imgData = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(res->Buffer->data()), res->Buffer->size(),
-                                             &asset.Width, &asset.Height, nullptr, 4);
-
-    if (imgData == nullptr) {
-        SPDLOG_ERROR("Error loading imgui texture {}", stbi_failure_reason());
-        return;
-    }
+    auto initData = std::make_shared<ResourceInitData>();
+    initData->Format = RESOURCE_FORMAT_BINARY;
+    initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE);
+    initData->ResourceVersion = 0;
+    auto guiTexture = std::static_pointer_cast<GuiTexture>(
+        Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
 
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
 
     // TODO: Nothing ever unloads the texture from Fast3D here.
-    asset.RendererTextureId = api->new_texture();
-    api->select_texture(0, asset.RendererTextureId);
+    guiTexture->Metadata.RendererTextureId = api->new_texture();
+    api->select_texture(0, guiTexture->Metadata.RendererTextureId);
     api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(imgData, asset.Width, asset.Height);
+    api->upload_texture(guiTexture->Data, guiTexture->Metadata.Width, guiTexture->Metadata.Height);
 
-    mGuiTextures[name] = asset;
-    stbi_image_free(imgData);
+    mGuiTextures[name] = guiTexture->Metadata;
 }
 
 bool Gui::SupportsViewports() {
@@ -910,7 +899,7 @@ void Gui::LoadGuiTexture(const std::string& name, const LUS::Texture& res, const
         texBuffer[pixel * 4 + 3] *= tint.w;
     }
 
-    GuiTexture asset;
+    GuiTextureMetadata asset;
     asset.RendererTextureId = api->new_texture();
     asset.Width = res.Width;
     asset.Height = res.Height;
