@@ -920,7 +920,7 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
 
 void Gui::UnloadTexture(const std::string& name) {
     if (mGuiTextures.contains(name)) {
-        GuiTexture tex = mGuiTextures[name];
+        GuiTextureMetadata tex = mGuiTextures[name];
         GfxRenderingAPI* api = gfx_get_current_rendering_api();
         api->delete_texture(tex.RendererTextureId);
         mGuiTextures.erase(name);
