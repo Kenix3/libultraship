@@ -60,25 +60,6 @@ std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<Re
     return file;
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFileRaw(const std::string& filePath) {
-    if (filePath == "") {
-        return nullptr;
-    }
-
-    return LoadFileRaw(CRC64(filePath.c_str()));
-}
-
-std::shared_ptr<File> ArchiveManager::LoadFileRaw(uint64_t hash) {
-    const auto archive = mFileToArchive[hash];
-    if (archive == nullptr) {
-        return nullptr;
-    }
-
-    auto file = archive->LoadFileRaw(hash);
-    file->Parent = archive;
-    return file;
-}
-
 bool ArchiveManager::HasFile(const std::string& filePath) {
     return HasFile(CRC64(filePath.c_str()));
 }
