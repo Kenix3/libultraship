@@ -36,6 +36,7 @@ struct TextureCacheKey {
     const uint8_t* palette_addrs[2];
     uint8_t fmt, siz;
     uint8_t palette_index;
+    uint32_t size_bytes;
 
     bool operator==(const TextureCacheKey&) const noexcept = default;
 
