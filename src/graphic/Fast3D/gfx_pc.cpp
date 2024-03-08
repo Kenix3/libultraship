@@ -874,7 +874,7 @@ static void import_texture(int i, int tile, bool importReplacement) {
     uint32_t texFlags = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].tex_flags;
     uint32_t tmem_index = g_rdp.texture_tile[tile].tmem_index;
     uint8_t palette_index = g_rdp.texture_tile[tile].palette;
-    uint32_t orig_size_bytes = g_rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].orig_size_bytes;
+    uint32_t orig_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].orig_size_bytes;
 
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* orig_addr =
