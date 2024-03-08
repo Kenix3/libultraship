@@ -2645,9 +2645,15 @@ typedef union {
 #define gsSPInvalidateTexCache() \
     { _SHIFTL(G_INVALTEXCACHE, 24, 8), 0 }
 
-#define gSPSetFB(pkt, f, s, w, i) gSetImage(pkt, G_SETFB, f, s, w, i)
+#define gsSPSetFB(pkt, fb)                      \
+    {                                           \
+        Gfx* _g = (Gfx*)(pkt);                  \
+                                                \
+        _g->words.w0 = _SHIFTL(G_SETFB, 24, 8); \
+        _g->words.w1 = fb;                      \
+    }
 
-#define gSPResetFB(pkt)                           \
+#define gsSPResetFB(pkt)                          \
     {                                             \
         Gfx* _g = (Gfx*)(pkt);                    \
                                                   \
