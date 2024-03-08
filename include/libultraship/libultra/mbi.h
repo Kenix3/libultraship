@@ -32,7 +32,6 @@
 #include <stdint.h>
 #include "types.h"
 #include "gbi.h"
-#include "abi.h"
 
 #define NUM_SEGMENTS (16)
 #define SEGMENT_OFFSET(a) ((u32)(a)&0x00FFFFFF)
