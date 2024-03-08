@@ -470,7 +470,7 @@ static std::string gfx_get_base_texture_path(const std::string& path) {
 
 void gfx_texture_cache_delete(const uint8_t* orig_addr) {
     while (gfx_texture_cache.map.bucket_count() > 0) {
-        TextureCacheKey key = { orig_addr, { 0 }, 0, 0 }; // bucket index only depends on the address
+        TextureCacheKey key = { orig_addr, { 0 }, 0, 0, 0 }; // bucket index only depends on the address
         size_t bucket = gfx_texture_cache.map.bucket(key);
         bool again = false;
         for (auto it = gfx_texture_cache.map.begin(bucket); it != gfx_texture_cache.map.end(bucket); ++it) {
@@ -874,6 +874,7 @@ static void import_texture(int i, int tile, bool importReplacement) {
     uint32_t texFlags = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].tex_flags;
     uint32_t tmem_index = g_rdp.texture_tile[tile].tmem_index;
     uint8_t palette_index = g_rdp.texture_tile[tile].palette;
+    uint32_t orig_size_bytes = g_rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].orig_size_bytes;
 
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* orig_addr =
@@ -884,9 +885,9 @@ static void import_texture(int i, int tile, bool importReplacement) {
 
     TextureCacheKey key;
     if (fmt == G_IM_FMT_CI) {
-        key = { orig_addr, { g_rdp.palettes[0], g_rdp.palettes[1] }, fmt, siz, palette_index };
+        key = { orig_addr, { g_rdp.palettes[0], g_rdp.palettes[1] }, fmt, siz, palette_index, orig_size_bytes };
     } else {
-        key = { orig_addr, {}, fmt, siz, palette_index };
+        key = { orig_addr, {}, fmt, siz, palette_index, orig_size_bytes };
     }
 
     if (gfx_texture_cache_lookup(i, key)) {
@@ -958,7 +959,7 @@ static void import_texture_mask(int i, int tile) {
         return;
     }
 
-    TextureCacheKey key = { orig_addr, {}, 0, 0, 0 };
+    TextureCacheKey key = { orig_addr, {}, 0, 0, 0, 0 };
 
     if (gfx_texture_cache_lookup(i, key)) {
         return;
