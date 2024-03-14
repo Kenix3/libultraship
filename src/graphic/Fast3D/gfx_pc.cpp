@@ -2567,7 +2567,9 @@ Gfx* GfxExecStack::ret() {
 
     while (cmd_stack.size() > 0 && cmd_stack.top() == nullptr) {
         cmd_stack.pop();
-        gfx_path.pop_back();
+        if (!gfx_path.empty()) {
+            gfx_path.pop_back();
+        }
     }
     return cmd;
 }
