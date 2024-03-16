@@ -2753,12 +2753,12 @@ static void gfx_step(GfxExecStack& exec_stack) {
             Gfx* nDL = (Gfx*)ResourceGetDataByName((const char*)fileName);
 
             if (C0(16, 1) == 0 && nDL != nullptr) {
-                cmd++;
                 exec_stack.call(cmd0, nDL);
             } else {
                 if (nDL != nullptr) {
                     cmd = nDL;
                     exec_stack.branch(cmd0);
+                    return; // shortcut cmd increment
                 } else {
                     assert(0 && "???");
                     // gfx_path.pop_back();
@@ -2766,7 +2766,6 @@ static void gfx_step(GfxExecStack& exec_stack) {
                     // cmd_stack.pop();
                 }
             }
-            return; // shortcut cmd increment
         } break;
         case G_MODIFYVTX:
             gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), cmd->words.w1);
@@ -2776,15 +2775,14 @@ static void gfx_step(GfxExecStack& exec_stack) {
             if (C0(16, 1) == 0) {
                 // Push return address
                 if (subGFX != nullptr) {
-                    cmd++;
                     exec_stack.call(cmd0, subGFX);
                 }
             } else {
                 cmd = subGFX;
                 exec_stack.branch(cmd0);
+                return; // shortcut cmd increment
             }
-            return; // shortcut cmd increment
-        }
+        } break;
         case G_DL_OTR_HASH:
             if (C0(16, 1) == 0) {
                 // Push return address
@@ -2803,14 +2801,14 @@ static void gfx_step(GfxExecStack& exec_stack) {
                 Gfx* gfx = (Gfx*)ResourceGetDataByCrc(hash);
 
                 if (gfx != 0) {
-                    cmd++;
                     exec_stack.call(cmd0, gfx);
                 }
             } else {
                 assert(0 && "????");
                 cmd = (Gfx*)seg_addr(cmd->words.w1);
+                return;
             }
-            return;
+            break;
         case G_PUSHCD:
             gfx_push_current_dir((char*)cmd->words.w1);
             break;
