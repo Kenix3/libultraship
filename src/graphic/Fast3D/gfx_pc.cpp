@@ -2809,6 +2809,26 @@ static void gfx_step(GfxExecStack& exec_stack) {
                 return;
             }
             break;
+        case G_DL_INDEX: {
+            // Compute seg addr by converting an index value to a offset value
+            // handling 32 vs 64 bit size differences for Gfx
+            // adding 1 to trigger the segaddr flow
+            uint32_t segNum = cmd->words.w1 >> 24;
+            uint32_t index = cmd->words.w1 & 0x00FFFFFF;
+            uintptr_t segAddr = (segNum << 24) | (index * sizeof(Gfx)) + 1;
+
+            Gfx* subGFX = (Gfx*)seg_addr(segAddr);
+            if (C0(16, 1) == 0) {
+                // Push return address
+                if (subGFX != nullptr) {
+                    exec_stack.call(cmd0, subGFX);
+                }
+            } else {
+                cmd = subGFX;
+                exec_stack.branch(cmd0);
+                return; // shortcut cmd increment
+            }
+        } break;
         case G_PUSHCD:
             gfx_push_current_dir((char*)cmd->words.w1);
             break;

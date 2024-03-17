@@ -186,6 +186,7 @@
 #define G_EXTRAGEOMETRYMODE 0x3a
 #define G_COPYFB 0x3b
 #define G_IMAGERECT 0x3c
+#define G_DL_INDEX 0x3d
 #define G_SETINTENSITY 0x40
 
 /*
@@ -1782,11 +1783,13 @@ typedef union {
 #define gsSPDisplayList(dl) gsDma1p(G_DL, dl, 0, G_DL_PUSH)
 #define gsSPDisplayListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_PUSH)
 #define gsSPDisplayListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListIndex(dl) gsDma1p(G_DL_INDEX, dl, 0, G_DL_PUSH)
 
 #define gSPBranchList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchList(dl) gsDma1p(G_DL, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListIndex(dl) gsDma1p(G_DL_INDEX, dl, 0, G_DL_NOPUSH)
 
 #define gSPSprite2DBase(pkt, s) gDma1p(pkt, G_SPRITE2D_BASE, s, sizeof(uSprite), 0)
 #define gsSPSprite2DBase(s) gsDma1p(G_SPRITE2D_BASE, s, sizeof(uSprite), 0)
