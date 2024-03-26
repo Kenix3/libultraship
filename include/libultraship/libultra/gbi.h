@@ -184,6 +184,9 @@
 // RDP Cmd
 #define G_SETGRAYSCALE 0x39
 #define G_EXTRAGEOMETRYMODE 0x3a
+#define G_COPYFB 0x3b
+#define G_IMAGERECT 0x3c
+#define G_DL_INDEX 0x3d
 #define G_SETINTENSITY 0x40
 
 /*
@@ -343,6 +346,7 @@
 #define G_TEXTURE_GEN 0x00040000
 #define G_TEXTURE_GEN_LINEAR 0x00080000
 #define G_LOD 0x00100000 /* NOT IMPLEMENTED */
+#define G_LIGHTING_POSITIONAL 0x00400000
 #if (defined(F3DEX_GBI) || defined(F3DLP_GBI))
 #define G_CLIPPING 0x00800000
 #else
@@ -1271,6 +1275,15 @@ typedef struct {
 } Light_t;
 
 typedef struct {
+    unsigned char col[3];
+    unsigned char unk3;
+    unsigned char colc[3];
+    unsigned char unk7;
+    short pos[3];
+    unsigned char unkE;
+} PointLight_t;
+
+typedef struct {
     unsigned char col[3]; /* ambient light value (rgba) */
     char pad1;
     unsigned char colc[3]; /* copy of ambient light value (rgba) */
@@ -1283,6 +1296,7 @@ typedef struct {
 
 typedef union {
     Light_t l;
+    PointLight_t p;
     long long int force_structure_alignment[2];
 } Light;
 
@@ -1769,11 +1783,13 @@ typedef union {
 #define gsSPDisplayList(dl) gsDma1p(G_DL, dl, 0, G_DL_PUSH)
 #define gsSPDisplayListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_PUSH)
 #define gsSPDisplayListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListIndex(dl) gsDma1p(G_DL_INDEX, dl, 0, G_DL_PUSH)
 
 #define gSPBranchList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchList(dl) gsDma1p(G_DL, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_NOPUSH)
 #define gsSPBranchListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListIndex(dl) gsDma1p(G_DL_INDEX, dl, 0, G_DL_NOPUSH)
 
 #define gSPSprite2DBase(pkt, s) gDma1p(pkt, G_SPRITE2D_BASE, s, sizeof(uSprite), 0)
 #define gsSPSprite2DBase(s) gsDma1p(G_SPRITE2D_BASE, s, sizeof(uSprite), 0)
@@ -2271,9 +2287,9 @@ typedef union {
 #define gsSPLoadUcode(uc_start, uc_dstart) gsSPLoadUcodeEx((uc_start), (uc_dstart), SP_UCODE_DATA_SIZE)
 
 #define gSPLoadUcodeL(pkt, ucode) \
-    gSPLoadUcode((pkt), OS_K0_TO_PHYSICAL(&##ucode##TextStart), OS_K0_TO_PHYSICAL(&##ucode##DataStart))
+    gSPLoadUcode((pkt), OS_K0_TO_PHYSICAL(&(ucode##TextStart)), OS_K0_TO_PHYSICAL(&(ucode##DataStart)))
 #define gsSPLoadUcodeL(ucode) \
-    gsSPLoadUcode(OS_K0_TO_PHYSICAL(&##ucode##TextStart), OS_K0_TO_PHYSICAL(&##ucode##DataStart))
+    gsSPLoadUcode(OS_K0_TO_PHYSICAL(&(ucode##TextStart)), OS_K0_TO_PHYSICAL(&(ucode##DataStart)))
 #endif
 
 #ifdef F3DEX_GBI_2
@@ -2648,6 +2664,26 @@ typedef union {
         _g->words.w1 = 0;                         \
     }
 
+#define gDPCopyFB(pkt, dst, src, once, copiedPtr)                                                                    \
+    {                                                                                                                \
+        Gfx* _g = (Gfx*)(pkt);                                                                                       \
+                                                                                                                     \
+        _g->words.w0 = _SHIFTL(G_COPYFB, 24, 8) | _SHIFTL(dst, 11, 11) | _SHIFTL(src, 0, 11) | _SHIFTL(once, 22, 1); \
+        _g->words.w1 = (uintptr_t)copiedPtr;                                                                         \
+    }
+
+#define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \
+    {                                                                        \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt), *_g2 = (Gfx*)(pkt);      \
+                                                                             \
+        _g0->words.w0 = _SHIFTL(G_IMAGERECT, 24, 8) | _SHIFTL((tile), 0, 3); \
+        _g0->words.w1 = _SHIFTL((iw), 16, 16) | _SHIFTL((ih), 0, 16);        \
+        _g1->words.w0 = _SHIFTL((x0), 16, 16) | _SHIFTL((y0), 0, 16);        \
+        _g1->words.w1 = _SHIFTL((s0), 16, 16) | _SHIFTL((t0), 0, 16);        \
+        _g2->words.w0 = _SHIFTL((x1), 16, 16) | _SHIFTL((y1), 0, 16);        \
+        _g2->words.w1 = _SHIFTL((s1), 16, 16) | _SHIFTL((t1), 0, 16);        \
+    }
+
 #define gSPGrayscale(pkt, state)                       \
     {                                                  \
         Gfx* _g = (Gfx*)(pkt);                         \
@@ -2784,6 +2820,8 @@ typedef union {
 #define gDPSetAlphaDither(pkt, mode) gSPSetOtherMode(pkt, G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 2, mode)
 #define gsDPSetAlphaDither(mode) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 2, mode)
 #endif
+
+#define gDPSetDither(pkt, mode) gSPSetOtherMode(pkt, G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 4, mode)
 
 /* 'blendmask' is not supported anymore.
  * The bits are reserved for future use.

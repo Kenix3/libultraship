@@ -15,6 +15,7 @@
 #include "debug/Console.h"
 
 namespace LUS {
+class GfxDebugger;
 
 class Context {
   public:
@@ -47,6 +48,7 @@ class Context {
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
     std::shared_ptr<Audio> GetAudio();
+    std::shared_ptr<GfxDebugger> GetGfxDebugger();
 
     std::string GetConfigFilePath();
     std::string GetName();
@@ -60,6 +62,7 @@ class Context {
     void InitControlDeck(std::vector<uint16_t> additionalBitmasks = {});
     void InitCrashHandler();
     void InitAudio();
+    void InitGfxDebugger();
     void InitConsole();
     void InitWindow(std::shared_ptr<GuiWindow> customInputEditorWindow = nullptr);
 
@@ -78,6 +81,7 @@ class Context {
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
     std::shared_ptr<Audio> mAudio;
+    std::shared_ptr<GfxDebugger> mGfxDebugger;
 
     std::string mConfigFilePath;
     std::string mMainPath;

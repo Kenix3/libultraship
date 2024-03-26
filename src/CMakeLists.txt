@@ -1,8 +1,12 @@
 add_library(libultraship STATIC)
 set_target_properties(libultraship PROPERTIES PREFIX "")
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
+# Need to set C11 for libgfxd (_Alignas)
+set_property(TARGET libultraship PROPERTY C_STANDARD 11)
+
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
+option(GFX_DEBUG_DISASSEMBLER "Enable libgfxd" OFF)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
@@ -173,7 +177,7 @@ set(Source_Files__Public__Libultra
     ${CMAKE_CURRENT_SOURCE_DIR}/public/libultra/os.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/libultra/os.cpp
 )
- 
+
 source_group("public/libultra" FILES ${Source_Files__Public__Libultra})
 
 set(Source_Files__Public__Bridge
@@ -183,6 +187,8 @@ set(Source_Files__Public__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/windowbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxdebuggerbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxdebuggerbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controllerbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controllerbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/consolevariablebridge.h
@@ -190,7 +196,7 @@ set(Source_Files__Public__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/crashhandlerbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/crashhandlerbridge.cpp
 )
- 
+
 source_group("public/bridge" FILES ${Source_Files__Public__Bridge})
 target_sources(libultraship PRIVATE ${Source_Files__Public__Libultra} ${Source_Files__Public__Bridge})
 
@@ -201,6 +207,8 @@ set(Source_Files__Debug
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/CrashHandler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/Console.h
     ${CMAKE_CURRENT_SOURCE_DIR}/debug/Console.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/GfxDebugger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/GfxDebugger.h
 )
 
 source_group("debug" FILES ${Source_Files__Debug})
@@ -247,6 +255,8 @@ set(Source_Files__Window__Gui
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiElement.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GuiMenuBar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GfxDebuggerWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/GfxDebuggerWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/Font.h
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/Font.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window/gui/resource/FontFactory.h
@@ -259,6 +269,28 @@ set(Source_Files__Window__Gui
 
 source_group("window/gui" FILES ${Source_Files__Window__Gui})
 target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
+
+if (GFX_DEBUG_DISASSEMBLER)
+    set(Header_Files__Libraries__libgfxd
+        "../../ZAPDTR/lib/libgfxd/gbi.h"
+        "../../ZAPDTR/lib/libgfxd/gfxd.h"
+        "../../ZAPDTR/lib/libgfxd/priv.h"
+    )
+    source_group("Header Files\\Libraries\\libgfxd" FILES ${Header_Files__Libraries__libgfxd})
+
+    set(Source_Files__Libraries__libgfxd
+        "../../ZAPDTR/lib/libgfxd/gfxd.c"
+        "../../ZAPDTR/lib/libgfxd/uc.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3d.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3db.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3dex.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3dex2.c"
+        "../../ZAPDTR/lib/libgfxd/uc_f3dexb.c"
+    )
+    source_group("Source Files\\Libraries\\libgfxd" FILES ${Source_Files__Libraries__libgfxd})
+
+    target_sources(libultraship PRIVATE ${Header_Files__Libraries__libgfxd} ${Source_Files__Libraries__libgfxd})
+endif()
 
 #=================== Utils ===================
 
@@ -456,7 +488,7 @@ endif()
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR} $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:${CMAKE_CURRENT_SOURCE_DIR}/../../ZAPDTR/lib/libgfxd>
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 
@@ -518,7 +550,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
     )
 endif()
 
@@ -530,6 +562,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
         $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
         $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
+        $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
     )
 else ()
     target_compile_definitions(libultraship PRIVATE
