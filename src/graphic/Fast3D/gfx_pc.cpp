@@ -3756,7 +3756,8 @@ void gfx_start_frame(void) {
     }
     gfx_current_dimensions.aspect_ratio = (float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height;
 
-    if (gfx_current_dimensions.height != gfx_prev_dimensions.height) {
+    if (gfx_current_dimensions.width != gfx_prev_dimensions.width ||
+        gfx_current_dimensions.height != gfx_prev_dimensions.height) {
         for (auto& fb : framebuffers) {
             uint32_t width = fb.second.orig_width, height = fb.second.orig_height;
             gfx_adjust_width_height_for_scale(width, height);
