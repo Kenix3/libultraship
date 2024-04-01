@@ -8,5 +8,6 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "public/bridge/crashhandlerbridge.h"
 #include "public/bridge/gfxdebuggerbridge.h"
+#include "public/bridge/gfxbridge.h"
 
 #endif

@@ -144,6 +144,8 @@ struct MaskedTextureEntry {
 
 static map<string, MaskedTextureEntry> masked_textures;
 
+static UcodeHandlers ucode_handler_index = UcodeHandlers::ucode_f3dex2;
+
 static std::string GetPathWithoutFileName(char* filePath) {
     size_t len = strlen(filePath);
 
@@ -2146,7 +2148,7 @@ static void gfx_dp_set_fog_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 static void gfx_dp_set_blend_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    //TODO: Implement this command..
+    // TODO: Implement this command..
 }
 
 static void gfx_dp_set_fill_color(uint32_t packed_color) {
@@ -2582,7 +2584,7 @@ void gfx_set_framebuffer(int fb, float noise_scale);
 void gfx_reset_framebuffer();
 void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr);
 
-typedef bool (*GfxOpcodeHandlerFuncF3DEX2)(Gfx** gfx);
+typedef bool (*GfxOpcodeHandlerFunc)(Gfx** gfx);
 
 bool gfx_load_ucode_handler_f3dex2(Gfx** cmd) {
     g_rsp.fog_mul = 0;
@@ -2646,14 +2648,31 @@ bool gfx_mtx_handler_f3dex2(Gfx** cmd0) {
         mtxAddr = clearMtx;
     }
 
-#ifdef F3DEX_GBI_2
     gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t*)seg_addr(mtxAddr));
-#else
+
+    return false;
+}
+// Seems to be the same for all other non F3DEX2 microcodes...
+bool gfx_mtx_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+    uintptr_t mtxAddr = cmd->words.w1;
+
+    if (mtxAddr == SEG_ADDR(0, 0x12DB20) || // GC MQ D
+        mtxAddr == SEG_ADDR(0, 0x12DB40) || // GC NMQ D
+        mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
+        mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
+        mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
+        mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
+    ) {
+        mtxAddr = clearMtx;
+    }
+
+
     gfx_sp_matrix(C0(16, 8), (const int32_t*)seg_addr(cmd->words.w1));
-#endif
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_mtx_otr_handler_f3dex2(Gfx** cmd0) {
     (*cmd0)++;
     Gfx* cmd = *cmd0;
@@ -2676,56 +2695,99 @@ bool gfx_mtx_otr_handler_f3dex2(Gfx** cmd0) {
 
 bool gfx_pop_mtx_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
-    gfx_sp_pop_matrix((uint32_t)cmd->words.w1 / 64);
-#else
-    gfx_sp_pop_matrix(1);
-#endif
+
+    gfx_sp_pop_matrix((uint32_t)(cmd->words.w1 / 64));
+
     return false;
 }
+// Seems to be the same for all other non F3DEX2 microcodes...
+bool gfx_pop_mtx_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_pop_matrix(1);
+
+    return false;
+}
+
 
 bool gfx_movemem_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
+
     gfx_sp_movemem(C0(0, 8), C0(8, 8) * 8, seg_addr(cmd->words.w1));
-#else
-    gfx_sp_movemem(C0(16, 8), 0, seg_addr(cmd->words.w1));
-#endif
+
     return false;
 }
+
+// Seems to be the same for all other non F3DEX2 microcodes...
+bool gfx_movemem_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_movemem(C0(16, 8), 0, seg_addr(cmd->words.w1));
+
+    return false;
+}
+
 
 bool gfx_moveword_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
+
     gfx_sp_moveword(C0(16, 8), C0(0, 16), cmd->words.w1);
-#else
-    gfx_sp_moveword(C0(0, 8), C0(8, 16), cmd->words.w1);
-#endif
+
     return false;
 }
+
+// Seems to be the same for all other non F3DEX2 microcodes...
+bool gfx_moveword_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_moveword(C0(0, 8), C0(8, 16), cmd->words.w1);
+
+    return false;
+}
+
 
 bool gfx_texture_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
+
     gfx_sp_texture(C1(16, 16), C1(0, 16), C0(11, 3), C0(8, 3), C0(1, 7));
-#else
-    gfx_sp_texture(C1(16, 16), C1(0, 16), C0(11, 3), C0(8, 3), C0(0, 8));
-#endif
+
     return false;
 }
 
+// Seems to be the same for all other non F3DEX2 microcodes...
+bool gfx_texture_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_texture(C1(16, 16), C1(0, 16), C0(11, 3), C0(8, 3), C0(0, 8));
+
+    return false;
+}
+
+// Almost all versions of the microcode have their own version of this opcode
 bool gfx_vtx_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
+
     gfx_sp_vertex(C0(12, 8), C0(1, 7) - C0(12, 8), (const Vtx*)seg_addr(cmd->words.w1));
-#elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
-    gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, seg_addr(cmd->words.w1));
-#else
-    gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), seg_addr(cmd->words.w1));
-#endif
+
     return false;
 }
 
+bool gfx_vtx_handler_f3dex(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+    gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, (const Vtx*)seg_addr(cmd->words.w1));
+
+    return false;
+}
+
+bool gfx_vtx_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_vertex((C0(0, 16)) / sizeof(Vtx), C0(16, 4), (const Vtx*)seg_addr(cmd->words.w1));
+
+    return false;
+}
+
+//TODO handle special OTR opcodes later...
 bool gfx_vtx_hash_handler_f3dex2(Gfx** cmd0) {
     // Offset added to the start of the vertices
     const uintptr_t offset = (*cmd0)->words.w1;
@@ -2760,6 +2822,7 @@ bool gfx_vtx_hash_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_vtx_otr_filepath_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     char* fileName = (char*)cmd->words.w1;
@@ -2775,6 +2838,7 @@ bool gfx_vtx_otr_filepath_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_dl_otr_filepath_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     char* fileName = (char*)cmd->words.w1;
@@ -2797,13 +2861,15 @@ bool gfx_dl_otr_filepath_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// The original F3D microcode doesn't seem to have this opcode. Glide handles it as part of moveword
 bool gfx_modify_vtx_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     gfx_sp_modify_vertex(C0(1, 15), C0(16, 8), (uint32_t)cmd->words.w1);
     return false;
 }
 
-bool gfx_dl_handler_f3dex2(Gfx** cmd0) {
+//F3D, F3DEX, and F3DEX2 do the same thing
+bool gfx_dl_handler_common(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     Gfx* subGFX = (Gfx*)seg_addr(cmd->words.w1);
     if (C0(16, 1) == 0) {
@@ -2819,6 +2885,7 @@ bool gfx_dl_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_dl_otr_hash_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     if (C0(16, 1) == 0) {
@@ -2862,11 +2929,13 @@ bool gfx_dl_index_handler(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_pushcd_handler_f3dex2(Gfx** cmd0) {
     gfx_push_current_dir((char*)(*cmd0)->words.w1);
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_branch_z_otr_handler_f3dex2(Gfx** cmd0) {
     // Push return address
 
@@ -2888,7 +2957,8 @@ bool gfx_branch_z_otr_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
-bool gfx_end_dl_handler_f3dex2(Gfx** cmd0) {
+// F3D, F3DEX, and F3DEX2 do the same thing
+bool gfx_end_dl_handler_common(Gfx** cmd0) {
     markerOn = false;
     *cmd0 = g_exec_stack.ret();
     return true;
@@ -2899,19 +2969,22 @@ bool gfx_set_prim_depth_handler_f3dex2(Gfx** cmd) {
     return false;
 }
 
+//Only on F3DEX2
 bool gfx_geometry_mode_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     gfx_sp_geometry_mode(~C0(0, 24), (uint32_t)cmd->words.w1);
     return false;
 }
 
-bool gfx_set_geometry_mode_handler_f3dex2(Gfx** cmd0) {
+//Only on F3DEX and older
+bool gfx_set_geometry_mode_handler_f3dex(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     gfx_sp_geometry_mode(0, (uint32_t)cmd->words.w1);
     return false;
 }
 
-bool gfx_clear_geometry_mode_handler_f3dex2(Gfx** cmd0) {
+// Only on F3DEX and older
+bool gfx_clear_geometry_mode_handler_f3dex(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     gfx_sp_geometry_mode((uint32_t)cmd->words.w1, 0);
     return false;
@@ -2929,43 +3002,83 @@ bool gfx_tri1_otr_handler_f3dex2(Gfx** cmd0) {
 
 bool gfx_tri1_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
+
     gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
-#elif defined(F3DEX_GBI) || defined(F3DLP_GBI)
-    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
-#else
-    gfx_sp_tri1(C1(16, 8) / 10, C1(8, 8) / 10, C1(0, 8) / 10, false);
-#endif
+
     return false;
 }
 
-bool gfx_quad_tri2_handler_f3dex2(Gfx** cmd0) {
+bool gfx_tri1_handler_f3dex(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+
+    return false;
+}
+
+bool gfx_tri1_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_tri1(C1(16, 8) / 10, C1(8, 8) / 10, C1(0, 8) / 10, false);
+
+    return false;
+}
+
+//F3DEX, and F3DEX2 share a tri2 function, however F3DEX has a different quad function.
+bool gfx_tri2_handler_f3dex(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
 
     gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
     gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+    return false;
+}
+
+bool gfx_quad_handler_f3dex2(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
+    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+    return false;
+}
+
+bool gfx_quad_handler_f3dex(Gfx** cmd0) {
+    // TODO implement this command...
     return false;
 }
 
 bool gfx_othermode_l_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
+
     gfx_sp_set_other_mode(31 - C0(8, 8) - C0(0, 8), C0(0, 8) + 1, cmd->words.w1);
-#else
-    gfx_sp_set_other_mode(C0(8, 8), C0(0, 8), cmd->words.w1);
-#endif
+
     return false;
 }
 
-bool gfx_othermode_h_handler_f3dex2(Gfx** cmd0) {
+bool gfx_othermode_l_handler_f3d(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-#ifdef F3DEX_GBI_2
-    gfx_sp_set_other_mode(63 - C0(8, 8) - C0(0, 8), C0(0, 8) + 1, (uint64_t)cmd->words.w1 << 32);
-#else
-    gfx_sp_set_other_mode(C0(8, 8) + 32, C0(0, 8), (uint64_t)cmd->words.w1 << 32);
-#endif
+
+    gfx_sp_set_other_mode(C0(8, 8), C0(0, 8), cmd->words.w1);
+
     return false;
 }
+
+
+bool gfx_othermode_h_handler_f3dex2(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_set_other_mode(63 - C0(8, 8) - C0(0, 8), C0(0, 8) + 1, (uint64_t)cmd->words.w1 << 32);
+
+    return false;
+}
+
+bool gfx_othermode_h_handler_f3d(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    gfx_sp_set_other_mode(C0(8, 8) + 32, C0(0, 8), (uint64_t)cmd->words.w1 << 32);
+
+    return false;
+}
+
 
 bool gfx_set_timg_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
@@ -2996,6 +3109,7 @@ bool gfx_set_timg_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_set_timg_otr_hash_handler_f3dex2(Gfx** cmd0) {
     uintptr_t addr = (*cmd0)->words.w1;
     (*cmd0)++;
@@ -3061,6 +3175,7 @@ bool gfx_set_timg_otr_hash_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_set_timg_otr_filepath_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     const char* fileName = (char*)cmd->words.w1;
@@ -3091,6 +3206,7 @@ bool gfx_set_timg_otr_filepath_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_set_fb_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     gfx_flush();
@@ -3107,6 +3223,7 @@ bool gfx_set_fb_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_reset_fb_handler_f3dex2(Gfx** cmd0) {
     gfx_flush();
     fbActive = 0;
@@ -3115,6 +3232,7 @@ bool gfx_reset_fb_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_copy_fb_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
     bool* hasCopiedPtr = (bool*)cmd->words.w1;
@@ -3124,6 +3242,7 @@ bool gfx_copy_fb_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_set_timg_fb_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
 
@@ -3134,12 +3253,14 @@ bool gfx_set_timg_fb_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
+// TODO handle special OTR opcodes later...
 bool gfx_set_grayscale_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
 
     g_rdp.grayscale = cmd->words.w1;
     return false;
 }
+
 
 bool gfx_load_block_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
@@ -3360,7 +3481,7 @@ bool gfx_rdp_set_other_mode(Gfx** cmd0) {
     return false;
 }
 
-bool gfx_bg_copy_handler_f3dex2(Gfx** cmd0) {
+bool gfx_bg_copy_handler_s2dex(Gfx** cmd0) {
     Gfx* cmd = *(cmd0);
 
     if (!markerOn) {
@@ -3369,14 +3490,14 @@ bool gfx_bg_copy_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
-bool gfx_bg_1cyc_handler_f3dex2(Gfx** cmd0) {
+bool gfx_bg_1cyc_handler_s2dex(Gfx** cmd0) {
     Gfx* cmd = *(cmd0);
 
     gfx_s2dex_bg_1cyc((uObjBg*)cmd->words.w1);
     return false;
 }
 
-bool gfx_extra_geometry_mode_handler_f3dex2(Gfx** cmd0) {
+bool gfx_extra_geometry_mode_handler_s2dex(Gfx** cmd0) {
     Gfx* cmd = *(cmd0);
 
     gfx_sp_extra_geometry_mode(~C0(0, 24), (uint32_t)cmd->words.w1);
@@ -3391,11 +3512,11 @@ bool gfx_spnoop_command_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
-static const std::unordered_map<uint32_t, GfxOpcodeHandlerFuncF3DEX2> f3dex2Handlers = {
+static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
     // RSP commands
     { G_NOOP, gfx_noop_handler_f3dex2 },
     { G_CULLDL, gfx_cull_dl_handler_f3dex2 },
-    { G_LOAD_UCODE, gfx_load_ucode_handler_f3dex2 },
+    //{ G_LOAD_UCODE, gfx_load_ucode_handler_f3dex2 },
     { G_MARKER, gfx_marker_handler_f3dex2 },
     { G_INVALTEXCACHE, gfx_invalidate_tex_cache_handler_f3dex2 },
     { G_MTX, gfx_mtx_handler_f3dex2 },
@@ -3409,23 +3530,23 @@ static const std::unordered_map<uint32_t, GfxOpcodeHandlerFuncF3DEX2> f3dex2Hand
     { G_VTX_OTR_FILEPATH, gfx_vtx_otr_filepath_handler_f3dex2 },
     { G_DL_OTR_FILEPATH, gfx_dl_otr_filepath_handler_f3dex2 },
     { G_MODIFYVTX, gfx_modify_vtx_handler_f3dex2 },
-    { G_DL, gfx_dl_handler_f3dex2 },
+    { G_DL, gfx_dl_handler_common },
     { G_DL_OTR_HASH, gfx_dl_otr_hash_handler_f3dex2 },
     { G_DL_INDEX, gfx_dl_index_handler },
     { G_PUSHCD, gfx_pushcd_handler_f3dex2 },
     { G_BRANCH_Z_OTR, gfx_branch_z_otr_handler_f3dex2 },
-    { G_ENDDL, gfx_end_dl_handler_f3dex2 },
+    { G_ENDDL, gfx_end_dl_handler_common },
     { G_SETPRIMDEPTH, gfx_set_prim_depth_handler_f3dex2 },
 #ifdef F3DEX_GBI_2
     { G_GEOMETRYMODE, gfx_geometry_mode_handler_f3dex2 },
 #else
-    { G_SETGEOMETRYMODE, gfx_set_geometry_mode_handler_f3dex2 },
-    { G_CLEARGEOMETRYMODE, gfx_clear_geometry_mode_handler_f3dex2 },
+    { G_SETGEOMETRYMODE, gfx_set_geometry_mode_handler_f3dex },
+    { G_CLEARGEOMETRYMODE, gfx_clear_geometry_mode_handler_f3dex },
 #endif
     { G_TRI1_OTR, gfx_tri1_otr_handler_f3dex2 },
     { G_TRI1, gfx_tri1_handler_f3dex2 },
-    { G_QUAD, gfx_quad_tri2_handler_f3dex2 },
-    { G_TRI2, gfx_quad_tri2_handler_f3dex2 },
+    { G_QUAD, gfx_quad_handler_f3dex2 },
+    { G_TRI2, gfx_tri2_handler_f3dex },
     { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
     { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
     // RDP Commands
@@ -3459,25 +3580,60 @@ static const std::unordered_map<uint32_t, GfxOpcodeHandlerFuncF3DEX2> f3dex2Hand
     { G_SETCIMG, gfx_set_c_img_handler_f3dex2 },
     { G_RDPSETOTHERMODE, gfx_rdp_set_other_mode },
     { G_SETBLENDCOLOR, gfx_set_blend_color_handler_f3dex2 },
-    // S2DEX
-    { G_BG_COPY, gfx_bg_copy_handler_f3dex2 },
-    { G_BG_1CYC, gfx_bg_1cyc_handler_f3dex2 },
-    { G_EXTRAGEOMETRYMODE, gfx_extra_geometry_mode_handler_f3dex2 },
     // Commands that are unused in Soh and 2s2h
     { G_RDPFULLSYNC, gfx_stubbed_command_handler_f3dex2 },
     { G_RDPTILESYNC, gfx_stubbed_command_handler_f3dex2 },
     { G_RDPPIPESYNC, gfx_stubbed_command_handler_f3dex2 },
     { G_RDPLOADSYNC, gfx_stubbed_command_handler_f3dex2 },
-    { G_TEXRECTFLIP, gfx_stubbed_command_handler_f3dex2 },
+    // Commands to implement
     { G_SPNOOP, gfx_spnoop_command_handler_f3dex2 },
+    { G_RDPHALF_1, gfx_stubbed_command_handler_f3dex2 },
 };
+
+
+static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
+    { G_BG_COPY, gfx_bg_copy_handler_s2dex },
+    { G_BG_1CYC, gfx_bg_1cyc_handler_s2dex },
+    { G_EXTRAGEOMETRYMODE, gfx_extra_geometry_mode_handler_s2dex },
+    { G_OBJ_RENDERMODE, gfx_stubbed_command_handler_f3dex2 },
+    { G_OBJ_RECTANGLE_R, gfx_stubbed_command_handler_f3dex2 },
+    { G_DL, gfx_dl_handler_common},
+    { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
+    { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
+    { G_ENDDL, gfx_end_dl_handler_common},
+    { G_RDPHALF_1, gfx_stubbed_command_handler_f3dex2 },
+    { G_RDPHALF_2, gfx_stubbed_command_handler_f3dex2 },
+};
+
+const static std::array<std::unordered_map<uint32_t, GfxOpcodeHandlerFunc>*, UcodeHandlers::ucode_max> ucode_handlers = {
+    &f3dex2Handlers,
+    &s2dexHandlers,
+};
+
+// TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be are OK with that...
+extern "C" void gfx_set_ucode_handler(UcodeHandlers ucode) {
+    ucode_handler_index = ucode;
+}
+
 
 static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
     uint32_t opcode = (uint32_t)(cmd->words.w0 >> 24);
 
-    if (f3dex2Handlers.at(opcode)(&cmd)) {
+    if (opcode == G_LOAD_UCODE) {
+        gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
+        ++cmd;
+        return;
+        // Instead of having a handler for each ucode for switching ucode, just check for it early and return.
+    }
+    
+    // TODO, put RDP opcodes in their own list. For now, since they are all the same we can just run them from the f3dex2 list.
+    if (opcode >= (uint32_t)G_TEXRECT && opcode <= (uint32_t)G_SETCIMG) {
+        if (f3dex2Handlers.at(opcode)(&cmd)) {
+            return;
+        }
+    } else if (ucode_handlers[ucode_handler_index]->at(opcode)(&cmd)) {
         return;
     }
 
@@ -3523,6 +3679,8 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
         int max_tex_size = min(8192, gfx_rapi->get_max_texture_size());
         tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
+
+    ucode_handler_index = UcodeHandlers::ucode_f3dex2;
 }
 
 void gfx_destroy(void) {
