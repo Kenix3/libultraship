@@ -503,23 +503,35 @@ static void import_texture_rgba16(int tile, bool importReplacement) {
     uint32_t line_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].line_size_bytes;
     // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-    for (uint32_t i = 0; i < size_bytes / 2; i++) {
-        uint16_t col16 = (addr[2 * i] << 8) | addr[2 * i + 1];
-        uint8_t a = col16 & 1;
-        uint8_t r = col16 >> 11;
-        uint8_t g = (col16 >> 6) & 0x1f;
-        uint8_t b = (col16 >> 1) & 0x1f;
-        tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
-        tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
-        tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
-        tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
-    }
-
     uint32_t width = g_rdp.texture_tile[tile].line_size_bytes / 2;
     uint32_t height = size_bytes / g_rdp.texture_tile[tile].line_size_bytes;
 
+    // A single line of pixels should not equal the entire image (height == 1 non-withstanding)
+    if (full_image_line_size_bytes == size_bytes)
+        full_image_line_size_bytes = width * 2;
+
+    uint32_t i = 0;
+
+    for (uint32_t y = 0; y < height; y++) {
+        for (uint32_t x = 0; x < width; x++) {
+            uint32_t clrIdx = (y * (full_image_line_size_bytes / 2)) + (x);
+
+            uint16_t col16 = (addr[2 * clrIdx] << 8) | addr[2 * clrIdx + 1];
+            uint8_t a = col16 & 1;
+            uint8_t r = col16 >> 11;
+            uint8_t g = (col16 >> 6) & 0x1f;
+            uint8_t b = (col16 >> 1) & 0x1f;
+            tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
+            tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
+            tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
+            tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
+
+            i++;
+        }
+    }
+
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
-    // DumpTexture(g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
+    // DumpTexture(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path, rgba32_buf, width, height);
 }
 
 static void import_texture_rgba32(int tile, bool importReplacement) {
@@ -2499,6 +2511,31 @@ static void gfx_s2dex_bg_1cyc(uObjBg* bg) {
                              bg->b.imageY << 3, dsdxRect, 1 << 10, false);
 }
 
+static void gfx_s2dex_rect_copy(uObjSprite* spr) {
+    s16 dsdx = 4 << 10;
+    s16 uls = spr->s.objX << 3;
+    // Flip flag only flips horizontally
+    if (spr->s.imageFlags == G_BG_FLAG_FLIPS) {
+        dsdx = -dsdx;
+        uls = (spr->s.imageW - spr->s.objX) << 3;
+    }
+
+    int realX = spr->s.objX >> 2;
+    int realY = spr->s.objY >> 2;
+    int realW = (((spr->s.imageW)) >> 5);
+    int realH = (((spr->s.imageH)) >> 5);
+    float realSW = spr->s.scaleW / 1024.0f;
+    float realSH = spr->s.scaleH / 1024.0f;
+
+    int testX = (realX + (realW / realSW));
+    int testY = (realY + (realH / realSH));
+
+    gfx_dp_texture_rectangle(realX << 2, realY << 2, testX << 2, testY << 2, G_TX_RENDERTILE,
+                             g_rdp.texture_tile[0].uls << 3, g_rdp.texture_tile[0].ult << 3, (1 << 10) * realSW,
+                             (1 << 10) * realSH, false);
+}
+
+
 static inline void* seg_addr(uintptr_t w1) {
     // Segmented?
     if (w1 & 1) {
@@ -3497,6 +3534,15 @@ bool gfx_bg_1cyc_handler_s2dex(Gfx** cmd0) {
     return false;
 }
 
+bool gfx_obj_rectangle_handler_s2dex(Gfx** cmd0) {
+    Gfx* cmd = *(cmd0);
+
+    if (!markerOn) {
+        gfx_s2dex_rect_copy((uObjSprite*)cmd->words.w1); // not seg_addr here it seems
+    }
+    return false;
+}
+
 bool gfx_extra_geometry_mode_handler_s2dex(Gfx** cmd0) {
     Gfx* cmd = *(cmd0);
 
@@ -3597,6 +3643,7 @@ static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
     { G_EXTRAGEOMETRYMODE, gfx_extra_geometry_mode_handler_s2dex },
     { G_OBJ_RENDERMODE, gfx_stubbed_command_handler_f3dex2 },
     { G_OBJ_RECTANGLE_R, gfx_stubbed_command_handler_f3dex2 },
+    { G_OBJ_RECTANGLE, gfx_obj_rectangle_handler_s2dex },
     { G_DL, gfx_dl_handler_common},
     { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
     { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
