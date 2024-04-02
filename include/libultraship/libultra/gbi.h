@@ -2283,17 +2283,17 @@ typedef union {
         _SHIFTL(G_LOAD_UCODE, 24, 8) | _SHIFTL((int)(uc_dsize)-1, 0, 16), (uintptr_t)(uc_start), \
     }
 
-#define gSPLoadUcode(pkt, uc_index)                                                            \
-    _DW({                                                                                      \
-        Gfx* _g = (Gfx*)(pkt);                                                                 \
-        _g->words.w0 = _SHIFTL(G_LOAD_UCODE, 24, 8) | _SHIFTL(uc_index, 0, 16);                \
-    })                                                                                         \
+#define gSPLoadUcode(pkt, uc_index)                                             \
+    _DW({                                                                       \
+        Gfx* _g = (Gfx*)(pkt);                                                  \
+        _g->words.w0 = _SHIFTL(G_LOAD_UCODE, 24, 8) | _SHIFTL(uc_index, 0, 16); \
+    })
 
-#define gSPLoadUcodeL(pkt, uc_index)                                                           \
-     _DW({                                                                                     \
-        Gfx* _g = (Gfx*)(pkt);                                                                 \
-        _g->words.w0 = _SHIFTL(G_LOAD_UCODE, 24, 8) | _SHIFTL(uc_index, 0, 16);               \
-    })                                                                                         \
+#define gSPLoadUcodeL(pkt, uc_index)                                            \
+    _DW({                                                                       \
+        Gfx* _g = (Gfx*)(pkt);                                                  \
+        _g->words.w0 = _SHIFTL(G_LOAD_UCODE, 24, 8) | _SHIFTL(uc_index, 0, 16); \
+    })
 
 #if 0
 #define gSPLoadUcode(pkt, uc_start, uc_dstart) gSPLoadUcodeEx((pkt), (uc_start), (uc_dstart), SP_UCODE_DATA_SIZE)
