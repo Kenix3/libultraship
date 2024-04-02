@@ -11,8 +11,6 @@ typedef enum UcodeHandlers {
     ucode_max,
 } UcodeHandlers;
 
-void gfx_set_ucode_handler(UcodeHandlers ucode);
-
 #ifdef __cplusplus
 }
 #endif

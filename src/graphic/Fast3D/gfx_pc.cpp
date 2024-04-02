@@ -3654,7 +3654,7 @@ const static std::array<const std::unordered_map<uint32_t, GfxOpcodeHandlerFunc>
 
 // TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be
 // are OK with that...
-extern "C" void gfx_set_ucode_handler(UcodeHandlers ucode) {
+static void gfx_set_ucode_handler(UcodeHandlers ucode) {
     ucode_handler_index = ucode;
 }
 
