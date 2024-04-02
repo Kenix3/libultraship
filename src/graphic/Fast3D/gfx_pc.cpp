@@ -3614,7 +3614,6 @@ const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> f3dex2Handlers =
     { G_PUSHCD, gfx_pushcd_handler_f3dex2 },
     { G_BRANCH_Z_OTR, gfx_branch_z_otr_handler_f3dex2 },
     { G_ENDDL, gfx_end_dl_handler_common },
-    { G_SETPRIMDEPTH, gfx_set_prim_depth_handler_rdp },
 #ifdef F3DEX_GBI_2
     { G_GEOMETRYMODE, gfx_geometry_mode_handler_f3dex2 },
 #else
