@@ -55,12 +55,16 @@ static const char* GetOpName(uint32_t op) {
         CASE(G_PUSHCD);
         CASE(G_BRANCH_Z_OTR);
         CASE(G_ENDDL);
+#ifndef F3DEX_GBI
         CASE(G_GEOMETRYMODE);
+#endif
         // CASE(G_SETGEOMETRYMODE);
         // CASE(G_CLEARGEOMETRYMODE);
         CASE(G_TRI1_OTR);
         CASE(G_TRI1);
+#ifndef F3DEX_GBI
         CASE(G_QUAD);
+#endif
         CASE(G_TRI2);
         CASE(G_SETOTHERMODE_L);
         CASE(G_SETOTHERMODE_H);

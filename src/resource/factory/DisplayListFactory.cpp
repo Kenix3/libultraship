@@ -269,7 +269,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
                 int offset = strtol(fName.c_str() + 1, NULL, 16);
                 g = gsSPMatrix(offset | 1, paramInt);
             } else {
-                g = { gsSPMatrix(0, paramInt) };
+                g = gsSPMatrix(0, paramInt);
 
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_MTX_OTR2 << 24);
@@ -440,9 +440,9 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
 
             if (fName[0] == '>' && fName[1] == '0' && (fName[2] == 'x' || fName[2] == 'X')) {
                 uint32_t seg = std::stoul(fName.substr(1), nullptr, 16);
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, seg | 1) };
+                g = gsDPSetTextureImage(fmtVal, sizVal, width + 1, seg | 1);
             } else {
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, 0) };
+                g = gsDPSetTextureImage(fmtVal, sizVal, width + 1, 0);
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
                 g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
@@ -885,7 +885,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             }
 
-            g = { gsDPSetTextureImage(fmt, siz, width + 1, 0) };
+            g = gsDPSetTextureImage(fmt, siz, width + 1, 0);
             g.words.w0 &= 0x00FFFFFF;
             g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
             g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
@@ -944,7 +944,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
             std::string dlPath = (char*)child->Attribute("Path");
             if (dlPath[0] == '>' && dlPath[1] == '0' && (dlPath[2] == 'x' || dlPath[2] == 'X')) {
                 uint32_t seg = std::stoul(dlPath.substr(1), nullptr, 16);
-                g = { gsSPBranchListOTRHash(seg | 1) };
+                g = gsSPBranchListOTRHash(seg | 1);
             } else {
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
                 strcpy(dlPath2, dlPath.c_str());
@@ -955,7 +955,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
             std::string dlPath = (char*)child->Attribute("Path");
             if (dlPath[0] == '>' && dlPath[1] == '0' && (dlPath[2] == 'x' || dlPath[2] == 'X')) {
                 uint32_t seg = std::stoul(dlPath.substr(1), nullptr, 16);
-                g = { gsSPDisplayList(seg | 1) };
+                g = gsSPDisplayList(seg | 1);
             } else {
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
                 strcpy(dlPath2, dlPath.c_str());
