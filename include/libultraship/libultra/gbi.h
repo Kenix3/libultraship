@@ -2295,15 +2295,6 @@ typedef union {
         _g->words.w0 = _SHIFTL(G_LOAD_UCODE, 24, 8) | _SHIFTL(uc_index, 0, 16); \
     })
 
-#if 0
-#define gSPLoadUcode(pkt, uc_start, uc_dstart) gSPLoadUcodeEx((pkt), (uc_start), (uc_dstart), SP_UCODE_DATA_SIZE)
-#define gsSPLoadUcode(uc_start, uc_dstart) gsSPLoadUcodeEx((uc_start), (uc_dstart), SP_UCODE_DATA_SIZE)
-
-#define gSPLoadUcodeL(pkt, ucode) \
-    gSPLoadUcode((pkt), OS_K0_TO_PHYSICAL(&(ucode##TextStart)), OS_K0_TO_PHYSICAL(&(ucode##DataStart)))
-#define gsSPLoadUcodeL(ucode) \
-    gsSPLoadUcode(OS_K0_TO_PHYSICAL(&(ucode##TextStart)), OS_K0_TO_PHYSICAL(&(ucode##DataStart)))
-#endif
 #endif
 
 #ifdef F3DEX_GBI_2
