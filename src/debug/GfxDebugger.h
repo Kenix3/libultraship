@@ -1,8 +1,11 @@
 #pragma once
 
-#include "libultraship/libultra/gbi.h"
 #include <string>
 #include <vector>
+
+extern "C" {
+#include "libultraship/libultra/gbi.h"
+}
 
 namespace LUS {
 
