@@ -97,6 +97,12 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo = &ImGui::GetIO();
     mImGuiIo->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
 
+    ImFontConfig fontConfig = ImFontConfig();
+    fontConfig.OversampleH = fontConfig.OversampleV = 3;
+    fontConfig.GlyphExtraSpacing.x = 0.3f;
+    ImFont* font = mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(OpenSansFont_compressed_data_base85, 16, &fontConfig);
+    mImGuiIo->FontDefault = font;
+
     // Add Font Awesome and merge it into the default font.
     mImGuiIo->Fonts->AddFontDefault();
     // This must match the default font size, which is 13.0f.
@@ -270,7 +276,7 @@ bool Gui::SupportsViewports() {
 }
 
 void Gui::Update(WindowEvent event) {
-    if (mNeedsConsoleVariableSave) {
+        if (mNeedsConsoleVariableSave) {
         CVarSave();
         mNeedsConsoleVariableSave = false;
     }
@@ -284,7 +290,7 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
-
+        
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
@@ -295,7 +301,7 @@ void Gui::Update(WindowEvent event) {
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
-            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
+                        ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
                                            event.Win32.Param2);
             break;
 #endif
@@ -318,11 +324,22 @@ void Gui::UnblockImGuiGamepadNavigation() {
     }
 }
 
+float scaleCurrent = 1.f;
+float scaleNew, scaleDiff;
+
 void Gui::DrawMenu() {
     LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
+
+    scaleNew = GImGui->CurrentDpiScale;
+    scaleDiff = scaleNew / scaleCurrent;
+    scaleCurrent = scaleNew;
+
+    ImGui::GetStyle().ScaleAllSizes(scaleDiff);
+    ImFont *font = ImGui::GetFont();
+    font->Scale *= scaleDiff;
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
