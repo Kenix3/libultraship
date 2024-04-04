@@ -1405,7 +1405,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     uint64_t cc_options = 0;
     bool use_fog = (g_rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (g_rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
-    bool use_noise = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
+    bool use_noise = ((g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) < G_CYC_COPY) &&
+        ((g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER ||
+         (g_rdp.other_mode_h & (3U << G_MDSFT_ALPHADITHER)) == G_AD_NOISE ||
+         (g_rdp.other_mode_h & (3U << G_MDSFT_COLORDITHER)) == G_CD_NOISE);
     bool use_2cyc = (g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
     bool alpha_threshold = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
     bool invisible =
@@ -1821,11 +1824,7 @@ static void gfx_sp_movemem_f3dex2(uint8_t index, uint8_t offset, const void* dat
 #endif
 }
 
-// TODO remove these when headers are handled differently
-#define G_MV_L0 0x86
-#define G_MV_L1 0x88
-#define G_MV_L2 0x8a
-
+#ifdef F3DEX_GBI
 static void gfx_sp_movemem_f3d(uint8_t index, uint8_t offset, const void* data) {
     switch (index) {
         case G_MV_VIEWPORT:
@@ -1838,11 +1837,17 @@ static void gfx_sp_movemem_f3d(uint8_t index, uint8_t offset, const void* data) 
         case G_MV_L0:
         case G_MV_L1:
         case G_MV_L2:
+        case G_MV_L3:
+        case G_MV_L4:
+        case G_MV_L5:
+        case G_MV_L6:
+        case G_MV_L7:
             // NOTE: reads out of bounds if it is an ambient light
             memcpy(g_rsp.current_lights + (index - G_MV_L0) / 2, data, sizeof(Light_t));
             break;
     }
 }
+#endif
 
 static void gfx_sp_moveword_f3dex2(uint8_t index, uint16_t offset, uintptr_t data) {
     switch (index) {
@@ -1854,6 +1859,7 @@ static void gfx_sp_moveword_f3dex2(uint8_t index, uint16_t offset, uintptr_t dat
             g_rsp.fog_mul = (int16_t)(data >> 16);
             g_rsp.fog_offset = (int16_t)data;
             break;
+
         case G_MW_SEGMENT:
             int segNumber = offset / 4;
             gSegmentPointers[segNumber] = data;
@@ -1866,17 +1872,19 @@ static void gfx_sp_moveword_f3d(uint8_t index, uint16_t offset, uintptr_t data) 
         case G_MW_NUMLIGHT:
             // Ambient light is included
             // The 31th bit is a flag that lights should be recalculated
-            g_rsp.current_num_lights = (data - 0x80000000U) / 32;
+            g_rsp.current_num_lights = ((data - 0x80000000) >> 5) - 1;
             g_rsp.lights_changed = 1;
             break;
         case G_MW_FOG:
             g_rsp.fog_mul = (int16_t)(data >> 16);
             g_rsp.fog_offset = (int16_t)data;
             break;
-        case G_MW_SEGMENT:
+        case G_MW_SEGMENT: {
             int segNumber = offset / 4;
             gSegmentPointers[segNumber] = data;
             break;
+        }
+
     }
 }
 
@@ -3278,11 +3286,14 @@ bool gfx_set_fb_handler_custom(Gfx** cmd0) {
     return false;
 }
 
+float gfx_calculate_noise_scale() {
+    return ((float)gfx_current_dimensions.height / SCREEN_HEIGHT) * 0.5f;
+}
+
 bool gfx_reset_fb_handler_custom(Gfx** cmd0) {
     gfx_flush();
     fbActive = 0;
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / SCREEN_HEIGHT);
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale());
     return false;
 }
 
@@ -3877,8 +3888,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                                             gfx_current_window_dimensions.height, 1, false, true, true,
                                             !game_renders_to_framebuffer);
     gfx_rapi->start_frame();
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / SCREEN_HEIGHT);
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale());
     gfx_rapi->clear_framebuffer();
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
@@ -3976,7 +3986,7 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
 }
 
 void gfx_reset_framebuffer() {
-    gfx_rapi->start_draw_to_framebuffer(0, (float)gfx_current_dimensions.height / SCREEN_HEIGHT);
+    gfx_rapi->start_draw_to_framebuffer(0, gfx_calculate_noise_scale());
     gfx_rapi->clear_framebuffer();
 }
 

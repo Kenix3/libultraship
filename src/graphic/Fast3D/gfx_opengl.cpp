@@ -418,6 +418,22 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(fs_buf, &fs_len, "uniform int frame_count;");
     append_line(fs_buf, &fs_len, "uniform float noise_scale;");
 
+    append_line(fs_buf, &fs_len, "vec3 colorDither(float _noise_val, vec3 _color)");
+    append_line(fs_buf, &fs_len, "{");
+    append_line(fs_buf, &fs_len, "    vec3 _noise = vec3(_noise_val, _noise_val, _noise_val);");
+    append_line(fs_buf, &fs_len, "    vec3 threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(fs_buf, &fs_len, "    _color = clamp(_color + threshold, 0.0, 1.0);");
+    append_line(fs_buf, &fs_len, "    _color.rgb = round(_color.rgb * 32.0) / 32.0;");
+    append_line(fs_buf, &fs_len, "    return _color;");
+    append_line(fs_buf, &fs_len, "}");
+    append_line(fs_buf, &fs_len, "float alphaDither(float _noise, float _alpha)");
+    append_line(fs_buf, &fs_len, "{");
+    append_line(fs_buf, &fs_len, "    float threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(fs_buf, &fs_len, "    _alpha = clamp(_alpha + threshold, 0.0, 1.0);");
+    append_line(fs_buf, &fs_len, "    _alpha = round(_alpha * 32.0) / 32.0;");
+    append_line(fs_buf, &fs_len, "    return _alpha;");
+    append_line(fs_buf, &fs_len, "}");
+
     append_line(fs_buf, &fs_len, "float random(in vec3 value) {");
     append_line(fs_buf, &fs_len, "    float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
     append_line(fs_buf, &fs_len, "    return fract(sin(random) * 143758.5453);");
@@ -554,9 +570,9 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha && cc_features.opt_noise) {
-        append_line(fs_buf, &fs_len,
-                    "texel.a *= floor(clamp(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + "
-                    "texel.a, 0.0, 1.0));");
+        append_line(fs_buf, &fs_len, "texel.a = alphaDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), texel.a);");
+    } else if (cc_features.opt_noise) {
+        append_line(fs_buf, &fs_len, "texel.rgb = colorDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), texel.rgb);");
     }
 
     if (cc_features.opt_grayscale) {
@@ -566,8 +582,12 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha) {
+        append_line(fs_buf, &fs_len, "float cvg = 1.0;");
+        append_line(fs_buf, &fs_len, "float alphaValue = texel.a;");
+
         if (cc_features.opt_alpha_threshold) {
-            append_line(fs_buf, &fs_len, "if (texel.a < 8.0 / 256.0) discard;");
+            append_line(fs_buf, &fs_len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
+            append_line(fs_buf, &fs_len, "if (alphaValue < alphaTestValue) discard;");
         }
         if (cc_features.opt_invisible) {
             append_line(fs_buf, &fs_len, "texel.a = 0.0;");
