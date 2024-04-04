@@ -1412,7 +1412,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                      (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16);
     bool use_fog = (g_rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (g_rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
-    bool use_noise = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
+    bool use_noise = ((g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) < G_CYC_COPY) &&
+        ((g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER ||
+         (g_rdp.other_mode_h & (3U << G_MDSFT_ALPHADITHER)) == G_AD_NOISE ||
+         (g_rdp.other_mode_h & (3U << G_MDSFT_COLORDITHER)) == G_CD_NOISE);
     bool use_2cyc = (g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
     bool alpha_threshold = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
     bool invisible =
@@ -3283,11 +3286,14 @@ bool gfx_set_fb_handler_custom(Gfx** cmd0) {
     return false;
 }
 
+float gfx_calculate_noise_scale() {
+    return ((float)gfx_current_dimensions.height / SCREEN_HEIGHT) * 0.5f;
+}
+
 bool gfx_reset_fb_handler_custom(Gfx** cmd0) {
     gfx_flush();
     fbActive = 0;
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale());
     return false;
 }
 
@@ -3885,8 +3891,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                                             gfx_current_window_dimensions.height, 1, false, true, true,
                                             !game_renders_to_framebuffer);
     gfx_rapi->start_frame();
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale());
     gfx_rapi->clear_framebuffer();
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
@@ -4015,7 +4020,7 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
 }
 
 void gfx_reset_framebuffer() {
-    gfx_rapi->start_draw_to_framebuffer(0, (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    gfx_rapi->start_draw_to_framebuffer(0, gfx_calculate_noise_scale());
     gfx_rapi->clear_framebuffer();
 }
 
