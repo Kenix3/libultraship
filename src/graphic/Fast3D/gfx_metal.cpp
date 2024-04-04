@@ -103,6 +103,8 @@ struct FramebufferMetal {
     struct ShaderProgramMetal* last_shader_program;
     MTL::Texture* last_bound_textures[SHADER_MAX_TEXTURES];
     MTL::SamplerState* last_bound_samplers[SHADER_MAX_TEXTURES];
+    MTL::ScissorRect scissor_rect;
+    MTL::Viewport viewport;
 
     int8_t last_depth_test = -1;
     int8_t last_depth_mask = -1;
@@ -476,30 +478,29 @@ static void gfx_metal_set_zmode_decal(bool zmode_decal) {
 }
 
 static void gfx_metal_set_viewport(int x, int y, int width, int height) {
-    MTL::Viewport viewport;
-    viewport.originX = x;
-    viewport.originY = mctx.render_target_height - y - height;
-    viewport.width = width;
-    viewport.height = height;
-    viewport.znear = 0;
-    viewport.zfar = 1;
+    FramebufferMetal& fb = mctx.framebuffers[mctx.current_framebuffer];
 
-    auto current_framebuffer = mctx.framebuffers[mctx.current_framebuffer];
-    current_framebuffer.command_encoder->setViewport(viewport);
+    fb.viewport.originX = x;
+    fb.viewport.originY = mctx.render_target_height - y - height;
+    fb.viewport.width = width;
+    fb.viewport.height = height;
+    fb.viewport.znear = 0;
+    fb.viewport.zfar = 1;
+
+    fb.command_encoder->setViewport(fb.viewport);
 }
 
 static void gfx_metal_set_scissor(int x, int y, int width, int height) {
-    FramebufferMetal fb = mctx.framebuffers[mctx.current_framebuffer];
+    FramebufferMetal& fb = mctx.framebuffers[mctx.current_framebuffer];
     TextureDataMetal tex = mctx.textures[fb.texture_id];
 
-    MTL::ScissorRect rect;
     // clamp to viewport size as metal does not support larger values than viewport size
-    rect.x = std::max(0, std::min<int>(x, tex.width));
-    rect.y = std::max(0, std::min<int>(mctx.render_target_height - y - height, tex.height));
-    rect.width = std::max(0, std::min<int>(x + width, tex.width));
-    rect.height = std::max(0, std::min<int>(height, tex.height));
+    fb.scissor_rect.x = std::max(0, std::min<int>(x, tex.width));
+    fb.scissor_rect.y = std::max(0, std::min<int>(mctx.render_target_height - y - height, tex.height));
+    fb.scissor_rect.width = std::max(0, std::min<int>(x + width, tex.width));
+    fb.scissor_rect.height = std::max(0, std::min<int>(height, tex.height));
 
-    fb.command_encoder->setScissorRect(rect);
+    fb.command_encoder->setScissorRect(fb.scissor_rect);
 }
 
 static void gfx_metal_set_use_alpha(bool use_alpha) {
@@ -658,6 +659,8 @@ void gfx_metal_end_frame(void) {
             fb.last_bound_textures[i] = nullptr;
             fb.last_bound_samplers[i] = nullptr;
         }
+        memset(&fb.viewport, 0, sizeof(MTL::Viewport));
+        memset(&fb.scissor_rect, 0, sizeof(MTL::ScissorRect));
         fb.last_depth_test = -1;
         fb.last_depth_mask = -1;
         fb.last_zmode_decal = -1;
@@ -706,8 +709,7 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
     MTL::RenderPassDescriptor* render_pass_descriptor = MTL::RenderPassDescriptor::renderPassDescriptor();
     MTL::ClearColor clear_color = MTL::ClearColor::Make(0, 0, 0, 1);
     render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.texture);
-    render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(msaa_enabled ? MTL::LoadActionLoad
-                                                                                      : MTL::LoadActionClear);
+    render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
     render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
     render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
 
@@ -813,14 +815,13 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
             if (fb_msaa_enabled) {
                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.msaaTexture);
                 render_pass_descriptor->colorAttachments()->object(0)->setResolveTexture(tex.texture);
-                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
+                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
                 render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(
-                    MTL::StoreActionMultisampleResolve);
+                    MTL::StoreActionStoreAndMultisampleResolve);
                 render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
             } else {
                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.texture);
-                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(
-                    fb_id == 0 && game_msaa_enabled ? MTL::LoadActionLoad : MTL::LoadActionClear);
+                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
                 render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
                 render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
             }
@@ -1017,6 +1018,70 @@ void gfx_metal_select_texture_fb(int fb_id) {
     gfx_metal_select_texture(tile, mctx.framebuffers[fb_id].texture_id);
 }
 
+void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id) {
+    if (fb_src_id >= (int)mctx.framebuffers.size() || fb_dst_id >= (int)mctx.framebuffers.size()) {
+        return;
+    }
+
+    FramebufferMetal& source_framebuffer = mctx.framebuffers[fb_src_id];
+
+    int source_texture_id = source_framebuffer.texture_id;
+    MTL::Texture* source_texture = mctx.textures[source_texture_id].texture;
+
+    int target_texture_id = mctx.framebuffers[fb_dst_id].texture_id;
+    MTL::Texture* target_texture = mctx.textures[target_texture_id].texture;
+
+    // Skip copying framebuffers that don't have the same width
+    if (source_texture->width() != target_texture->width()) {
+        return;
+    }
+
+    // End the current render encoder
+    source_framebuffer.command_encoder->endEncoding();
+
+    // Create a blit encoder
+    MTL::BlitCommandEncoder* blit_encoder = source_framebuffer.command_buffer->blitCommandEncoder();
+    blit_encoder->setLabel(NS::String::string("Copy Framebuffer Encoder", NS::UTF8StringEncoding));
+
+    MTL::Origin source_origin = MTL::Origin(0, 0, 0);
+    MTL::Origin target_origin = MTL::Origin(0, 0, 0);
+    MTL::Size source_size = MTL::Size(source_texture->width(), source_texture->height(), 1);
+
+    // Account for source framebuffer having the menu bar open
+    if (source_texture->height() > target_texture->height()) {
+        auto diff = source_texture->height() - target_texture->height();
+        source_size.height -= diff;
+        source_origin.y = diff;
+    }
+
+    // Copy the texture over using the origins and size
+    blit_encoder->copyFromTexture(source_texture, 0, 0, source_origin, source_size, target_texture, 0, 0,
+                                  target_origin);
+    blit_encoder->endEncoding();
+
+    // Create a new render encoder back onto the framebuffer
+    source_framebuffer.command_encoder =
+        source_framebuffer.command_buffer->renderCommandEncoder(source_framebuffer.render_pass_descriptor);
+
+    std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Copy", fb_src_id);
+    source_framebuffer.command_encoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+    source_framebuffer.command_encoder->setDepthClipMode(MTL::DepthClipModeClamp);
+    source_framebuffer.command_encoder->setViewport(source_framebuffer.viewport);
+    source_framebuffer.command_encoder->setScissorRect(source_framebuffer.scissor_rect);
+
+    // Reset the framebuffer so the encoder is setup again when rendering triangles
+    source_framebuffer.has_bounded_vertex_buffer = false;
+    source_framebuffer.has_bounded_fragment_buffer = false;
+    source_framebuffer.last_shader_program = nullptr;
+    for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
+        source_framebuffer.last_bound_textures[i] = nullptr;
+        source_framebuffer.last_bound_samplers[i] = nullptr;
+    }
+    source_framebuffer.last_depth_test = -1;
+    source_framebuffer.last_depth_mask = -1;
+    source_framebuffer.last_zmode_decal = -1;
+}
+
 void gfx_metal_set_texture_filter(FilteringMode mode) {
     mctx.current_filter_mode = mode;
     gfx_texture_cache_clear();
@@ -1056,6 +1121,7 @@ struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_create_framebuffer,
                                          gfx_metal_update_framebuffer_parameters,
                                          gfx_metal_start_draw_to_framebuffer,
+                                         gfx_metal_copy_framebuffer,
                                          gfx_metal_clear_framebuffer,
                                          gfx_metal_resolve_msaa_color_buffer,
                                          gfx_metal_get_pixel_depth,

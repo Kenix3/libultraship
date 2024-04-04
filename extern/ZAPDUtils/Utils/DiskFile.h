@@ -81,7 +81,10 @@ public:
 
 	static void WriteAllText(const fs::path& filePath, const std::string& text)
 	{
-		std::ofstream file(filePath, std::ios::out);
+        if (!std::filesystem::exists(filePath.parent_path())) {
+                std::filesystem::create_directories(filePath.parent_path());
+		}
+        std::ofstream file(filePath, std::ios::out);
 		file.write(text.c_str(), text.size());
 	}
 };

@@ -7,7 +7,7 @@ typedef unsigned int u32;
 #define A_SPNOOP 0
 #define A_ADPCM 1
 #define A_CLEARBUFF 2
-#define A_UNK3 3
+#define A_UNK3 3f
 #define A_ADDMIXER 4
 #define A_RESAMPLE 5
 #define A_RESAMPLE_ZOH 6
@@ -37,6 +37,7 @@ typedef unsigned int u32;
 #define A_INIT 0x01
 #define A_CONTINUE 0x00
 #define A_LOOP 0x02
+#define A_ADPCM_SHORT 0x04
 #define A_OUT 0x02
 #define A_LEFT 0x02
 #define A_RIGHT 0x00
@@ -446,12 +447,12 @@ typedef short ENVMIX_STATE[40];
         _a->words.w1 = (u32)(addr);                                                                 \
     }
 
-#define aDuplicate(pkt, count, dmemi, dmemo, a4)                                                      \
-    {                                                                                                 \
-        Acmd* _a = (Acmd*)pkt;                                                                        \
-                                                                                                      \
-        _a->words.w0 = (_SHIFTL(A_DUPLICATE, 24, 8) | _SHIFTL(count, 16, 8) | _SHIFTL(dmemi, 0, 16)); \
-        _a->words.w1 = _SHIFTL(dmemo, 16, 16) | _SHIFTL(a4, 0, 16);                                   \
+#define aDuplicate(pkt, numCopies, dmemSrc, dmemDest)                                                       \
+    {                                                                                                       \
+        Acmd* _a = (Acmd*)pkt;                                                                              \
+                                                                                                            \
+        _a->words.w0 = (_SHIFTL(A_DUPLICATE, 24, 8) | _SHIFTL(numCopies, 16, 8) | _SHIFTL(dmemSrc, 0, 16)); \
+        _a->words.w1 = _SHIFTL(dmemDest, 16, 16) | _SHIFTL(0x80, 0, 16);                                    \
     }
 
 #define aAddMixer(pkt, count, dmemi, dmemo, a4)                                                        \

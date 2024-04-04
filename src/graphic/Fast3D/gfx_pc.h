@@ -7,9 +7,14 @@
 #include <unordered_map>
 #include <list>
 #include <cstddef>
+#include <vector>
+#include <stack>
 
 #include "libultraship/libultra/gbi.h"
 #include "libultraship/libultra/types.h"
+
+#include "resource/type/Texture.h"
+#include "resource/Resource.h"
 
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320
@@ -36,6 +41,7 @@ struct TextureCacheKey {
     const uint8_t* palette_addrs[2];
     uint8_t fmt, siz;
     uint8_t palette_index;
+    uint32_t size_bytes;
 
     bool operator==(const TextureCacheKey&) const noexcept = default;
 
@@ -61,6 +67,135 @@ struct TextureCacheValue {
 struct TextureCacheMapIter {
     TextureCacheMap::iterator it;
 };
+
+struct GfxExecStack {
+    // This is a dlist stack used to handle dlist calls.
+    std::stack<Gfx*> cmd_stack = {};
+    // This is also a dlist stack but a std::vector is used to make it possible
+    // to iterate on the elements.
+    // The purpose of this is to identify an instruction at a poin in time
+    // which would not be possible with just a Gfx* because a dlist can be called multiple times
+    // what we do instead is store the call path that leads to the instruction (including branches)
+    std::vector<const Gfx*> gfx_path = {};
+    struct CodeDisp {
+        const char* file;
+        int line;
+    };
+    // stack for OpenDisp/CloseDisps
+    std::vector<CodeDisp> disp_stack{};
+
+    void start(Gfx* dlist);
+    void stop();
+    Gfx*& currCmd();
+    void openDisp(const char* file, int line);
+    void closeDisp();
+    const std::vector<CodeDisp>& getDisp() const;
+    void branch(Gfx* caller);
+    void call(Gfx* caller, Gfx* callee);
+    Gfx* ret();
+};
+
+struct RGBA {
+    uint8_t r, g, b, a;
+};
+
+struct LoadedVertex {
+    float x, y, z, w;
+    float u, v;
+    struct RGBA color;
+    uint8_t clip_rej;
+};
+
+struct RawTexMetadata {
+    uint16_t width, height;
+    float h_byte_scale = 1, v_pixel_scale = 1;
+    std::shared_ptr<LUS::Texture> resource;
+    LUS::TextureType type;
+};
+
+#define MAX_BUFFERED 256
+// #define MAX_LIGHTS 2
+#define MAX_LIGHTS 32
+#define MAX_VERTICES 64
+
+struct RSP {
+    float modelview_matrix_stack[11][4][4];
+    uint8_t modelview_matrix_stack_size;
+
+    float MP_matrix[4][4];
+    float P_matrix[4][4];
+
+    Light_t lookat[2];
+    Light current_lights[MAX_LIGHTS + 1];
+    float current_lights_coeffs[MAX_LIGHTS][3];
+    float current_lookat_coeffs[2][3]; // lookat_x, lookat_y
+    uint8_t current_num_lights;        // includes ambient light
+    bool lights_changed;
+
+    uint32_t geometry_mode;
+    int16_t fog_mul, fog_offset;
+
+    uint32_t extra_geometry_mode;
+
+    struct {
+        // U0.16
+        uint16_t s, t;
+    } texture_scaling_factor;
+
+    struct LoadedVertex loaded_vertices[MAX_VERTICES + 4];
+};
+
+struct RDP {
+    const uint8_t* palettes[2];
+    struct {
+        const uint8_t* addr;
+        uint8_t siz;
+        uint32_t width;
+        uint32_t tex_flags;
+        struct RawTexMetadata raw_tex_metadata;
+    } texture_to_load;
+    struct {
+        const uint8_t* addr;
+        uint32_t orig_size_bytes;
+        uint32_t size_bytes;
+        uint32_t full_image_line_size_bytes;
+        uint32_t line_size_bytes;
+        uint32_t tex_flags;
+        struct RawTexMetadata raw_tex_metadata;
+        bool masked;
+        bool blended;
+    } loaded_texture[2];
+    struct {
+        uint8_t fmt;
+        uint8_t siz;
+        uint8_t cms, cmt;
+        uint8_t shifts, shiftt;
+        uint16_t uls, ult, lrs, lrt; // U10.2
+        uint16_t tmem;               // 0-511, in 64-bit word units
+        uint32_t line_size_bytes;
+        uint8_t palette;
+        uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively
+    } texture_tile[8];
+    bool textures_changed[2];
+
+    uint8_t first_tile_index;
+
+    uint32_t other_mode_l, other_mode_h;
+    uint64_t combine_mode;
+    bool grayscale;
+
+    uint8_t prim_lod_fraction;
+    struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
+    struct XYWidthHeight viewport, scissor;
+    bool viewport_or_scissor_changed;
+    void* z_buf_address;
+    void* color_image_address;
+};
+
+extern RDP g_rdp;
+extern RSP g_rsp;
+
+extern GfxExecStack g_exec_stack;
 
 extern "C" {
 

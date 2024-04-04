@@ -1,7 +1,6 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "libultraship/libultra/types.h"
 
 #define TEX_FLAG_LOAD_AS_RAW (1 << 0)
 
