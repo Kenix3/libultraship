@@ -58,34 +58,34 @@ uint32_t osGetCount(void) {
         .count();
 }
 
-void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msgBuf, int32_t count) {
-    mq->validCount = 0;
-    mq->first = 0;
-    mq->msgCount = count;
-    mq->msg = msgBuf;
-    return;
+OSPiHandle *osCartRomInit(void) {
+    return NULL;
 }
 
-int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
-    int32_t index;
-    if (mq->validCount >= mq->msgCount) {
-        return -1;
-    }
-    index = (mq->first + mq->validCount) % mq->msgCount;
-    mq->msg[index] = msg;
-    mq->validCount++;
+int osSetTimer(OSTimer* t, OSTime countdown, OSTime interval, OSMesgQueue* mq, OSMesg msg){
     return 0;
 }
 
-int32_t osRecvMesg(OSMesgQueue* mq, OSMesg* msg, int32_t flag) {
-    if (mq->validCount == 0) {
-        return -1;
-    }
-    if (msg != NULL) {
-        *msg = *(mq->first + mq->msg);
-    }
-    mq->first = (mq->first + 1) % mq->msgCount;
-    mq->validCount--;
+int32_t osEPiStartDma(OSPiHandle *pihandle, OSIoMesg *mb, int32_t direction) {
     return 0;
 }
+
+uint32_t osAiGetLength() {
+    // TODO: Implement
+    return 0;
+}
+
+int32_t osAiSetNextBuffer(void *buff, uint32_t len) {
+    // TODO: Implement
+    return 0;
+}
+
+int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
+    return 0;
+}
+
+int32_t osMotorInit(OSMesgQueue* ctrlrqueue, OSPfs* pfs, int32_t channel) {
+    return 0;
+}
+
 }

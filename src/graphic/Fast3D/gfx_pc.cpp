@@ -1401,8 +1401,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
     uint64_t cc_id = g_rdp.combine_mode;
     uint64_t cc_options = 0;
-    bool use_alpha = (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
-                     (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16);
     bool use_fog = (g_rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (g_rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
@@ -1411,6 +1409,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool invisible =
         (g_rdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = g_rdp.grayscale;
+    bool use_alpha = use_2cyc ? (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
+                                    (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16)
+                              : (g_rdp.other_mode_l & (3 << 18)) == G_BL_1MA;
 
     if (texture_edge) {
         use_alpha = true;
@@ -3080,8 +3081,8 @@ bool gfx_tri1_handler_f3d(Gfx** cmd0) {
 bool gfx_tri2_handler_f3dex(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
 
-    gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
-    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+    gfx_sp_tri1(C0(17, 7), C0(9, 7), C0(1, 7), false);
+    gfx_sp_tri1(C1(17, 7), C1(9, 7), C1(1, 7), false);
     return false;
 }
 
