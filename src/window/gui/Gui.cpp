@@ -97,10 +97,13 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo = &ImGui::GetIO();
     mImGuiIo->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
 
+    // Set OpenSans-Semibold as default font
     ImFontConfig fontConfig = ImFontConfig();
-    fontConfig.OversampleH = fontConfig.OversampleV = 3;
-    fontConfig.GlyphExtraSpacing.x = 0.3f;
-    ImFont* font = mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(OpenSansFont_compressed_data_base85, 16, &fontConfig);
+    // Font Oversample for clean pixelfree letters (Could be set to 3 for best quality or to 1 for memory critical targets)
+    fontConfig.OversampleH = fontConfig.OversampleV = 2;
+    // Looks better with some space between the letters
+    fontConfig.GlyphExtraSpacing.x = 0.5f;
+    ImFont* font = mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(OpenSansFont_compressed_data_base85, 17, &fontConfig);
     mImGuiIo->FontDefault = font;
 
     // Add Font Awesome and merge it into the default font.
@@ -324,22 +327,21 @@ void Gui::UnblockImGuiGamepadNavigation() {
     }
 }
 
-float scaleCurrent = 1.f;
-float scaleNew, scaleDiff;
-
 void Gui::DrawMenu() {
     LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
 
-    scaleNew = GImGui->CurrentDpiScale;
-    scaleDiff = scaleNew / scaleCurrent;
-    scaleCurrent = scaleNew;
+    // Get the difference between the last frame and the current Frame 
+    mDpiScaleDiff = GImGui->CurrentDpiScale / mLastDpiScale;
+    // Store the current scale for next frame
+    mLastDpiScale = GImGui->CurrentDpiScale;
 
-    ImGui::GetStyle().ScaleAllSizes(scaleDiff);
+    // Apply the scale difference to ImGui
+    ImGui::GetStyle().ScaleAllSizes(mDpiScaleDiff);
     ImFont *font = ImGui::GetFont();
-    font->Scale *= scaleDiff;
+    font->Scale *= mDpiScaleDiff;
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
