@@ -112,9 +112,9 @@ class Gui {
     std::map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
 
-    //DPI scale     
-    float mLastDpiScale = 1.f;  // Default scale is 1.0; Holds the scale of the last frame.
-    float mDpiScaleDiff;        // Scale difference factor to last frame.
+    // DPI scale
+    float mLastDpiScale = 1.f; // Default scale is 1.0; Holds the scale of the last frame.
+    float mDpiScaleDiff;       // Scale difference factor to last frame.
 };
 } // namespace LUS
 

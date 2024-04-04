@@ -102,11 +102,13 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
     // Set OpenSans-Semibold as default font
     ImFontConfig fontConfig = ImFontConfig();
-    // Font Oversample for clean pixelfree letters (Could be set to 3 for best quality or to 1 for memory critical targets)
+    // Font Oversample for clean pixelfree letters (Could be set to 3 for best quality or to 1 for memory critical
+    // targets)
     fontConfig.OversampleH = fontConfig.OversampleV = 2;
     // Looks better with some space between the letters
     fontConfig.GlyphExtraSpacing.x = 0.5f;
-    ImFont* font = mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(OpenSansFont_compressed_data_base85, 17, &fontConfig);
+    ImFont* font =
+        mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(OpenSansFont_compressed_data_base85, 17, &fontConfig);
     mImGuiIo->FontDefault = font;
 
     // Add Font Awesome and merge it into the default font.
@@ -283,7 +285,7 @@ bool Gui::SupportsViewports() {
 }
 
 void Gui::Update(WindowEvent event) {
-        if (mNeedsConsoleVariableSave) {
+    if (mNeedsConsoleVariableSave) {
         CVarSave();
         mNeedsConsoleVariableSave = false;
     }
@@ -297,7 +299,7 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
-        
+
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
@@ -308,7 +310,7 @@ void Gui::Update(WindowEvent event) {
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
-                        ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
+            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
                                            event.Win32.Param2);
             break;
 #endif
@@ -337,14 +339,14 @@ void Gui::DrawMenu() {
     ImGuiWMNewFrame();
     ImGui::NewFrame();
 
-    // Get the difference between the last frame and the current Frame 
+    // Get the difference between the last frame and the current Frame
     mDpiScaleDiff = GImGui->CurrentDpiScale / mLastDpiScale;
     // Store the current scale for next frame
     mLastDpiScale = GImGui->CurrentDpiScale;
 
     // Apply the scale difference to ImGui
     ImGui::GetStyle().ScaleAllSizes(mDpiScaleDiff);
-    ImFont *font = ImGui::GetFont();
+    ImFont* font = ImGui::GetFont();
     font->Scale *= mDpiScaleDiff;
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
