@@ -87,6 +87,7 @@ static size_t current_framebuffer;
 static float current_noise_scale;
 static FilteringMode current_filter_mode = FILTER_THREE_POINT;
 
+GLint max_msaa_level = 1;
 GLuint pixel_depth_rb, pixel_depth_fb;
 size_t pixel_depth_rb_size;
 
@@ -877,6 +878,8 @@ static void gfx_opengl_init(void) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     pixel_depth_rb_size = 1;
+
+    glGetIntegerv(GL_MAX_SAMPLES, &max_msaa_level);
 }
 
 static void gfx_opengl_on_resize(void) {
@@ -932,6 +935,7 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
 
     width = max(width, 1U);
     height = max(height, 1U);
+    msaa_level = min(msaa_level, (uint32_t)max_msaa_level);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
 
