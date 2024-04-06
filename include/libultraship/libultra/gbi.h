@@ -3117,21 +3117,7 @@ typedef union {
  */
 #define G_TX_DXT_FRAC 11
 
-/*
- *  For RCP 2.0, the maximum number of texels that can be loaded
- *  using a load_block command is 2048.  In order to load the total
- *  4kB of Tmem, change the texel size when loading to be G_IM_SIZ_16b,
- *  then change the tile to the proper texel size after the load.
- *  The g*DPLoadTextureBlock macros already do this, so this change
- *  will be transparent if you use these macros.  If you use
- *  the g*DPLoadBlock macros directly, you will need to handle this
- *  tile manipulation yourself.  RJM.
- */
-#ifdef _HW_VERSION_1
 #define G_TX_LDBLK_MAX_TXL 4095
-#else
-#define G_TX_LDBLK_MAX_TXL 2047
-#endif /* _HW_VERSION_1 */
 
 #define TXL2WORDS(txls, b_txl) MAX(1, ((txls) * (b_txl) / 8))
 #define CALC_DXT(width, b_txl) (((1 << G_TX_DXT_FRAC) + TXL2WORDS(width, b_txl) - 1) / TXL2WORDS(width, b_txl))
