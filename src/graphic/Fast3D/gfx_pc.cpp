@@ -1752,10 +1752,17 @@ static void gfx_sp_extra_geometry_mode(uint32_t clear, uint32_t set) {
 
 static void gfx_adjust_viewport_or_scissor(XYWidthHeight* area) {
     if (!fbActive) {
+        // Adjust the y origin based on the y-inversion for the active framebuffer
+        GfxClipParameters clipParameters = gfx_rapi->get_clip_parameters();
+        if (clipParameters.invert_y) {
+            area->y -= area->height;
+        } else {
+            area->y = SCREEN_HEIGHT - area->y;
+        }
+
         area->width *= RATIO_X;
         area->height *= RATIO_Y;
         area->x *= RATIO_X;
-        area->y = SCREEN_HEIGHT - area->y;
         area->y *= RATIO_Y;
 
         if (!game_renders_to_framebuffer ||
