@@ -3687,8 +3687,15 @@ static void gfx_step() {
         if (rdpHandlers.at(opcode)(&cmd)) {
             return;
         }
-    } else if (ucode_handlers[ucode_handler_index]->at(opcode)(&cmd)) {
-        return;
+    } else if (ucode_handler_index < ucode_handlers.size()) {
+        if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
+            if (ucode_handlers[ucode_handler_index]->at(opcode)(&cmd)) {
+                return;
+            }
+        }
+    } else {
+        // Loaded ucode is out of range of the supported ucode_handlers
+        assert(true);
     }
 
     ++cmd;
