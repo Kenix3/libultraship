@@ -1347,10 +1347,12 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             cross = -cross;
         }
 
+#ifdef F3DEX_GBI_2
         // If inverted culling is requested, negate the cross
         if ((g_rsp.extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
             cross = -cross;
         }
+#endif
 
         switch (g_rsp.geometry_mode & G_CULL_BOTH) {
             case G_CULL_FRONT:
@@ -1799,6 +1801,7 @@ static void gfx_calc_and_set_viewport(const Vp_t* viewport) {
 }
 
 static void gfx_sp_movemem_f3dex2(uint8_t index, uint8_t offset, const void* data) {
+#ifdef F3DEX_GBI_2
     switch (index) {
         case G_MV_VIEWPORT:
             gfx_calc_and_set_viewport((const Vp_t*)data);
@@ -1814,6 +1817,7 @@ static void gfx_sp_movemem_f3dex2(uint8_t index, uint8_t offset, const void* dat
             break;
         }
     }
+#endif
 }
 
 // TODO remove these when headers are handled differently
@@ -1825,6 +1829,10 @@ static void gfx_sp_movemem_f3d(uint8_t index, uint8_t offset, const void* data) 
     switch (index) {
         case G_MV_VIEWPORT:
             gfx_calc_and_set_viewport((const Vp_t*)data);
+            break;
+        case G_MV_LOOKATY:
+        case G_MV_LOOKATX:
+            memcpy(g_rsp.lookat + (index - G_MV_LOOKATY) / 2, data, sizeof(Light_t));
             break;
         case G_MV_L0:
         case G_MV_L1:
@@ -2830,8 +2838,7 @@ bool gfx_vtx_handler_f3dex2(Gfx** cmd0) {
 
 bool gfx_vtx_handler_f3dex(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-    gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, (const Vtx*)seg_addr(cmd->words.w1));
-
+    gfx_sp_vertex(C0(10, 6), C0(17, 7), (const Vtx*)seg_addr(cmd->words.w1));
     return false;
 }
 
@@ -3578,7 +3585,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> rdpHandlers = {
     { G_SETCIMG, gfx_set_c_img_handler_rdp },             // G_SETCIMG (-1)
 };
 
-const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> otrHandlers = {
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> otrHandlers = {
     { G_SETTIMG_OTR_HASH, gfx_set_timg_otr_hash_handler_custom },         // G_SETTIMG_OTR_HASH (0x20)
     { G_SETFB, gfx_set_fb_handler_custom },                               // G_SETFB (0x21)
     { G_RESETFB, gfx_reset_fb_handler_custom },                           // G_RESETFB (0x22)
@@ -3604,44 +3611,68 @@ const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> otrHandlers = {
     { G_SETINTENSITY, gfx_set_intensity_handler_custom },            // G_SETINTENSITY (0x40)
 };
 
-const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
+#ifdef F3DEX_GBI_2
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
     { G_NOOP, gfx_noop_handler_f3dex2 },
     { G_CULLDL, gfx_cull_dl_handler_f3dex2 },
     { G_MARKER, gfx_marker_handler_f3dex2 },
     { G_INVALTEXCACHE, gfx_invalidate_tex_cache_handler_f3dex2 },
     { G_MTX, gfx_mtx_handler_f3dex2 },
     { G_POPMTX, gfx_pop_mtx_handler_f3dex2 },
-#ifdef F3DEX_GBI_2
     { G_MOVEMEM, gfx_movemem_handler_f3dex2 },
     { G_MOVEWORD, gfx_moveword_handler_f3dex2 },
-#else
-    { G_MOVEMEM, gfx_movemem_handler_f3d },
-    { G_MOVEWORD, gfx_moveword_handler_f3d },
-#endif
     { G_TEXTURE, gfx_texture_handler_f3dex2 },
+    { G_GEOMETRYMODE, gfx_geometry_mode_handler_f3dex2 },
+    { G_QUAD, gfx_quad_handler_f3dex2 },
+    { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
+    { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
     { G_VTX, gfx_vtx_handler_f3dex2 },
     { G_MODIFYVTX, gfx_modify_vtx_handler_f3dex2 },
     { G_DL, gfx_dl_handler_common },
     { G_DL_INDEX, gfx_dl_index_handler },
     { G_PUSHCD, gfx_pushcd_handler_f3dex2 },
     { G_ENDDL, gfx_end_dl_handler_common },
-#ifdef F3DEX_GBI_2
-    { G_GEOMETRYMODE, gfx_geometry_mode_handler_f3dex2 },
-#else
+    { G_TRI1, gfx_tri1_handler_f3dex2 },
+    { G_TRI2, gfx_tri2_handler_f3dex },
+    // Commands to implement
+    { G_SPNOOP, gfx_spnoop_command_handler_f3dex2 },
+    { G_RDPHALF_1, gfx_stubbed_command_handler },
+};
+#endif
+
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
+    { G_NOOP, gfx_noop_handler_f3dex2 },
+    { G_CULLDL, gfx_cull_dl_handler_f3dex2 },
+    { G_MARKER, gfx_marker_handler_f3dex2 },
+    { G_INVALTEXCACHE, gfx_invalidate_tex_cache_handler_f3dex2 },
+    { G_MTX, gfx_mtx_handler_f3d },
+    { G_POPMTX, gfx_pop_mtx_handler_f3d },
+    { G_MOVEMEM, gfx_movemem_handler_f3d },
+    { G_MOVEWORD, gfx_moveword_handler_f3d },
+    { G_TEXTURE, gfx_texture_handler_f3d },
+    { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3d },
+    { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3d },
     { G_SETGEOMETRYMODE, gfx_set_geometry_mode_handler_f3dex },
     { G_CLEARGEOMETRYMODE, gfx_clear_geometry_mode_handler_f3dex },
+#ifdef F3DEX_GBI
+    { G_VTX, gfx_vtx_handler_f3dex },
+    { G_TRI1, gfx_tri1_handler_f3dex },
+#else
+    { G_VTX, gfx_vtx_handler_f3d },
+    { G_TRI1, gfx_tri1_handler_f3d },
 #endif
-    { G_TRI1, gfx_tri1_handler_f3dex2 },
-    { G_QUAD, gfx_quad_handler_f3dex2 },
+    { G_MODIFYVTX, gfx_modify_vtx_handler_f3dex2 },
+    { G_DL, gfx_dl_handler_common },
+    { G_DL_INDEX, gfx_dl_index_handler },
+    { G_PUSHCD, gfx_pushcd_handler_f3dex2 },
+    { G_ENDDL, gfx_end_dl_handler_common },
     { G_TRI2, gfx_tri2_handler_f3dex },
-    { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
-    { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
     // Commands to implement
     { G_SPNOOP, gfx_spnoop_command_handler_f3dex2 },
     { G_RDPHALF_1, gfx_stubbed_command_handler },
 };
 
-const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
     { G_BG_COPY, gfx_bg_copy_handler_s2dex },
     { G_BG_1CYC, gfx_bg_1cyc_handler_s2dex },
     { G_OBJ_RENDERMODE, gfx_stubbed_command_handler },
@@ -3655,9 +3686,13 @@ const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> s2dexHandlers = 
     { G_RDPHALF_2, gfx_stubbed_command_handler },
 };
 
-const static std::array<const std::unordered_map<uint32_t, GfxOpcodeHandlerFunc>*, UcodeHandlers::ucode_max>
+const static std::array<const std::unordered_map<int8_t, GfxOpcodeHandlerFunc>*, UcodeHandlers::ucode_max>
     ucode_handlers = {
+    #ifdef F3DEX_GBI_2
         &f3dex2Handlers,
+    #else
+        &f3dexHandlers,
+    #endif
         &s2dexHandlers,
     };
 
@@ -3672,7 +3707,7 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
 static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
-    uint32_t opcode = (uint32_t)(cmd->words.w0 >> 24);
+    int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
     if (opcode == G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
