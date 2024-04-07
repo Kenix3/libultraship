@@ -759,6 +759,9 @@ static void import_texture_ci4(int tile, bool importReplacement) {
 
 static void import_texture_ci8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    if(metadata->resource == nullptr) {
+        return;
+    }
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
@@ -2864,6 +2867,7 @@ bool gfx_vtx_hash_handler_custom(Gfx** cmd0) {
     const uintptr_t offset = (*cmd0)->words.w1;
     // This is a two-part display list command, so increment the instruction pointer so we can get the CRC64
     // hash from the second
+
     (*cmd0)++;
     const uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
@@ -2951,6 +2955,20 @@ bool gfx_dl_handler_common(Gfx** cmd0) {
         g_exec_stack.branch(cmd);
         return true; // shortcut cmd increment
     }
+    return false;
+}
+
+bool gfx_movemem_handler_otr_hash_custom(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    uint8_t index = C1(24, 8);
+    uint8_t offset = C1(16, 8);
+    (*cmd0)++;
+    uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
+    uint8_t* data = (uint8_t*)ResourceGetDataByCrc(hash);
+
+    gfx_sp_movemem_f3d(index, offset, data);
+
     return false;
 }
 
@@ -3079,7 +3097,7 @@ bool gfx_tri1_handler_f3dex2(Gfx** cmd0) {
 bool gfx_tri1_handler_f3dex(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
 
-    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+    gfx_sp_tri1(C1(17, 7), C1(9, 7), C1(1, 7), false);
 
     return false;
 }
@@ -3148,9 +3166,9 @@ bool gfx_othermode_h_handler_f3d(Gfx** cmd0) {
 
 bool gfx_set_timg_handler_rdp(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
-    uintptr_t i = (uintptr_t)seg_addr(cmd->words.w1);
+    uintptr_t i = reinterpret_cast<uintptr_t>(seg_addr(cmd->words.w1));
 
-    char* imgData = (char*)i;
+    auto imgData = reinterpret_cast<char*>(i);
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetdata = {};
 
@@ -3570,7 +3588,7 @@ bool gfx_spnoop_command_handler_f3dex2(Gfx** cmd0) {
     return false;
 }
 
-const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> rdpHandlers = {
+const static std::unordered_map<uint8_t, GfxOpcodeHandlerFunc> rdpHandlers = {
     { G_TEXRECT, gfx_tex_rect_and_flip_handler_rdp },     // G_TEXRECT (-28)
     { G_TEXRECTFLIP, gfx_tex_rect_and_flip_handler_rdp }, // G_TEXRECTFLIP (-27)
     { G_RDPLOADSYNC, gfx_stubbed_command_handler },       // G_RDPLOADSYNC (-26)
@@ -3597,7 +3615,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> rdpHandlers = {
     { G_SETCIMG, gfx_set_c_img_handler_rdp },             // G_SETCIMG (-1)
 };
 
-const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> otrHandlers = {
+const static std::unordered_map<uint8_t, GfxOpcodeHandlerFunc> otrHandlers = {
     { G_SETTIMG_OTR_HASH, gfx_set_timg_otr_hash_handler_custom },         // G_SETTIMG_OTR_HASH (0x20)
     { G_SETFB, gfx_set_fb_handler_custom },                               // G_SETFB (0x21)
     { G_RESETFB, gfx_reset_fb_handler_custom },                           // G_RESETFB (0x22)
@@ -3609,6 +3627,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> otrHandlers = {
     { G_DL_OTR_HASH, gfx_dl_otr_hash_handler_custom },                    // G_DL_OTR_HASH (0x31)
     { G_VTX_OTR_HASH, gfx_vtx_hash_handler_custom },                      // G_VTX_OTR_HASH (0x32)
     { G_BRANCH_Z_OTR, gfx_branch_z_otr_handler_f3dex2 },                  // G_BRANCH_Z_OTR (0x35)
+    { G_MOVEMEM_OTR_HASH, gfx_movemem_handler_otr_hash_custom },          // G_MOVEMEM_OTR_HASH (0x42)
 #ifdef F3DEX_GBI_2
     { G_MTX_OTR, gfx_mtx_otr_handler_custom_f3dex2 }, // G_MTX_OTR (0x36)
 #else
@@ -3652,7 +3671,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
 };
 #endif
 
-const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
+const static std::unordered_map<uint8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
     { G_NOOP, gfx_noop_handler_f3dex2 },
     { G_CULLDL, gfx_cull_dl_handler_f3dex2 },
     { G_MARKER, gfx_marker_handler_f3dex2 },
@@ -3684,7 +3703,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
     { G_RDPHALF_1, gfx_stubbed_command_handler },
 };
 
-const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
+const static std::unordered_map<uint8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
     { G_BG_COPY, gfx_bg_copy_handler_s2dex },
     { G_BG_1CYC, gfx_bg_1cyc_handler_s2dex },
     { G_OBJ_RENDERMODE, gfx_stubbed_command_handler },
@@ -3698,8 +3717,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
     { G_RDPHALF_2, gfx_stubbed_command_handler },
 };
 
-const static std::array<const std::unordered_map<int8_t, GfxOpcodeHandlerFunc>*, UcodeHandlers::ucode_max>
-    ucode_handlers = {
+static constexpr std::array ucode_handlers = {
     #ifdef F3DEX_GBI_2
         &f3dex2Handlers,
     #else
@@ -3719,13 +3737,19 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
 static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
-    int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
+    uint8_t opcode = static_cast<uint8_t>(cmd->words.w0 >> 24);
 
     if (opcode == G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
         ++cmd;
         return;
         // Instead of having a handler for each ucode for switching ucode, just check for it early and return.
+    }
+
+    if(markerOn){
+        // SPDLOG_INFO("OPCODE: 0x{:02X}", (uint8_t)opcode);
+        // SPDLOG_INFO("CMD0: 0x{:08X}", cmd0->words.w0);
+        // SPDLOG_INFO("CMD1: 0x{:08X}", cmd0->words.w1);
     }
 
     if (otrHandlers.contains(opcode)) {
