@@ -3695,7 +3695,7 @@ static void gfx_step() {
                 return;
             }
         } else {
-            SPDLOG_WARN("Unhandled OP code: {}, for loaded ucode: {}", opcode, ucode_handler_index);
+            SPDLOG_WARN("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
         }
     }
 
