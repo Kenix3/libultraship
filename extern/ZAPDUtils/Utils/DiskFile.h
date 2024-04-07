@@ -66,8 +66,9 @@ public:
 
 	static void WriteAllBytes(const std::string& filePath, const std::vector<char>& data)
 	{
-		if (!Directory::Exists(Path::GetDirectoryName(filePath)))
+		if (!Directory::Exists(Path::GetDirectoryName(filePath))) {
 			Directory::MakeDirectory(Path::GetDirectoryName(filePath).string());
+		}
 
 		std::ofstream file(filePath, std::ios::binary);
 		file.write((char*)data.data(), data.size());
@@ -81,8 +82,8 @@ public:
 
 	static void WriteAllText(const fs::path& filePath, const std::string& text)
 	{
-        if (!std::filesystem::exists(filePath.parent_path())) {
-                std::filesystem::create_directories(filePath.parent_path());
+		if (!Directory::Exists(Path::GetDirectoryName(filePath))) {
+			Directory::MakeDirectory(Path::GetDirectoryName(filePath).string());
 		}
         std::ofstream file(filePath, std::ios::out);
 		file.write(text.c_str(), text.size());
