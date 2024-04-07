@@ -709,7 +709,7 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
     MTL::RenderPassDescriptor* render_pass_descriptor = MTL::RenderPassDescriptor::renderPassDescriptor();
     MTL::ClearColor clear_color = MTL::ClearColor::Make(0, 0, 0, 1);
     render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.texture);
-    render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
+    render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
     render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
     render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
 
@@ -815,13 +815,13 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
             if (fb_msaa_enabled) {
                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.msaaTexture);
                 render_pass_descriptor->colorAttachments()->object(0)->setResolveTexture(tex.texture);
-                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
+                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
                 render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(
                     MTL::StoreActionStoreAndMultisampleResolve);
                 render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
             } else {
                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.texture);
-                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
+                render_pass_descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
                 render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
                 render_pass_descriptor->colorAttachments()->object(0)->setClearColor(clear_color);
             }
@@ -928,15 +928,44 @@ void gfx_metal_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
         return;
     }
 
-    // Copy over the source framebuffer's texture to the target
-    auto& source_framebuffer = mctx.framebuffers[fb_id_source];
-    source_framebuffer.command_encoder->endEncoding();
-    source_framebuffer.has_ended_encoding = true;
+    // When the target buffer is our main window buffer, we need to perform the blit operation on the target
+    // buffer instead of the source buffer
+    if (fb_id_target != 0) {
+        // Copy over the source framebuffer's texture to the target
+        auto& source_framebuffer = mctx.framebuffers[fb_id_source];
+        source_framebuffer.command_encoder->endEncoding();
+        source_framebuffer.has_ended_encoding = true;
 
-    MTL::BlitCommandEncoder* blit_encoder = source_framebuffer.command_buffer->blitCommandEncoder();
-    blit_encoder->setLabel(NS::String::string("MSAA Copy Encoder", NS::UTF8StringEncoding));
-    blit_encoder->copyFromTexture(source_texture, target_texture);
-    blit_encoder->endEncoding();
+        MTL::BlitCommandEncoder* blit_encoder = source_framebuffer.command_buffer->blitCommandEncoder();
+        blit_encoder->setLabel(NS::String::string("MSAA Copy Encoder", NS::UTF8StringEncoding));
+        blit_encoder->copyFromTexture(source_texture, target_texture);
+        blit_encoder->endEncoding();
+    } else {
+        // End the current render encoder
+        auto& target_framebuffer = mctx.framebuffers[fb_id_target];
+        target_framebuffer.command_encoder->endEncoding();
+
+        // Create a blit encoder
+        MTL::BlitCommandEncoder* blit_encoder = target_framebuffer.command_buffer->blitCommandEncoder();
+        blit_encoder->setLabel(NS::String::string("MSAA Copy Encoder", NS::UTF8StringEncoding));
+
+        // Copy the texture over using the origins and size
+        blit_encoder->copyFromTexture(source_texture, target_texture);
+        blit_encoder->endEncoding();
+
+        // Update the load action to Load to leverage the blit results
+        // The original load action will be set back on the next frame by gfx_metal_setup_screen_framebuffer
+        MTL::RenderPassColorAttachmentDescriptor* targetColorAttachment =
+            target_framebuffer.render_pass_descriptor->colorAttachments()->object(0);
+        targetColorAttachment->setLoadAction(MTL::LoadActionLoad);
+
+        // Create a new render encoder back onto the framebuffer
+        target_framebuffer.command_encoder =
+            target_framebuffer.command_buffer->renderCommandEncoder(target_framebuffer.render_pass_descriptor);
+
+        std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After MSAA Resolve", fb_id_target);
+        target_framebuffer.command_encoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+    }
 }
 
 std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
@@ -1059,6 +1088,11 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id) {
                                   target_origin);
     blit_encoder->endEncoding();
 
+    // Track the original load action and set the next load action to Load to leverage the blit results
+    MTL::RenderPassColorAttachmentDescriptor* srcColorAttachment = source_framebuffer.render_pass_descriptor->colorAttachments()->object(0);
+    MTL::LoadAction origLoadAction = srcColorAttachment->loadAction();
+    srcColorAttachment->setLoadAction(MTL::LoadActionLoad);
+
     // Create a new render encoder back onto the framebuffer
     source_framebuffer.command_encoder =
         source_framebuffer.command_buffer->renderCommandEncoder(source_framebuffer.render_pass_descriptor);
@@ -1068,6 +1102,9 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id) {
     source_framebuffer.command_encoder->setDepthClipMode(MTL::DepthClipModeClamp);
     source_framebuffer.command_encoder->setViewport(source_framebuffer.viewport);
     source_framebuffer.command_encoder->setScissorRect(source_framebuffer.scissor_rect);
+
+    // Now that the command encoder is started, we set the original load action back for the next frame's use
+    srcColorAttachment->setLoadAction(origLoadAction);
 
     // Reset the framebuffer so the encoder is setup again when rendering triangles
     source_framebuffer.has_bounded_vertex_buffer = false;
