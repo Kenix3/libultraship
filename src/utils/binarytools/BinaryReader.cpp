@@ -163,26 +163,6 @@ double LUS::BinaryReader::ReadDouble() {
     return result;
 }
 
-ZAPDUtils::Vec3f LUS::BinaryReader::ReadVec3f() {
-    return ZAPDUtils::Vec3f();
-}
-
-ZAPDUtils::Vec3s LUS::BinaryReader::ReadVec3s() {
-    return ZAPDUtils::Vec3s(0, 0, 0);
-}
-
-ZAPDUtils::Vec3s LUS::BinaryReader::ReadVec3b() {
-    return ZAPDUtils::Vec3s(0, 0, 0);
-}
-
-ZAPDUtils::Vec2f LUS::BinaryReader::ReadVec2f() {
-    return ZAPDUtils::Vec2f();
-}
-
-Color3b LUS::BinaryReader::ReadColor3b() {
-    return Color3b();
-}
-
 std::string LUS::BinaryReader::ReadString() {
     std::string res;
     int numChars = ReadInt32();

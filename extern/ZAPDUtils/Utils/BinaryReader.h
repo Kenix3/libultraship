@@ -4,10 +4,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "../Color3b.h"
-#include "../Vec2f.h"
-#include "../Vec3f.h"
-#include "../Vec3s.h"
 #include "BitConverter.h"
 #include "Stream.h"
 
@@ -37,11 +33,6 @@ public:
 	uint64_t ReadUInt64();
 	float ReadSingle();
 	double ReadDouble();
-	Vec3f ReadVec3f();
-	Vec3s ReadVec3s();
-	Vec3s ReadVec3b();
-	Vec2f ReadVec2f();
-	Color3b ReadColor3b();
 	std::string ReadString();
 
 protected:
