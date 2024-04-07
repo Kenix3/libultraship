@@ -1089,7 +1089,8 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id) {
     blit_encoder->endEncoding();
 
     // Track the original load action and set the next load action to Load to leverage the blit results
-    MTL::RenderPassColorAttachmentDescriptor* srcColorAttachment = source_framebuffer.render_pass_descriptor->colorAttachments()->object(0);
+    MTL::RenderPassColorAttachmentDescriptor* srcColorAttachment =
+        source_framebuffer.render_pass_descriptor->colorAttachments()->object(0);
     MTL::LoadAction origLoadAction = srcColorAttachment->loadAction();
     srcColorAttachment->setLoadAction(MTL::LoadActionLoad);
 
