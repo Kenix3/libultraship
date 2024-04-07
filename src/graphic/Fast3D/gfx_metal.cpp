@@ -185,7 +185,12 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 // MARK: - ImGui & SDL Wrappers
 
 bool Metal_IsSupported() {
-    return MTLCopyAllDevices()->count() > 0;
+    NS::Array* devices = MTLCopyAllDevices();
+    NS::UInteger count = devices->count();
+
+    devices->release();
+
+    return count > 0;
 }
 
 bool Metal_Init(SDL_Renderer* renderer) {
@@ -290,6 +295,7 @@ static void gfx_metal_init(void) {
 
     mctx.depth_compute_function = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
 
+    library->release();
     autorelease_pool->release();
 }
 
@@ -325,10 +331,11 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
                      error->localizedDescription()->cString(NS::UTF8StringEncoding));
 
     MTL::RenderPipelineDescriptor* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
-    pipeline_descriptor->setVertexFunction(
-        library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding)));
-    pipeline_descriptor->setFragmentFunction(
-        library->newFunction(NS::String::string("fragmentShader", NS::UTF8StringEncoding)));
+    MTL::Function* vertexFunc = library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding));
+    MTL::Function* fragmentFunc = library->newFunction(NS::String::string("fragmentShader", NS::UTF8StringEncoding));
+
+    pipeline_descriptor->setVertexFunction(vertexFunc);
+    pipeline_descriptor->setFragmentFunction(fragmentFunc);
     pipeline_descriptor->setVertexDescriptor(vertex_descriptor);
 
     pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
@@ -382,6 +389,9 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
 
     gfx_metal_load_shader((struct ShaderProgram*)prg);
 
+    vertexFunc->release();
+    fragmentFunc->release();
+    library->release();
     pipeline_descriptor->release();
     autorelease_pool->release();
 
@@ -835,6 +845,8 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
 
         tex.width = width;
         tex.height = height;
+
+        tex_descriptor->release();
     }
 
     if (has_depth_buffer && (diff || !fb.has_depth_buffer || (fb.depth_texture != nullptr) != can_extract_depth)) {
@@ -1033,6 +1045,7 @@ gfx_metal_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
         }
     }
 
+    compute_pipeline_state->release();
     autorelease_pool->release();
 
     return res;
