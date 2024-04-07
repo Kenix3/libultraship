@@ -4,12 +4,6 @@
 #include <memory>
 #include <vector>
 #include "endianness.h"
-#ifdef USE_ZAPD
-#include "Vec2f.h"
-#include "Vec3f.h"
-#include "Vec3s.h"
-#include "Color3b.h"
-#endif
 #include "Stream.h"
 
 class BinaryReader;
@@ -42,13 +36,6 @@ class BinaryReader {
     uint64_t ReadUInt64();
     float ReadFloat();
     double ReadDouble();
-#ifdef USE_ZAPD
-    ZAPDUtils::Vec3f ReadVec3f();
-    ZAPDUtils::Vec3s ReadVec3s();
-    ZAPDUtils::Vec3s ReadVec3b();
-    ZAPDUtils::Vec2f ReadVec2f();
-    Color3b ReadColor3b();
-#endif
     std::string ReadString();
     std::string ReadCString();
 

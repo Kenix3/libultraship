@@ -166,31 +166,6 @@ double BinaryReader::ReadDouble()
 	return result;
 }
 
-Vec3f BinaryReader::ReadVec3f()
-{
-	return Vec3f();
-}
-
-Vec3s BinaryReader::ReadVec3s()
-{
-	return Vec3s(0, 0, 0);
-}
-
-Vec3s BinaryReader::ReadVec3b()
-{
-	return Vec3s(0, 0, 0);
-}
-
-Vec2f BinaryReader::ReadVec2f()
-{
-	return Vec2f();
-}
-
-Color3b BinaryReader::ReadColor3b()
-{
-	return Color3b();
-}
-
 std::string BinaryReader::ReadString()
 {
 	std::string res;
