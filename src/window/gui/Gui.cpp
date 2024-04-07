@@ -100,17 +100,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo = &ImGui::GetIO();
     mImGuiIo->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
 
-    // Set OpenSans-Semibold as default font
-    ImFontConfig fontConfig = ImFontConfig();
-    // Font Oversample for clean pixelfree letters (Could be set to 3 for best quality or to 1 for memory critical
-    // targets)
-    fontConfig.OversampleH = fontConfig.OversampleV = 2;
-    // Looks better with some space between the letters
-    fontConfig.GlyphExtraSpacing.x = 0.5f;
-    ImFont* font =
-        mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(OpenSansFont_compressed_data_base85, 17, &fontConfig);
-    mImGuiIo->FontDefault = font;
-
     // Add Font Awesome and merge it into the default font.
     mImGuiIo->Fonts->AddFontDefault();
     // This must match the default font size, which is 13.0f.
