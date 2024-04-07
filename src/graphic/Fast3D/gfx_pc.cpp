@@ -3664,6 +3664,8 @@ const static std::array<const std::unordered_map<uint32_t, GfxOpcodeHandlerFunc>
 // TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be
 // are OK with that...
 static void gfx_set_ucode_handler(UcodeHandlers ucode) {
+    // Loaded ucode must be in range of the supported ucode_handlers
+    assert(ucode < ucode_max);
     ucode_handler_index = ucode;
 }
 
@@ -3687,8 +3689,14 @@ static void gfx_step() {
         if (rdpHandlers.at(opcode)(&cmd)) {
             return;
         }
-    } else if (ucode_handlers[ucode_handler_index]->at(opcode)(&cmd)) {
-        return;
+    } else if (ucode_handler_index < ucode_handlers.size()) {
+        if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
+            if (ucode_handlers[ucode_handler_index]->at(opcode)(&cmd)) {
+                return;
+            }
+        } else {
+            SPDLOG_WARN("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+        }
     }
 
     ++cmd;
