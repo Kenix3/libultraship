@@ -2675,7 +2675,9 @@ bool gfx_marker_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = (*cmd0);
     const uint64_t hash = ((uint64_t)(cmd)->words.w0 << 32) + (cmd)->words.w1;
     std::string dlName = ResourceGetNameByCrc(hash);
-    markerOn = true;
+    SPDLOG_INFO("Marker: {}", dlName);
+
+    markerOn = dlName.ends_with("D_FO_600D9F0");
     return false;
 }
 
@@ -2868,6 +2870,8 @@ bool gfx_vtx_hash_handler_custom(Gfx** cmd0) {
     // This is a two-part display list command, so increment the instruction pointer so we can get the CRC64
     // hash from the second
 
+
+
     (*cmd0)++;
     const uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
@@ -2882,7 +2886,7 @@ bool gfx_vtx_hash_handler_custom(Gfx** cmd0) {
         Vtx* vtx = (Vtx*)ResourceGetDataByCrc(hash);
 
         if (vtx != NULL) {
-            vtx = (Vtx*)((char*)vtx + offset);
+            vtx = &vtx[offset];
 
             (*cmd0)--;
             Gfx* cmd = *cmd0;
@@ -3045,6 +3049,10 @@ bool gfx_branch_z_otr_handler_f3dex2(Gfx** cmd0) {
 
 // F3D, F3DEX, and F3DEX2 do the same thing
 bool gfx_end_dl_handler_common(Gfx** cmd0) {
+    if(markerOn) {
+        int bp = 0;
+        SPDLOG_INFO("Yay we finished the display list!");
+    }
     markerOn = false;
     *cmd0 = g_exec_stack.ret();
     return true;
@@ -3737,6 +3745,12 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
 static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
+
+    if(cmd->words.trace.valid && CVarGetInteger("gEnableDebugMode", 0)){
+        SPDLOG_INFO("Trace File: {}", cmd->words.trace.file);
+        SPDLOG_INFO("Trace Line: {}", cmd->words.trace.idx);
+    }
+
     uint8_t opcode = static_cast<uint8_t>(cmd->words.w0 >> 24);
 
     if (opcode == G_LOAD_UCODE) {
@@ -3766,7 +3780,7 @@ static void gfx_step() {
                 return;
             }
         } else {
-            SPDLOG_WARN("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_WARN("Unhandled OP code: 0x{:X}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
         }
     }
 

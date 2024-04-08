@@ -140,23 +140,28 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
         reader->ReadInt8();
     }
 
+    size_t idx = 0;
     while (true) {
         Gfx command;
         command.words.w0 = reader->ReadUInt32();
         command.words.w1 = reader->ReadUInt32();
 
-        displayList->Instructions.push_back(command);
-
         int8_t opcode = (int8_t)(command.words.w0 >> 24);
+        bool isExpanded = opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
+            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR;
 
         // These are 128-bit commands, so read an extra 64 bits...
-        if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
-            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR) {
+        if (isExpanded) {
+            displayList->Instructions.push_back(command);
             command.words.w0 = reader->ReadUInt32();
             command.words.w1 = reader->ReadUInt32();
-
-            displayList->Instructions.push_back(command);
         }
+
+        command.words.trace.file = file->InitData->Path.c_str();
+        command.words.trace.idx = idx++;
+        command.words.trace.valid = true;
+
+        displayList->Instructions.push_back(command);
 
         if (opcode == G_ENDDL) {
             break;
