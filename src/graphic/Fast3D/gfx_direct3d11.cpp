@@ -966,7 +966,8 @@ void gfx_d3d11_select_texture_fb(int fbID) {
     gfx_d3d11_select_texture(tile, d3d.framebuffers[fbID].texture_id);
 }
 
-void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id) {
+void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
+                                int dstY0, int dstX1, int dstY1) {
     if (fb_src_id >= (int)d3d.framebuffers.size() || fb_dst_id >= (int)d3d.framebuffers.size()) {
         return;
     }
@@ -976,11 +977,6 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id) {
 
     TextureData& td_dst = d3d.textures[fb_dst.texture_id];
     TextureData& td_src = d3d.textures[fb_src.texture_id];
-
-    // Skip copying framebuffers that don't have the same width
-    if (td_src.width != td_dst.width) {
-        return;
-    }
 
     // Textures are the same size so we can do a direct copy or resolve
     if (td_src.height == td_dst.height) {
@@ -994,21 +990,16 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id) {
     }
 
     D3D11_BOX region;
-    region.left = 0;
-    region.right = td_src.width;
-    region.top = 0;
-    region.bottom = td_src.height;
+    region.left = srcX0;
+    region.right = srcX1;
+    region.top = srcY0;
+    region.bottom = srcY1;
     region.front = 0;
     region.back = 1;
 
-    // Account for source framebuffer having the menu bar open
-    if (td_src.height > td_dst.height) {
-        region.top = td_src.height - td_dst.height;
-    }
-
     // We can't region copy a multi-sample texture to a single sample texture
     if (fb_src.msaa_level <= 1) {
-        d3d.context->CopySubresourceRegion(td_dst.texture.Get(), 0, 0, 0, 0, td_src.texture.Get(), 0, &region);
+        d3d.context->CopySubresourceRegion(td_dst.texture.Get(), dstX0, dstY0, 0, 0, td_src.texture.Get(), 0, &region);
     } else {
         // Setup a temporary texture
         TextureData td_resolved;
@@ -1034,7 +1025,8 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id) {
         d3d.context->ResolveSubresource(td_resolved.texture.Get(), 0, td_src.texture.Get(), 0,
                                         DXGI_FORMAT_R8G8B8A8_UNORM);
         // Then copy the region to the destination
-        d3d.context->CopySubresourceRegion(td_dst.texture.Get(), 0, 0, 0, 0, td_resolved.texture.Get(), 0, &region);
+        d3d.context->CopySubresourceRegion(td_dst.texture.Get(), dstX0, dstY0, 0, 0, td_resolved.texture.Get(), 0,
+                                           &region);
     }
 }
 

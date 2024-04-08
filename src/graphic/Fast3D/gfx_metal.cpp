@@ -1060,7 +1060,8 @@ void gfx_metal_select_texture_fb(int fb_id) {
     gfx_metal_select_texture(tile, mctx.framebuffers[fb_id].texture_id);
 }
 
-void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id) {
+void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
+                                int dstY0, int dstX1, int dstY1) {
     if (fb_src_id >= (int)mctx.framebuffers.size() || fb_dst_id >= (int)mctx.framebuffers.size()) {
         return;
     }
@@ -1073,11 +1074,6 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id) {
     int target_texture_id = mctx.framebuffers[fb_dst_id].texture_id;
     MTL::Texture* target_texture = mctx.textures[target_texture_id].texture;
 
-    // Skip copying framebuffers that don't have the same width
-    if (source_texture->width() != target_texture->width()) {
-        return;
-    }
-
     // End the current render encoder
     source_framebuffer.command_encoder->endEncoding();
 
@@ -1085,16 +1081,9 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id) {
     MTL::BlitCommandEncoder* blit_encoder = source_framebuffer.command_buffer->blitCommandEncoder();
     blit_encoder->setLabel(NS::String::string("Copy Framebuffer Encoder", NS::UTF8StringEncoding));
 
-    MTL::Origin source_origin = MTL::Origin(0, 0, 0);
-    MTL::Origin target_origin = MTL::Origin(0, 0, 0);
-    MTL::Size source_size = MTL::Size(source_texture->width(), source_texture->height(), 1);
-
-    // Account for source framebuffer having the menu bar open
-    if (source_texture->height() > target_texture->height()) {
-        auto diff = source_texture->height() - target_texture->height();
-        source_size.height -= diff;
-        source_origin.y = diff;
-    }
+    MTL::Origin source_origin = MTL::Origin(srcX0, srcY0, 0);
+    MTL::Origin target_origin = MTL::Origin(dstX0, dstY0, 0);
+    MTL::Size source_size = MTL::Size(srcX1 - srcX0, srcY1 - srcY0, 1);
 
     // Copy the texture over using the origins and size
     blit_encoder->copyFromTexture(source_texture, 0, 0, source_origin, source_size, target_texture, 0, 0,

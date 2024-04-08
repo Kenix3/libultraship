@@ -3926,12 +3926,36 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
         return;
     }
 
-    if (fb_src_id == 0 && gfx_msaa_level > 1) {
+    if (fb_src_id == 0 && game_renders_to_framebuffer) {
         // read from the framebuffer we've been rendering to
         fb_src_id = game_framebuffer;
     }
 
-    gfx_rapi->copy_framebuffer(fb_dst_id, fb_src_id);
+    int srcX0, srcY0, srcX1, srcY1;
+    int dstX0, dstY0, dstX1, dstY1;
+
+    // When rendering to the main window buffer or MSAA is enabled with a buffer size equal to the view port,
+    // then the source coordinates must account for any docked ImGui elements
+    if (fb_src_id == 0 ||
+        (gfx_msaa_level > 1 && gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&
+         gfx_current_dimensions.height == gfx_current_game_window_viewport.height)) {
+        srcX0 = gfx_current_game_window_viewport.x;
+        srcY0 = gfx_current_game_window_viewport.y;
+        srcX1 = gfx_current_game_window_viewport.x + gfx_current_game_window_viewport.width;
+        srcY1 = gfx_current_game_window_viewport.y + gfx_current_game_window_viewport.height;
+    } else {
+        srcX0 = 0;
+        srcY0 = 0;
+        srcX1 = gfx_current_dimensions.width;
+        srcY1 = gfx_current_dimensions.height;
+    }
+
+    dstX0 = 0;
+    dstY0 = 0;
+    dstX1 = gfx_current_dimensions.width;
+    dstY1 = gfx_current_dimensions.height;
+
+    gfx_rapi->copy_framebuffer(fb_dst_id, fb_src_id, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1);
 
     // Set the copied pointer if we have one
     if (hasCopiedPtr != nullptr) {

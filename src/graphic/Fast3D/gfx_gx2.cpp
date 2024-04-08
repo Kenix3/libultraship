@@ -752,7 +752,8 @@ void gfx_gx2_select_texture_fb(int fb) {
     GX2SetPixelSampler(&buffer->sampler, location);
 }
 
-void gfx_gx2_copy_framebuffer(int fb_dst_id, int fb_src_id) {
+void gfx_gx2_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
+                              int dstY0, int dstX1, int dstY1) {
     // TODO: Implement framebuffer texture copy
 }
 
