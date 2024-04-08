@@ -582,7 +582,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha) {
-        append_line(fs_buf, &fs_len, "float cvg = 1.0;");
+        append_line(fs_buf, &fs_len, "float gamma = 2.2;");
         append_line(fs_buf, &fs_len, "float alphaValue = texel.a;");
 
         if (cc_features.opt_alpha_threshold) {
@@ -604,6 +604,15 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "gl_FragColor = vec4(texel, 1.0);");
 #endif
     }
+
+    if(cc_features.opt_gamma) {
+#if defined(__APPLE__) || defined(USE_OPENGLES)
+    append_line(fs_buf, &fs_len, "outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));");
+#else
+    append_line(fs_buf, &fs_len, "gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0 / gamma));");
+#endif
+    }
+
     append_line(fs_buf, &fs_len, "}");
 
     vs_buf[vs_len] = '\0';

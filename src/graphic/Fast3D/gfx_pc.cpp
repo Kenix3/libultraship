@@ -1420,6 +1420,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool use_alpha = use_2cyc ? (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
                                     (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16)
                               : (g_rdp.other_mode_l & (3 << 18)) == G_BL_1MA;
+    bool use_gamma = (g_rdp.vi_mode & OS_VI_GAMMA_ON || g_rdp.vi_mode & OS_VI_GAMMA_DITHER_ON);
 
     if (texture_edge) {
         use_alpha = true;
@@ -1460,6 +1461,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
     if (g_rdp.loaded_texture[1].blended) {
         cc_options |= (uint64_t)SHADER_OPT_TEXEL1_BLEND;
+    }
+    if(use_gamma) {
+        cc_options |= (uint64_t)SHADER_OPT_GAMMA;
     }
 
     // If we are not using alpha, clear the alpha components of the combiner as they have no effect
@@ -2675,9 +2679,10 @@ bool gfx_marker_handler_f3dex2(Gfx** cmd0) {
     Gfx* cmd = (*cmd0);
     const uint64_t hash = ((uint64_t)(cmd)->words.w0 << 32) + (cmd)->words.w1;
     std::string dlName = ResourceGetNameByCrc(hash);
-    SPDLOG_INFO("Marker: {}", dlName);
-
-    markerOn = dlName.ends_with("D_FO_600D9F0");
+    if(CVarGetInteger("gEnableDebugMode", 0)) {
+        SPDLOG_INFO("Marker: {}", dlName);
+    }
+    markerOn = true;
     return false;
 }
 
@@ -3049,10 +3054,6 @@ bool gfx_branch_z_otr_handler_f3dex2(Gfx** cmd0) {
 
 // F3D, F3DEX, and F3DEX2 do the same thing
 bool gfx_end_dl_handler_common(Gfx** cmd0) {
-    if(markerOn) {
-        int bp = 0;
-        SPDLOG_INFO("Yay we finished the display list!");
-    }
     markerOn = false;
     *cmd0 = g_exec_stack.ret();
     return true;
@@ -4106,4 +4107,8 @@ void gfx_unregister_blended_texture(const char* name) {
     }
 
     masked_textures.erase(name);
+}
+
+void gfx_set_vi_modes(uint32_t mode){
+    g_rdp.vi_mode = mode;
 }

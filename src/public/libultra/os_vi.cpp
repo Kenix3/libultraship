@@ -1,4 +1,5 @@
 #include "libultraship/libultraship.h"
+#include "graphic/Fast3D/gfx_pc.h"
 
 extern "C" {
 
@@ -32,6 +33,7 @@ void osViSwapBuffer(void* a) {
 }
 
 void osViSetSpecialFeatures(uint32_t a) {
+    gfx_set_vi_modes(a);
 }
 
 void osViSetMode(OSViMode* a) {
