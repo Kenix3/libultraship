@@ -2891,7 +2891,7 @@ bool gfx_vtx_hash_handler_custom(Gfx** cmd0) {
         Vtx* vtx = (Vtx*)ResourceGetDataByCrc(hash);
 
         if (vtx != NULL) {
-            vtx = &vtx[offset];
+            vtx = (Vtx*)((char*)vtx + offset);
 
             (*cmd0)--;
             Gfx* cmd = *cmd0;
