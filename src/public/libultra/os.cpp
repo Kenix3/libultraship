@@ -82,11 +82,11 @@ int32_t osAiSetNextBuffer(void *buff, uint32_t len) {
 }
 
 int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
-    auto interface = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(pfs->channel)->GetRumble();
+    auto io = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(pfs->channel)->GetRumble();
     if (vibrate) {
-        interface->StartRumble();
+        io->StartRumble();
     } else {
-        interface->StopRumble();
+        io->StopRumble();
     }
 
     return 0;
