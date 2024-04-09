@@ -29,11 +29,17 @@ ControlDeck::~ControlDeck() {
 
 void ControlDeck::Init(uint8_t* controllerBits) {
     mControllerBits = controllerBits;
-    *mControllerBits |= 1 << 0;
 
-    for (auto port : mPorts) {
-        if (port->GetConnectedController()->HasConfig()) {
-            port->GetConnectedController()->ReloadAllMappingsFromConfig();
+    for (size_t i = 0; i < mPorts.size(); i++) {
+        const std::shared_ptr<Controller> controller = mPorts[i]->GetConnectedController();
+
+        if (controller == nullptr) {
+            continue;
+        }
+
+        if (controller->HasConfig()) {
+            controller->ReloadAllMappingsFromConfig();
+            *mControllerBits |= 1 << i;
         }
     }
 
