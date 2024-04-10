@@ -46,6 +46,12 @@ void osContGetReadData(OSContPad* pad) {
     LUS::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
 }
 
+uint8_t osContGetStatus(uint8_t port) {
+    const auto controller = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port);
+    const auto isConnected = controller != nullptr && controller->IsConnected();
+    return isConnected;
+}
+
 // Returns the OS time matching the N64 46.875MHz cycle rate
 // LUSTODO: This should be adjusted to return the time since "boot"
 uint64_t osGetTime(void) {

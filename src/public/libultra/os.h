@@ -107,6 +107,7 @@ extern "C" {
 int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status);
 int32_t osContStartReadData(OSMesgQueue* mesg);
 void osContGetReadData(OSContPad* pad);
+uint8_t osContGetStatus(uint8_t controller);
 
 void osWritebackDCacheAll();
 void osInvalDCache(void* p, int32_t l);

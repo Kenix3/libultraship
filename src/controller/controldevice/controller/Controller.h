@@ -28,7 +28,7 @@ class Controller : public ControlDevice {
 
     void ReloadAllMappingsFromConfig();
 
-    bool IsConnected() const;
+    bool IsConnected();
     void Connect();
     void Disconnect();
 

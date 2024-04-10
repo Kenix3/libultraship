@@ -39,6 +39,9 @@ void ControlDeck::Init(uint8_t* controllerBits) {
 
         if (controller->HasConfig()) {
             controller->ReloadAllMappingsFromConfig();
+        }
+
+        if(controller->IsConnected()){
             *mControllerBits |= 1 << i;
         }
     }
