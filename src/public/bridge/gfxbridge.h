@@ -13,7 +13,7 @@ typedef enum UcodeHandlers {
     ucode_max,
 } UcodeHandlers;
 
-void Gfx_SetNativeDimensions(uint32_t width, uint32_t height);
+void GfxSetNativeDimensions(uint32_t width, uint32_t height);
 
 #ifdef __cplusplus
 }
