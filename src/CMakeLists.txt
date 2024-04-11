@@ -187,6 +187,8 @@ set(Source_Files__Public__Bridge
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/windowbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/audiobridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxbridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxdebuggerbridge.h
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/gfxdebuggerbridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/public/bridge/controllerbridge.h
