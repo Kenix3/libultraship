@@ -187,6 +187,7 @@
 #define G_COPYFB 0x3b
 #define G_IMAGERECT 0x3c
 #define G_DL_INDEX 0x3d
+#define G_READFB 0x3e
 #define G_SETINTENSITY 0x40
 
 /*
@@ -2675,6 +2676,16 @@ typedef union {
                                                                                                                      \
         _g->words.w0 = _SHIFTL(G_COPYFB, 24, 8) | _SHIFTL(dst, 11, 11) | _SHIFTL(src, 0, 11) | _SHIFTL(once, 22, 1); \
         _g->words.w1 = (uintptr_t)copiedPtr;                                                                         \
+    }
+
+#define gDPReadFB(pkt, src, buf, ulx, uly, width, height)                \
+    {                                                                    \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                      \
+                                                                         \
+        _g0->words.w0 = _SHIFTL(G_READFB, 24, 8) | _SHIFTL(src, 0, 8);   \
+        _g0->words.w1 = (uintptr_t)buf;                                  \
+        _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);      \
+        _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16); \
     }
 
 #define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \
