@@ -1030,6 +1030,68 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
     }
 }
 
+void gfx_d3d11_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, void* rgb_buf) {
+    if (fb_id >= (int)d3d.framebuffers.size()) {
+        return;
+    }
+
+    Framebuffer& fb = d3d.framebuffers[fb_id];
+    TextureData& td = d3d.textures[fb.texture_id];
+
+    ID3D11Texture2D* staging = nullptr;
+
+    // Create an staging texture with cpu read access
+    D3D11_TEXTURE2D_DESC texture_desc;
+    texture_desc.Width = width;
+    texture_desc.Height = height;
+    texture_desc.Usage = D3D11_USAGE_STAGING;
+    texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    texture_desc.BindFlags = 0;
+    texture_desc.MiscFlags = 0;
+    texture_desc.ArraySize = 1;
+    texture_desc.MipLevels = 1;
+    texture_desc.SampleDesc.Count = 1;
+    texture_desc.SampleDesc.Quality = 0;
+
+    ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, &staging));
+
+    // Copy the framebuffer texture to the staging texture
+    d3d.context->CopyResource(staging, td.texture.Get());
+
+    // Map the staging texture to a resource that we can read
+    D3D11_MAPPED_SUBRESOURCE resource = {};
+    ThrowIfFailed(d3d.context->Map(staging, 0, D3D11_MAP_READ, 0, &resource));
+
+    if (!resource.pData) {
+        return;
+    }
+
+    // Copy the mapped values to a temp array that we can process later
+    uint32_t* temp = new uint32_t[width * height]();
+    for (size_t i = 0; i < height; i++) {
+        memcpy((uint8_t*)temp + (resource.RowPitch * i), (uint8_t*)resource.pData + (resource.RowPitch * i),
+               resource.RowPitch);
+    }
+
+    d3d.context->Unmap(staging, 0);
+
+    // Convert the RGBA32 values to RGBA16
+    for (size_t i = 0; i < width; i++) {
+        for (size_t j = 0; j < height; j++) {
+            uint32_t pixel = temp[i + (j * width)];
+            uint8_t r = (((pixel & 0xFF) + 4) * 0x1F) / 0xFF;
+            uint8_t g = ((((pixel >> 8) & 0xFF) + 4) * 0x1F) / 0xFF;
+            uint8_t b = ((((pixel >> 16) & 0xFF) + 4) * 0x1F) / 0xFF;
+            uint8_t a = ((pixel >> 24) & 0xFF) ? 1 : 0;
+
+            ((uint16_t*)rgb_buf)[i + (j * width)] = (r << 11) | (g << 6) | (b << 1) | a;
+        }
+    }
+
+    delete[] temp;
+}
+
 void gfx_d3d11_set_texture_filter(FilteringMode mode) {
     d3d.current_filter_mode = mode;
     gfx_texture_cache_clear();
@@ -1184,6 +1246,7 @@ struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
                                               gfx_d3d11_start_draw_to_framebuffer,
                                               gfx_d3d11_copy_framebuffer,
                                               gfx_d3d11_clear_framebuffer,
+                                              gfx_d3d11_read_framebuffer_to_cpu,
                                               gfx_d3d11_resolve_msaa_color_buffer,
                                               gfx_d3d11_get_pixel_depth,
                                               gfx_d3d11_get_framebuffer_texture_id,
