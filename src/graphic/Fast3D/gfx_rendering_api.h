@@ -58,7 +58,8 @@ struct GfxRenderingAPI {
                                           bool opengl_invert_y, bool render_target, bool has_depth_buffer,
                                           bool can_extract_depth);
     void (*start_draw_to_framebuffer)(int fb_id, float noise_scale);
-    void (*copy_framebuffer)(int fb_dst_id, int fb_src_id);
+    void (*copy_framebuffer)(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
+                             int dstY0, int dstX1, int dstY1);
     void (*clear_framebuffer)(void);
     void (*resolve_msaa_color_buffer)(int fb_id_target, int fb_id_source);
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> (*get_pixel_depth)(

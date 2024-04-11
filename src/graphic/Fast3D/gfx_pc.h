@@ -199,6 +199,9 @@ extern GfxExecStack g_exec_stack;
 
 extern "C" {
 
+extern struct XYWidthHeight
+    gfx_native_dimensions; // The dimensions of the VI mode for the console (typically SCREEN_WIDTH, SCREEN_HEIGHT)
+
 extern struct GfxDimensions gfx_current_window_dimensions; // The dimensions of the window
 extern struct GfxDimensions
     gfx_current_dimensions; // The dimensions of the draw area the game draws to, before scaling (if applicable)
@@ -219,7 +222,7 @@ void gfx_set_target_fps(int);
 void gfx_set_maximum_frame_latency(int latency);
 void gfx_texture_cache_delete(const uint8_t* orig_addr);
 extern "C" void gfx_texture_cache_clear();
-extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height);
+extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height);
 void gfx_get_pixel_depth_prepare(float x, float y);
 uint16_t gfx_get_pixel_depth(float x, float y);
 void gfx_push_current_dir(char* path);

@@ -56,9 +56,9 @@ using namespace std;
 #define SCALE_3_8(VAL_) ((VAL_)*0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
-// SCREEN_WIDTH and SCREEN_HEIGHT are defined in the headerfile
-#define HALF_SCREEN_WIDTH (SCREEN_WIDTH / 2)
-#define HALF_SCREEN_HEIGHT (SCREEN_HEIGHT / 2)
+// Based off the current set native dimensions
+#define HALF_SCREEN_WIDTH (gfx_native_dimensions.width / 2)
+#define HALF_SCREEN_HEIGHT (gfx_native_dimensions.height / 2)
 
 #define RATIO_X (gfx_current_dimensions.width / (2.0f * HALF_SCREEN_WIDTH))
 #define RATIO_Y (gfx_current_dimensions.height / (2.0f * HALF_SCREEN_HEIGHT))
@@ -101,6 +101,8 @@ int32_t gfx_current_window_position_y;
 struct GfxDimensions gfx_current_dimensions;
 static struct GfxDimensions gfx_prev_dimensions;
 struct XYWidthHeight gfx_current_game_window_viewport;
+struct XYWidthHeight gfx_native_dimensions;
+struct XYWidthHeight gfx_prev_native_dimensions;
 
 static bool game_renders_to_framebuffer;
 static int game_framebuffer;
@@ -125,8 +127,9 @@ static int markerOn;
 uintptr_t gSegmentPointers[16];
 
 struct FBInfo {
-    uint32_t orig_width, orig_height;
-    uint32_t applied_width, applied_height;
+    uint32_t orig_width, orig_height;       // Original shape
+    uint32_t applied_width, applied_height; // Up-scaled for the viewport
+    uint32_t native_width, native_height;   // Max "native" size of the screen, used for up-scaling
 };
 
 static bool fbActive = 0;
@@ -1111,9 +1114,12 @@ static float gfx_adjust_x_for_aspect_ratio(float x) {
     }
 }
 
-static void gfx_adjust_width_height_for_scale(uint32_t& width, uint32_t& height) {
-    width = round(width * RATIO_X);
-    height = round(height * RATIO_Y);
+// Scale the width and height value based on the ratio of the viewport to the native size
+static void gfx_adjust_width_height_for_scale(uint32_t& width, uint32_t& height, uint32_t native_width,
+                                              uint32_t native_height) {
+    width = round(width * (gfx_current_dimensions.width / (2.0f * (native_width / 2))));
+    height = round(height * (gfx_current_dimensions.height / (2.0f * (native_height / 2))));
+
     if (width == 0) {
         width = 1;
     }
@@ -1752,10 +1758,17 @@ static void gfx_sp_extra_geometry_mode(uint32_t clear, uint32_t set) {
 
 static void gfx_adjust_viewport_or_scissor(XYWidthHeight* area) {
     if (!fbActive) {
+        // Adjust the y origin based on the y-inversion for the active framebuffer
+        GfxClipParameters clipParameters = gfx_rapi->get_clip_parameters();
+        if (clipParameters.invert_y) {
+            area->y -= area->height;
+        } else {
+            area->y = gfx_native_dimensions.height - area->y;
+        }
+
         area->width *= RATIO_X;
         area->height *= RATIO_Y;
         area->x *= RATIO_X;
-        area->y = SCREEN_HEIGHT - area->y;
         area->y *= RATIO_Y;
 
         if (!game_renders_to_framebuffer ||
@@ -2230,7 +2243,8 @@ static void gfx_draw_rectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lr
     ur->w = 1.0f;
 
     // The coordinates for texture rectangle shall bypass the viewport setting
-    struct XYWidthHeight default_viewport = { 0, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT };
+    struct XYWidthHeight default_viewport = { 0, gfx_native_dimensions.height, gfx_native_dimensions.width,
+                                              gfx_native_dimensions.height };
     struct XYWidthHeight viewport_saved = g_rdp.viewport;
     uint32_t geometry_mode_saved = g_rsp.geometry_mode;
 
@@ -3267,7 +3281,7 @@ bool gfx_reset_fb_handler_custom(Gfx** cmd0) {
     gfx_flush();
     fbActive = 0;
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / SCREEN_HEIGHT);
+                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
     return false;
 }
 
@@ -3657,6 +3671,8 @@ const static std::array<const std::unordered_map<uint32_t, GfxOpcodeHandlerFunc>
 // TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be
 // are OK with that...
 static void gfx_set_ucode_handler(UcodeHandlers ucode) {
+    // Loaded ucode must be in range of the supported ucode_handlers
+    assert(ucode < ucode_max);
     ucode_handler_index = ucode;
 }
 
@@ -3680,8 +3696,14 @@ static void gfx_step() {
         if (rdpHandlers.at(opcode)(&cmd)) {
             return;
         }
-    } else if (ucode_handlers[ucode_handler_index]->at(opcode)(&cmd)) {
-        return;
+    } else if (ucode_handler_index < ucode_handlers.size()) {
+        if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
+            if (ucode_handlers[ucode_handler_index]->at(opcode)(&cmd)) {
+                return;
+            }
+        } else {
+            SPDLOG_WARN("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+        }
     }
 
     ++cmd;
@@ -3716,6 +3738,9 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 #endif
     game_framebuffer = gfx_rapi->create_framebuffer();
     game_framebuffer_msaa_resolved = gfx_rapi->create_framebuffer();
+
+    gfx_native_dimensions.width = SCREEN_WIDTH;
+    gfx_native_dimensions.height = SCREEN_HEIGHT;
 
     for (int i = 0; i < 16; i++) {
         gSegmentPointers[i] = 0;
@@ -3756,10 +3781,15 @@ void gfx_start_frame(void) {
     }
     gfx_current_dimensions.aspect_ratio = (float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height;
 
-    if (gfx_current_dimensions.height != gfx_prev_dimensions.height) {
+    // Update the framebuffer sizes when the viewport or native dimension changes
+    if (gfx_current_dimensions.width != gfx_prev_dimensions.width ||
+        gfx_current_dimensions.height != gfx_prev_dimensions.height ||
+        gfx_native_dimensions.width != gfx_prev_native_dimensions.width ||
+        gfx_native_dimensions.height != gfx_prev_native_dimensions.height) {
+
         for (auto& fb : framebuffers) {
             uint32_t width = fb.second.orig_width, height = fb.second.orig_height;
-            gfx_adjust_width_height_for_scale(width, height);
+            gfx_adjust_width_height_for_scale(width, height, fb.second.native_width, fb.second.native_height);
             if (width != fb.second.applied_width || height != fb.second.applied_height) {
                 gfx_rapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true);
                 fb.second.applied_width = width;
@@ -3767,7 +3797,9 @@ void gfx_start_frame(void) {
             }
         }
     }
+
     gfx_prev_dimensions = gfx_current_dimensions;
+    gfx_prev_native_dimensions = gfx_native_dimensions;
 
     bool different_size = gfx_current_dimensions.width != gfx_current_game_window_viewport.width ||
                           gfx_current_dimensions.height != gfx_current_game_window_viewport.height;
@@ -3826,7 +3858,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                                             !game_renders_to_framebuffer);
     gfx_rapi->start_frame();
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / SCREEN_HEIGHT);
+                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
     gfx_rapi->clear_framebuffer();
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
@@ -3890,12 +3922,13 @@ void gfx_set_maximum_frame_latency(int latency) {
     gfx_wapi->set_maximum_frame_latency(latency);
 }
 
-extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height) {
+extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height) {
     uint32_t orig_width = width, orig_height = height;
-    gfx_adjust_width_height_for_scale(width, height);
+    gfx_adjust_width_height_for_scale(width, height, native_width, native_height);
     int fb = gfx_rapi->create_framebuffer();
     gfx_rapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true);
-    framebuffers[fb] = { orig_width, orig_height, width, height };
+
+    framebuffers[fb] = { orig_width, orig_height, width, height, native_width, native_height };
     return fb;
 }
 
@@ -3910,12 +3943,36 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
         return;
     }
 
-    if (fb_src_id == 0 && gfx_msaa_level > 1) {
+    if (fb_src_id == 0 && game_renders_to_framebuffer) {
         // read from the framebuffer we've been rendering to
         fb_src_id = game_framebuffer;
     }
 
-    gfx_rapi->copy_framebuffer(fb_dst_id, fb_src_id);
+    int srcX0, srcY0, srcX1, srcY1;
+    int dstX0, dstY0, dstX1, dstY1;
+
+    // When rendering to the main window buffer or MSAA is enabled with a buffer size equal to the view port,
+    // then the source coordinates must account for any docked ImGui elements
+    if (fb_src_id == 0 ||
+        (gfx_msaa_level > 1 && gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&
+         gfx_current_dimensions.height == gfx_current_game_window_viewport.height)) {
+        srcX0 = gfx_current_game_window_viewport.x;
+        srcY0 = gfx_current_game_window_viewport.y;
+        srcX1 = gfx_current_game_window_viewport.x + gfx_current_game_window_viewport.width;
+        srcY1 = gfx_current_game_window_viewport.y + gfx_current_game_window_viewport.height;
+    } else {
+        srcX0 = 0;
+        srcY0 = 0;
+        srcX1 = gfx_current_dimensions.width;
+        srcY1 = gfx_current_dimensions.height;
+    }
+
+    dstX0 = 0;
+    dstY0 = 0;
+    dstX1 = gfx_current_dimensions.width;
+    dstY1 = gfx_current_dimensions.height;
+
+    gfx_rapi->copy_framebuffer(fb_dst_id, fb_src_id, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1);
 
     // Set the copied pointer if we have one
     if (hasCopiedPtr != nullptr) {
@@ -3924,12 +3981,12 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
 }
 
 void gfx_reset_framebuffer() {
-    gfx_rapi->start_draw_to_framebuffer(0, (float)gfx_current_dimensions.height / SCREEN_HEIGHT);
+    gfx_rapi->start_draw_to_framebuffer(0, (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
     gfx_rapi->clear_framebuffer();
 }
 
 static void adjust_pixel_depth_coordinates(float& x, float& y) {
-    x = x * RATIO_X - (SCREEN_WIDTH * RATIO_X - gfx_current_dimensions.width) / 2;
+    x = x * RATIO_X - (gfx_native_dimensions.width * RATIO_X - gfx_current_dimensions.width) / 2;
     y *= RATIO_Y;
     if (!game_renders_to_framebuffer ||
         (gfx_msaa_level > 1 && gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&

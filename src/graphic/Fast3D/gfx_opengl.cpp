@@ -87,6 +87,7 @@ static size_t current_framebuffer;
 static float current_noise_scale;
 static FilteringMode current_filter_mode = FILTER_THREE_POINT;
 
+GLint max_msaa_level = 1;
 GLuint pixel_depth_rb, pixel_depth_fb;
 size_t pixel_depth_rb_size;
 
@@ -877,6 +878,8 @@ static void gfx_opengl_init(void) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     pixel_depth_rb_size = 1;
+
+    glGetIntegerv(GL_MAX_SAMPLES, &max_msaa_level);
 }
 
 static void gfx_opengl_on_resize(void) {
@@ -932,6 +935,7 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
 
     width = max(width, 1U);
     height = max(height, 1U);
+    msaa_level = min(msaa_level, (uint32_t)max_msaa_level);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
 
@@ -1020,57 +1024,51 @@ void gfx_opengl_select_texture_fb(int fb_id) {
     glBindTexture(GL_TEXTURE_2D, framebuffers[fb_id].clrbuf);
 }
 
-void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id) {
+void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
+                                 int dstY0, int dstX1, int dstY1) {
     if (fb_dst_id >= (int)framebuffers.size() || fb_src_id >= (int)framebuffers.size()) {
         return;
     }
 
-    Framebuffer& src = framebuffers[fb_src_id];
+    Framebuffer src = framebuffers[fb_src_id];
     const Framebuffer& dst = framebuffers[fb_dst_id];
 
-    // Skip copying framebuffers that don't have the same width
-    if (src.width != dst.width) {
-        return;
+    // Adjust y values for non-inverted source frame buffers because opengl uses bottom left for origin
+    if (!src.invert_y) {
+        int temp = srcY1 - srcY0;
+        srcY1 = src.height - srcY0;
+        srcY0 = srcY1 - temp;
     }
 
-    int srcX0, srcY0, srcX1, srcY1;
-    int dstX0, dstY0, dstX1, dstY1;
-
-    dstX0 = dstY0 = 0;
-    dstX1 = dst.width;
-    dstY1 = dst.height;
-
-    srcX0 = 0;
-    srcY0 = 0;
-    srcX1 = src.width;
-    srcY1 = src.height;
-
-    // Account for source framebuffer having the menu bar open
-    if (src.height >= dst.height) {
-        srcY1 -= src.height - dst.height;
-    }
-
-    // flip vertically as openGLs origin is in the bottom left when compared to Fast3D
+    // Flip the y values
     if (src.invert_y != dst.invert_y) {
-        std::swap(dstY0, dstY1);
+        std::swap(srcY0, srcY1);
     }
 
     // Disabled for blit
     glDisable(GL_SCISSOR_TEST);
 
     // For msaa enabled buffers we can't perform a scaled blit to a simple sample buffer
-    // First do an unscaled blit to main buffer to resolve the sample data
+    // First do an unscaled blit to a msaa resolved buffer
     if (src.height != dst.height && src.width != dst.width && src.msaa_level > 1) {
-        // Since frambuffer 0 is considered the final single sample resolve for the MSAA buffer,
-        // and is only needed at the end of a frame, we can temporarily use it here without causing issues
+        // Start with the main buffer (0) as the msaa resolved buffer
+        int fb_resolve_id = 0;
+        Framebuffer fb_resolve = framebuffers[fb_resolve_id];
+
+        // If the size doesn't match our source, then we need to use our separate color msaa resolved buffer (2)
+        if (fb_resolve.height != src.height || fb_resolve.width != src.width) {
+            fb_resolve_id = 2;
+            fb_resolve = framebuffers[fb_resolve_id];
+        }
+
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_resolve.fbo);
 
         glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, src.width, src.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-        // Switch source buffer to the single sample
-        fb_src_id = 0;
-        src = framebuffers[0];
+        // Switch source buffer to the resolved sample
+        fb_src_id = fb_resolve_id;
+        src = fb_resolve;
     }
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
