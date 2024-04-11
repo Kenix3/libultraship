@@ -145,6 +145,7 @@ static struct {
     MTL::Buffer* depth_value_output_buffer;
     size_t coord_buffer_size;
     MTL::Function* depth_compute_function;
+    MTL::Function* convert_to_rgb5_a1_function;
 
     // Current state
     struct ShaderProgramMetal* shader_program;
@@ -281,6 +282,18 @@ static void gfx_metal_init(void) {
             uint2 coord = query_coords.coords[thread_position.x];
             output_values[thread_position.x] = depth_texture.read(coord);
         }
+
+        kernel void convertToRGB5A1(texture2d<half, access::read> inTexture [[ texture(0) ]],
+                                    device short* outputBuffer [[ buffer(0) ]],
+                                    uint2 gid [[ thread_position_in_grid ]]) {
+            uint index = gid.x + (inTexture.get_width() * gid.y);
+            half4 pixel = inTexture.read(gid);
+            uint r = pixel.r * 0x1F;
+            uint g = pixel.g * 0x1F;
+            uint b = pixel.b * 0x1F;
+            uint a = pixel.a > 0;
+            outputBuffer[index] = (r << 11) | (g << 6) | (b << 1) | a;
+        }
     )";
 
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
@@ -294,6 +307,8 @@ static void gfx_metal_init(void) {
                      error->localizedDescription()->cString(NS::UTF8StringEncoding));
 
     mctx.depth_compute_function = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
+    mctx.convert_to_rgb5_a1_function =
+        library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
 
     library->release();
     autorelease_pool->release();
@@ -911,6 +926,9 @@ void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale) {
         std::string fbcb_label = fmt::format("FrameBuffer {} Command Buffer", fb_id);
         fb.command_buffer->setLabel(NS::String::string(fbcb_label.c_str(), NS::UTF8StringEncoding));
 
+        // Queue the command buffers in order of start draw
+        fb.command_buffer->enqueue();
+
         fb.command_encoder = fb.command_buffer->renderCommandEncoder(fb.render_pass_descriptor);
         std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
         fb.command_encoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
@@ -1122,6 +1140,53 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
     source_framebuffer.last_zmode_decal = -1;
 }
 
+void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, void* rgb_buf) {
+    if (fb_id >= (int)mctx.framebuffers.size()) {
+        return;
+    }
+
+    FramebufferMetal& framebuffer = mctx.framebuffers[fb_id];
+    MTL::Texture* texture = mctx.textures[framebuffer.texture_id].texture;
+
+    MTL::Buffer* output_buffer =
+        mctx.device->newBuffer(sizeof(uint16_t) * width * height, MTL::ResourceOptionCPUCacheModeDefault);
+    output_buffer->setLabel(NS::String::string("Pixels output buffer", NS::UTF8StringEncoding));
+
+    NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
+
+    auto command_buffer = mctx.command_queue->commandBuffer();
+    command_buffer->setLabel(NS::String::string("Read Pixels Shader Command Buffer", NS::UTF8StringEncoding));
+
+    NS::Error* error = nullptr;
+    MTL::ComputePipelineState* compute_pipeline_state =
+        mctx.device->newComputePipelineState(mctx.convert_to_rgb5_a1_function, &error);
+
+    MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
+    compute_encoder->setComputePipelineState(compute_pipeline_state);
+    compute_encoder->setTexture(texture, 0);
+    compute_encoder->setBuffer(output_buffer, 0, 0);
+
+    MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
+    MTL::Size thread_group_count = MTL::Size::Make(width, height, 1);
+
+    compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    compute_encoder->endEncoding();
+
+    // Use a completion handler to wait for the GPU to be done without blocking the thread
+    command_buffer->addCompletedHandler([=](MTL::CommandBuffer* cmd_buffer) {
+        // Now the converted pixel values can be copied from the buffer
+        uint16_t* values = (uint16_t*)output_buffer->contents();
+        memcpy(rgb_buf, values, sizeof(uint16_t) * width * height);
+
+        output_buffer->release();
+    });
+
+    command_buffer->commit();
+
+    compute_pipeline_state->release();
+    autorelease_pool->release();
+}
+
 void gfx_metal_set_texture_filter(FilteringMode mode) {
     mctx.current_filter_mode = mode;
     gfx_texture_cache_clear();
@@ -1163,6 +1228,7 @@ struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_start_draw_to_framebuffer,
                                          gfx_metal_copy_framebuffer,
                                          gfx_metal_clear_framebuffer,
+                                         gfx_metal_read_framebuffer_to_cpu,
                                          gfx_metal_resolve_msaa_color_buffer,
                                          gfx_metal_get_pixel_depth,
                                          gfx_metal_get_framebuffer_texture_id,
