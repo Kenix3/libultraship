@@ -130,6 +130,7 @@ struct FBInfo {
     uint32_t orig_width, orig_height;       // Original shape
     uint32_t applied_width, applied_height; // Up-scaled for the viewport
     uint32_t native_width, native_height;   // Max "native" size of the screen, used for up-scaling
+    bool resize;                            // Scale to match the viewport
 };
 
 static bool fbActive = 0;
@@ -1779,11 +1780,14 @@ static void gfx_adjust_viewport_or_scissor(XYWidthHeight* area) {
                        (gfx_current_game_window_viewport.y + gfx_current_game_window_viewport.height);
         }
     } else {
-        area->width *= RATIO_X;
-        area->height *= RATIO_Y;
-        area->x *= RATIO_X;
         area->y = active_fb->second.orig_height - area->y;
-        area->y *= RATIO_Y;
+
+        if (active_fb->second.resize) {
+            area->width *= RATIO_X;
+            area->height *= RATIO_Y;
+            area->x *= RATIO_X;
+            area->y *= RATIO_Y;
+        }
     }
 }
 
@@ -3789,7 +3793,9 @@ void gfx_start_frame(void) {
 
         for (auto& fb : framebuffers) {
             uint32_t width = fb.second.orig_width, height = fb.second.orig_height;
-            gfx_adjust_width_height_for_scale(width, height, fb.second.native_width, fb.second.native_height);
+            if (fb.second.resize) {
+                gfx_adjust_width_height_for_scale(width, height, fb.second.native_width, fb.second.native_height);
+            }
             if (width != fb.second.applied_width || height != fb.second.applied_height) {
                 gfx_rapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true);
                 fb.second.applied_width = width;
@@ -3922,13 +3928,19 @@ void gfx_set_maximum_frame_latency(int latency) {
     gfx_wapi->set_maximum_frame_latency(latency);
 }
 
-extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height) {
+extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
+                                      uint8_t resize) {
     uint32_t orig_width = width, orig_height = height;
-    gfx_adjust_width_height_for_scale(width, height, native_width, native_height);
+    if (resize) {
+        gfx_adjust_width_height_for_scale(width, height, native_width, native_height);
+    }
+
     int fb = gfx_rapi->create_framebuffer();
     gfx_rapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true);
 
-    framebuffers[fb] = { orig_width, orig_height, width, height, native_width, native_height };
+    framebuffers[fb] = {
+        orig_width, orig_height, width, height, native_width, native_height, static_cast<bool>(resize)
+    };
     return fb;
 }
 
