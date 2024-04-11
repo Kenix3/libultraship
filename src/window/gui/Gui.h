@@ -92,6 +92,7 @@ class Gui {
     bool ImGuiGamepadNavigationEnabled();
     void BlockImGuiGamepadNavigation();
     void UnblockImGuiGamepadNavigation();
+    float GetCurrentDpiScale();
 
   protected:
     void ImGuiWMInit();
@@ -112,9 +113,8 @@ class Gui {
     std::map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
 
-    // DPI scale
-    float mLastDpiScale = 1.f; // Default scale is 1.0; Holds the scale of the last frame.
-    float mDpiScaleDiff;       // Scale difference factor to last frame.
+    bool mDpiInit = false;
+    float mLastDpiScale = 0;
 };
 } // namespace LUS
 
