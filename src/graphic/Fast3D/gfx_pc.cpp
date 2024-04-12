@@ -3304,17 +3304,18 @@ bool gfx_read_fb_handler_custom(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
 
     int32_t width, height, ulx, uly;
-    void* rgbBuffer = (void*)cmd->words.w1;
+    uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
     ++(*cmd0);
     cmd = *cmd0;
+    // Specifying the upper left origin value is unused and unsupported at the renderer level
     ulx = C0(0, 16);
     uly = C0(16, 16);
     width = C1(0, 16);
     height = C1(16, 16);
 
     gfx_flush();
-    gfx_rapi->read_framebuffer_to_cpu(fbId, width, height, rgbBuffer);
+    gfx_rapi->read_framebuffer_to_cpu(fbId, width, height, rgba16Buffer);
     return false;
 }
 

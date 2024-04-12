@@ -61,7 +61,7 @@ struct GfxRenderingAPI {
     void (*copy_framebuffer)(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
                              int dstY0, int dstX1, int dstY1);
     void (*clear_framebuffer)(void);
-    void (*read_framebuffer_to_cpu)(int fb_id, uint32_t width, uint32_t height, void* rgb_buf);
+    void (*read_framebuffer_to_cpu)(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf);
     void (*resolve_msaa_color_buffer)(int fb_id_target, int fb_id_source);
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> (*get_pixel_depth)(
         int fb_id, const std::set<std::pair<float, float>>& coordinates);

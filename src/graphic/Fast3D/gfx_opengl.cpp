@@ -1090,13 +1090,13 @@ void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int sr
     glEnable(GL_SCISSOR_TEST);
 }
 
-void gfx_opengl_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, void* rgb_buf) {
+void gfx_opengl_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
     if (fb_id >= (int)framebuffers.size()) {
         return;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[fb_id].fbo);
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, rgb_buf);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (void*)rgba16_buf);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[current_framebuffer].fbo);
 }
 

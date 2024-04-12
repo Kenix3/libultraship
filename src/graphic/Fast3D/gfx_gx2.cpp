@@ -757,7 +757,7 @@ void gfx_gx2_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0
     // TODO: Implement framebuffer texture copy
 }
 
-void gfx_gx2_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, void* rgb_buf) {
+void gfx_gx2_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
     // TODO: Implement framebuffer copy to CPU
 }
 

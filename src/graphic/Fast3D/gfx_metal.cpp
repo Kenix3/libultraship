@@ -1140,7 +1140,7 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
     source_framebuffer.last_zmode_decal = -1;
 }
 
-void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, void* rgb_buf) {
+void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
     if (fb_id >= (int)mctx.framebuffers.size()) {
         return;
     }
@@ -1161,11 +1161,13 @@ void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t heigh
     MTL::ComputePipelineState* compute_pipeline_state =
         mctx.device->newComputePipelineState(mctx.convert_to_rgb5_a1_function, &error);
 
+    // Use a compute encoder to convert the pixel data to rgba16 and transfer to a cpu readable buffer
     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
     compute_encoder->setComputePipelineState(compute_pipeline_state);
     compute_encoder->setTexture(texture, 0);
     compute_encoder->setBuffer(output_buffer, 0, 0);
 
+    // Use a thread group size and count that covers the whole copy area
     MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
     MTL::Size thread_group_count = MTL::Size::Make(width, height, 1);
 
@@ -1176,7 +1178,7 @@ void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t heigh
     command_buffer->addCompletedHandler([=](MTL::CommandBuffer* cmd_buffer) {
         // Now the converted pixel values can be copied from the buffer
         uint16_t* values = (uint16_t*)output_buffer->contents();
-        memcpy(rgb_buf, values, sizeof(uint16_t) * width * height);
+        memcpy(rgba16_buf, values, sizeof(uint16_t) * width * height);
 
         output_buffer->release();
     });

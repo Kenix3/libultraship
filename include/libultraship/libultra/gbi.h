@@ -2670,6 +2670,7 @@ typedef union {
         _g->words.w1 = 0;                         \
     }
 
+// Copy a framebuffer's texture to another framebuffer's in the GPU
 #define gDPCopyFB(pkt, dst, src, once, copiedPtr)                                                                    \
     {                                                                                                                \
         Gfx* _g = (Gfx*)(pkt);                                                                                       \
@@ -2678,12 +2679,13 @@ typedef union {
         _g->words.w1 = (uintptr_t)copiedPtr;                                                                         \
     }
 
-#define gDPReadFB(pkt, src, buf, ulx, uly, width, height)                \
+// Read the framebuffer's texture to a cpu memory location as RGBA16
+#define gDPReadFB(pkt, src, rgba16buf, ulx, uly, width, height)          \
     {                                                                    \
         Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                      \
                                                                          \
         _g0->words.w0 = _SHIFTL(G_READFB, 24, 8) | _SHIFTL(src, 0, 8);   \
-        _g0->words.w1 = (uintptr_t)buf;                                  \
+        _g0->words.w1 = (uintptr_t)rgba16buf;                            \
         _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);      \
         _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16); \
     }

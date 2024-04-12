@@ -1030,7 +1030,7 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
     }
 }
 
-void gfx_d3d11_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, void* rgb_buf) {
+void gfx_d3d11_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
     if (fb_id >= (int)d3d.framebuffers.size()) {
         return;
     }
@@ -1085,7 +1085,7 @@ void gfx_d3d11_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t heigh
             uint8_t b = ((((pixel >> 16) & 0xFF) + 4) * 0x1F) / 0xFF;
             uint8_t a = ((pixel >> 24) & 0xFF) ? 1 : 0;
 
-            ((uint16_t*)rgb_buf)[i + (j * width)] = (r << 11) | (g << 6) | (b << 1) | a;
+            rgba16_buf[i + (j * width)] = (r << 11) | (g << 6) | (b << 1) | a;
         }
     }
 
