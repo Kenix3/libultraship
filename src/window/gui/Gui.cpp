@@ -283,7 +283,7 @@ void Gui::Update(WindowEvent event) {
         mNeedsConsoleVariableSave = false;
     }
 
-    float dpi = 0;
+    float dpiScale = 0;
 
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
@@ -303,7 +303,9 @@ void Gui::Update(WindowEvent event) {
                 else
                     display = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mImpl.Metal.Window));
 
+                float dpi;
                 SDL_GetDisplayDPI(display, &dpi, nullptr, nullptr);
+                dpiScale = dpi / USER_DEFAULT_SCREEN_DPI;
             }
 
 #ifdef __SWITCH__
@@ -319,23 +321,24 @@ void Gui::Update(WindowEvent event) {
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
                                            event.Win32.Param2);
 
-            if (event.Win32.Msg == WM_DPICHANGED || mDpiInit)
-                dpi = (float)GetDpiForWindow(static_cast<HWND>(event.Win32.Handle));
+            if (event.Win32.Msg == WM_DPICHANGED || mDpiInit) {
+                HMONITOR monitor = MonitorFromWindow(static_cast<HWND>(event.Win32.Handle), MONITOR_DEFAULTTONEAREST);
+                dpiScale = (float)ImGui_ImplWin32_GetDpiScaleForMonitor(monitor);
+            }
             break;
 #endif
         default:
             break;
     }
 
-    if (dpi > 0) {
+    if (dpiScale > 0) {
         if (mDpiInit) {
             mLastDpiScale = 1.f;
             mDpiInit = false;
         }
 
-        float scale = dpi / USER_DEFAULT_SCREEN_DPI;
-        float diff = scale / mLastDpiScale;
-        mLastDpiScale = scale;
+        float diff = dpiScale / mLastDpiScale;
+        mLastDpiScale = dpiScale;
 
         ImGui::GetStyle().ScaleAllSizes(diff);
         ImFont* font = ImGui::GetFont();
