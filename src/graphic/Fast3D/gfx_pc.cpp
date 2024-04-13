@@ -3208,6 +3208,12 @@ bool gfx_set_timg_otr_hash_handler_custom(Gfx** cmd0) {
     uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (uint64_t)(*cmd0)->words.w1;
 
     const char* fileName = ResourceGetNameByCrc(hash);
+
+    if(fileName == nullptr) {
+        (*cmd0)++;
+        return false;
+    }
+
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 

@@ -582,7 +582,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha) {
-        append_line(fs_buf, &fs_len, "float gamma = 2.2;");
+        append_line(fs_buf, &fs_len, "float gamma = 1.9;");
         append_line(fs_buf, &fs_len, "float alphaValue = texel.a;");
 
         if (cc_features.opt_alpha_threshold) {
