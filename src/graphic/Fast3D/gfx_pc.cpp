@@ -130,6 +130,7 @@ struct FBInfo {
     uint32_t orig_width, orig_height;       // Original shape
     uint32_t applied_width, applied_height; // Up-scaled for the viewport
     uint32_t native_width, native_height;   // Max "native" size of the screen, used for up-scaling
+    bool resize;                            // Scale to match the viewport
 };
 
 static bool fbActive = 0;
@@ -1779,11 +1780,14 @@ static void gfx_adjust_viewport_or_scissor(XYWidthHeight* area) {
                        (gfx_current_game_window_viewport.y + gfx_current_game_window_viewport.height);
         }
     } else {
-        area->width *= RATIO_X;
-        area->height *= RATIO_Y;
-        area->x *= RATIO_X;
         area->y = active_fb->second.orig_height - area->y;
-        area->y *= RATIO_Y;
+
+        if (active_fb->second.resize) {
+            area->width *= RATIO_X;
+            area->height *= RATIO_Y;
+            area->x *= RATIO_X;
+            area->y *= RATIO_Y;
+        }
     }
 }
 
@@ -2355,8 +2359,10 @@ static void gfx_dp_image_rectangle(int32_t tile, int32_t w, int32_t h, int32_t u
     g_rdp.texture_tile[tile].cmt = 0;
     g_rdp.texture_tile[tile].shifts = 0;
     g_rdp.texture_tile[tile].shiftt = 0;
-    g_rdp.texture_tile[tile].uls = 0;
-    g_rdp.texture_tile[tile].ult = 0;
+    g_rdp.texture_tile[tile].uls = 0 * 4;
+    g_rdp.texture_tile[tile].ult = 0 * 4;
+    g_rdp.texture_tile[tile].lrs = w * 4;
+    g_rdp.texture_tile[tile].lrt = h * 4;
     g_rdp.texture_tile[tile].line_size_bytes = w << (g_rdp.texture_tile[tile].siz >> 1);
 
     auto& loadtex = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index];
@@ -3294,6 +3300,25 @@ bool gfx_copy_fb_handler_custom(Gfx** cmd0) {
     return false;
 }
 
+bool gfx_read_fb_handler_custom(Gfx** cmd0) {
+    Gfx* cmd = *cmd0;
+
+    int32_t width, height, ulx, uly;
+    uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
+    int fbId = C0(0, 8);
+    ++(*cmd0);
+    cmd = *cmd0;
+    // Specifying the upper left origin value is unused and unsupported at the renderer level
+    ulx = C0(0, 16);
+    uly = C0(16, 16);
+    width = C1(0, 16);
+    height = C1(16, 16);
+
+    gfx_flush();
+    gfx_rapi->read_framebuffer_to_cpu(fbId, width, height, rgba16Buffer);
+    return false;
+}
+
 bool gfx_set_timg_fb_handler_custom(Gfx** cmd0) {
     Gfx* cmd = *cmd0;
 
@@ -3607,6 +3632,7 @@ const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> otrHandlers = {
     { G_SETGRAYSCALE, gfx_set_grayscale_handler_custom },            // G_SETGRAYSCALE (0x39)
     { G_EXTRAGEOMETRYMODE, gfx_extra_geometry_mode_handler_custom }, // G_EXTRAGEOMETRYMODE (0x3a)
     { G_COPYFB, gfx_copy_fb_handler_custom },                        // G_COPYFB (0x3b)
+    { G_READFB, gfx_read_fb_handler_custom },                        // G_READFB (0x3e)
     { G_IMAGERECT, gfx_image_rect_handler_custom },                  // G_IMAGERECT (0x3c)
     { G_SETINTENSITY, gfx_set_intensity_handler_custom },            // G_SETINTENSITY (0x40)
 };
@@ -3789,7 +3815,9 @@ void gfx_start_frame(void) {
 
         for (auto& fb : framebuffers) {
             uint32_t width = fb.second.orig_width, height = fb.second.orig_height;
-            gfx_adjust_width_height_for_scale(width, height, fb.second.native_width, fb.second.native_height);
+            if (fb.second.resize) {
+                gfx_adjust_width_height_for_scale(width, height, fb.second.native_width, fb.second.native_height);
+            }
             if (width != fb.second.applied_width || height != fb.second.applied_height) {
                 gfx_rapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true);
                 fb.second.applied_width = width;
@@ -3922,13 +3950,19 @@ void gfx_set_maximum_frame_latency(int latency) {
     gfx_wapi->set_maximum_frame_latency(latency);
 }
 
-extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height) {
+extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
+                                      uint8_t resize) {
     uint32_t orig_width = width, orig_height = height;
-    gfx_adjust_width_height_for_scale(width, height, native_width, native_height);
+    if (resize) {
+        gfx_adjust_width_height_for_scale(width, height, native_width, native_height);
+    }
+
     int fb = gfx_rapi->create_framebuffer();
     gfx_rapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true);
 
-    framebuffers[fb] = { orig_width, orig_height, width, height, native_width, native_height };
+    framebuffers[fb] = {
+        orig_width, orig_height, width, height, native_width, native_height, static_cast<bool>(resize)
+    };
     return fb;
 }
 

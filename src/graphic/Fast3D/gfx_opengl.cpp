@@ -1090,6 +1090,16 @@ void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int sr
     glEnable(GL_SCISSOR_TEST);
 }
 
+void gfx_opengl_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
+    if (fb_id >= (int)framebuffers.size()) {
+        return;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[fb_id].fbo);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (void*)rgba16_buf);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[current_framebuffer].fbo);
+}
+
 static std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
 gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> res;
@@ -1196,6 +1206,7 @@ struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
                                           gfx_opengl_start_draw_to_framebuffer,
                                           gfx_opengl_copy_framebuffer,
                                           gfx_opengl_clear_framebuffer,
+                                          gfx_opengl_read_framebuffer_to_cpu,
                                           gfx_opengl_resolve_msaa_color_buffer,
                                           gfx_opengl_get_pixel_depth,
                                           gfx_opengl_get_framebuffer_texture_id,

@@ -757,6 +757,10 @@ void gfx_gx2_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0
     // TODO: Implement framebuffer texture copy
 }
 
+void gfx_gx2_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
+    // TODO: Implement framebuffer copy to CPU
+}
+
 static std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
 gfx_gx2_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
     struct Framebuffer* buffer = (struct Framebuffer*)fb_id;
@@ -862,6 +866,7 @@ struct GfxRenderingAPI gfx_gx2_api = { gfx_gx2_get_name,
                                        gfx_gx2_start_draw_to_framebuffer,
                                        gfx_gx2_copy_framebuffer,
                                        gfx_gx2_clear_framebuffer,
+                                       gfx_gx2_read_framebuffer_to_cpu,
                                        gfx_gx2_resolve_msaa_color_buffer,
                                        gfx_gx2_get_pixel_depth,
                                        gfx_gx2_get_framebuffer_texture_id,
