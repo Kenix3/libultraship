@@ -298,14 +298,16 @@ void Gui::Update(WindowEvent event) {
             if (static_cast<const SDL_Event*>(event.Sdl.Event)->window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED ||
                 mDpiInit) {
                 int display = 0;
-                if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::SDL_OPENGL)
+                if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::SDL_OPENGL) {
                     display = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mImpl.Opengl.Window));
-                else
+                } else {
                     display = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mImpl.Metal.Window));
+                }
 
                 float dpi;
-                SDL_GetDisplayDPI(display, &dpi, nullptr, nullptr);
-                dpiScale = dpi / USER_DEFAULT_SCREEN_DPI;
+                if (SDL_GetDisplayDPI(display, &dpi, nullptr, nullptr) == 0) {
+                    dpiScale = dpi / USER_DEFAULT_SCREEN_DPI;
+                }
             }
 
 #ifdef __SWITCH__
@@ -361,8 +363,9 @@ void Gui::UnblockImGuiGamepadNavigation() {
 }
 
 float Gui::GetCurrentDpiScale() {
-    if (mLastDpiScale <= 0)
+    if (mLastDpiScale <= 0) {
         return 1.f;
+    }
 
     return mLastDpiScale;
 }
@@ -373,8 +376,9 @@ void Gui::DrawMenu() {
     ImGuiWMNewFrame();
     ImGui::NewFrame();
 
-    if (mLastDpiScale == 0)
+    if (mLastDpiScale == 0) {
         mDpiInit = true;
+    }
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
