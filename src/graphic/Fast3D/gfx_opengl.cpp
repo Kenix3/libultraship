@@ -754,7 +754,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         glUniform1i(sampler_location, 5);
     }
 
-    if(cc_features.opt_alpha_cvg_sel || cc_features.opt_alpha_threshold) {
+    if(cc_features.opt_alpha_threshold) {
         prg->alpha_test_val_location = glGetUniformLocation(shader_program, "alphaTestValue");
         prg->used_alpha_threshold = true;
     } else {
