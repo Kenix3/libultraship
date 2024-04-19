@@ -127,10 +127,8 @@ void Controller::ReadToPad(OSContPad* pad) {
     OSContPad padToBuffer = { 0 };
 
     // Button Inputs
-    int32_t blarg = 3;
     for (auto [bitmask, button] : mButtons) {
         button->UpdatePad(padToBuffer.button);
-        blarg++;
     }
 
     // Stick Inputs
