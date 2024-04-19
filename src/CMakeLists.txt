@@ -296,6 +296,11 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
         $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
     )
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+        target_compile_definitions(libultraship PRIVATE
+            ENABLE_OPENGL
+        )
+    endif()
 else ()
     target_compile_definitions(libultraship PRIVATE
         $<$<CONFIG:Debug>:_DEBUG>
