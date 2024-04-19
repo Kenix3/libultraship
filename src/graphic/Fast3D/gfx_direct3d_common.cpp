@@ -450,7 +450,7 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
                     "    texel.a = alphaDither(random(float3(floor(screenSpace.xy * noise_scale), "
                     "float(noise_frame))), texel.a);");
     } else if (cc_features.opt_noise) {
-        append_line(fs_buf, &fs_len,
+        append_line(buf, &len,
                     "    texel.rgb = colorDither(random(float3(floor(screenSpace.xy * noise_scale), float(frame_count))), "
                     "    texel.rgb);");
     }
