@@ -1169,7 +1169,10 @@ gfx_d3d11_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
     }
 
     // ImGui overwrites these values, so we cannot set them once at init
-    d3d.context->CSSetShader(fb.msaa_level > 1 ? d3d.compute_shader_msaa.Get() : d3d.compute_shader.Get(), nullptr, 0);
+    d3d.context->CSSetShader(fb.msaa_level > 1 && d3d.feature_level >= D3D_FEATURE_LEVEL_10_1
+                                 ? d3d.compute_shader_msaa.Get()
+                                 : d3d.compute_shader.Get(),
+                             nullptr, 0);
     d3d.context->CSSetUnorderedAccessViews(0, 1, d3d.depth_value_output_uav.GetAddressOf(), nullptr);
 
     ThrowIfFailed(d3d.context->Map(d3d.coord_buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
