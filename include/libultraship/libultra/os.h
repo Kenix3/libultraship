@@ -3,14 +3,12 @@
 #ifndef OS_H
 #define OS_H
 
-#include "stdint.h"
-#include "libultra/controller.h"
-#include "libultra/message.h"
-#include "libultra/pi.h"
-
-#include "libultra/time.h"
-
-#include <libultra/vi.h>
+#include <stdint.h>
+#include "controller.h"
+#include "message.h"
+#include "time.h"
+#include "pi.h"
+#include "vi.h"
 
 #ifndef _HW_VERSION_1
 #define MAXCONTROLLERS 4
