@@ -14,7 +14,7 @@ int32_t osPiWriteIo(uint32_t devAddr, uint32_t data) {
 }
 
 int32_t osPiStartDma(OSIoMesg* mb, int32_t priority, int32_t direction, uintptr_t devAddr, void* vAddr, size_t nbytes,
-                 OSMesgQueue* mq) {
+                     OSMesgQueue* mq) {
     memcpy(vAddr, (const void*)devAddr, nbytes);
     return 0;
 }

@@ -54,15 +54,15 @@ uint32_t osGetCount(void) {
         .count();
 }
 
-OSPiHandle *osCartRomInit(void) {
+OSPiHandle* osCartRomInit(void) {
     return NULL;
 }
 
-int osSetTimer(OSTimer* t, OSTime countdown, OSTime interval, OSMesgQueue* mq, OSMesg msg){
+int osSetTimer(OSTimer* t, OSTime countdown, OSTime interval, OSMesgQueue* mq, OSMesg msg) {
     return 0;
 }
 
-int32_t osEPiStartDma(OSPiHandle *pihandle, OSIoMesg *mb, int32_t direction) {
+int32_t osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, int32_t direction) {
     return 0;
 }
 
@@ -71,7 +71,7 @@ uint32_t osAiGetLength() {
     return 0;
 }
 
-int32_t osAiSetNextBuffer(void *buff, uint32_t len) {
+int32_t osAiSetNextBuffer(void* buff, uint32_t len) {
     // TODO: Implement
     return 0;
 }
@@ -83,5 +83,4 @@ int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
 int32_t osMotorInit(OSMesgQueue* ctrlrqueue, OSPfs* pfs, int32_t channel) {
     return 0;
 }
-
 }
