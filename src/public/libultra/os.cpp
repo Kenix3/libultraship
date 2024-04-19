@@ -12,6 +12,7 @@ uint8_t __osMaxControllers = MAXCONTROLLERS;
 
 int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status) {
     *controllerBits = 0;
+    status->status |= 1;
 
     if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
         SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());

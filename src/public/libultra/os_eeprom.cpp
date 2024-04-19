@@ -10,7 +10,7 @@ int32_t osEepromLongRead(OSMesgQueue* mq, uint8_t address, uint8_t* buffer, int3
     u8 content[512];
     s32 ret = -1;
 
-    FILE* fp = fopen("ghostship.sav", "rb");
+    FILE* fp = fopen("default.sav", "rb");
     if (fp == NULL) {
         return -1;
     }
@@ -30,7 +30,7 @@ int32_t osEepromLongWrite(OSMesgQueue* mq, uint8_t address, uint8_t* buffer, int
     }
     memcpy(content + address * 8, buffer, length);
 
-    FILE* fp = fopen("ghostship.sav", "wb");
+    FILE* fp = fopen("default.sav", "wb");
     if (fp == NULL) {
         return -1;
     }
