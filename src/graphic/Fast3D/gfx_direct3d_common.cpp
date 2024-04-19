@@ -194,6 +194,7 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
     append_line(buf, &len, "cbuffer PerFrameCB : register(b0) {");
     append_line(buf, &len, "    uint noise_frame;");
     append_line(buf, &len, "    float noise_scale;");
+    append_line(buf, &len, "    float alpha_test_value;");
     append_line(buf, &len, "}");
 
     append_line(buf, &len, "float3 colorDither(in float _noise_val, in float3 _color)");
@@ -448,6 +449,10 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         append_line(buf, &len,
                     "    texel.a = alphaDither(random(float3(floor(screenSpace.xy * noise_scale), "
                     "float(noise_frame))), texel.a);");
+    } else if (cc_features.opt_noise) {
+        append_line(fs_buf, &fs_len,
+                    "    texel.rgb = colorDither(random(float3(floor(screenSpace.xy * noise_scale), float(frame_count))), "
+                    "    texel.rgb);");
     }
 
     if (cc_features.opt_alpha) {
@@ -455,7 +460,7 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
 
         if (cc_features.opt_alpha_threshold) {
             append_line(buf, &len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
-            append_line(buf, &len, "if (alphaValue < alphaTestValue) discard;");
+            append_line(buf, &len, "if (alphaValue < alpha_test_value) discard;");
         }
         if (cc_features.opt_invisible) {
             append_line(buf, &len, "    texel.a = 0.0;");

@@ -60,8 +60,10 @@ struct ShaderProgram {
     GLint attrib_locations[16];
     uint8_t attrib_sizes[16];
     uint8_t num_attribs;
+    bool used_alpha_threshold;
     GLint frame_count_location;
     GLint noise_scale_location;
+    GLint alpha_test_val_location;
 };
 
 struct Framebuffer {
@@ -85,6 +87,7 @@ static uint32_t frame_count;
 static vector<Framebuffer> framebuffers;
 static size_t current_framebuffer;
 static float current_noise_scale;
+static float current_alpha_test_value = 0.0f;
 static FilteringMode current_filter_mode = FILTER_THREE_POINT;
 
 GLint max_msaa_level = 1;
@@ -120,6 +123,9 @@ static void gfx_opengl_vertex_array_set_attribs(struct ShaderProgram* prg) {
 static void gfx_opengl_set_uniforms(struct ShaderProgram* prg) {
     glUniform1i(prg->frame_count_location, frame_count);
     glUniform1f(prg->noise_scale_location, current_noise_scale);
+    if (prg->used_alpha_threshold) {
+        glUniform1f(prg->alpha_test_val_location, current_alpha_test_value);
+    }
 }
 
 static void gfx_opengl_unload_shader(struct ShaderProgram* old_prg) {
@@ -415,6 +421,11 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "uniform sampler2D uTexBlend1;");
     }
 
+    if (cc_features.opt_alpha_threshold) {
+        append_line(fs_buf, &fs_len, "uniform float alphaTestValue;");
+        append_line(fs_buf, &fs_len, "#define WRAP(x, low, high) (mod((x)-(low), (high)-(low)) + (low));");
+    }
+
     append_line(fs_buf, &fs_len, "uniform int frame_count;");
     append_line(fs_buf, &fs_len, "uniform float noise_scale;");
 
@@ -586,7 +597,6 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha) {
-        append_line(fs_buf, &fs_len, "float cvg = 1.0;");
         append_line(fs_buf, &fs_len, "float alphaValue = texel.a;");
 
         if (cc_features.opt_alpha_threshold) {
@@ -715,6 +725,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 
     prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
     prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
+    prg->alpha_test_val_location = glGetUniformLocation(shader_program, "alphaTestValue");
 
     gfx_opengl_load_shader(prg);
 
@@ -741,6 +752,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     if (cc_features.used_blend[1]) {
         GLint sampler_location = glGetUniformLocation(shader_program, "uTexBlend1");
         glUniform1i(sampler_location, 5);
+    }
+
+    if(cc_features.opt_alpha_cvg_sel || cc_features.opt_alpha_threshold) {
+        prg->alpha_test_val_location = glGetUniformLocation(shader_program, "alphaTestValue");
+        prg->used_alpha_threshold = true;
+    } else {
+        prg->used_alpha_threshold = false;
     }
 
     return prg;
@@ -1003,9 +1021,10 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
     fb.invert_y = opengl_invert_y;
 }
 
-void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale) {
+void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale, float alpha_test_value) {
     Framebuffer& fb = framebuffers[fb_id];
 
+    current_alpha_test_value = alpha_test_value;
     if (noise_scale != 0.0f) {
         current_noise_scale = 1.0f / noise_scale;
     }

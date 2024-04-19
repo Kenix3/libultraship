@@ -114,6 +114,7 @@ struct FramebufferMetal {
 struct FrameUniforms {
     simd::int1 frameCount;
     simd::float1 noiseScale;
+    simd::float1 alphaTestValue;
 };
 
 struct CoordUniforms {
@@ -274,7 +275,7 @@ static void gfx_metal_init(void) {
         struct CoordUniforms {
             uint2 coords[1024];
         };
-        
+
         kernel void depthKernel(depth2d<float, access::read> depth_texture [[ texture(0) ]],
                                      constant CoordUniforms& query_coords [[ buffer(0) ]],
                                      device float* output_values [[ buffer(1) ]],
@@ -914,7 +915,7 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
     autorelease_pool->release();
 }
 
-void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale) {
+void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale, float alpha_test_value) {
     FramebufferMetal& fb = mctx.framebuffers[fb_id];
     mctx.render_target_height = mctx.textures[fb.texture_id].height;
 
@@ -937,6 +938,10 @@ void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale) {
 
     if (noise_scale != 0.0f) {
         mctx.frame_uniforms.noiseScale = 1.0f / noise_scale;
+    }
+
+    if (alpha_test_value != 0.0f) {
+        mctx.frame_uniforms.alphaTestValue = alpha_test_value;
     }
 
     memcpy(mctx.frame_uniform_buffer->contents(), &mctx.frame_uniforms, sizeof(FrameUniforms));

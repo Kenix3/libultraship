@@ -42,6 +42,7 @@ namespace {
 struct PerFrameCB {
     uint32_t noise_frame;
     float noise_scale;
+    float alpha_test_value;
     uint32_t padding[2]; // constant buffers must be multiples of 16 bytes in size
 };
 
@@ -920,7 +921,7 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
     fb.msaa_level = msaa_level;
 }
 
-void gfx_d3d11_start_draw_to_framebuffer(int fb_id, float noise_scale) {
+void gfx_d3d11_start_draw_to_framebuffer(int fb_id, float noise_scale, float alpha_test_value) {
     Framebuffer& fb = d3d.framebuffers[fb_id];
     d3d.render_target_height = d3d.textures[fb.texture_id].height;
 
@@ -931,6 +932,10 @@ void gfx_d3d11_start_draw_to_framebuffer(int fb_id, float noise_scale) {
 
     if (noise_scale != 0.0f) {
         d3d.per_frame_cb_data.noise_scale = 1.0f / noise_scale;
+    }
+
+    if (alpha_test_value != 0.0f) {
+        d3d.per_frame_cb_data.alpha_test_value = alpha_test_value;
     }
 
     D3D11_MAPPED_SUBRESOURCE ms;

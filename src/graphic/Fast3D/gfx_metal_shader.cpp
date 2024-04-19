@@ -140,6 +140,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
     append_line(buf, &len, "struct FrameUniforms {");
     append_line(buf, &len, "    int frameCount;");
     append_line(buf, &len, "    float noiseScale;");
+    append_line(buf, &len, "    float alphaTestValue;");
     append_line(buf, &len, "};");
     // end uniforms struct
 
@@ -293,6 +294,21 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
         append_line(buf, &len, "}");
     }
 
+    append_line(buf, &len, "float3 colorDither(float _noise_val, float3 _color) {");
+    append_line(buf, &len, "    float3 _noise = float3(_noise_val, _noise_val, _noise_val);");
+    append_line(buf, &len, "    float3 threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(buf, &len, "    _color = clamp(_color + threshold, 0.0, 1.0);");
+    append_line(buf, &len, "    _color.rgb = round(_color.rgb * 32.0) / 32.0;");
+    append_line(buf, &len, "    return _color;");
+    append_line(buf, &len, "}");
+
+    append_line(buf, &len, "float alphaDither(float _noise, float _alpha) {");
+    append_line(buf, &len, "    float threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(buf, &len, "    _alpha = clamp(_alpha + threshold, 0.0, 1.0);");
+    append_line(buf, &len, "    _alpha = round(_alpha * 32.0) / 32.0;");
+    append_line(buf, &len, "    return _alpha;");
+    append_line(buf, &len, "}");
+
     append_line(buf, &len, "float random(float3 value) {");
     append_line(buf, &len, "    float random = dot(sin(value), float3(12.9898, 78.233, 37.719));");
     append_line(buf, &len, "    return fract(sin(random) * 143758.5453);");
@@ -415,22 +431,28 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
         append_line(buf, &len, "    if (texel.w > 0.19) texel.w = 1.0; else discard_fragment();");
     }
 
-    if (cc_features.opt_alpha && cc_features.opt_noise) {
-        append_line(buf, &len, "    float2 coords = in.position.xy * frameUniforms.noiseScale;");
-        append_line(buf, &len,
-                    "    texel.w *= floor(fast::clamp(random(float3(floor(coords), float(frameUniforms.frameCount))) + "
-                    "texel.w, 0.0, 1.0));");
-    }
-
     if (cc_features.opt_grayscale) {
         append_line(buf, &len, "    float intensity = (texel.x + texel.y + texel.z) / 3.0;");
         append_line(buf, &len, "    float3 new_texel = in.grayscale.xyz * intensity;");
         append_line(buf, &len, "    texel.xyz = mix(texel.xyz, new_texel, in.grayscale.w);");
     }
 
+    if (cc_features.opt_alpha && cc_features.opt_noise) {
+        append_line(buf, &len,
+                    "    texel.w = alphaDither(random(float3(floor(in.position.xy * frameUniforms.noiseScale), "
+                    "float(frameUniforms.frameCount))), texel.w);");
+    } else if (cc_features.opt_noise) {
+        append_line(buf, &len,
+                    "    texel.rgb = colorDither(random(float3(floor(in.position.xy * frameUniforms.noiseScale), float(frameUniforms.frameCount))), "
+                    "    texel.rgb);");
+    }
+
     if (cc_features.opt_alpha) {
+        append_line(buf, &len, "    float alphaValue = texel.w;");
+
         if (cc_features.opt_alpha_threshold) {
-            append_line(buf, &len, "    if (texel.w < 8.0 / 256.0) discard_fragment();");
+            append_line(buf, &len, "    alphaValue = clamp(alphaValue, 0.0, 1.0);");
+            append_line(buf, &len, "    if (alphaValue < frameUniforms.alphaTestValue) discard_fragment();");
         }
         if (cc_features.opt_invisible) {
             append_line(buf, &len, "    texel.w = 0.0;");
