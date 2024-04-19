@@ -570,9 +570,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha && cc_features.opt_noise) {
-        append_line(fs_buf, &fs_len, "texel.a = alphaDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), texel.a);");
+        append_line(
+            fs_buf, &fs_len,
+            "texel.a = alphaDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), texel.a);");
     } else if (cc_features.opt_noise) {
-        append_line(fs_buf, &fs_len, "texel.rgb = colorDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), texel.rgb);");
+        append_line(fs_buf, &fs_len,
+                    "texel.rgb = colorDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), "
+                    "texel.rgb);");
     }
 
     if (cc_features.opt_grayscale) {

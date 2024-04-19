@@ -1413,9 +1413,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool use_fog = (g_rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (g_rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = ((g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) < G_CYC_COPY) &&
-        ((g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER ||
-         (g_rdp.other_mode_h & (3U << G_MDSFT_ALPHADITHER)) == G_AD_NOISE ||
-         (g_rdp.other_mode_h & (3U << G_MDSFT_COLORDITHER)) == G_CD_NOISE);
+                     ((g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER ||
+                      (g_rdp.other_mode_h & (3U << G_MDSFT_ALPHADITHER)) == G_AD_NOISE ||
+                      (g_rdp.other_mode_h & (3U << G_MDSFT_COLORDITHER)) == G_CD_NOISE);
     bool use_2cyc = (g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
     bool alpha_threshold = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
     bool invisible =
@@ -3293,7 +3293,8 @@ float gfx_calculate_noise_scale() {
 bool gfx_reset_fb_handler_custom(Gfx** cmd0) {
     gfx_flush();
     fbActive = 0;
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale());
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
+                                        gfx_calculate_noise_scale());
     return false;
 }
 
@@ -3891,7 +3892,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                                             gfx_current_window_dimensions.height, 1, false, true, true,
                                             !game_renders_to_framebuffer);
     gfx_rapi->start_frame();
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale());
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
+                                        gfx_calculate_noise_scale());
     gfx_rapi->clear_framebuffer();
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
