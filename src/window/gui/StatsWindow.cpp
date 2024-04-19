@@ -45,7 +45,7 @@ void StatsWindow::DrawElement() {
         window_flags |= ImGuiWindowFlags_NoMove;
     }
 
-    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+    ImGui::SetNextWindowBgAlpha(0.7f); // Transparent background
 
     if (ImGui::Begin("Example: Simple overlay", &mIsVisible, window_flags)) {
 
