@@ -358,8 +358,6 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     height = window_height;
 #endif
 
-
-
 #ifdef PLATFORM_IOS
     Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
 #else

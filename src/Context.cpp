@@ -339,7 +339,7 @@ std::string Context::GetAppBundlePath() {
 #endif
 
 #ifdef PLATFORM_IOS
-    const char *home = getenv("HOME");
+    const char* home = getenv("HOME");
     return std::string(home) + "/Documents";
 #endif
 
@@ -380,7 +380,7 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
 #endif
 
 #ifdef PLATFORM_IOS
-    const char *home = getenv("HOME");
+    const char* home = getenv("HOME");
     return std::string(home) + "/Documents";
 #endif
 
