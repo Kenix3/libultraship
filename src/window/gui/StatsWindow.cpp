@@ -52,7 +52,7 @@ void StatsWindow::DrawElement() {
         ImGui::Text("Debug Stats\n"
                     "(right-click to change position)");
 
-        #if defined(_WIN32)
+#if defined(_WIN32)
         ImGui::Text("Platform: Windows");
 #elif defined(__APPLE__)
         ImGui::Text("Platform: macOS");
