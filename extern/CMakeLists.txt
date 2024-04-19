@@ -2,7 +2,7 @@ find_package(OpenGL QUIET)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     find_package(SDL2 CONFIG REQUIRED)
-elseif (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+elseif (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     find_package(SDL2 REQUIRED)
 endif()
 
@@ -16,13 +16,32 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Android")
         FetchContent_Declare(
             SDL2
 	    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-	    GIT_TAG release-2.28.1 
+	    GIT_TAG release-2.28.1
     	)
         message("SDL2 not found. Downloading now...")
         FetchContent_MakeAvailable(SDL2)
         message("SDL2 downloaded to " ${FETCHCONTENT_BASE_DIR}/sdl2-src)
     endif()
 endif()
+
+################################################################################
+# Find/download SDL2 for IOS
+################################################################################
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    find_package(SDL2 QUIET)
+    if (NOT ${SDL2_FOUND})
+    	include(FetchContent)
+        FetchContent_Declare(
+            SDL2
+            GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+            GIT_TAG release-2.28.1
+    	)
+        message("SDL2 not found. Downloading now...")
+        FetchContent_MakeAvailable(SDL2)
+        message("SDL2 downloaded to " ${FETCHCONTENT_BASE_DIR}/sdl2-src)
+    endif()
+endif()
+
 
 #=================== DrLibs ===================
 
@@ -80,7 +99,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         ${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
         ${IMGUI_DIR}/backends/imgui_impl_win32.cpp
     )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_sources(ImGui
         PRIVATE
         ${IMGUI_DIR}/backends/imgui_impl_metal.mm
@@ -95,15 +114,15 @@ endif()
 
 target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/metal-cpp)
     target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_link_libraries(ImGui PUBLIC SDL2::SDL2-static)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    target_link_libraries(ImGui PUBLIC SDL2::SDL2-static SDL2::SDL2main)
 else()
     target_link_libraries(ImGui PUBLIC SDL2::SDL2)
 endif()
@@ -115,7 +134,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_package(GLEW REQUIRED)
     target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
     set_target_properties(ImGui PROPERTIES
-        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if (USE_OPENGLES)

@@ -1,5 +1,5 @@
 #pragma once
-
+#ifndef PLATFORM_IOS
 #undef _DLL
 
 #include <string>
@@ -31,3 +31,4 @@ class O2rArchive : virtual public Archive {
     zip_t* mZipArchive;
 };
 } // namespace LUS
+#endif

@@ -307,7 +307,7 @@ set(Source_Files__Utils
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/Utils.cpp
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(APPEND Source_Files__Utils
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.h
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm
@@ -453,7 +453,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d_common.h
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d_common.cpp
     )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(APPEND Source_Files__Graphic
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.h
@@ -486,7 +486,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
 
 #=================== metal-cpp ===================
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
 endif()
 
@@ -516,16 +516,18 @@ target_link_libraries(libultraship
     PUBLIC ZAPDUtils ImGui tinyxml2 nlohmann_json::nlohmann_json
 )
 
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)
+endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
     target_link_libraries(libultraship PRIVATE Threads::Threads)
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     find_Library(OSX_FOUNDATION Foundation)
     find_Library(OSX_AVFOUNDATION AVFoundation)
     find_library(METAL Metal)
@@ -554,7 +556,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     )
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set_target_properties(${PROJECT_NAME} PROPERTIES
         XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
     )
@@ -562,7 +564,6 @@ endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_compile_definitions(libultraship PRIVATE
-        ENABLE_OPENGL
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>

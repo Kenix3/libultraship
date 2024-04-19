@@ -361,3 +361,6 @@ cmake_install.cmake
 src/install_config.h
 # Removed jsonConfig and jsonConfigVersion
 extern/nlohmann-json/*_jsonConfig*
+*.pbxproj
+*.xcworkspace
+*.xcsettings

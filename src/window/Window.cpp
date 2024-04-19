@@ -47,6 +47,7 @@ Window::~Window() {
 void Window::Init() {
     bool steamDeckGameMode = false;
     bool androidGameMode = false;
+    bool iosGameMode = false;
 
 #ifdef __linux__
     std::ifstream osReleaseFile("/etc/os-release");
@@ -68,8 +69,12 @@ void Window::Init() {
     androidGameMode = true;
 #endif
 
+#ifdef PLATFORM_IOS
+    iosGameMode = true;
+#endif
+
     mIsFullscreen = LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) ||
-                    steamDeckGameMode || androidGameMode;
+                    steamDeckGameMode || androidGameMode || iosGameMode;
     mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
     mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
 
@@ -237,17 +242,17 @@ void Window::InitWindowManager() {
             mWindowManagerApi = &gfx_dxgi_api;
             break;
 #endif
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             mRenderingApi = &gfx_opengl_api;
             mWindowManagerApi = &gfx_sdl;
             break;
+#endif
 #ifdef __APPLE__
         case WindowBackend::SDL_METAL:
             mRenderingApi = &gfx_metal_api;
             mWindowManagerApi = &gfx_sdl;
             break;
-#endif
 #endif
 #ifdef __WIIU__
         case WindowBackend::GX2:

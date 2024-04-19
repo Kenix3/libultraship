@@ -210,6 +210,7 @@ void Gui::ImGuiBackendInit() {
             ImGui_ImplGX2_Init();
             break;
 #else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -219,6 +220,7 @@ void Gui::ImGuiBackendInit() {
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif
             break;
+#endif
 #endif
 
 #ifdef __APPLE__
@@ -463,7 +465,7 @@ void Gui::ImGuiBackendNewFrame() {
             mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
             ImGui_ImplGX2_NewFrame();
             break;
-#else
+#elif defined(ENABLE_OPENGL)
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
@@ -720,9 +722,11 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             ImGui_ImplWiiU_DrawKeyboardOverlay();
             break;
 #else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
+#endif
 #endif
 #ifdef __APPLE__
         case WindowBackend::SDL_METAL:
