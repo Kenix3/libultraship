@@ -10,7 +10,7 @@
 #include <vector>
 #include <stack>
 
-#include "libultraship/libultra/gbi.h"
+//#include "libultraship/libultra/gbi.h"
 #include "libultraship/libultra/types.h"
 
 #include "resource/type/Texture.h"

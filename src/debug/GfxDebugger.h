@@ -4,7 +4,7 @@
 #include <vector>
 
 extern "C" {
-#include "libultraship/libultra/gbi.h"
+////#include "libultraship/libultra/gbi.h"
 }
 
 namespace LUS {

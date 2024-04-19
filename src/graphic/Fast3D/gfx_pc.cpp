@@ -19,7 +19,8 @@
 #define _LANGUAGE_C
 #endif
 #include "libultraship/libultra/types.h"
-#include "libultraship/libultra/gbi.h"
+//#include "libultraship/libultra/gbi.h"
+#include "lus_gbi.h"
 #include "libultraship/libultra/gs2dex.h"
 #include <string>
 
@@ -34,7 +35,7 @@
 #include "resource/GameVersions.h"
 #include "resource/ResourceManager.h"
 #include "utils/Utils.h"
-#include "libultraship/libultraship.h"
+#include "Context.h"
 #include "libultraship/bridge.h"
 #include "debug/GfxDebugger.h"
 
