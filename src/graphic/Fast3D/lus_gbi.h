@@ -966,7 +966,7 @@ typedef struct {
     unsigned short flag;
     short tc[2];         /* texture coord */
     unsigned char cn[4]; /* color & alpha */
-} Vtx_t;
+} F3DVtx_t;
 
 /*
  * Vertex (set up for use with normals)
@@ -977,19 +977,19 @@ typedef struct {
     short tc[2];      /* texture coord */
     signed char n[3]; /* normal */
     unsigned char a;  /* alpha  */
-} Vtx_tn;
+} F3DVtx_tn;
 
-typedef union {
-    Vtx_t v;  /* Use this one for colors  */
-    Vtx_tn n; /* Use this one for normals */
+typedef union F3DVtx {
+    F3DVtx_t v;  /* Use this one for colors  */
+    F3DVtx_tn n; /* Use this one for normals */
     long long int force_structure_alignment;
-} Vtx;
+} F3DVtx;
 
 /*
  * Sprite structure
  */
 
-typedef struct {
+typedef struct F3DuSprite_t {
     void* SourceImagePointer;
     void* TlutPointer;
     short Stride;
@@ -1004,14 +1004,14 @@ typedef struct {
     /* padding to bring structure size to 64 bit allignment */
     char dummy[4];
 
-} uSprite_t;
+} F3DuSprite_t;
 
 typedef union {
-    uSprite_t s;
+    F3DuSprite_t s;
 
     /* Need to make sure this is 64 bit aligned */
     long long int force_structure_allignment[3];
-} uSprite;
+} F3DuSprite;
 
 /*
  * Triangle face
@@ -1019,7 +1019,7 @@ typedef union {
 typedef struct {
     unsigned char flag;
     unsigned char v[3];
-} Tri;
+} F3DTri;
 
 /*
  * Viewport
@@ -1059,12 +1059,12 @@ typedef struct {
     short vscale[4]; /* scale, 2 bits fraction */
     short vtrans[4]; /* translate, 2 bits fraction */
     /* both the above arrays are padded to 64-bit boundary */
-} Vp_t;
+} F3DVp_t;
 
 typedef union {
-    Vp_t vp;
+    F3DVp_t vp;
     long long int force_structure_alignment;
-} Vp;
+} F3DVp;
 
 /*
  * MOVEMEM indices
@@ -1228,7 +1228,7 @@ typedef struct {
     char pad2;
     signed char dir[3]; /* direction of light (normalized) */
     char pad3;
-} Light_t;
+} F3DLight_t;
 
 typedef struct {
     unsigned char col[3];
@@ -1237,267 +1237,83 @@ typedef struct {
     unsigned char unk7;
     short pos[3];
     unsigned char unkE;
-} PointLight_t;
+} F3DPointLight_t;
 
 typedef struct {
     unsigned char col[3]; /* ambient light value (rgba) */
     char pad1;
     unsigned char colc[3]; /* copy of ambient light value (rgba) */
     char pad2;
-} Ambient_t;
+} F3DAmbient_t;
 
 typedef struct {
     int x1, y1, x2, y2; /* texture offsets for highlight 1/2 */
-} Hilite_t;
+} F3DHilite_t;
 
 typedef union {
-    Light_t l;
-    PointLight_t p;
+    F3DLight_t l;
+    F3DPointLight_t p;
     long long int force_structure_alignment[2];
-} Light;
+} F3DLight;
 
 typedef union {
-    Ambient_t l;
+    F3DAmbient_t l;
     long long int force_structure_alignment[1];
-} Ambient;
+} F3DAmbient;
 
 typedef struct {
-    Ambient a;
-    Light l[7];
-} Lightsn;
+    F3DAmbient a;
+    F3DLight l[7];
+} F3DLightsn;
 
 typedef struct {
-    Ambient a;
-    Light l[1];
-} Lights0;
+    F3DAmbient a;
+    F3DLight l[1];
+} F3DLights0;
 
 typedef struct {
-    Ambient a;
-    Light l[1];
-} Lights1;
+    F3DAmbient a;
+    F3DLight l[1];
+} F3DLights1;
 
 typedef struct {
-    Ambient a;
-    Light l[2];
-} Lights2;
+    F3DAmbient a;
+    F3DLight l[2];
+} F3DLights2;
 
 typedef struct {
-    Ambient a;
-    Light l[3];
-} Lights3;
+    F3DAmbient a;
+    F3DLight l[3];
+} F3DLights3;
 
 typedef struct {
-    Ambient a;
-    Light l[4];
-} Lights4;
+    F3DAmbient a;
+    F3DLight l[4];
+} F3DLights4;
 
 typedef struct {
-    Ambient a;
-    Light l[5];
-} Lights5;
+    F3DAmbient a;
+    F3DLight l[5];
+} F3DLights5;
 
 typedef struct {
-    Ambient a;
-    Light l[6];
-} Lights6;
+    F3DAmbient a;
+    F3DLight l[6];
+} F3DLights6;
 
 typedef struct {
-    Ambient a;
-    Light l[7];
-} Lights7;
+    F3DAmbient a;
+    F3DLight l[7];
+} F3DLights7;
 
 typedef struct {
-    Light l[2];
-} LookAt;
+    F3DLight l[2];
+} F3DLookAt;
 
 typedef union {
-    Hilite_t h;
+    F3DHilite_t h;
     long int force_structure_alignment[4];
-} Hilite;
-
-/*
- *  Graphics DMA Packet
- */
-typedef struct {
-    int cmd : 8;
-    unsigned int par : 8;
-    unsigned int len : 16;
-    unsigned int addr;
-} Gdma;
-
-/*
- * Graphics Immediate Mode Packet types
- */
-typedef struct {
-    int cmd : 8;
-    int pad : 24;
-    Tri tri;
-} Gtri;
-
-typedef struct {
-    int cmd : 8;
-    int pad1 : 24;
-    int pad2 : 24;
-    unsigned char param : 8;
-} Gpopmtx;
-
-/*
- * typedef struct {
- *      int     cmd:8;
- *      int     pad0:24;
- *      int     pad1:4;
- *      int     number:4;
- *      int     base:24;
- * } Gsegment;
- */
-typedef struct {
-    int cmd : 8;
-    int pad0 : 8;
-    int mw_index : 8;
-    int number : 8;
-    int pad1 : 8;
-    int base : 24;
-} Gsegment;
-
-typedef struct {
-    int cmd : 8;
-    int pad0 : 8;
-    int sft : 8;
-    int len : 8;
-    unsigned int data : 32;
-} GsetothermodeL;
-
-typedef struct {
-    int cmd : 8;
-    int pad0 : 8;
-    int sft : 8;
-    int len : 8;
-    unsigned int data : 32;
-} GsetothermodeH;
-
-typedef struct {
-    unsigned char cmd;
-    unsigned char lodscale;
-    unsigned char tile;
-    unsigned char on;
-    unsigned short s;
-    unsigned short t;
-} Gtexture;
-
-typedef struct {
-    int cmd : 8;
-    int pad : 24;
-    Tri line;
-} Gline3D;
-
-typedef struct {
-    int cmd : 8;
-    int pad1 : 24;
-    short int pad2;
-    short int scale;
-} Gperspnorm;
-
-/*
- * RDP Packet types
- */
-typedef struct {
-    int cmd : 8;
-    unsigned int fmt : 3;
-    unsigned int siz : 2;
-    unsigned int pad : 7;
-    unsigned int wd : 12; /* really only 10 bits, extra   */
-    unsigned int dram;    /* to account for 1024      */
-} Gsetimg;
-
-typedef struct {
-    int cmd : 8;
-    unsigned int muxs0 : 24;
-    unsigned int muxs1 : 32;
-} Gsetcombine;
-
-typedef struct {
-    int cmd : 8;
-    unsigned char pad;
-    unsigned char prim_min_level;
-    unsigned char prim_level;
-    unsigned long color;
-} Gsetcolor;
-
-typedef struct {
-    int cmd : 8;
-    int x0 : 10;
-    int x0frac : 2;
-    int y0 : 10;
-    int y0frac : 2;
-    unsigned int pad : 8;
-    int x1 : 10;
-    int x1frac : 2;
-    int y1 : 10;
-    int y1frac : 2;
-} Gfillrect;
-
-typedef struct {
-    int cmd : 8;
-    unsigned int fmt : 3;
-    unsigned int siz : 2;
-    unsigned int pad0 : 1;
-    unsigned int line : 9;
-    unsigned int tmem : 9;
-    unsigned int pad1 : 5;
-    unsigned int tile : 3;
-    unsigned int palette : 4;
-    unsigned int ct : 1;
-    unsigned int mt : 1;
-    unsigned int maskt : 4;
-    unsigned int shiftt : 4;
-    unsigned int cs : 1;
-    unsigned int ms : 1;
-    unsigned int masks : 4;
-    unsigned int shifts : 4;
-} Gsettile;
-
-typedef struct {
-    int cmd : 8;
-    unsigned int sl : 12;
-    unsigned int tl : 12;
-    int pad : 5;
-    unsigned int tile : 3;
-    unsigned int sh : 12;
-    unsigned int th : 12;
-} Gloadtile;
-
-typedef Gloadtile Gloadblock;
-
-typedef Gloadtile Gsettilesize;
-
-typedef Gloadtile Gloadtlut;
-
-typedef struct {
-    unsigned int cmd : 8;   /* command          */
-    unsigned int xl : 12;   /* X coordinate of upper left   */
-    unsigned int yl : 12;   /* Y coordinate of upper left   */
-    unsigned int pad1 : 5;  /* Padding          */
-    unsigned int tile : 3;  /* Tile descriptor index    */
-    unsigned int xh : 12;   /* X coordinate of lower right  */
-    unsigned int yh : 12;   /* Y coordinate of lower right  */
-    unsigned int s : 16;    /* S texture coord at top left  */
-    unsigned int t : 16;    /* T texture coord at top left  */
-    unsigned int dsdx : 16; /* Change in S per change in X  */
-    unsigned int dtdy : 16; /* Change in T per change in Y  */
-} Gtexrect;
-
-#define MakeTexRect(xh, yh, flip, tile, xl, yl, s, t, dsdx, dtdy) \
-    G_TEXRECT, xh, yh, 0, flip, 0, tile, xl, yl, s, t, dsdx, dtdy
-
-/*
- * Textured rectangles are 128 bits not 64 bits
- */
-typedef struct {
-    unsigned long w0;
-    unsigned long w1;
-    unsigned long w2;
-    unsigned long w3;
-} TexRect;
+} F3DHilite;
 
 /*
  * Generic Gfx Packet
@@ -1505,23 +1321,20 @@ typedef struct {
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
-
-    // unsigned long long w0;
-    // unsigned long long w1;
-} Gwords;
+} F3DGwords;
 
 #ifdef __cplusplus
-static_assert(sizeof(Gwords) == 2 * sizeof(void*), "Display list size is bad");
+static_assert(sizeof(F3DGwords) == 2 * sizeof(void*), "Display list size is bad");
 #endif
 
 /*
  * This union is the fundamental type of the display list.
  * It is, by law, exactly 64 bits in size.
  */
-typedef union {
-    Gwords words;
+typedef union F3DGfx{
+    F3DGwords words;
     long long int force_structure_alignment;
-} Gfx;
+} F3DGfx;
 
 
 #endif

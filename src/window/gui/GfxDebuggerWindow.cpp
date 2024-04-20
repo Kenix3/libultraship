@@ -128,11 +128,11 @@ static inline void* seg_addr(uintptr_t w1) {
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
 // static int s_dbgcnt = 0;
-void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& gfx_path) const {
+void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfx_path) const {
     auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
 
-    auto node_with_text = [dbg, this, &gfx_path](const Gfx* cmd, const std::string& text,
-                                                 const Gfx* sub = nullptr) mutable {
+    auto node_with_text = [dbg, this, &gfx_path](const F3DGfx* cmd, const std::string& text,
+                                                 const F3DGfx* sub = nullptr) mutable {
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
         gfx_path.push_back(cmd);
@@ -154,7 +154,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
         gfx_path.pop_back();
     };
 
-    auto simple_node = [dbg, node_with_text](const Gfx* cmd, uint32_t opcode) mutable {
+    auto simple_node = [dbg, node_with_text](const F3DGfx* cmd, uint32_t opcode) mutable {
         const char* opname = GetOpName(opcode);
         size_t size = 1;
         if (opcode == G_TEXRECT)
@@ -189,7 +189,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
 
     while (true) {
         uint32_t opcode = cmd->words.w0 >> 24;
-        const Gfx* cmd0 = cmd;
+        const F3DGfx* cmd0 = cmd;
         switch (opcode) {
 
             case G_NOOP: {
@@ -230,7 +230,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                     if (!dlName)
                         dlName = "UNKNOWN";
 
-                    Gfx* subGfx = (Gfx*)ResourceGetDataByCrc(hash);
+                    F3DGfx* subGfx = (F3DGfx*)ResourceGetDataByCrc(hash);
                     // node_with_text(cmd0, fmt::format("G_DL_OTR_HASH: {}", "UNKOWN"), subGfx);
                     node_with_text(cmd0, fmt::format("G_DL_OTR_HASH: {}", dlName), subGfx);
                     cmd++;
@@ -270,7 +270,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
             };
 
             case G_DL: {
-                Gfx* subGFX = (Gfx*)seg_addr(cmd->words.w1);
+                F3DGfx* subGFX = (F3DGfx*)seg_addr(cmd->words.w1);
                 if (C0(16, 1) == 0) {
                     node_with_text(cmd0, fmt::format("G_DL: 0x{:x} -> {}", cmd->words.w1, (void*)subGFX), subGFX);
                     cmd++;
@@ -347,7 +347,7 @@ static const char* getTexType(LUS::TextureType type) {
     }
 }
 
-static bool bpEquals(const std::vector<const Gfx*>& x, const std::vector<const Gfx*>& y) {
+static bool bpEquals(const std::vector<const F3DGfx*>& x, const std::vector<const F3DGfx*>& y) {
     if (x.size() != y.size())
         return false;
 
@@ -381,7 +381,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
     std::string TO_LOAD_TEX = "GfxDebuggerWindowTextureToLoad";
 
-    const Gfx* cmd = dlist;
+    const F3DGfx* cmd = dlist;
     auto gui = LUS::Context::GetInstance()->GetWindow()->GetGui();
 
     ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
@@ -478,7 +478,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
     ImGui::BeginChild("##Disassembler", ImVec2(0.0f, 0.0f), true);
     {
-        std::vector<const Gfx*> gfx_path;
+        std::vector<const F3DGfx*> gfx_path;
         DrawDisasNode(dlist, gfx_path);
     }
     ImGui::EndChild();

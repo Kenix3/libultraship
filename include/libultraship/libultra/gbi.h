@@ -1024,7 +1024,7 @@ typedef struct {
     unsigned char a;  /* alpha  */
 } Vtx_tn;
 
-typedef union {
+typedef union Vtx {
     Vtx_t v;  /* Use this one for colors  */
     Vtx_tn n; /* Use this one for normals */
     long long int force_structure_alignment;
@@ -1658,7 +1658,7 @@ static_assert(sizeof(Gwords) == 2 * sizeof(void*), "Display list size is bad");
  * This union is the fundamental type of the display list.
  * It is, by law, exactly 64 bits in size.
  */
-typedef union {
+typedef union Gfx {
     Gwords words;
 #if !defined(F3D_OLD) && IS_BIG_ENDIAN && !IS_64_BIT
     Gdma dma;

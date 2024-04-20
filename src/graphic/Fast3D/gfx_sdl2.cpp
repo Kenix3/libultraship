@@ -1,13 +1,5 @@
 #include <stdio.h>
 
-#ifndef __SWITCH__
-#include "libultraship/libultraship.h"
-#else
-// including libultraship.h on switch leads to conflicting typedefs for u64 and s64
-// so we need to just include classes.h instead here
-#include "libultraship/classes.h"
-#endif
-
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
 #ifdef __MINGW32__
@@ -15,6 +7,9 @@
 #else
 #define FOR_WINDOWS 0
 #endif
+
+#include "Context.h"
+#include "config/ConsoleVariable.h"
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
@@ -543,9 +538,9 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            CVarSetString("gDroppedFile", event.drop.file);
-            CVarSetInteger("gNewFileDropped", 1);
-            CVarSave();
+            LUS::Context::GetInstance()->GetConsoleVariables()->GetString("gDroppedFile", event.drop.file);
+            LUS::Context::GetInstance()->GetConsoleVariables()->GetInteger("gNewFileDropped", 1);
+            LUS::Context::GetInstance()->GetConsoleVariables()->Save();
             break;
         case SDL_QUIT:
             is_running = false;

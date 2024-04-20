@@ -1,8 +1,320 @@
 #include "resource/factory/DisplayListFactory.h"
 #include "resource/type/DisplayList.h"
 #include "spdlog/spdlog.h"
+#include "graphic/Fast3D/lus_gbi.h"
 
-#define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
+typedef int Mtx_t[4][4];
+typedef union {
+    Mtx_t m;
+    struct {
+        unsigned short intPart[4][4];
+        unsigned short fracPart[4][4];
+    };
+    long long int forc_structure_alignment;
+} Mtx;
+
+
+#define G_IM_FMT_RGBA 0
+#define G_IM_FMT_YUV 1
+#define G_IM_FMT_CI 2
+#define G_IM_FMT_IA 3
+#define G_IM_FMT_I 4
+
+#define G_IM_SIZ_4b 0
+#define G_IM_SIZ_8b 1
+#define G_IM_SIZ_16b 2
+#define G_IM_SIZ_32b 3
+#define G_IM_SIZ_DD 5
+
+#define G_IM_SIZ_4b_BYTES 0
+#define G_IM_SIZ_4b_TILE_BYTES G_IM_SIZ_4b_BYTES
+#define G_IM_SIZ_4b_LINE_BYTES G_IM_SIZ_4b_BYTES
+
+#define G_IM_SIZ_8b_BYTES 1
+#define G_IM_SIZ_8b_TILE_BYTES G_IM_SIZ_8b_BYTES
+#define G_IM_SIZ_8b_LINE_BYTES G_IM_SIZ_8b_BYTES
+
+#define G_IM_SIZ_16b_BYTES 2
+#define G_IM_SIZ_16b_TILE_BYTES G_IM_SIZ_16b_BYTES
+#define G_IM_SIZ_16b_LINE_BYTES G_IM_SIZ_16b_BYTES
+
+#define G_IM_SIZ_32b_BYTES 4
+#define G_IM_SIZ_32b_TILE_BYTES 2
+#define G_IM_SIZ_32b_LINE_BYTES 2
+
+#define G_IM_SIZ_4b_LOAD_BLOCK G_IM_SIZ_16b
+#define G_IM_SIZ_8b_LOAD_BLOCK G_IM_SIZ_16b
+#define G_IM_SIZ_16b_LOAD_BLOCK G_IM_SIZ_16b
+#define G_IM_SIZ_32b_LOAD_BLOCK G_IM_SIZ_32b
+
+#define G_IM_SIZ_4b_SHIFT 2
+#define G_IM_SIZ_8b_SHIFT 1
+#define G_IM_SIZ_16b_SHIFT 0
+#define G_IM_SIZ_32b_SHIFT 0
+
+#define G_IM_SIZ_4b_INCR 3
+#define G_IM_SIZ_8b_INCR 1
+#define G_IM_SIZ_16b_INCR 0
+#define G_IM_SIZ_32b_INCR 0
+
+#define FR_NEG_FRUSTRATIO_1 0x00000001
+#define FR_POS_FRUSTRATIO_1 0x0000ffff
+#define FR_NEG_FRUSTRATIO_2 0x00000002
+#define FR_POS_FRUSTRATIO_2 0x0000fffe
+#define FR_NEG_FRUSTRATIO_3 0x00000003
+#define FR_POS_FRUSTRATIO_3 0x0000fffd
+#define FR_NEG_FRUSTRATIO_4 0x00000004
+#define FR_POS_FRUSTRATIO_4 0x0000fffc
+#define FR_NEG_FRUSTRATIO_5 0x00000005
+#define FR_POS_FRUSTRATIO_5 0x0000fffb
+#define FR_NEG_FRUSTRATIO_6 0x00000006
+#define FR_POS_FRUSTRATIO_6 0x0000fffa
+
+#define G_TX_DXT_FRAC 11
+
+
+#define ARRAY_COUNT(arr) (int)(sizeof(arr) / sizeof(arr[0]))
+#define NUML(n) ((n) * 24)
+#define _SHIFTL(v, s, w) ((unsigned int)(((unsigned int)(v) & ((0x01 << (w)) - 1)) << (s)))
+#define _SHIFTR(v, s, w) ((unsigned int)(((unsigned int)(v) >> (s)) & ((0x01 << (w)) - 1)))
+#define G_TX_LDBLK_MAX_TXL 4095
+
+#define gsDPNoParam(cmd) { _SHIFTL(cmd, 24, 8), 0 }
+#define gsDPFullSync() gsDPNoParam(G_RDPFULLSYNC)
+#define gsDPTileSync() gsDPNoParam(G_RDPTILESYNC)
+#define gsDPPipeSync() gsDPNoParam(G_RDPPIPESYNC)
+#define gsDPLoadSync() gsDPNoParam(G_RDPLOADSYNC)
+
+#define TXL2WORDS(txls, b_txl) MAX(1, ((txls) * (b_txl) / 8))
+#define TXL2WORDS_4b(txls) MAX(1, ((txls) / 16))
+
+#define CALC_DXT(width, b_txl) (((1 << G_TX_DXT_FRAC) + TXL2WORDS(width, b_txl) - 1) / TXL2WORDS(width, b_txl))
+#define CALC_DXT_4b(width) (((1 << G_TX_DXT_FRAC) + TXL2WORDS_4b(width) - 1) / TXL2WORDS_4b(width))
+
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#define gsSPTexture(s, t, level, tile, on)                                                                          \
+    {                                                                                                               \
+        (_SHIFTL(G_TEXTURE, 24, 8) | _SHIFTL(BOWTIE_VAL, 16, 8) | _SHIFTL((level), 11, 3) | _SHIFTL((tile), 8, 3) | \
+         _SHIFTL((on), 1, 7)),                                                                                      \
+            (_SHIFTL((s), 16, 16) | _SHIFTL((t), 0, 16))                                                            \
+    }
+#define gsDPSetPrimColor(m, l, r, g, b, a)                                                \
+    {                                                                                     \
+        (_SHIFTL(G_SETPRIMCOLOR, 24, 8) | _SHIFTL(m, 8, 8) | _SHIFTL(l, 0, 8)),           \
+            (_SHIFTL(r, 24, 8) | _SHIFTL(g, 16, 8) | _SHIFTL(b, 8, 8) | _SHIFTL(a, 0, 8)) \
+    }
+
+#define gsDma1p(c, s, l, p) \
+    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s) }
+
+#define gsDma2p(c, adrs, len, idx, ofs)                                                                          \
+    {                                                                                                            \
+        (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)), \
+            (uintptr_t)(adrs)                                                                                    \
+    }
+
+#define gsMoveWd(index, offset, data) gsDma1p(G_MOVEWORD, data, offset, index)
+
+#define gsDPSetColor(c, d)  { _SHIFTL(c, 24, 8), (unsigned int)(d) }
+
+#define DPRGBColor(pkt, cmd, r, g, b, a) \
+    gDPSetColor(pkt, cmd, (_SHIFTL(r, 24, 8) | _SHIFTL(g, 16, 8) | _SHIFTL(b, 8, 8) | _SHIFTL(a, 0, 8)))
+#define sDPRGBColor(cmd, r, g, b, a) \
+    gsDPSetColor(cmd, (_SHIFTL(r, 24, 8) | _SHIFTL(g, 16, 8) | _SHIFTL(b, 8, 8) | _SHIFTL(a, 0, 8)))
+#define gDPSetGrayscaleColor(pkt, r, g, b, lerp) DPRGBColor(pkt, G_SETINTENSITY, r, g, b, lerp)
+#define gsDPSetGrayscaleColor(r, g, b, a) sDPRGBColor(G_SETINTENSITY, r, g, b, a)
+#define gDPSetEnvColor(pkt, r, g, b, a) DPRGBColor(pkt, G_SETENVCOLOR, r, g, b, a)
+#define gsDPSetEnvColor(r, g, b, a) sDPRGBColor(G_SETENVCOLOR, r, g, b, a)
+#define gDPSetBlendColor(pkt, r, g, b, a) DPRGBColor(pkt, G_SETBLENDCOLOR, r, g, b, a)
+#define gsDPSetBlendColor(r, g, b, a) sDPRGBColor(G_SETBLENDCOLOR, r, g, b, a)
+#define gDPSetFogColor(pkt, r, g, b, a) DPRGBColor(pkt, G_SETFOGCOLOR, r, g, b, a)
+#define gsDPSetFogColor(r, g, b, a) sDPRGBColor(G_SETFOGCOLOR, r, g, b, a)
+#define gDPSetFillColor(pkt, d) gDPSetColor(pkt, G_SETFILLCOLOR, (d))
+#define gsDPSetFillColor(d) gsDPSetColor(G_SETFILLCOLOR, (d))
+#define gDPSetPrimDepth(pkt, z, dz) gDPSetColor(pkt, G_SETPRIMDEPTH, _SHIFTL(z, 16, 16) | _SHIFTL(dz, 0, 16))
+#define gsDPSetPrimDepth(z, dz) gsDPSetColor(G_SETPRIMDEPTH, _SHIFTL(z, 16, 16) | _SHIFTL(dz, 0, 16))
+#define gsSPGrayscale(state) { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
+
+#define gDPSetBlendMask(pkt, mask) gDPNoOp(pkt)
+#define gsDPSetBlendMask(mask) gsDPNoOp()
+
+#define gSPSetOtherMode(pkt, cmd, sft, len, data)                                                          \
+    _DW({                                                                                                  \
+        F3DGfx* _g = (F3DGfx*)(pkt);                                                                             \
+        _g->words.w0 = (_SHIFTL(cmd, 24, 8) | _SHIFTL(32 - (sft) - (len), 8, 8) | _SHIFTL((len)-1, 0, 8)); \
+        _g->words.w1 = (unsigned int)(data);                                                               \
+    })
+
+#define gsSPSetOtherMode(cmd, sft, len, data) \
+    { _SHIFTL(cmd, 24, 8) | _SHIFTL(32 - (sft) - (len), 8, 8) | _SHIFTL((len)-1, 0, 8), (unsigned int)(data) }
+
+#define gDPSetAlphaCompare(pkt, type) gSPSetOtherMode(pkt, G_SETOTHERMODE_L, G_MDSFT_ALPHACOMPARE, 2, type)
+#define gsDPSetAlphaCompare(type) gsSPSetOtherMode(G_SETOTHERMODE_L, G_MDSFT_ALPHACOMPARE, 2, type)
+
+#define gDPSetDepthSource(pkt, src) gSPSetOtherMode(pkt, G_SETOTHERMODE_L, G_MDSFT_ZSRCSEL, 1, src)
+#define gsDPSetDepthSource(src) gsSPSetOtherMode(G_SETOTHERMODE_L, G_MDSFT_ZSRCSEL, 1, src)
+
+#define gDPSetRenderMode(pkt, c0, c1) gSPSetOtherMode(pkt, G_SETOTHERMODE_L, G_MDSFT_RENDERMODE, 29, (c0) | (c1))
+#define gsDPSetRenderMode(c0, c1) gsSPSetOtherMode(G_SETOTHERMODE_L, G_MDSFT_RENDERMODE, 29, (c0) | (c1))
+#define gsDPSetAlphaDither(mode) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 2, mode)
+#define gsDPSetColorDither(mode) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_RGBDITHER, 2, mode)
+#define gsDPSetCombineKey(type) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_COMBKEY, 1, type)
+#define gsDPSetTextureFilter(type) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_TEXTFILT, 2, type)
+#define gsDPSetTextureDetail(type) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_TEXTDETAIL, 2, type)
+#define gsDPSetTextureLOD(type) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_TEXTLOD, 1, type)
+#define gsDPSetTexturePersp(type) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_TEXTPERSP, 1, type)
+#define gsSPPerspNormalize(s) gsMoveWd(G_MW_PERSPNORM, 0, (s))
+#define gsDPSetCycleType(type) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_CYCLETYPE, 2, type)
+#define gsDPPipelineMode(mode) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_PIPELINE, 1, mode)
+
+#define gsSPFogPosition(min, max) \
+    gsMoveWd(G_MW_FOG, G_MWO_FOG, \
+             (_SHIFTL((128000 / ((max) - (min))), 16, 16) | _SHIFTL(((500 - (min)) * 256 / ((max) - (min))), 0, 16)))
+
+#define gsSPFogFactor(fm, fo) gsMoveWd(G_MW_FOG, G_MWO_FOG, (_SHIFTL(fm, 16, 16) | _SHIFTL(fo, 0, 16)))
+#define gsSPNumLights(n) gsMoveWd(G_MW_NUMLIGHT, G_MWO_NUMLIGHT, NUML(n))
+#define gsSPSegment(segment, base) gsMoveWd(G_MW_SEGMENT, (segment) * 4, base)
+
+#define gsSPMatrix(m, p) gsDma2p(G_MTX, (m), sizeof(Mtx), (p) ^ G_MTX_PUSH, 0)
+
+#define gsDPLoadTileGeneric(c, tile, uls, ult, lrs, lrt)                      \
+    {                                                                         \
+        _SHIFTL(c, 24, 8) | _SHIFTL(uls, 12, 12) | _SHIFTL(ult, 0, 12),       \
+            _SHIFTL(tile, 24, 3) | _SHIFTL(lrs, 12, 12) | _SHIFTL(lrt, 0, 12) \
+    }
+
+#define gsDPSetTileSize(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_SETTILESIZE, t, uls, ult, lrs, lrt)
+#define gsDPLoadTile(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_LOADTILE, t, uls, ult, lrs, lrt)
+
+#define gsDPSetTextureLUT(type) gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_TEXTLUT, 2, type)
+
+#define gsDPLoadTLUTCmd(tile, count) \
+    { _SHIFTL(G_LOADTLUT, 24, 8), _SHIFTL((tile), 24, 3) | _SHIFTL((count), 14, 10) }
+
+#define GCCc0w0(saRGB0, mRGB0, saA0, mA0) \
+    (_SHIFTL((saRGB0), 20, 4) | _SHIFTL((mRGB0), 15, 5) | _SHIFTL((saA0), 12, 3) | _SHIFTL((mA0), 9, 3))
+
+#define GCCc1w0(saRGB1, mRGB1) (_SHIFTL((saRGB1), 5, 4) | _SHIFTL((mRGB1), 0, 5))
+
+#define GCCc0w1(sbRGB0, aRGB0, sbA0, aA0) \
+    (_SHIFTL((sbRGB0), 28, 4) | _SHIFTL((aRGB0), 15, 3) | _SHIFTL((sbA0), 12, 3) | _SHIFTL((aA0), 9, 3))
+
+#define GCCc1w1(sbRGB1, saA1, mA1, aRGB1, sbA1, aA1)                                                      \
+    (_SHIFTL((sbRGB1), 24, 4) | _SHIFTL((saA1), 21, 3) | _SHIFTL((mA1), 18, 3) | _SHIFTL((aRGB1), 6, 3) | \
+     _SHIFTL((sbA1), 3, 3) | _SHIFTL((aA1), 0, 3))
+
+#define gsDPSetCombineLERP_NoMacros(a0, b0, c0, d0, Aa0, Ab0, Ac0, Ad0, a1, b1, c1, d1, Aa1, Ab1, Ac1, Ad1) \
+    {                                                                                                       \
+        _SHIFTL(G_SETCOMBINE, 24, 8) | _SHIFTL(GCCc0w0(a0, c0, Aa0, Ac0) | GCCc1w0(a1, c1), 0, 24),         \
+            (unsigned int)(GCCc0w1(b0, d0, Ab0, Ad0) | GCCc1w1(b1, Aa1, Ac1, d1, Ab1, Ad1))                 \
+    }
+
+#define gsDPLoadBlock(tile, uls, ult, lrs, dxt)                                                            \
+    {                                                                                                      \
+        (_SHIFTL(G_LOADBLOCK, 24, 8) | _SHIFTL(uls, 12, 12) | _SHIFTL(ult, 0, 12)),                        \
+            (_SHIFTL(tile, 24, 3) | _SHIFTL((MIN(lrs, G_TX_LDBLK_MAX_TXL)), 12, 12) | _SHIFTL(dxt, 0, 12)) \
+    }
+
+#define __gsSP1Triangle_w1(v0, v1, v2) (_SHIFTL((v0)*2, 16, 8) | _SHIFTL((v1)*2, 8, 8) | _SHIFTL((v2)*2, 0, 8))
+#define __gsSP1Triangle_w1f(v0, v1, v2, flag)         \
+    (((flag) == 0)   ? __gsSP1Triangle_w1(v0, v1, v2) \
+     : ((flag) == 1) ? __gsSP1Triangle_w1(v1, v2, v0) \
+                     : __gsSP1Triangle_w1(v2, v0, v1))
+
+#define gsSP1TriangleOTR(v0, v1, v2, flag) \
+    { _SHIFTL(G_TRI1_OTR, 24, 8) | __gsSP1Triangle_w1f(v0, v1, v2, flag), 0 }
+
+#define gsSP2Triangles(v00, v01, v02, flag0, v10, v11, v12, flag1) \
+    { (_SHIFTL(G_TRI2, 24, 8) | __gsSP1Triangle_w1f(v00, v01, v02, flag0)), __gsSP1Triangle_w1f(v10, v11, v12, flag1) }
+
+#define gsSetImage(cmd, fmt, siz, width, i) \
+    { _SHIFTL(cmd, 24, 8) | _SHIFTL(fmt, 21, 3) | _SHIFTL(siz, 19, 2) | _SHIFTL((width)-1, 0, 12), (uintptr_t)(i) }
+
+#define gsDPSetTextureImage(f, s, w, i) gsSetImage(G_SETTIMG, f, s, w, i)
+
+#define gsDPLoadTileGeneric(c, tile, uls, ult, lrs, lrt)                      \
+    {                                                                         \
+        _SHIFTL(c, 24, 8) | _SHIFTL(uls, 12, 12) | _SHIFTL(ult, 0, 12),       \
+            _SHIFTL(tile, 24, 3) | _SHIFTL(lrs, 12, 12) | _SHIFTL(lrt, 0, 12) \
+    }
+#define gsDPSetTileSize(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_SETTILESIZE, t, uls, ult, lrs, lrt)
+
+#define gsDPSetTile(fmt, siz, line, tmem, tile, palette, cmt, maskt, shiftt, cms, masks, shifts)            \
+    {                                                                                                       \
+        (_SHIFTL(G_SETTILE, 24, 8) | _SHIFTL(fmt, 21, 3) | _SHIFTL(siz, 19, 2) | _SHIFTL(line, 9, 9) |      \
+         _SHIFTL(tmem, 0, 9)),                                                                              \
+            (_SHIFTL(tile, 24, 3) | _SHIFTL(palette, 20, 4) | _SHIFTL(cmt, 18, 2) | _SHIFTL(maskt, 14, 4) | \
+             _SHIFTL(shiftt, 10, 4) | _SHIFTL(cms, 8, 2) | _SHIFTL(masks, 4, 4) | _SHIFTL(shifts, 0, 4))    \
+    }
+
+#define gsDPLoadTextureBlock(timg, fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt)              \
+                                                                                                                      \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                                                              \
+        gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts),           \
+        gsDPLoadSync(),                                                                                               \
+        gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                    \
+                      CALC_DXT(width, siz##_BYTES)),                                                                  \
+        gsDPPipeSync(),                                                                                               \
+        gsDPSetTile(fmt, siz, ((((width) * siz##_LINE_BYTES) + 7) >> 3), 0, G_TX_RENDERTILE, pal, cmt, maskt, shiftt, \
+                    cms, masks, shifts),                                                                              \
+        gsDPSetTileSize(G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC,                                   \
+                        ((height)-1) << G_TEXTURE_IMAGE_FRAC)
+
+#define gsSPEndDisplayList() \
+    { _SHIFTL(G_ENDDL, 24, 8), 0 }
+
+#define gsSPCullDisplayList(vstart, vend) \
+    { _SHIFTL(G_CULLDL, 24, 8) | _SHIFTL((vstart) * 2, 0, 16), _SHIFTL((vend) * 2, 0, 16) }
+
+
+#define gsSPClipRatio(r)                                                                              \
+    gsMoveWd(G_MW_CLIP, G_MWO_CLIP_RNX, FR_NEG_##r), gsMoveWd(G_MW_CLIP, G_MWO_CLIP_RNY, FR_NEG_##r), \
+        gsMoveWd(G_MW_CLIP, G_MWO_CLIP_RPX, FR_POS_##r), gsMoveWd(G_MW_CLIP, G_MWO_CLIP_RPY, FR_POS_##r)
+
+#define gsSPPushCD(pkt, dl) gDma1p(pkt, G_PUSHCD, dl, 0, G_DL_PUSH)
+#define __gSPDisplayList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_PUSH)
+#define gsSPDisplayList(dl) gsDma1p(G_DL, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_PUSH)
+#define gsSPDisplayListIndex(dl) gsDma1p(G_DL_INDEX, dl, 0, G_DL_PUSH)
+
+#define gSPBranchList(pkt, dl) gDma1p(pkt, G_DL, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchList(dl) gsDma1p(G_DL, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListOTRHash(dl) gsDma1p(G_DL_OTR_HASH, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListOTRFilePath(dl) gsDma1p(G_DL_OTR_FILEPATH, dl, 0, G_DL_NOPUSH)
+#define gsSPBranchListIndex(dl) gsDma1p(G_DL_INDEX, dl, 0, G_DL_NOPUSH)
+
+#define gsSPGeometryMode(c, s) \
+    { (_SHIFTL(G_GEOMETRYMODE, 24, 8) | _SHIFTL(~(unsigned int)(c), 0, 24)), (unsigned int)(s) }
+
+#define gsSPClearGeometryMode(word) gsSPGeometryMode((word), 0)
+#define gsSPLoadGeometryMode(word) gsSPGeometryMode(-1, (word))
+#define gsSPSetGeometryMode(word) gsSPGeometryMode(0, (word))
+
+#define G_MWO_aLIGHT_2 0x18
+#define G_MWO_bLIGHT_2 0x1c
+#define G_MWO_aLIGHT_3 0x30
+#define G_MWO_bLIGHT_3 0x34
+#define G_MWO_aLIGHT_4 0x48
+#define G_MWO_bLIGHT_4 0x4c
+#define G_MWO_aLIGHT_5 0x60
+#define G_MWO_bLIGHT_5 0x64
+#define G_MWO_aLIGHT_6 0x78
+#define G_MWO_bLIGHT_6 0x7c
+#define G_MWO_aLIGHT_7 0x90
+#define G_MWO_bLIGHT_7 0x94
+#define G_MWO_aLIGHT_8 0xa8
+
+#define gsSPLightColor(n, col) gsMoveWd(G_MW_LIGHTCOL, G_MWO_a##n, col), gsMoveWd(G_MW_LIGHTCOL, G_MWO_b##n, col)
+
+
 
 namespace LUS {
 std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", G_RM_ZB_OPA_SURF },
@@ -39,16 +351,16 @@ std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", 
                                                           { "G_RM_ZB_XLU_DECAL2", G_RM_ZB_XLU_DECAL2 },
                                                           { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 } };
 
-static Gfx GsSpVertexOtR2P1(char* filePathPtr) {
-    Gfx g;
+static F3DGfx GsSpVertexOtR2P1(char* filePathPtr) {
+    F3DGfx g;
     g.words.w0 = G_VTX_OTR_FILEPATH << 24;
     g.words.w1 = (uintptr_t)filePathPtr;
 
     return g;
 }
 
-static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
-    Gfx g;
+static F3DGfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
+    F3DGfx g;
     g.words.w0 = (uintptr_t)vtxCnt;
     g.words.w1 = (uintptr_t)((vtxBufOffset << 16) | vtxDataOffset);
 
@@ -141,7 +453,7 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
     }
 
     while (true) {
-        Gfx command;
+        F3DGfx command;
         command.words.w0 = reader->ReadUInt32();
         command.words.w1 = reader->ReadUInt32();
 
@@ -178,7 +490,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
     while (child != nullptr) {
         std::string childName = child->Name();
 
-        Gfx g = gsDPPipeSync();
+        F3DGfx g = gsDPPipeSync();
 
         if (childName == "PipeSync") {
             g = gsDPPipeSync();
@@ -865,24 +1177,24 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
 
-            Gfx g2[7];
+            F3DGfx g2[7];
 
             if (siz == 0) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_4b, width, height, 0, cms, cmt, maskS, maskT,
+                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_4b, width, height, 0, cms, cmt, maskS, maskT,
                                                    shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(Gfx));
+                memcpy(g2, g3, 7 * sizeof(F3DGfx));
             } else if (siz == 1) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
+                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
                                                    shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(Gfx));
+                memcpy(g2, g3, 7 * sizeof(F3DGfx));
             } else if (siz == 2) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
+                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
                                                    shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(Gfx));
+                memcpy(g2, g3, 7 * sizeof(F3DGfx));
             } else if (siz == 3) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
+                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
                                                    shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(Gfx));
+                memcpy(g2, g3, 7 * sizeof(F3DGfx));
             }
 
             g = { gsDPSetTextureImage(fmt, siz, width + 1, 0) };
@@ -907,32 +1219,32 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
             g = gsSPCullDisplayList(start, end);
         } else if (childName == "ClipRatio") {
             uint32_t ratio = child->IntAttribute("Start");
-            Gfx g2[4];
+            F3DGfx g2[4];
 
             switch (ratio) {
                 case 1: {
-                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_1) };
-                    memcpy(g2, g3, sizeof(Gfx) * 4);
+                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_1) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
                 } break;
                 case 2: {
-                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_2) };
-                    memcpy(g2, g3, sizeof(Gfx) * 4);
+                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_2) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
                 } break;
                 case 3: {
-                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_3) };
-                    memcpy(g2, g3, sizeof(Gfx) * 4);
+                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_3) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
                 } break;
                 case 4: {
-                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_4) };
-                    memcpy(g2, g3, sizeof(Gfx) * 4);
+                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_4) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
                 } break;
                 case 5: {
-                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_5) };
-                    memcpy(g2, g3, sizeof(Gfx) * 4);
+                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_5) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
                 } break;
                 case 6: {
-                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_6) };
-                    memcpy(g2, g3, sizeof(Gfx) * 4);
+                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_6) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
                 } break;
             }
 
@@ -1018,40 +1330,40 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
             int n = child->IntAttribute("N");
             uint32_t col = child->IntAttribute("Col");
 
-            Gfx g2[2];
+            F3DGfx g2[2];
 
             switch (n) {
                 case 1: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_1, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_1, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
                 case 2: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_2, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_2, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
                 case 3: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_3, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_3, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
                 case 4: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_4, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_4, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
                 case 5: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_5, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_5, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
                 case 6: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_6, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_6, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
                 case 7: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_7, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_7, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
                 case 8: {
-                    Gfx g3[2] = { gsSPLightColor(LIGHT_8, col) };
-                    memcpy(g2, g3, sizeof(Gfx) * 2);
+                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_8, col) };
+                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
                 } break;
             }
 

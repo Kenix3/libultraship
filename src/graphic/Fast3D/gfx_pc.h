@@ -11,6 +11,7 @@
 #include <stack>
 
 //#include "libultraship/libultra/gbi.h"
+#include "graphic/Fast3D/lus_gbi.h"
 #include "libultraship/libultra/types.h"
 
 #include "resource/type/Texture.h"
@@ -67,16 +68,17 @@ struct TextureCacheValue {
 struct TextureCacheMapIter {
     TextureCacheMap::iterator it;
 };
+union Gfx;
 
 struct GfxExecStack {
     // This is a dlist stack used to handle dlist calls.
-    std::stack<Gfx*> cmd_stack = {};
+    std::stack<F3DGfx*> cmd_stack = {};
     // This is also a dlist stack but a std::vector is used to make it possible
     // to iterate on the elements.
     // The purpose of this is to identify an instruction at a poin in time
-    // which would not be possible with just a Gfx* because a dlist can be called multiple times
+    // which would not be possible with just a F3DGfx* because a dlist can be called multiple times
     // what we do instead is store the call path that leads to the instruction (including branches)
-    std::vector<const Gfx*> gfx_path = {};
+    std::vector<const F3DGfx*> gfx_path = {};
     struct CodeDisp {
         const char* file;
         int line;
@@ -84,15 +86,15 @@ struct GfxExecStack {
     // stack for OpenDisp/CloseDisps
     std::vector<CodeDisp> disp_stack{};
 
-    void start(Gfx* dlist);
+    void start(F3DGfx* dlist);
     void stop();
-    Gfx*& currCmd();
+    F3DGfx*& currCmd();
     void openDisp(const char* file, int line);
     void closeDisp();
     const std::vector<CodeDisp>& getDisp() const;
-    void branch(Gfx* caller);
-    void call(Gfx* caller, Gfx* callee);
-    Gfx* ret();
+    void branch(F3DGfx* caller);
+    void call(F3DGfx* caller, F3DGfx* callee);
+    F3DGfx* ret();
 };
 
 struct RGBA {
@@ -125,8 +127,8 @@ struct RSP {
     float MP_matrix[4][4];
     float P_matrix[4][4];
 
-    Light_t lookat[2];
-    Light current_lights[MAX_LIGHTS + 1];
+    F3DLight_t lookat[2];
+    F3DLight current_lights[MAX_LIGHTS + 1];
     float current_lights_coeffs[MAX_LIGHTS][3];
     float current_lookat_coeffs[2][3]; // lookat_x, lookat_y
     uint8_t current_num_lights;        // includes ambient light
@@ -216,6 +218,8 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 void gfx_destroy(void);
 struct GfxRenderingAPI* gfx_get_current_rendering_api(void);
 void gfx_start_frame(void);
+
+// Since this function is "exposted" to the games, it needs to take a normal Gfx
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
 void gfx_end_frame(void);
 void gfx_set_target_fps(int);

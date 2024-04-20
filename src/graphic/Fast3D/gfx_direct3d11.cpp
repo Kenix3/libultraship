@@ -15,8 +15,6 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-#include "libultraship/libultraship.h"
-
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
@@ -29,6 +27,8 @@
 
 #include "gfx_screen_config.h"
 #include "window/gui/Gui.h"
+#include "Context.h"
+#include "config/ConsoleVariable.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
@@ -712,7 +712,7 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2;
-        switch (CVarGetInteger("gZFightingMode", 0)) {
+        switch (LUS::Context::GetInstance()->GetConsoleVariables()->GetInteger("gZFightingMode", 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)d3d.render_target_height / n64modeFactor;
                 break;

@@ -1,19 +1,20 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "libultraship/libultra/gbi.h"
 #include <vector>
 
+union F3DVtx;
+
 namespace LUS {
-class Vertex : public Resource<Vtx> {
+class Vertex : public Resource<F3DVtx> {
   public:
     using Resource::Resource;
 
     Vertex();
 
-    Vtx* GetPointer() override;
+    F3DVtx* GetPointer() override;
     size_t GetPointerSize() override;
 
-    std::vector<Vtx> VertexList;
+    std::vector<F3DVtx> VertexList;
 };
 } // namespace LUS

@@ -9,15 +9,15 @@ void GfxDebugger::ResumeGame() {
     mDlist = nullptr;
 }
 
-const Gfx* GfxDebugger::GetDisplayList() const {
+const F3DGfx* GfxDebugger::GetDisplayList() const {
     return mDlist;
 }
 
-const std::vector<const Gfx*>& GfxDebugger::GetBreakPoint() const {
+const std::vector<const F3DGfx*>& GfxDebugger::GetBreakPoint() const {
     return mBreakPoint;
 }
 
-void GfxDebugger::SetBreakPoint(const std::vector<const Gfx*>& bp) {
+void GfxDebugger::SetBreakPoint(const std::vector<const F3DGfx*>& bp) {
     mBreakPoint = bp;
 }
 
@@ -31,14 +31,14 @@ bool GfxDebugger::IsDebuggingRequested() const {
     return mIsDebuggingRequested;
 }
 
-void GfxDebugger::DebugDisplayList(Gfx* cmds) {
+void GfxDebugger::DebugDisplayList(F3DGfx* cmds) {
     mDlist = cmds;
     mIsDebuggingRequested = false;
     mIsDebugging = true;
     mBreakPoint = { cmds };
 }
 
-bool GfxDebugger::HasBreakPoint(const std::vector<const Gfx*>& path) const {
+bool GfxDebugger::HasBreakPoint(const std::vector<const F3DGfx*>& path) const {
     if (path.size() != mBreakPoint.size())
         return false;
 
