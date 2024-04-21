@@ -443,7 +443,8 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
                     "float(frameUniforms.frameCount))), texel.w);");
     } else if (cc_features.opt_noise) {
         append_line(buf, &len,
-                    "    texel.rgb = colorDither(random(float3(floor(in.position.xy * frameUniforms.noiseScale), float(frameUniforms.frameCount))), "
+                    "    texel.rgb = colorDither(random(float3(floor(in.position.xy * frameUniforms.noiseScale), "
+                    "float(frameUniforms.frameCount))), "
                     "    texel.rgb);");
     }
 
