@@ -7,5 +7,6 @@ namespace LUS {
 class GuiMenuBar : public GuiElement {
   public:
     using GuiElement::GuiElement;
+    float MenuBarHeight;
 };
 } // namespace LUS

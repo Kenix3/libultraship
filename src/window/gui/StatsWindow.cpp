@@ -5,6 +5,8 @@
 #include "ImGui/imgui.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "spdlog/spdlog.h"
+#include "Gui.h"
+#include <Context.h>
 
 namespace LUS {
 StatsWindow::~StatsWindow() {
@@ -19,14 +21,18 @@ void StatsWindow::DrawElement() {
     const float deltatime = ImGui::GetIO().DeltaTime;
 
     static int location = 0;
+
     ImGuiIO& io = ImGui::GetIO();
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
                                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     if (location >= 0) {
-        const float PAD = 10.0f;
-        const float MENU_BAR_HEIGHT = 25.0f;
+        const std::shared_ptr<Gui> gui = LUS::Context::GetInstance()->GetWindow()->GetGui();
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+        const float PAD = 10.0f;
+        const float MENU_BAR_HEIGHT = gui->GetMenuBar()->MenuBarHeight;
+
         ImVec2 work_pos = viewport->WorkPos;
         work_pos.y += MENU_BAR_HEIGHT;
         ImVec2 work_size = viewport->WorkSize;
@@ -44,6 +50,9 @@ void StatsWindow::DrawElement() {
         ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
         window_flags |= ImGuiWindowFlags_NoMove;
     }
+
+    const ImVec2 window_size = ImVec2{ 275, 80 };
+    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
 
     ImGui::SetNextWindowBgAlpha(0.7f); // Transparent background
 

@@ -395,6 +395,12 @@ void Gui::DrawMenu() {
 
     if (GetMenuBar()) {
         GetMenuBar()->Draw();
+
+        if (GetMenuBar()->IsVisible()) {
+            GetMenuBar()->MenuBarHeight = ImGui::GetFrameHeight();
+        } else {
+            GetMenuBar()->MenuBarHeight = 0.0f;
+        }
     }
 
     ImGui::End();
