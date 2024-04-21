@@ -16,7 +16,6 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultraship/libultra/gbi.h"
 #include <public/bridge/consolevariablebridge.h>
 
 #include "gfx_cc.h"

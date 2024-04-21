@@ -20,8 +20,7 @@
 #endif
 #include "debug/GfxDebugger.h"
 #include "libultraship/libultra/types.h"
-
-#include "libultraship/libultra/gs2dex.h"
+//#include "libultraship/libultra/gs2dex.h"
 #include <string>
 
 #include "gfx_pc.h"
@@ -2443,7 +2442,7 @@ static void gfx_dp_set_other_mode(uint32_t h, uint32_t l) {
     g_rdp.other_mode_l = l;
 }
 
-static void gfx_s2dex_bg_copy(uObjBg* bg) {
+static void gfx_s2dex_bg_copy(F3DuObjBg* bg) {
     /*
     bg->b.imageX = 0;
     bg->b.imageW = width * 4;
@@ -2497,7 +2496,7 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
                              false);
 }
 
-static void gfx_s2dex_bg_1cyc(uObjBg* bg) {
+static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
     uintptr_t data = (uintptr_t)bg->b.imagePtr;
 
     uint32_t texFlags = 0;
@@ -2540,7 +2539,7 @@ static void gfx_s2dex_bg_1cyc(uObjBg* bg) {
                              bg->b.imageY << 3, dsdxRect, 1 << 10, false);
 }
 
-static void gfx_s2dex_rect_copy(uObjSprite* spr) {
+static void gfx_s2dex_rect_copy(F3DuObjSprite* spr) {
     s16 dsdx = 4 << 10;
     s16 uls = spr->s.objX << 3;
     // Flip flag only flips horizontally
@@ -2665,7 +2664,7 @@ bool gfx_cull_dl_handler_f3dex2(F3DGfx** cmd) {
     return false;
 }
 
-bool gfx_marker_handler_f3dex2(F3DGfx** cmd0) {
+bool gfx_marker_handler_otr(F3DGfx** cmd0) {
     (*cmd0)++;
     F3DGfx* cmd = (*cmd0);
     const uint64_t hash = ((uint64_t)(cmd)->words.w0 << 32) + (cmd)->words.w1;
@@ -2936,7 +2935,7 @@ bool gfx_modify_vtx_handler_f3dex2(F3DGfx** cmd0) {
     return false;
 }
 
-// F3D, F3DEX, and F3DEX2 do the same thing
+// F3D, F3DEX, and F3DEX2 do the same thing but F3DEX2 has its own opcode number
 bool gfx_dl_handler_common(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     F3DGfx* subGFX = (F3DGfx*)seg_addr(cmd->words.w1);
@@ -2997,7 +2996,7 @@ bool gfx_dl_index_handler(F3DGfx** cmd0) {
 }
 
 // TODO handle special OTR opcodes later...
-bool gfx_pushcd_handler_f3dex2(F3DGfx** cmd0) {
+bool gfx_pushcd_handler_custom(F3DGfx** cmd0) {
     gfx_push_current_dir((char*)(*cmd0)->words.w1);
     return false;
 }
@@ -3024,7 +3023,7 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
     return false;
 }
 
-// F3D, F3DEX, and F3DEX2 do the same thing
+// F3D, F3DEX, and F3DEX2 do the same thing but F3DEX2 has its own opcode number
 bool gfx_end_dl_handler_common(F3DGfx** cmd0) {
     markerOn = false;
     *cmd0 = g_exec_stack.ret();
@@ -3044,14 +3043,14 @@ bool gfx_geometry_mode_handler_f3dex2(F3DGfx** cmd0) {
 }
 
 // Only on F3DEX and older
-bool gfx_set_geometry_mode_handler_f3dex(F3DGfx** cmd0) {
+bool gfx_set_geometry_mode_handler_f3d(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     gfx_sp_geometry_mode(0, (uint32_t)cmd->words.w1);
     return false;
 }
 
 // Only on F3DEX and older
-bool gfx_clear_geometry_mode_handler_f3dex(F3DGfx** cmd0) {
+bool gfx_clear_geometry_mode_handler_f3d(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     gfx_sp_geometry_mode((uint32_t)cmd->words.w1, 0);
     return false;
@@ -3427,7 +3426,7 @@ bool gfx_set_combine_handler_rdp(F3DGfx** cmd0) {
 
 bool gfx_tex_rect_and_flip_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
-    uint32_t opcode = (uint32_t)(cmd->words.w0 >> 24);
+    int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
     int32_t lrx, lry, tile, ulx, uly;
     uint32_t uls, ult, dsdx, dtdy;
 
@@ -3446,13 +3445,13 @@ bool gfx_tex_rect_and_flip_handler_rdp(F3DGfx** cmd0) {
     dsdx = C1(16, 16);
     dtdy = C1(0, 16);
 
-    gfx_dp_texture_rectangle(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, opcode == G_TEXRECTFLIP);
+    gfx_dp_texture_rectangle(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, opcode == RDP_G_TEXRECTFLIP);
     return false;
 }
 
 bool gfx_tex_rect_wide_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
-    uint32_t opcode = (uint32_t)(cmd->words.w0 >> 24);
+    int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
     int32_t lrx, lry, tile, ulx, uly;
     uint32_t uls, ult, dsdx, dtdy;
 
@@ -3469,7 +3468,7 @@ bool gfx_tex_rect_wide_handler_custom(F3DGfx** cmd0) {
     ult = C0(0, 16);
     dsdx = C1(16, 16);
     dtdy = C1(0, 16);
-    gfx_dp_texture_rectangle(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, opcode == G_TEXRECTFLIP);
+    gfx_dp_texture_rectangle(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, opcode == RDP_G_TEXRECTFLIP);
     return false;
 }
 
@@ -3549,7 +3548,7 @@ bool gfx_bg_copy_handler_s2dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *(cmd0);
 
     if (!markerOn) {
-        gfx_s2dex_bg_copy((uObjBg*)cmd->words.w1); // not seg_addr here it seems
+        gfx_s2dex_bg_copy((F3DuObjBg*)cmd->words.w1); // not seg_addr here it seems
     }
     return false;
 }
@@ -3557,7 +3556,7 @@ bool gfx_bg_copy_handler_s2dex(F3DGfx** cmd0) {
 bool gfx_bg_1cyc_handler_s2dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *(cmd0);
 
-    gfx_s2dex_bg_1cyc((uObjBg*)cmd->words.w1);
+    gfx_s2dex_bg_1cyc((F3DuObjBg*)cmd->words.w1);
     return false;
 }
 
@@ -3565,7 +3564,7 @@ bool gfx_obj_rectangle_handler_s2dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *(cmd0);
 
     if (!markerOn) {
-        gfx_s2dex_rect_copy((uObjSprite*)cmd->words.w1); // not seg_addr here it seems
+        gfx_s2dex_rect_copy((F3DuObjSprite*)cmd->words.w1); // not seg_addr here it seems
     }
     return false;
 }
@@ -3586,111 +3585,113 @@ bool gfx_spnoop_command_handler_f3dex2(F3DGfx** cmd0) {
 }
 
 const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> rdpHandlers = {
-    { G_TEXRECT, gfx_tex_rect_and_flip_handler_rdp },     // G_TEXRECT (-28)
-    { G_TEXRECTFLIP, gfx_tex_rect_and_flip_handler_rdp }, // G_TEXRECTFLIP (-27)
-    { G_RDPLOADSYNC, gfx_stubbed_command_handler },       // G_RDPLOADSYNC (-26)
-    { G_RDPPIPESYNC, gfx_stubbed_command_handler },       // G_RDPPIPESYNC (-25)
-    { G_RDPTILESYNC, gfx_stubbed_command_handler },       // G_RDPPIPESYNC (-24)
-    { G_RDPFULLSYNC, gfx_stubbed_command_handler },       // G_RDPFULLSYNC (-23)
-    { G_SETSCISSOR, gfx_set_scissor_handler_rdp },        // G_SETSCISSOR (-19)
-    { G_SETPRIMDEPTH, gfx_set_prim_depth_handler_rdp },   // G_SETPRIMDEPTH (-18)
-    { G_RDPSETOTHERMODE, gfx_rdp_set_other_mode_rdp },    // G_RDPSETOTHERMODE (-17)
-    { G_LOADTLUT, gfx_load_tlut_handler_rdp },            // G_LOADTLUT (-16)
-    { G_SETTILESIZE, gfx_set_tile_size_handler_rdp },     // G_SETTILESIZE (-14)
-    { G_LOADBLOCK, gfx_load_block_handler_rdp },          // G_LOADBLOCK (-13)
-    { G_LOADTILE, gfx_load_tile_handler_rdp },            // G_LOADTILE (-12)
-    { G_SETTILE, gfx_set_tile_handler_rdp },              // G_SETTILE (-11)
-    { G_FILLRECT, gfx_fill_rect_handler_rdp },            // G_FILLRECT (-10)
-    { G_SETFILLCOLOR, gfx_set_fill_color_handler_rdp },   // G_SETFILLCOLOR (-9)
-    { G_SETFOGCOLOR, gfx_set_fog_color_handler_rdp },     // G_SETFOGCOLOR (-8)
-    { G_SETBLENDCOLOR, gfx_set_blend_color_handler_rdp }, // G_SETBLENDCOLOR (-7)
-    { G_SETPRIMCOLOR, gfx_set_prim_color_handler_rdp },   // G_SETPRIMCOLOR (-6)
-    { G_SETENVCOLOR, gfx_set_env_color_handler_rdp },     // G_SETENVCOLOR (-5)
-    { G_SETCOMBINE, gfx_set_combine_handler_rdp },        // G_SETCOMBINE (-4)
-    { G_SETTIMG, gfx_set_timg_handler_rdp },              // G_SETTIMG (-3)
-    { G_SETZIMG, gfx_set_z_img_handler_rdp },             // G_SETZIMG (-2)
-    { G_SETCIMG, gfx_set_c_img_handler_rdp },             // G_SETCIMG (-1)
+    { RDP_G_TEXRECT, gfx_tex_rect_and_flip_handler_rdp },     // G_TEXRECT (-28)
+    { RDP_G_TEXRECTFLIP, gfx_tex_rect_and_flip_handler_rdp }, // G_TEXRECTFLIP (-27)
+    { RDP_G_RDPLOADSYNC, gfx_stubbed_command_handler },       // G_RDPLOADSYNC (-26)
+    { RDP_G_RDPPIPESYNC, gfx_stubbed_command_handler },       // G_RDPPIPESYNC (-25)
+    { RDP_G_RDPTILESYNC, gfx_stubbed_command_handler },       // G_RDPPIPESYNC (-24)
+    { RDP_G_RDPFULLSYNC, gfx_stubbed_command_handler },       // G_RDPFULLSYNC (-23)
+    { RDP_G_SETSCISSOR, gfx_set_scissor_handler_rdp },        // G_SETSCISSOR (-19)
+    { RDP_G_SETPRIMDEPTH, gfx_set_prim_depth_handler_rdp },   // G_SETPRIMDEPTH (-18)
+    { RDP_G_RDPSETOTHERMODE, gfx_rdp_set_other_mode_rdp },    // G_RDPSETOTHERMODE (-17)
+    { RDP_G_LOADTLUT, gfx_load_tlut_handler_rdp },            // G_LOADTLUT (-16)
+    { RDP_G_SETTILESIZE, gfx_set_tile_size_handler_rdp },     // G_SETTILESIZE (-14)
+    { RDP_G_LOADBLOCK, gfx_load_block_handler_rdp },          // G_LOADBLOCK (-13)
+    { RDP_G_LOADTILE, gfx_load_tile_handler_rdp },            // G_LOADTILE (-12)
+    { RDP_G_SETTILE, gfx_set_tile_handler_rdp },              // G_SETTILE (-11)
+    { RDP_G_FILLRECT, gfx_fill_rect_handler_rdp },            // G_FILLRECT (-10)
+    { RDP_G_SETFILLCOLOR, gfx_set_fill_color_handler_rdp },   // G_SETFILLCOLOR (-9)
+    { RDP_G_SETFOGCOLOR, gfx_set_fog_color_handler_rdp },     // G_SETFOGCOLOR (-8)
+    { RDP_G_SETBLENDCOLOR, gfx_set_blend_color_handler_rdp }, // G_SETBLENDCOLOR (-7)
+    { RDP_G_SETPRIMCOLOR, gfx_set_prim_color_handler_rdp },   // G_SETPRIMCOLOR (-6)
+    { RDP_G_SETENVCOLOR, gfx_set_env_color_handler_rdp },     // G_SETENVCOLOR (-5)
+    { RDP_G_SETCOMBINE, gfx_set_combine_handler_rdp },        // G_SETCOMBINE (-4)
+    { RDP_G_SETTIMG, gfx_set_timg_handler_rdp },              // G_SETTIMG (-3)
+    { RDP_G_SETZIMG, gfx_set_z_img_handler_rdp },             // G_SETZIMG (-2)
+    { RDP_G_SETCIMG, gfx_set_c_img_handler_rdp },             // G_SETCIMG (-1)
 };
 
-const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> otrHandlers = {
-    { G_SETTIMG_OTR_HASH, gfx_set_timg_otr_hash_handler_custom },         // G_SETTIMG_OTR_HASH (0x20)
-    { G_SETFB, gfx_set_fb_handler_custom },                               // G_SETFB (0x21)
-    { G_RESETFB, gfx_reset_fb_handler_custom },                           // G_RESETFB (0x22)
-    { G_SETTIMG_FB, gfx_set_timg_fb_handler_custom },                     // G_SETTIMG_FB (0x23)
-    { G_VTX_OTR_FILEPATH, gfx_vtx_otr_filepath_handler_custom },          // G_VTX_OTR_FILEPATH (0x24)
-    { G_SETTIMG_OTR_FILEPATH, gfx_set_timg_otr_filepath_handler_custom }, // G_SETTIMG_OTR_FILEPATH (0x25)
-    { G_TRI1_OTR, gfx_tri1_otr_handler_f3dex2 },                          // G_TRI1_OTR (0x26)
-    { G_DL_OTR_FILEPATH, gfx_dl_otr_filepath_handler_custom },            // G_DL_OTR_FILEPATH (0x27)
-    { G_DL_OTR_HASH, gfx_dl_otr_hash_handler_custom },                    // G_DL_OTR_HASH (0x31)
-    { G_VTX_OTR_HASH, gfx_vtx_hash_handler_custom },                      // G_VTX_OTR_HASH (0x32)
-    { G_BRANCH_Z_OTR, gfx_branch_z_otr_handler_f3dex2 },                  // G_BRANCH_Z_OTR (0x35)
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> otrHandlers = {
+    { OTR_G_SETTIMG_OTR_HASH, gfx_set_timg_otr_hash_handler_custom },         // G_SETTIMG_OTR_HASH (0x20)
+    { OTR_G_SETFB, gfx_set_fb_handler_custom },                               // G_SETFB (0x21)
+    { OTR_G_RESETFB, gfx_reset_fb_handler_custom },                           // G_RESETFB (0x22)
+    { OTR_G_SETTIMG_FB, gfx_set_timg_fb_handler_custom },                     // G_SETTIMG_FB (0x23)
+    { OTR_G_VTX_OTR_FILEPATH, gfx_vtx_otr_filepath_handler_custom },          // G_VTX_OTR_FILEPATH (0x24)
+    { OTR_G_SETTIMG_OTR_FILEPATH, gfx_set_timg_otr_filepath_handler_custom }, // G_SETTIMG_OTR_FILEPATH (0x25)
+    { OTR_G_TRI1_OTR, gfx_tri1_otr_handler_f3dex2 },                          // G_TRI1_OTR (0x26)
+    { OTR_G_DL_OTR_FILEPATH, gfx_dl_otr_filepath_handler_custom },            // G_DL_OTR_FILEPATH (0x27)
+    { OTR_G_PUSHCD, gfx_pushcd_handler_custom },                              // G_PUSHCD (0x28)
+    { OTR_G_DL_OTR_HASH, gfx_dl_otr_hash_handler_custom },                    // G_DL_OTR_HASH (0x31)
+    { OTR_G_VTX_OTR_HASH, gfx_vtx_hash_handler_custom },                      // G_VTX_OTR_HASH (0x32)
+    { OTR_G_MARKER, gfx_marker_handler_otr },                                 // G_MARKER (0X33)
+    { OTR_G_INVALTEXCACHE, gfx_invalidate_tex_cache_handler_f3dex2 },         // G_INVALTEXCACHE (0X34)
+    { OTR_G_BRANCH_Z_OTR, gfx_branch_z_otr_handler_f3dex2 },                  // G_BRANCH_Z_OTR (0x35)
 #ifdef F3DEX_GBI_2
-    { G_MTX_OTR, gfx_mtx_otr_handler_custom_f3dex2 }, // G_MTX_OTR (0x36)
+    { OTR_G_MTX_OTR, gfx_mtx_otr_handler_custom_f3dex2 }, // G_MTX_OTR (0x36)
 #else
-    { G_MTX_OTR, gfx_mtx_otr_handler_custom_f3d }, // G_MTX_OTR (0x36)
+    { OTR_G_MTX_OTR2, gfx_mtx_otr_handler_custom_f3d }, //G_MTX_OTR2 (0x29) Is this the right code?
 #endif
-    { G_TEXRECT_WIDE, gfx_tex_rect_wide_handler_custom },            // G_TEXRECT_WIDE (0x37)
-    { G_FILLWIDERECT, gfx_fill_wide_rect_handler_custom },           // G_FILLWIDERECT (0x38)
-    { G_SETGRAYSCALE, gfx_set_grayscale_handler_custom },            // G_SETGRAYSCALE (0x39)
-    { G_EXTRAGEOMETRYMODE, gfx_extra_geometry_mode_handler_custom }, // G_EXTRAGEOMETRYMODE (0x3a)
-    { G_COPYFB, gfx_copy_fb_handler_custom },                        // G_COPYFB (0x3b)
-    { G_READFB, gfx_read_fb_handler_custom },                        // G_READFB (0x3e)
-    { G_IMAGERECT, gfx_image_rect_handler_custom },                  // G_IMAGERECT (0x3c)
-    { G_SETINTENSITY, gfx_set_intensity_handler_custom },            // G_SETINTENSITY (0x40)
+    { OTR_G_TEXRECT_WIDE, gfx_tex_rect_wide_handler_custom },            // G_TEXRECT_WIDE (0x37)
+    { OTR_G_FILLWIDERECT, gfx_fill_wide_rect_handler_custom },           // G_FILLWIDERECT (0x38)
+    { OTR_G_SETGRAYSCALE, gfx_set_grayscale_handler_custom },            // G_SETGRAYSCALE (0x39)
+    { OTR_G_EXTRAGEOMETRYMODE, gfx_extra_geometry_mode_handler_custom }, // G_EXTRAGEOMETRYMODE (0x3a)
+    { OTR_G_COPYFB, gfx_copy_fb_handler_custom },                        // G_COPYFB (0x3b)
+    { OTR_G_IMAGERECT, gfx_image_rect_handler_custom },                  // G_IMAGERECT (0x3c)
+    { OTR_G_DL_INDEX, gfx_dl_index_handler },                            // G_DL_INDEX (0x3d)
+    { OTR_G_READFB, gfx_read_fb_handler_custom },                        // G_READFB (0x3e)
+    { OTR_G_SETINTENSITY, gfx_set_intensity_handler_custom },            // G_SETINTENSITY (0x40)
 };
 
-const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
-    { G_NOOP, gfx_noop_handler_f3dex2 },
-    { G_CULLDL, gfx_cull_dl_handler_f3dex2 },
-    { G_MARKER, gfx_marker_handler_f3dex2 },
-    { G_INVALTEXCACHE, gfx_invalidate_tex_cache_handler_f3dex2 },
-    { G_MTX, gfx_mtx_handler_f3dex2 },
-    { G_POPMTX, gfx_pop_mtx_handler_f3dex2 },
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
+    { F3DEX2_G_NOOP, gfx_noop_handler_f3dex2 },
+    { F3DEX2_G_CULLDL, gfx_cull_dl_handler_f3dex2 },
+    { F3DEX2_G_MTX, gfx_mtx_handler_f3dex2 },
+    { F3DEX2_G_POPMTX, gfx_pop_mtx_handler_f3dex2 },
 #ifdef F3DEX_GBI_2
-    { G_MOVEMEM, gfx_movemem_handler_f3dex2 },
-    { G_MOVEWORD, gfx_moveword_handler_f3dex2 },
+    { F3DEX2_G_MOVEMEM, gfx_movemem_handler_f3dex2 },
+    { F3DEX2_G_MOVEWORD, gfx_moveword_handler_f3dex2 },
 #else
     { G_MOVEMEM, gfx_movemem_handler_f3d },
     { G_MOVEWORD, gfx_moveword_handler_f3d },
 #endif
-    { G_TEXTURE, gfx_texture_handler_f3dex2 },
-    { G_VTX, gfx_vtx_handler_f3dex2 },
-    { G_MODIFYVTX, gfx_modify_vtx_handler_f3dex2 },
-    { G_DL, gfx_dl_handler_common },
-    { G_DL_INDEX, gfx_dl_index_handler },
-    { G_PUSHCD, gfx_pushcd_handler_f3dex2 },
-    { G_ENDDL, gfx_end_dl_handler_common },
+    { F3DEX2_G_TEXTURE, gfx_texture_handler_f3dex2 },
+    { F3DEX2_G_VTX, gfx_vtx_handler_f3dex2 },
+    { F3DEX2_G_MODIFYVTX, gfx_modify_vtx_handler_f3dex2 },
+    { F3DEX2_G_DL, gfx_dl_handler_common },
+    { F3DEX2_G_ENDDL, gfx_end_dl_handler_common },
 #ifdef F3DEX_GBI_2
-    { G_GEOMETRYMODE, gfx_geometry_mode_handler_f3dex2 },
+    { F3DEX2_G_GEOMETRYMODE, gfx_geometry_mode_handler_f3dex2 },
 #else
-    { G_SETGEOMETRYMODE, gfx_set_geometry_mode_handler_f3dex },
-    { G_CLEARGEOMETRYMODE, gfx_clear_geometry_mode_handler_f3dex },
+    { G_SETGEOMETRYMODE, gfx_set_geometry_mode_handler_f3d },
+    { G_CLEARGEOMETRYMODE, gfx_clear_geometry_mode_handler_f3d },
 #endif
-    { G_TRI1, gfx_tri1_handler_f3dex2 },
-    { G_QUAD, gfx_quad_handler_f3dex2 },
-    { G_TRI2, gfx_tri2_handler_f3dex },
-    { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
-    { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
+    { F3DEX2_G_TRI1, gfx_tri1_handler_f3dex2 },
+    { F3DEX2_G_TRI2, gfx_tri2_handler_f3dex },
+    { F3DEX2_G_QUAD, gfx_quad_handler_f3dex2 },
+    { F3DEX2_G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
+    { F3DEX2_G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
     // Commands to implement
-    { G_SPNOOP, gfx_spnoop_command_handler_f3dex2 },
-    { G_RDPHALF_1, gfx_stubbed_command_handler },
+    { F3DEX2_G_SPNOOP, gfx_spnoop_command_handler_f3dex2 },
+    { F3DEX2_G_RDPHALF_1, gfx_stubbed_command_handler },
 };
 
-const static std::unordered_map<uint32_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
-    { G_BG_COPY, gfx_bg_copy_handler_s2dex },
-    { G_BG_1CYC, gfx_bg_1cyc_handler_s2dex },
-    { G_OBJ_RENDERMODE, gfx_stubbed_command_handler },
-    { G_OBJ_RECTANGLE_R, gfx_stubbed_command_handler },
-    { G_OBJ_RECTANGLE, gfx_obj_rectangle_handler_s2dex },
-    { G_DL, gfx_dl_handler_common },
-    { G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
-    { G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
-    { G_ENDDL, gfx_end_dl_handler_common },
-    { G_RDPHALF_1, gfx_stubbed_command_handler },
-    { G_RDPHALF_2, gfx_stubbed_command_handler },
+// LUSTODO figure out how to deal with non f3dex2. It seems that the opcode numbers are different.
+// Are the actual implementations different?
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
+    { S2DEX_G_BG_COPY, gfx_bg_copy_handler_s2dex },
+    { S2DEX_G_BG_1CYC, gfx_bg_1cyc_handler_s2dex },
+    { S2DEX_G_OBJ_RENDERMODE, gfx_stubbed_command_handler },
+    { S2DEX_G_OBJ_RECTANGLE_R, gfx_stubbed_command_handler },
+    { S2DEX_G_OBJ_RECTANGLE, gfx_obj_rectangle_handler_s2dex },
+    { F3DEX2_G_DL, gfx_dl_handler_common },
+    //{ G_SETOTHERMODE_L, gfx_othermode_l_handler_f3dex2 },
+    //{ G_SETOTHERMODE_H, gfx_othermode_h_handler_f3dex2 },
+    { F3DEX2_G_ENDDL, gfx_end_dl_handler_common },
+    { F3DEX2_G_RDPHALF_1, gfx_stubbed_command_handler },
+    { F3DEX2_G_RDPHALF_2, gfx_stubbed_command_handler },
 };
 
-const static std::array<const std::unordered_map<uint32_t, GfxOpcodeHandlerFunc>*, UcodeHandlers::ucode_max>
+const static std::array<const std::unordered_map<int8_t, GfxOpcodeHandlerFunc>*, UcodeHandlers::ucode_max>
     ucode_handlers = {
         &f3dex2Handlers,
         &s2dexHandlers,
@@ -3707,7 +3708,7 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
 static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
-    uint32_t opcode = (uint32_t)(cmd->words.w0 >> 24);
+    int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
     if (opcode == G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));

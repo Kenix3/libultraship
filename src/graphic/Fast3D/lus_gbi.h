@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 /* To enable Fast3DEX grucode support, define F3DEX_GBI. */
 
 /* Types */
@@ -15,33 +16,33 @@
 #ifndef F3DEX_GBI
 #define F3DEX_GBI
 #endif
-#define G_NOOP 0x00
-#define G_RDPHALF_2 0xf1
-#define G_SETOTHERMODE_H 0xe3
-#define G_SETOTHERMODE_L 0xe2
-#define G_RDPHALF_1 0xe1
-#define G_SPNOOP 0xe0
-#define G_ENDDL 0xdf
-#define G_DL 0xde
+constexpr int8_t F3DEX2_G_NOOP = 0x00;
+constexpr int8_t F3DEX2_G_RDPHALF_2 = 0xf1;
+constexpr int8_t F3DEX2_G_SETOTHERMODE_H = 0xe3;
+constexpr int8_t F3DEX2_G_SETOTHERMODE_L = 0xe2;
+constexpr int8_t F3DEX2_G_RDPHALF_1 = 0xe1;
+constexpr int8_t F3DEX2_G_SPNOOP = 0xe0;
+constexpr int8_t F3DEX2_G_ENDDL = 0xdf;
+constexpr int8_t F3DEX2_G_DL = 0xde;
 #define G_LOAD_UCODE 0xdd
-#define G_MOVEMEM 0xdc
-#define G_MOVEWORD 0xdb
-#define G_MTX 0xda
-#define G_GEOMETRYMODE 0xd9
-#define G_POPMTX 0xd8
-#define G_TEXTURE 0xd7
+constexpr int8_t F3DEX2_G_MOVEMEM = 0xdc;
+constexpr int8_t F3DEX2_G_MOVEWORD = 0xdb;
+constexpr int8_t F3DEX2_G_MTX = 0xda;
+constexpr int8_t F3DEX2_G_GEOMETRYMODE = 0xd9;
+constexpr int8_t F3DEX2_G_POPMTX = 0xd8;
+constexpr int8_t F3DEX2_G_TEXTURE = 0xd7;
 #define G_DMA_IO 0xd6
 #define G_SPECIAL_1 0xd5
 #define G_SPECIAL_2 0xd4
 #define G_SPECIAL_3 0xd3
 
-#define G_VTX 0x01
-#define G_MODIFYVTX 0x02
-#define G_CULLDL 0x03
-#define G_BRANCH_Z 0x04
-#define G_TRI1 0x05
-#define G_TRI2 0x06
-#define G_QUAD 0x07
+constexpr int8_t F3DEX2_G_VTX = 0x01;
+constexpr int8_t F3DEX2_G_MODIFYVTX = 0x02;
+constexpr int8_t F3DEX2_G_CULLDL = 0x03;
+constexpr int8_t F3DEX2_G_BRANCH_Z = 0x04;
+constexpr int8_t F3DEX2_G_TRI1 = 0x05;
+constexpr int8_t F3DEX2_G_TRI2 = 0x06;
+constexpr int8_t F3DEX2_G_QUAD = 0x07;
 #define G_LINE3D 0x08
 #else              /* F3DEX_GBI_2 */
 
@@ -49,7 +50,7 @@
 #define G_SPNOOP 0 /* handle 0 gracefully */
 #define G_MTX 1
 #define G_RESERVED0 2 /* not implemeted */
-#define G_MOVEMEM 3   /* move a block of memory (up to 4 words) to dmem */
+constexpr int8_t G_MOVEMEM 3   /* move a block of memory (up to 4 words) to dmem */
 #define G_VTX 4
 #define G_RESERVED1 5 /* not implemeted */
 #define G_DL 6
@@ -62,13 +63,13 @@
 #define G_TRI1 (G_IMMFIRST - 0)
 #define G_CULLDL (G_IMMFIRST - 1)
 #define G_POPMTX (G_IMMFIRST - 2)
-#define G_MOVEWORD (G_IMMFIRST - 3)
+constexpr int8_t G_MOVEWORD = (G_IMMFIRST - 3);
 #define G_TEXTURE (G_IMMFIRST - 4)
 #define G_SETOTHERMODE_H (G_IMMFIRST - 5)
 #define G_SETOTHERMODE_L (G_IMMFIRST - 6)
 #define G_ENDDL (G_IMMFIRST - 7)
-#define G_SETGEOMETRYMODE (G_IMMFIRST - 8)
-#define G_CLEARGEOMETRYMODE (G_IMMFIRST - 9)
+constexpr int8_t G_SETGEOMETRYMODE = (G_IMMFIRST - 8);
+constexpr int8_t G_CLEARGEOMETRYMODE - (G_IMMFIRST - 9);
 #define G_LINE3D (G_IMMFIRST - 10)
 #define G_RDPHALF_1 (G_IMMFIRST - 11)
 #define G_RDPHALF_2 (G_IMMFIRST - 12)
@@ -93,64 +94,64 @@
 #endif /* F3DEX_GBI_2 */
 
 /* RDP commands: */
-#define G_SETCIMG 0xff         /*  -1 */
-#define G_SETZIMG 0xfe         /*  -2 */
-#define G_SETTIMG 0xfd         /*  -3 */
-#define G_SETCOMBINE 0xfc      /*  -4 */
-#define G_SETENVCOLOR 0xfb     /*  -5 */
-#define G_SETPRIMCOLOR 0xfa    /*  -6 */
-#define G_SETBLENDCOLOR 0xf9   /*  -7 */
-#define G_SETFOGCOLOR 0xf8     /*  -8 */
-#define G_SETFILLCOLOR 0xf7    /*  -9 */
-#define G_FILLRECT 0xf6        /* -10 */
-#define G_SETTILE 0xf5         /* -11 */
-#define G_LOADTILE 0xf4        /* -12 */
-#define G_LOADBLOCK 0xf3       /* -13 */
-#define G_SETTILESIZE 0xf2     /* -14 */
-#define G_LOADTLUT 0xf0        /* -16 */
-#define G_RDPSETOTHERMODE 0xef /* -17 */
-#define G_SETPRIMDEPTH 0xee    /* -18 */
-#define G_SETSCISSOR 0xed      /* -19 */
-#define G_SETCONVERT 0xec      /* -20 */
-#define G_SETKEYR 0xeb         /* -21 */
-#define G_SETKEYGB 0xea        /* -22 */
-#define G_RDPFULLSYNC 0xe9     /* -23 */
-#define G_RDPTILESYNC 0xe8     /* -24 */
-#define G_RDPPIPESYNC 0xe7     /* -25 */
-#define G_RDPLOADSYNC 0xe6     /* -26 */
-#define G_TEXRECTFLIP 0xe5     /* -27 */
-#define G_TEXRECT 0xe4         /* -28 */
+constexpr int8_t RDP_G_SETCIMG = 0xff;         /*  -1 */
+constexpr int8_t RDP_G_SETZIMG = 0xfe;         /*  -2 */
+constexpr int8_t RDP_G_SETTIMG = 0xfd;         /*  -3 */
+constexpr int8_t RDP_G_SETCOMBINE=  0xfc;      /*  -4 */
+constexpr int8_t RDP_G_SETENVCOLOR = 0xfb;     /*  -5 */
+constexpr int8_t RDP_G_SETPRIMCOLOR = 0xfa;    /*  -6 */
+constexpr int8_t RDP_G_SETBLENDCOLOR = 0xf9;   /*  -7 */
+constexpr int8_t RDP_G_SETFOGCOLOR = 0xf8;     /*  -8 */
+constexpr int8_t RDP_G_SETFILLCOLOR = 0xf7;    /*  -9 */
+constexpr int8_t RDP_G_FILLRECT = 0xf6;        /* -10 */
+constexpr int8_t RDP_G_SETTILE = 0xf5;         /* -11 */
+constexpr int8_t RDP_G_LOADTILE = 0xf4;        /* -12 */
+constexpr int8_t RDP_G_LOADBLOCK = 0xf3;       /* -13 */
+constexpr int8_t RDP_G_SETTILESIZE = 0xf2;     /* -14 */
+constexpr int8_t RDP_G_LOADTLUT = 0xf0;        /* -16 */
+constexpr int8_t RDP_G_RDPSETOTHERMODE = 0xef; /* -17 */
+constexpr int8_t RDP_G_SETPRIMDEPTH = 0xee;    /* -18 */
+constexpr int8_t RDP_G_SETSCISSOR = 0xed;      /* -19 */
+constexpr int8_t RDP_G_SETCONVERT = 0xec;      /* -20 */
+constexpr int8_t RDP_G_SETKEYR = 0xeb;         /* -21 */
+constexpr int8_t RDP_G_SETKEYGB = 0xea;        /* -22 */
+constexpr int8_t RDP_G_RDPFULLSYNC = 0xe9;     /* -23 */
+constexpr int8_t RDP_G_RDPTILESYNC = 0xe8;     /* -24 */
+constexpr int8_t RDP_G_RDPPIPESYNC = 0xe7;     /* -25 */
+constexpr int8_t RDP_G_RDPLOADSYNC = 0xe6;     /* -26 */
+constexpr int8_t RDP_G_TEXRECTFLIP = 0xe5;     /* -27 */
+constexpr int8_t RDP_G_TEXRECT = 0xe4;         /* -28 */
 
 // CUSTOM OTR COMMANDS
-#define G_SETTIMG_OTR_HASH 0x20
-#define G_SETFB 0x21
-#define G_RESETFB 0x22
-#define G_SETTIMG_FB 0x23
-#define G_VTX_OTR_FILEPATH 0x24
-#define G_SETTIMG_OTR_FILEPATH 0x25
-#define G_TRI1_OTR 0x26
-#define G_DL_OTR_FILEPATH 0x27
-#define G_PUSHCD 0x28
-#define G_MTX_OTR2 0x29
-#define G_DL_OTR_HASH 0x31
-#define G_VTX_OTR_HASH 0x32
-#define G_MARKER 0x33
-#define G_INVALTEXCACHE 0x34
-#define G_BRANCH_Z_OTR 0x35
-#define G_MTX_OTR 0x36
-#define G_TEXRECT_WIDE 0x37
-#define G_FILLWIDERECT 0x38
+constexpr int8_t OTR_G_SETTIMG_OTR_HASH = 0x20;
+constexpr int8_t OTR_G_SETFB = 0x21;
+constexpr int8_t OTR_G_RESETFB = 0x22;
+constexpr int8_t OTR_G_SETTIMG_FB = 0x23;
+constexpr int8_t OTR_G_VTX_OTR_FILEPATH = 0x24;
+constexpr int8_t OTR_G_SETTIMG_OTR_FILEPATH = 0x25;
+constexpr int8_t OTR_G_TRI1_OTR = 0x26;
+constexpr int8_t OTR_G_DL_OTR_FILEPATH = 0x27;
+constexpr int8_t OTR_G_PUSHCD = 0x28;
+constexpr int8_t OTR_G_MTX_OTR2 = 0x29;
+constexpr int8_t OTR_G_DL_OTR_HASH = 0x31;
+constexpr int8_t OTR_G_VTX_OTR_HASH = 0x32;
+constexpr int8_t OTR_G_MARKER = 0x33;
+constexpr int8_t OTR_G_INVALTEXCACHE = 0x34;
+constexpr int8_t OTR_G_BRANCH_Z_OTR = 0x35;
+constexpr int8_t OTR_G_MTX_OTR = 0x36;
+constexpr int8_t OTR_G_TEXRECT_WIDE = 0x37;
+constexpr int8_t OTR_G_FILLWIDERECT = 0x38;
 
 /* GFX Effects */
 
 // RDP Cmd
-#define G_SETGRAYSCALE 0x39
-#define G_EXTRAGEOMETRYMODE 0x3a
-#define G_COPYFB 0x3b
-#define G_IMAGERECT 0x3c
-#define G_DL_INDEX 0x3d
-#define G_READFB 0x3e
-#define G_SETINTENSITY 0x40
+constexpr int8_t OTR_G_SETGRAYSCALE = 0x39;
+constexpr int8_t OTR_G_EXTRAGEOMETRYMODE = 0x3a;
+constexpr int8_t OTR_G_COPYFB = 0x3b;
+constexpr int8_t OTR_G_IMAGERECT = 0x3c;
+constexpr int8_t OTR_G_DL_INDEX = 0x3d;
+constexpr int8_t OTR_G_READFB = 0x3e;
+constexpr int8_t OTR_G_SETINTENSITY = 0x40;
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1335,6 +1336,236 @@ typedef union F3DGfx{
     F3DGwords words;
     long long int force_structure_alignment;
 } F3DGfx;
+
+/*===========================================================================*
+ *	GBI Commands for S2DEX microcode
+ *===========================================================================*/
+/* GBI Header */
+#ifdef F3DEX_GBI_2
+constexpr int8_t S2DEX_G_OBJ_RECTANGLE_R = 0xda;
+#define G_OBJ_MOVEMEM 0xdc
+#define G_RDPHALF_0 0xe4
+constexpr int8_t S2DEX_G_OBJ_RECTANGLE = 0x01;
+#define G_OBJ_SPRITE 0x02
+#define G_SELECT_DL 0x04
+#define G_OBJ_LOADTXTR 0x05
+#define G_OBJ_LDTX_SPRITE 0x06
+#define G_OBJ_LDTX_RECT 0x07
+#define G_OBJ_LDTX_RECT_R 0x08
+constexpr int8_t S2DEX_G_BG_1CYC = 0x09;
+constexpr int8_t S2DEX_G_BG_COPY = 0x0a;
+constexpr int8_t S2DEX_G_OBJ_RENDERMODE = 0x0b;
+#else
+#define G_BG_1CYC 0x01
+#define G_BG_COPY 0x02
+#define G_OBJ_RECTANGLE 0x03
+#define G_OBJ_SPRITE 0x04
+#define G_OBJ_MOVEMEM 0x05
+#define G_SELECT_DL 0xb0
+#define G_OBJ_RENDERMODE 0xb1
+#define G_OBJ_RECTANGLE_R 0xb2
+#define G_OBJ_LOADTXTR 0xc1
+#define G_OBJ_LDTX_SPRITE 0xc2
+#define G_OBJ_LDTX_RECT 0xc3
+#define G_OBJ_LDTX_RECT_R 0xc4
+#define G_RDPHALF_0 0xe4
+#endif
+
+#define G_BGLT_LOADBLOCK 0x0033
+#define G_BGLT_LOADTILE 0xfff4
+
+#define G_BG_FLAG_FLIPS 0x01
+#define G_BG_FLAG_FLIPT 0x10
+
+/* Non scalable background plane */
+typedef struct {
+    unsigned short imageX; /* x-coordinate of upper-left position of texture (u10.5) */
+    unsigned short imageW; /* width of the texture (u10.2) */
+    short frameX; /* upper-left position of transferred frame (s10.2) */
+    unsigned short frameW; /* width of transferred frame (u10.2) */
+
+    unsigned short imageY; /* y-coordinate of upper-left position of texture (u10.5) */
+    unsigned short imageH; /* height of the texture (u10.2) */
+    short frameY; /* upper-left position of transferred frame (s10.2) */
+    unsigned short frameH; /* height of transferred frame (u10.2) */
+
+    unsigned long long int* imagePtr; /* texture source address on DRAM */
+    unsigned short imageLoad; /* which to use, LoadBlock or  LoadTile */
+    unsigned char imageFmt;   /* format of texel - G_IM_FMT_*  */
+    unsigned char imageSiz;   /* size of texel - G_IM_SIZ_*   */
+    unsigned short imagePal;  /* pallet number  */
+    unsigned short imageFlip; /* right & left image inversion (Inverted by G_BG_FLAG_FLIPS) */
+
+    /* The following is set in the initialization routine guS2DInitBg(). There is no need for the user to set it. */
+    unsigned short tmemW;      /* TMEM width and Word size of frame 1 line.
+                       At LoadBlock, GS_PIX2TMEM(imageW/4,imageSiz)
+                       At LoadTile  GS_PIX2TMEM(frameW/4,imageSiz)+1 */
+    unsigned short tmemH;      /* height of TMEM loadable at a time (s13.2) 4 times value
+                       When the normal texture, 512/tmemW*4
+                       When the CI texture, 256/tmemW*4 */
+    unsigned short tmemLoadSH; /* SH value
+                       At LoadBlock, tmemSize/2-1
+                       At LoadTile, tmemW*16-1 */
+    unsigned short tmemLoadTH; /* TH value or Stride value
+                       At LoadBlock, GS_CALC_DXT(tmemW)
+                       At LoadTile, tmemH-1 */
+    unsigned short tmemSizeW;  /* skip value of imagePtr for image 1-line
+                       At LoadBlock, tmemW*2
+                       At LoadTile, GS_PIX2TMEM(imageW/4,imageSiz)*2 */
+    unsigned short tmemSize;   /* skip value of imagePtr for 1-loading
+                       = tmemSizeW*tmemH                          */
+} F3DuObjBg_t;         /* 40 bytes */
+
+/* Scalable background plane */
+typedef struct {
+    unsigned short imageX; /* x-coordinate of upper-left position of texture (u10.5) */
+    unsigned short imageW; /* width of texture (u10.2) */
+    short frameX; /* upper-left position of transferred frame (s10.2) */
+    unsigned short frameW; /* width of transferred frame (u10.2) */
+
+    unsigned short imageY; /* y-coordinate of upper-left position of texture (u10.5) */
+    unsigned short imageH; /* height of texture (u10.2) */
+    short frameY; /* upper-left position of transferred frame (s10.2) */
+    unsigned short frameH; /* height of transferred frame (u10.2) */
+
+    unsigned long long int* imagePtr; /* texture source address on DRAM */
+    unsigned short imageLoad; /* Which to use, LoadBlock or LoadTile? */
+    unsigned char imageFmt;   /* format of texel - G_IM_FMT_*  */
+    unsigned char imageSiz;   /* size of texel - G_IM_SIZ_*  */
+    unsigned short imagePal;  /* pallet number */
+    unsigned short imageFlip; /* right & left image inversion (Inverted by G_BG_FLAG_FLIPS) */
+
+    unsigned short scaleW;     /* scale value of X-direction (u5.10) */
+    unsigned short scaleH;     /* scale value of Y-direction (u5.10) */
+    int imageYorig; /* start point of drawing on image (s20.5) */
+
+    unsigned char padding[4];
+
+} F3DuObjScaleBg_t; /* 40 bytes */
+
+typedef union {
+    F3DuObjBg_t b;
+    F3DuObjScaleBg_t s;
+    long long int force_structure_alignment;
+} F3DuObjBg;
+
+/*---------------------------------------------------------------------------*
+ *	2D Objects
+ *---------------------------------------------------------------------------*/
+#define G_OBJ_FLAG_FLIPS 1 << 0 /* inversion to S-direction */
+#define G_OBJ_FLAG_FLIPT 1 << 4 /* nversion to T-direction */
+
+typedef struct {
+    short objX;        /* s10.2 OBJ x-coordinate of upper-left end */
+    unsigned short scaleW;      /* u5.10 Scaling of u5.10 width direction   */
+    unsigned short imageW;      /* u10.5 width of u10.5 texture (length of S-direction) */
+    unsigned short paddingX;    /* Unused - Always 0 */
+    short objY;        /* s10.2 OBJ y-coordinate of s10.2 OBJ upper-left end */
+    unsigned short scaleH;      /* u5.10 Scaling of u5.10 height direction */
+    unsigned short imageH;      /* u10.5 height of u10.5 texture (length of T-direction) */
+    unsigned short paddingY;    /* Unused - Always 0 */
+    unsigned short imageStride; /* folding width of texel (In units of 64bit word) */
+    unsigned short imageAdrs;   /* texture header position in TMEM (In units of 64bit word) */
+    unsigned char imageFmt;     /* format of texel - G_IM_FMT_* */
+    unsigned char imageSiz;     /* size of texel - G_IM_SIZ_* */
+    unsigned char imagePal;     /* pallet number (0-7) */
+    unsigned char imageFlags;   /* The display flag - G_OBJ_FLAG_FLIP* */
+} F3DuObjSprite_t;      /* 24 bytes */
+
+typedef union {
+    F3DuObjSprite_t s;
+    long long int force_structure_alignment;
+} F3DuObjSprite;
+
+/*---------------------------------------------------------------------------*
+ *	2D Matrix
+ *---------------------------------------------------------------------------*/
+typedef struct {
+    int A, B, C, D; /* s15.16 */
+    short X, Y;       /* s10.2  */
+    unsigned short BaseScaleX; /* u5.10  */
+    unsigned short BaseScaleY; /* u5.10  */
+} F3DuObjMtx_t;        /* 24 bytes */
+
+typedef union {
+    F3DuObjMtx_t m;
+    long long int force_structure_alignment;
+} F3DuObjMtx;
+
+typedef struct {
+    short X, Y;       /* s10.2  */
+    unsigned short BaseScaleX; /* u5.10  */
+    unsigned short BaseScaleY; /* u5.10  */
+} F3DuObjSubMtx_t;     /* 8 bytes */
+
+typedef union {
+    F3DuObjSubMtx_t m;
+    long long int force_structure_alignment;
+} F3DuObjSubMtx;
+
+/*---------------------------------------------------------------------------*
+ *	Loading into TMEM
+ *---------------------------------------------------------------------------*/
+#define G_OBJLT_TXTRBLOCK 0x00001033
+#define G_OBJLT_TXTRTILE 0x00fc1034
+#define G_OBJLT_TLUT 0x00000030
+
+#define GS_TB_TSIZE(pix, siz) (GS_PIX2TMEM((pix), (siz)) - 1)
+#define GS_TB_TLINE(pix, siz) (GS_CALC_DXT(GS_PIX2TMEM((pix), (siz))))
+
+typedef struct {
+    unsigned int type;      /* G_OBJLT_TXTRBLOCK divided into types */
+    unsigned long long int* image;    /* texture source address on DRAM */
+    unsigned short tmem;      /* loaded TMEM word address (8byteWORD) */
+    unsigned short tsize;     /* Texture size, Specified by macro GS_TB_TSIZE() */
+    unsigned short tline;     /* width of Texture 1-line, Specified by macro GS_TB_TLINE() */
+    unsigned short sid;       /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12) */
+    unsigned int flag;      /* STATE flag  */
+    unsigned int mask;      /* STATE mask  */
+} F3DuObjTxtrBlock_t; /* 24 bytes */
+
+#define GS_TT_TWIDTH(pix, siz) ((GS_PIX2TMEM((pix), (siz)) << 2) - 1)
+#define GS_TT_THEIGHT(pix, siz) (((pix) << 2) - 1)
+
+typedef struct {
+    unsigned int type;     /* G_OBJLT_TXTRTILE divided into types */
+    unsigned long long int* image;   /* texture source address on DRAM */
+    unsigned short tmem;     /* loaded TMEM word address (8byteWORD)*/
+    unsigned short twidth;   /* width of Texture (Specified by macro GS_TT_TWIDTH()) */
+    unsigned short theight;  /* height of Texture (Specified by macro GS_TT_THEIGHT()) */
+    unsigned short sid;      /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12) */
+    unsigned int flag;     /* STATE flag  */
+    unsigned int mask;     /* STATE mask  */
+} F3DuObjTxtrTile_t; /* 24 bytes */
+
+#define GS_PAL_HEAD(head) ((head) + 256)
+#define GS_PAL_NUM(num) ((num)-1)
+
+typedef struct {
+    unsigned int type;     /* G_OBJLT_TLUT divided into types */
+    unsigned long long int* image;   /* texture source address on DRAM */
+    unsigned short phead;    /* pallet number of load header (Between 256 and 511) */
+    unsigned short pnum;     /* loading pallet number -1 */
+    unsigned short zero;     /* Assign 0 all the time */
+    unsigned short sid;      /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12)*/
+    unsigned int flag;     /* STATE flag  */
+    unsigned int mask;     /* STATE mask  */
+} F3DuObjTxtrTLUT_t; /* 24 bytes */
+
+typedef union {
+    F3DuObjTxtrBlock_t block;
+    F3DuObjTxtrTile_t tile;
+    F3DuObjTxtrTLUT_t tlut;
+    long long int force_structure_alignment;
+} F3DuObjTxtr;
+
+/*---------------------------------------------------------------------------*
+ *	Loading into TMEM & 2D Objects
+ *---------------------------------------------------------------------------*/
+typedef struct {
+    F3DuObjTxtr txtr;
+    F3DuObjSprite sprite;
+} F3DuObjTxSprite; /* 48 bytes */
 
 
 #endif

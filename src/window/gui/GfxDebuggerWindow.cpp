@@ -24,8 +24,9 @@ void GfxDebuggerWindow::InitElement() {
 void GfxDebuggerWindow::UpdateElement() {
 }
 
-static const char* GetOpName(uint32_t op) {
+static const char* GetOpName(int8_t op) {
     switch (op) {
+    #if 0
 #define CASE(x) \
     case x:     \
         return #x
@@ -99,6 +100,7 @@ static const char* GetOpName(uint32_t op) {
         CASE(G_CULLDL);
         CASE(G_IMAGERECT);
         CASE(G_COPYFB);
+        #endif
         default:
             return nullptr;
             // return "UNKNOWN";
@@ -154,10 +156,10 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
         gfx_path.pop_back();
     };
 
-    auto simple_node = [dbg, node_with_text](const F3DGfx* cmd, uint32_t opcode) mutable {
+    auto simple_node = [dbg, node_with_text](const F3DGfx* cmd, int8_t opcode) mutable {
         const char* opname = GetOpName(opcode);
-        size_t size = 1;
-        if (opcode == G_TEXRECT)
+        [[maybe_unused]] size_t size = 1;
+        if (opcode == RDP_G_TEXRECT)
             size = 3;
         if (opname) {
 #ifdef GFX_DEBUG_DISASSEMBLER
@@ -182,17 +184,17 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
             node_with_text(cmd, fmt::format("{}", opname));
 #endif
         } else {
-            uint32_t opcode = cmd->words.w0 >> 24;
+            int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
             node_with_text(cmd, fmt::format("UNK: 0x{:X}", opcode));
         }
     };
 
     while (true) {
-        uint32_t opcode = cmd->words.w0 >> 24;
+        int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
         const F3DGfx* cmd0 = cmd;
         switch (opcode) {
 
-            case G_NOOP: {
+            case F3DEX2_G_NOOP: {
                 const char* filename = (const char*)cmd->words.w1;
                 uint32_t p = C0(16, 8);
                 uint32_t l = C0(0, 16);
@@ -209,7 +211,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
-            case G_MARKER: {
+            case OTR_G_MARKER: {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 const char* dlName = ResourceGetNameByCrc(hash);
@@ -221,7 +223,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
-            case G_DL_OTR_HASH: {
+            case OTR_G_DL_OTR_HASH: {
 
                 if (C0(16, 1) == 0) {
                     cmd++;
@@ -240,7 +242,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
-            case G_SETTIMG_OTR_HASH: {
+            case OTR_G_SETTIMG_OTR_HASH: {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 const char* name = ResourceGetNameByCrc(hash);
@@ -255,7 +257,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
-            case G_VTX_OTR_HASH: {
+            case OTR_G_VTX_OTR_HASH: {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 const char* name = ResourceGetNameByCrc(hash);
@@ -269,7 +271,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             };
 
-            case G_DL: {
+            case F3DEX2_G_DL: {
                 F3DGfx* subGFX = (F3DGfx*)seg_addr(cmd->words.w1);
                 if (C0(16, 1) == 0) {
                     node_with_text(cmd0, fmt::format("G_DL: 0x{:x} -> {}", cmd->words.w1, (void*)subGFX), subGFX);
@@ -282,30 +284,30 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
-            case G_ENDDL: {
+            case F3DEX2_G_ENDDL: {
                 simple_node(cmd, opcode);
                 return;
             }
 
-            case G_TEXRECT: {
+            case RDP_G_TEXRECT: {
                 simple_node(cmd, opcode);
                 cmd += 3;
                 break;
             }
 
-            case G_IMAGERECT: {
+            case OTR_G_IMAGERECT: {
                 node_with_text(cmd0, fmt::format("G_IMAGERECT"));
                 cmd += 3;
                 break;
             }
 
-            case G_SETTIMG_FB: {
+            case OTR_G_SETTIMG_FB: {
                 node_with_text(cmd0, fmt::format("G_SETTIMG_FB: src {}", cmd->words.w1));
                 cmd++;
                 break;
             }
 
-            case G_COPYFB: {
+            case OTR_G_COPYFB: {
                 node_with_text(cmd0, fmt::format("G_COPYFB: src {}, dest {}, new frames only {}", C0(0, 11), C0(11, 11),
                                                  C0(22, 1)));
                 cmd++;

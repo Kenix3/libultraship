@@ -1,8 +1,8 @@
 #include "resource/factory/DisplayListFactory.h"
 #include "resource/type/DisplayList.h"
 #include "spdlog/spdlog.h"
-#include "graphic/Fast3D/lus_gbi.h"
-
+#include "libultraship/libultra/gbi.h"
+#if 0
 typedef int Mtx_t[4][4];
 typedef union {
     Mtx_t m;
@@ -315,7 +315,7 @@ typedef union {
 #define gsSPLightColor(n, col) gsMoveWd(G_MW_LIGHTCOL, G_MWO_a##n, col), gsMoveWd(G_MW_LIGHTCOL, G_MWO_b##n, col)
 
 
-
+#endif
 namespace LUS {
 std::unordered_map<std::string, uint32_t> renderModes = { { "G_RM_ZB_OPA_SURF", G_RM_ZB_OPA_SURF },
                                                           { "G_RM_AA_ZB_OPA_SURF", G_RM_AA_ZB_OPA_SURF },
@@ -431,7 +431,7 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
                           G_ACMUX_LOD_FRACTION,
                           G_ACMUX_PRIM_LOD_FRAC };
 
-    for (int i = 0; i < ARRAY_COUNT(values); i++) {
+    for (size_t i = 0; i < std::size(values); i++) {
         if (valStr == strings[i]) {
             return values[i];
         }
