@@ -3710,7 +3710,7 @@ static void gfx_step() {
     auto cmd0 = cmd;
     int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
-    if (opcode == G_LOAD_UCODE) {
+    if (opcode == (int8_t)G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
         ++cmd;
         return;
@@ -3731,7 +3731,7 @@ static void gfx_step() {
                 return;
             }
         } else {
-            SPDLOG_WARN("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_CRITICAL("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
         }
     }
 
