@@ -3292,7 +3292,7 @@ bool gfx_set_fb_handler_custom(Gfx** cmd0) {
 }
 
 float gfx_calculate_noise_scale() {
-    return ((float)gfx_current_game_window_viewport.height / SCREEN_HEIGHT) * 0.5f;
+    return ((float)gfx_current_dimensions.height / gfx_native_dimensions.height) * 0.5f;
 }
 
 bool gfx_reset_fb_handler_custom(Gfx** cmd0) {
