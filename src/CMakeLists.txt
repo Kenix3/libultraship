@@ -387,6 +387,8 @@ set(Source_Files__Resource__Types
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Texture.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/Vertex.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/RawJson.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/type/RawJson.h
 )
 source_group("resource/type" FILES ${Source_Files__Resource__Types})
 
@@ -403,6 +405,8 @@ set(Source_Files__Resource__Factories
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/TextureFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/VertexFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/RawJsonFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/factory/RawJsonFactory.h
 )
 source_group("resource/factory" FILES ${Source_Files__Resource__Factories})
 

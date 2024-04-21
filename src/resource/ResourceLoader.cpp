@@ -12,6 +12,7 @@
 #include "factory/BlobFactory.h"
 #include "factory/DisplayListFactory.h"
 #include "factory/MatrixFactory.h"
+#include "factory/RawJsonFactory.h"
 
 namespace LUS {
 ResourceLoader::ResourceLoader() {
@@ -41,6 +42,8 @@ void ResourceLoader::RegisterGlobalResourceFactories() {
                             static_cast<uint32_t>(ResourceType::Array), 0);
     RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryBlobV0>(), RESOURCE_FORMAT_BINARY, "Blob",
                             static_cast<uint32_t>(ResourceType::Blob), 0);
+    RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryRawJsonV0>(), RESOURCE_FORMAT_BINARY, "RawJson",
+                            static_cast<uint32_t>(ResourceType::RawJson), 0);
 }
 
 bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format,
