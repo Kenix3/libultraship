@@ -5,11 +5,11 @@
 
 namespace LUS {
 
-class RawJson : public Resource<void> {
+class Json : public Resource<void> {
   public:
     using Resource::Resource;
 
-    RawJson();
+    Json();
 
     void* GetPointer() override;
     size_t GetPointerSize() override;

@@ -14,6 +14,6 @@ enum class ResourceType {
     Array = 0x4F415252,       // OARR
     Blob = 0x4F424C42,        // OBLB
     Texture = 0x4F544558,     // OTEX
-    RawJson = 0x4A534F4E,     // JSON
+    Json = 0x4A534F4E,        // JSON
 };
 } // namespace LUS
