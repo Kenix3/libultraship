@@ -65,6 +65,10 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 
 #endif
 
+#ifndef USER_DEFAULT_SCREEN_DPI
+#define USER_DEFAULT_SCREEN_DPI 96
+#endif
+
 namespace LUS {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
@@ -279,6 +283,8 @@ void Gui::Update(WindowEvent event) {
         mNeedsConsoleVariableSave = false;
     }
 
+    float dpiScale = 0;
+
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __WIIU__
         case WindowBackend::GX2:
@@ -288,6 +294,21 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+
+            if (static_cast<const SDL_Event*>(event.Sdl.Event)->window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED ||
+                mDpiInit) {
+                int display = 0;
+                if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::SDL_OPENGL) {
+                    display = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mImpl.Opengl.Window));
+                } else {
+                    display = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mImpl.Metal.Window));
+                }
+
+                float dpi;
+                if (SDL_GetDisplayDPI(display, &dpi, nullptr, nullptr) == 0) {
+                    dpiScale = dpi / USER_DEFAULT_SCREEN_DPI;
+                }
+            }
 
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
@@ -301,10 +322,29 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
                                            event.Win32.Param2);
+
+            if (event.Win32.Msg == WM_DPICHANGED || mDpiInit) {
+                HMONITOR monitor = MonitorFromWindow(static_cast<HWND>(event.Win32.Handle), MONITOR_DEFAULTTONEAREST);
+                dpiScale = (float)ImGui_ImplWin32_GetDpiScaleForMonitor(monitor);
+            }
             break;
 #endif
         default:
             break;
+    }
+
+    if (dpiScale > 0) {
+        if (mDpiInit) {
+            mLastDpiScale = 1.f;
+            mDpiInit = false;
+        }
+
+        float diff = dpiScale / mLastDpiScale;
+        mLastDpiScale = dpiScale;
+
+        ImGui::GetStyle().ScaleAllSizes(diff);
+        ImFont* font = ImGui::GetFont();
+        font->Scale *= diff;
     }
 }
 
@@ -322,11 +362,23 @@ void Gui::UnblockImGuiGamepadNavigation() {
     }
 }
 
+float Gui::GetCurrentDpiScale() {
+    if (mLastDpiScale <= 0) {
+        return 1.f;
+    }
+
+    return mLastDpiScale;
+}
+
 void Gui::DrawMenu() {
     LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
+
+    if (mLastDpiScale == 0) {
+        mDpiInit = true;
+    }
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();

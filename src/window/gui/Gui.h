@@ -92,6 +92,7 @@ class Gui {
     bool ImGuiGamepadNavigationEnabled();
     void BlockImGuiGamepadNavigation();
     void UnblockImGuiGamepadNavigation();
+    float GetCurrentDpiScale();
 
   protected:
     void ImGuiWMInit();
@@ -111,6 +112,9 @@ class Gui {
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
+
+    bool mDpiInit = false;
+    float mLastDpiScale = 0;
 };
 } // namespace LUS
 
