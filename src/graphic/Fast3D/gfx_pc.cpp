@@ -2914,7 +2914,7 @@ bool gfx_dl_otr_filepath_handler_custom(Gfx** cmd0) {
         g_exec_stack.call(*cmd0, nDL);
     } else {
         if (nDL != nullptr) {
-            cmd = nDL;
+            (*cmd0) = nDL;
             g_exec_stack.branch(*cmd0);
             return true; // shortcut cmd increment
         } else {
@@ -2945,7 +2945,7 @@ bool gfx_dl_handler_common(Gfx** cmd0) {
         }
     } else {
         (*cmd0) = subGFX;
-        g_exec_stack.branch(cmd);
+        g_exec_stack.branch(*cmd0);
         return true; // shortcut cmd increment
     }
     return false;
@@ -2987,8 +2987,8 @@ bool gfx_dl_index_handler(Gfx** cmd0) {
             g_exec_stack.call((*cmd0), subGFX);
         }
     } else {
-        cmd = subGFX;
-        g_exec_stack.branch((*cmd0));
+        (*cmd0) = subGFX;
+        g_exec_stack.branch(*cmd0);
         return true; // shortcut cmd increment
     }
     return false;
