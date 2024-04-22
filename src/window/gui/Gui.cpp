@@ -295,13 +295,8 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
-#ifdef __SWITCH__
-            // Switch doesn't support SDL_WINDOWEVENT_DISPLAY_CHANGED
-            if (mDpiInit) {
-#else
             if (static_cast<const SDL_Event*>(event.Sdl.Event)->window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED ||
                 mDpiInit) {
-#endif
                 int display = 0;
                 if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::SDL_OPENGL) {
                     display = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mImpl.Opengl.Window));
