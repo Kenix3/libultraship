@@ -12,6 +12,10 @@
 
 namespace LUS {
 
+#ifndef CVAR_GAME_OVERLAY_FONT
+#define CVAR_GAME_OVERLAY_FONT "gOverlayFont"
+#endif
+
 enum class OverlayType { TEXT, IMAGE, NOTIFICATION };
 
 struct Overlay {
@@ -27,6 +31,8 @@ class GameOverlay {
     ~GameOverlay();
 
     void Init();
+    void LoadFont(const std::string& name, const std::string& path, float fontSize);
+    void SetCurrentFont(const std::string& name);
     void Draw();
     void DrawSettings();
     float GetStringWidth(const char* text);
@@ -47,6 +53,5 @@ class GameOverlay {
     bool mNeedsCleanup = false;
 
     void CleanupNotifications();
-    void LoadFont(const std::string& name, const std::string& path, float fontSize);
 };
 } // namespace LUS
