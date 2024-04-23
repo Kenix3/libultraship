@@ -81,6 +81,10 @@
 #define CONT_ADDR_CRC_ER 0x04
 #define CONT_EEPROM_BUSY 0x80
 
+#ifndef CONTROLLERBUTTONS_T
+#define CONTROLLERBUTTONS_T uint16_t
+#endif
+
 /* Buttons */
 #define BTN_CRIGHT 0x00001
 #define BTN_CLEFT 0x00002
@@ -117,7 +121,7 @@ typedef struct {
 } OSContStatus; // size = 0x04
 
 typedef struct {
-    /* 0x00 */ uint16_t button;
+    /* 0x00 */ CONTROLLERBUTTONS_T button;
     /* 0x02 */ int8_t stick_x;
     /* 0x03 */ int8_t stick_y;
     /* 0x04 */ uint8_t err_no;
