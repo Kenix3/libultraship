@@ -10,7 +10,7 @@
 #include <algorithm>
 
 namespace LUS {
-ControllerButton::ControllerButton(uint8_t portIndex, uint16_t bitmask)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN) {
 }
@@ -18,7 +18,7 @@ ControllerButton::ControllerButton(uint8_t portIndex, uint16_t bitmask)
 ControllerButton::~ControllerButton() {
 }
 
-std::string ControllerButton::GetConfigNameFromBitmask(uint16_t bitmask) {
+std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
     switch (bitmask) {
         case BTN_A:
             return "A";
@@ -159,7 +159,7 @@ void ControllerButton::ClearAllButtonMappingsForDevice(LUSDeviceIndex lusDeviceI
     SaveButtonMappingIdsToConfig();
 }
 
-void ControllerButton::UpdatePad(uint16_t& padButtons) {
+void ControllerButton::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     for (const auto& [id, mapping] : mButtonMappings) {
         mapping->UpdatePad(padButtons);
     }
@@ -171,7 +171,7 @@ bool ControllerButton::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
 }
 
 #ifdef __WIIU__
-bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
+bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping =
         ButtonMappingFactory::CreateButtonMappingFromWiiUInput(mPortIndex, bitmask);
 
@@ -203,7 +203,7 @@ void ControllerButton::AddDefaultMappings(LUSDeviceIndex lusDeviceIndex) {
     SaveButtonMappingIdsToConfig();
 }
 #else
-bool ControllerButton::AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id) {
+bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
     mUseKeydownEventToCreateNewMapping = true;

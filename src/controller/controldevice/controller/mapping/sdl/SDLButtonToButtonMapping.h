@@ -4,9 +4,9 @@
 namespace LUS {
 class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public ControllerButtonMapping {
   public:
-    SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
+    SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                              int32_t sdlControllerButton);
-    void UpdatePad(uint16_t& padButtons) override;
+    void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
     uint8_t GetMappingType() override;
     std::string GetButtonMappingId() override;
     void SaveToConfig() override;

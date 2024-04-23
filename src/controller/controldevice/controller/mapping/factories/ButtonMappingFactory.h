@@ -11,19 +11,19 @@ class ButtonMappingFactory {
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromConfig(uint8_t portIndex, std::string id);
 #ifdef __WIIU__
     static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask);
+    CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromWiiUInput(uint8_t portIndex,
-                                                                                     uint16_t bitmask);
+                                                                                     CONTROLLERBUTTONS_T bitmask);
 #else
     static std::vector<std::shared_ptr<ControllerButtonMapping>> CreateDefaultKeyboardButtonMappings(uint8_t portIndex,
-                                                                                                     uint16_t bitmask);
+                                                                                                     CONTROLLERBUTTONS_T bitmask);
 
     static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask);
+    CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromSDLInput(uint8_t portIndex,
-                                                                                    uint16_t bitmask);
+                                                                                    CONTROLLERBUTTONS_T bitmask);
 #endif
 };
 } // namespace LUS

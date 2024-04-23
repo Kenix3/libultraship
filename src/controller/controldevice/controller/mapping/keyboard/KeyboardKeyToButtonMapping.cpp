@@ -5,12 +5,12 @@
 #include "Context.h"
 
 namespace LUS {
-KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, uint16_t bitmask, KbScancode scancode)
+KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, KbScancode scancode)
     : ControllerInputMapping(LUSDeviceIndex::Keyboard),
       ControllerButtonMapping(LUSDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
 }
 
-void KeyboardKeyToButtonMapping::UpdatePad(uint16_t& padButtons) {
+void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->KeyboardGameInputBlocked()) {
         return;
     }

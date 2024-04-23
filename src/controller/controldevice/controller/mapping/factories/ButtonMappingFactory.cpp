@@ -19,7 +19,7 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     const std::string mappingCvarKey = "gControllers.ButtonMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
-    uint16_t bitmask = CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
+    CONTROLLERBUTTONS_T bitmask = CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
     if (!bitmask) {
         // all button mappings need bitmasks
         CVarClear(mappingCvarKey.c_str());
@@ -99,7 +99,7 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 #ifdef __WIIU__
 std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
-                                                      uint16_t bitmask) {
+                                                      CONTROLLERBUTTONS_T bitmask) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(
@@ -384,7 +384,7 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIn
 }
 
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex,
-                                                                                                uint16_t bitmask) {
+                                                                                                CONTROLLERBUTTONS_T bitmask) {
     for (auto [lusDeviceIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
         auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
@@ -474,7 +474,7 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 }
 #else
 std::vector<std::shared_ptr<ControllerButtonMapping>>
-ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, uint16_t bitmask) {
+ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     switch (bitmask) {
@@ -535,7 +535,7 @@ ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, uin
 
 std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
-                                                     uint16_t bitmask) {
+                                                     CONTROLLERBUTTONS_T bitmask) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
@@ -626,7 +626,7 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceInd
 }
 
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex,
-                                                                                               uint16_t bitmask) {
+                                                                                               CONTROLLERBUTTONS_T bitmask) {
     std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :

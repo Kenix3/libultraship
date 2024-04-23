@@ -7,13 +7,13 @@
 #include "Context.h"
 
 namespace LUS {
-WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
+WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                      bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
     : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
       WiiUButtonToAnyMapping(lusDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
 }
 
-void WiiUButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
+void WiiUButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return;
     }
