@@ -15,7 +15,8 @@
 
 namespace LUS {
 
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : ControlDevice(portIndex) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : ControlDevice(portIndex) {
     for (auto bitmask : { BUTTON_BITMASKS }) {
         mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
     }

@@ -5,7 +5,8 @@
 #include "Context.h"
 
 namespace LUS {
-KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, KbScancode scancode)
+KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                       KbScancode scancode)
     : ControllerInputMapping(LUSDeviceIndex::Keyboard),
       ControllerButtonMapping(LUSDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
 }

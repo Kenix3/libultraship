@@ -7,8 +7,9 @@
 #include "Context.h"
 
 namespace LUS {
-WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                                     bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton)
+WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+                                                     CONTROLLERBUTTONS_T bitmask, bool isNunchuk, bool isClassic,
+                                                     uint32_t wiiuControllerButton)
     : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
       WiiUButtonToAnyMapping(lusDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
 }

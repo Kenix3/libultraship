@@ -6,8 +6,8 @@
 #include "Context.h"
 
 namespace LUS {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                                   int32_t sdlControllerButton)
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+                                                   CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton)
     : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
       SDLButtonToAnyMapping(lusDeviceIndex, sdlControllerButton) {
 }
