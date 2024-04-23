@@ -7,13 +7,13 @@
 
 namespace LUS {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
-                                                                 uint16_t bitmask, int32_t sdlControllerAxis,
+                                                                 CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerAxis,
                                                                  int32_t axisDirection)
     : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
       SDLAxisDirectionToAnyMapping(lusDeviceIndex, sdlControllerAxis, axisDirection) {
 }
 
-void SDLAxisDirectionToButtonMapping::UpdatePad(uint16_t& padButtons) {
+void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (!ControllerLoaded()) {
         return;
     }

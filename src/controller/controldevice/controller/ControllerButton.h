@@ -15,7 +15,7 @@ namespace LUS {
 
 class ControllerButton {
   public:
-    ControllerButton(uint8_t portIndex, uint16_t bitmask);
+    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
     ~ControllerButton();
 
     std::shared_ptr<ControllerButtonMapping> GetButtonMappingById(std::string id);
@@ -32,9 +32,9 @@ class ControllerButton {
     void ClearAllButtonMappings();
     void ClearAllButtonMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
 
-    bool AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id);
+    bool AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id);
 
-    void UpdatePad(uint16_t& padButtons);
+    void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
 #ifndef __WIIU__
     bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
@@ -44,9 +44,9 @@ class ControllerButton {
 
   private:
     uint8_t mPortIndex;
-    uint16_t mBitmask;
+    CONTROLLERBUTTONS_T mBitmask;
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
-    std::string GetConfigNameFromBitmask(uint16_t bitmask);
+    std::string GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask);
 
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;

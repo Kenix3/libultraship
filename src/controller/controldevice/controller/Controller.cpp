@@ -15,7 +15,8 @@
 
 namespace LUS {
 
-Controller::Controller(uint8_t portIndex, std::vector<uint16_t> additionalBitmasks) : ControlDevice(portIndex) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : ControlDevice(portIndex) {
     for (auto bitmask : { BUTTON_BITMASKS }) {
         mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
     }
@@ -36,11 +37,11 @@ Controller::~Controller() {
     SPDLOG_TRACE("destruct controller");
 }
 
-std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> Controller::GetAllButtons() {
+std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> Controller::GetAllButtons() {
     return mButtons;
 }
 
-std::shared_ptr<ControllerButton> Controller::GetButton(uint16_t bitmask) {
+std::shared_ptr<ControllerButton> Controller::GetButton(CONTROLLERBUTTONS_T bitmask) {
     return mButtons[bitmask];
 }
 
@@ -209,7 +210,7 @@ bool Controller::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
     return false;
 }
 
-std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(uint16_t bitmask) {
+std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask) {
     return mButtons[bitmask];
 }
 

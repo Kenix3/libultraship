@@ -6,13 +6,13 @@
 #include "Context.h"
 
 namespace LUS {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask,
-                                                   int32_t sdlControllerButton)
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+                                                   CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton)
     : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
       SDLButtonToAnyMapping(lusDeviceIndex, sdlControllerButton) {
 }
 
-void SDLButtonToButtonMapping::UpdatePad(uint16_t& padButtons) {
+void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (!ControllerLoaded()) {
         return;
     }

@@ -224,7 +224,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 #endif
 }
 
-void Context::InitControlDeck(std::vector<uint16_t> additionalBitmasks) {
+void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
     if (GetControlDeck() != nullptr) {
         return;
     }

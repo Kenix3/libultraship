@@ -180,7 +180,7 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
     ImGui::EndDisabled();
 }
 
-void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask) {
+void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     auto popupId = StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask);
     if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(),
@@ -209,7 +209,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bi
     }
 }
 
-void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t bitmask, std::string id) {
+void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, std::string id) {
     auto mapping = LUS::Context::GetInstance()
                        ->GetControlDeck()
                        ->GetControllerByPort(port)
@@ -352,7 +352,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t b
     ImGui::SameLine(0, 4.0f);
 }
 
-void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask,
+void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask,
                                        ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine(32.0f);
@@ -922,7 +922,7 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
     }
 }
 
-void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16_t> bitmasks) {
+void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks) {
     std::set<LUSDeviceIndex> allLusDeviceIndices;
     allLusDeviceIndices.insert(LUSDeviceIndex::Keyboard);
     for (auto [lusIndex, mapping] : Context::GetInstance()
