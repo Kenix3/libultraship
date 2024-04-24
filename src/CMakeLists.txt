@@ -302,6 +302,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
         $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+        __IOS__
     )
 else()
     target_compile_definitions(libultraship PRIVATE

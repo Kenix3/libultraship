@@ -188,13 +188,14 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 bool Metal_IsSupported() {
 #ifdef __IOS__
     return true;
-#endif
+#else
     NS::Array* devices = MTLCopyAllDevices();
     NS::UInteger count = devices->count();
 
     devices->release();
 
     return count > 0;
+#endif
 }
 
 bool Metal_Init(SDL_Renderer* renderer) {
