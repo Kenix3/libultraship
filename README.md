@@ -52,3 +52,4 @@ LUS makes use of the following third party libraries and resources:
 - [bzip2](https://github.com/libarchive/bzip2) (bzip2) compression used in StormLib
 - [sdl2](https://github.com/libsdl-org/SDL) (zlib) window manager, controllers, and audio player
 - [glew](https://github.com/nigels-com/glew) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
+- [libzip](https://github.com/nih-at/) (BSD-3-Clause)
