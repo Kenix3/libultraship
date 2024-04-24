@@ -37,11 +37,11 @@ target_sources(libultraship PRIVATE ${Source_Files__Audio})
 file(GLOB_RECURSE Source_Files__Controller RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "controller/*.h" "controller/*.cpp")
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/mapping/keyboard/*")
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/mapping/sdl/*")
+    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/controldevice/controller/mapping/keyboard/*")
+    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/controldevice/controller/mapping/sdl/*")
     list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.*")
 else()
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/mapping/wiiu/*")
+    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/controldevice/controller/mapping/wiiu/*")
     list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.*")
 endif()
 
@@ -164,6 +164,7 @@ file(GLOB Source_Files__Graphic RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "graphic/Fa
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_dxgi*")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_direct3d*")
+    list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/dxsdk/*")
 endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -187,6 +188,18 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
 endif()
 
+#=================== STB ===================
+# hack: no idea why wii u doesn't want to link this when we build it
+#       as a separate static lib
+if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    set(Source_Files__Lib__stb
+        "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image_write.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_impl.c"
+    )
+    source_group("extern/stb" FILES ${Source_Files__Lib__stb})
+    target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
+endif()
 
 #=================== Packages & Includes ===================
 
@@ -209,9 +222,15 @@ else()
     target_link_libraries(libultraship PUBLIC storm)
 endif()
 target_link_libraries(libultraship
-    PRIVATE StrHash64 stb
+    PRIVATE StrHash64
     PUBLIC ZAPDUtils ImGui tinyxml2 nlohmann_json::nlohmann_json
 )
+
+# hack cont.: wii u just includes these files, everyone
+#             else handles linking it just fine
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    target_link_libraries(libultraship PRIVATE stb)
+endif()
 
 if (GFX_DEBUG_DISASSEMBLER)
     target_link_libraries(libultraship PRIVATE libgfxd)
