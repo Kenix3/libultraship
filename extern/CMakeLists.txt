@@ -151,6 +151,7 @@ add_subdirectory(${ZAPDUTILS_DIR})
 if (GFX_DEBUG_DISASSEMBLER)
     set(LIBGFXD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libgfxd)
     add_library(libgfxd STATIC)
+    set_property(TARGET libgfxd PROPERTY C_STANDARD 11)
 
     target_sources(libgfxd PRIVATE
         ${LIBGFXD_DIR}/gbi.h
