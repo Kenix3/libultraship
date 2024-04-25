@@ -216,7 +216,8 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
-#ifdef PLATFORM_IOS
+#ifdef __IOS__
+        // We need this exit to close the app when we dismiss the dialog
         exit(0);
 #endif
 #endif
@@ -338,7 +339,7 @@ std::string Context::GetAppBundlePath() {
     }
 #endif
 
-#ifdef PLATFORM_IOS
+#ifdef __IOS__
     const char* home = getenv("HOME");
     return std::string(home) + "/Documents";
 #endif
@@ -379,7 +380,7 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     }
 #endif
 
-#ifdef PLATFORM_IOS
+#ifdef __IOS__
     const char* home = getenv("HOME");
     return std::string(home) + "/Documents";
 #endif

@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef __cplusplus
 #include <vector>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -100,4 +99,3 @@ class Config {
     std::map<uint32_t, std::shared_ptr<ConfigVersionUpdater>> mVersionUpdaters;
 };
 } // namespace LUS
-#endif

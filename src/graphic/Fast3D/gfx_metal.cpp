@@ -186,16 +186,15 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 // MARK: - ImGui & SDL Wrappers
 
 bool Metal_IsSupported() {
-#ifdef PLATFORM_IOS
+#ifdef __IOS__
     return true;
-#else
+#endif
     NS::Array* devices = MTLCopyAllDevices();
     NS::UInteger count = devices->count();
 
     devices->release();
 
     return count > 0;
-#endif
 }
 
 bool Metal_Init(SDL_Renderer* renderer) {

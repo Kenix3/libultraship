@@ -287,21 +287,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     )
 endif()
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_compile_definitions(libultraship PRIVATE
-        $<$<CONFIG:Debug>:_DEBUG>
-        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
-        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
-        $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
-        $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
-    )
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
-        target_compile_definitions(libultraship PRIVATE
-            ENABLE_OPENGL
-        )
-    endif()
-else ()
+if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_compile_definitions(libultraship PRIVATE
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
@@ -309,6 +295,23 @@ else ()
         SPDLOG_NO_TLS
         STBI_NO_THREAD_LOCALS
         SPDLOG_ACTIVE_LEVEL=3
+    )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    target_compile_definitions(libultraship PRIVATE
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
+        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+    )
+else()
+    target_compile_definitions(libultraship PRIVATE
+        ENABLE_OPENGL
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
+        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+        $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
+        $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
     )
 endif()
 

@@ -209,8 +209,7 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::GX2:
             ImGui_ImplGX2_Init();
             break;
-#else
-#ifdef ENABLE_OPENGL
+#elif defined(ENABLE_OPENGL)
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -220,7 +219,6 @@ void Gui::ImGuiBackendInit() {
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif
             break;
-#endif
 #endif
 
 #ifdef __APPLE__
@@ -468,14 +466,14 @@ void Gui::ImGuiBackendNewFrame() {
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
-#ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
-            Metal_NewFrame(mImpl.Metal.Renderer);
-            break;
-#endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_NewFrame();
+            break;
+#elif defined(__APPLE__)
+        case WindowBackend::SDL_METAL:
+            Metal_NewFrame(mImpl.Metal.Renderer);
             break;
 #endif
         default:
@@ -719,21 +717,19 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             GX2SetScissor(0, 0, mImGuiIo->DisplaySize.x, mImGuiIo->DisplaySize.y);
             ImGui_ImplWiiU_DrawKeyboardOverlay();
             break;
-#else
-#ifdef ENABLE_OPENGL
+#elif defined(ENABLE_OPENGL)
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
-#endif
-#ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
-            Metal_RenderDrawData(data);
-            break;
-#endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_RenderDrawData(data);
+            break;
+#elif defined(__APPLE__)
+        case WindowBackend::SDL_METAL:
+            Metal_RenderDrawData(data);
             break;
 #endif
         default:

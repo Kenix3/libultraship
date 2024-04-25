@@ -1,6 +1,6 @@
 #include "O2rArchive.h"
 
-#ifndef PLATFORM_IOS
+#ifndef __IOS__
 #include "Context.h"
 #include "spdlog/spdlog.h"
 

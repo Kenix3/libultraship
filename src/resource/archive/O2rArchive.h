@@ -1,5 +1,5 @@
 #pragma once
-#ifndef PLATFORM_IOS
+#ifndef __IOS__
 #undef _DLL
 
 #include <string>
