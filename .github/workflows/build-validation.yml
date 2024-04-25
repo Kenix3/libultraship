@@ -49,6 +49,17 @@ jobs:
         ./configure
         make -j 10
         sudo make install
+    - name: Install latest tinyxml2
+      run: |
+        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+        wget https://github.com/leethomason/tinyxml2/archive/refs/tags/10.0.0.tar.gz
+        tar -xzf 10.0.0.tar.gz
+        cd tinyxml2-10.0.0
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
