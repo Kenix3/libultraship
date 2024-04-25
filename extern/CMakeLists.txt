@@ -108,6 +108,14 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 endif()
 
+#=================== tinyxml2 ===================
+
+set(TINYXML2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2)
+add_library(tinyxml2 STATIC)
+
+target_sources(tinyxml2 PRIVATE ${TINYXML2_DIR}/tinyxml2.cpp)
+target_include_directories(tinyxml2 PUBLIC ${TINYXML2_DIR})
+
 #=================== ZAPDUtils ===================
 
 set(ZAPDUTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ZAPDUtils)
