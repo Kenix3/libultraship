@@ -522,7 +522,7 @@ static void gfx_metal_set_scissor(int x, int y, int width, int height) {
     // clamp to viewport size as metal does not support larger values than viewport size
     fb.scissor_rect.x = std::max(0, std::min<int>(x, tex.width));
     fb.scissor_rect.y = std::max(0, std::min<int>(mctx.render_target_height - y - height, tex.height));
-    fb.scissor_rect.width = std::max(0, std::min<int>(x + width, tex.width));
+    fb.scissor_rect.width = std::max(0, std::min<int>(width, tex.width));
     fb.scissor_rect.height = std::max(0, std::min<int>(height, tex.height));
 
     fb.command_encoder->setScissorRect(fb.scissor_rect);
