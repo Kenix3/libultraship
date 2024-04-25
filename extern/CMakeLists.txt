@@ -169,13 +169,6 @@ if (GFX_DEBUG_DISASSEMBLER)
     target_include_directories(libgfxd PUBLIC ${LIBGFXD_DIR})
 endif()
 
-#=================== nlohmann-json ===================
-
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-
-set(NLOHMANN_JSON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann-json)
-add_subdirectory(${NLOHMANN_JSON_DIR})
-
 #=================== StrHash64 ===================
 
 set(STRHASH64_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StrHash64)
