@@ -210,6 +210,7 @@ void Gui::ImGuiBackendInit() {
             ImGui_ImplGX2_Init();
             break;
 #else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -219,6 +220,7 @@ void Gui::ImGuiBackendInit() {
             ImGui_ImplOpenGL3_Init("#version 120");
 #endif
             break;
+#endif
 #endif
 
 #ifdef __APPLE__
@@ -291,12 +293,10 @@ void Gui::Update(WindowEvent event) {
 
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
-#endif
-#ifdef __ANDROID__
-            LUS::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+#elif defined(__ANDROID__) || defined(__IOS__)
+            LUS::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
-#endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
@@ -463,7 +463,7 @@ void Gui::ImGuiBackendNewFrame() {
             mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
             ImGui_ImplGX2_NewFrame();
             break;
-#else
+#elif defined(ENABLE_OPENGL)
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
@@ -720,9 +720,11 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             ImGui_ImplWiiU_DrawKeyboardOverlay();
             break;
 #else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
+#endif
 #endif
 #ifdef __APPLE__
         case WindowBackend::SDL_METAL:

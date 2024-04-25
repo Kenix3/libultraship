@@ -7,7 +7,7 @@
 
 namespace LUS {
 
-class Android {
+class Mobile {
   public:
     static void ImGuiProcessEvent(bool wantsTextInput);
 };

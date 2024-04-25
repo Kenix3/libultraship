@@ -5,7 +5,9 @@
 
 #include "resource/archive/Archive.h"
 #include "resource/archive/OtrArchive.h"
+#ifndef PLATFORM_IOS
 #include "resource/archive/O2rArchive.h"
+#endif
 #include "Utils/StringHelper.h"
 #include <StrHash64.h>
 
@@ -155,13 +157,21 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
     SPDLOG_INFO("Reading archive: {}", path.string());
 
     if (StringHelper::IEquals(extension, ".zip") || StringHelper::IEquals(extension, ".zip")) {
+#ifndef PLATFORM_IOS
         archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
+#else
+        SPDLOG_WARN("Zip archives are not supported on iOS");
+#endif
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath));
     } else {
+#ifndef PLATFORM_IOS
         // Not recognized file extension, trying with o2r
         SPDLOG_WARN("File extension \"{}\" not recognized, trying to create an o2r archive.", extension);
         archive = std::make_shared<O2rArchive>(archivePath);
+#else
+        SPDLOG_WARN("Zip archives are not supported on iOS");
+#endif
     }
 
     archive->Load();

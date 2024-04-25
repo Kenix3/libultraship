@@ -216,6 +216,9 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
+#ifdef PLATFORM_IOS
+        exit(0);
+#endif
 #endif
         return;
     }
@@ -334,6 +337,12 @@ std::string Context::GetAppBundlePath() {
         return externaldir;
     }
 #endif
+
+#ifdef PLATFORM_IOS
+    const char *home = getenv("HOME");
+    return std::string(home) + "/Documents";
+#endif
+
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
@@ -368,6 +377,11 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     if (externaldir != NULL) {
         return externaldir;
     }
+#endif
+
+#ifdef PLATFORM_IOS
+    const char *home = getenv("HOME");
+    return std::string(home) + "/Documents";
 #endif
 
 #if defined(__linux__) || defined(__APPLE__)

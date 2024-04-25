@@ -186,12 +186,16 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 // MARK: - ImGui & SDL Wrappers
 
 bool Metal_IsSupported() {
+#ifdef PLATFORM_IOS
+    return true;
+#else
     NS::Array* devices = MTLCopyAllDevices();
     NS::UInteger count = devices->count();
 
     devices->release();
 
     return count > 0;
+#endif
 }
 
 bool Metal_Init(SDL_Renderer* renderer) {
@@ -274,7 +278,7 @@ static void gfx_metal_init(void) {
         struct CoordUniforms {
             uint2 coords[1024];
         };
-        
+
         kernel void depthKernel(depth2d<float, access::read> depth_texture [[ texture(0) ]],
                                      constant CoordUniforms& query_coords [[ buffer(0) ]],
                                      device float* output_values [[ buffer(1) ]],
