@@ -239,12 +239,6 @@ endif()
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)
 
-if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
-    include(FetchContent)
-    FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
-    FetchContent_MakeAvailable(json)
-endif()
-
 find_package(nlohmann_json REQUIRED)
 target_link_libraries(libultraship PUBLIC nlohmann_json::nlohmann_json)
 
