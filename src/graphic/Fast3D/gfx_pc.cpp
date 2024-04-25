@@ -3306,6 +3306,7 @@ bool gfx_read_fb_handler_custom(Gfx** cmd0) {
     int32_t width, height, ulx, uly;
     uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
+    bool bswap = C0(8, 1);
     ++(*cmd0);
     cmd = *cmd0;
     // Specifying the upper left origin value is unused and unsupported at the renderer level
@@ -3316,6 +3317,16 @@ bool gfx_read_fb_handler_custom(Gfx** cmd0) {
 
     gfx_flush();
     gfx_rapi->read_framebuffer_to_cpu(fbId, width, height, rgba16Buffer);
+
+#ifndef IS_BIGENDIAN
+    // byteswap the output to BE
+    if (bswap) {
+        for (size_t i = 0; i < width * height; i++) {
+            rgba16Buffer[i] = BE16SWAP(rgba16Buffer[i]);
+        }
+    }
+#endif
+
     return false;
 }
 
