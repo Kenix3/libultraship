@@ -2680,14 +2680,14 @@ typedef union {
     }
 
 // Read the framebuffer's texture to a cpu memory location as RGBA16
-#define gDPReadFB(pkt, src, rgba16buf, ulx, uly, width, height)          \
-    {                                                                    \
-        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                      \
-                                                                         \
-        _g0->words.w0 = _SHIFTL(G_READFB, 24, 8) | _SHIFTL(src, 0, 8);   \
-        _g0->words.w1 = (uintptr_t)rgba16buf;                            \
-        _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);      \
-        _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16); \
+#define gDPReadFB(pkt, src, rgba16buf, ulx, uly, width, height, bswap)                        \
+    {                                                                                         \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                                           \
+                                                                                              \
+        _g0->words.w0 = _SHIFTL(G_READFB, 24, 8) | _SHIFTL(bswap, 8, 1) | _SHIFTL(src, 0, 8); \
+        _g0->words.w1 = (uintptr_t)rgba16buf;                                                 \
+        _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);                           \
+        _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16);                      \
     }
 
 #define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \
