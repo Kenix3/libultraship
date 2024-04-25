@@ -239,7 +239,7 @@ endif()
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)
 
-find_package(nlohmann_json CONFIG REQUIRED)
+find_package(nlohmann_json REQUIRED)
 target_link_libraries(libultraship PUBLIC nlohmann_json::nlohmann_json)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
