@@ -45,8 +45,8 @@
 #include "port/switch/SwitchImpl.h"
 #endif
 
-#ifdef __ANDROID__
-#include "port/android/AndroidImpl.h"
+#if defined(__ANDROID__) || defined(__IOS__)
+#include "port/mobile/MobileImpl.h"
 #endif
 
 #ifdef ENABLE_OPENGL
@@ -288,13 +288,13 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
-
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #elif defined(__ANDROID__) || defined(__IOS__)
             LUS::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
+#endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
