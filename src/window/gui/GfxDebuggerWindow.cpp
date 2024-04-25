@@ -24,88 +24,9 @@ void GfxDebuggerWindow::InitElement() {
 void GfxDebuggerWindow::UpdateElement() {
 }
 
+// LUSTODO handle switching ucodes
 static const char* GetOpName(int8_t op) {
-    switch (op) {
-    #if 0
-#define CASE(x) \
-    case x:     \
-        return #x
-
-        CASE(G_RDPHALF_1);
-        CASE(G_RDPHALF_2);
-        CASE(G_RDPPIPESYNC);
-        CASE(G_RDPFULLSYNC);
-        CASE(G_RDPLOADSYNC);
-        CASE(G_LOAD_UCODE);
-        CASE(G_MARKER);
-        CASE(G_INVALTEXCACHE);
-        CASE(G_NOOP);
-        CASE(G_MTX);
-        CASE(G_MTX_OTR);
-        CASE(G_POPMTX);
-        CASE(G_MOVEMEM);
-        CASE(G_MOVEWORD);
-        CASE(G_TEXTURE);
-        CASE(G_VTX);
-        CASE(G_VTX_OTR_HASH);
-        CASE(G_VTX_OTR_FILEPATH);
-        CASE(G_DL_OTR_FILEPATH);
-        CASE(G_MODIFYVTX);
-        CASE(G_DL);
-        CASE(G_DL_OTR_HASH);
-        CASE(G_PUSHCD);
-        CASE(G_BRANCH_Z_OTR);
-        CASE(G_ENDDL);
-        CASE(G_GEOMETRYMODE);
-        // CASE(G_SETGEOMETRYMODE);
-        // CASE(G_CLEARGEOMETRYMODE);
-        CASE(G_TRI1_OTR);
-        CASE(G_TRI1);
-        CASE(G_QUAD);
-        CASE(G_TRI2);
-        CASE(G_SETOTHERMODE_L);
-        CASE(G_SETOTHERMODE_H);
-        CASE(G_SETTIMG);
-        CASE(G_SETTIMG_OTR_HASH);
-        CASE(G_SETTIMG_OTR_FILEPATH);
-        CASE(G_SETFB);
-        CASE(G_RESETFB);
-        CASE(G_SETTIMG_FB);
-        CASE(G_SETGRAYSCALE);
-        CASE(G_LOADBLOCK);
-        CASE(G_LOADTILE);
-        CASE(G_SETTILE);
-        CASE(G_SETTILESIZE);
-        CASE(G_LOADTLUT);
-        CASE(G_SETENVCOLOR);
-        CASE(G_SETPRIMCOLOR);
-        CASE(G_SETFOGCOLOR);
-        CASE(G_SETFILLCOLOR);
-        CASE(G_SETINTENSITY);
-        CASE(G_SETCOMBINE);
-        CASE(G_TEXRECT);
-        CASE(G_TEXRECTFLIP);
-        CASE(G_TEXRECT_WIDE);
-        CASE(G_FILLRECT);
-        CASE(G_FILLWIDERECT);
-        CASE(G_SETSCISSOR);
-        CASE(G_SETZIMG);
-        CASE(G_SETCIMG);
-        CASE(G_RDPSETOTHERMODE);
-        // CASE(G_BG_COPY);
-        CASE(G_EXTRAGEOMETRYMODE);
-        CASE(G_SETBLENDCOLOR);
-        CASE(G_RDPTILESYNC);
-        CASE(G_SPNOOP);
-        CASE(G_CULLDL);
-        CASE(G_IMAGERECT);
-        CASE(G_COPYFB);
-        #endif
-        default:
-            return nullptr;
-            // return "UNKNOWN";
-#undef CASE
-    }
+    return GfxGetOpcodeName(op);
 }
 
 static inline void* seg_addr(uintptr_t w1) {

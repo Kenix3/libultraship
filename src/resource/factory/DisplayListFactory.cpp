@@ -13,7 +13,6 @@ typedef union {
     long long int forc_structure_alignment;
 } Mtx;
 
-
 #define G_IM_FMT_RGBA 0
 #define G_IM_FMT_YUV 1
 #define G_IM_FMT_CI 2
@@ -72,14 +71,14 @@ typedef union {
 
 #define G_TX_DXT_FRAC 11
 
-
 #define ARRAY_COUNT(arr) (int)(sizeof(arr) / sizeof(arr[0]))
-#define NUML(n) ((n) * 24)
+#define NUML(n) ((n)*24)
 #define _SHIFTL(v, s, w) ((unsigned int)(((unsigned int)(v) & ((0x01 << (w)) - 1)) << (s)))
 #define _SHIFTR(v, s, w) ((unsigned int)(((unsigned int)(v) >> (s)) & ((0x01 << (w)) - 1)))
 #define G_TX_LDBLK_MAX_TXL 4095
 
-#define gsDPNoParam(cmd) { _SHIFTL(cmd, 24, 8), 0 }
+#define gsDPNoParam(cmd) \
+    { _SHIFTL(cmd, 24, 8), 0 }
 #define gsDPFullSync() gsDPNoParam(G_RDPFULLSYNC)
 #define gsDPTileSync() gsDPNoParam(G_RDPTILESYNC)
 #define gsDPPipeSync() gsDPNoParam(G_RDPPIPESYNC)
@@ -122,7 +121,8 @@ typedef union {
 
 #define gsMoveWd(index, offset, data) gsDma1p(G_MOVEWORD, data, offset, index)
 
-#define gsDPSetColor(c, d)  { _SHIFTL(c, 24, 8), (unsigned int)(d) }
+#define gsDPSetColor(c, d) \
+    { _SHIFTL(c, 24, 8), (unsigned int)(d) }
 
 #define DPRGBColor(pkt, cmd, r, g, b, a) \
     gDPSetColor(pkt, cmd, (_SHIFTL(r, 24, 8) | _SHIFTL(g, 16, 8) | _SHIFTL(b, 8, 8) | _SHIFTL(a, 0, 8)))
@@ -140,14 +140,15 @@ typedef union {
 #define gsDPSetFillColor(d) gsDPSetColor(G_SETFILLCOLOR, (d))
 #define gDPSetPrimDepth(pkt, z, dz) gDPSetColor(pkt, G_SETPRIMDEPTH, _SHIFTL(z, 16, 16) | _SHIFTL(dz, 0, 16))
 #define gsDPSetPrimDepth(z, dz) gsDPSetColor(G_SETPRIMDEPTH, _SHIFTL(z, 16, 16) | _SHIFTL(dz, 0, 16))
-#define gsSPGrayscale(state) { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
+#define gsSPGrayscale(state) \
+    { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
 #define gDPSetBlendMask(pkt, mask) gDPNoOp(pkt)
 #define gsDPSetBlendMask(mask) gsDPNoOp()
 
 #define gSPSetOtherMode(pkt, cmd, sft, len, data)                                                          \
     _DW({                                                                                                  \
-        F3DGfx* _g = (F3DGfx*)(pkt);                                                                             \
+        F3DGfx* _g = (F3DGfx*)(pkt);                                                                       \
         _g->words.w0 = (_SHIFTL(cmd, 24, 8) | _SHIFTL(32 - (sft) - (len), 8, 8) | _SHIFTL((len)-1, 0, 8)); \
         _g->words.w1 = (unsigned int)(data);                                                               \
     })
@@ -180,7 +181,7 @@ typedef union {
 
 #define gsSPFogFactor(fm, fo) gsMoveWd(G_MW_FOG, G_MWO_FOG, (_SHIFTL(fm, 16, 16) | _SHIFTL(fo, 0, 16)))
 #define gsSPNumLights(n) gsMoveWd(G_MW_NUMLIGHT, G_MWO_NUMLIGHT, NUML(n))
-#define gsSPSegment(segment, base) gsMoveWd(G_MW_SEGMENT, (segment) * 4, base)
+#define gsSPSegment(segment, base) gsMoveWd(G_MW_SEGMENT, (segment)*4, base)
 
 #define gsSPMatrix(m, p) gsDma2p(G_MTX, (m), sizeof(Mtx), (p) ^ G_MTX_PUSH, 0)
 
@@ -254,25 +255,24 @@ typedef union {
              _SHIFTL(shiftt, 10, 4) | _SHIFTL(cms, 8, 2) | _SHIFTL(masks, 4, 4) | _SHIFTL(shifts, 0, 4))    \
     }
 
-#define gsDPLoadTextureBlock(timg, fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt)              \
-                                                                                                                      \
-    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                                                              \
-        gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts),           \
-        gsDPLoadSync(),                                                                                               \
-        gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                    \
-                      CALC_DXT(width, siz##_BYTES)),                                                                  \
-        gsDPPipeSync(),                                                                                               \
-        gsDPSetTile(fmt, siz, ((((width) * siz##_LINE_BYTES) + 7) >> 3), 0, G_TX_RENDERTILE, pal, cmt, maskt, shiftt, \
-                    cms, masks, shifts),                                                                              \
-        gsDPSetTileSize(G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC,                                   \
+#define gsDPLoadTextureBlock(timg, fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt)            \
+                                                                                                                    \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                                                            \
+        gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts),         \
+        gsDPLoadSync(),                                                                                             \
+        gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                  \
+                      CALC_DXT(width, siz##_BYTES)),                                                                \
+        gsDPPipeSync(),                                                                                             \
+        gsDPSetTile(fmt, siz, ((((width)*siz##_LINE_BYTES) + 7) >> 3), 0, G_TX_RENDERTILE, pal, cmt, maskt, shiftt, \
+                    cms, masks, shifts),                                                                            \
+        gsDPSetTileSize(G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC,                                 \
                         ((height)-1) << G_TEXTURE_IMAGE_FRAC)
 
 #define gsSPEndDisplayList() \
     { _SHIFTL(G_ENDDL, 24, 8), 0 }
 
 #define gsSPCullDisplayList(vstart, vend) \
-    { _SHIFTL(G_CULLDL, 24, 8) | _SHIFTL((vstart) * 2, 0, 16), _SHIFTL((vend) * 2, 0, 16) }
-
+    { _SHIFTL(G_CULLDL, 24, 8) | _SHIFTL((vstart)*2, 0, 16), _SHIFTL((vend)*2, 0, 16) }
 
 #define gsSPClipRatio(r)                                                                              \
     gsMoveWd(G_MW_CLIP, G_MWO_CLIP_RNX, FR_NEG_##r), gsMoveWd(G_MW_CLIP, G_MWO_CLIP_RNY, FR_NEG_##r), \
@@ -313,7 +313,6 @@ typedef union {
 #define G_MWO_aLIGHT_8 0xa8
 
 #define gsSPLightColor(n, col) gsMoveWd(G_MW_LIGHTCOL, G_MWO_a##n, col), gsMoveWd(G_MW_LIGHTCOL, G_MWO_b##n, col)
-
 
 #endif
 namespace LUS {
@@ -1181,19 +1180,19 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
 
             if (siz == 0) {
                 F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_4b, width, height, 0, cms, cmt, maskS, maskT,
-                                                   shiftS, shiftT) };
+                                                      shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(F3DGfx));
             } else if (siz == 1) {
                 F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
-                                                   shiftS, shiftT) };
+                                                      shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(F3DGfx));
             } else if (siz == 2) {
                 F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
-                                                   shiftS, shiftT) };
+                                                      shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(F3DGfx));
             } else if (siz == 3) {
                 F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
-                                                   shiftS, shiftT) };
+                                                      shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(F3DGfx));
             }
 

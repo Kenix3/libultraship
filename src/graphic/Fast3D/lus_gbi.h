@@ -50,7 +50,7 @@ constexpr int8_t F3DEX2_G_QUAD = 0x07;
 #define G_SPNOOP 0 /* handle 0 gracefully */
 #define G_MTX 1
 #define G_RESERVED0 2 /* not implemeted */
-constexpr int8_t G_MOVEMEM 3   /* move a block of memory (up to 4 words) to dmem */
+constexpr int8_t G_MOVEMEM 3 /* move a block of memory (up to 4 words) to dmem */
 #define G_VTX 4
 #define G_RESERVED1 5 /* not implemeted */
 #define G_DL 6
@@ -63,7 +63,7 @@ constexpr int8_t G_MOVEMEM 3   /* move a block of memory (up to 4 words) to dmem
 #define G_TRI1 (G_IMMFIRST - 0)
 #define G_CULLDL (G_IMMFIRST - 1)
 #define G_POPMTX (G_IMMFIRST - 2)
-constexpr int8_t G_MOVEWORD = (G_IMMFIRST - 3);
+    constexpr int8_t G_MOVEWORD = (G_IMMFIRST - 3);
 #define G_TEXTURE (G_IMMFIRST - 4)
 #define G_SETOTHERMODE_H (G_IMMFIRST - 5)
 #define G_SETOTHERMODE_L (G_IMMFIRST - 6)
@@ -97,7 +97,7 @@ constexpr int8_t G_CLEARGEOMETRYMODE - (G_IMMFIRST - 9);
 constexpr int8_t RDP_G_SETCIMG = 0xff;         /*  -1 */
 constexpr int8_t RDP_G_SETZIMG = 0xfe;         /*  -2 */
 constexpr int8_t RDP_G_SETTIMG = 0xfd;         /*  -3 */
-constexpr int8_t RDP_G_SETCOMBINE=  0xfc;      /*  -4 */
+constexpr int8_t RDP_G_SETCOMBINE = 0xfc;      /*  -4 */
 constexpr int8_t RDP_G_SETENVCOLOR = 0xfb;     /*  -5 */
 constexpr int8_t RDP_G_SETPRIMCOLOR = 0xfa;    /*  -6 */
 constexpr int8_t RDP_G_SETBLENDCOLOR = 0xf9;   /*  -7 */
@@ -242,7 +242,7 @@ constexpr int8_t OTR_G_SETINTENSITY = 0x40;
  */
 #define G_MAXFBZ 0x3fff /* 3b exp, 11b mantissa */
 
-#define GPACK_RGBA5551(r, g, b, a) ((((r) << 8) & 0xf800) | (((g) << 3) & 0x7c0) | (((b) >> 2) & 0x3e) | ((a) & 0x1))
+#define GPACK_RGBA5551(r, g, b, a) ((((r) << 8) & 0xf800) | (((g) << 3) & 0x7c0) | (((b) >> 2) & 0x3e) | ((a)&0x1))
 #define GPACK_ZDZ(z, dz) ((z) << 2 | (dz))
 
 /*
@@ -386,7 +386,6 @@ constexpr int8_t OTR_G_SETINTENSITY = 0x40;
 #define G_TX_CLAMP 0x2
 #define G_TX_NOMASK 0
 #define G_TX_NOLOD 0
-
 
 /*
  * G_SETCOMBINE: color combine modes
@@ -1332,7 +1331,7 @@ static_assert(sizeof(F3DGwords) == 2 * sizeof(void*), "Display list size is bad"
  * This union is the fundamental type of the display list.
  * It is, by law, exactly 64 bits in size.
  */
-typedef union F3DGfx{
+typedef union F3DGfx {
     F3DGwords words;
     long long int force_structure_alignment;
 } F3DGfx;
@@ -1381,20 +1380,20 @@ constexpr int8_t S2DEX_G_OBJ_RENDERMODE = 0x0b;
 typedef struct {
     unsigned short imageX; /* x-coordinate of upper-left position of texture (u10.5) */
     unsigned short imageW; /* width of the texture (u10.2) */
-    short frameX; /* upper-left position of transferred frame (s10.2) */
+    short frameX;          /* upper-left position of transferred frame (s10.2) */
     unsigned short frameW; /* width of transferred frame (u10.2) */
 
     unsigned short imageY; /* y-coordinate of upper-left position of texture (u10.5) */
     unsigned short imageH; /* height of the texture (u10.2) */
-    short frameY; /* upper-left position of transferred frame (s10.2) */
+    short frameY;          /* upper-left position of transferred frame (s10.2) */
     unsigned short frameH; /* height of transferred frame (u10.2) */
 
     unsigned long long int* imagePtr; /* texture source address on DRAM */
-    unsigned short imageLoad; /* which to use, LoadBlock or  LoadTile */
-    unsigned char imageFmt;   /* format of texel - G_IM_FMT_*  */
-    unsigned char imageSiz;   /* size of texel - G_IM_SIZ_*   */
-    unsigned short imagePal;  /* pallet number  */
-    unsigned short imageFlip; /* right & left image inversion (Inverted by G_BG_FLAG_FLIPS) */
+    unsigned short imageLoad;         /* which to use, LoadBlock or  LoadTile */
+    unsigned char imageFmt;           /* format of texel - G_IM_FMT_*  */
+    unsigned char imageSiz;           /* size of texel - G_IM_SIZ_*   */
+    unsigned short imagePal;          /* pallet number  */
+    unsigned short imageFlip;         /* right & left image inversion (Inverted by G_BG_FLAG_FLIPS) */
 
     /* The following is set in the initialization routine guS2DInitBg(). There is no need for the user to set it. */
     unsigned short tmemW;      /* TMEM width and Word size of frame 1 line.
@@ -1414,30 +1413,30 @@ typedef struct {
                        At LoadTile, GS_PIX2TMEM(imageW/4,imageSiz)*2 */
     unsigned short tmemSize;   /* skip value of imagePtr for 1-loading
                        = tmemSizeW*tmemH                          */
-} F3DuObjBg_t;         /* 40 bytes */
+} F3DuObjBg_t;                 /* 40 bytes */
 
 /* Scalable background plane */
 typedef struct {
     unsigned short imageX; /* x-coordinate of upper-left position of texture (u10.5) */
     unsigned short imageW; /* width of texture (u10.2) */
-    short frameX; /* upper-left position of transferred frame (s10.2) */
+    short frameX;          /* upper-left position of transferred frame (s10.2) */
     unsigned short frameW; /* width of transferred frame (u10.2) */
 
     unsigned short imageY; /* y-coordinate of upper-left position of texture (u10.5) */
     unsigned short imageH; /* height of texture (u10.2) */
-    short frameY; /* upper-left position of transferred frame (s10.2) */
+    short frameY;          /* upper-left position of transferred frame (s10.2) */
     unsigned short frameH; /* height of transferred frame (u10.2) */
 
     unsigned long long int* imagePtr; /* texture source address on DRAM */
-    unsigned short imageLoad; /* Which to use, LoadBlock or LoadTile? */
-    unsigned char imageFmt;   /* format of texel - G_IM_FMT_*  */
-    unsigned char imageSiz;   /* size of texel - G_IM_SIZ_*  */
-    unsigned short imagePal;  /* pallet number */
-    unsigned short imageFlip; /* right & left image inversion (Inverted by G_BG_FLAG_FLIPS) */
+    unsigned short imageLoad;         /* Which to use, LoadBlock or LoadTile? */
+    unsigned char imageFmt;           /* format of texel - G_IM_FMT_*  */
+    unsigned char imageSiz;           /* size of texel - G_IM_SIZ_*  */
+    unsigned short imagePal;          /* pallet number */
+    unsigned short imageFlip;         /* right & left image inversion (Inverted by G_BG_FLAG_FLIPS) */
 
-    unsigned short scaleW;     /* scale value of X-direction (u5.10) */
-    unsigned short scaleH;     /* scale value of Y-direction (u5.10) */
-    int imageYorig; /* start point of drawing on image (s20.5) */
+    unsigned short scaleW; /* scale value of X-direction (u5.10) */
+    unsigned short scaleH; /* scale value of Y-direction (u5.10) */
+    int imageYorig;        /* start point of drawing on image (s20.5) */
 
     unsigned char padding[4];
 
@@ -1456,11 +1455,11 @@ typedef union {
 #define G_OBJ_FLAG_FLIPT 1 << 4 /* nversion to T-direction */
 
 typedef struct {
-    short objX;        /* s10.2 OBJ x-coordinate of upper-left end */
+    short objX;                 /* s10.2 OBJ x-coordinate of upper-left end */
     unsigned short scaleW;      /* u5.10 Scaling of u5.10 width direction   */
     unsigned short imageW;      /* u10.5 width of u10.5 texture (length of S-direction) */
     unsigned short paddingX;    /* Unused - Always 0 */
-    short objY;        /* s10.2 OBJ y-coordinate of s10.2 OBJ upper-left end */
+    short objY;                 /* s10.2 OBJ y-coordinate of s10.2 OBJ upper-left end */
     unsigned short scaleH;      /* u5.10 Scaling of u5.10 height direction */
     unsigned short imageH;      /* u10.5 height of u10.5 texture (length of T-direction) */
     unsigned short paddingY;    /* Unused - Always 0 */
@@ -1470,7 +1469,7 @@ typedef struct {
     unsigned char imageSiz;     /* size of texel - G_IM_SIZ_* */
     unsigned char imagePal;     /* pallet number (0-7) */
     unsigned char imageFlags;   /* The display flag - G_OBJ_FLAG_FLIP* */
-} F3DuObjSprite_t;      /* 24 bytes */
+} F3DuObjSprite_t;              /* 24 bytes */
 
 typedef union {
     F3DuObjSprite_t s;
@@ -1481,11 +1480,11 @@ typedef union {
  *	2D Matrix
  *---------------------------------------------------------------------------*/
 typedef struct {
-    int A, B, C, D; /* s15.16 */
-    short X, Y;       /* s10.2  */
+    int A, B, C, D;            /* s15.16 */
+    short X, Y;                /* s10.2  */
     unsigned short BaseScaleX; /* u5.10  */
     unsigned short BaseScaleY; /* u5.10  */
-} F3DuObjMtx_t;        /* 24 bytes */
+} F3DuObjMtx_t;                /* 24 bytes */
 
 typedef union {
     F3DuObjMtx_t m;
@@ -1493,10 +1492,10 @@ typedef union {
 } F3DuObjMtx;
 
 typedef struct {
-    short X, Y;       /* s10.2  */
+    short X, Y;                /* s10.2  */
     unsigned short BaseScaleX; /* u5.10  */
     unsigned short BaseScaleY; /* u5.10  */
-} F3DuObjSubMtx_t;     /* 8 bytes */
+} F3DuObjSubMtx_t;             /* 8 bytes */
 
 typedef union {
     F3DuObjSubMtx_t m;
@@ -1514,43 +1513,43 @@ typedef union {
 #define GS_TB_TLINE(pix, siz) (GS_CALC_DXT(GS_PIX2TMEM((pix), (siz))))
 
 typedef struct {
-    unsigned int type;      /* G_OBJLT_TXTRBLOCK divided into types */
-    unsigned long long int* image;    /* texture source address on DRAM */
-    unsigned short tmem;      /* loaded TMEM word address (8byteWORD) */
-    unsigned short tsize;     /* Texture size, Specified by macro GS_TB_TSIZE() */
-    unsigned short tline;     /* width of Texture 1-line, Specified by macro GS_TB_TLINE() */
-    unsigned short sid;       /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12) */
-    unsigned int flag;      /* STATE flag  */
-    unsigned int mask;      /* STATE mask  */
-} F3DuObjTxtrBlock_t; /* 24 bytes */
+    unsigned int type;             /* G_OBJLT_TXTRBLOCK divided into types */
+    unsigned long long int* image; /* texture source address on DRAM */
+    unsigned short tmem;           /* loaded TMEM word address (8byteWORD) */
+    unsigned short tsize;          /* Texture size, Specified by macro GS_TB_TSIZE() */
+    unsigned short tline;          /* width of Texture 1-line, Specified by macro GS_TB_TLINE() */
+    unsigned short sid;            /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12) */
+    unsigned int flag;             /* STATE flag  */
+    unsigned int mask;             /* STATE mask  */
+} F3DuObjTxtrBlock_t;              /* 24 bytes */
 
 #define GS_TT_TWIDTH(pix, siz) ((GS_PIX2TMEM((pix), (siz)) << 2) - 1)
 #define GS_TT_THEIGHT(pix, siz) (((pix) << 2) - 1)
 
 typedef struct {
-    unsigned int type;     /* G_OBJLT_TXTRTILE divided into types */
-    unsigned long long int* image;   /* texture source address on DRAM */
-    unsigned short tmem;     /* loaded TMEM word address (8byteWORD)*/
-    unsigned short twidth;   /* width of Texture (Specified by macro GS_TT_TWIDTH()) */
-    unsigned short theight;  /* height of Texture (Specified by macro GS_TT_THEIGHT()) */
-    unsigned short sid;      /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12) */
-    unsigned int flag;     /* STATE flag  */
-    unsigned int mask;     /* STATE mask  */
-} F3DuObjTxtrTile_t; /* 24 bytes */
+    unsigned int type;             /* G_OBJLT_TXTRTILE divided into types */
+    unsigned long long int* image; /* texture source address on DRAM */
+    unsigned short tmem;           /* loaded TMEM word address (8byteWORD)*/
+    unsigned short twidth;         /* width of Texture (Specified by macro GS_TT_TWIDTH()) */
+    unsigned short theight;        /* height of Texture (Specified by macro GS_TT_THEIGHT()) */
+    unsigned short sid;            /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12) */
+    unsigned int flag;             /* STATE flag  */
+    unsigned int mask;             /* STATE mask  */
+} F3DuObjTxtrTile_t;               /* 24 bytes */
 
 #define GS_PAL_HEAD(head) ((head) + 256)
 #define GS_PAL_NUM(num) ((num)-1)
 
 typedef struct {
-    unsigned int type;     /* G_OBJLT_TLUT divided into types */
-    unsigned long long int* image;   /* texture source address on DRAM */
-    unsigned short phead;    /* pallet number of load header (Between 256 and 511) */
-    unsigned short pnum;     /* loading pallet number -1 */
-    unsigned short zero;     /* Assign 0 all the time */
-    unsigned short sid;      /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12)*/
-    unsigned int flag;     /* STATE flag  */
-    unsigned int mask;     /* STATE mask  */
-} F3DuObjTxtrTLUT_t; /* 24 bytes */
+    unsigned int type;             /* G_OBJLT_TLUT divided into types */
+    unsigned long long int* image; /* texture source address on DRAM */
+    unsigned short phead;          /* pallet number of load header (Between 256 and 511) */
+    unsigned short pnum;           /* loading pallet number -1 */
+    unsigned short zero;           /* Assign 0 all the time */
+    unsigned short sid;            /* STATE ID Multipled by 4 (Either one of  0, 4, 8 and 12)*/
+    unsigned int flag;             /* STATE flag  */
+    unsigned int mask;             /* STATE mask  */
+} F3DuObjTxtrTLUT_t;               /* 24 bytes */
 
 typedef union {
     F3DuObjTxtrBlock_t block;
@@ -1566,6 +1565,5 @@ typedef struct {
     F3DuObjTxtr txtr;
     F3DuObjSprite sprite;
 } F3DuObjTxSprite; /* 48 bytes */
-
 
 #endif

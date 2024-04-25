@@ -1,6 +1,5 @@
 #include "resource/type/DisplayList.h"
 
-
 namespace LUS {
 DisplayList::DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
