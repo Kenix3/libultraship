@@ -223,7 +223,7 @@ else()
 endif()
 target_link_libraries(libultraship
     PRIVATE StrHash64
-    PUBLIC ZAPDUtils ImGui tinyxml2
+    PUBLIC ZAPDUtils ImGui
 )
 
 # hack cont.: wii u just includes these files, everyone
@@ -241,6 +241,9 @@ target_link_libraries(libultraship PRIVATE libzip::zip)
 
 find_package(nlohmann_json REQUIRED)
 target_link_libraries(libultraship PUBLIC nlohmann_json::nlohmann_json)
+
+find_package(tinyxml2 REQUIRED)
+target_link_libraries(libultraship PUBLIC tinyxml2::tinyxml2)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
     set(THREADS_PREFER_PTHREAD_FLAG ON)

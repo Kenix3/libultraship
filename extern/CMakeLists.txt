@@ -6,24 +6,6 @@ elseif (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
     find_package(SDL2 REQUIRED)
 endif()
 
-################################################################################
-# Find/download SDL2 for Android
-################################################################################
-if (CMAKE_SYSTEM_NAME STREQUAL "Android")
-    find_package(SDL2 QUIET)
-    if (NOT ${SDL2_FOUND})
-    	include(FetchContent)
-        FetchContent_Declare(
-            SDL2
-	    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-	    GIT_TAG release-2.28.1 
-    	)
-        message("SDL2 not found. Downloading now...")
-        FetchContent_MakeAvailable(SDL2)
-        message("SDL2 downloaded to " ${FETCHCONTENT_BASE_DIR}/sdl2-src)
-    endif()
-endif()
-
 #=================== DrLibs ===================
 
 set(DRLIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dr_libs)
@@ -125,14 +107,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY})
     endif()
 endif()
-
-#=================== tinyxml2 ===================
-
-set(TINYXML2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2)
-add_library(tinyxml2 STATIC)
-
-target_sources(tinyxml2 PRIVATE ${TINYXML2_DIR}/tinyxml2.cpp)
-target_include_directories(tinyxml2 PUBLIC ${TINYXML2_DIR})
 
 #=================== ZAPDUtils ===================
 
