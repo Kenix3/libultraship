@@ -169,13 +169,6 @@ if (GFX_DEBUG_DISASSEMBLER)
     target_include_directories(libgfxd PUBLIC ${LIBGFXD_DIR})
 endif()
 
-#=================== nlohmann-json ===================
-if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
-    include(FetchContent)
-    FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
-    FetchContent_MakeAvailable(json)
-endif()
-
 #=================== StrHash64 ===================
 
 set(STRHASH64_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StrHash64)
