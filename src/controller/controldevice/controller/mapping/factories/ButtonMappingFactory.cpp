@@ -253,47 +253,47 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                     break;
                 case BTN_R:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_R, false, true, WPAD_CLASSIC_BUTTON_ZR));
+                        shipDKDeviceIndex, portIndex, BTN_R, false, true, WPAD_CLASSIC_BUTTON_ZR));
                     break;
                 case BTN_Z:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_Z, false, true, WPAD_CLASSIC_BUTTON_ZL));
+                        shipDKDeviceIndex, portIndex, BTN_Z, false, true, WPAD_CLASSIC_BUTTON_ZL));
                     break;
                 case BTN_START:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_START, false, true, WPAD_CLASSIC_BUTTON_PLUS));
+                        shipDKDeviceIndex, portIndex, BTN_START, false, true, WPAD_CLASSIC_BUTTON_PLUS));
                     break;
                 case BTN_CUP:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_CUP, false, true, WPAD_CLASSIC_STICK_R_EMULATION_UP));
+                        shipDKDeviceIndex, portIndex, BTN_CUP, false, true, WPAD_CLASSIC_STICK_R_EMULATION_UP));
                     break;
                 case BTN_CDOWN:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_CDOWN, false, true, WPAD_CLASSIC_STICK_R_EMULATION_DOWN));
+                        shipDKDeviceIndex, portIndex, BTN_CDOWN, false, true, WPAD_CLASSIC_STICK_R_EMULATION_DOWN));
                     break;
                 case BTN_CLEFT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_CLEFT, false, true, WPAD_CLASSIC_STICK_R_EMULATION_LEFT));
+                        shipDKDeviceIndex, portIndex, BTN_CLEFT, false, true, WPAD_CLASSIC_STICK_R_EMULATION_LEFT));
                     break;
                 case BTN_CRIGHT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_CRIGHT, false, true, WPAD_CLASSIC_STICK_R_EMULATION_RIGHT));
+                        shipDKDeviceIndex, portIndex, BTN_CRIGHT, false, true, WPAD_CLASSIC_STICK_R_EMULATION_RIGHT));
                     break;
                 case BTN_DUP:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_DUP, false, true, WPAD_CLASSIC_BUTTON_UP));
+                        shipDKDeviceIndex, portIndex, BTN_DUP, false, true, WPAD_CLASSIC_BUTTON_UP));
                     break;
                 case BTN_DDOWN:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_DDOWN, false, true, WPAD_CLASSIC_BUTTON_DOWN));
+                        shipDKDeviceIndex, portIndex, BTN_DDOWN, false, true, WPAD_CLASSIC_BUTTON_DOWN));
                     break;
                 case BTN_DLEFT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_DLEFT, false, true, WPAD_CLASSIC_BUTTON_LEFT));
+                        shipDKDeviceIndex, portIndex, BTN_DLEFT, false, true, WPAD_CLASSIC_BUTTON_LEFT));
                     break;
                 case BTN_DRIGHT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_DRIGHT, false, true, WPAD_CLASSIC_BUTTON_RIGHT));
+                        shipDKDeviceIndex, portIndex, BTN_DRIGHT, false, true, WPAD_CLASSIC_BUTTON_RIGHT));
                     break;
             }
             return mappings;
@@ -314,7 +314,7 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                     break;
                 case BTN_Z:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_Z, false, false, WPAD_NUNCHUK_BUTTON_Z));
+                        shipDKDeviceIndex, portIndex, BTN_Z, false, false, WPAD_NUNCHUK_BUTTON_Z));
                     break;
                 case BTN_START:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
@@ -334,7 +334,7 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                     break;
                 case BTN_CRIGHT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_CRIGHT, false, false, WPAD_BUTTON_RIGHT));
+                        shipDKDeviceIndex, portIndex, BTN_CRIGHT, false, false, WPAD_BUTTON_RIGHT));
                     break;
             }
             return mappings;
@@ -375,7 +375,7 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                     break;
                 case BTN_DRIGHT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
-                        ShipDKDeviceIndex, portIndex, BTN_DRIGHT, false, false, WPAD_BUTTON_RIGHT));
+                        shipDKDeviceIndex, portIndex, BTN_DRIGHT, false, false, WPAD_BUTTON_RIGHT));
                     break;
             }
             return mappings;
@@ -386,7 +386,7 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
 
 std::shared_ptr<ControllerButtonMapping>
 ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    for (auto [ShipDKDeviceIndex, indexMapping] :
+    for (auto [shipDKDeviceIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
         auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
 
