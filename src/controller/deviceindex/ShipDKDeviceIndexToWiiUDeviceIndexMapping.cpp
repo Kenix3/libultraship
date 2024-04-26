@@ -17,7 +17,7 @@ bool ShipDKDeviceIndexToWiiUDeviceIndexMapping::IsWiiUGamepad() {
     return mIsWiiUGamepad;
 }
 
-int32_t shipDKDeviceIndexToWiiUDeviceIndexMapping::GetDeviceChannel() {
+int32_t ShipDKDeviceIndexToWiiUDeviceIndexMapping::GetDeviceChannel() {
     return mDeviceChannel;
 }
 
@@ -25,7 +25,7 @@ void ShipDKDeviceIndexToWiiUDeviceIndexMapping::SetDeviceChannel(int32_t channel
     mDeviceChannel = channel;
 }
 
-int32_t shipDKDeviceIndexToWiiUDeviceIndexMapping::GetExtensionType() {
+int32_t ShipDKDeviceIndexToWiiUDeviceIndexMapping::GetExtensionType() {
     return mExtensionType;
 }
 
