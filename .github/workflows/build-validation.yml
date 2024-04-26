@@ -45,7 +45,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: soh-ios
-        path: build-cmake/src/Debug-iphoneos/*.a
+        path: build-cmake/src/*/*.a
         if-no-files-found: error
   build-linux:
     runs-on: ubuntu-latest
