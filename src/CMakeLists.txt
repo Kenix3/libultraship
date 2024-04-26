@@ -214,12 +214,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     )
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
-    target_include_directories(${PROJECT_NAME} PRIVATE
-        ${DEVKITPRO}/portlibs/switch/include/
-    )
-endif()
-
 #=================== Linking ===================
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS" AND NOT CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
