@@ -1,4 +1,5 @@
 #pragma once
+
 #undef _DLL
 
 #include <string>

@@ -2,7 +2,7 @@ find_package(OpenGL QUIET)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     find_package(SDL2 CONFIG REQUIRED)
-elseif (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+elseif (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
     find_package(SDL2 REQUIRED)
 endif()
 

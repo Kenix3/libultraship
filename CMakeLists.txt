@@ -1,15 +1,33 @@
 cmake_minimum_required(VERSION 3.24.0)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 option(NON_PORTABLE "Build a non-portable version" OFF)
-option(SIGN_LIBRARY "Enable xcode signing" OFF)
-option(BUNDLE_ID "Bundle ID for xcode signing" "com.example.libultraship")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    option(SIGN_LIBRARY "Enable xcode signing" OFF)
+    option(BUNDLE_ID "Bundle ID for xcode signing" "com.example.libultraship")
+endif()
 
 project(libultraship LANGUAGES C CXX)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     enable_language(OBJCXX)
     set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS} -fobjc-arc")
     set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} -fobjc-arc")
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(PLATFORM "OS64COMBINED")
+    include(FetchContent)
+    FetchContent_Declare(iostoolchain
+        GIT_REPOSITORY https://github.com/leetal/ios-cmake
+        GIT_TAG origin/master
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+    )
+    FetchContent_GetProperties(iostoolchain)
+    if(NOT iostoolchain_POPULATED)
+        FetchContent_Populate(iostoolchain)
+    endif()
+    include(${iostoolchain_SOURCE_DIR}/ios.toolchain.cmake)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -23,9 +41,7 @@ include(cmake/dependencies/common.cmake)
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
 	include(cmake/dependencies/android.cmake)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    set(PLATFORM "OS64")
     include(cmake/dependencies/ios.cmake)
-    include(cmake/ios.toolchain.cmake)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     include(cmake/dependencies/windows.cmake)
 endif()

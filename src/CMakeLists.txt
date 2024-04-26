@@ -131,12 +131,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchImpl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchPerformanceProfiles.h
     )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
-    set(Source_Files__Port
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.cpp
-    )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Android" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(Source_Files__Port
         ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.h
         ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.cpp
