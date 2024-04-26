@@ -15,7 +15,7 @@
 #include "debug/Console.h"
 
 namespace LUS {
-  class GfxDebugger;
+class GfxDebugger;
 }
 
 namespace ShipDK {
