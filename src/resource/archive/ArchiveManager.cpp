@@ -7,12 +7,8 @@
 #include "resource/archive/OtrArchive.h"
 #include "resource/archive/O2rArchive.h"
 #include "Utils/StringHelper.h"
+#include "utils/glob.h"
 #include <StrHash64.h>
-
-// TODO: Delete me and find an implementation
-// Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
-// NOLINTNEXTLINE
-extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
 ArchiveManager::ArchiveManager() {
@@ -72,9 +68,8 @@ std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::s
     auto list = ListFiles();
     auto result = std::make_shared<std::vector<std::string>>();
 
-    std::copy_if(list->begin(), list->end(), std::back_inserter(*result), [filter](const std::string& filePath) {
-        return SFileCheckWildCard(filePath.c_str(), filter.c_str());
-    });
+    std::copy_if(list->begin(), list->end(), std::back_inserter(*result),
+                 [filter](const std::string& filePath) { return glob_match(filter.c_str(), filePath.c_str()); });
 
     return result;
 }

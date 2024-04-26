@@ -5,13 +5,9 @@
 #include <algorithm>
 #include <thread>
 #include <Utils/StringHelper.h>
+#include "utils/glob.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
-
-// TODO: Delete me and find an implementation
-// Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
-// NOLINTNEXTLINE
-extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
 

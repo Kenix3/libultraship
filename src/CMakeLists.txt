@@ -99,7 +99,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
 
 #=================== Utils ===================
 
-file(GLOB Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/*.h" "utils/*.cpp")
+file(GLOB Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/*.h" "utils/*.cpp" "utils/*.c")
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm)
