@@ -7,13 +7,9 @@
 #include "resource/File.h"
 #include "resource/ResourceLoader.h"
 #include "utils/binarytools/MemoryStream.h"
+#include "utils/glob.h"
 #include <StrHash64.h>
 #include <nlohmann/json.hpp>
-
-// TODO: Delete me and find an implementation
-// Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
-// NOLINTNEXTLINE
-extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
 
 namespace LUS {
 Archive::Archive(const std::string& path)
@@ -66,7 +62,7 @@ std::shared_ptr<std::unordered_map<uint64_t, std::string>> Archive::ListFiles(co
 
     std::copy_if(mHashes->begin(), mHashes->end(), std::inserter(*result, result->begin()),
                  [filter](const std::pair<const int64_t, const std::string&> entry) {
-                     return SFileCheckWildCard(entry.second.c_str(), filter.c_str());
+                     return glob_match(filter.c_str(), entry.second.c_str());
                  });
 
     return result;
