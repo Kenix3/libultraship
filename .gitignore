@@ -364,3 +364,4 @@ extern/nlohmann-json/*_jsonConfig*
 *.pbxproj
 *.xcworkspace
 *.xcsettings
+build*
