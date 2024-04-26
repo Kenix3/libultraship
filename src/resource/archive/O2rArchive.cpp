@@ -1,6 +1,5 @@
 #include "O2rArchive.h"
 
-#ifndef __IOS__
 #include "Context.h"
 #include "spdlog/spdlog.h"
 
@@ -85,4 +84,3 @@ bool O2rArchive::Close() {
     return true;
 }
 } // namespace LUS
-#endif

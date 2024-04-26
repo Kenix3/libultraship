@@ -133,8 +133,13 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
     set(Source_Files__Port
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.cpp
+    )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(Source_Files__Port
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.cpp
     )
 endif()
 
@@ -209,7 +214,7 @@ endif()
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR} $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:${CMAKE_CURRENT_SOURCE_DIR}/../../ZAPDTR/lib/libgfxd>
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb ${ADDITIONAL_LIB_INCLUDES}
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
