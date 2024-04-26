@@ -31,8 +31,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || ShipDKDeviceIndex < 0 ||
-            wiiuControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
+            ShipDKDeviceIndex < 0 || wiiuControllerAxis == -1 ||
+            (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
@@ -55,8 +56,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t wiiuControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || ShipDKDeviceIndex < 0 ||
-            wiiuControllerButton == -1) {
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
+            ShipDKDeviceIndex < 0 || wiiuControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
@@ -77,8 +78,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDKDeviceIndex < 0 ||
-            sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
+            shipDKDeviceIndex < 0 || sdlControllerAxis == -1 ||
+            (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
@@ -97,16 +99,16 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDKDeviceIndex < 0 ||
-            sdlControllerButton == -1) {
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
+            shipDKDeviceIndex < 0 || sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLButtonToAxisDirectionMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex), portIndex,
-                                                                 stick, static_cast<Direction>(direction),
+        return std::make_shared<SDLButtonToAxisDirectionMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex),
+                                                                 portIndex, stick, static_cast<Direction>(direction),
                                                                  sdlControllerButton);
     }
 
@@ -132,8 +134,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
 #ifdef __WIIU__
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
-                                                                    Stick stick) {
+AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(ShipDKDeviceIndex shipDKDeviceIndex,
+                                                                    uint8_t portIndex, Stick stick) {
     auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToWiiUDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
@@ -380,8 +382,8 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
-                                                                   Stick stick) {
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDKDeviceIndex shipDKDeviceIndex,
+                                                                   uint8_t portIndex, Stick stick) {
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()

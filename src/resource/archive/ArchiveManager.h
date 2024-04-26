@@ -20,7 +20,8 @@ class ArchiveManager {
     ~ArchiveManager();
 
     bool IsArchiveLoaded();
-    std::shared_ptr<ShipDK::File> LoadFile(const std::string& filePath, std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
+    std::shared_ptr<ShipDK::File> LoadFile(const std::string& filePath,
+                                           std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
     std::shared_ptr<ShipDK::File> LoadFile(uint64_t hash, std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
     bool HasFile(const std::string& filePath);
     bool HasFile(uint64_t hash);

@@ -7,9 +7,10 @@
 #include "Context.h"
 
 namespace ShipDK {
-WiiUButtonToAxisDirectionMapping::WiiUButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
-                                                                   Stick stick, Direction direction, bool isNunchuk,
-                                                                   bool isClassic, uint32_t wiiuControllerButton)
+WiiUButtonToAxisDirectionMapping::WiiUButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex,
+                                                                   uint8_t portIndex, Stick stick, Direction direction,
+                                                                   bool isNunchuk, bool isClassic,
+                                                                   uint32_t wiiuControllerButton)
     : ControllerInputMapping(shipDKDeviceIndex),
       ControllerAxisDirectionMapping(shipDKDeviceIndex, portIndex, stick, direction),
       WiiUButtonToAnyMapping(shipDKDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
@@ -25,8 +26,8 @@ float WiiUButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 
 std::string WiiUButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
     return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mStick, mDirection,
-                                 ControllerInputMapping::mShipDKDeviceIndex, mIsNunchukButton, mIsClassicControllerButton,
-                                 mControllerButton);
+                                 ControllerInputMapping::mShipDKDeviceIndex, mIsNunchukButton,
+                                 mIsClassicControllerButton, mControllerButton);
 }
 
 void WiiUButtonToAxisDirectionMapping::SaveToConfig() {

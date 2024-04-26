@@ -1,7 +1,8 @@
 #include "ShipDKDeviceIndexToPhysicalDeviceIndexMapping.h"
 
 namespace ShipDK {
-ShipDKDeviceIndexToPhysicalDeviceIndexMapping::ShipDKDeviceIndexToPhysicalDeviceIndexMapping(ShipDKDeviceIndex shipDKDeviceIndex)
+ShipDKDeviceIndexToPhysicalDeviceIndexMapping::ShipDKDeviceIndexToPhysicalDeviceIndexMapping(
+    ShipDKDeviceIndex shipDKDeviceIndex)
     : mShipDKDeviceIndex(shipDKDeviceIndex) {
 }
 

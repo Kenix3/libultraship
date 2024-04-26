@@ -78,7 +78,8 @@ RumbleMappingFactory::CreateDefaultWiiURumbleMappings(ShipDKDeviceIndex shipDKDe
     }
 
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<WiiURumbleMapping>(
-        ShipDKDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
+        ShipDKDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+        DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
     return mappings;
 }
@@ -192,7 +193,8 @@ RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDKDeviceIndex shipDKDev
     }
 
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
-        shipDKDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
+        shipDKDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+        DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
     return mappings;
 }

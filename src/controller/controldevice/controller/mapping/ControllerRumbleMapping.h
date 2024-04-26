@@ -11,8 +11,8 @@ namespace ShipDK {
 
 class ControllerRumbleMapping : public ControllerMapping {
   public:
-    ControllerRumbleMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
-                            uint8_t highFrequencyIntensityPercentage);
+    ControllerRumbleMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
+                            uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage);
     ~ControllerRumbleMapping();
     virtual void StartRumble() = 0;
     virtual void StopRumble() = 0;

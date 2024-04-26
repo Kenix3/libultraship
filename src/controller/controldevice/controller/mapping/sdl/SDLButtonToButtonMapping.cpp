@@ -31,8 +31,8 @@ uint8_t SDLButtonToButtonMapping::GetMappingType() {
 }
 
 std::string SDLButtonToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask, ControllerInputMapping::mShipDKDeviceIndex,
-                                 mControllerButton);
+    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask,
+                                 ControllerInputMapping::mShipDKDeviceIndex, mControllerButton);
 }
 
 void SDLButtonToButtonMapping::SaveToConfig() {

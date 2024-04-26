@@ -45,7 +45,8 @@ void ShipDKDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<
     ShipDK::WiiU::SetControllersInitialized();
 }
 
-void ShipDKDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad, int32_t wiiuChannel) {
+void ShipDKDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad,
+                                                                    int32_t wiiuChannel) {
     KPADError error;
     KPADStatus* status = !isGamepad ? ShipDK::WiiU::GetKPADStatus(static_cast<WPADChan>(wiiuChannel), &error) : nullptr;
 
@@ -100,8 +101,10 @@ void ShipDKDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64p
                 continue;
             }
 
-            if (!Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->HasMappingsForShipDKDeviceIndex(
-                    lusIndex)) {
+            if (!Context::GetInstance()
+                     ->GetControlDeck()
+                     ->GetControllerByPort(portIndex)
+                     ->HasMappingsForShipDKDeviceIndex(lusIndex)) {
                 continue;
             }
 
@@ -198,7 +201,8 @@ void ShipDKDeviceIndexMappingManager::UpdateExtensionTypesFromConfig() {
     }
 }
 
-std::pair<bool, int32_t> ShipDKDeviceIndexMappingManager::GetWiiUDeviceTypeFromShipDKDeviceIndex(ShipDKDeviceIndex index) {
+std::pair<bool, int32_t>
+ShipDKDeviceIndexMappingManager::GetWiiUDeviceTypeFromShipDKDeviceIndex(ShipDKDeviceIndex index) {
     return mShipDKDeviceIndexToWiiUDeviceTypes[index];
 }
 
@@ -310,7 +314,7 @@ void ShipDKDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64po
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestShipDKDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
     auto deviceIndexMapping = std::make_shared<ShipDKDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString,
-                                                                                      sdlControllerName, 25, 25);
+                                                                                         sdlControllerName, 25, 25);
     mShipDKDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     deviceIndexMapping->SaveToConfig();
     SetShipDKDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
@@ -761,7 +765,8 @@ ShipDKDeviceIndexMappingManager::GetShipDKDeviceIndexOfDisconnectedPhysicalDevic
 }
 #endif
 
-ShipDKDeviceIndex ShipDKDeviceIndexMappingManager::GetLowestShipDKDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
+ShipDKDeviceIndex
+ShipDKDeviceIndexMappingManager::GetLowestShipDKDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
     for (uint8_t lusIndex = ShipDKDeviceIndex::Blue; lusIndex < ShipDKDeviceIndex::Max; lusIndex++) {
         if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForShipDKDeviceIndex(
                 static_cast<ShipDKDeviceIndex>(lusIndex)) ||

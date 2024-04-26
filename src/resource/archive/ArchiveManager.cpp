@@ -37,7 +37,7 @@ bool ArchiveManager::IsArchiveLoaded() {
 }
 
 std::shared_ptr<ShipDK::File> ArchiveManager::LoadFile(const std::string& filePath,
-                                               std::shared_ptr<ShipDK::ResourceInitData> initData) {
+                                                       std::shared_ptr<ShipDK::ResourceInitData> initData) {
     if (filePath == "") {
         return nullptr;
     }
@@ -45,7 +45,8 @@ std::shared_ptr<ShipDK::File> ArchiveManager::LoadFile(const std::string& filePa
     return LoadFile(CRC64(filePath.c_str()), initData);
 }
 
-std::shared_ptr<ShipDK::File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<ShipDK::ResourceInitData> initData) {
+std::shared_ptr<ShipDK::File> ArchiveManager::LoadFile(uint64_t hash,
+                                                       std::shared_ptr<ShipDK::ResourceInitData> initData) {
     const auto archive = mFileToArchive[hash];
     if (archive == nullptr) {
         return nullptr;

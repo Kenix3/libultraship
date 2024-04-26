@@ -13,7 +13,8 @@ namespace ShipDK {
 
 class ControllerLEDMapping : public ControllerMapping {
   public:
-    ControllerLEDMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
+    ControllerLEDMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+                         Color_RGB8 savedColor);
     ~ControllerLEDMapping();
 
     void SetColorSource(uint8_t colorSource);

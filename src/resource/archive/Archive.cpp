@@ -110,7 +110,7 @@ void Archive::IndexFile(const std::string& filePath) {
 }
 
 std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath,
-                                                                std::shared_ptr<ShipDK::File> metaFileToLoad) {
+                                                                        std::shared_ptr<ShipDK::File> metaFileToLoad) {
     auto initData = CreateDefaultResourceInitData();
 
     // just using metaFileToLoad->Buffer->data() leads to garbage at the end
@@ -137,8 +137,8 @@ std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitData(const st
     return initData;
 }
 
-std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
-                                                                      std::shared_ptr<ShipDK::File> fileToLoad) {
+std::shared_ptr<ShipDK::ResourceInitData>
+Archive::ReadResourceInitDataLegacy(const std::string& filePath, std::shared_ptr<ShipDK::File> fileToLoad) {
     // Determine if file is binary or XML...
     if (fileToLoad->Buffer->at(0) == '<') {
         // File is XML
@@ -199,7 +199,8 @@ std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<
     return xmlReader;
 }
 
-std::shared_ptr<ShipDK::File> Archive::LoadFile(const std::string& filePath, std::shared_ptr<ShipDK::ResourceInitData> initData) {
+std::shared_ptr<ShipDK::File> Archive::LoadFile(const std::string& filePath,
+                                                std::shared_ptr<ShipDK::ResourceInitData> initData) {
     std::shared_ptr<ShipDK::File> fileToLoad = nullptr;
 
     if (initData != nullptr) {
@@ -253,8 +254,8 @@ std::shared_ptr<ShipDK::ResourceInitData> Archive::CreateDefaultResourceInitData
     return resourceInitData;
 }
 
-std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitDataBinary(const std::string& filePath,
-                                                                      std::shared_ptr<ShipDK::BinaryReader> headerReader) {
+std::shared_ptr<ShipDK::ResourceInitData>
+Archive::ReadResourceInitDataBinary(const std::string& filePath, std::shared_ptr<ShipDK::BinaryReader> headerReader) {
     auto resourceInitData = CreateDefaultResourceInitData();
     resourceInitData->Path = filePath;
 
@@ -293,8 +294,8 @@ std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitDataBinary(co
     return resourceInitData;
 }
 
-std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitDataXml(const std::string& filePath,
-                                                                   std::shared_ptr<tinyxml2::XMLDocument> document) {
+std::shared_ptr<ShipDK::ResourceInitData>
+Archive::ReadResourceInitDataXml(const std::string& filePath, std::shared_ptr<tinyxml2::XMLDocument> document) {
     auto resourceInitData = CreateDefaultResourceInitData();
     resourceInitData->Path = filePath;
 

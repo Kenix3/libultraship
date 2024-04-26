@@ -6,7 +6,8 @@
 #include <Utils/StringHelper.h>
 
 namespace ShipDK {
-SDLMapping::SDLMapping(ShipDKDeviceIndex shipDKDeviceIndex) : ControllerMapping(shipDKDeviceIndex), mController(nullptr) {
+SDLMapping::SDLMapping(ShipDKDeviceIndex shipDKDeviceIndex)
+    : ControllerMapping(shipDKDeviceIndex), mController(nullptr) {
 }
 
 SDLMapping::~SDLMapping() {

@@ -7,8 +7,8 @@
 #include <Utils/StringHelper.h>
 
 namespace ShipDK {
-SDLGyroMapping::SDLGyroMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
-                               float neutralYaw, float neutralRoll)
+SDLGyroMapping::SDLGyroMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, float sensitivity,
+                               float neutralPitch, float neutralYaw, float neutralRoll)
     : ControllerInputMapping(shipDKDeviceIndex), ControllerGyroMapping(shipDKDeviceIndex, portIndex, sensitivity),
       mNeutralPitch(neutralPitch), SDLMapping(shipDKDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }

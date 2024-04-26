@@ -1,7 +1,8 @@
 #include "ControllerInputMapping.h"
 
 namespace ShipDK {
-ControllerInputMapping::ControllerInputMapping(ShipDKDeviceIndex shipDKDeviceIndex) : ControllerMapping(shipDKDeviceIndex) {
+ControllerInputMapping::ControllerInputMapping(ShipDKDeviceIndex shipDKDeviceIndex)
+    : ControllerMapping(shipDKDeviceIndex) {
 }
 
 ControllerInputMapping::~ControllerInputMapping() {

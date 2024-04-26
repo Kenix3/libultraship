@@ -42,7 +42,7 @@ bool ResourceManager::DidLoadSuccessfully() {
 }
 
 std::shared_ptr<ShipDK::File> ResourceManager::LoadFileProcess(const std::string& filePath,
-                                                       std::shared_ptr<ShipDK::ResourceInitData> initData) {
+                                                               std::shared_ptr<ShipDK::ResourceInitData> initData) {
     auto file = mArchiveManager->LoadFile(filePath, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
@@ -52,8 +52,9 @@ std::shared_ptr<ShipDK::File> ResourceManager::LoadFileProcess(const std::string
     return file;
 }
 
-std::shared_ptr<ShipDK::IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact,
-                                                                std::shared_ptr<ShipDK::ResourceInitData> initData) {
+std::shared_ptr<ShipDK::IResource>
+ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact,
+                                     std::shared_ptr<ShipDK::ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         const auto newFilePath = filePath.substr(7);
@@ -161,7 +162,7 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
 }
 
 std::shared_ptr<ShipDK::IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
-                                                         std::shared_ptr<ShipDK::ResourceInitData> initData) {
+                                                                 std::shared_ptr<ShipDK::ResourceInitData> initData) {
     auto resource = LoadResourceAsync(filePath, loadExact, true, initData).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
@@ -236,7 +237,8 @@ ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<ShipDK::IResource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
+std::shared_ptr<std::vector<std::shared_ptr<ShipDK::IResource>>>
+ResourceManager::LoadDirectory(const std::string& searchMask) {
     auto futureList = LoadDirectoryAsync(searchMask, true);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<ShipDK::IResource>>>();
 

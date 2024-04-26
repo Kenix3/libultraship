@@ -82,8 +82,8 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
             return nullptr;
         }
 
-        return std::make_shared<SDLAxisDirectionToButtonMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex), portIndex,
-                                                                 bitmask, sdlControllerAxis, axisDirection);
+        return std::make_shared<SDLAxisDirectionToButtonMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex),
+                                                                 portIndex, bitmask, sdlControllerAxis, axisDirection);
     }
 
     if (mappingClass == "KeyboardKeyToButtonMapping") {
@@ -115,24 +115,24 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
     if (wiiuIndexMapping->IsWiiUGamepad()) {
         switch (bitmask) {
             case BTN_A:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_A, false,
-                                                                               false, VPAD_BUTTON_A));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_A,
+                                                                               false, false, VPAD_BUTTON_A));
                 break;
             case BTN_B:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_B, false,
-                                                                               false, VPAD_BUTTON_B));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_B,
+                                                                               false, false, VPAD_BUTTON_B));
                 break;
             case BTN_L:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_L, false,
-                                                                               false, VPAD_BUTTON_L));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_L,
+                                                                               false, false, VPAD_BUTTON_L));
                 break;
             case BTN_R:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_R, false,
-                                                                               false, VPAD_BUTTON_ZR));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_R,
+                                                                               false, false, VPAD_BUTTON_ZR));
                 break;
             case BTN_Z:
-                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_Z, false,
-                                                                               false, VPAD_BUTTON_ZL));
+                mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_Z,
+                                                                               false, false, VPAD_BUTTON_ZL));
                 break;
             case BTN_START:
                 mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_START,
@@ -199,8 +199,8 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                                                                                    false, false, WPAD_PRO_TRIGGER_ZL));
                     break;
                 case BTN_START:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_START,
-                                                                                   false, false, WPAD_PRO_BUTTON_PLUS));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_START, false, false, WPAD_PRO_BUTTON_PLUS));
                     break;
                 case BTN_CUP:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
@@ -219,16 +219,16 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                         ShipDKDeviceIndex, portIndex, BTN_CRIGHT, false, false, WPAD_PRO_STICK_R_EMULATION_RIGHT));
                     break;
                 case BTN_DUP:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_DUP,
-                                                                                   false, false, WPAD_PRO_BUTTON_UP));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_DUP, false, false, WPAD_PRO_BUTTON_UP));
                     break;
                 case BTN_DDOWN:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_DDOWN,
-                                                                                   false, false, WPAD_PRO_BUTTON_DOWN));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_DDOWN, false, false, WPAD_PRO_BUTTON_DOWN));
                     break;
                 case BTN_DLEFT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_DLEFT,
-                                                                                   false, false, WPAD_PRO_BUTTON_LEFT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_DLEFT, false, false, WPAD_PRO_BUTTON_LEFT));
                     break;
                 case BTN_DRIGHT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
@@ -317,20 +317,20 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                         ShipDKDeviceIndex, portIndex, BTN_Z, false, false, WPAD_NUNCHUK_BUTTON_Z));
                     break;
                 case BTN_START:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_START,
-                                                                                   false, false, WPAD_BUTTON_PLUS));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_START, false, false, WPAD_BUTTON_PLUS));
                     break;
                 case BTN_CUP:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CUP,
-                                                                                   false, false, WPAD_BUTTON_UP));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_CUP, false, false, WPAD_BUTTON_UP));
                     break;
                 case BTN_CDOWN:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                   false, false, WPAD_BUTTON_DOWN));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_CDOWN, false, false, WPAD_BUTTON_DOWN));
                     break;
                 case BTN_CLEFT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                   false, false, WPAD_BUTTON_LEFT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_CLEFT, false, false, WPAD_BUTTON_LEFT));
                     break;
                 case BTN_CRIGHT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
@@ -358,20 +358,20 @@ ButtonMappingFactory::CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDe
                                                                                    false, false, WPAD_BUTTON_1));
                     break;
                 case BTN_START:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_START,
-                                                                                   false, false, WPAD_BUTTON_PLUS));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_START, false, false, WPAD_BUTTON_PLUS));
                     break;
                 case BTN_DUP:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_DUP,
-                                                                                   false, false, WPAD_BUTTON_UP));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_DUP, false, false, WPAD_BUTTON_UP));
                     break;
                 case BTN_DDOWN:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_DDOWN,
-                                                                                   false, false, WPAD_BUTTON_DOWN));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_DDOWN, false, false, WPAD_BUTTON_DOWN));
                     break;
                 case BTN_DLEFT:
-                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_DLEFT,
-                                                                                   false, false, WPAD_BUTTON_LEFT));
+                    mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
+                        shipDKDeviceIndex, portIndex, BTN_DLEFT, false, false, WPAD_BUTTON_LEFT));
                     break;
                 case BTN_DRIGHT:
                     mappings.push_back(std::make_shared<WiiUButtonToButtonMapping>(
@@ -407,7 +407,8 @@ ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex, CONTRO
                     continue;
                 }
 
-                return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, false, false, i);
+                return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, false, false,
+                                                                   i);
             }
 
             continue;
@@ -427,7 +428,8 @@ ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex, CONTRO
                     continue;
                 }
 
-                return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, false, false, i);
+                return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, false, false,
+                                                                   i);
             }
 
             continue;
@@ -443,8 +445,8 @@ ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex, CONTRO
                         continue;
                     }
 
-                    return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, true, false,
-                                                                       i);
+                    return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, true,
+                                                                       false, i);
                 }
                 break;
             case WPAD_EXT_CLASSIC:
@@ -454,8 +456,8 @@ ButtonMappingFactory::CreateButtonMappingFromWiiUInput(uint8_t portIndex, CONTRO
                         continue;
                     }
 
-                    return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, false, true,
-                                                                       i);
+                    return std::make_shared<WiiUButtonToButtonMapping>(shipDKDeviceIndex, portIndex, bitmask, false,
+                                                                       true, i);
                 }
                 break;
         }
@@ -552,12 +554,12 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(ShipDKDeviceIndex shipDKDev
 
     switch (bitmask) {
         case BTN_A:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_A, SDL_CONTROLLER_BUTTON_A));
+            mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_A,
+                                                                          SDL_CONTROLLER_BUTTON_A));
             break;
         case BTN_B:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_B, SDL_CONTROLLER_BUTTON_B));
+            mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_B,
+                                                                          SDL_CONTROLLER_BUTTON_B));
             break;
         case BTN_L:
             if (!isGameCube) {
@@ -582,24 +584,24 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(ShipDKDeviceIndex shipDKDev
                                                                                  SDL_CONTROLLER_AXIS_RIGHTY, -1));
             break;
         case BTN_CDOWN:
-            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTY, 1));
+            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(
+                shipDKDeviceIndex, portIndex, BTN_CDOWN, SDL_CONTROLLER_AXIS_RIGHTY, 1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CDOWN,
                                                                               SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
             }
             break;
         case BTN_CLEFT:
-            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, -1));
+            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(
+                shipDKDeviceIndex, portIndex, BTN_CLEFT, SDL_CONTROLLER_AXIS_RIGHTX, -1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CLEFT,
                                                                               SDL_CONTROLLER_BUTTON_Y));
             }
             break;
         case BTN_CRIGHT:
-            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, 1));
+            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(
+                shipDKDeviceIndex, portIndex, BTN_CRIGHT, SDL_CONTROLLER_AXIS_RIGHTX, 1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDKDeviceIndex, portIndex, BTN_CRIGHT,
                                                                               SDL_CONTROLLER_BUTTON_X));

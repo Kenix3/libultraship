@@ -214,7 +214,8 @@ std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTO
     return mButtons[bitmask];
 }
 
-void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDKDeviceIndex lusIndex) {
+void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController,
+                                                   ShipDKDeviceIndex lusIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         std::vector<std::string> buttonMappingIdsToRemove;
         for (auto [id, mapping] : button->GetAllButtonMappings()) {

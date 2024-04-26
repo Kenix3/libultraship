@@ -34,8 +34,8 @@ void ResourceLoader::RegisterGlobalResourceFactories() {
                             static_cast<uint32_t>(LUS::ResourceType::Vertex), 0);
     RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryDisplayListV0>(), RESOURCE_FORMAT_BINARY,
                             "DisplayList", static_cast<uint32_t>(LUS::ResourceType::DisplayList), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryXMLDisplayListV0>(), RESOURCE_FORMAT_XML, "DisplayList",
-                            static_cast<uint32_t>(LUS::ResourceType::DisplayList), 0);
+    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryXMLDisplayListV0>(), RESOURCE_FORMAT_XML,
+                            "DisplayList", static_cast<uint32_t>(LUS::ResourceType::DisplayList), 0);
     RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryMatrixV0>(), RESOURCE_FORMAT_BINARY, "Matrix",
                             static_cast<uint32_t>(LUS::ResourceType::Matrix), 0);
     RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryArrayV0>(), RESOURCE_FORMAT_BINARY, "Array",

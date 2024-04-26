@@ -4,8 +4,8 @@
 namespace ShipDK {
 class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public SDLButtonToAnyMapping {
   public:
-    SDLButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
-                                    int32_t sdlControllerButton);
+    SDLButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick,
+                                    Direction direction, int32_t sdlControllerButton);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
     uint8_t GetMappingType() override;

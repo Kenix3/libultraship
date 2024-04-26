@@ -5,9 +5,9 @@ namespace ShipDK {
 enum class ResourceType {
     // Not set
     None = 0x00000000,
-    
-    Json = 0x4A534F4E,        // JSON
-}; 
+
+    Json = 0x4A534F4E, // JSON
+};
 } // namespace ShipDK
 
 namespace LUS {

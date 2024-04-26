@@ -11,7 +11,8 @@ class ButtonMappingFactory {
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromConfig(uint8_t portIndex, std::string id);
 #ifdef __WIIU__
     static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+    CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
+                                    CONTROLLERBUTTONS_T bitmask);
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromWiiUInput(uint8_t portIndex,
                                                                                      CONTROLLERBUTTONS_T bitmask);

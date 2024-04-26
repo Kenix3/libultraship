@@ -41,10 +41,11 @@ class ShipDKDeviceIndexMappingManager {
     GetAllDeviceIndexMappingsFromConfig();
     std::shared_ptr<ShipDKDeviceIndexToPhysicalDeviceIndexMapping>
     GetDeviceIndexMappingFromShipDKDeviceIndex(ShipDKDeviceIndex lusIndex);
-    void
-    SetShipDKDeviceIndexToPhysicalDeviceIndexMapping(std::shared_ptr<ShipDKDeviceIndexToPhysicalDeviceIndexMapping> mapping);
+    void SetShipDKDeviceIndexToPhysicalDeviceIndexMapping(
+        std::shared_ptr<ShipDKDeviceIndexToPhysicalDeviceIndexMapping> mapping);
     void RemoveShipDKDeviceIndexToPhysicalDeviceIndexMapping(ShipDKDeviceIndex index);
-    ShipDKDeviceIndex GetLowestShipDKDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings(); // did this name for the meme
+    ShipDKDeviceIndex
+    GetLowestShipDKDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings(); // did this name for the meme
 
     void InitializeMappingsSinglePlayer();
 

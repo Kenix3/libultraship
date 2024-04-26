@@ -9,8 +9,9 @@ namespace ShipDK {
 class ShipDKDeviceIndexToSDLDeviceIndexMapping : public ShipDKDeviceIndexToPhysicalDeviceIndexMapping {
   public:
     ShipDKDeviceIndexToSDLDeviceIndexMapping(ShipDKDeviceIndex shipDKDeviceIndex, int32_t sdlDeviceIndex,
-                                          std::string sdlJoystickGuid, std::string sdlControllerName,
-                                          int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage);
+                                             std::string sdlJoystickGuid, std::string sdlControllerName,
+                                             int32_t stickAxisThresholdPercentage,
+                                             int32_t triggerAxisThresholdPercentage);
     ~ShipDKDeviceIndexToSDLDeviceIndexMapping();
     std::string GetJoystickGUID();
     std::string GetSDLControllerName();

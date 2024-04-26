@@ -38,8 +38,8 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
             return nullptr;
         }
 
-        return std::make_shared<SDLLEDMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex), portIndex, colorSource,
-                                               savedColor);
+        return std::make_shared<SDLLEDMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex), portIndex,
+                                               colorSource, savedColor);
     }
 #endif
 

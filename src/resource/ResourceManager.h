@@ -31,9 +31,10 @@ class ResourceManager {
     std::shared_ptr<ResourceLoader> GetResourceLoader();
     std::shared_ptr<ShipDK::IResource> GetCachedResource(const std::string& filePath, bool loadExact = false);
     std::shared_ptr<ShipDK::IResource> LoadResource(const std::string& filePath, bool loadExact = false,
-                                            std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
-    std::shared_ptr<ShipDK::IResource> LoadResourceProcess(const std::string& filePath, bool loadExact = false,
-                                                   std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
+                                                    std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
+    std::shared_ptr<ShipDK::IResource>
+    LoadResourceProcess(const std::string& filePath, bool loadExact = false,
+                        std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
     size_t UnloadResource(const std::string& filePath);
     std::shared_future<std::shared_ptr<ShipDK::IResource>>
     LoadResourceAsync(const std::string& filePath, bool loadExact = false, bool priority = false,
@@ -47,10 +48,11 @@ class ResourceManager {
 
   protected:
     std::shared_ptr<ShipDK::File> LoadFileProcess(const std::string& filePath,
-                                          std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
-    std::shared_ptr<ShipDK::IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<ShipDK::IResource>> cacheLine);
+                                                  std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
+    std::shared_ptr<ShipDK::IResource>
+    GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<ShipDK::IResource>> cacheLine);
     std::variant<ResourceLoadError, std::shared_ptr<ShipDK::IResource>> CheckCache(const std::string& filePath,
-                                                                           bool loadExact = false);
+                                                                                   bool loadExact = false);
 
   private:
     std::unordered_map<std::string, std::variant<ResourceLoadError, std::shared_ptr<ShipDK::IResource>>> mResourceCache;

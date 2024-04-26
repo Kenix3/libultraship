@@ -10,8 +10,8 @@ namespace ShipDK {
 
 class ShipDKDeviceIndexToWiiUDeviceIndexMapping : public ShipDKDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    ShipDKDeviceIndexToWiiUDeviceIndexMapping(ShipDKDeviceIndex shipDKDeviceIndex, bool isGamepad, int32_t deviceChannel,
-                                           int32_t extensionType);
+    ShipDKDeviceIndexToWiiUDeviceIndexMapping(ShipDKDeviceIndex shipDKDeviceIndex, bool isGamepad,
+                                              int32_t deviceChannel, int32_t extensionType);
     ~ShipDKDeviceIndexToWiiUDeviceIndexMapping();
 
     void SaveToConfig() override;

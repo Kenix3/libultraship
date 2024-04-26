@@ -5,8 +5,9 @@
 namespace ShipDK {
 class WiiUButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public WiiUButtonToAnyMapping {
   public:
-    WiiUButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
-                                     bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton);
+    WiiUButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick,
+                                     Direction direction, bool isNunchuk, bool isClassic,
+                                     uint32_t wiiuControllerButton);
 
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;

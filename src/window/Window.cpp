@@ -74,10 +74,10 @@ void Window::Init() {
     mPosY = ShipDK::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
 
     if (mIsFullscreen) {
-        mWidth = ShipDK::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width",
-                                                                  steamDeckGameMode || androidGameMode ? 1280 : 1920);
-        mHeight = ShipDK::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height",
-                                                                   steamDeckGameMode || androidGameMode ? 800 : 1080);
+        mWidth = ShipDK::Context::GetInstance()->GetConfig()->GetInt(
+            "Window.Fullscreen.Width", steamDeckGameMode || androidGameMode ? 1280 : 1920);
+        mHeight = ShipDK::Context::GetInstance()->GetConfig()->GetInt(
+            "Window.Fullscreen.Height", steamDeckGameMode || androidGameMode ? 800 : 1080);
     } else {
         mWidth = ShipDK::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         mHeight = ShipDK::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);

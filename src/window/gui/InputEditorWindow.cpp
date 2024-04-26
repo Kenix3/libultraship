@@ -144,7 +144,7 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
 void InputEditorWindow::GetButtonColorsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex, ImVec4& buttonColor,
-                                                         ImVec4& buttonHoveredColor) {
+                                                            ImVec4& buttonHoveredColor) {
     switch (lusIndex) {
         case ShipDKDeviceIndex::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
@@ -639,7 +639,8 @@ void InputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeRumbleMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(20.0f, 20.0f))) {
-        ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(id);
+        ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(
+            id);
     }
     ImGui::PopStyleVar();
 }
