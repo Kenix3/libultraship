@@ -723,7 +723,9 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             GX2SetScissor(0, 0, mImGuiIo->DisplaySize.x, mImGuiIo->DisplaySize.y);
             ImGui_ImplWiiU_DrawKeyboardOverlay();
             break;
-#elif defined(ENABLE_OPENGL)
+#endif
+
+#ifdef defined(ENABLE_OPENGL)
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
