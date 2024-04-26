@@ -2,7 +2,7 @@
 #include <stddef.h>
 
 // This has been borrowed from the dual MIT/GPL licensed glob module from the Linux kernel under the MIT license.
-// See https://github.com/torvalds/linux/commit/d1bd5fa07667fcc3e38996ec42aef98761f23039
+// See https://github.com/torvalds/linux/blob/d1bd5fa07667fcc3e38996ec42aef98761f23039/lib/glob.c
 
 /**
  * glob_match - Shell-style pattern matching, like !fnmatch(pat, str, 0)
