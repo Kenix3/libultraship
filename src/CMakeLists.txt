@@ -309,6 +309,20 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
         $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
         __IOS__
     )
+
+    set_xcode_property(${PROJECT_NAME} PRODUCT_BUNDLE_IDENTIFIER ${BUNDLE_ID} All)
+
+    if(NOT SIGN_LIBRARY)
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        )
+
+        set_target_properties(SDL2 PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        )
+    endif()
 else()
     target_compile_definitions(libultraship PRIVATE
         ENABLE_OPENGL
