@@ -187,6 +187,7 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 
 bool Metal_IsSupported() {
 #ifdef __IOS__
+    // iOS always supports Metal and MTLCopyAllDevices is not available
     return true;
 #else
     NS::Array* devices = MTLCopyAllDevices();

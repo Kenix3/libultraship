@@ -209,7 +209,9 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::GX2:
             ImGui_ImplGX2_Init();
             break;
-#elif defined(ENABLE_OPENGL)
+#endif
+
+#ifdef defined(ENABLE_OPENGL)
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -461,7 +463,9 @@ void Gui::ImGuiBackendNewFrame() {
             mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
             ImGui_ImplGX2_NewFrame();
             break;
-#elif defined(ENABLE_OPENGL)
+#endif
+
+#ifdef defined(ENABLE_OPENGL)
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
@@ -471,7 +475,9 @@ void Gui::ImGuiBackendNewFrame() {
         case WindowBackend::DX11:
             ImGui_ImplDX11_NewFrame();
             break;
-#elif defined(__APPLE__)
+#endif
+
+#ifdef defined(__APPLE__)
         case WindowBackend::SDL_METAL:
             Metal_NewFrame(mImpl.Metal.Renderer);
             break;
@@ -727,7 +733,9 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
         case WindowBackend::DX11:
             ImGui_ImplDX11_RenderDrawData(data);
             break;
-#elif defined(__APPLE__)
+#endif
+
+#ifdef defined(__APPLE__)
         case WindowBackend::SDL_METAL:
             Metal_RenderDrawData(data);
             break;
