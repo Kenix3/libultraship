@@ -322,6 +322,11 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
             XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
         )
+
+        set_target_properties(zip PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        )
     endif()
 else()
     target_compile_definitions(libultraship PRIVATE

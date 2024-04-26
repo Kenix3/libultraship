@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24.0)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 option(NON_PORTABLE "Build a non-portable version" OFF)
 option(SIGN_LIBRARY "Enable xcode signing" OFF)
