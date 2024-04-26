@@ -16,7 +16,7 @@
 #include "Context.h"
 
 #ifdef __APPLE__
-#include "utils/OSXFolderManager.h"
+#include "utils/AppleFolderManager.h"
 #elif defined(__SWITCH__)
 #include "port/switch/SwitchImpl.h"
 #elif defined(__WIIU__)

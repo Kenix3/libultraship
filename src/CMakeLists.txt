@@ -102,10 +102,10 @@ target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
 file(GLOB Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/*.h" "utils/*.cpp")
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm)
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+    list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 else()
-    list(REMOVE_ITEM Header_Files__include ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.h)
+    list(REMOVE_ITEM Header_Files__include ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.h)
 endif()
 
 source_group("utils" FILES ${Source_Files__Utils})

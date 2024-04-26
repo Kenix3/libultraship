@@ -1,11 +1,11 @@
 //
-//  OSXFolderManager.m
+//  AppleFolderManager.m
 //  libultraship
 //
 //  Created by David Chavez on 28.06.22.
 //
 
-#include "OSXFolderManager.h"
+#include "AppleFolderManager.h"
 #import <Foundation/Foundation.h>
 
 using namespace LUS;

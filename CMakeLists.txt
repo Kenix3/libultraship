@@ -36,7 +36,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     include(FetchContent)
     FetchContent_Declare(iostoolchain
         GIT_REPOSITORY https://github.com/leetal/ios-cmake
-        GIT_TAG origin/master
+        GIT_TAG 06465b27698424cf4a04a5ca4904d50a3c966c45
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
     )

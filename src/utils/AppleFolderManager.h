@@ -1,12 +1,11 @@
 //
-//  OSXFolderManager.h
+//  AppleFolderManager.h
 //  libultraship
 //
 //  Created by David Chavez on 28.06.22.
 //
 
-#ifndef OSXFolderManager_h
-#define OSXFolderManager_h
+#pragma once
 
 #include <stdio.h>
 namespace LUS {
@@ -66,5 +65,3 @@ class FolderManager {
     void* m_autoreleasePool;
 };
 }; // namespace LUS
-
-#endif /* OSXFolderManager_h */
