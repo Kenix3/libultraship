@@ -372,6 +372,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
 		-Wno-parentheses
 		-Wno-narrowing
 		-Wno-missing-field-initializers
+        -Wno-implicit-function-declaration
         $<$<COMPILE_LANGUAGE:C,OBJC>:-Wno-int-conversion>
 	)
 endif()
