@@ -32,7 +32,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
-            ShipDKDeviceIndex < 0 || wiiuControllerAxis == -1 ||
+            shipDKDeviceIndex < 0 || wiiuControllerAxis == -1 ||
             (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -57,7 +57,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             CVarGetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
-            ShipDKDeviceIndex < 0 || wiiuControllerButton == -1) {
+            shipDKDeviceIndex < 0 || wiiuControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
