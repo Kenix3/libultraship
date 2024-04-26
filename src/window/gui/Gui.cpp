@@ -211,7 +211,7 @@ void Gui::ImGuiBackendInit() {
             break;
 #endif
 
-#ifdef defined(ENABLE_OPENGL)
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -465,7 +465,7 @@ void Gui::ImGuiBackendNewFrame() {
             break;
 #endif
 
-#ifdef defined(ENABLE_OPENGL)
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
@@ -477,7 +477,7 @@ void Gui::ImGuiBackendNewFrame() {
             break;
 #endif
 
-#ifdef defined(__APPLE__)
+#ifdef __APPLE__
         case WindowBackend::SDL_METAL:
             Metal_NewFrame(mImpl.Metal.Renderer);
             break;
@@ -725,21 +725,21 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             break;
 #endif
 
-#ifdef defined(ENABLE_OPENGL)
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
+            break;
+#endif
+
+#ifdef __APPLE__
+        case WindowBackend::SDL_METAL:
+            Metal_RenderDrawData(data);
             break;
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_RenderDrawData(data);
-            break;
-#endif
-
-#ifdef defined(__APPLE__)
-        case WindowBackend::SDL_METAL:
-            Metal_RenderDrawData(data);
             break;
 #endif
         default:
