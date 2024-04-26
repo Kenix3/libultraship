@@ -5,10 +5,10 @@
 
 #include <ImGui/imgui.h>
 
-namespace LUS {
+namespace ShipDK {
 
 class Android {
   public:
     static void ImGuiProcessEvent(bool wantsTextInput);
 };
-}; // namespace LUS
+}; // namespace ShipDK

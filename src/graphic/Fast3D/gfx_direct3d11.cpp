@@ -385,9 +385,9 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     // Create ImGui
 
-    LUS::GuiWindowInitData window_impl;
+    ShipDK::GuiWindowInitData window_impl;
     window_impl.Dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+    ShipDK::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 }
 
 static int gfx_d3d11_get_max_texture_size() {

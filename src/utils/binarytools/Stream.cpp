@@ -1,5 +1,5 @@
 #include "Stream.h"
 
-uint64_t LUS::Stream::GetBaseAddress() {
+uint64_t ShipDK::Stream::GetBaseAddress() {
     return mBaseAddress;
 }

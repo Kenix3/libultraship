@@ -7,7 +7,7 @@
 
 static bool isShowingVirtualKeyboard = true;
 
-void LUS::Android::ImGuiProcessEvent(bool wantsTextInput) {
+void ShipDK::Android::ImGuiProcessEvent(bool wantsTextInput) {
     ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
 
     if (wantsTextInput) {

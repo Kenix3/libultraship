@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <StrHash64.h>
 
-std::shared_ptr<LUS::IResource> ResourceLoad(const char* name) {
-    return LUS::Context::GetInstance()->GetResourceManager()->LoadResource(name);
+std::shared_ptr<ShipDK::IResource> ResourceLoad(const char* name) {
+    return ShipDK::Context::GetInstance()->GetResourceManager()->LoadResource(name);
 }
 
-std::shared_ptr<LUS::IResource> ResourceLoad(uint64_t crc) {
+std::shared_ptr<ShipDK::IResource> ResourceLoad(uint64_t crc) {
     auto name = ResourceGetNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
@@ -27,7 +27,7 @@ uint64_t ResourceGetCrcByName(const char* name) {
 
 const char* ResourceGetNameByCrc(uint64_t crc) {
     const std::string* hashStr =
-        LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(crc);
+        ShipDK::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(crc);
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
 }
 
@@ -147,26 +147,26 @@ size_t ResourceGetTexSizeByCrc(uint64_t crc) {
 }
 
 void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
-    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
+    auto list = ShipDK::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
 
 void ResourceLoadDirectoryAsync(const char* name) {
-    LUS::Context::GetInstance()->GetResourceManager()->LoadDirectoryAsync(name);
+    ShipDK::Context::GetInstance()->GetResourceManager()->LoadDirectoryAsync(name);
 }
 
 uint32_t ResourceHasGameVersion(uint32_t hash) {
-    auto list = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
+    auto list = ShipDK::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 
 void ResourceLoadDirectory(const char* name) {
-    LUS::Context::GetInstance()->GetResourceManager()->LoadDirectory(name);
+    ShipDK::Context::GetInstance()->GetResourceManager()->LoadDirectory(name);
 }
 
 void ResourceDirtyDirectory(const char* name) {
-    LUS::Context::GetInstance()->GetResourceManager()->DirtyDirectory(name);
+    ShipDK::Context::GetInstance()->GetResourceManager()->DirtyDirectory(name);
 }
 
 void ResourceDirtyByName(const char* name) {
@@ -186,7 +186,7 @@ void ResourceDirtyByCrc(uint64_t crc) {
 }
 
 void ResourceUnloadByName(const char* name) {
-    LUS::Context::GetInstance()->GetResourceManager()->UnloadResource(name);
+    ShipDK::Context::GetInstance()->GetResourceManager()->UnloadResource(name);
 }
 
 void ResourceUnloadByCrc(uint64_t crc) {
@@ -194,10 +194,10 @@ void ResourceUnloadByCrc(uint64_t crc) {
 }
 
 void ResourceUnloadDirectory(const char* name) {
-    LUS::Context::GetInstance()->GetResourceManager()->UnloadDirectory(name);
+    ShipDK::Context::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
 
 uint32_t ResourceDoesOtrFileExist() {
-    return LUS::Context::GetInstance()->GetResourceManager()->DidLoadSuccessfully();
+    return ShipDK::Context::GetInstance()->GetResourceManager()->DidLoadSuccessfully();
 }
 }

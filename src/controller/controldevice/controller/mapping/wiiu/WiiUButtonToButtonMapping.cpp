@@ -6,12 +6,12 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-namespace LUS {
-WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+namespace ShipDK {
+WiiUButtonToButtonMapping::WiiUButtonToButtonMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
                                                      CONTROLLERBUTTONS_T bitmask, bool isNunchuk, bool isClassic,
                                                      uint32_t wiiuControllerButton)
-    : ControllerInputMapping(lusDeviceIndex), ControllerButtonMapping(lusDeviceIndex, portIndex, bitmask),
-      WiiUButtonToAnyMapping(lusDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
+    : ControllerInputMapping(shipDKDeviceIndex), ControllerButtonMapping(shipDKDeviceIndex, portIndex, bitmask),
+      WiiUButtonToAnyMapping(shipDKDeviceIndex, isNunchuk, isClassic, wiiuControllerButton) {
 }
 
 void WiiUButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
@@ -30,7 +30,7 @@ uint8_t WiiUButtonToButtonMapping::GetMappingType() {
 
 std::string WiiUButtonToButtonMapping::GetButtonMappingId() {
     return StringHelper::Sprintf("P%d-B%d-LUSI%d-N%d-C%d-B%d", mPortIndex, mBitmask,
-                                 ControllerInputMapping::mLUSDeviceIndex, mIsNunchukButton ? 1 : 0,
+                                 ControllerInputMapping::mShipDKDeviceIndex, mIsNunchukButton ? 1 : 0,
                                  mIsClassicControllerButton ? 1 : 0, mControllerButton);
 }
 
@@ -39,8 +39,8 @@ void WiiUButtonToButtonMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "WiiUButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mShipDKDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(),
                    mIsNunchukButton ? 1 : 0);
     CVarSetInteger(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str(),
@@ -54,11 +54,11 @@ void WiiUButtonToButtonMapping::EraseFromConfig() {
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.IsNunchukButton", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str());
     CVarSave();
 }
-} // namespace LUS
+} // namespace ShipDK
 #endif

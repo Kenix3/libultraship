@@ -3,9 +3,9 @@
 #include <string>
 #include "window/gui/GuiElement.h"
 
-namespace LUS {
+namespace ShipDK {
 class GuiMenuBar : public GuiElement {
   public:
     using GuiElement::GuiElement;
 };
-} // namespace LUS
+} // namespace ShipDK

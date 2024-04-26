@@ -1,10 +1,10 @@
 #include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "SDLButtonToAnyMapping.h"
 
-namespace LUS {
+namespace ShipDK {
 class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public SDLButtonToAnyMapping {
   public:
-    SDLButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
+    SDLButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
                                     int32_t sdlControllerButton);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
@@ -12,4 +12,4 @@ class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapp
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };
-} // namespace LUS
+} // namespace ShipDK

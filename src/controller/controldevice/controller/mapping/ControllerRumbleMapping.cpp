@@ -1,10 +1,10 @@
 #include "ControllerRumbleMapping.h"
 
-namespace LUS {
-ControllerRumbleMapping::ControllerRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+namespace ShipDK {
+ControllerRumbleMapping::ControllerRumbleMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
                                                  uint8_t lowFrequencyIntensityPercentage,
                                                  uint8_t highFrequencyIntensityPercentage)
-    : ControllerMapping(lusDeviceIndex), mPortIndex(portIndex),
+    : ControllerMapping(shipDKDeviceIndex), mPortIndex(portIndex),
       mLowFrequencyIntensityPercentage(lowFrequencyIntensityPercentage),
       mHighFrequencyIntensityPercentage(highFrequencyIntensityPercentage) {
 }
@@ -47,4 +47,4 @@ bool ControllerRumbleMapping::LowFrequencyIntensityIsDefault() {
 void ControllerRumbleMapping::SetPortIndex(uint8_t portIndex) {
     mPortIndex = portIndex;
 }
-} // namespace LUS
+} // namespace ShipDK

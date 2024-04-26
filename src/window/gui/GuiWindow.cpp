@@ -1,6 +1,6 @@
 #include "GuiWindow.h"
 
-namespace LUS {
+namespace ShipDK {
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name)
     : mName(name), GuiElement(consoleVariable, isVisible) {
 }
@@ -134,4 +134,4 @@ void GuiWindow::EndGroupPanel(float minHeight) {
 
     ImGui::EndGroup();
 }
-} // namespace LUS
+} // namespace ShipDK

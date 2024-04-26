@@ -3,10 +3,10 @@
 #include "SDLMapping.h"
 #include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
-namespace LUS {
+namespace ShipDK {
 class SDLButtonToAnyMapping : virtual public ControllerInputMapping, public SDLMapping {
   public:
-    SDLButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerButton);
+    SDLButtonToAnyMapping(ShipDKDeviceIndex shipDKDeviceIndex, int32_t sdlControllerButton);
     ~SDLButtonToAnyMapping();
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;
@@ -22,4 +22,4 @@ class SDLButtonToAnyMapping : virtual public ControllerInputMapping, public SDLM
     std::string GetGameCubeButtonName();
     std::string GetGenericButtonName();
 };
-} // namespace LUS
+} // namespace ShipDK

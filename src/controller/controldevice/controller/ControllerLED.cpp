@@ -7,7 +7,7 @@
 
 #include "controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
-namespace LUS {
+namespace ShipDK {
 ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -61,10 +61,10 @@ void ControllerLED::ClearAllMappings() {
     SaveLEDMappingIdsToConfig();
 }
 
-void ControllerLED::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
+void ControllerLED::ClearAllMappingsForDevice(ShipDKDeviceIndex lusIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mLEDMappings) {
-        if (mapping->GetLUSDeviceIndex() == lusIndex) {
+        if (mapping->GetShipDKDeviceIndex() == lusIndex) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -145,8 +145,8 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
 }
 #endif
 
-bool ControllerLED::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerLED::HasMappingsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex) {
     return std::any_of(mLEDMappings.begin(), mLEDMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
+                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDKDeviceIndex() == lusIndex; });
 }
-} // namespace LUS
+} // namespace ShipDK

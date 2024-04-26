@@ -9,13 +9,13 @@
 #include <padscore/kpad.h>
 #include "port/wiiu/WiiUImpl.h"
 
-namespace LUS {
+namespace ShipDK {
 enum Axis { X = 0, Y = 1 };
 enum AxisDirection { NEGATIVE = -1, POSITIVE = 1 };
 
 class WiiUMapping : public ControllerMapping {
   public:
-    WiiUMapping(LUSDeviceIndex lusDeviceIndex);
+    WiiUMapping(ShipDKDeviceIndex shipDKDeviceIndex);
     ~WiiUMapping();
 
   protected:
@@ -26,5 +26,5 @@ class WiiUMapping : public ControllerMapping {
     std::string GetWiiUControllerName();
     bool WiiUDeviceIsConnected();
 };
-} // namespace LUS
+} // namespace ShipDK
 #endif

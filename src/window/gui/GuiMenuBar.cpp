@@ -1,3 +1,3 @@
 #include "window/gui/GuiMenuBar.h"
 
-namespace LUS {} // namespace LUS
+namespace ShipDK {} // namespace ShipDK

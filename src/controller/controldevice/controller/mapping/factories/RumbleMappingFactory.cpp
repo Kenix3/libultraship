@@ -8,9 +8,9 @@
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
 #include "Context.h"
-#include "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h"
+#include "controller/deviceindex/ShipDKDeviceIndexToSDLDeviceIndexMapping.h"
 
-namespace LUS {
+namespace ShipDK {
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromConfig(uint8_t portIndex,
                                                                                              std::string id) {
     const std::string mappingCvarKey = "gControllers.RumbleMappings." + id;
@@ -32,32 +32,32 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 
 #ifdef __WIIU__
     if (mappingClass == "WiiURumbleMapping") {
-        int32_t lusDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t shipDKDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (lusDeviceIndex < 0) {
+        if (shipDKDeviceIndex < 0) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<WiiURumbleMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
+        return std::make_shared<WiiURumbleMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex), portIndex,
                                                    lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
     }
 #else
     if (mappingClass == "SDLRumbleMapping") {
-        int32_t lusDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t shipDKDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (lusDeviceIndex < 0) {
+        if (shipDKDeviceIndex < 0) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLRumbleMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
+        return std::make_shared<SDLRumbleMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex), portIndex,
                                                   lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
     }
 #endif
@@ -67,26 +67,26 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 
 #ifdef __WIIU__
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
-RumbleMappingFactory::CreateDefaultWiiURumbleMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex) {
-    auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(
+RumbleMappingFactory::CreateDefaultWiiURumbleMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex) {
+    auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToWiiUDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDKDeviceIndex(shipDKDeviceIndex));
     if (wiiuIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
     }
 
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<WiiURumbleMapping>(
-        lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
+        ShipDKDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
     return mappings;
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromWiiUInput(uint8_t portIndex) {
-    for (auto [lusDeviceIndex, indexMapping] :
+    for (auto [ShipDKDeviceIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
+        auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
 
         if (wiiuIndexMapping == nullptr) {
             continue;
@@ -94,7 +94,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 
         if (wiiuIndexMapping->IsWiiUGamepad()) {
             VPADReadError verror;
-            VPADStatus* vstatus = LUS::WiiU::GetVPADStatus(&verror);
+            VPADStatus* vstatus = ShipDK::WiiU::GetVPADStatus(&verror);
 
             if (vstatus == nullptr || verror != VPAD_READ_SUCCESS) {
                 continue;
@@ -105,7 +105,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                     continue;
                 }
 
-                return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                return std::make_shared<WiiURumbleMapping>(shipDKDeviceIndex, portIndex,
                                                            DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
                                                            DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
             }
@@ -115,7 +115,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 
         KPADError kerror;
         KPADStatus* kstatus =
-            LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
+            ShipDK::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
 
         if (kstatus == nullptr || kerror != KPAD_ERROR_OK) {
             continue;
@@ -127,7 +127,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                     continue;
                 }
 
-                return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                return std::make_shared<WiiURumbleMapping>(shipDKDeviceIndex, portIndex,
                                                            DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
                                                            DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
             }
@@ -145,7 +145,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                         continue;
                     }
 
-                    return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                    return std::make_shared<WiiURumbleMapping>(shipDKDeviceIndex, portIndex,
                                                                DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
                                                                DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 }
@@ -157,7 +157,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                         continue;
                     }
 
-                    return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+                    return std::make_shared<WiiURumbleMapping>(shipDKDeviceIndex, portIndex,
                                                                DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
                                                                DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 }
@@ -171,7 +171,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                 continue;
             }
 
-            return std::make_shared<WiiURumbleMapping>(lusDeviceIndex, portIndex,
+            return std::make_shared<WiiURumbleMapping>(shipDKDeviceIndex, portIndex,
                                                        DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
                                                        DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
         }
@@ -181,28 +181,28 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 }
 #else
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
-RumbleMappingFactory::CreateDefaultSDLRumbleMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex) {
-    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
+RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex) {
+    auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDKDeviceIndex(shipDKDeviceIndex));
     if (sdlIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
     }
 
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
-        lusDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
+        shipDKDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
     return mappings;
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllersWithRumble;
+    std::unordered_map<ShipDKDeviceIndex, SDL_GameController*> sdlControllersWithRumble;
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+        auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
         if (sdlIndexMapping == nullptr) {
             // this LUS index isn't mapped to an SDL index
@@ -270,4 +270,4 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
     return mapping;
 }
 #endif
-} // namespace LUS
+} // namespace ShipDK

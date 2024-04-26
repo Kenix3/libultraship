@@ -19,7 +19,7 @@
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace LUS {
+namespace ShipDK {
 std::weak_ptr<Context> Context::mContext;
 
 std::shared_ptr<Context> Context::GetInstance() {
@@ -211,7 +211,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 #if defined(__SWITCH__)
         printf("Main OTR file not found!\n");
 #elif defined(__WIIU__)
-        LUS::WiiU::ThrowMissingOTR(mMainPath.c_str());
+        ShipDK::WiiU::ThrowMissingOTR(mMainPath.c_str());
 #else
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
@@ -220,7 +220,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
         return;
     }
 #ifdef __SWITCH__
-    LUS::Switch::Init(PostInitPhase);
+    ShipDK::Switch::Init(PostInitPhase);
 #endif
 }
 
@@ -254,7 +254,7 @@ void Context::InitGfxDebugger() {
         return;
     }
 
-    mGfxDebugger = std::make_shared<GfxDebugger>();
+    mGfxDebugger = std::make_shared<LUS::GfxDebugger>();
 }
 
 void Context::InitConsole() {
@@ -311,7 +311,7 @@ std::shared_ptr<Audio> Context::GetAudio() {
     return mAudio;
 }
 
-std::shared_ptr<GfxDebugger> Context::GetGfxDebugger() {
+std::shared_ptr<LUS::GfxDebugger> Context::GetGfxDebugger() {
     return mGfxDebugger;
 }
 
@@ -417,4 +417,4 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     return "./" + std::string(path);
 }
 
-} // namespace LUS
+} // namespace ShipDK

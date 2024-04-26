@@ -11,7 +11,7 @@
 #include <vector>
 #include "controller/controldevice/controller/Controller.h"
 
-namespace LUS {
+namespace ShipDK {
 
 class ControllerReorderingWindow : public GuiWindow {
   public:
@@ -33,4 +33,4 @@ class ControllerReorderingWindow : public GuiWindow {
     std::vector<int32_t> mDeviceIndices;
     uint8_t mCurrentPortNumber;
 };
-} // namespace LUS
+} // namespace ShipDK

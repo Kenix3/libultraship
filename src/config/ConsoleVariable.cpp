@@ -6,7 +6,7 @@
 #include "config/Config.h"
 #include "Context.h"
 
-namespace LUS {
+namespace ShipDK {
 
 ConsoleVariable::ConsoleVariable() {
     Load();
@@ -165,13 +165,13 @@ void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue)
 }
 
 void ConsoleVariable::ClearVariable(const char* name) {
-    std::shared_ptr<Config> conf = LUS::Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> conf = ShipDK::Context::GetInstance()->GetConfig();
     mVariables.erase(name);
     conf->Erase(StringHelper::Sprintf("CVars.%s", name));
 }
 
 void ConsoleVariable::Save() {
-    std::shared_ptr<Config> conf = LUS::Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> conf = ShipDK::Context::GetInstance()->GetConfig();
 
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
@@ -208,7 +208,7 @@ void ConsoleVariable::Save() {
 }
 
 void ConsoleVariable::Load() {
-    std::shared_ptr<Config> conf = LUS::Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> conf = ShipDK::Context::GetInstance()->GetConfig();
     conf->Reload();
 
     LoadFromPath("", conf->GetNestedJson()["CVars"].items());
@@ -265,7 +265,7 @@ void ConsoleVariable::LoadFromPath(
     }
 }
 void ConsoleVariable::LoadLegacy() {
-    auto conf = LUS::Context::GetPathRelativeToAppDirectory("cvars.cfg");
+    auto conf = ShipDK::Context::GetPathRelativeToAppDirectory("cvars.cfg");
     if (DiskFile::Exists(conf)) {
         const auto lines = DiskFile::ReadAllLines(conf);
 
@@ -312,4 +312,4 @@ void ConsoleVariable::LoadLegacy() {
         fs::remove(conf);
     }
 }
-} // namespace LUS
+} // namespace ShipDK

@@ -3,13 +3,13 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<File> file) {
+std::shared_ptr<ShipDK::IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<ShipDK::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
     auto vertex = std::make_shared<Vertex>(file->InitData);
-    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
+    auto reader = std::get<std::shared_ptr<ShipDK::BinaryReader>>(file->Reader);
 
     uint32_t count = reader->ReadUInt32();
     vertex->VertexList.reserve(count);
@@ -32,7 +32,7 @@ std::shared_ptr<IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shar
     return vertex;
 }
 
-std::shared_ptr<IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_ptr<File> file) {
+std::shared_ptr<ShipDK::IResource> ResourceFactoryXMLVertexV0::ReadResource(std::shared_ptr<ShipDK::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }

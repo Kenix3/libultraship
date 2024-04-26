@@ -1,7 +1,7 @@
 #include "Array.h"
 
 namespace LUS {
-Array::Array() : Resource(std::shared_ptr<ResourceInitData>()) {
+Array::Array() : Resource(std::shared_ptr<ShipDK::ResourceInitData>()) {
 }
 
 void* Array::GetPointer() {

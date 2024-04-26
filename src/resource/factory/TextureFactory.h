@@ -4,13 +4,13 @@
 #include "resource/ResourceFactoryBinary.h"
 
 namespace LUS {
-class ResourceFactoryBinaryTextureV0 : public ResourceFactoryBinary {
+class ResourceFactoryBinaryTextureV0 : public ShipDK::ResourceFactoryBinary {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
+    std::shared_ptr<ShipDK::IResource> ReadResource(std::shared_ptr<ShipDK::File> file) override;
 };
 
-class ResourceFactoryBinaryTextureV1 : public ResourceFactoryBinary {
+class ResourceFactoryBinaryTextureV1 : public ShipDK::ResourceFactoryBinary {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
+    std::shared_ptr<ShipDK::IResource> ReadResource(std::shared_ptr<ShipDK::File> file) override;
 };
 } // namespace LUS

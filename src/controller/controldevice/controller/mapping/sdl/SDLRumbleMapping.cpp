@@ -3,12 +3,12 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 
-namespace LUS {
-SDLRumbleMapping::SDLRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+namespace ShipDK {
+SDLRumbleMapping::SDLRumbleMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
                                    uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage)
-    : ControllerRumbleMapping(lusDeviceIndex, portIndex, lowFrequencyIntensityPercentage,
+    : ControllerRumbleMapping(shipDKDeviceIndex, portIndex, lowFrequencyIntensityPercentage,
                               highFrequencyIntensityPercentage),
-      SDLMapping(lusDeviceIndex) {
+      SDLMapping(shipDKDeviceIndex) {
     SetLowFrequencyIntensity(lowFrequencyIntensityPercentage);
     SetHighFrequencyIntensity(highFrequencyIntensityPercentage);
 }
@@ -40,14 +40,14 @@ void SDLRumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercentage) {
 }
 
 std::string SDLRumbleMapping::GetRumbleMappingId() {
-    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerRumbleMapping::mLUSDeviceIndex);
+    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerRumbleMapping::mShipDKDeviceIndex);
 }
 
 void SDLRumbleMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
     CVarSetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "SDLRumbleMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerRumbleMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerRumbleMapping::mShipDKDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
                    mLowFrequencyIntensityPercentage);
     CVarSetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
@@ -59,7 +59,7 @@ void SDLRumbleMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str());
 
@@ -73,4 +73,4 @@ std::string SDLRumbleMapping::GetPhysicalDeviceName() {
 bool SDLRumbleMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
-} // namespace LUS
+} // namespace ShipDK

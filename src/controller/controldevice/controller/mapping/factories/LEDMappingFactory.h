@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace LUS {
+namespace ShipDK {
 class LEDMappingFactory {
   public:
     static std::shared_ptr<ControllerLEDMapping> CreateLEDMappingFromConfig(uint8_t portIndex, std::string id);
@@ -13,4 +13,4 @@ class LEDMappingFactory {
     static std::shared_ptr<ControllerLEDMapping> CreateLEDMappingFromSDLInput(uint8_t portIndex);
 #endif
 };
-} // namespace LUS
+} // namespace ShipDK

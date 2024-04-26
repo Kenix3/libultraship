@@ -8,7 +8,7 @@
 #include "OSXFolderManager.h"
 #import <Foundation/Foundation.h>
 
-using namespace LUS;
+using namespace ShipDK;
 
 FolderManager::FolderManager() {
     m_autoreleasePool = [[NSAutoreleasePool alloc] init];

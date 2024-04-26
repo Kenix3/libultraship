@@ -1,57 +1,57 @@
-#include "LUSDeviceIndexToSDLDeviceIndexMapping.h"
+#include "ShipDKDeviceIndexToSDLDeviceIndexMapping.h"
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 
-namespace LUS {
-LUSDeviceIndexToSDLDeviceIndexMapping::LUSDeviceIndexToSDLDeviceIndexMapping(
-    LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
+namespace ShipDK {
+ShipDKDeviceIndexToSDLDeviceIndexMapping::ShipDKDeviceIndexToSDLDeviceIndexMapping(
+    ShipDKDeviceIndex shipDKDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
     int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage)
-    : LUSDeviceIndexToPhysicalDeviceIndexMapping(lusDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
+    : ShipDKDeviceIndexToPhysicalDeviceIndexMapping(shipDKDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
       mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName),
       mStickAxisThresholdPercentage(stickAxisThresholdPercentage),
       mTriggerAxisThresholdPercentage(triggerAxisThresholdPercentage) {
 }
 
-LUSDeviceIndexToSDLDeviceIndexMapping::~LUSDeviceIndexToSDLDeviceIndexMapping() {
+ShipDKDeviceIndexToSDLDeviceIndexMapping::~ShipDKDeviceIndexToSDLDeviceIndexMapping() {
 }
 
-int32_t LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLDeviceIndex() {
+int32_t ShipDKDeviceIndexToSDLDeviceIndexMapping::GetSDLDeviceIndex() {
     return mSDLDeviceIndex;
 }
 
-void LUSDeviceIndexToSDLDeviceIndexMapping::SetSDLDeviceIndex(int32_t index) {
+void ShipDKDeviceIndexToSDLDeviceIndexMapping::SetSDLDeviceIndex(int32_t index) {
     mSDLDeviceIndex = index;
 }
 
-int32_t LUSDeviceIndexToSDLDeviceIndexMapping::GetStickAxisThresholdPercentage() {
+int32_t ShipDKDeviceIndexToSDLDeviceIndexMapping::GetStickAxisThresholdPercentage() {
     return mStickAxisThresholdPercentage;
 }
 
-void LUSDeviceIndexToSDLDeviceIndexMapping::SetStickAxisThresholdPercentage(int32_t stickAxisThresholdPercentage) {
+void ShipDKDeviceIndexToSDLDeviceIndexMapping::SetStickAxisThresholdPercentage(int32_t stickAxisThresholdPercentage) {
     mStickAxisThresholdPercentage = stickAxisThresholdPercentage;
 }
 
-int32_t LUSDeviceIndexToSDLDeviceIndexMapping::GetTriggerAxisThresholdPercentage() {
+int32_t ShipDKDeviceIndexToSDLDeviceIndexMapping::GetTriggerAxisThresholdPercentage() {
     return mTriggerAxisThresholdPercentage;
 }
 
-void LUSDeviceIndexToSDLDeviceIndexMapping::SetTriggerAxisThresholdPercentage(int32_t triggerAxisThresholdPercentage) {
+void ShipDKDeviceIndexToSDLDeviceIndexMapping::SetTriggerAxisThresholdPercentage(int32_t triggerAxisThresholdPercentage) {
     mTriggerAxisThresholdPercentage = triggerAxisThresholdPercentage;
 }
 
-std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetJoystickGUID() {
+std::string ShipDKDeviceIndexToSDLDeviceIndexMapping::GetJoystickGUID() {
     return mSDLJoystickGUID;
 }
 
-std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLControllerName() {
+std::string ShipDKDeviceIndexToSDLDeviceIndexMapping::GetSDLControllerName() {
     return mSDLControllerName;
 }
 
-void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
+void ShipDKDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),
-                  "LUSDeviceIndexToSDLDeviceIndexMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), mLUSDeviceIndex);
+                  "ShipDKDeviceIndexToSDLDeviceIndexMapping");
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(), mShipDKDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str(), mSDLDeviceIndex);
     CVarSetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(),
                   mSDLJoystickGUID.c_str());
@@ -64,11 +64,11 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
     CVarSave();
 }
 
-void LUSDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
+void ShipDKDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerName", mappingCvarKey.c_str()).c_str());
@@ -77,4 +77,4 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
 
     CVarSave();
 }
-} // namespace LUS
+} // namespace ShipDK

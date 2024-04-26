@@ -10,13 +10,13 @@ class ResourceFactoryDisplayList {
     uint32_t GetCombineLERPValue(std::string valStr);
 };
 
-class ResourceFactoryBinaryDisplayListV0 : public ResourceFactoryDisplayList, public ResourceFactoryBinary {
+class ResourceFactoryBinaryDisplayListV0 : public ResourceFactoryDisplayList, public ShipDK::ResourceFactoryBinary {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
+    std::shared_ptr<ShipDK::IResource> ReadResource(std::shared_ptr<ShipDK::File> file) override;
 };
 
-class ResourceFactoryXMLDisplayListV0 : public ResourceFactoryDisplayList, public ResourceFactoryXML {
+class ResourceFactoryXMLDisplayListV0 : public ResourceFactoryDisplayList, public ShipDK::ResourceFactoryXML {
   public:
-    std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
+    std::shared_ptr<ShipDK::IResource> ReadResource(std::shared_ptr<ShipDK::File> file) override;
 };
 } // namespace LUS

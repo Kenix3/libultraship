@@ -13,7 +13,7 @@
 #include <ImGui/imgui.h>
 #include <spdlog/spdlog.h>
 
-namespace LUS {
+namespace ShipDK {
 
 class ConsoleWindow : public GuiWindow {
   public:
@@ -90,4 +90,4 @@ class ConsoleWindow : public GuiWindow {
     };
     static constexpr size_t gMaxBufferSize = 255;
 };
-} // namespace LUS
+} // namespace ShipDK

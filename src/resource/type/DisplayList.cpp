@@ -1,7 +1,7 @@
 #include "resource/type/DisplayList.h"
 
 namespace LUS {
-DisplayList::DisplayList() : Resource(std::shared_ptr<ResourceInitData>()) {
+DisplayList::DisplayList() : Resource(std::shared_ptr<ShipDK::ResourceInitData>()) {
 }
 
 Gfx* DisplayList::GetPointer() {

@@ -2,10 +2,10 @@
 #include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "WiiUButtonToAnyMapping.h"
 
-namespace LUS {
+namespace ShipDK {
 class WiiUButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public WiiUButtonToAnyMapping {
   public:
-    WiiUButtonToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
+    WiiUButtonToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick, Direction direction,
                                      bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton);
 
     float GetNormalizedAxisDirectionValue() override;
@@ -14,5 +14,5 @@ class WiiUButtonToAxisDirectionMapping final : public ControllerAxisDirectionMap
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };
-} // namespace LUS
+} // namespace ShipDK
 #endif

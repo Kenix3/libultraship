@@ -1,9 +1,9 @@
 #include "ControllerLEDMapping.h"
 
-namespace LUS {
-ControllerLEDMapping::ControllerLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+namespace ShipDK {
+ControllerLEDMapping::ControllerLEDMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, uint8_t colorSource,
                                            Color_RGB8 savedColor)
-    : ControllerMapping(lusDeviceIndex), mPortIndex(portIndex), mColorSource(colorSource), mSavedColor(savedColor) {
+    : ControllerMapping(shipDKDeviceIndex), mPortIndex(portIndex), mColorSource(colorSource), mSavedColor(savedColor) {
 }
 
 ControllerLEDMapping::~ControllerLEDMapping() {
@@ -39,4 +39,4 @@ Color_RGB8 ControllerLEDMapping::GetSavedColor() {
 void ControllerLEDMapping::SetPortIndex(uint8_t portIndex) {
     mPortIndex = portIndex;
 }
-} // namespace LUS
+} // namespace ShipDK

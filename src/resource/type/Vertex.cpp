@@ -1,7 +1,7 @@
 #include "resource/type/Vertex.h"
 
 namespace LUS {
-Vertex::Vertex() : Resource(std::shared_ptr<ResourceInitData>()) {
+Vertex::Vertex() : Resource(std::shared_ptr<ShipDK::ResourceInitData>()) {
 }
 
 Vtx* Vertex::GetPointer() {

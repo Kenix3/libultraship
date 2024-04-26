@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace LUS {
-class Vertex : public Resource<Vtx> {
+class Vertex : public ShipDK::Resource<Vtx> {
   public:
     using Resource::Resource;
 

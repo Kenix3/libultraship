@@ -3,7 +3,7 @@
 #include "stddef.h"
 #include <string>
 
-namespace LUS {
+namespace ShipDK {
 class AudioPlayer {
 
   public:
@@ -27,7 +27,7 @@ class AudioPlayer {
   private:
     bool mInitialized;
 };
-} // namespace LUS
+} // namespace ShipDK
 
 #ifdef _WIN32
 #include "WasapiAudioPlayer.h"

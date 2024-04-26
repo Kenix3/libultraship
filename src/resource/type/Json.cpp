@@ -1,7 +1,7 @@
 #include "Json.h"
 
 namespace LUS {
-Json::Json() : Resource(std::shared_ptr<ResourceInitData>()) {
+Json::Json() : Resource(std::shared_ptr<ShipDK::ResourceInitData>()) {
 }
 
 void* Json::GetPointer() {

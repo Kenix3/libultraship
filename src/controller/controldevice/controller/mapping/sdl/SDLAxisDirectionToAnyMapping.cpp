@@ -3,10 +3,10 @@
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
 
-namespace LUS {
-SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerAxis,
+namespace ShipDK {
+SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(ShipDKDeviceIndex shipDKDeviceIndex, int32_t sdlControllerAxis,
                                                            int32_t axisDirection)
-    : ControllerInputMapping(lusDeviceIndex), SDLMapping(lusDeviceIndex) {
+    : ControllerInputMapping(shipDKDeviceIndex), SDLMapping(shipDKDeviceIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
@@ -78,4 +78,4 @@ bool SDLAxisDirectionToAnyMapping::AxisIsStick() {
     return mControllerAxis == SDL_CONTROLLER_AXIS_LEFTX || mControllerAxis == SDL_CONTROLLER_AXIS_LEFTY ||
            mControllerAxis == SDL_CONTROLLER_AXIS_RIGHTX || mControllerAxis == SDL_CONTROLLER_AXIS_RIGHTY;
 }
-} // namespace LUS
+} // namespace ShipDK

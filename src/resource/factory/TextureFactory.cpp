@@ -4,13 +4,13 @@
 
 namespace LUS {
 
-std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<File> file) {
+std::shared_ptr<ShipDK::IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<ShipDK::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
     auto texture = std::make_shared<Texture>(file->InitData);
-    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
+    auto reader = std::get<std::shared_ptr<ShipDK::BinaryReader>>(file->Reader);
 
     texture->Type = (TextureType)reader->ReadUInt32();
     texture->Width = reader->ReadUInt32();
@@ -23,13 +23,13 @@ std::shared_ptr<IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::sha
     return texture;
 }
 
-std::shared_ptr<IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<File> file) {
+std::shared_ptr<ShipDK::IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<ShipDK::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
     auto texture = std::make_shared<Texture>(file->InitData);
-    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
+    auto reader = std::get<std::shared_ptr<ShipDK::BinaryReader>>(file->Reader);
 
     texture->Type = (TextureType)reader->ReadUInt32();
     texture->Width = reader->ReadUInt32();

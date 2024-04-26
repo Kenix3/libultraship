@@ -4,10 +4,10 @@
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
 
-namespace LUS {
-WiiUButtonToAnyMapping::WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic,
+namespace ShipDK {
+WiiUButtonToAnyMapping::WiiUButtonToAnyMapping(ShipDKDeviceIndex shipDKDeviceIndex, bool isNunchuk, bool isClassic,
                                                uint32_t wiiuControllerButton)
-    : ControllerInputMapping(lusDeviceIndex), WiiUMapping(lusDeviceIndex), mIsNunchukButton(isNunchuk),
+    : ControllerInputMapping(shipDKDeviceIndex), WiiUMapping(shipDKDeviceIndex), mIsNunchukButton(isNunchuk),
       mControllerButton(wiiuControllerButton) {
 }
 
@@ -268,7 +268,7 @@ bool WiiUButtonToAnyMapping::PhysicalDeviceIsConnected() {
 bool WiiUButtonToAnyMapping::PhysicalButtonIsPressed() {
     if (IsGamepad()) {
         VPADReadError error;
-        VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+        VPADStatus* status = ShipDK::WiiU::GetVPADStatus(&error);
         if (status == nullptr) {
             return false;
         }
@@ -277,7 +277,7 @@ bool WiiUButtonToAnyMapping::PhysicalButtonIsPressed() {
     }
 
     KPADError error;
-    KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
+    KPADStatus* status = ShipDK::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
     if (status == nullptr || error != KPAD_ERROR_OK) {
         return false;
     }
@@ -296,5 +296,5 @@ bool WiiUButtonToAnyMapping::PhysicalButtonIsPressed() {
 
     return status->hold & mControllerButton;
 }
-} // namespace LUS
+} // namespace ShipDK
 #endif

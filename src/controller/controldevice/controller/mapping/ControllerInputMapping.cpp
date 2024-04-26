@@ -1,7 +1,7 @@
 #include "ControllerInputMapping.h"
 
-namespace LUS {
-ControllerInputMapping::ControllerInputMapping(LUSDeviceIndex lusDeviceIndex) : ControllerMapping(lusDeviceIndex) {
+namespace ShipDK {
+ControllerInputMapping::ControllerInputMapping(ShipDKDeviceIndex shipDKDeviceIndex) : ControllerMapping(shipDKDeviceIndex) {
 }
 
 ControllerInputMapping::~ControllerInputMapping() {
@@ -10,4 +10,4 @@ ControllerInputMapping::~ControllerInputMapping() {
 std::string ControllerInputMapping::GetPhysicalInputName() {
     return "Unknown";
 }
-} // namespace LUS
+} // namespace ShipDK

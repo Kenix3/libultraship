@@ -7,7 +7,7 @@
 #include "libultraship/libultra/controller.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
-namespace LUS {
+namespace ShipDK {
 
 #define BUTTON_BITMASKS                                                                                             \
     BTN_A, BTN_B, BTN_L, BTN_R, BTN_Z, BTN_START, BTN_CLEFT, BTN_CRIGHT, BTN_CUP, BTN_CDOWN, BTN_DLEFT, BTN_DRIGHT, \
@@ -24,23 +24,23 @@ class ControllerButton {
     void ClearButtonMappingId(std::string id);
     void ClearButtonMapping(std::string id);
     void ClearButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
-    void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
+    void AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex);
 
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
     void ReloadAllMappingsFromConfig();
     void ClearAllButtonMappings();
-    void ClearAllButtonMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
+    void ClearAllButtonMappingsForDevice(ShipDKDeviceIndex shipDKDeviceIndex);
 
     bool AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id);
 
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
 #ifndef __WIIU__
-    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
+    bool ProcessKeyboardEvent(ShipDK::KbEventType eventType, ShipDK::KbScancode scancode);
 #endif
 
-    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    bool HasMappingsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex);
 
   private:
     uint8_t mPortIndex;
@@ -51,4 +51,4 @@ class ControllerButton {
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
 };
-} // namespace LUS
+} // namespace ShipDK

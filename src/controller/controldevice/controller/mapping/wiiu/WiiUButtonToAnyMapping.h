@@ -4,10 +4,10 @@
 #include "WiiUMapping.h"
 #include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
-namespace LUS {
+namespace ShipDK {
 class WiiUButtonToAnyMapping : virtual public ControllerInputMapping, public WiiUMapping {
   public:
-    WiiUButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, bool isNunchuk, bool isClassic,
+    WiiUButtonToAnyMapping(ShipDKDeviceIndex shipDKDeviceIndex, bool isNunchuk, bool isClassic,
                            uint32_t wiiuControllerButton);
     ~WiiUButtonToAnyMapping();
     std::string GetPhysicalInputName() override;
@@ -27,5 +27,5 @@ class WiiUButtonToAnyMapping : virtual public ControllerInputMapping, public Wii
     std::string GetClassicControllerButtonName();
     std::string GetProControllerButtonName();
 };
-} // namespace LUS
+} // namespace ShipDK
 #endif

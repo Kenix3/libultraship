@@ -5,22 +5,22 @@
 extern "C" {
 
 uint32_t WindowGetWidth() {
-    return LUS::Context::GetInstance()->GetWindow()->GetWidth();
+    return ShipDK::Context::GetInstance()->GetWindow()->GetWidth();
 }
 
 uint32_t WindowGetHeight() {
-    return LUS::Context::GetInstance()->GetWindow()->GetHeight();
+    return ShipDK::Context::GetInstance()->GetWindow()->GetHeight();
 }
 
 float WindowGetAspectRatio() {
-    return LUS::Context::GetInstance()->GetWindow()->GetCurrentAspectRatio();
+    return ShipDK::Context::GetInstance()->GetWindow()->GetCurrentAspectRatio();
 }
 
 void WindowGetPixelDepthPrepare(float x, float y) {
-    return LUS::Context::GetInstance()->GetWindow()->GetPixelDepthPrepare(x, y);
+    return ShipDK::Context::GetInstance()->GetWindow()->GetPixelDepthPrepare(x, y);
 }
 
 uint16_t WindowGetPixelDepth(float x, float y) {
-    return LUS::Context::GetInstance()->GetWindow()->GetPixelDepth(x, y);
+    return ShipDK::Context::GetInstance()->GetWindow()->GetPixelDepth(x, y);
 }
 }

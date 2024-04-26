@@ -6,7 +6,7 @@
 #include "ResourceFactory.h"
 #include "Resource.h"
 
-namespace LUS {
+namespace ShipDK {
 struct File;
 
 struct ResourceFactoryKey {
@@ -32,7 +32,7 @@ class ResourceLoader {
     ResourceLoader();
     ~ResourceLoader();
 
-    std::shared_ptr<IResource> LoadResource(std::shared_ptr<File> fileToLoad);
+    std::shared_ptr<ShipDK::IResource> LoadResource(std::shared_ptr<ShipDK::File> fileToLoad);
     bool RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format, std::string typeName,
                                  uint32_t type, uint32_t version);
 
@@ -47,4 +47,4 @@ class ResourceLoader {
     std::unordered_map<std::string, uint32_t> mResourceTypes;
     std::unordered_map<ResourceFactoryKey, std::shared_ptr<ResourceFactory>, ResourceFactoryKeyHash> mFactories;
 };
-} // namespace LUS
+} // namespace ShipDK

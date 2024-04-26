@@ -2,9 +2,9 @@
 
 #include "ResourceFactory.h"
 
-namespace LUS {
+namespace ShipDK {
 class ResourceFactoryXML : public ResourceFactory {
   protected:
-    bool FileHasValidFormatAndReader(std::shared_ptr<File> file) override;
+    bool FileHasValidFormatAndReader(std::shared_ptr<ShipDK::File> file) override;
 };
-} // namespace LUS
+} // namespace ShipDK

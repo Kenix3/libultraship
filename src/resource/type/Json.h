@@ -5,7 +5,7 @@
 
 namespace LUS {
 
-class Json : public Resource<void> {
+class Json : public ShipDK::Resource<void> {
   public:
     using Resource::Resource;
 

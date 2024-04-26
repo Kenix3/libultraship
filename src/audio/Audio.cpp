@@ -2,7 +2,7 @@
 
 #include "Context.h"
 
-namespace LUS {
+namespace ShipDK {
 Audio::Audio() {
 }
 
@@ -62,4 +62,4 @@ std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {
     return mAvailableAudioBackends;
 }
 
-} // namespace LUS
+} // namespace ShipDK

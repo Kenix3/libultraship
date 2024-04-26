@@ -3,55 +3,55 @@
 #include <cmath>
 #include <stdexcept>
 
-LUS::BinaryReader::BinaryReader(char* nBuffer, size_t nBufferSize) {
+ShipDK::BinaryReader::BinaryReader(char* nBuffer, size_t nBufferSize) {
     mStream = std::make_shared<MemoryStream>(nBuffer, nBufferSize);
 }
 
-LUS::BinaryReader::BinaryReader(Stream* nStream) {
+ShipDK::BinaryReader::BinaryReader(Stream* nStream) {
     mStream.reset(nStream);
 }
 
-LUS::BinaryReader::BinaryReader(std::shared_ptr<Stream> nStream) {
+ShipDK::BinaryReader::BinaryReader(std::shared_ptr<Stream> nStream) {
     mStream = nStream;
 }
 
-void LUS::BinaryReader::Close() {
+void ShipDK::BinaryReader::Close() {
     mStream->Close();
 }
 
-void LUS::BinaryReader::SetEndianness(Endianness endianness) {
+void ShipDK::BinaryReader::SetEndianness(Endianness endianness) {
     this->mEndianness = endianness;
 }
 
-LUS::Endianness LUS::BinaryReader::GetEndianness() const {
+ShipDK::Endianness ShipDK::BinaryReader::GetEndianness() const {
     return mEndianness;
 }
 
-void LUS::BinaryReader::Seek(int32_t offset, SeekOffsetType seekType) {
+void ShipDK::BinaryReader::Seek(int32_t offset, SeekOffsetType seekType) {
     mStream->Seek(offset, seekType);
 }
 
-uint32_t LUS::BinaryReader::GetBaseAddress() {
+uint32_t ShipDK::BinaryReader::GetBaseAddress() {
     return mStream->GetBaseAddress();
 }
 
-void LUS::BinaryReader::Read(int32_t length) {
+void ShipDK::BinaryReader::Read(int32_t length) {
     mStream->Read(length);
 }
 
-void LUS::BinaryReader::Read(char* buffer, int32_t length) {
+void ShipDK::BinaryReader::Read(char* buffer, int32_t length) {
     mStream->Read(buffer, length);
 }
 
-char LUS::BinaryReader::ReadChar() {
+char ShipDK::BinaryReader::ReadChar() {
     return (char)mStream->ReadByte();
 }
 
-int8_t LUS::BinaryReader::ReadInt8() {
+int8_t ShipDK::BinaryReader::ReadInt8() {
     return mStream->ReadByte();
 }
 
-int16_t LUS::BinaryReader::ReadInt16() {
+int16_t ShipDK::BinaryReader::ReadInt16() {
     int16_t result = 0;
     mStream->Read((char*)&result, sizeof(int16_t));
     if (mEndianness != Endianness::Native) {
@@ -61,7 +61,7 @@ int16_t LUS::BinaryReader::ReadInt16() {
     return result;
 }
 
-int32_t LUS::BinaryReader::ReadInt32() {
+int32_t ShipDK::BinaryReader::ReadInt32() {
     int32_t result = 0;
 
     mStream->Read((char*)&result, sizeof(int32_t));
@@ -73,11 +73,11 @@ int32_t LUS::BinaryReader::ReadInt32() {
     return result;
 }
 
-uint8_t LUS::BinaryReader::ReadUByte() {
+uint8_t ShipDK::BinaryReader::ReadUByte() {
     return (uint8_t)mStream->ReadByte();
 }
 
-uint16_t LUS::BinaryReader::ReadUInt16() {
+uint16_t ShipDK::BinaryReader::ReadUInt16() {
     uint16_t result = 0;
 
     mStream->Read((char*)&result, sizeof(uint16_t));
@@ -89,7 +89,7 @@ uint16_t LUS::BinaryReader::ReadUInt16() {
     return result;
 }
 
-uint32_t LUS::BinaryReader::ReadUInt32() {
+uint32_t ShipDK::BinaryReader::ReadUInt32() {
     uint32_t result = 0;
 
     mStream->Read((char*)&result, sizeof(uint32_t));
@@ -101,7 +101,7 @@ uint32_t LUS::BinaryReader::ReadUInt32() {
     return result;
 }
 
-uint64_t LUS::BinaryReader::ReadUInt64() {
+uint64_t ShipDK::BinaryReader::ReadUInt64() {
     uint64_t result = 0;
 
     mStream->Read((char*)&result, sizeof(uint64_t));
@@ -113,7 +113,7 @@ uint64_t LUS::BinaryReader::ReadUInt64() {
     return result;
 }
 
-float LUS::BinaryReader::ReadFloat() {
+float ShipDK::BinaryReader::ReadFloat() {
     float result = NAN;
 
     mStream->Read((char*)&result, sizeof(float));
@@ -136,7 +136,7 @@ float LUS::BinaryReader::ReadFloat() {
     return result;
 }
 
-double LUS::BinaryReader::ReadDouble() {
+double ShipDK::BinaryReader::ReadDouble() {
     double result = NAN;
 
     mStream->Read((char*)&result, sizeof(double));
@@ -163,7 +163,7 @@ double LUS::BinaryReader::ReadDouble() {
     return result;
 }
 
-std::string LUS::BinaryReader::ReadString() {
+std::string ShipDK::BinaryReader::ReadString() {
     std::string res;
     int numChars = ReadInt32();
     for (int i = 0; i < numChars; i++) {
@@ -172,7 +172,7 @@ std::string LUS::BinaryReader::ReadString() {
     return res;
 }
 
-std::string LUS::BinaryReader::ReadCString() {
+std::string ShipDK::BinaryReader::ReadCString() {
     std::string res;
 
     unsigned char c = 0;
@@ -188,6 +188,6 @@ std::string LUS::BinaryReader::ReadCString() {
     return res;
 }
 
-std::vector<char> LUS::BinaryReader::ToVector() {
+std::vector<char> ShipDK::BinaryReader::ToVector() {
     return mStream->ToVector();
 }

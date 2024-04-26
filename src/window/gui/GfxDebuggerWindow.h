@@ -6,7 +6,7 @@
 
 namespace LUS {
 
-class GfxDebuggerWindow : public GuiWindow {
+class GfxDebuggerWindow : public ShipDK::GuiWindow {
   public:
     using GuiWindow::GuiWindow;
     ~GfxDebuggerWindow();

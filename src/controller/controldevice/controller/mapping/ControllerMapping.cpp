@@ -1,7 +1,7 @@
 #include "ControllerMapping.h"
 
-namespace LUS {
-ControllerMapping::ControllerMapping(LUSDeviceIndex lusDeviceIndex) : mLUSDeviceIndex(lusDeviceIndex) {
+namespace ShipDK {
+ControllerMapping::ControllerMapping(ShipDKDeviceIndex shipDKDeviceIndex) : mShipDKDeviceIndex(shipDKDeviceIndex) {
 }
 
 ControllerMapping::~ControllerMapping() {
@@ -11,7 +11,7 @@ std::string ControllerMapping::GetPhysicalDeviceName() {
     return "Unknown";
 }
 
-LUSDeviceIndex ControllerMapping::GetLUSDeviceIndex() {
-    return mLUSDeviceIndex;
+ShipDKDeviceIndex ControllerMapping::GetShipDKDeviceIndex() {
+    return mShipDKDeviceIndex;
 }
-} // namespace LUS
+} // namespace ShipDK

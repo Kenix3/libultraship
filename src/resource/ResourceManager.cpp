@@ -9,7 +9,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-namespace LUS {
+namespace ShipDK {
 
 ResourceManager::ResourceManager() {
 }
@@ -41,8 +41,8 @@ bool ResourceManager::DidLoadSuccessfully() {
     return mArchiveManager != nullptr && mArchiveManager->IsArchiveLoaded();
 }
 
-std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath,
-                                                       std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<ShipDK::File> ResourceManager::LoadFileProcess(const std::string& filePath,
+                                                       std::shared_ptr<ShipDK::ResourceInitData> initData) {
     auto file = mArchiveManager->LoadFile(filePath, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
@@ -52,8 +52,8 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     return file;
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact,
-                                                                std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<ShipDK::IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact,
+                                                                std::shared_ptr<ShipDK::ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         const auto newFilePath = filePath.substr(7);
@@ -134,9 +134,9 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
     return resource;
 }
 
-std::shared_future<std::shared_ptr<IResource>>
+std::shared_future<std::shared_ptr<ShipDK::IResource>>
 ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, bool priority,
-                                   std::shared_ptr<ResourceInitData> initData) {
+                                   std::shared_ptr<ShipDK::ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
@@ -146,7 +146,7 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
     // Check the cache before queueing the job.
     auto cacheCheck = GetCachedResource(filePath, loadExact);
     if (cacheCheck) {
-        auto promise = std::make_shared<std::promise<std::shared_ptr<IResource>>>();
+        auto promise = std::make_shared<std::promise<std::shared_ptr<ShipDK::IResource>>>();
         promise->set_value(cacheCheck);
         return promise->get_future().share();
     }
@@ -160,8 +160,8 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
     }
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
-                                                         std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<ShipDK::IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
+                                                         std::shared_ptr<ShipDK::ResourceInitData> initData) {
     auto resource = LoadResourceAsync(filePath, loadExact, true, initData).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
@@ -169,7 +169,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& file
     return resource;
 }
 
-std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
+std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<ShipDK::IResource>>
 ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
     if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + filePath;
@@ -177,7 +177,7 @@ ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
 
         // If the type held at this cache index is a resource, then we return it.
         // Else we attempt to load standard definition assets.
-        if (std::holds_alternative<std::shared_ptr<IResource>>(altCacheResult)) {
+        if (std::holds_alternative<std::shared_ptr<ShipDK::IResource>>(altCacheResult)) {
             return altCacheResult;
         }
     }
@@ -192,17 +192,17 @@ ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
     return resourceCacheFind->second;
 }
 
-std::shared_ptr<IResource> ResourceManager::GetCachedResource(const std::string& filePath, bool loadExact) {
+std::shared_ptr<ShipDK::IResource> ResourceManager::GetCachedResource(const std::string& filePath, bool loadExact) {
     // Gets the cached resource based on filePath.
     return GetCachedResource(CheckCache(filePath, loadExact));
 }
 
-std::shared_ptr<IResource>
-ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine) {
+std::shared_ptr<ShipDK::IResource>
+ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<ShipDK::IResource>> cacheLine) {
     // Gets the cached resource based on a cache line std::variant from the cache map.
-    if (std::holds_alternative<std::shared_ptr<IResource>>(cacheLine)) {
+    if (std::holds_alternative<std::shared_ptr<ShipDK::IResource>>(cacheLine)) {
         try {
-            auto resource = std::get<std::shared_ptr<IResource>>(cacheLine);
+            auto resource = std::get<std::shared_ptr<ShipDK::IResource>>(cacheLine);
 
             if (resource.use_count() <= 0) {
                 return nullptr;
@@ -221,9 +221,9 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
     return nullptr;
 }
 
-std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
+std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<ShipDK::IResource>>>>
 ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority) {
-    auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
+    auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<ShipDK::IResource>>>>();
     auto fileList = GetArchiveManager()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
@@ -236,9 +236,9 @@ ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
+std::shared_ptr<std::vector<std::shared_ptr<ShipDK::IResource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
     auto futureList = LoadDirectoryAsync(searchMask, true);
-    auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
+    auto loadedList = std::make_shared<std::vector<std::shared_ptr<ShipDK::IResource>>>();
 
     for (size_t i = 0; i < futureList->size(); i++) {
         const auto future = futureList->at(i);
@@ -283,7 +283,7 @@ size_t ResourceManager::UnloadResource(const std::string& filePath) {
     // Store a shared pointer here so that erase doesn't destruct the resource.
     // The resource will attempt to load other resources on the destructor, and this will fail because we already hold
     // the mutex.
-    std::variant<ResourceLoadError, std::shared_ptr<IResource>> value = nullptr;
+    std::variant<ResourceLoadError, std::shared_ptr<ShipDK::IResource>> value = nullptr;
     size_t ret = 0;
     {
         const std::lock_guard<std::mutex> lock(mMutex);
@@ -299,4 +299,4 @@ bool ResourceManager::OtrSignatureCheck(const char* fileName) {
     return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
 }
 
-} // namespace LUS
+} // namespace ShipDK

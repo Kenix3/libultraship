@@ -466,8 +466,8 @@ static bool gfx_texture_cache_lookup(int i, const TextureCacheKey& key) {
 }
 
 static std::string gfx_get_base_texture_path(const std::string& path) {
-    if (path.starts_with(LUS::IResource::gAltAssetPrefix)) {
-        return path.substr(LUS::IResource::gAltAssetPrefix.length());
+    if (path.starts_with(ShipDK::IResource::gAltAssetPrefix)) {
+        return path.substr(ShipDK::IResource::gAltAssetPrefix.length());
     }
 
     return path;
@@ -1245,8 +1245,8 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
                 dotx /= 127.0f;
                 doty /= 127.0f;
 
-                dotx = LUS::Math::clamp(dotx, -1.0f, 1.0f);
-                doty = LUS::Math::clamp(doty, -1.0f, 1.0f);
+                dotx = ShipDK::Math::clamp(dotx, -1.0f, 1.0f);
+                doty = ShipDK::Math::clamp(doty, -1.0f, 1.0f);
 
                 if (g_rsp.geometry_mode & G_TEXTURE_GEN_LINEAR) {
                     // Not sure exactly what formula we should use to get accurate values
@@ -1309,7 +1309,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx* verti
             }
 
             float fog_z = z * winv * g_rsp.fog_mul + g_rsp.fog_offset;
-            fog_z = LUS::Math::clamp(fog_z, 0.0f, 255.0f);
+            fog_z = ShipDK::Math::clamp(fog_z, 0.0f, 255.0f);
             d->color.a = fog_z; // Use alpha variable to store fog factor
         } else {
             d->color.a = v->cn[3];
@@ -2464,7 +2464,7 @@ static void gfx_s2dex_bg_copy(uObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
-            LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            ShipDK::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2503,7 +2503,7 @@ static void gfx_s2dex_bg_1cyc(uObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
-            LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            ShipDK::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -3154,7 +3154,7 @@ bool gfx_set_timg_handler_rdp(Gfx** cmd0) {
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
-                LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+                ShipDK::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
             i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
             texFlags = tex->Flags;
@@ -3182,7 +3182,7 @@ bool gfx_set_timg_otr_hash_handler_custom(Gfx** cmd0) {
     RawTexMetadata rawTexMetadata = {};
 
     std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-        LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
+        ShipDK::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -3245,7 +3245,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(Gfx** cmd0) {
     RawTexMetadata rawTexMetadata = {};
 
     std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-        LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
+        ShipDK::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -3810,7 +3810,7 @@ void gfx_start_frame(void) {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
                              &gfx_current_window_position_x, &gfx_current_window_position_y);
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
+    ShipDK::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
     has_drawn_imgui_menu = true;
     if (gfx_current_dimensions.height == 0) {
         // Avoid division by zero
@@ -3878,8 +3878,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
         if (has_drawn_imgui_menu) {
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->EndFrame();
+            ShipDK::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
+            ShipDK::Context::GetInstance()->GetWindow()->GetGui()->EndFrame();
             has_drawn_imgui_menu = false;
         }
         return;
@@ -3887,7 +3887,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     dropped_frame = false;
 
     if (!has_drawn_imgui_menu) {
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
+        ShipDK::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
     }
 
     current_mtx_replacements = &mtx_replacements;
@@ -3903,7 +3903,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     rendering_state.viewport = {};
     rendering_state.scissor = {};
 
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = ShipDK::Context::GetInstance()->GetGfxDebugger();
     g_exec_stack.start(commands);
     while (!g_exec_stack.cmd_stack.empty()) {
         auto cmd = g_exec_stack.cmd_stack.top();
@@ -3939,8 +3939,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
             gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
     }
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
+    ShipDK::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
+    ShipDK::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
     has_drawn_imgui_menu = false;
@@ -4079,7 +4079,7 @@ int32_t gfx_check_image_signature(const char* imgData) {
     }
 
     if (i != 0) {
-        return LUS::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+        return ShipDK::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
     }
 
     return 0;
@@ -4092,7 +4092,7 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
         LUS::Texture* tex = std::static_pointer_cast<LUS::Texture>(
-                                LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                ShipDK::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
                                     reinterpret_cast<char*>(replacement)))
                                 .get();
 

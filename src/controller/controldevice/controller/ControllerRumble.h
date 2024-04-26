@@ -7,7 +7,7 @@
 
 #include "controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
 
-namespace LUS {
+namespace ShipDK {
 class ControllerRumble {
   public:
     ControllerRumble(uint8_t portIndex);
@@ -19,8 +19,8 @@ class ControllerRumble {
     void ClearRumbleMapping(std::string id);
     void SaveRumbleMappingIdsToConfig();
     void ClearAllMappings();
-    void ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
-    void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
+    void ClearAllMappingsForDevice(ShipDKDeviceIndex shipDKDeviceIndex);
+    void AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex);
     void LoadRumbleMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();
 
@@ -29,10 +29,10 @@ class ControllerRumble {
     void StartRumble();
     void StopRumble();
 
-    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    bool HasMappingsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex);
 
   private:
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> mRumbleMappings;
 };
-} // namespace LUS
+} // namespace ShipDK

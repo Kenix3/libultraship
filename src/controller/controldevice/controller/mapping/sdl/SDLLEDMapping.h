@@ -1,10 +1,10 @@
 #include "controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 #include "SDLMapping.h"
 
-namespace LUS {
+namespace ShipDK {
 class SDLLEDMapping final : public ControllerLEDMapping, public SDLMapping {
   public:
-    SDLLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
+    SDLLEDMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
 
     void SetLEDColor(Color_RGB8 color) override;
 
@@ -15,4 +15,4 @@ class SDLLEDMapping final : public ControllerLEDMapping, public SDLMapping {
     std::string GetPhysicalDeviceName() override;
     bool PhysicalDeviceIsConnected() override;
 };
-} // namespace LUS
+} // namespace ShipDK

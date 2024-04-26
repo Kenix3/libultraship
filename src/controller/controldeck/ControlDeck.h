@@ -4,9 +4,9 @@
 #include <vector>
 #include <config/Config.h>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "controller/deviceindex/LUSDeviceIndexMappingManager.h"
+#include "controller/deviceindex/ShipDKDeviceIndexMappingManager.h"
 
-namespace LUS {
+namespace ShipDK {
 
 class ControlDeck {
   public:
@@ -27,10 +27,10 @@ class ControlDeck {
     bool IsSinglePlayerMappingMode();
 
 #ifndef __WIIU__
-    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
+    bool ProcessKeyboardEvent(ShipDK::KbEventType eventType, ShipDK::KbScancode scancode);
 #endif
 
-    std::shared_ptr<LUSDeviceIndexMappingManager> GetDeviceIndexMappingManager();
+    std::shared_ptr<ShipDKDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 
   private:
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
@@ -40,6 +40,6 @@ class ControlDeck {
 
     bool AllGameInputBlocked();
     std::unordered_map<int32_t, bool> mGameInputBlockers;
-    std::shared_ptr<LUSDeviceIndexMappingManager> mDeviceIndexMappingManager;
+    std::shared_ptr<ShipDKDeviceIndexMappingManager> mDeviceIndexMappingManager;
 };
-} // namespace LUS
+} // namespace ShipDK

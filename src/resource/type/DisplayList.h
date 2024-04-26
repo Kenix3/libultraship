@@ -5,7 +5,7 @@
 #include "libultraship/libultra/gbi.h"
 
 namespace LUS {
-class DisplayList : public Resource<Gfx> {
+class DisplayList : public ShipDK::Resource<Gfx> {
   public:
     using Resource::Resource;
 

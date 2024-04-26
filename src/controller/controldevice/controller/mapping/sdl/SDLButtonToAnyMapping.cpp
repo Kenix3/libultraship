@@ -3,9 +3,9 @@
 #include <Utils/StringHelper.h>
 #include "window/gui/IconsFontAwesome4.h"
 
-namespace LUS {
-SDLButtonToAnyMapping::SDLButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerButton)
-    : ControllerInputMapping(lusDeviceIndex), SDLMapping(lusDeviceIndex) {
+namespace ShipDK {
+SDLButtonToAnyMapping::SDLButtonToAnyMapping(ShipDKDeviceIndex shipDKDeviceIndex, int32_t sdlControllerButton)
+    : ControllerInputMapping(shipDKDeviceIndex), SDLMapping(shipDKDeviceIndex) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 
@@ -218,4 +218,4 @@ std::string SDLButtonToAnyMapping::GetPhysicalDeviceName() {
 bool SDLButtonToAnyMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
-} // namespace LUS
+} // namespace ShipDK

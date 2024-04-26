@@ -11,7 +11,7 @@
 #include <StrHash64.h>
 #include <nlohmann/json.hpp>
 
-namespace LUS {
+namespace ShipDK {
 Archive::Archive(const std::string& path)
     : mHasGameVersion(false), mGameVersion(UNKNOWN_GAME_VERSION), mPath(path), mIsLoaded(false) {
     mHashes = std::make_shared<std::unordered_map<uint64_t, std::string>>();
@@ -30,7 +30,7 @@ void Archive::Load() {
         mHasGameVersion = true;
         auto stream = std::make_shared<MemoryStream>(t->Buffer->data(), t->Buffer->size());
         auto reader = std::make_shared<BinaryReader>(stream);
-        LUS::Endianness endianness = (Endianness)reader->ReadUByte();
+        ShipDK::Endianness endianness = (Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
         SetGameVersion(reader->ReadUInt32());
         isGameVersionValid =
@@ -109,8 +109,8 @@ void Archive::IndexFile(const std::string& filePath) {
     (*mHashes)[CRC64(filePath.c_str())] = filePath;
 }
 
-std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath,
-                                                                std::shared_ptr<File> metaFileToLoad) {
+std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath,
+                                                                std::shared_ptr<ShipDK::File> metaFileToLoad) {
     auto initData = CreateDefaultResourceInitData();
 
     // just using metaFileToLoad->Buffer->data() leads to garbage at the end
@@ -137,8 +137,8 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::strin
     return initData;
 }
 
-std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
-                                                                      std::shared_ptr<File> fileToLoad) {
+std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                      std::shared_ptr<ShipDK::File> fileToLoad) {
     // Determine if file is binary or XML...
     if (fileToLoad->Buffer->at(0) == '<') {
         // File is XML
@@ -177,14 +177,14 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std:
     }
 }
 
-std::shared_ptr<BinaryReader> Archive::CreateBinaryReader(std::shared_ptr<File> fileToLoad) {
+std::shared_ptr<ShipDK::BinaryReader> Archive::CreateBinaryReader(std::shared_ptr<ShipDK::File> fileToLoad) {
     auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
     auto reader = std::make_shared<BinaryReader>(stream);
     reader->SetEndianness(fileToLoad->InitData->ByteOrder);
     return reader;
 }
 
-std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<File> fileToLoad) {
+std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<ShipDK::File> fileToLoad) {
     auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
     auto binaryReader = std::make_shared<BinaryReader>(stream);
 
@@ -199,8 +199,8 @@ std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<
     return xmlReader;
 }
 
-std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData) {
-    std::shared_ptr<File> fileToLoad = nullptr;
+std::shared_ptr<ShipDK::File> Archive::LoadFile(const std::string& filePath, std::shared_ptr<ShipDK::ResourceInitData> initData) {
+    std::shared_ptr<ShipDK::File> fileToLoad = nullptr;
 
     if (initData != nullptr) {
         fileToLoad = LoadFileRaw(filePath);
@@ -236,13 +236,13 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared
     return fileToLoad;
 }
 
-std::shared_ptr<File> Archive::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<ShipDK::File> Archive::LoadFile(uint64_t hash, std::shared_ptr<ShipDK::ResourceInitData> initData) {
     const std::string& filePath =
         *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath, initData);
 }
 
-std::shared_ptr<ResourceInitData> Archive::CreateDefaultResourceInitData() {
+std::shared_ptr<ShipDK::ResourceInitData> Archive::CreateDefaultResourceInitData() {
     auto resourceInitData = std::make_shared<ResourceInitData>();
     resourceInitData->Id = 0xDEADBEEFDEADBEEF;
     resourceInitData->Type = static_cast<uint32_t>(ResourceType::None);
@@ -253,8 +253,8 @@ std::shared_ptr<ResourceInitData> Archive::CreateDefaultResourceInitData() {
     return resourceInitData;
 }
 
-std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataBinary(const std::string& filePath,
-                                                                      std::shared_ptr<BinaryReader> headerReader) {
+std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitDataBinary(const std::string& filePath,
+                                                                      std::shared_ptr<ShipDK::BinaryReader> headerReader) {
     auto resourceInitData = CreateDefaultResourceInitData();
     resourceInitData->Path = filePath;
 
@@ -293,7 +293,7 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataBinary(const std:
     return resourceInitData;
 }
 
-std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataXml(const std::string& filePath,
+std::shared_ptr<ShipDK::ResourceInitData> Archive::ReadResourceInitDataXml(const std::string& filePath,
                                                                    std::shared_ptr<tinyxml2::XMLDocument> document) {
     auto resourceInitData = CreateDefaultResourceInitData();
     resourceInitData->Path = filePath;
@@ -315,4 +315,4 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataXml(const std::st
     return resourceInitData;
 }
 
-} // namespace LUS
+} // namespace ShipDK
