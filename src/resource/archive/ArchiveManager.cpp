@@ -68,8 +68,8 @@ std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::s
     auto list = ListFiles();
     auto result = std::make_shared<std::vector<std::string>>();
 
-    std::copy_if(list->begin(), list->end(), std::back_inserter(*result), [filter](const std::string& filePath) { return glob_match(filter.c_str() , filePath.c_str());
-    });
+    std::copy_if(list->begin(), list->end(), std::back_inserter(*result),
+                 [filter](const std::string& filePath) { return glob_match(filter.c_str(), filePath.c_str()); });
 
     return result;
 }
