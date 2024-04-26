@@ -13,7 +13,10 @@
 #include "window/Window.h"
 #include "config/ConsoleVariable.h"
 #include "debug/Console.h"
-#include "debug/GfxDebugger.h"
+
+namespace LUS {
+  class GfxDebugger;
+}
 
 namespace ShipDK {
 
