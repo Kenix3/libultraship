@@ -3,9 +3,9 @@
 #include "resource/Resource.h"
 #include <nlohmann/json.hpp>
 
-namespace LUS {
+namespace Ship {
 
-class Json : public Ship::Resource<void> {
+class Json : public Resource<void> {
   public:
     using Resource::Resource;
 
@@ -17,4 +17,4 @@ class Json : public Ship::Resource<void> {
     nlohmann::json Data;
     size_t DataSize;
 };
-}; // namespace LUS
+}; // namespace Ship

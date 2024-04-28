@@ -42,8 +42,8 @@ void ResourceLoader::RegisterGlobalResourceFactories() {
                             static_cast<uint32_t>(LUS::ResourceType::Array), 0);
     RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryBlobV0>(), RESOURCE_FORMAT_BINARY, "Blob",
                             static_cast<uint32_t>(LUS::ResourceType::Blob), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryJsonV0>(), RESOURCE_FORMAT_BINARY, "Json",
-                            static_cast<uint32_t>(LUS::ResourceType::Json), 0);
+    RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryJsonV0>(), RESOURCE_FORMAT_BINARY, "Json",
+                            static_cast<uint32_t>(Ship::ResourceType::Json), 0);
 }
 
 bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format,
