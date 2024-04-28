@@ -346,3 +346,22 @@ ZAPDUtils.lib
 .vs/
 .idea/
 cmake-build-**
+cmake_install.cmake
+*.a
+*.o
+*.pc
+*.vcxproj
+*.sln
+*.filters
+*.stamp
+*.depend
+*.lib
+*.tlog
+*.recipe
+src/install_config.h
+# Removed jsonConfig and jsonConfigVersion
+extern/nlohmann-json/*_jsonConfig*
+*.pbxproj
+*.xcworkspace
+*.xcsettings
+build*
