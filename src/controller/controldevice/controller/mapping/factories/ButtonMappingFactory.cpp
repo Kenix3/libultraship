@@ -16,7 +16,7 @@
 namespace LUS {
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromConfig(uint8_t portIndex,
                                                                                              std::string id) {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + id;
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".ButtonMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
     CONTROLLERBUTTONS_T bitmask =

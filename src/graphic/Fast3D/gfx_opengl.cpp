@@ -798,7 +798,7 @@ static void gfx_opengl_set_zmode_decal(bool zmode_decal) {
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         GLfloat SSDB = -2;
-        switch (CVarGetInteger("gZFightingMode", 0)) {
+        switch (CVarGetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             // scaled z-fighting (N64 mode like)
             case 1:
                 if (framebuffers.size() > current_framebuffer) { // safety check for vector size can probably be removed

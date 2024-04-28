@@ -18,6 +18,10 @@
 #include "controller/controldevice/ControlDevice.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
+#ifndef CVAR_SIMULATED_INPUT_LAG
+#define CVAR_SIMULATED_INPUT_LAG "gSimulatedInputLag"
+#endif
+
 namespace LUS {
 
 class Controller : public ControlDevice {

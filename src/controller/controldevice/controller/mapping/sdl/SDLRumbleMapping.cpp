@@ -44,7 +44,7 @@ std::string SDLRumbleMapping::GetRumbleMappingId() {
 }
 
 void SDLRumbleMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".RumbleMappings." + GetRumbleMappingId();
     CVarSetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "SDLRumbleMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerRumbleMapping::mLUSDeviceIndex);
@@ -56,7 +56,7 @@ void SDLRumbleMapping::SaveToConfig() {
 }
 
 void SDLRumbleMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.RumbleMappings." + GetRumbleMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".RumbleMappings." + GetRumbleMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());

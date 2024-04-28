@@ -34,7 +34,7 @@ std::string SDLLEDMapping::GetLEDMappingId() {
 }
 
 void SDLLEDMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
     CVarSetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerLEDMapping::mLUSDeviceIndex);
@@ -44,7 +44,7 @@ void SDLLEDMapping::SaveToConfig() {
 }
 
 void SDLLEDMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());

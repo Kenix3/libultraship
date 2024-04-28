@@ -36,7 +36,7 @@ std::string SDLButtonToButtonMapping::GetButtonMappingId() {
 }
 
 void SDLButtonToButtonMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
@@ -47,7 +47,7 @@ void SDLButtonToButtonMapping::SaveToConfig() {
 }
 
 void SDLButtonToButtonMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());

@@ -32,7 +32,7 @@ std::string KeyboardKeyToButtonMapping::GetButtonMappingId() {
 }
 
 void KeyboardKeyToButtonMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
@@ -41,7 +41,7 @@ void KeyboardKeyToButtonMapping::SaveToConfig() {
 }
 
 void KeyboardKeyToButtonMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
+    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());

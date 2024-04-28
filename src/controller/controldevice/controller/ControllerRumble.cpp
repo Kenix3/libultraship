@@ -34,7 +34,7 @@ void ControllerRumble::SaveRumbleMappingIdsToConfig() {
     }
 
     const std::string rumbleMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.RumbleMappingIds", mPortIndex + 1);
+        StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.RumbleMappingIds", mPortIndex + 1);
     if (rumbleMappingIdListString == "") {
         CVarClear(rumbleMappingIdsCvarKey.c_str());
     } else {
@@ -128,7 +128,7 @@ void ControllerRumble::ReloadAllMappingsFromConfig() {
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
     const std::string rumbleMappingIdsCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.RumbleMappingIds", mPortIndex + 1);
+        StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.RumbleMappingIds", mPortIndex + 1);
     std::stringstream rumbleMappingIdsStringStream(CVarGetString(rumbleMappingIdsCvarKey.c_str(), ""));
     std::string rumbleMappingIdString;
     while (getline(rumbleMappingIdsStringStream, rumbleMappingIdString, ',')) {
@@ -153,7 +153,7 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
     AddRumbleMapping(mapping);
     mapping->SaveToConfig();
     SaveRumbleMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey = StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;
@@ -171,7 +171,7 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
     AddRumbleMapping(mapping);
     mapping->SaveToConfig();
     SaveRumbleMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey = StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;

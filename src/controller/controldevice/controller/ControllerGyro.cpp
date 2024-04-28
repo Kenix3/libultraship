@@ -32,7 +32,7 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     SetGyroMapping(mapping);
     mapping->SaveToConfig();
     SaveGyroMappingIdToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey = StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;
@@ -50,7 +50,7 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     SetGyroMapping(mapping);
     mapping->SaveToConfig();
     SaveGyroMappingIdToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey = StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;
@@ -67,7 +67,7 @@ void ControllerGyro::UpdatePad(float& x, float& y) {
 
 void ControllerGyro::SaveGyroMappingIdToConfig() {
     const std::string gyroMappingIdCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.Gyro.GyroMappingId", mPortIndex + 1);
+        StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     if (mGyroMapping == nullptr) {
         CVarClear(gyroMappingIdCvarKey.c_str());
@@ -90,7 +90,7 @@ void ControllerGyro::ClearGyroMapping() {
 
 void ControllerGyro::ReloadGyroMappingFromConfig() {
     const std::string gyroMappingIdCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.Gyro.GyroMappingId", mPortIndex + 1);
+        StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     std::string id = CVarGetString(gyroMappingIdCvarKey.c_str(), "");
     if (id == "") {

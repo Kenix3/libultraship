@@ -257,7 +257,7 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_SetWindowPosition(wnd, posX, posY);
         SDL_SetWindowSize(wnd, window_width, window_height);
     }
-    if (SDL_SetWindowFullscreen(wnd, on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+    if (SDL_SetWindowFullscreen(wnd, on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
                                                                                        : SDL_WINDOW_FULLSCREEN)
                                         : 0) >= 0) {
         fullscreen_state = on;
@@ -543,8 +543,8 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            CVarSetString("gDroppedFile", event.drop.file);
-            CVarSetInteger("gNewFileDropped", 1);
+            CVarSetString(CVAR_DROPPED_FILE, event.drop.file);
+            CVarSetInteger(CVAR_NEW_FILE_DROPPED, 1);
             CVarSave();
             break;
         case SDL_QUIT:

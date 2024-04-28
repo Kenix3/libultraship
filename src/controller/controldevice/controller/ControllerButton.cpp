@@ -106,7 +106,7 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
     }
 
     const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf(
-        "gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, GetConfigNameFromBitmask(mBitmask).c_str());
+        CVAR_BLOCK_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, GetConfigNameFromBitmask(mBitmask).c_str());
     if (buttonMappingIdListString == "") {
         CVarClear(buttonMappingIdsCvarKey.c_str());
     } else {
@@ -125,7 +125,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
     const std::string buttonMappingIdsCvarKey = StringHelper::Sprintf(
-        "gControllers.Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, GetConfigNameFromBitmask(mBitmask).c_str());
+        CVAR_BLOCK_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1, GetConfigNameFromBitmask(mBitmask).c_str());
     std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
@@ -186,7 +186,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     AddButtonMapping(mapping);
     mapping->SaveToConfig();
     SaveButtonMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey = StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;
@@ -229,7 +229,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     AddButtonMapping(mapping);
     mapping->SaveToConfig();
     SaveButtonMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey = StringHelper::Sprintf(CVAR_BLOCK_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;

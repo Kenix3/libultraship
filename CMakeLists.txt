@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.24.0)
 option(NON_PORTABLE "Build a non-portable version" OFF)
 
 project(libultraship LANGUAGES C CXX)
+
+include(cmake/cvars.cmake)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     enable_language(OBJCXX)
     set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS} -fobjc-arc")
