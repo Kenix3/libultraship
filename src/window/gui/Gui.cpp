@@ -83,7 +83,7 @@ Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVari
     AddGuiWindow(
         std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
-    AddGuiWindow(std::make_shared<ShipDK::GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
+    AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
 }
 
 Gui::Gui() : Gui(nullptr) {
