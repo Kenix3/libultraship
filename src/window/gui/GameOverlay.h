@@ -10,7 +10,7 @@
 #include <imgui.h>
 #include <unordered_map>
 
-namespace ShipDK {
+namespace Ship {
 
 #ifndef CVAR_GAME_OVERLAY_FONT
 #define CVAR_GAME_OVERLAY_FONT "gOverlayFont"
@@ -54,4 +54,4 @@ class GameOverlay {
 
     void CleanupNotifications();
 };
-} // namespace ShipDK
+} // namespace Ship

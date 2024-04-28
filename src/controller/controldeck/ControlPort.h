@@ -4,7 +4,7 @@
 #include "controller/controldevice/controller/Controller.h"
 #include <memory>
 
-namespace ShipDK {
+namespace Ship {
 class ControlPort {
   public:
     ControlPort(uint8_t portIndex);
@@ -21,4 +21,4 @@ class ControlPort {
     uint8_t mPortIndex;
     std::shared_ptr<ControlDevice> mDevice;
 };
-} // namespace ShipDK
+} // namespace Ship

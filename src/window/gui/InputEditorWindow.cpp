@@ -8,7 +8,7 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #endif
 
-namespace ShipDK {
+namespace Ship {
 
 InputEditorWindow::~InputEditorWindow() {
     SPDLOG_TRACE("destruct input editor window");
@@ -26,7 +26,7 @@ void InputEditorWindow::InitElement() {
 #define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
 void InputEditorWindow::UpdateElement() {
     if (mInputEditorPopupOpen && ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
-        ShipDK::Context::GetInstance()->GetControlDeck()->BlockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
+        Ship::Context::GetInstance()->GetControlDeck()->BlockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
 
         // continue to block input for a third of a second after getting the mapping
         mGameInputBlockTimer = ImGui::GetIO().Framerate / 3;
@@ -38,24 +38,24 @@ void InputEditorWindow::UpdateElement() {
             }
         }
 
-        ShipDK::Context::GetInstance()->GetWindow()->GetGui()->BlockImGuiGamepadNavigation();
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->BlockImGuiGamepadNavigation();
     } else {
         if (mGameInputBlockTimer != INT32_MAX) {
             mGameInputBlockTimer--;
             if (mGameInputBlockTimer <= 0) {
-                ShipDK::Context::GetInstance()->GetControlDeck()->UnblockGameInput(
+                Ship::Context::GetInstance()->GetControlDeck()->UnblockGameInput(
                     INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
                 mGameInputBlockTimer = INT32_MAX;
             }
         }
 
-        if (ShipDK::Context::GetInstance()->GetWindow()->GetGui()->ImGuiGamepadNavigationEnabled()) {
+        if (Ship::Context::GetInstance()->GetWindow()->GetGui()->ImGuiGamepadNavigationEnabled()) {
             mMappingInputBlockTimer = ImGui::GetIO().Framerate / 3;
         } else {
             mMappingInputBlockTimer = INT32_MAX;
         }
 
-        ShipDK::Context::GetInstance()->GetWindow()->GetGui()->UnblockImGuiGamepadNavigation();
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->UnblockImGuiGamepadNavigation();
     }
 }
 
@@ -143,26 +143,26 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_GAMEPAD_PURPLE ImVec4(0.431f, 0.369f, 0.706f, 0.5f)
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
-void InputEditorWindow::GetButtonColorsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex, ImVec4& buttonColor,
+void InputEditorWindow::GetButtonColorsForShipDeviceIndex(ShipDeviceIndex lusIndex, ImVec4& buttonColor,
                                                             ImVec4& buttonHoveredColor) {
     switch (lusIndex) {
-        case ShipDKDeviceIndex::Keyboard:
+        case ShipDeviceIndex::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
             buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
             break;
-        case ShipDKDeviceIndex::Blue:
+        case ShipDeviceIndex::Blue:
             buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
             buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
             break;
-        case ShipDKDeviceIndex::Red:
+        case ShipDeviceIndex::Red:
             buttonColor = BUTTON_COLOR_GAMEPAD_RED;
             buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
             break;
-        case ShipDKDeviceIndex::Orange:
+        case ShipDeviceIndex::Orange:
             buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
             buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
             break;
-        case ShipDKDeviceIndex::Green:
+        case ShipDeviceIndex::Green:
             buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
             buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
             break;
@@ -197,7 +197,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERB
             ImGui::CloseCurrentPopup();
         }
         // todo: figure out why optional params (using id = "" in the definition) wasn't working
-        if (mMappingInputBlockTimer == INT32_MAX && ShipDK::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetButton(bitmask)
@@ -210,7 +210,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERB
 }
 
 void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, std::string id) {
-    auto mapping = ShipDK::Context::GetInstance()
+    auto mapping = Ship::Context::GetInstance()
                        ->GetControlDeck()
                        ->GetControllerByPort(port)
                        ->GetButton(bitmask)
@@ -234,7 +234,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     }
     auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
     auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-    GetButtonColorsForShipDKDeviceIndex(mapping->GetShipDKDeviceIndex(), buttonColor, buttonHoveredColor);
+    GetButtonColorsForShipDeviceIndex(mapping->GetShipDeviceIndex(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     auto popupId = StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str());
@@ -256,7 +256,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
             mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
-        if (mMappingInputBlockTimer == INT32_MAX && ShipDK::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetButton(bitmask)
@@ -275,14 +275,14 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     auto indexMapping = Context::GetInstance()
                             ->GetControlDeck()
                             ->GetDeviceIndexMappingManager()
-                            ->GetDeviceIndexMappingFromShipDKDeviceIndex(mapping->GetShipDKDeviceIndex());
-    auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+                            ->GetDeviceIndexMappingFromShipDeviceIndex(mapping->GetShipDeviceIndex());
+    auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
     if (sdlIndexMapping != nullptr && sdlAxisDirectionToButtonMapping != nullptr) {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForShipDKDeviceIndex(mapping->GetShipDKDeviceIndex(), buttonColor, buttonHoveredColor);
+        GetButtonColorsForShipDeviceIndex(mapping->GetShipDeviceIndex(), buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         auto popupId = StringHelper::Sprintf("editAxisThresholdPopup##%s", id.c_str());
@@ -340,7 +340,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
-        ShipDK::Context::GetInstance()
+        Ship::Context::GetInstance()
             ->GetControlDeck()
             ->GetControllerByPort(port)
             ->GetButton(bitmask)
@@ -384,7 +384,7 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
         }
         if (stick == LEFT) {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                ShipDK::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -394,7 +394,7 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
             }
         } else {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                ShipDK::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -410,13 +410,13 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
                                                                 std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     if (stick == LEFT) {
-        mapping = ShipDK::Context::GetInstance()
+        mapping = Ship::Context::GetInstance()
                       ->GetControlDeck()
                       ->GetControllerByPort(port)
                       ->GetLeftStick()
                       ->GetAxisDirectionMappingById(direction, id);
     } else {
-        mapping = ShipDK::Context::GetInstance()
+        mapping = Ship::Context::GetInstance()
                       ->GetControlDeck()
                       ->GetControllerByPort(port)
                       ->GetRightStick()
@@ -442,7 +442,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
     }
     auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
     auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-    GetButtonColorsForShipDKDeviceIndex(mapping->GetShipDKDeviceIndex(), buttonColor, buttonHoveredColor);
+    GetButtonColorsForShipDeviceIndex(mapping->GetShipDeviceIndex(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     auto popupId = StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str());
@@ -467,7 +467,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
 
         if (stick == LEFT) {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                ShipDK::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -477,7 +477,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
             }
         } else {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                ShipDK::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -495,13 +495,13 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeStickDirectionMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str())) {
         if (stick == LEFT) {
-            ShipDK::Context::GetInstance()
+            Ship::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetLeftStick()
                 ->ClearAxisDirectionMapping(direction, id);
         } else {
-            ShipDK::Context::GetInstance()
+            Ship::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetRightStick()
@@ -533,9 +533,9 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
     static int8_t sX, sY;
     std::shared_ptr<ControllerStick> controllerStick = nullptr;
     if (stick == LEFT) {
-        controllerStick = ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick();
+        controllerStick = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick();
     } else {
-        controllerStick = ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
+        controllerStick = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
     }
     controllerStick->Process(sX, sY);
     DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(sX, sY));
@@ -601,7 +601,7 @@ void InputEditorWindow::UpdateBitmaskToMappingIds(uint8_t port) {
     // todo: do we need this now that ControllerButton exists?
 
     for (auto [bitmask, button] :
-         ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtons()) {
+         Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtons()) {
         for (auto [id, mapping] : button->GetAllButtonMappings()) {
             // using a vector here instead of a set because i want newly added mappings
             // to go to the end of the list instead of autosorting
@@ -617,9 +617,9 @@ void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
     // todo: do we need this?
     for (auto stick :
          { std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(
-               LEFT, ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()),
+               LEFT, Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()),
            std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(
-               RIGHT, ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()) }) {
+               RIGHT, Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()) }) {
         for (auto direction : { LEFT, RIGHT, UP, DOWN }) {
             for (auto [id, mapping] : stick.second->GetAllAxisDirectionMappingByDirection(direction)) {
                 // using a vector here instead of a set because i want newly added mappings
@@ -639,7 +639,7 @@ void InputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeRumbleMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(20.0f, 20.0f))) {
-        ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(
             id);
     }
     ImGui::PopStyleVar();
@@ -663,7 +663,7 @@ void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (mMappingInputBlockTimer == INT32_MAX && ShipDK::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetRumble()
@@ -676,7 +676,7 @@ void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
 }
 
 void InputEditorWindow::DrawRumbleSection(uint8_t port) {
-    for (auto [id, mapping] : ShipDK::Context::GetInstance()
+    for (auto [id, mapping] : Ship::Context::GetInstance()
                                   ->GetControlDeck()
                                   ->GetControllerByPort(port)
                                   ->GetRumble()
@@ -685,7 +685,7 @@ void InputEditorWindow::DrawRumbleSection(uint8_t port) {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForShipDKDeviceIndex(mapping->GetShipDKDeviceIndex(), buttonColor, buttonHoveredColor);
+        GetButtonColorsForShipDeviceIndex(mapping->GetShipDeviceIndex(), buttonColor, buttonHoveredColor);
         // begin hackaround https://github.com/ocornut/imgui/issues/282#issuecomment-123763192
         // spaces to have background color for text in a tree node
         std::string spaces = "";
@@ -754,7 +754,7 @@ void InputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::string id)
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeLEDMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(20.0f, 20.0f))) {
-        ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->ClearLEDMapping(id);
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->ClearLEDMapping(id);
     }
     ImGui::PopStyleVar();
 }
@@ -777,7 +777,7 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (mMappingInputBlockTimer == INT32_MAX && ShipDK::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetLED()
@@ -791,7 +791,7 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
 
 void InputEditorWindow::DrawLEDSection(uint8_t port) {
     for (auto [id, mapping] :
-         ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
+         Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         auto open = ImGui::TreeNode(
@@ -833,7 +833,7 @@ void InputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::string id
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeGyroMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(20.0f, 20.0f))) {
-        ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->ClearGyroMapping();
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->ClearGyroMapping();
     }
     ImGui::PopStyleVar();
 }
@@ -856,7 +856,7 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (mMappingInputBlockTimer == INT32_MAX && ShipDK::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetGyro()
@@ -870,7 +870,7 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
 
 void InputEditorWindow::DrawGyroSection(uint8_t port) {
     auto mapping =
-        ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->GetGyroMapping();
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->GetGyroMapping();
     if (mapping != nullptr) {
         auto id = mapping->GetGyroMappingId();
         ImGui::AlignTextToFramePadding();
@@ -924,8 +924,8 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
 }
 
 void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks) {
-    std::set<ShipDKDeviceIndex> allLusDeviceIndices;
-    allLusDeviceIndices.insert(ShipDKDeviceIndex::Keyboard);
+    std::set<ShipDeviceIndex> allLusDeviceIndices;
+    allLusDeviceIndices.insert(ShipDeviceIndex::Keyboard);
     for (auto [lusIndex, mapping] : Context::GetInstance()
                                         ->GetControlDeck()
                                         ->GetDeviceIndexMappingManager()
@@ -933,7 +933,7 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
         allLusDeviceIndices.insert(lusIndex);
     }
 
-    std::vector<std::pair<ShipDKDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    std::vector<std::pair<ShipDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
         for (auto [bitmask, button] :
              Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllButtons()) {
@@ -941,11 +941,11 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
                 continue;
             }
 
-            if (button->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+            if (button->HasMappingsForShipDeviceIndex(lusIndex)) {
                 for (auto [id, mapping] : button->GetAllButtonMappings()) {
-                    if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+                    if (mapping->GetShipDeviceIndex() == lusIndex) {
                         lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<ShipDKDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                            std::pair<ShipDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                         break;
                     }
                 }
@@ -957,11 +957,11 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
     for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::SameLine();
-        if (lusIndex == ShipDKDeviceIndex::Keyboard) {
+        if (lusIndex == ShipDeviceIndex::Keyboard) {
             ImGui::SmallButton(ICON_FA_KEYBOARD_O);
         } else {
             ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
@@ -971,9 +971,9 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
     }
 }
 
-void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, ShipDK::Stick stick) {
-    std::set<ShipDKDeviceIndex> allLusDeviceIndices;
-    allLusDeviceIndices.insert(ShipDKDeviceIndex::Keyboard);
+void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, Ship::Stick stick) {
+    std::set<ShipDeviceIndex> allLusDeviceIndices;
+    allLusDeviceIndices.insert(ShipDeviceIndex::Keyboard);
     for (auto [lusIndex, mapping] : Context::GetInstance()
                                         ->GetControlDeck()
                                         ->GetDeviceIndexMappingManager()
@@ -981,20 +981,20 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, ShipDK::St
         allLusDeviceIndices.insert(lusIndex);
     }
 
-    std::vector<std::pair<ShipDKDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    std::vector<std::pair<ShipDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
         auto controllerStick =
             stick == Stick::LEFT_STICK
                 ? Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLeftStick()
                 : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRightStick();
-        if (controllerStick->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+        if (controllerStick->HasMappingsForShipDeviceIndex(lusIndex)) {
             for (auto [direction, mappings] : controllerStick->GetAllAxisDirectionMappings()) {
                 bool foundMapping = false;
                 for (auto [id, mapping] : mappings) {
-                    if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+                    if (mapping->GetShipDeviceIndex() == lusIndex) {
                         foundMapping = true;
                         lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<ShipDKDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                            std::pair<ShipDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                         break;
                     }
                 }
@@ -1008,11 +1008,11 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, ShipDK::St
     for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::SameLine();
-        if (lusIndex == ShipDKDeviceIndex::Keyboard) {
+        if (lusIndex == ShipDeviceIndex::Keyboard) {
             ImGui::SmallButton(ICON_FA_KEYBOARD_O);
         } else {
             ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
@@ -1023,7 +1023,7 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, ShipDK::St
 }
 
 void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
-    std::set<ShipDKDeviceIndex> allLusDeviceIndices;
+    std::set<ShipDeviceIndex> allLusDeviceIndices;
     for (auto [lusIndex, mapping] : Context::GetInstance()
                                         ->GetControlDeck()
                                         ->GetDeviceIndexMappingManager()
@@ -1031,21 +1031,21 @@ void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
         allLusDeviceIndices.insert(lusIndex);
     }
 
-    std::vector<std::pair<ShipDKDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    std::vector<std::pair<ShipDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
         if (Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(portIndex)
                 ->GetRumble()
-                ->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+                ->HasMappingsForShipDeviceIndex(lusIndex)) {
             for (auto [id, mapping] : Context::GetInstance()
                                           ->GetControlDeck()
                                           ->GetControllerByPort(portIndex)
                                           ->GetRumble()
                                           ->GetAllRumbleMappings()) {
-                if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+                if (mapping->GetShipDeviceIndex() == lusIndex) {
                     lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<ShipDKDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        std::pair<ShipDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                     break;
                 }
             }
@@ -1055,7 +1055,7 @@ void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
     for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::SameLine();
@@ -1074,7 +1074,7 @@ void InputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
 
     auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
     auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-    GetButtonColorsForShipDKDeviceIndex(mapping->GetShipDKDeviceIndex(), buttonColor, buttonHoveredColor);
+    GetButtonColorsForShipDeviceIndex(mapping->GetShipDeviceIndex(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     ImGui::SameLine();
@@ -1084,7 +1084,7 @@ void InputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
 }
 
 void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
-    std::set<ShipDKDeviceIndex> allLusDeviceIndices;
+    std::set<ShipDeviceIndex> allLusDeviceIndices;
     for (auto [lusIndex, mapping] : Context::GetInstance()
                                         ->GetControlDeck()
                                         ->GetDeviceIndexMappingManager()
@@ -1092,21 +1092,21 @@ void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
         allLusDeviceIndices.insert(lusIndex);
     }
 
-    std::vector<std::pair<ShipDKDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
+    std::vector<std::pair<ShipDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
         if (Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(portIndex)
                 ->GetRumble()
-                ->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+                ->HasMappingsForShipDeviceIndex(lusIndex)) {
             for (auto [id, mapping] : Context::GetInstance()
                                           ->GetControlDeck()
                                           ->GetControllerByPort(portIndex)
                                           ->GetLED()
                                           ->GetAllLEDMappings()) {
-                if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+                if (mapping->GetShipDeviceIndex() == lusIndex) {
                     lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<ShipDKDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        std::pair<ShipDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
                     break;
                 }
             }
@@ -1116,7 +1116,7 @@ void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
     for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::SameLine();
@@ -1137,13 +1137,13 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
                 ImGui::CloseCurrentPopup();
             }
             if (ImGui::Button("Clear All")) {
-                ShipDK::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappings();
+                Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappings();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
         DrawSetDefaultsButton(portIndex);
-        if (!ShipDK::Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+        if (!Ship::Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
             ImGui::SameLine();
             if (ImGui::Button("Reorder controllers")) {
                 Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
@@ -1240,10 +1240,10 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
     ImGui::PopStyleVar();
 
     if (ImGui::BeginPopup(popupId.c_str())) {
-        std::map<ShipDKDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
+        std::map<ShipDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
         for (auto [lusIndex, mapping] :
              Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-            auto wiiuIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToWiiUDeviceIndexMapping>(mapping);
+            auto wiiuIndexMapping = std::static_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(mapping);
             if (wiiuIndexMapping == nullptr) {
                 continue;
             }
@@ -1260,7 +1260,7 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 
             auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
             auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+            GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
 
@@ -1301,12 +1301,12 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 
 void InputEditorWindow::DrawDevicesTab() {
     if (ImGui::BeginTabItem("Devices")) {
-        std::map<ShipDKDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
+        std::map<ShipDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
         for (auto [lusIndex, mapping] : Context::GetInstance()
                                             ->GetControlDeck()
                                             ->GetDeviceIndexMappingManager()
                                             ->GetAllDeviceIndexMappingsFromConfig()) {
-            auto wiiuIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToWiiUDeviceIndexMapping>(mapping);
+            auto wiiuIndexMapping = std::static_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(mapping);
             if (wiiuIndexMapping == nullptr) {
                 continue;
             }
@@ -1316,7 +1316,7 @@ void InputEditorWindow::DrawDevicesTab() {
 
         for (auto [lusIndex, mapping] :
              Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-            auto wiiuIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToWiiUDeviceIndexMapping>(mapping);
+            auto wiiuIndexMapping = std::static_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(mapping);
             if (wiiuIndexMapping == nullptr) {
                 continue;
             }
@@ -1333,7 +1333,7 @@ void InputEditorWindow::DrawDevicesTab() {
 
             auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
             auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+            GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::Button(StringHelper::Sprintf("%s %s%s", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN,
@@ -1360,10 +1360,10 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
     ImGui::PopStyleVar();
 
     if (ImGui::BeginPopup(popupId.c_str())) {
-        std::map<ShipDKDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
+        std::map<ShipDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
         for (auto [lusIndex, mapping] :
              Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-            auto sdlIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(mapping);
+            auto sdlIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(mapping);
             if (sdlIndexMapping == nullptr) {
                 continue;
             }
@@ -1377,7 +1377,7 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 
             auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
             auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+            GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
             if (ImGui::Button(StringHelper::Sprintf("%s %s (%s)", ICON_FA_GAMEPAD, name.c_str(),
@@ -1417,12 +1417,12 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 
 void InputEditorWindow::DrawDevicesTab() {
     if (ImGui::BeginTabItem("Devices")) {
-        std::map<ShipDKDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
+        std::map<ShipDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
         for (auto [lusIndex, mapping] : Context::GetInstance()
                                             ->GetControlDeck()
                                             ->GetDeviceIndexMappingManager()
                                             ->GetAllDeviceIndexMappingsFromConfig()) {
-            auto sdlIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(mapping);
+            auto sdlIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(mapping);
             if (sdlIndexMapping == nullptr) {
                 continue;
             }
@@ -1432,7 +1432,7 @@ void InputEditorWindow::DrawDevicesTab() {
 
         for (auto [lusIndex, mapping] :
              Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-            auto sdlIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(mapping);
+            auto sdlIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(mapping);
             if (sdlIndexMapping == nullptr) {
                 continue;
             }
@@ -1446,7 +1446,7 @@ void InputEditorWindow::DrawDevicesTab() {
 
             auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
             auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForShipDKDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+            GetButtonColorsForShipDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::Button(
@@ -1472,4 +1472,4 @@ void InputEditorWindow::DrawElement() {
     ImGui::EndTabBar();
     ImGui::End();
 }
-} // namespace ShipDK
+} // namespace Ship

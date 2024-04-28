@@ -7,7 +7,7 @@
 #include "audio/Audio.h"
 #include "window/Window.h"
 
-namespace ShipDK {
+namespace Ship {
 
 /**
  * @brief Abstract class representing a Config Version Updater, intended to express how to
@@ -98,4 +98,4 @@ class Config {
     bool mIsNewInstance;
     std::map<uint32_t, std::shared_ptr<ConfigVersionUpdater>> mVersionUpdaters;
 };
-} // namespace ShipDK
+} // namespace Ship

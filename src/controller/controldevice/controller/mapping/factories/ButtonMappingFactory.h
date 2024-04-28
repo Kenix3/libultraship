@@ -5,13 +5,13 @@
 #include <string>
 #include <vector>
 
-namespace ShipDK {
+namespace Ship {
 class ButtonMappingFactory {
   public:
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromConfig(uint8_t portIndex, std::string id);
 #ifdef __WIIU__
     static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultWiiUButtonMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
+    CreateDefaultWiiUButtonMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
                                     CONTROLLERBUTTONS_T bitmask);
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromWiiUInput(uint8_t portIndex,
@@ -21,10 +21,10 @@ class ButtonMappingFactory {
     CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
 
     static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultSDLButtonMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+    CreateDefaultSDLButtonMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromSDLInput(uint8_t portIndex,
                                                                                     CONTROLLERBUTTONS_T bitmask);
 #endif
 };
-} // namespace ShipDK
+} // namespace Ship

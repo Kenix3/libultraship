@@ -2,10 +2,10 @@
 #include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "WiiUButtonToAnyMapping.h"
 
-namespace ShipDK {
+namespace Ship {
 class WiiUButtonToButtonMapping final : public WiiUButtonToAnyMapping, public ControllerButtonMapping {
   public:
-    WiiUButtonToButtonMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+    WiiUButtonToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                               bool isNunchuk, bool isClassic, uint32_t wiiuControllerButton);
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
     uint8_t GetMappingType() override;
@@ -13,5 +13,5 @@ class WiiUButtonToButtonMapping final : public WiiUButtonToAnyMapping, public Co
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };
-} // namespace ShipDK
+} // namespace Ship
 #endif

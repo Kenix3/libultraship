@@ -7,7 +7,7 @@
 
 #include "controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
-namespace ShipDK {
+namespace Ship {
 ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -61,10 +61,10 @@ void ControllerLED::ClearAllMappings() {
     SaveLEDMappingIdsToConfig();
 }
 
-void ControllerLED::ClearAllMappingsForDevice(ShipDKDeviceIndex lusIndex) {
+void ControllerLED::ClearAllMappingsForDevice(ShipDeviceIndex lusIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mLEDMappings) {
-        if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+        if (mapping->GetShipDeviceIndex() == lusIndex) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -145,8 +145,8 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
 }
 #endif
 
-bool ControllerLED::HasMappingsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex) {
+bool ControllerLED::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     return std::any_of(mLEDMappings.begin(), mLEDMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDKDeviceIndex() == lusIndex; });
+                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
-} // namespace ShipDK
+} // namespace Ship

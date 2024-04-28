@@ -1,7 +1,7 @@
 #include "resource/type/Texture.h"
 
 namespace LUS {
-Texture::Texture() : Resource(std::shared_ptr<ShipDK::ResourceInitData>()) {
+Texture::Texture() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
 }
 
 uint8_t* Texture::GetPointer() {

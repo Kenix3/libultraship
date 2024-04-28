@@ -2,14 +2,14 @@
 
 #include "resource/File.h"
 
-namespace ShipDK {
+namespace Ship {
 class ResourceManager;
 
 class IResource {
   public:
     inline static const std::string gAltAssetPrefix = "alt/";
 
-    IResource(std::shared_ptr<ShipDK::ResourceInitData> initData);
+    IResource(std::shared_ptr<Ship::ResourceInitData> initData);
     virtual ~IResource();
 
     virtual void* GetRawPointer() = 0;
@@ -17,10 +17,10 @@ class IResource {
 
     bool IsDirty();
     void Dirty();
-    std::shared_ptr<ShipDK::ResourceInitData> GetInitData();
+    std::shared_ptr<Ship::ResourceInitData> GetInitData();
 
   private:
-    std::shared_ptr<ShipDK::ResourceInitData> mInitData;
+    std::shared_ptr<Ship::ResourceInitData> mInitData;
     bool mIsDirty = false;
 };
 
@@ -33,4 +33,4 @@ template <class T> class Resource : public IResource {
     }
 };
 
-} // namespace ShipDK
+} // namespace Ship

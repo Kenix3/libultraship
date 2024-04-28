@@ -1,7 +1,7 @@
 #include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "KeyboardKeyToAnyMapping.h"
 
-namespace ShipDK {
+namespace Ship {
 class KeyboardKeyToButtonMapping final : public KeyboardKeyToAnyMapping, public ControllerButtonMapping {
   public:
     KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, KbScancode scancode);
@@ -11,4 +11,4 @@ class KeyboardKeyToButtonMapping final : public KeyboardKeyToAnyMapping, public 
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };
-} // namespace ShipDK
+} // namespace Ship

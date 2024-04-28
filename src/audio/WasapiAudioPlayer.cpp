@@ -15,7 +15,7 @@ const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioRenderClient = __uuidof(IAudioRenderClient);
 
-namespace ShipDK {
+namespace Ship {
 WasapiAudioPlayer::WasapiAudioPlayer()
     : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false), AudioPlayer(){};
 
@@ -164,5 +164,5 @@ HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::QueryInterface(REFIID riid, VOID** 
     }
     return S_OK;
 }
-} // namespace ShipDK
+} // namespace Ship
 #endif

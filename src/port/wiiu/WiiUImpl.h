@@ -4,7 +4,7 @@
 #include <vpad/input.h>
 #include <padscore/kpad.h>
 
-namespace ShipDK {
+namespace Ship {
 namespace WiiU {
 
 void Init(const std::string& shortName);
@@ -24,4 +24,4 @@ KPADStatus* GetKPADStatus(WPADChan chan, KPADError* error);
 void SetControllersInitialized();
 
 }; // namespace WiiU
-}; // namespace ShipDK
+}; // namespace Ship

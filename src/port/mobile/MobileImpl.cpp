@@ -7,7 +7,7 @@
 
 static bool isShowingVirtualKeyboard = true;
 
-void ShipDK::Mobile::ImGuiProcessEvent(bool wantsTextInput) {
+void Ship::Mobile::ImGuiProcessEvent(bool wantsTextInput) {
     ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
 
     if (wantsTextInput) {

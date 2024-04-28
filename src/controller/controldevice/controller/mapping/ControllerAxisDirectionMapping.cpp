@@ -3,10 +3,10 @@
 #include <random>
 #include <sstream>
 
-namespace ShipDK {
-ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
+namespace Ship {
+ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
                                                                Stick stick, Direction direction)
-    : ControllerInputMapping(shipDKDeviceIndex), mPortIndex(portIndex), mStick(stick), mDirection(direction) {
+    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mStick(stick), mDirection(direction) {
 }
 
 ControllerAxisDirectionMapping::~ControllerAxisDirectionMapping() {
@@ -23,4 +23,4 @@ Direction ControllerAxisDirectionMapping::GetDirection() {
 void ControllerAxisDirectionMapping::SetPortIndex(uint8_t portIndex) {
     mPortIndex = portIndex;
 }
-} // namespace ShipDK
+} // namespace Ship

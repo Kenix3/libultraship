@@ -4,11 +4,11 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-namespace ShipDK {
+namespace Ship {
 KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                        KbScancode scancode)
-    : ControllerInputMapping(ShipDKDeviceIndex::Keyboard),
-      ControllerButtonMapping(ShipDKDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
+    : ControllerInputMapping(ShipDeviceIndex::Keyboard),
+      ControllerButtonMapping(ShipDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
 }
 
 void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
@@ -49,4 +49,4 @@ void KeyboardKeyToButtonMapping::EraseFromConfig() {
 
     CVarSave();
 }
-} // namespace ShipDK
+} // namespace Ship

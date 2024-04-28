@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace ShipDK {
+namespace Ship {
 class AxisDirectionMappingFactory {
   public:
     static std::shared_ptr<ControllerAxisDirectionMapping>
@@ -13,7 +13,7 @@ class AxisDirectionMappingFactory {
 
 #ifdef __WIIU__
     static std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-    CreateDefaultWiiUAxisDirectionMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick);
+    CreateDefaultWiiUAxisDirectionMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, Stick stick);
 
     static std::shared_ptr<ControllerAxisDirectionMapping>
     CreateAxisDirectionMappingFromWiiUInput(uint8_t portIndex, Stick stick, Direction direction);
@@ -22,10 +22,10 @@ class AxisDirectionMappingFactory {
     CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick);
 
     static std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-    CreateDefaultSDLAxisDirectionMappings(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick);
+    CreateDefaultSDLAxisDirectionMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, Stick stick);
 
     static std::shared_ptr<ControllerAxisDirectionMapping>
     CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, Stick stick, Direction direction);
 #endif
 };
-} // namespace ShipDK
+} // namespace Ship

@@ -1,6 +1,6 @@
 #include "GuiTexture.h"
 
-namespace ShipDK {
+namespace Ship {
 GuiTexture::GuiTexture() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
@@ -17,4 +17,4 @@ void* GuiTexture::GetPointer() {
 size_t GuiTexture::GetPointerSize() {
     return DataSize * sizeof(uint8_t);
 }
-} // namespace ShipDK
+} // namespace Ship

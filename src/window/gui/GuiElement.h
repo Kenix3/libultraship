@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace ShipDK {
+namespace Ship {
 class GuiElement {
   public:
     GuiElement(const std::string& visibilityConsoleVariable, bool isVisible);
@@ -36,4 +36,4 @@ class GuiElement {
     bool mIsInitialized;
 };
 
-} // namespace ShipDK
+} // namespace Ship

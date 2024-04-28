@@ -9,7 +9,7 @@
 #include "Context.h"
 #include <Utils/StringHelper.h>
 
-namespace ShipDK {
+namespace Ship {
 GameOverlay::GameOverlay() {
 }
 
@@ -232,4 +232,4 @@ void GameOverlay::Draw() {
 
     ImGui::End();
 }
-} // namespace ShipDK
+} // namespace Ship

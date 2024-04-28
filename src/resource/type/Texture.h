@@ -18,7 +18,7 @@ enum class TextureType {
     GrayscaleAlpha16bpp = 9,
 };
 
-class Texture : public ShipDK::Resource<uint8_t> {
+class Texture : public Ship::Resource<uint8_t> {
   public:
     using Resource::Resource;
 

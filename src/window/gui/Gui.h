@@ -21,7 +21,7 @@
 #include "resource/type/Texture.h"
 #include "window/gui/resource/GuiTexture.h"
 
-namespace ShipDK {
+namespace Ship {
 
 typedef struct {
     union {
@@ -112,6 +112,6 @@ class Gui {
     std::map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
 };
-} // namespace ShipDK
+} // namespace Ship
 
 #endif

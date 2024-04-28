@@ -13,7 +13,7 @@
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
-namespace ShipDK {
+namespace Ship {
 
 Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
     : ControlDevice(portIndex) {
@@ -85,28 +85,28 @@ void Controller::ClearAllMappings() {
     GetLED()->ClearAllMappings();
 }
 
-void Controller::ClearAllMappingsForDevice(ShipDKDeviceIndex shipDKDeviceIndex) {
+void Controller::ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->ClearAllButtonMappingsForDevice(shipDKDeviceIndex);
+        button->ClearAllButtonMappingsForDevice(shipDeviceIndex);
     }
-    GetLeftStick()->ClearAllMappingsForDevice(shipDKDeviceIndex);
-    GetRightStick()->ClearAllMappingsForDevice(shipDKDeviceIndex);
+    GetLeftStick()->ClearAllMappingsForDevice(shipDeviceIndex);
+    GetRightStick()->ClearAllMappingsForDevice(shipDeviceIndex);
 
     auto gyroMapping = GetGyro()->GetGyroMapping();
-    if (gyroMapping != nullptr && gyroMapping->GetShipDKDeviceIndex() == shipDKDeviceIndex) {
+    if (gyroMapping != nullptr && gyroMapping->GetShipDeviceIndex() == shipDeviceIndex) {
         GetGyro()->ClearGyroMapping();
     }
 
-    GetRumble()->ClearAllMappingsForDevice(shipDKDeviceIndex);
-    GetLED()->ClearAllMappingsForDevice(shipDKDeviceIndex);
+    GetRumble()->ClearAllMappingsForDevice(shipDeviceIndex);
+    GetLED()->ClearAllMappingsForDevice(shipDeviceIndex);
 }
 
-void Controller::AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex) {
+void Controller::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->AddDefaultMappings(shipDKDeviceIndex);
+        button->AddDefaultMappings(shipDeviceIndex);
     }
-    GetLeftStick()->AddDefaultMappings(shipDKDeviceIndex);
-    GetRumble()->AddDefaultMappings(shipDKDeviceIndex);
+    GetLeftStick()->AddDefaultMappings(shipDeviceIndex);
+    GetRumble()->AddDefaultMappings(shipDeviceIndex);
 
     const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
@@ -174,7 +174,7 @@ void Controller::ReadToPad(OSContPad* pad) {
 }
 
 #ifndef __WIIU__
-bool Controller::ProcessKeyboardEvent(ShipDK::KbEventType eventType, ShipDK::KbScancode scancode) {
+bool Controller::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
     bool result = false;
     for (auto [bitmask, button] : GetAllButtons()) {
         result = button->ProcessKeyboardEvent(eventType, scancode) || result;
@@ -185,25 +185,25 @@ bool Controller::ProcessKeyboardEvent(ShipDK::KbEventType eventType, ShipDK::KbS
 }
 #endif
 
-bool Controller::HasMappingsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex) {
+bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        if (button->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+        if (button->HasMappingsForShipDeviceIndex(lusIndex)) {
             return true;
         }
     }
-    if (GetLeftStick()->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+    if (GetLeftStick()->HasMappingsForShipDeviceIndex(lusIndex)) {
         return true;
     }
-    if (GetRightStick()->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+    if (GetRightStick()->HasMappingsForShipDeviceIndex(lusIndex)) {
         return true;
     }
-    if (GetGyro()->HasMappingForShipDKDeviceIndex(lusIndex)) {
+    if (GetGyro()->HasMappingForShipDeviceIndex(lusIndex)) {
         return true;
     }
-    if (GetRumble()->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+    if (GetRumble()->HasMappingsForShipDeviceIndex(lusIndex)) {
         return true;
     }
-    if (GetLED()->HasMappingsForShipDKDeviceIndex(lusIndex)) {
+    if (GetLED()->HasMappingsForShipDeviceIndex(lusIndex)) {
         return true;
     }
 
@@ -215,11 +215,11 @@ std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTO
 }
 
 void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController,
-                                                   ShipDKDeviceIndex lusIndex) {
+                                                   ShipDeviceIndex lusIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         std::vector<std::string> buttonMappingIdsToRemove;
         for (auto [id, mapping] : button->GetAllButtonMappings()) {
-            if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+            if (mapping->GetShipDeviceIndex() == lusIndex) {
                 buttonMappingIdsToRemove.push_back(id);
 
                 mapping->SetPortIndex(newController->GetPortIndex());
@@ -240,7 +240,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
         for (auto [direction, mappings] : stick->GetAllAxisDirectionMappings()) {
             std::vector<std::string> axisDirectionMappingIdsToRemove;
             for (auto [id, mapping] : mappings) {
-                if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+                if (mapping->GetShipDeviceIndex() == lusIndex) {
                     axisDirectionMappingIdsToRemove.push_back(id);
 
                     mapping->SetPortIndex(newController->GetPortIndex());
@@ -256,7 +256,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
         }
     }
 
-    if (GetGyro()->GetGyroMapping() != nullptr && GetGyro()->GetGyroMapping()->GetShipDKDeviceIndex() == lusIndex) {
+    if (GetGyro()->GetGyroMapping() != nullptr && GetGyro()->GetGyroMapping()->GetShipDeviceIndex() == lusIndex) {
         GetGyro()->GetGyroMapping()->SetPortIndex(newController->GetPortIndex());
         GetGyro()->GetGyroMapping()->SaveToConfig();
 
@@ -273,7 +273,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
 
     std::vector<std::string> rumbleMappingIdsToRemove;
     for (auto [id, mapping] : GetRumble()->GetAllRumbleMappings()) {
-        if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+        if (mapping->GetShipDeviceIndex() == lusIndex) {
             rumbleMappingIdsToRemove.push_back(id);
 
             mapping->SetPortIndex(newController->GetPortIndex());
@@ -289,7 +289,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
 
     std::vector<std::string> ledMappingIdsToRemove;
     for (auto [id, mapping] : GetLED()->GetAllLEDMappings()) {
-        if (mapping->GetShipDKDeviceIndex() == lusIndex) {
+        if (mapping->GetShipDeviceIndex() == lusIndex) {
             ledMappingIdsToRemove.push_back(id);
 
             mapping->SetPortIndex(newController->GetPortIndex());
@@ -332,4 +332,4 @@ std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {
 
     return allMappings;
 }
-} // namespace ShipDK
+} // namespace Ship

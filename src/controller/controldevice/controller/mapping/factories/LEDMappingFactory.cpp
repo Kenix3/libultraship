@@ -6,9 +6,9 @@
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
 #include "Context.h"
-#include "controller/deviceindex/ShipDKDeviceIndexToSDLDeviceIndexMapping.h"
+#include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 
-namespace ShipDK {
+namespace Ship {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
 #ifndef __WIIU__
     const std::string mappingCvarKey = "gControllers.LEDMappings." + id;
@@ -28,17 +28,17 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
     }
 
     if (mappingClass == "SDLLEDMapping") {
-        int32_t shipDKDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t shipDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (shipDKDeviceIndex < 0) {
+        if (shipDeviceIndex < 0) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
             return nullptr;
         }
 
-        return std::make_shared<SDLLEDMapping>(static_cast<ShipDKDeviceIndex>(shipDKDeviceIndex), portIndex,
+        return std::make_shared<SDLLEDMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex,
                                                colorSource, savedColor);
     }
 #endif
@@ -48,11 +48,11 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
 
 #ifndef __WIIU__
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<ShipDKDeviceIndex, SDL_GameController*> sdlControllersWithLEDs;
+    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllersWithLEDs;
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+        auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
         if (sdlIndexMapping == nullptr) {
             // this LUS index isn't mapped to an SDL index
@@ -112,4 +112,4 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
     return mapping;
 }
 #endif
-} // namespace ShipDK
+} // namespace Ship

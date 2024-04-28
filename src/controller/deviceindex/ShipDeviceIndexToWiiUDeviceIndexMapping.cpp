@@ -1,39 +1,39 @@
 #ifdef __WIIU__
-#include "ShipDKDeviceIndexToWiiUDeviceIndexMapping.h"
+#include "ShipDeviceIndexToWiiUDeviceIndexMapping.h"
 #include <Utils/StringHelper.h>
 #include "public/bridge/consolevariablebridge.h"
 
-namespace ShipDK {
-ShipDKDeviceIndexToWiiUDeviceIndexMapping::ShipDKDeviceIndexToWiiUDeviceIndexMapping(
-    ShipDKDeviceIndex shipDKDeviceIndex, bool isGamepad, int32_t deviceChannel, int32_t extensionType)
-    : ShipDKDeviceIndexToPhysicalDeviceIndexMapping(shipDKDeviceIndex), mIsWiiUGamepad(isGamepad),
+namespace Ship {
+ShipDeviceIndexToWiiUDeviceIndexMapping::ShipDeviceIndexToWiiUDeviceIndexMapping(
+    ShipDeviceIndex shipDeviceIndex, bool isGamepad, int32_t deviceChannel, int32_t extensionType)
+    : ShipDeviceIndexToPhysicalDeviceIndexMapping(shipDeviceIndex), mIsWiiUGamepad(isGamepad),
       mDeviceChannel(deviceChannel), mExtensionType(extensionType) {
 }
 
-ShipDKDeviceIndexToWiiUDeviceIndexMapping::~ShipDKDeviceIndexToWiiUDeviceIndexMapping() {
+ShipDeviceIndexToWiiUDeviceIndexMapping::~ShipDeviceIndexToWiiUDeviceIndexMapping() {
 }
 
-bool ShipDKDeviceIndexToWiiUDeviceIndexMapping::IsWiiUGamepad() {
+bool ShipDeviceIndexToWiiUDeviceIndexMapping::IsWiiUGamepad() {
     return mIsWiiUGamepad;
 }
 
-int32_t ShipDKDeviceIndexToWiiUDeviceIndexMapping::GetDeviceChannel() {
+int32_t ShipDeviceIndexToWiiUDeviceIndexMapping::GetDeviceChannel() {
     return mDeviceChannel;
 }
 
-void ShipDKDeviceIndexToWiiUDeviceIndexMapping::SetDeviceChannel(int32_t channel) {
+void ShipDeviceIndexToWiiUDeviceIndexMapping::SetDeviceChannel(int32_t channel) {
     mDeviceChannel = channel;
 }
 
-int32_t ShipDKDeviceIndexToWiiUDeviceIndexMapping::GetExtensionType() {
+int32_t ShipDeviceIndexToWiiUDeviceIndexMapping::GetExtensionType() {
     return mExtensionType;
 }
 
-void ShipDKDeviceIndexToWiiUDeviceIndexMapping::SetExtensionType(int32_t extensionType) {
+void ShipDeviceIndexToWiiUDeviceIndexMapping::SetExtensionType(int32_t extensionType) {
     mExtensionType = extensionType;
 }
 
-bool ShipDKDeviceIndexToWiiUDeviceIndexMapping::HasEquivalentExtensionType(int32_t extensionType) {
+bool ShipDeviceIndexToWiiUDeviceIndexMapping::HasEquivalentExtensionType(int32_t extensionType) {
     switch (extensionType) {
         case WPAD_EXT_CORE:  // Wii Remote with no extension
         case WPAD_EXT_MPLUS: // Wii remote with motion plus
@@ -51,7 +51,7 @@ bool ShipDKDeviceIndexToWiiUDeviceIndexMapping::HasEquivalentExtensionType(int32
     }
 }
 
-std::string ShipDKDeviceIndexToWiiUDeviceIndexMapping::GetWiiUControllerName() {
+std::string ShipDeviceIndexToWiiUDeviceIndexMapping::GetWiiUControllerName() {
     if (IsWiiUGamepad()) {
         return "Wii U Gamepad";
     }
@@ -75,27 +75,27 @@ std::string ShipDKDeviceIndexToWiiUDeviceIndexMapping::GetWiiUControllerName() {
     }
 }
 
-void ShipDKDeviceIndexToWiiUDeviceIndexMapping::SaveToConfig() {
+void ShipDeviceIndexToWiiUDeviceIndexMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),
-                  "ShipDKDeviceIndexToWiiUDeviceIndexMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(), mShipDKDeviceIndex);
+                  "ShipDeviceIndexToWiiUDeviceIndexMapping");
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), mShipDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), mIsWiiUGamepad);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str(), mDeviceChannel);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), mExtensionType);
     CVarSave();
 }
 
-void ShipDKDeviceIndexToWiiUDeviceIndexMapping::EraseFromConfig() {
+void ShipDeviceIndexToWiiUDeviceIndexMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str());
 
     CVarSave();
 }
-} // namespace ShipDK
+} // namespace Ship
 #endif

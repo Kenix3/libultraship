@@ -14,7 +14,7 @@
 #include "factory/MatrixFactory.h"
 #include "factory/JsonFactory.h"
 
-namespace ShipDK {
+namespace Ship {
 ResourceLoader::ResourceLoader() {
     RegisterGlobalResourceFactories();
 }
@@ -87,7 +87,7 @@ std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, std
     return GetFactory(format, mResourceTypes[typeName], version);
 }
 
-std::shared_ptr<ShipDK::IResource> ResourceLoader::LoadResource(std::shared_ptr<ShipDK::File> fileToLoad) {
+std::shared_ptr<Ship::IResource> ResourceLoader::LoadResource(std::shared_ptr<Ship::File> fileToLoad) {
     if (fileToLoad == nullptr) {
         SPDLOG_ERROR("Failed to load resource: File not loaded");
         return nullptr;
@@ -117,4 +117,4 @@ std::shared_ptr<ShipDK::IResource> ResourceLoader::LoadResource(std::shared_ptr<
 uint32_t ResourceLoader::GetResourceType(const std::string& type) {
     return mResourceTypes.contains(type) ? mResourceTypes[type] : static_cast<uint32_t>(ResourceType::None);
 }
-} // namespace ShipDK
+} // namespace Ship

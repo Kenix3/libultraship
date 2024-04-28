@@ -9,7 +9,7 @@
 #define AppleFolderManager_h
 
 #include <stdio.h>
-namespace ShipDK {
+namespace Ship {
 enum {
     NSApplicationDirectory = 1,
     NSDemoApplicationDirectory,
@@ -65,6 +65,6 @@ class FolderManager {
   private:
     void* m_autoreleasePool;
 };
-}; // namespace ShipDK
+}; // namespace Ship
 
 #endif /* AppleFolderManager_h */

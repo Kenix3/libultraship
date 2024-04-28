@@ -1,24 +1,24 @@
 #include "SDLMapping.h"
 #include <spdlog/spdlog.h>
 #include "Context.h"
-#include "controller/deviceindex/ShipDKDeviceIndexToSDLDeviceIndexMapping.h"
+#include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 
 #include <Utils/StringHelper.h>
 
-namespace ShipDK {
-SDLMapping::SDLMapping(ShipDKDeviceIndex shipDKDeviceIndex)
-    : ControllerMapping(shipDKDeviceIndex), mController(nullptr) {
+namespace Ship {
+SDLMapping::SDLMapping(ShipDeviceIndex shipDeviceIndex)
+    : ControllerMapping(shipDeviceIndex), mController(nullptr) {
 }
 
 SDLMapping::~SDLMapping() {
 }
 
 bool SDLMapping::OpenController() {
-    auto deviceIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(
-        ShipDK::Context::GetInstance()
+    auto deviceIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
+        Ship::Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDKDeviceIndex(mShipDKDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(mShipDeviceIndex));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
@@ -116,11 +116,11 @@ bool SDLMapping::UsesGameCubeLayout() {
 }
 
 int32_t SDLMapping::GetSDLDeviceIndex() {
-    auto deviceIndexMapping = std::static_pointer_cast<ShipDKDeviceIndexToSDLDeviceIndexMapping>(
-        ShipDK::Context::GetInstance()
+    auto deviceIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
+        Ship::Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDKDeviceIndex(mShipDKDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(mShipDeviceIndex));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
@@ -131,10 +131,10 @@ int32_t SDLMapping::GetSDLDeviceIndex() {
 }
 
 std::string SDLMapping::GetSDLControllerName() {
-    return ShipDK::Context::GetInstance()
+    return Ship::Context::GetInstance()
         ->GetControlDeck()
         ->GetDeviceIndexMappingManager()
-        ->GetSDLControllerNameFromShipDKDeviceIndex(mShipDKDeviceIndex);
+        ->GetSDLControllerNameFromShipDeviceIndex(mShipDeviceIndex);
 }
 
 std::string SDLMapping::GetSDLDeviceName() {
@@ -168,4 +168,4 @@ int32_t SDLMapping::GetCurrentSDLDeviceIndex() {
     // didn't find one
     return -1;
 }
-} // namespace ShipDK
+} // namespace Ship

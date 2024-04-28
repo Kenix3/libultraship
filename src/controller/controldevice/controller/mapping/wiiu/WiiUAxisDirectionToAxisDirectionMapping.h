@@ -9,10 +9,10 @@
 #define WII_U_AXIS_NUNCHUK_STICK_X 4
 #define WII_U_AXIS_NUNCHUK_STICK_Y 5
 
-namespace ShipDK {
+namespace Ship {
 class WiiUAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirectionMapping, public WiiUMapping {
   public:
-    WiiUAxisDirectionToAxisDirectionMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, Stick stick,
+    WiiUAxisDirectionToAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, Stick stick,
                                             Direction direction, int32_t wiiuControllerAxis, int32_t axisDirection);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
@@ -27,5 +27,5 @@ class WiiUAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirec
     int32_t mControllerAxis;
     AxisDirection mAxisDirection;
 };
-} // namespace ShipDK
+} // namespace Ship
 #endif

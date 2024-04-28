@@ -2,10 +2,10 @@
 #include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 #include "WiiUMapping.h"
 
-namespace ShipDK {
+namespace Ship {
 class WiiUGyroMapping final : public ControllerGyroMapping, public WiiUMapping {
   public:
-    WiiUGyroMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
+    WiiUGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
                     float neutralYaw, float neutralRoll);
     void UpdatePad(float& x, float& y) override;
     void SaveToConfig() override;
@@ -21,5 +21,5 @@ class WiiUGyroMapping final : public ControllerGyroMapping, public WiiUMapping {
     float mNeutralYaw;
     float mNeutralRoll;
 };
-} // namespace ShipDK
+} // namespace Ship
 #endif

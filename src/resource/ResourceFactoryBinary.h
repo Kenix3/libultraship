@@ -2,9 +2,9 @@
 
 #include "ResourceFactory.h"
 
-namespace ShipDK {
+namespace Ship {
 class ResourceFactoryBinary : public ResourceFactory {
   protected:
-    bool FileHasValidFormatAndReader(std::shared_ptr<ShipDK::File> file) override;
+    bool FileHasValidFormatAndReader(std::shared_ptr<Ship::File> file) override;
 };
-} // namespace ShipDK
+} // namespace Ship

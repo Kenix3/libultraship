@@ -13,7 +13,7 @@
 #include <SDL.h>
 #endif
 
-namespace ShipDK {
+namespace Ship {
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
 class CrashHandler {
@@ -44,6 +44,6 @@ class CrashHandler {
 
     bool CheckStrLen(const char* str);
 };
-} // namespace ShipDK
+} // namespace Ship
 
 #endif // CRASH_HANDLER_H

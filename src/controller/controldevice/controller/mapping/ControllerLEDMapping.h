@@ -5,7 +5,7 @@
 #include "ControllerMapping.h"
 #include "libultraship/color.h"
 
-namespace ShipDK {
+namespace Ship {
 
 #define LED_COLOR_SOURCE_OFF 0
 #define LED_COLOR_SOURCE_SET 1
@@ -13,7 +13,7 @@ namespace ShipDK {
 
 class ControllerLEDMapping : public ControllerMapping {
   public:
-    ControllerLEDMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+    ControllerLEDMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t colorSource,
                          Color_RGB8 savedColor);
     ~ControllerLEDMapping();
 
@@ -33,4 +33,4 @@ class ControllerLEDMapping : public ControllerMapping {
     uint8_t mColorSource;
     Color_RGB8 mSavedColor;
 };
-} // namespace ShipDK
+} // namespace Ship

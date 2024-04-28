@@ -11,7 +11,7 @@
 
 #include "Context.h"
 
-namespace ShipDK {
+namespace Ship {
 namespace WiiU {
 
 static bool hasVpad = false;
@@ -220,6 +220,6 @@ KPADStatus* GetKPADStatus(WPADChan chan, KPADError* error) {
 }
 
 }; // namespace WiiU
-}; // namespace ShipDK
+}; // namespace Ship
 
 #endif

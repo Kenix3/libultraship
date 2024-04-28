@@ -8,9 +8,9 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 #include <imgui.h>
-#include "controller/deviceindex/ShipDKDeviceIndexMappingManager.h"
+#include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
 
-namespace ShipDK {
+namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
     : mPads(nullptr), mSinglePlayerMappingMode(false) {
@@ -18,7 +18,7 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
         mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
     }
 
-    mDeviceIndexMappingManager = std::make_shared<ShipDKDeviceIndexMappingManager>();
+    mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
 }
 
 ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
@@ -41,7 +41,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
 #ifndef __WIIU__
     // if we don't have a config for controller 1, set default keyboard bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
-        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDKDeviceIndex::Keyboard);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Keyboard);
     }
 #endif
 
@@ -113,7 +113,7 @@ void ControlDeck::UnblockGameInput(int32_t blockId) {
     mGameInputBlockers.erase(blockId);
 }
 
-std::shared_ptr<ShipDKDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
+std::shared_ptr<ShipDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
     return mDeviceIndexMappingManager;
 }
 
@@ -124,4 +124,4 @@ void ControlDeck::SetSinglePlayerMappingMode(bool singlePlayer) {
 bool ControlDeck::IsSinglePlayerMappingMode() {
     return mSinglePlayerMappingMode;
 }
-} // namespace ShipDK
+} // namespace Ship

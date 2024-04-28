@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ShipDK {
+namespace Ship {
 
 #define SHIPDK_DEVICE_INDEX_VALUES \
     X(Keyboard, -1)                \
@@ -47,7 +47,7 @@ namespace ShipDK {
     X(Max, 40)
 
 #define X(name, value) name = value,
-enum ShipDKDeviceIndex { SHIPDK_DEVICE_INDEX_VALUES };
+enum ShipDeviceIndex { SHIPDK_DEVICE_INDEX_VALUES };
 #undef X
 
-} // namespace ShipDK
+} // namespace Ship

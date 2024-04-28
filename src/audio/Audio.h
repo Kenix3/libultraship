@@ -5,7 +5,7 @@
 #include <vector>
 #include "audio/AudioPlayer.h"
 
-namespace ShipDK {
+namespace Ship {
 enum class AudioBackend { WASAPI, SDL };
 
 class Audio {
@@ -27,4 +27,4 @@ class Audio {
     AudioBackend mAudioBackend;
     std::shared_ptr<std::vector<AudioBackend>> mAvailableAudioBackends;
 };
-} // namespace ShipDK
+} // namespace Ship

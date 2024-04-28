@@ -2,7 +2,7 @@
 
 #include "resource/Resource.h"
 
-namespace ShipDK {
+namespace Ship {
 #define RESOURCE_TYPE_FONT 0x464F4E54 // FONT
 
 class Font : public Resource<void> {
@@ -18,4 +18,4 @@ class Font : public Resource<void> {
     char* Data = nullptr;
     size_t DataSize;
 };
-}; // namespace ShipDK
+}; // namespace Ship

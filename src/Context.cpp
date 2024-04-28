@@ -19,7 +19,7 @@
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace ShipDK {
+namespace Ship {
 std::weak_ptr<Context> Context::mContext;
 
 std::shared_ptr<Context> Context::GetInstance() {
@@ -211,7 +211,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 #if defined(__SWITCH__)
         printf("Main OTR file not found!\n");
 #elif defined(__WIIU__)
-        ShipDK::WiiU::ThrowMissingOTR(mMainPath.c_str());
+        Ship::WiiU::ThrowMissingOTR(mMainPath.c_str());
 #else
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
@@ -224,7 +224,7 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
         return;
     }
 #ifdef __SWITCH__
-    ShipDK::Switch::Init(PostInitPhase);
+    Ship::Switch::Init(PostInitPhase);
 #endif
 }
 
@@ -432,4 +432,4 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     return "./" + std::string(path);
 }
 
-} // namespace ShipDK
+} // namespace Ship

@@ -5,10 +5,10 @@
 
 #include <ImGui/imgui.h>
 
-namespace ShipDK {
+namespace Ship {
 
 class Mobile {
   public:
     static void ImGuiProcessEvent(bool wantsTextInput);
 };
-}; // namespace ShipDK
+}; // namespace Ship

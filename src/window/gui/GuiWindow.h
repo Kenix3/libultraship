@@ -8,7 +8,7 @@
 #include <ImGui/imgui_internal.h>
 #include "window/gui/GuiElement.h"
 
-namespace ShipDK {
+namespace Ship {
 class GuiWindow : public GuiElement {
   public:
     GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name);
@@ -24,4 +24,4 @@ class GuiWindow : public GuiElement {
     std::string mName;
     ImVector<ImRect> mGroupPanelLabelStack;
 };
-} // namespace ShipDK
+} // namespace Ship

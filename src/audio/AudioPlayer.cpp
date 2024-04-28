@@ -1,7 +1,7 @@
 #include "AudioPlayer.h"
 #include "spdlog/spdlog.h"
 
-namespace ShipDK {
+namespace Ship {
 AudioPlayer::AudioPlayer() : mInitialized(false){};
 
 AudioPlayer::~AudioPlayer() {
@@ -16,4 +16,4 @@ bool AudioPlayer::Init(void) {
 bool AudioPlayer::IsInitialized(void) {
     return mInitialized;
 }
-} // namespace ShipDK
+} // namespace Ship

@@ -6,7 +6,7 @@
 
 #include "controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h"
 
-namespace ShipDK {
+namespace Ship {
 ControllerRumble::ControllerRumble(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -67,10 +67,10 @@ void ControllerRumble::ClearAllMappings() {
     SaveRumbleMappingIdsToConfig();
 }
 
-void ControllerRumble::ClearAllMappingsForDevice(ShipDKDeviceIndex shipDKDeviceIndex) {
+void ControllerRumble::ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mRumbleMappings) {
-        if (mapping->GetShipDKDeviceIndex() == shipDKDeviceIndex) {
+        if (mapping->GetShipDeviceIndex() == shipDeviceIndex) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -86,8 +86,8 @@ void ControllerRumble::ClearAllMappingsForDevice(ShipDKDeviceIndex shipDKDeviceI
 }
 
 #ifdef __WIIU__
-void ControllerRumble::AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex) {
-    for (auto mapping : RumbleMappingFactory::CreateDefaultWiiURumbleMappings(shipDKDeviceIndex, mPortIndex)) {
+void ControllerRumble::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
+    for (auto mapping : RumbleMappingFactory::CreateDefaultWiiURumbleMappings(shipDeviceIndex, mPortIndex)) {
         AddRumbleMapping(mapping);
     }
 
@@ -97,8 +97,8 @@ void ControllerRumble::AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex) {
     SaveRumbleMappingIdsToConfig();
 }
 #else
-void ControllerRumble::AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex) {
-    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(shipDKDeviceIndex, mPortIndex)) {
+void ControllerRumble::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
+    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(shipDeviceIndex, mPortIndex)) {
         AddRumbleMapping(mapping);
     }
 
@@ -178,8 +178,8 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
 }
 #endif
 
-bool ControllerRumble::HasMappingsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex) {
+bool ControllerRumble::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDKDeviceIndex() == lusIndex; });
+                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
-} // namespace ShipDK
+} // namespace Ship

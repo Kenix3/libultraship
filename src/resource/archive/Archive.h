@@ -7,7 +7,7 @@
 #include <tinyxml2.h>
 #include "utils/binarytools/BinaryReader.h"
 
-namespace ShipDK {
+namespace Ship {
 #define OTR_HEADER_SIZE ((size_t)64)
 
 struct File;
@@ -23,10 +23,10 @@ class Archive {
     void Load();
     void Unload();
 
-    virtual std::shared_ptr<ShipDK::File> LoadFile(const std::string& filePath,
-                                                   std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
-    virtual std::shared_ptr<ShipDK::File> LoadFile(uint64_t hash,
-                                                   std::shared_ptr<ShipDK::ResourceInitData> initData = nullptr);
+    virtual std::shared_ptr<Ship::File> LoadFile(const std::string& filePath,
+                                                   std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
+    virtual std::shared_ptr<Ship::File> LoadFile(uint64_t hash,
+                                                   std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles();
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles(const std::string& filter);
     bool HasFile(const std::string& filePath);
@@ -43,21 +43,21 @@ class Archive {
     void SetLoaded(bool isLoaded);
     void SetGameVersion(uint32_t gameVersion);
     void IndexFile(const std::string& filePath);
-    virtual std::shared_ptr<ShipDK::File> LoadFileRaw(const std::string& filePath) = 0;
-    virtual std::shared_ptr<ShipDK::File> LoadFileRaw(uint64_t hash) = 0;
+    virtual std::shared_ptr<Ship::File> LoadFileRaw(const std::string& filePath) = 0;
+    virtual std::shared_ptr<Ship::File> LoadFileRaw(uint64_t hash) = 0;
 
   private:
-    static std::shared_ptr<ShipDK::ResourceInitData> CreateDefaultResourceInitData();
-    std::shared_ptr<ShipDK::ResourceInitData> ReadResourceInitData(const std::string& filePath,
-                                                                   std::shared_ptr<ShipDK::File> metaFileToLoad);
-    std::shared_ptr<ShipDK::ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath,
-                                                                         std::shared_ptr<ShipDK::File> fileToLoad);
-    static std::shared_ptr<ShipDK::ResourceInitData>
-    ReadResourceInitDataBinary(const std::string& filePath, std::shared_ptr<ShipDK::BinaryReader> headerReader);
-    static std::shared_ptr<ShipDK::ResourceInitData>
+    static std::shared_ptr<Ship::ResourceInitData> CreateDefaultResourceInitData();
+    std::shared_ptr<Ship::ResourceInitData> ReadResourceInitData(const std::string& filePath,
+                                                                   std::shared_ptr<Ship::File> metaFileToLoad);
+    std::shared_ptr<Ship::ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                         std::shared_ptr<Ship::File> fileToLoad);
+    static std::shared_ptr<Ship::ResourceInitData>
+    ReadResourceInitDataBinary(const std::string& filePath, std::shared_ptr<Ship::BinaryReader> headerReader);
+    static std::shared_ptr<Ship::ResourceInitData>
     ReadResourceInitDataXml(const std::string& filePath, std::shared_ptr<tinyxml2::XMLDocument> document);
-    std::shared_ptr<ShipDK::BinaryReader> CreateBinaryReader(std::shared_ptr<ShipDK::File> fileToLoad);
-    std::shared_ptr<tinyxml2::XMLDocument> CreateXMLReader(std::shared_ptr<ShipDK::File> fileToLoad);
+    std::shared_ptr<Ship::BinaryReader> CreateBinaryReader(std::shared_ptr<Ship::File> fileToLoad);
+    std::shared_ptr<tinyxml2::XMLDocument> CreateXMLReader(std::shared_ptr<Ship::File> fileToLoad);
 
     bool mIsLoaded;
     bool mHasGameVersion;
@@ -65,4 +65,4 @@ class Archive {
     std::string mPath;
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> mHashes;
 };
-} // namespace ShipDK
+} // namespace Ship

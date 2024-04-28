@@ -4,7 +4,7 @@
 #include <vector>
 #include "Stream.h"
 
-namespace ShipDK {
+namespace Ship {
 class MemoryStream : public Stream {
   public:
     MemoryStream();
@@ -32,4 +32,4 @@ class MemoryStream : public Stream {
     std::shared_ptr<std::vector<char>> mBuffer;
     std::size_t mBufferSize;
 };
-} // namespace ShipDK
+} // namespace Ship

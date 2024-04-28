@@ -1,8 +1,8 @@
 #include "ControllerInputMapping.h"
 
-namespace ShipDK {
-ControllerInputMapping::ControllerInputMapping(ShipDKDeviceIndex shipDKDeviceIndex)
-    : ControllerMapping(shipDKDeviceIndex) {
+namespace Ship {
+ControllerInputMapping::ControllerInputMapping(ShipDeviceIndex shipDeviceIndex)
+    : ControllerMapping(shipDeviceIndex) {
 }
 
 ControllerInputMapping::~ControllerInputMapping() {
@@ -11,4 +11,4 @@ ControllerInputMapping::~ControllerInputMapping() {
 std::string ControllerInputMapping::GetPhysicalInputName() {
     return "Unknown";
 }
-} // namespace ShipDK
+} // namespace Ship

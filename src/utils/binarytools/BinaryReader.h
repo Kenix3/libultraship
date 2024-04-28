@@ -8,7 +8,7 @@
 
 class BinaryReader;
 
-namespace ShipDK {
+namespace Ship {
 
 class BinaryReader {
   public:
@@ -45,4 +45,4 @@ class BinaryReader {
     std::shared_ptr<Stream> mStream;
     Endianness mEndianness = Endianness::Native;
 };
-} // namespace ShipDK
+} // namespace Ship

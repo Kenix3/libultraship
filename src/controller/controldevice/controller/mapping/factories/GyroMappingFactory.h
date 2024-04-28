@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-namespace ShipDK {
+namespace Ship {
 class GyroMappingFactory {
   public:
     static std::shared_ptr<ControllerGyroMapping> CreateGyroMappingFromConfig(uint8_t portIndex, std::string id);
@@ -14,4 +14,4 @@ class GyroMappingFactory {
     static std::shared_ptr<ControllerGyroMapping> CreateGyroMappingFromSDLInput(uint8_t portIndex);
 #endif
 };
-} // namespace ShipDK
+} // namespace Ship

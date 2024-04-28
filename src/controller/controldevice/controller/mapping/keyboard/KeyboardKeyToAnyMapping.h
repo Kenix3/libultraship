@@ -3,13 +3,13 @@
 #include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
 #include "KeyboardScancodes.h"
 
-namespace ShipDK {
+namespace Ship {
 class KeyboardKeyToAnyMapping : virtual public ControllerInputMapping {
   public:
     KeyboardKeyToAnyMapping(KbScancode scancode);
     ~KeyboardKeyToAnyMapping();
     std::string GetPhysicalInputName() override;
-    bool ProcessKeyboardEvent(ShipDK::KbEventType eventType, ShipDK::KbScancode scancode);
+    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
     std::string GetPhysicalDeviceName() override;
     bool PhysicalDeviceIsConnected() override;
 
@@ -17,4 +17,4 @@ class KeyboardKeyToAnyMapping : virtual public ControllerInputMapping {
     KbScancode mKeyboardScancode;
     bool mKeyPressed;
 };
-} // namespace ShipDK
+} // namespace Ship

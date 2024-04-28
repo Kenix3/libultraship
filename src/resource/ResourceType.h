@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ShipDK {
+namespace Ship {
 
 enum class ResourceType {
     // Not set
@@ -8,7 +8,7 @@ enum class ResourceType {
 
     Json = 0x4A534F4E, // JSON
 };
-} // namespace ShipDK
+} // namespace Ship
 
 namespace LUS {
 

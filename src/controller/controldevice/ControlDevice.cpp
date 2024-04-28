@@ -1,10 +1,10 @@
 #include "ControlDevice.h"
 
-namespace ShipDK {
+namespace Ship {
 ControlDevice::ControlDevice(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
 ControlDevice::~ControlDevice() {
 }
 
-} // namespace ShipDK
+} // namespace Ship

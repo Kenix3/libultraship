@@ -9,7 +9,7 @@
 
 using namespace Microsoft::WRL;
 
-namespace ShipDK {
+namespace Ship {
 class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
   public:
     WasapiAudioPlayer();
@@ -41,5 +41,5 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     bool mInitialized;
     bool mStarted;
 };
-} // namespace ShipDK
+} // namespace Ship
 #endif

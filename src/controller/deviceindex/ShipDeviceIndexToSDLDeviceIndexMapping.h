@@ -2,17 +2,17 @@
 
 #include <cstdint>
 #include <string>
-#include "ShipDKDeviceIndexToPhysicalDeviceIndexMapping.h"
+#include "ShipDeviceIndexToPhysicalDeviceIndexMapping.h"
 
-namespace ShipDK {
+namespace Ship {
 
-class ShipDKDeviceIndexToSDLDeviceIndexMapping : public ShipDKDeviceIndexToPhysicalDeviceIndexMapping {
+class ShipDeviceIndexToSDLDeviceIndexMapping : public ShipDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    ShipDKDeviceIndexToSDLDeviceIndexMapping(ShipDKDeviceIndex shipDKDeviceIndex, int32_t sdlDeviceIndex,
+    ShipDeviceIndexToSDLDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlDeviceIndex,
                                              std::string sdlJoystickGuid, std::string sdlControllerName,
                                              int32_t stickAxisThresholdPercentage,
                                              int32_t triggerAxisThresholdPercentage);
-    ~ShipDKDeviceIndexToSDLDeviceIndexMapping();
+    ~ShipDeviceIndexToSDLDeviceIndexMapping();
     std::string GetJoystickGUID();
     std::string GetSDLControllerName();
 
@@ -35,4 +35,4 @@ class ShipDKDeviceIndexToSDLDeviceIndexMapping : public ShipDKDeviceIndexToPhysi
     int32_t mStickAxisThresholdPercentage;
     int32_t mTriggerAxisThresholdPercentage;
 };
-} // namespace ShipDK
+} // namespace Ship

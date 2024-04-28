@@ -5,7 +5,7 @@
 
 #include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 
-namespace ShipDK {
+namespace Ship {
 class ControllerGyro {
   public:
     ControllerGyro(uint8_t portIndex);
@@ -22,10 +22,10 @@ class ControllerGyro {
 
     void UpdatePad(float& x, float& y);
 
-    bool HasMappingForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex);
+    bool HasMappingForShipDeviceIndex(ShipDeviceIndex lusIndex);
 
   private:
     uint8_t mPortIndex;
     std::shared_ptr<ControllerGyroMapping> mGyroMapping;
 };
-} // namespace ShipDK
+} // namespace Ship

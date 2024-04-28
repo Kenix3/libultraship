@@ -6,7 +6,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "spdlog/spdlog.h"
 
-namespace ShipDK {
+namespace Ship {
 StatsWindow::~StatsWindow() {
     SPDLOG_TRACE("destruct stats window");
 }
@@ -42,4 +42,4 @@ void StatsWindow::DrawElement() {
 
 void StatsWindow::UpdateElement() {
 }
-} // namespace ShipDK
+} // namespace Ship

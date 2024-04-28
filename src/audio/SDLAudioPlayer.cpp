@@ -1,7 +1,7 @@
 #include "SDLAudioPlayer.h"
 #include <spdlog/spdlog.h>
 
-namespace ShipDK {
+namespace Ship {
 SDLAudioPlayer::SDLAudioPlayer() : AudioPlayer() {
 }
 
@@ -46,4 +46,4 @@ void SDLAudioPlayer::Play(const uint8_t* buf, size_t len) {
         SDL_QueueAudio(mDevice, buf, len);
     }
 }
-} // namespace ShipDK
+} // namespace Ship

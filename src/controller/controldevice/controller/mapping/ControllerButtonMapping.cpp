@@ -5,10 +5,10 @@
 
 #include "public/bridge/consolevariablebridge.h"
 
-namespace ShipDK {
-ControllerButtonMapping::ControllerButtonMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex,
+namespace Ship {
+ControllerButtonMapping::ControllerButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
                                                  CONTROLLERBUTTONS_T bitmask)
-    : ControllerInputMapping(shipDKDeviceIndex), mPortIndex(portIndex), mBitmask(bitmask) {
+    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mBitmask(bitmask) {
 }
 
 ControllerButtonMapping::~ControllerButtonMapping() {
@@ -25,4 +25,4 @@ uint8_t ControllerButtonMapping::GetMappingType() {
 void ControllerButtonMapping::SetPortIndex(uint8_t portIndex) {
     mPortIndex = portIndex;
 }
-} // namespace ShipDK
+} // namespace Ship

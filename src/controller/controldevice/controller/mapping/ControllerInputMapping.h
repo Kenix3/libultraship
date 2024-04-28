@@ -3,12 +3,12 @@
 #include <string>
 #include "ControllerMapping.h"
 
-namespace ShipDK {
+namespace Ship {
 
 class ControllerInputMapping : public ControllerMapping {
   public:
-    ControllerInputMapping(ShipDKDeviceIndex shipDKDeviceIndex);
+    ControllerInputMapping(ShipDeviceIndex shipDeviceIndex);
     ~ControllerInputMapping();
     virtual std::string GetPhysicalInputName();
 };
-} // namespace ShipDK
+} // namespace Ship

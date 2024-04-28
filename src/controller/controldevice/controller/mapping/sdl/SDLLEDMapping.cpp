@@ -3,10 +3,10 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 
-namespace ShipDK {
-SDLLEDMapping::SDLLEDMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+namespace Ship {
+SDLLEDMapping::SDLLEDMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t colorSource,
                              Color_RGB8 savedColor)
-    : ControllerLEDMapping(shipDKDeviceIndex, portIndex, colorSource, savedColor), SDLMapping(shipDKDeviceIndex) {
+    : ControllerLEDMapping(shipDeviceIndex, portIndex, colorSource, savedColor), SDLMapping(shipDeviceIndex) {
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
@@ -30,14 +30,14 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {
-    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, ControllerLEDMapping::mShipDKDeviceIndex);
+    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, ControllerLEDMapping::mShipDeviceIndex);
 }
 
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
     CVarSetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerLEDMapping::mShipDKDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerLEDMapping::mShipDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
     CVarSetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
     CVarSave();
@@ -47,7 +47,7 @@ void SDLLEDMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.LEDMappings." + GetLEDMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str());
 
@@ -61,4 +61,4 @@ std::string SDLLEDMapping::GetPhysicalDeviceName() {
 bool SDLLEDMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
-} // namespace ShipDK
+} // namespace Ship

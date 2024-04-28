@@ -2,7 +2,7 @@
 #include "Utils/StringHelper.h"
 #include "Context.h"
 
-namespace ShipDK {
+namespace Ship {
 Console::Console() {
 }
 
@@ -73,4 +73,4 @@ std::map<std::string, CommandEntry>& Console::GetCommands() {
 CommandEntry& Console::GetCommand(const std::string& command) {
     return mCommands[command];
 }
-} // namespace ShipDK
+} // namespace Ship

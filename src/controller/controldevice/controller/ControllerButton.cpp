@@ -9,7 +9,7 @@
 #include <sstream>
 #include <algorithm>
 
-namespace ShipDK {
+namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN) {
@@ -141,10 +141,10 @@ void ControllerButton::ClearAllButtonMappings() {
     SaveButtonMappingIdsToConfig();
 }
 
-void ControllerButton::ClearAllButtonMappingsForDevice(ShipDKDeviceIndex shipDKDeviceIndex) {
+void ControllerButton::ClearAllButtonMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mButtonMappings) {
-        if (mapping->GetShipDKDeviceIndex() == shipDKDeviceIndex) {
+        if (mapping->GetShipDeviceIndex() == shipDeviceIndex) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -165,9 +165,9 @@ void ControllerButton::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     }
 }
 
-bool ControllerButton::HasMappingsForShipDKDeviceIndex(ShipDKDeviceIndex lusIndex) {
+bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     return std::any_of(mButtonMappings.begin(), mButtonMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDKDeviceIndex() == lusIndex; });
+                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
 
 #ifdef __WIIU__
@@ -192,9 +192,9 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     return true;
 }
 
-void ControllerButton::AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex) {
+void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
     for (auto mapping :
-         ButtonMappingFactory::CreateDefaultWiiUButtonMappings(shipDKDeviceIndex, mPortIndex, mBitmask)) {
+         ButtonMappingFactory::CreateDefaultWiiUButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
         AddButtonMapping(mapping);
     }
 
@@ -236,7 +236,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     return true;
 }
 
-bool ControllerButton::ProcessKeyboardEvent(ShipDK::KbEventType eventType, ShipDK::KbScancode scancode) {
+bool ControllerButton::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
     if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
         mKeyboardScancodeForNewMapping = scancode;
         return true;
@@ -255,12 +255,12 @@ bool ControllerButton::ProcessKeyboardEvent(ShipDK::KbEventType eventType, ShipD
     return result;
 }
 
-void ControllerButton::AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex) {
-    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDKDeviceIndex, mPortIndex, mBitmask)) {
+void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
+    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
         AddButtonMapping(mapping);
     }
 
-    if (shipDKDeviceIndex == ShipDKDeviceIndex::Keyboard) {
+    if (shipDeviceIndex == ShipDeviceIndex::Keyboard) {
         for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
             AddButtonMapping(mapping);
         }
@@ -272,4 +272,4 @@ void ControllerButton::AddDefaultMappings(ShipDKDeviceIndex shipDKDeviceIndex) {
     SaveButtonMappingIdsToConfig();
 }
 #endif
-} // namespace ShipDK
+} // namespace Ship

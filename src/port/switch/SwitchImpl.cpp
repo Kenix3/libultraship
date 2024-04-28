@@ -22,7 +22,7 @@ void DetectAppletMode();
 
 static void on_applet_hook(AppletHookType hook, void* param);
 
-void ShipDK::Switch::Init(SwitchPhase phase) {
+void Ship::Switch::Init(SwitchPhase phase) {
     switch (phase) {
         case PreInitPhase:
             DetectAppletMode();
@@ -43,7 +43,7 @@ void ShipDK::Switch::Init(SwitchPhase phase) {
     }
 }
 
-void ShipDK::Switch::Exit() {
+void Ship::Switch::Exit() {
 #ifdef DEBUG
     socketExit();
 #endif
@@ -51,7 +51,7 @@ void ShipDK::Switch::Exit() {
     appletSetGamePlayRecordingState(false);
 }
 
-void ShipDK::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
+void Ship::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plInitialize(PlServiceType_User);
     static PlFontData stdFontData, extFontData;
 
@@ -79,7 +79,7 @@ void ShipDK::Switch::ImGuiSetupFont(ImFontAtlas* fonts) {
     plExit();
 }
 
-void ShipDK::Switch::ImGuiProcessEvent(bool wantsTextInput) {
+void Ship::Switch::ImGuiProcessEvent(bool wantsTextInput) {
     ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
 
     if (wantsTextInput) {
@@ -97,11 +97,11 @@ void ShipDK::Switch::ImGuiProcessEvent(bool wantsTextInput) {
     }
 }
 
-bool ShipDK::Switch::IsRunning() {
+bool Ship::Switch::IsRunning() {
     return isRunning;
 }
 
-void ShipDK::Switch::GetDisplaySize(int* width, int* height) {
+void Ship::Switch::GetDisplaySize(int* width, int* height) {
     switch (appletGetOperationMode()) {
         case DOCKED_MODE:
             *width = 1920;
@@ -114,10 +114,10 @@ void ShipDK::Switch::GetDisplaySize(int* width, int* height) {
     }
 }
 
-void ShipDK::Switch::ApplyOverclock(void) {
-    SwitchProfiles perfMode = (SwitchProfiles)CVarGetInteger("gSwitchPerfMode", (int)ShipDK::MAXIMUM);
+void Ship::Switch::ApplyOverclock(void) {
+    SwitchProfiles perfMode = (SwitchProfiles)CVarGetInteger("gSwitchPerfMode", (int)Ship::MAXIMUM);
 
-    if (perfMode >= 0 && perfMode <= ShipDK::POWERSAVINGM3) {
+    if (perfMode >= 0 && perfMode <= Ship::POWERSAVINGM3) {
         if (hosversionBefore(8, 0, 0)) {
             pcvSetClockRate(PcvModule_CpuBus, SWITCH_CPU_SPEEDS_VALUES[perfMode]);
         } else {
@@ -129,7 +129,7 @@ void ShipDK::Switch::ApplyOverclock(void) {
     }
 }
 
-void ShipDK::Switch::PrintErrorMessageToScreen(const char* str, ...) {
+void Ship::Switch::PrintErrorMessageToScreen(const char* str, ...) {
     consoleInit(NULL);
     srand(time(0));
 
@@ -161,26 +161,26 @@ static void on_applet_hook(AppletHookType hook, void* param) {
 
             if (!hasFocus) {
                 if (hosversionBefore(8, 0, 0)) {
-                    pcvSetClockRate(PcvModule_CpuBus, SWITCH_CPU_SPEEDS_VALUES[ShipDK::STOCK]);
+                    pcvSetClockRate(PcvModule_CpuBus, SWITCH_CPU_SPEEDS_VALUES[Ship::STOCK]);
                 } else {
                     ClkrstSession session = { 0 };
                     clkrstOpenSession(&session, PcvModuleId_CpuBus, 3);
-                    clkrstSetClockRate(&session, SWITCH_CPU_SPEEDS_VALUES[ShipDK::STOCK]);
+                    clkrstSetClockRate(&session, SWITCH_CPU_SPEEDS_VALUES[Ship::STOCK]);
                     clkrstCloseSession(&session);
                 }
             } else {
-                ShipDK::Switch::ApplyOverclock();
+                Ship::Switch::ApplyOverclock();
                 // reinitialize audio subsystem to fix audio problems after resuming from sleep
                 // see https://github.com/HarbourMasters/Shipwright/issues/3317
                 SPDLOG_INFO("restarting SDL audio system to work around audio problems on resume");
-                ShipDK::Context::GetInstance()->GetAudio()->SetAudioBackend(ShipDK::AudioBackend::SDL);
+                Ship::Context::GetInstance()->GetAudio()->SetAudioBackend(Ship::AudioBackend::SDL);
             }
 
             break;
 
             /* Performance mode */
         case AppletHookType_OnPerformanceMode:
-            ShipDK::Switch::ApplyOverclock();
+            Ship::Switch::ApplyOverclock();
             break;
         default:
             break;
@@ -212,15 +212,15 @@ void DetectAppletMode() {
     if (at == AppletType_Application || at == AppletType_SystemApplication)
         return;
 
-    ShipDK::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship while in Applet mode."
+    Ship::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship while in Applet mode."
                                               "\x1b[4;2HPlease relaunch while in full-memory mode."
                                               "\x1b[5;2HHold R when opening any game to enter HBMenu."
                                               "\x1b[44;2H%s.",
                                               RandomTexts[rand() % 25]);
 }
 
-void ShipDK::Switch::ThrowMissingOTR(std::string OTRPath) {
-    ShipDK::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship without the OTR file."
+void Ship::Switch::ThrowMissingOTR(std::string OTRPath) {
+    Ship::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship without the OTR file."
                                               "\x1b[4;2HPlease relaunch making sure %s exists."
                                               "\x1b[44;2H%s.",
                                               OTRPath.c_str(), RandomTexts[rand() % 25]);

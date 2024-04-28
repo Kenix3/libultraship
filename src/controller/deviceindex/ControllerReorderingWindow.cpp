@@ -9,7 +9,7 @@
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace ShipDK {
+namespace Ship {
 
 ControllerReorderingWindow::~ControllerReorderingWindow() {
 }
@@ -27,7 +27,7 @@ std::vector<int32_t> ControllerReorderingWindow::GetConnectedWiiUDevices() {
     std::vector<int32_t> connectedDevices;
 
     VPADReadError verror;
-    VPADStatus* vstatus = ShipDK::WiiU::GetVPADStatus(&verror);
+    VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
 
     if (vstatus != nullptr && verror == VPAD_READ_SUCCESS) {
         connectedDevices.push_back(INT32_MAX);
@@ -35,7 +35,7 @@ std::vector<int32_t> ControllerReorderingWindow::GetConnectedWiiUDevices() {
 
     for (uint32_t channel = 0; channel < 4; channel++) {
         KPADError kerror;
-        KPADStatus* kstatus = ShipDK::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
+        KPADStatus* kstatus = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
 
         if (kstatus != nullptr && kerror == KPAD_ERROR_OK) {
             connectedDevices.push_back(channel);
@@ -47,7 +47,7 @@ std::vector<int32_t> ControllerReorderingWindow::GetConnectedWiiUDevices() {
 
 int32_t ControllerReorderingWindow::GetWiiUDeviceFromWiiUInput() {
     VPADReadError verror;
-    VPADStatus* vstatus = ShipDK::WiiU::GetVPADStatus(&verror);
+    VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
 
     if (vstatus != nullptr && verror == VPAD_READ_SUCCESS) {
         if (vstatus->hold) {
@@ -64,7 +64,7 @@ int32_t ControllerReorderingWindow::GetWiiUDeviceFromWiiUInput() {
 
     for (int32_t channel = 0; channel < 4; channel++) {
         KPADError kerror;
-        KPADStatus* kstatus = ShipDK::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
+        KPADStatus* kstatus = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
 
         if (kstatus != nullptr && kerror == KPAD_ERROR_OK) {
             if (kstatus->hold) {
@@ -235,4 +235,4 @@ void ControllerReorderingWindow::DrawElement() {
     Hide();
 }
 #endif
-} // namespace ShipDK
+} // namespace Ship

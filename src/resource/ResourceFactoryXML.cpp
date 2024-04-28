@@ -1,8 +1,8 @@
 #include "ResourceFactoryXML.h"
 #include "spdlog/spdlog.h"
 
-namespace ShipDK {
-bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<ShipDK::File> file) {
+namespace Ship {
+bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<Ship::File> file) {
     if (file->InitData->Format != RESOURCE_FORMAT_XML) {
         SPDLOG_ERROR("resource file format does not match factory format.");
         return false;
@@ -16,4 +16,4 @@ bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<ShipDK::Fil
 
     return true;
 };
-} // namespace ShipDK
+} // namespace Ship

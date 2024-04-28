@@ -6,11 +6,11 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 
-namespace ShipDK {
-SDLGyroMapping::SDLGyroMapping(ShipDKDeviceIndex shipDKDeviceIndex, uint8_t portIndex, float sensitivity,
+namespace Ship {
+SDLGyroMapping::SDLGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity,
                                float neutralPitch, float neutralYaw, float neutralRoll)
-    : ControllerInputMapping(shipDKDeviceIndex), ControllerGyroMapping(shipDKDeviceIndex, portIndex, sensitivity),
-      mNeutralPitch(neutralPitch), SDLMapping(shipDKDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+    : ControllerInputMapping(shipDeviceIndex), ControllerGyroMapping(shipDeviceIndex, portIndex, sensitivity),
+      mNeutralPitch(neutralPitch), SDLMapping(shipDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
 void SDLGyroMapping::Recalibrate() {
@@ -46,15 +46,15 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
 }
 
 std::string SDLGyroMapping::GetGyroMappingId() {
-    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mShipDKDeviceIndex);
+    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mShipDeviceIndex);
 }
 
 void SDLGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDKDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mShipDeviceIndex);
     CVarSetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
@@ -67,7 +67,7 @@ void SDLGyroMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.ShipDKDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());
@@ -83,4 +83,4 @@ std::string SDLGyroMapping::GetPhysicalDeviceName() {
 bool SDLGyroMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
-} // namespace ShipDK
+} // namespace Ship

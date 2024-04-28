@@ -5,13 +5,13 @@
 #include "resource/ResourceFactoryXML.h"
 
 namespace LUS {
-class ResourceFactoryBinaryVertexV0 : public ShipDK::ResourceFactoryBinary {
+class ResourceFactoryBinaryVertexV0 : public Ship::ResourceFactoryBinary {
   public:
-    std::shared_ptr<ShipDK::IResource> ReadResource(std::shared_ptr<ShipDK::File> file) override;
+    std::shared_ptr<Ship::IResource> ReadResource(std::shared_ptr<Ship::File> file) override;
 };
 
-class ResourceFactoryXMLVertexV0 : public ShipDK::ResourceFactoryXML {
+class ResourceFactoryXMLVertexV0 : public Ship::ResourceFactoryXML {
   public:
-    std::shared_ptr<ShipDK::IResource> ReadResource(std::shared_ptr<ShipDK::File> file) override;
+    std::shared_ptr<Ship::IResource> ReadResource(std::shared_ptr<Ship::File> file) override;
 };
 } // namespace LUS

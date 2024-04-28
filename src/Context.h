@@ -18,7 +18,7 @@ namespace LUS {
 class GfxDebugger;
 }
 
-namespace ShipDK {
+namespace Ship {
 
 class Context {
   public:
@@ -93,4 +93,4 @@ class Context {
     std::string mName;
     std::string mShortName;
 };
-} // namespace ShipDK
+} // namespace Ship

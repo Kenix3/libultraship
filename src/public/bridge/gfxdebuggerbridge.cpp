@@ -3,14 +3,14 @@
 #include "debug/GfxDebugger.h"
 
 void GfxDebuggerRequestDebugging(void) {
-    ShipDK::Context::GetInstance()->GetGfxDebugger()->RequestDebugging();
+    Ship::Context::GetInstance()->GetGfxDebugger()->RequestDebugging();
 }
 bool GfxDebuggerIsDebugging(void) {
-    return ShipDK::Context::GetInstance()->GetGfxDebugger()->IsDebugging();
+    return Ship::Context::GetInstance()->GetGfxDebugger()->IsDebugging();
 }
 bool GfxDebuggerIsDebuggingRequested(void) {
-    return ShipDK::Context::GetInstance()->GetGfxDebugger()->IsDebuggingRequested();
+    return Ship::Context::GetInstance()->GetGfxDebugger()->IsDebuggingRequested();
 }
 void GfxDebuggerDebugDisplayList(void* cmds) {
-    ShipDK::Context::GetInstance()->GetGfxDebugger()->DebugDisplayList((Gfx*)cmds);
+    Ship::Context::GetInstance()->GetGfxDebugger()->DebugDisplayList((Gfx*)cmds);
 }

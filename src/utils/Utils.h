@@ -4,7 +4,7 @@
 #include <vector>
 #include <sstream>
 
-namespace ShipDK {
+namespace Ship {
 
 namespace Math {
 float clamp(float d, float min, float max);
@@ -16,4 +16,4 @@ template <typename Numeric> bool IsNumber(const std::string& s) {
 
 std::vector<std::string> splitText(const std::string& text, char separator, bool keepQuotes);
 std::string toLowerCase(std::string in);
-} // namespace ShipDK
+} // namespace Ship
