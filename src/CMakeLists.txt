@@ -101,11 +101,11 @@ target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
 
 file(GLOB Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/*.h" "utils/*.cpp" "utils/*.c")
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm)
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 else()
-    list(REMOVE_ITEM Header_Files__include ${CMAKE_CURRENT_SOURCE_DIR}/utils/OSXFolderManager.h)
+    list(REMOVE_ITEM Header_Files__include ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.h)
 endif()
 
 source_group("utils" FILES ${Source_Files__Utils})
@@ -131,10 +131,10 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchImpl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchPerformanceProfiles.h
     )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Android" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(Source_Files__Port
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/android/AndroidImpl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.cpp
     )
 endif()
 
@@ -167,8 +167,12 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/dxsdk/*")
 endif()
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_metal*")
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_opengl*")
 endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
@@ -184,7 +188,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
 #=================== metal-cpp ===================
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
 endif()
 
@@ -205,7 +209,7 @@ endif()
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR} $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:${CMAKE_CURRENT_SOURCE_DIR}/../../ZAPDTR/lib/libgfxd>
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb ${ADDITIONAL_LIB_INCLUDES}
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
@@ -248,7 +252,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "NintendoS
     target_link_libraries(libultraship PRIVATE Threads::Threads)
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     find_Library(OSX_FOUNDATION Foundation)
     find_Library(OSX_AVFOUNDATION AVFoundation)
     find_library(METAL Metal)
@@ -277,13 +281,49 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     )
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set_target_properties(${PROJECT_NAME} PROPERTIES
         XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
     )
 endif()
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    target_compile_definitions(libultraship PRIVATE
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        SPDLOG_NO_THREAD_ID
+        SPDLOG_NO_TLS
+        STBI_NO_THREAD_LOCALS
+        SPDLOG_ACTIVE_LEVEL=3
+    )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    target_compile_definitions(libultraship PRIVATE
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
+        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+        __IOS__
+    )
+
+    set_xcode_property(${PROJECT_NAME} PRODUCT_BUNDLE_IDENTIFIER ${BUNDLE_ID} All)
+
+    if(NOT SIGN_LIBRARY)
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        )
+
+        set_target_properties(SDL2 PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        )
+
+        set_target_properties(zip PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        )
+    endif()
+else()
     target_compile_definitions(libultraship PRIVATE
         ENABLE_OPENGL
         $<$<CONFIG:Debug>:_DEBUG>
@@ -292,15 +332,6 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
         $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
         $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
         $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
-    )
-else ()
-    target_compile_definitions(libultraship PRIVATE
-        $<$<CONFIG:Debug>:_DEBUG>
-        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        SPDLOG_NO_THREAD_ID
-        SPDLOG_NO_TLS
-        STBI_NO_THREAD_LOCALS
-        SPDLOG_ACTIVE_LEVEL=3
     )
 endif()
 
@@ -341,6 +372,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
 		-Wno-parentheses
 		-Wno-narrowing
 		-Wno-missing-field-initializers
+        -Wno-implicit-function-declaration
         $<$<COMPILE_LANGUAGE:C,OBJC>:-Wno-int-conversion>
 	)
 endif()

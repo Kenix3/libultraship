@@ -7,7 +7,7 @@
 
 namespace ShipDK {
 
-class Android {
+class Mobile {
   public:
     static void ImGuiProcessEvent(bool wantsTextInput);
 };

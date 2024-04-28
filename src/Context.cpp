@@ -12,7 +12,7 @@
 #endif
 
 #ifdef __APPLE__
-#include "utils/OSXFolderManager.h"
+#include "utils/AppleFolderManager.h"
 #elif defined(__SWITCH__)
 #include "port/switch/SwitchImpl.h"
 #elif defined(__WIIU__)
@@ -216,6 +216,10 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
+#ifdef __IOS__
+        // We need this exit to close the app when we dismiss the dialog
+        exit(0);
+#endif
 #endif
         return;
     }
@@ -334,6 +338,12 @@ std::string Context::GetAppBundlePath() {
         return externaldir;
     }
 #endif
+
+#ifdef __IOS__
+    const char* home = getenv("HOME");
+    return std::string(home) + "/Documents";
+#endif
+
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
@@ -368,6 +378,11 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     if (externaldir != NULL) {
         return externaldir;
     }
+#endif
+
+#ifdef __IOS__
+    const char* home = getenv("HOME");
+    return std::string(home) + "/Documents";
 #endif
 
 #if defined(__linux__) || defined(__APPLE__)

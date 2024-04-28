@@ -1,12 +1,12 @@
 //
-//  OSXFolderManager.h
+//  AppleFolderManager.h
 //  libultraship
 //
 //  Created by David Chavez on 28.06.22.
 //
 
-#ifndef OSXFolderManager_h
-#define OSXFolderManager_h
+#ifndef AppleFolderManager_h
+#define AppleFolderManager_h
 
 #include <stdio.h>
 namespace ShipDK {
@@ -67,4 +67,4 @@ class FolderManager {
 };
 }; // namespace ShipDK
 
-#endif /* OSXFolderManager_h */
+#endif /* AppleFolderManager_h */

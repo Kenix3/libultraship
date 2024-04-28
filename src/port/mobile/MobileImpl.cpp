@@ -1,5 +1,5 @@
-#ifdef __ANDROID__
-#include "AndroidImpl.h"
+#if defined(__ANDROID__) || defined(__IOS__)
+#include "MobileImpl.h"
 #include <SDL2/SDL.h>
 #include "public/bridge/consolevariablebridge.h"
 
@@ -7,7 +7,7 @@
 
 static bool isShowingVirtualKeyboard = true;
 
-void ShipDK::Android::ImGuiProcessEvent(bool wantsTextInput) {
+void ShipDK::Mobile::ImGuiProcessEvent(bool wantsTextInput) {
     ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
 
     if (wantsTextInput) {

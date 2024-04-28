@@ -45,8 +45,8 @@
 #include "port/switch/SwitchImpl.h"
 #endif
 
-#ifdef __ANDROID__
-#include "port/android/AndroidImpl.h"
+#if defined(__ANDROID__) || defined(__IOS__)
+#include "port/mobile/MobileImpl.h"
 #endif
 
 #ifdef ENABLE_OPENGL
@@ -83,7 +83,7 @@ Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVari
     AddGuiWindow(
         std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
-    AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
+    AddGuiWindow(std::make_shared<ShipDK::GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
 }
 
 Gui::Gui() : Gui(nullptr) {
@@ -209,7 +209,9 @@ void Gui::ImGuiBackendInit() {
         case WindowBackend::GX2:
             ImGui_ImplGX2_Init();
             break;
-#else
+#endif
+
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -288,12 +290,10 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
-
 #ifdef __SWITCH__
             ShipDK::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
-#endif
-#ifdef __ANDROID__
-            ShipDK::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+#elif defined(__ANDROID__) || defined(__IOS__)
+            ShipDK::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
 #endif
@@ -463,19 +463,23 @@ void Gui::ImGuiBackendNewFrame() {
             mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
             ImGui_ImplGX2_NewFrame();
             break;
-#else
+#endif
+
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
-#ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
-            Metal_NewFrame(mImpl.Metal.Renderer);
-            break;
-#endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_NewFrame();
+            break;
+#endif
+
+#ifdef __APPLE__
+        case WindowBackend::SDL_METAL:
+            Metal_NewFrame(mImpl.Metal.Renderer);
             break;
 #endif
         default:
@@ -719,16 +723,20 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             GX2SetScissor(0, 0, mImGuiIo->DisplaySize.x, mImGuiIo->DisplaySize.y);
             ImGui_ImplWiiU_DrawKeyboardOverlay();
             break;
-#else
+#endif
+
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
+
 #ifdef __APPLE__
         case WindowBackend::SDL_METAL:
             Metal_RenderDrawData(data);
             break;
 #endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_RenderDrawData(data);
