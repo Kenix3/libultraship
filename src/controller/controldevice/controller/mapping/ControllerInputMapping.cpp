@@ -1,8 +1,7 @@
 #include "ControllerInputMapping.h"
 
 namespace Ship {
-ControllerInputMapping::ControllerInputMapping(ShipDeviceIndex shipDeviceIndex)
-    : ControllerMapping(shipDeviceIndex) {
+ControllerInputMapping::ControllerInputMapping(ShipDeviceIndex shipDeviceIndex) : ControllerMapping(shipDeviceIndex) {
 }
 
 ControllerInputMapping::~ControllerInputMapping() {

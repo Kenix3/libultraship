@@ -4,8 +4,9 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace Ship {
-ShipDeviceIndexToWiiUDeviceIndexMapping::ShipDeviceIndexToWiiUDeviceIndexMapping(
-    ShipDeviceIndex shipDeviceIndex, bool isGamepad, int32_t deviceChannel, int32_t extensionType)
+ShipDeviceIndexToWiiUDeviceIndexMapping::ShipDeviceIndexToWiiUDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex,
+                                                                                 bool isGamepad, int32_t deviceChannel,
+                                                                                 int32_t extensionType)
     : ShipDeviceIndexToPhysicalDeviceIndexMapping(shipDeviceIndex), mIsWiiUGamepad(isGamepad),
       mDeviceChannel(deviceChannel), mExtensionType(extensionType) {
 }

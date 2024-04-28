@@ -10,8 +10,8 @@ namespace Ship {
 
 class ShipDeviceIndexToWiiUDeviceIndexMapping : public ShipDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    ShipDeviceIndexToWiiUDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex, bool isGamepad,
-                                              int32_t deviceChannel, int32_t extensionType);
+    ShipDeviceIndexToWiiUDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex, bool isGamepad, int32_t deviceChannel,
+                                            int32_t extensionType);
     ~ShipDeviceIndexToWiiUDeviceIndexMapping();
 
     void SaveToConfig() override;

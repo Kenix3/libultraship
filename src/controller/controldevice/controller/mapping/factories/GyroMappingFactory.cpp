@@ -41,8 +41,8 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         float neutralYaw = CVarGetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
         float neutralRoll = CVarGetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
 
-        return std::make_shared<WiiUGyroMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex,
-                                                 sensitivity, neutralPitch, neutralYaw, neutralRoll);
+        return std::make_shared<WiiUGyroMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, sensitivity,
+                                                 neutralPitch, neutralYaw, neutralRoll);
     }
 #else
     if (mappingClass == "SDLGyroMapping") {
@@ -61,8 +61,8 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         float neutralYaw = CVarGetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
         float neutralRoll = CVarGetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
 
-        return std::make_shared<SDLGyroMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex,
-                                                sensitivity, neutralPitch, neutralYaw, neutralRoll);
+        return std::make_shared<SDLGyroMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, sensitivity,
+                                                neutralPitch, neutralYaw, neutralRoll);
     }
 #endif
     return nullptr;

@@ -128,8 +128,7 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
     return G_CCMUX_1;
 }
 
-std::shared_ptr<Ship::IResource>
-ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
+std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }

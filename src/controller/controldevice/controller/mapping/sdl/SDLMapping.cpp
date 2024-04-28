@@ -6,8 +6,7 @@
 #include <Utils/StringHelper.h>
 
 namespace Ship {
-SDLMapping::SDLMapping(ShipDeviceIndex shipDeviceIndex)
-    : ControllerMapping(shipDeviceIndex), mController(nullptr) {
+SDLMapping::SDLMapping(ShipDeviceIndex shipDeviceIndex) : ControllerMapping(shipDeviceIndex), mController(nullptr) {
 }
 
 SDLMapping::~SDLMapping() {

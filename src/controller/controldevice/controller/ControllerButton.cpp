@@ -193,8 +193,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 }
 
 void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
-    for (auto mapping :
-         ButtonMappingFactory::CreateDefaultWiiUButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
+    for (auto mapping : ButtonMappingFactory::CreateDefaultWiiUButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
         AddButtonMapping(mapping);
     }
 

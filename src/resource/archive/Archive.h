@@ -24,9 +24,9 @@ class Archive {
     void Unload();
 
     virtual std::shared_ptr<Ship::File> LoadFile(const std::string& filePath,
-                                                   std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
+                                                 std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
     virtual std::shared_ptr<Ship::File> LoadFile(uint64_t hash,
-                                                   std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
+                                                 std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles();
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles(const std::string& filter);
     bool HasFile(const std::string& filePath);
@@ -49,9 +49,9 @@ class Archive {
   private:
     static std::shared_ptr<Ship::ResourceInitData> CreateDefaultResourceInitData();
     std::shared_ptr<Ship::ResourceInitData> ReadResourceInitData(const std::string& filePath,
-                                                                   std::shared_ptr<Ship::File> metaFileToLoad);
+                                                                 std::shared_ptr<Ship::File> metaFileToLoad);
     std::shared_ptr<Ship::ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath,
-                                                                         std::shared_ptr<Ship::File> fileToLoad);
+                                                                       std::shared_ptr<Ship::File> fileToLoad);
     static std::shared_ptr<Ship::ResourceInitData>
     ReadResourceInitDataBinary(const std::string& filePath, std::shared_ptr<Ship::BinaryReader> headerReader);
     static std::shared_ptr<Ship::ResourceInitData>

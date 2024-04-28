@@ -46,7 +46,7 @@ void ShipDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<in
 }
 
 void ShipDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad,
-                                                                    int32_t wiiuChannel) {
+                                                                  int32_t wiiuChannel) {
     KPADError error;
     KPADStatus* status = !isGamepad ? Ship::WiiU::GetKPADStatus(static_cast<WPADChan>(wiiuChannel), &error) : nullptr;
 
@@ -201,8 +201,7 @@ void ShipDeviceIndexMappingManager::UpdateExtensionTypesFromConfig() {
     }
 }
 
-std::pair<bool, int32_t>
-ShipDeviceIndexMappingManager::GetWiiUDeviceTypeFromShipDeviceIndex(ShipDeviceIndex index) {
+std::pair<bool, int32_t> ShipDeviceIndexMappingManager::GetWiiUDeviceTypeFromShipDeviceIndex(ShipDeviceIndex index) {
     return mShipDeviceIndexToWiiUDeviceTypes[index];
 }
 
@@ -314,7 +313,7 @@ void ShipDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port
     // if we didn't find a mapping for this guid, make defaults
     auto lusIndex = GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
     auto deviceIndexMapping = std::make_shared<ShipDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString,
-                                                                                         sdlControllerName, 25, 25);
+                                                                                       sdlControllerName, 25, 25);
     mShipDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     deviceIndexMapping->SaveToConfig();
     SetShipDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
@@ -765,8 +764,7 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
 }
 #endif
 
-ShipDeviceIndex
-ShipDeviceIndexMappingManager::GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
+ShipDeviceIndex ShipDeviceIndexMappingManager::GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
     for (uint8_t lusIndex = ShipDeviceIndex::Blue; lusIndex < ShipDeviceIndex::Max; lusIndex++) {
         if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForShipDeviceIndex(
                 static_cast<ShipDeviceIndex>(lusIndex)) ||

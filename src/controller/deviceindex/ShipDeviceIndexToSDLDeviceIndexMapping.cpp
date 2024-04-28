@@ -4,8 +4,8 @@
 
 namespace Ship {
 ShipDeviceIndexToSDLDeviceIndexMapping::ShipDeviceIndexToSDLDeviceIndexMapping(
-    ShipDeviceIndex shipDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid,
-    std::string sdlControllerName, int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage)
+    ShipDeviceIndex shipDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
+    int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage)
     : ShipDeviceIndexToPhysicalDeviceIndexMapping(shipDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
       mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName),
       mStickAxisThresholdPercentage(stickAxisThresholdPercentage),
@@ -35,8 +35,7 @@ int32_t ShipDeviceIndexToSDLDeviceIndexMapping::GetTriggerAxisThresholdPercentag
     return mTriggerAxisThresholdPercentage;
 }
 
-void ShipDeviceIndexToSDLDeviceIndexMapping::SetTriggerAxisThresholdPercentage(
-    int32_t triggerAxisThresholdPercentage) {
+void ShipDeviceIndexToSDLDeviceIndexMapping::SetTriggerAxisThresholdPercentage(int32_t triggerAxisThresholdPercentage) {
     mTriggerAxisThresholdPercentage = triggerAxisThresholdPercentage;
 }
 

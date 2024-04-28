@@ -213,16 +213,16 @@ void DetectAppletMode() {
         return;
 
     Ship::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship while in Applet mode."
-                                              "\x1b[4;2HPlease relaunch while in full-memory mode."
-                                              "\x1b[5;2HHold R when opening any game to enter HBMenu."
-                                              "\x1b[44;2H%s.",
-                                              RandomTexts[rand() % 25]);
+                                            "\x1b[4;2HPlease relaunch while in full-memory mode."
+                                            "\x1b[5;2HHold R when opening any game to enter HBMenu."
+                                            "\x1b[44;2H%s.",
+                                            RandomTexts[rand() % 25]);
 }
 
 void Ship::Switch::ThrowMissingOTR(std::string OTRPath) {
     Ship::Switch::PrintErrorMessageToScreen("\x1b[2;2HYou've launched the Ship without the OTR file."
-                                              "\x1b[4;2HPlease relaunch making sure %s exists."
-                                              "\x1b[44;2H%s.",
-                                              OTRPath.c_str(), RandomTexts[rand() % 25]);
+                                            "\x1b[4;2HPlease relaunch making sure %s exists."
+                                            "\x1b[44;2H%s.",
+                                            OTRPath.c_str(), RandomTexts[rand() % 25]);
 }
 #endif

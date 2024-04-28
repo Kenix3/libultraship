@@ -110,7 +110,7 @@ void Archive::IndexFile(const std::string& filePath) {
 }
 
 std::shared_ptr<Ship::ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath,
-                                                                        std::shared_ptr<Ship::File> metaFileToLoad) {
+                                                                      std::shared_ptr<Ship::File> metaFileToLoad) {
     auto initData = CreateDefaultResourceInitData();
 
     // just using metaFileToLoad->Buffer->data() leads to garbage at the end
@@ -137,8 +137,8 @@ std::shared_ptr<Ship::ResourceInitData> Archive::ReadResourceInitData(const std:
     return initData;
 }
 
-std::shared_ptr<Ship::ResourceInitData>
-Archive::ReadResourceInitDataLegacy(const std::string& filePath, std::shared_ptr<Ship::File> fileToLoad) {
+std::shared_ptr<Ship::ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                            std::shared_ptr<Ship::File> fileToLoad) {
     // Determine if file is binary or XML...
     if (fileToLoad->Buffer->at(0) == '<') {
         // File is XML
@@ -200,7 +200,7 @@ std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<
 }
 
 std::shared_ptr<Ship::File> Archive::LoadFile(const std::string& filePath,
-                                                std::shared_ptr<Ship::ResourceInitData> initData) {
+                                              std::shared_ptr<Ship::ResourceInitData> initData) {
     std::shared_ptr<Ship::File> fileToLoad = nullptr;
 
     if (initData != nullptr) {

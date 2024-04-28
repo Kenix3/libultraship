@@ -9,9 +9,9 @@ namespace Ship {
 class ShipDeviceIndexToSDLDeviceIndexMapping : public ShipDeviceIndexToPhysicalDeviceIndexMapping {
   public:
     ShipDeviceIndexToSDLDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlDeviceIndex,
-                                             std::string sdlJoystickGuid, std::string sdlControllerName,
-                                             int32_t stickAxisThresholdPercentage,
-                                             int32_t triggerAxisThresholdPercentage);
+                                           std::string sdlJoystickGuid, std::string sdlControllerName,
+                                           int32_t stickAxisThresholdPercentage,
+                                           int32_t triggerAxisThresholdPercentage);
     ~ShipDeviceIndexToSDLDeviceIndexMapping();
     std::string GetJoystickGUID();
     std::string GetSDLControllerName();

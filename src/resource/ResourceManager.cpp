@@ -42,7 +42,7 @@ bool ResourceManager::DidLoadSuccessfully() {
 }
 
 std::shared_ptr<Ship::File> ResourceManager::LoadFileProcess(const std::string& filePath,
-                                                               std::shared_ptr<Ship::ResourceInitData> initData) {
+                                                             std::shared_ptr<Ship::ResourceInitData> initData) {
     auto file = mArchiveManager->LoadFile(filePath, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
@@ -162,7 +162,7 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
 }
 
 std::shared_ptr<Ship::IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
-                                                                 std::shared_ptr<Ship::ResourceInitData> initData) {
+                                                               std::shared_ptr<Ship::ResourceInitData> initData) {
     auto resource = LoadResourceAsync(filePath, loadExact, true, initData).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
