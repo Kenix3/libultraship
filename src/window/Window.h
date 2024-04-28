@@ -8,7 +8,7 @@
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "window/gui/Gui.h"
 
-namespace LUS {
+namespace Ship {
 enum class WindowBackend { DX11, DX12, GLX_OPENGL, SDL_OPENGL, SDL_METAL, GX2, BACKEND_COUNT };
 
 class Config;
@@ -77,4 +77,4 @@ class Window {
     int32_t mPosY;
     int32_t mLastScancode;
 };
-} // namespace LUS
+} // namespace Ship

@@ -1,6 +1,6 @@
 #include "Font.h"
 
-namespace LUS {
+namespace Ship {
 Font::Font() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
@@ -17,4 +17,4 @@ void* Font::GetPointer() {
 size_t Font::GetPointerSize() {
     return DataSize * sizeof(char);
 }
-} // namespace LUS
+} // namespace Ship

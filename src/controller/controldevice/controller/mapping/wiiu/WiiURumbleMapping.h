@@ -2,10 +2,10 @@
 #include "controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
 #include "WiiUMapping.h"
 
-namespace LUS {
+namespace Ship {
 class WiiURumbleMapping final : public ControllerRumbleMapping, public WiiUMapping {
   public:
-    WiiURumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+    WiiURumbleMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                       uint8_t highFrequencyIntensityPercentage);
 
     void StartRumble() override;
@@ -24,5 +24,5 @@ class WiiURumbleMapping final : public ControllerRumbleMapping, public WiiUMappi
     void SetIntensity(uint8_t intensityPercentage);
     uint8_t mRumblePattern[15];
 };
-} // namespace LUS
+} // namespace Ship
 #endif

@@ -9,7 +9,7 @@
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace LUS {
+namespace Ship {
 
 ControllerDisconnectedWindow::~ControllerDisconnectedWindow() {
 }
@@ -41,7 +41,7 @@ void ControllerDisconnectedWindow::UpdateElement() {
 #ifdef __WIIU__
 bool ControllerDisconnectedWindow::AnyWiiUDevicesAreConnected() {
     VPADReadError verror;
-    VPADStatus* vstatus = LUS::WiiU::GetVPADStatus(&verror);
+    VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
 
     if (vstatus != nullptr && verror == VPAD_READ_SUCCESS) {
         return true;
@@ -49,7 +49,7 @@ bool ControllerDisconnectedWindow::AnyWiiUDevicesAreConnected() {
 
     for (uint32_t channel = 0; channel < 4; channel++) {
         KPADError kerror;
-        KPADStatus* kstatus = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
+        KPADStatus* kstatus = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
 
         if (kstatus != nullptr && kerror == KPAD_ERROR_OK) {
             return true;
@@ -61,7 +61,7 @@ bool ControllerDisconnectedWindow::AnyWiiUDevicesAreConnected() {
 
 int32_t ControllerDisconnectedWindow::GetWiiUDeviceFromWiiUInput() {
     VPADReadError verror;
-    VPADStatus* vstatus = LUS::WiiU::GetVPADStatus(&verror);
+    VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
 
     if (vstatus != nullptr && verror == VPAD_READ_SUCCESS) {
         if (vstatus->hold) {
@@ -72,7 +72,7 @@ int32_t ControllerDisconnectedWindow::GetWiiUDeviceFromWiiUInput() {
 
     for (int32_t channel = 0; channel < 4; channel++) {
         KPADError kerror;
-        KPADStatus* kstatus = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
+        KPADStatus* kstatus = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
 
         if (kstatus != nullptr && kerror == KPAD_ERROR_OK) {
             if (kstatus->hold) {
@@ -132,8 +132,8 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
 
     auto index = GetSDLIndexFromSDLInput();
     if (index != -1 &&
-        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetLUSDeviceIndexFromSDLDeviceIndex(
-            index) == LUSDeviceIndex::Max) {
+        Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetShipDeviceIndexFromSDLDeviceIndex(
+            index) == ShipDeviceIndex::Max) {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeSDLMappingsForPort(
             mPortIndexOfDisconnectedController, index);
         mPortIndexOfDisconnectedController = UINT8_MAX;
@@ -248,4 +248,4 @@ void ControllerDisconnectedWindow::SetPortIndexOfDisconnectedController(uint8_t 
     // todo: don't use UINT8_MAX-1 to mean multiple controllers disconnected
     mPortIndexOfDisconnectedController = UINT8_MAX - 1;
 }
-} // namespace LUS
+} // namespace Ship

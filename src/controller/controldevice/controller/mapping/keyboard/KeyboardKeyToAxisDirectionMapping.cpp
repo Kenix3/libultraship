@@ -5,11 +5,11 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-namespace LUS {
+namespace Ship {
 KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
                                                                      Direction direction, KbScancode scancode)
-    : ControllerInputMapping(LUSDeviceIndex::Keyboard),
-      ControllerAxisDirectionMapping(LUSDeviceIndex::Keyboard, portIndex, stick, direction),
+    : ControllerInputMapping(ShipDeviceIndex::Keyboard),
+      ControllerAxisDirectionMapping(ShipDeviceIndex::Keyboard, portIndex, stick, direction),
       KeyboardKeyToAnyMapping(scancode) {
 }
 
@@ -47,4 +47,4 @@ void KeyboardKeyToAxisDirectionMapping::EraseFromConfig() {
 uint8_t KeyboardKeyToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_KEYBOARD;
 }
-} // namespace LUS
+} // namespace Ship

@@ -2,7 +2,7 @@
 #define ENDIANESS_H
 
 #ifdef __cplusplus
-namespace LUS {
+namespace Ship {
 enum class Endianness {
     Little = 0,
     Big = 1,
@@ -13,7 +13,7 @@ enum class Endianness {
     Native = Little,
 #endif
 };
-} // namespace LUS
+} // namespace Ship
 #endif
 
 #ifdef _MSC_VER

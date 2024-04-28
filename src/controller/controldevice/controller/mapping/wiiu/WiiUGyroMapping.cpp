@@ -7,11 +7,11 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 
-namespace LUS {
-WiiUGyroMapping::WiiUGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity,
+namespace Ship {
+WiiUGyroMapping::WiiUGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity,
                                  float neutralPitch, float neutralYaw, float neutralRoll)
-    : ControllerInputMapping(lusDeviceIndex), ControllerGyroMapping(lusDeviceIndex, portIndex, sensitivity),
-      mNeutralPitch(neutralPitch), WiiUMapping(lusDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+    : ControllerInputMapping(shipDeviceIndex), ControllerGyroMapping(shipDeviceIndex, portIndex, sensitivity),
+      mNeutralPitch(neutralPitch), WiiUMapping(shipDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
 void WiiUGyroMapping::Recalibrate() {
@@ -23,7 +23,7 @@ void WiiUGyroMapping::Recalibrate() {
     }
 
     VPADReadError error;
-    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+    VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
     if (status == nullptr) {
         mNeutralPitch = 0;
         mNeutralYaw = 0;
@@ -44,7 +44,7 @@ void WiiUGyroMapping::UpdatePad(float& x, float& y) {
     }
 
     VPADReadError error;
-    VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+    VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
     if (status == nullptr) {
         x = 0;
         y = 0;
@@ -56,15 +56,15 @@ void WiiUGyroMapping::UpdatePad(float& x, float& y) {
 }
 
 std::string WiiUGyroMapping::GetGyroMappingId() {
-    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mLUSDeviceIndex);
+    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mShipDeviceIndex);
 }
 
 void WiiUGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "WiiUGyroMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mShipDeviceIndex);
     CVarSetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
@@ -77,7 +77,7 @@ void WiiUGyroMapping::EraseFromConfig() {
     const std::string mappingCvarKey = "gControllers.GyroMappings." + GetGyroMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());
@@ -93,5 +93,5 @@ std::string WiiUGyroMapping::GetPhysicalDeviceName() {
 bool WiiUGyroMapping::PhysicalDeviceIsConnected() {
     return WiiUDeviceIsConnected();
 }
-} // namespace LUS
+} // namespace Ship
 #endif

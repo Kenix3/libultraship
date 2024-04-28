@@ -2,7 +2,7 @@
 
 #include "window/gui/GuiWindow.h"
 
-namespace LUS {
+namespace Ship {
 class StatsWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
@@ -13,4 +13,4 @@ class StatsWindow : public GuiWindow {
     void DrawElement() override;
     void UpdateElement() override;
 };
-} // namespace LUS
+} // namespace Ship

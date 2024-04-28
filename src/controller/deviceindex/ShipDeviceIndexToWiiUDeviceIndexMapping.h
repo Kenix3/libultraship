@@ -3,16 +3,16 @@
 
 #include <cstdint>
 #include <string>
-#include "LUSDeviceIndexToPhysicalDeviceIndexMapping.h"
+#include "ShipDeviceIndexToPhysicalDeviceIndexMapping.h"
 #include <padscore/wpad.h>
 
-namespace LUS {
+namespace Ship {
 
-class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
+class ShipDeviceIndexToWiiUDeviceIndexMapping : public ShipDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    LUSDeviceIndexToWiiUDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, bool isGamepad, int32_t deviceChannel,
-                                           int32_t extensionType);
-    ~LUSDeviceIndexToWiiUDeviceIndexMapping();
+    ShipDeviceIndexToWiiUDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex, bool isGamepad, int32_t deviceChannel,
+                                            int32_t extensionType);
+    ~ShipDeviceIndexToWiiUDeviceIndexMapping();
 
     void SaveToConfig() override;
     void EraseFromConfig() override;
@@ -34,5 +34,5 @@ class LUSDeviceIndexToWiiUDeviceIndexMapping : public LUSDeviceIndexToPhysicalDe
     int32_t mDeviceChannel;
     int32_t mExtensionType;
 };
-} // namespace LUS
+} // namespace Ship
 #endif

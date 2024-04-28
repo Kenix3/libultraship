@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 #include "controller/controldevice/controller/Controller.h"
-#include "LUSDeviceIndex.h"
+#include "ShipDeviceIndex.h"
 
-namespace LUS {
+namespace Ship {
 
 class ControllerDisconnectedWindow : public GuiWindow {
   public:
@@ -37,4 +37,4 @@ class ControllerDisconnectedWindow : public GuiWindow {
 
     uint8_t mPortIndexOfDisconnectedController;
 };
-} // namespace LUS
+} // namespace Ship

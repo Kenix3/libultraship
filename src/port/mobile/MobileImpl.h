@@ -5,10 +5,10 @@
 
 #include <ImGui/imgui.h>
 
-namespace LUS {
+namespace Ship {
 
 class Mobile {
   public:
     static void ImGuiProcessEvent(bool wantsTextInput);
 };
-}; // namespace LUS
+}; // namespace Ship

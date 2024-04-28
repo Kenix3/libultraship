@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef __cplusplus
-namespace LUS {
+namespace Ship {
 #endif
 typedef enum KbEventType {
     LUS_KB_EVENT_KEY_DOWN = 0,
@@ -118,5 +118,5 @@ typedef enum KbScancode {
 
 };
 #ifdef __cplusplus
-} // namespace LUS
+} // namespace Ship
 #endif

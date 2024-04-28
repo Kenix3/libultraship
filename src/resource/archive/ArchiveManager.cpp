@@ -10,7 +10,7 @@
 #include "utils/glob.h"
 #include <StrHash64.h>
 
-namespace LUS {
+namespace Ship {
 ArchiveManager::ArchiveManager() {
 }
 
@@ -36,8 +36,8 @@ bool ArchiveManager::IsArchiveLoaded() {
     return !mArchives.empty();
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath,
-                                               std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<Ship::File> ArchiveManager::LoadFile(const std::string& filePath,
+                                                     std::shared_ptr<Ship::ResourceInitData> initData) {
     if (filePath == "") {
         return nullptr;
     }
@@ -45,7 +45,7 @@ std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath,
     return LoadFile(CRC64(filePath.c_str()), initData);
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<Ship::File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<Ship::ResourceInitData> initData) {
     const auto archive = mFileToArchive[hash];
     if (archive == nullptr) {
         return nullptr;
@@ -193,4 +193,4 @@ bool ArchiveManager::IsGameVersionValid(uint32_t gameVersion) {
     return mValidGameVersions.empty() || mValidGameVersions.contains(gameVersion);
 }
 
-} // namespace LUS
+} // namespace Ship

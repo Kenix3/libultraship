@@ -1,6 +1,6 @@
 #include "Json.h"
 
-namespace LUS {
+namespace Ship {
 Json::Json() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
@@ -11,4 +11,4 @@ void* Json::GetPointer() {
 size_t Json::GetPointerSize() {
     return DataSize * sizeof(char);
 }
-} // namespace LUS
+} // namespace Ship

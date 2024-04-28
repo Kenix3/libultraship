@@ -2,7 +2,7 @@
 #include "window/gui/resource/Font.h"
 #include "spdlog/spdlog.h"
 
-namespace LUS {
+namespace Ship {
 std::shared_ptr<IResource> ResourceFactoryBinaryFontV0::ReadResource(std::shared_ptr<File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
@@ -18,4 +18,4 @@ std::shared_ptr<IResource> ResourceFactoryBinaryFontV0::ReadResource(std::shared
 
     return font;
 }
-} // namespace LUS
+} // namespace Ship

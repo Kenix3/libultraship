@@ -1,6 +1,6 @@
 #include "ControlPort.h"
 
-namespace LUS {
+namespace Ship {
 ControlPort::ControlPort(uint8_t portIndex) : mPortIndex(portIndex), mDevice(nullptr) {
 }
 
@@ -27,4 +27,4 @@ std::shared_ptr<Controller> ControlPort::GetConnectedController() {
     return std::dynamic_pointer_cast<Controller>(mDevice);
 }
 
-} // namespace LUS
+} // namespace Ship

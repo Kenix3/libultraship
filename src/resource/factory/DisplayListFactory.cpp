@@ -128,13 +128,13 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(std::string valStr) {
     return G_CCMUX_1;
 }
 
-std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<File> file) {
+std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
     auto displayList = std::make_shared<DisplayList>(file->InitData);
-    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
+    auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
 
     while (reader->GetBaseAddress() % 8 != 0) {
         reader->ReadInt8();
@@ -166,7 +166,7 @@ std::shared_ptr<IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std:
     return displayList;
 }
 
-std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<File> file) {
+std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }

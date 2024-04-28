@@ -4,14 +4,14 @@
 #include <string>
 #include "ControllerMapping.h"
 
-namespace LUS {
+namespace Ship {
 
 #define DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE 100
 #define DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE 100
 
 class ControllerRumbleMapping : public ControllerMapping {
   public:
-    ControllerRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+    ControllerRumbleMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                             uint8_t highFrequencyIntensityPercentage);
     ~ControllerRumbleMapping();
     virtual void StartRumble() = 0;
@@ -37,4 +37,4 @@ class ControllerRumbleMapping : public ControllerMapping {
     uint8_t mLowFrequencyIntensityPercentage;
     uint8_t mHighFrequencyIntensityPercentage;
 };
-} // namespace LUS
+} // namespace Ship

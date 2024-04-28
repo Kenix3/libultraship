@@ -12,9 +12,9 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "Context.h"
-#include "controller/deviceindex/LUSDeviceIndexToSDLDeviceIndexMapping.h"
+#include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 
-namespace LUS {
+namespace Ship {
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIndex, Stick stick, std::string id) {
     const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + id;
@@ -24,14 +24,14 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 #ifdef __WIIU__
     if (mappingClass == "WiiUAxisDirectionToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t lusDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t shipDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t wiiuControllerAxis =
             CVarGetInteger(StringHelper::Sprintf("%s.WiiUControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || lusDeviceIndex < 0 ||
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDeviceIndex < 0 ||
             wiiuControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -40,14 +40,14 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         }
 
         return std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(
-            static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, stick, static_cast<Direction>(direction),
+            static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, stick, static_cast<Direction>(direction),
             wiiuControllerAxis, axisDirection);
     }
 
     if (mappingClass == "WiiUButtonToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t lusDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t shipDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         bool isClassic = CVarGetInteger(
             StringHelper::Sprintf("%s.IsClassicControllerButton", mappingCvarKey.c_str()).c_str(), false);
         bool isNunchuk =
@@ -55,7 +55,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         int32_t wiiuControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.WiiUControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || lusDeviceIndex < 0 ||
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDeviceIndex < 0 ||
             wiiuControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -63,21 +63,21 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<WiiUButtonToAxisDirectionMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex),
+        return std::make_shared<WiiUButtonToAxisDirectionMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex),
                                                                   portIndex, stick, static_cast<Direction>(direction),
                                                                   isNunchuk, isClassic, wiiuControllerButton);
     }
 #else
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t lusDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t shipDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerAxis =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || lusDeviceIndex < 0 ||
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDeviceIndex < 0 ||
             sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -86,18 +86,18 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         }
 
         return std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
-            static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex, stick, static_cast<Direction>(direction),
+            static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, stick, static_cast<Direction>(direction),
             sdlControllerAxis, axisDirection);
     }
 
     if (mappingClass == "SDLButtonToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t lusDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t shipDeviceIndex =
+            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || lusDeviceIndex < 0 ||
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDeviceIndex < 0 ||
             sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -105,8 +105,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<SDLButtonToAxisDirectionMapping>(static_cast<LUSDeviceIndex>(lusDeviceIndex), portIndex,
-                                                                 stick, static_cast<Direction>(direction),
+        return std::make_shared<SDLButtonToAxisDirectionMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex),
+                                                                 portIndex, stick, static_cast<Direction>(direction),
                                                                  sdlControllerButton);
     }
 
@@ -132,13 +132,13 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
 #ifdef __WIIU__
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
                                                                     Stick stick) {
-    auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(
+    auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(shipDeviceIndex));
     if (wiiuIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>();
     }
@@ -155,22 +155,22 @@ AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(LUSDeviceInd
         }
 
         std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, LEFT, 4, -1),
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, RIGHT, 4, 1),
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, UP, 5, -1),
-            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, DOWN, 5, 1)
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, LEFT, 4, -1),
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, RIGHT, 4, 1),
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, UP, 5, -1),
+            std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, DOWN, 5, 1)
         };
         return mappings;
     }
 
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, LEFT,
+        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, LEFT,
                                                                   stick == LEFT_STICK ? 0 : 2, -1),
-        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, RIGHT,
+        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, RIGHT,
                                                                   stick == LEFT_STICK ? 0 : 2, 1),
-        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, UP,
+        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, UP,
                                                                   stick == LEFT_STICK ? 1 : 3, -1),
-        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, DOWN,
+        std::make_shared<WiiUAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, DOWN,
                                                                   stick == LEFT_STICK ? 1 : 3, 1)
     };
     return mappings;
@@ -181,7 +181,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
                                                                      Direction direction) {
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto wiiuIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
+        auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
 
         if (wiiuIndexMapping == nullptr) {
             continue;
@@ -189,7 +189,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
 
         if (wiiuIndexMapping->IsWiiUGamepad()) {
             VPADReadError verror;
-            VPADStatus* vstatus = LUS::WiiU::GetVPADStatus(&verror);
+            VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
 
             if (vstatus == nullptr || verror != VPAD_READ_SUCCESS) {
                 continue;
@@ -236,7 +236,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(uint8_t por
 
         KPADError kerror;
         KPADStatus* kstatus =
-            LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
+            Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
 
         if (kstatus == nullptr || kerror != KPAD_ERROR_OK) {
             continue;
@@ -380,25 +380,25 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex,
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
                                                                    Stick stick) {
-    auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(
+    auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromLUSDeviceIndex(lusDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(shipDeviceIndex));
     if (sdlIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>();
     }
 
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, LEFT,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, LEFT,
                                                                  stick == LEFT_STICK ? 0 : 2, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, RIGHT,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, RIGHT,
                                                                  stick == LEFT_STICK ? 0 : 2, 1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, UP,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, UP,
                                                                  stick == LEFT_STICK ? 1 : 3, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(lusDeviceIndex, portIndex, stick, DOWN,
+        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(shipDeviceIndex, portIndex, stick, DOWN,
                                                                  stick == LEFT_STICK ? 1 : 3, 1)
     };
 
@@ -408,11 +408,11 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(LUSDeviceInde
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, Stick stick,
                                                                     Direction direction) {
-    std::unordered_map<LUSDeviceIndex, SDL_GameController*> sdlControllers;
+    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto sdlIndexMapping = std::dynamic_pointer_cast<LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+        auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
         if (sdlIndexMapping == nullptr) {
             // this LUS index isn't mapped to an SDL index
@@ -469,4 +469,4 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
     return mapping;
 }
 #endif
-} // namespace LUS
+} // namespace Ship

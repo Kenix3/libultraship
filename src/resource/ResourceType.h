@@ -1,5 +1,15 @@
 #pragma once
 
+namespace Ship {
+
+enum class ResourceType {
+    // Not set
+    None = 0x00000000,
+
+    Json = 0x4A534F4E, // JSON
+};
+} // namespace Ship
+
 namespace LUS {
 
 enum class ResourceType {
@@ -14,6 +24,5 @@ enum class ResourceType {
     Array = 0x4F415252,       // OARR
     Blob = 0x4F424C42,        // OBLB
     Texture = 0x4F544558,     // OTEX
-    Json = 0x4A534F4E,        // JSON
 };
 } // namespace LUS

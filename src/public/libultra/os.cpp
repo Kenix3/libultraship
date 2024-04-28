@@ -20,7 +20,7 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
     }
 
 #ifndef __SWITCH__
-    std::string controllerDb = LUS::Context::LocateFileAcrossAppDirs("gamecontrollerdb.txt");
+    std::string controllerDb = Ship::Context::LocateFileAcrossAppDirs("gamecontrollerdb.txt");
     int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb.c_str());
     if (mappingsAdded >= 0) {
         SPDLOG_INFO("Added SDL game controllers from \"{}\" ({})", controllerDb, mappingsAdded);
@@ -30,7 +30,7 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
 #endif
 #endif
 
-    LUS::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
+    Ship::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
 
     return 0;
 }
@@ -42,7 +42,7 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
-    LUS::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
+    Ship::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
 }
 
 // Returns the OS time matching the N64 46.875MHz cycle rate

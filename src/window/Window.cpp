@@ -23,7 +23,7 @@
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace LUS {
+namespace Ship {
 
 Window::Window(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     mWindowManagerApi = nullptr;
@@ -65,16 +65,16 @@ void Window::Init() {
     mGameMode = true;
 #endif
 
-    mIsFullscreen = LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || mGameMode;
-    mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
-    mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
+    mIsFullscreen = Ship::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || mGameMode;
+    mPosX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
+    mPosY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
 
     if (mIsFullscreen) {
-        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", mGameMode ? 1280 : 1920);
-        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", mGameMode ? 800 : 1080);
+        mWidth = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", mGameMode ? 1280 : 1920);
+        mHeight = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", mGameMode ? 800 : 1080);
     } else {
-        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
-        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
+        mWidth = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
+        mHeight = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
 
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
@@ -94,7 +94,7 @@ void Window::Init() {
 
     InitWindowManager();
 
-    gfx_init(mWindowManagerApi, mRenderingApi, LUS::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
+    gfx_init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
              mHeight, mPosX, mPosY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
 #ifndef __WIIU__
@@ -132,7 +132,7 @@ void Window::ToggleFullscreen() {
 }
 
 void Window::SetFullscreen(bool isFullscreen) {
-    SaveWindowSizeToConfig(LUS::Context::GetInstance()->GetConfig());
+    SaveWindowSizeToConfig(Ship::Context::GetInstance()->GetConfig());
     mWindowManagerApi->set_fullscreen(isFullscreen);
 }
 
@@ -326,4 +326,4 @@ void Window::SaveWindowSizeToConfig(std::shared_ptr<Config> conf) {
         conf->SetInt("Window.PositionY", GetPosY());
     }
 }
-} // namespace LUS
+} // namespace Ship

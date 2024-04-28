@@ -1,7 +1,7 @@
 #include "ControllerMapping.h"
 
-namespace LUS {
-ControllerMapping::ControllerMapping(LUSDeviceIndex lusDeviceIndex) : mLUSDeviceIndex(lusDeviceIndex) {
+namespace Ship {
+ControllerMapping::ControllerMapping(ShipDeviceIndex shipDeviceIndex) : mShipDeviceIndex(shipDeviceIndex) {
 }
 
 ControllerMapping::~ControllerMapping() {
@@ -11,7 +11,7 @@ std::string ControllerMapping::GetPhysicalDeviceName() {
     return "Unknown";
 }
 
-LUSDeviceIndex ControllerMapping::GetLUSDeviceIndex() {
-    return mLUSDeviceIndex;
+ShipDeviceIndex ControllerMapping::GetShipDeviceIndex() {
+    return mShipDeviceIndex;
 }
-} // namespace LUS
+} // namespace Ship

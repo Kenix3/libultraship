@@ -5,10 +5,11 @@
 //  Created by David Chavez on 28.06.22.
 //
 
-#pragma once
+#ifndef AppleFolderManager_h
+#define AppleFolderManager_h
 
 #include <stdio.h>
-namespace LUS {
+namespace Ship {
 enum {
     NSApplicationDirectory = 1,
     NSDemoApplicationDirectory,
@@ -64,4 +65,6 @@ class FolderManager {
   private:
     void* m_autoreleasePool;
 };
-}; // namespace LUS
+}; // namespace Ship
+
+#endif /* AppleFolderManager_h */

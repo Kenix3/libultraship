@@ -6,7 +6,7 @@
 #define strdup _strdup
 #endif
 
-namespace LUS {
+namespace Ship {
 namespace Math {
 float clamp(float d, float min, float max) {
     const float t = d < min ? min : d;
@@ -67,4 +67,4 @@ std::string toLowerCase(std::string in) {
     std::transform(cpy.begin(), cpy.end(), cpy.begin(), ::tolower);
     return cpy;
 }
-} // namespace LUS
+} // namespace Ship

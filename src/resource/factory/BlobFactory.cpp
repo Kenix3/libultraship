@@ -3,13 +3,13 @@
 #include "spdlog/spdlog.h"
 
 namespace LUS {
-std::shared_ptr<IResource> ResourceFactoryBinaryBlobV0::ReadResource(std::shared_ptr<File> file) {
+std::shared_ptr<Ship::IResource> ResourceFactoryBinaryBlobV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
     auto blob = std::make_shared<Blob>(file->InitData);
-    auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
+    auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
 
     uint32_t dataSize = reader->ReadUInt32();
 

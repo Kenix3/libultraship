@@ -4,13 +4,13 @@
 #include <string>
 #include "ControllerInputMapping.h"
 
-namespace LUS {
+namespace Ship {
 
 #define GYRO_SENSITIVITY_DEFAULT 100
 
 class ControllerGyroMapping : virtual public ControllerInputMapping {
   public:
-    ControllerGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity);
+    ControllerGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity);
     ~ControllerGyroMapping();
     virtual void UpdatePad(float& x, float& y) = 0;
     virtual void SaveToConfig() = 0;
@@ -29,4 +29,4 @@ class ControllerGyroMapping : virtual public ControllerInputMapping {
     uint8_t mSensitivityPercent;
     float mSensitivity;
 };
-} // namespace LUS
+} // namespace Ship
