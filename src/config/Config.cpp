@@ -13,7 +13,7 @@
 
 namespace fs = std::filesystem;
 
-namespace LUS {
+namespace Ship {
 Config::Config(std::string path) : mPath(std::move(path)), mIsNewInstance(false) {
     Reload();
 }
@@ -284,4 +284,4 @@ uint32_t ConfigVersionUpdater::GetVersion() {
     return mVersion;
 }
 
-} // namespace LUS
+} // namespace Ship

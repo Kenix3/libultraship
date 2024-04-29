@@ -2,7 +2,7 @@
 
 #include "libultraship/libultraship.h"
 
-namespace LUS {
+namespace Ship {
 GuiElement::GuiElement(const std::string& visibilityConsoleVariable, bool isVisible)
     : mIsInitialized(false), mIsVisible(isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable) {
     if (!mVisibilityConsoleVariable.empty()) {
@@ -60,7 +60,7 @@ void GuiElement::SyncVisibilityConsoleVariable() {
     }
 
     if (shouldSave) {
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
     }
 }
 
@@ -88,4 +88,4 @@ bool GuiElement::IsVisible() {
 bool GuiElement::IsInitialized() {
     return mIsInitialized;
 }
-} // namespace LUS
+} // namespace Ship

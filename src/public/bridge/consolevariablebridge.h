@@ -9,7 +9,7 @@
 #ifdef __cplusplus
 #include <memory>
 #include <config/ConsoleVariable.h>
-std::shared_ptr<LUS::CVar> CVarGet(const char* name);
+std::shared_ptr<Ship::CVar> CVarGet(const char* name);
 
 extern "C" {
 #endif

@@ -16,14 +16,14 @@
 #include "Context.h"
 
 #ifdef __APPLE__
-#include "utils/OSXFolderManager.h"
+#include "utils/AppleFolderManager.h"
 #elif defined(__SWITCH__)
 #include "port/switch/SwitchImpl.h"
 #elif defined(__WIIU__)
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace LUS {
+namespace Ship {
 
 Window::Window(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     mWindowManagerApi = nullptr;
@@ -45,8 +45,7 @@ Window::~Window() {
 }
 
 void Window::Init() {
-    bool steamDeckGameMode = false;
-    bool androidGameMode = false;
+    bool mGameMode = false;
 
 #ifdef __linux__
     std::ifstream osReleaseFile("/etc/os-release");
@@ -55,32 +54,27 @@ void Window::Init() {
         while (std::getline(osReleaseFile, line)) {
             if (line.find("VARIANT_ID") != std::string::npos) {
                 if (line.find("steamdeck") != std::string::npos) {
-                    steamDeckGameMode = std::getenv("XDG_CURRENT_DESKTOP") != nullptr &&
-                                        std::string(std::getenv("XDG_CURRENT_DESKTOP")) == "gamescope";
+                    mGameMode = std::getenv("XDG_CURRENT_DESKTOP") != nullptr &&
+                                std::string(std::getenv("XDG_CURRENT_DESKTOP")) == "gamescope";
                 }
                 break;
             }
         }
     }
+#elif defined(__ANDROID__) || defined(__IOS__)
+    mGameMode = true;
 #endif
 
-#ifdef __ANDROID__
-    androidGameMode = true;
-#endif
-
-    mIsFullscreen = LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) ||
-                    steamDeckGameMode || androidGameMode;
-    mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
-    mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
+    mIsFullscreen = Ship::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || mGameMode;
+    mPosX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
+    mPosY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
 
     if (mIsFullscreen) {
-        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width",
-                                                                  steamDeckGameMode || androidGameMode ? 1280 : 1920);
-        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height",
-                                                                   steamDeckGameMode || androidGameMode ? 800 : 1080);
+        mWidth = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", mGameMode ? 1280 : 1920);
+        mHeight = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", mGameMode ? 800 : 1080);
     } else {
-        mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
-        mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
+        mWidth = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
+        mHeight = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
 
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
@@ -100,7 +94,7 @@ void Window::Init() {
 
     InitWindowManager();
 
-    gfx_init(mWindowManagerApi, mRenderingApi, LUS::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
+    gfx_init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
              mHeight, mPosX, mPosY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
 #ifndef __WIIU__
@@ -138,7 +132,7 @@ void Window::ToggleFullscreen() {
 }
 
 void Window::SetFullscreen(bool isFullscreen) {
-    SaveWindowSizeToConfig(LUS::Context::GetInstance()->GetConfig());
+    SaveWindowSizeToConfig(Ship::Context::GetInstance()->GetConfig());
     mWindowManagerApi->set_fullscreen(isFullscreen);
 }
 
@@ -237,17 +231,17 @@ void Window::InitWindowManager() {
             mWindowManagerApi = &gfx_dxgi_api;
             break;
 #endif
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             mRenderingApi = &gfx_opengl_api;
             mWindowManagerApi = &gfx_sdl;
             break;
+#endif
 #ifdef __APPLE__
         case WindowBackend::SDL_METAL:
             mRenderingApi = &gfx_metal_api;
             mWindowManagerApi = &gfx_sdl;
             break;
-#endif
 #endif
 #ifdef __WIIU__
         case WindowBackend::GX2:
@@ -332,4 +326,4 @@ void Window::SaveWindowSizeToConfig(std::shared_ptr<Config> conf) {
         conf->SetInt("Window.PositionY", GetPosY());
     }
 }
-} // namespace LUS
+} // namespace Ship

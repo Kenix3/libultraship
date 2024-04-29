@@ -3,7 +3,7 @@
 #include "resource/Resource.h"
 
 namespace LUS {
-class Blob : public Resource<void> {
+class Blob : public Ship::Resource<void> {
   public:
     using Resource::Resource;
 

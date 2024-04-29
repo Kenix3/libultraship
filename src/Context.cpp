@@ -12,14 +12,14 @@
 #endif
 
 #ifdef __APPLE__
-#include "utils/OSXFolderManager.h"
+#include "utils/AppleFolderManager.h"
 #elif defined(__SWITCH__)
 #include "port/switch/SwitchImpl.h"
 #elif defined(__WIIU__)
 #include "port/wiiu/WiiUImpl.h"
 #endif
 
-namespace LUS {
+namespace Ship {
 std::weak_ptr<Context> Context::mContext;
 
 std::shared_ptr<Context> Context::GetInstance() {
@@ -211,16 +211,20 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
 #if defined(__SWITCH__)
         printf("Main OTR file not found!\n");
 #elif defined(__WIIU__)
-        LUS::WiiU::ThrowMissingOTR(mMainPath.c_str());
+        Ship::WiiU::ThrowMissingOTR(mMainPath.c_str());
 #else
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
+#ifdef __IOS__
+        // We need this exit to close the app when we dismiss the dialog
+        exit(0);
+#endif
 #endif
         return;
     }
 #ifdef __SWITCH__
-    LUS::Switch::Init(PostInitPhase);
+    Ship::Switch::Init(PostInitPhase);
 #endif
 }
 
@@ -254,7 +258,7 @@ void Context::InitGfxDebugger() {
         return;
     }
 
-    mGfxDebugger = std::make_shared<GfxDebugger>();
+    mGfxDebugger = std::make_shared<LUS::GfxDebugger>();
 }
 
 void Context::InitConsole() {
@@ -311,7 +315,7 @@ std::shared_ptr<Audio> Context::GetAudio() {
     return mAudio;
 }
 
-std::shared_ptr<GfxDebugger> Context::GetGfxDebugger() {
+std::shared_ptr<LUS::GfxDebugger> Context::GetGfxDebugger() {
     return mGfxDebugger;
 }
 
@@ -334,6 +338,12 @@ std::string Context::GetAppBundlePath() {
         return externaldir;
     }
 #endif
+
+#ifdef __IOS__
+    const char* home = getenv("HOME");
+    return std::string(home) + "/Documents";
+#endif
+
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
@@ -368,6 +378,11 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     if (externaldir != NULL) {
         return externaldir;
     }
+#endif
+
+#ifdef __IOS__
+    const char* home = getenv("HOME");
+    return std::string(home) + "/Documents";
 #endif
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -417,4 +432,4 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     return "./" + std::string(path);
 }
 
-} // namespace LUS
+} // namespace Ship

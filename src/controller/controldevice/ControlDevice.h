@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace LUS {
+namespace Ship {
 class ControlDevice {
   public:
     ControlDevice(uint8_t portIndex);
@@ -11,4 +11,4 @@ class ControlDevice {
   protected:
     uint8_t mPortIndex;
 };
-} // namespace LUS
+} // namespace Ship

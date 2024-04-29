@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <string>
 
-namespace LUS {
+namespace Ship {
 typedef enum class ConsoleVariableType { Integer, Float, String, Color, Color24 } ConsoleVariableType;
 
 typedef struct CVar {
@@ -58,4 +58,4 @@ class ConsoleVariable {
   private:
     std::unordered_map<std::string, std::shared_ptr<CVar>> mVariables;
 };
-} // namespace LUS
+} // namespace Ship

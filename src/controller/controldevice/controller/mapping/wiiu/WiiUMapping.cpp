@@ -2,23 +2,23 @@
 #include "WiiUMapping.h"
 #include <spdlog/spdlog.h>
 #include "Context.h"
-#include "controller/deviceindex/LUSDeviceIndexToWiiUDeviceIndexMapping.h"
+#include "controller/deviceindex/ShipDeviceIndexToWiiUDeviceIndexMapping.h"
 
 #include <Utils/StringHelper.h>
 
-namespace LUS {
-WiiUMapping::WiiUMapping(LUSDeviceIndex lusDeviceIndex) : ControllerMapping(lusDeviceIndex) {
+namespace Ship {
+WiiUMapping::WiiUMapping(ShipDeviceIndex shipDeviceIndex) : ControllerMapping(shipDeviceIndex) {
 }
 
 WiiUMapping::~WiiUMapping() {
 }
 
 int32_t WiiUMapping::GetWiiUDeviceChannel() {
-    auto deviceIndexMapping = std::static_pointer_cast<LUSDeviceIndexToWiiUDeviceIndexMapping>(
-        LUS::Context::GetInstance()
+    auto deviceIndexMapping = std::static_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(
+        Ship::Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromLUSDeviceIndex(mLUSDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(mShipDeviceIndex));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have a wii u device for this LUS device index
@@ -29,10 +29,10 @@ int32_t WiiUMapping::GetWiiUDeviceChannel() {
 }
 
 std::string WiiUMapping::GetWiiUControllerName() {
-    auto [isGamepad, extensionType] = LUS::Context::GetInstance()
+    auto [isGamepad, extensionType] = Ship::Context::GetInstance()
                                           ->GetControlDeck()
                                           ->GetDeviceIndexMappingManager()
-                                          ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
+                                          ->GetWiiUDeviceTypeFromShipDeviceIndex(mShipDeviceIndex);
 
     if (isGamepad) {
         return "Wii U Gamepad";
@@ -58,19 +58,19 @@ std::string WiiUMapping::GetWiiUControllerName() {
 }
 
 bool WiiUMapping::IsGamepad() {
-    auto [isGamepad, extensionType] = LUS::Context::GetInstance()
+    auto [isGamepad, extensionType] = Ship::Context::GetInstance()
                                           ->GetControlDeck()
                                           ->GetDeviceIndexMappingManager()
-                                          ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
+                                          ->GetWiiUDeviceTypeFromShipDeviceIndex(mShipDeviceIndex);
 
     return isGamepad;
 }
 
 int32_t WiiUMapping::ExtensionType() {
-    auto [isGamepad, extensionType] = LUS::Context::GetInstance()
+    auto [isGamepad, extensionType] = Ship::Context::GetInstance()
                                           ->GetControlDeck()
                                           ->GetDeviceIndexMappingManager()
-                                          ->GetWiiUDeviceTypeFromLUSDeviceIndex(mLUSDeviceIndex);
+                                          ->GetWiiUDeviceTypeFromShipDeviceIndex(mShipDeviceIndex);
 
     return extensionType;
 }
@@ -93,7 +93,7 @@ std::string WiiUMapping::GetWiiUDeviceName() {
 bool WiiUMapping::WiiUDeviceIsConnected() {
     if (IsGamepad()) {
         VPADReadError error;
-        VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+        VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
         if (status == nullptr) {
             return false;
         }
@@ -102,12 +102,12 @@ bool WiiUMapping::WiiUDeviceIsConnected() {
     }
 
     KPADError error;
-    KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
+    KPADStatus* status = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
     if (status == nullptr || error != KPAD_ERROR_OK) {
         return false;
     }
 
     return true;
 }
-} // namespace LUS
+} // namespace Ship
 #endif

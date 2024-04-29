@@ -7,13 +7,14 @@
 
 #define MAX_AXIS_RANGE 85.0f
 
-namespace LUS {
+namespace Ship {
 enum Stick { LEFT_STICK, RIGHT_STICK };
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
 class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
   public:
-    ControllerAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, Stick stick, Direction direction);
+    ControllerAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, Stick stick,
+                                   Direction direction);
     ~ControllerAxisDirectionMapping();
     virtual float GetNormalizedAxisDirectionValue() = 0;
     virtual uint8_t GetMappingType();
@@ -30,4 +31,4 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
     Stick mStick;
     Direction mDirection;
 };
-} // namespace LUS
+} // namespace Ship

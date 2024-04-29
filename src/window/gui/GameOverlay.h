@@ -10,7 +10,7 @@
 #include <imgui.h>
 #include <unordered_map>
 
-namespace LUS {
+namespace Ship {
 
 enum class OverlayType { TEXT, IMAGE, NOTIFICATION };
 
@@ -50,4 +50,4 @@ class GameOverlay {
 
     void CleanupNotifications();
 };
-} // namespace LUS
+} // namespace Ship

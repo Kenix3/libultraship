@@ -16,6 +16,9 @@
 
 namespace LUS {
 class GfxDebugger;
+}
+
+namespace Ship {
 
 class Context {
   public:
@@ -48,7 +51,7 @@ class Context {
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
     std::shared_ptr<Audio> GetAudio();
-    std::shared_ptr<GfxDebugger> GetGfxDebugger();
+    std::shared_ptr<LUS::GfxDebugger> GetGfxDebugger();
 
     std::string GetConfigFilePath();
     std::string GetName();
@@ -81,7 +84,7 @@ class Context {
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
     std::shared_ptr<Audio> mAudio;
-    std::shared_ptr<GfxDebugger> mGfxDebugger;
+    std::shared_ptr<LUS::GfxDebugger> mGfxDebugger;
 
     std::string mConfigFilePath;
     std::string mMainPath;
@@ -90,4 +93,4 @@ class Context {
     std::string mName;
     std::string mShortName;
 };
-} // namespace LUS
+} // namespace Ship

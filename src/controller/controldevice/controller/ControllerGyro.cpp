@@ -4,7 +4,7 @@
 #include <Utils/StringHelper.h>
 #include "controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
 
-namespace LUS {
+namespace Ship {
 ControllerGyro::ControllerGyro(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -103,11 +103,11 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     SaveGyroMappingIdToConfig();
 }
 
-bool ControllerGyro::HasMappingForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerGyro::HasMappingForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     if (mGyroMapping == nullptr) {
         return false;
     }
 
-    return mGyroMapping->GetLUSDeviceIndex() == lusIndex;
+    return mGyroMapping->GetShipDeviceIndex() == lusIndex;
 }
-} // namespace LUS
+} // namespace Ship

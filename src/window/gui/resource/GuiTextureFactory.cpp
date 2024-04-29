@@ -2,7 +2,7 @@
 #include "window/gui/resource/GuiTexture.h"
 #include "spdlog/spdlog.h"
 
-namespace LUS {
+namespace Ship {
 std::shared_ptr<IResource> ResourceFactoryBinaryGuiTextureV0::ReadResource(std::shared_ptr<File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
@@ -25,4 +25,4 @@ std::shared_ptr<IResource> ResourceFactoryBinaryGuiTextureV0::ReadResource(std::
 
     return guiTexture;
 }
-} // namespace LUS
+} // namespace Ship

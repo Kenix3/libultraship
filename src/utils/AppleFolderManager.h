@@ -1,15 +1,15 @@
 //
-//  OSXFolderManager.h
+//  AppleFolderManager.h
 //  libultraship
 //
 //  Created by David Chavez on 28.06.22.
 //
 
-#ifndef OSXFolderManager_h
-#define OSXFolderManager_h
+#ifndef AppleFolderManager_h
+#define AppleFolderManager_h
 
 #include <stdio.h>
-namespace LUS {
+namespace Ship {
 enum {
     NSApplicationDirectory = 1,
     NSDemoApplicationDirectory,
@@ -65,6 +65,6 @@ class FolderManager {
   private:
     void* m_autoreleasePool;
 };
-}; // namespace LUS
+}; // namespace Ship
 
-#endif /* OSXFolderManager_h */
+#endif /* AppleFolderManager_h */

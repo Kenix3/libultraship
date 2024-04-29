@@ -6,14 +6,14 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-namespace LUS {
-WiiUAxisDirectionToAxisDirectionMapping::WiiUAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex,
+namespace Ship {
+WiiUAxisDirectionToAxisDirectionMapping::WiiUAxisDirectionToAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex,
                                                                                  uint8_t portIndex, Stick stick,
                                                                                  Direction direction,
                                                                                  int32_t wiiuControllerAxis,
                                                                                  int32_t axisDirection)
-    : ControllerInputMapping(lusDeviceIndex),
-      ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction), WiiUMapping(lusDeviceIndex),
+    : ControllerInputMapping(shipDeviceIndex),
+      ControllerAxisDirectionMapping(shipDeviceIndex, portIndex, stick, direction), WiiUMapping(shipDeviceIndex),
       mControllerAxis(wiiuControllerAxis) {
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
@@ -27,7 +27,7 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
 
     if (IsGamepad()) {
         VPADReadError error;
-        VPADStatus* status = LUS::WiiU::GetVPADStatus(&error);
+        VPADStatus* status = Ship::WiiU::GetVPADStatus(&error);
         if (status == nullptr) {
             return 0.0f;
         }
@@ -48,7 +48,7 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
         }
     } else {
         KPADError error;
-        KPADStatus* status = LUS::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
+        KPADStatus* status = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(GetWiiUDeviceChannel()), &error);
         if (status == nullptr || error != KPAD_ERROR_OK) {
             return 0.0f;
         }
@@ -116,7 +116,7 @@ float WiiUAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue()
 
 std::string WiiUAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() {
     return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-A%d-AD%s", mPortIndex, mStick, mDirection,
-                                 ControllerInputMapping::mLUSDeviceIndex, mControllerAxis,
+                                 ControllerInputMapping::mShipDeviceIndex, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 
@@ -126,8 +126,8 @@ void WiiUAxisDirectionToAxisDirectionMapping::SaveToConfig() {
                   "WiiUAxisDirectionToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mShipDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.WiiUControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
     CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
     CVarSave();
@@ -138,7 +138,7 @@ void WiiUAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.WiiUControllerAxis", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
     CVarSave();
@@ -181,5 +181,5 @@ std::string WiiUAxisDirectionToAxisDirectionMapping::GetPhysicalDeviceName() {
 bool WiiUAxisDirectionToAxisDirectionMapping::PhysicalDeviceIsConnected() {
     return WiiUDeviceIsConnected();
 }
-} // namespace LUS
+} // namespace Ship
 #endif

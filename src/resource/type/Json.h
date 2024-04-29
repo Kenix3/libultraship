@@ -3,7 +3,7 @@
 #include "resource/Resource.h"
 #include <nlohmann/json.hpp>
 
-namespace LUS {
+namespace Ship {
 
 class Json : public Resource<void> {
   public:
@@ -17,4 +17,4 @@ class Json : public Resource<void> {
     nlohmann::json Data;
     size_t DataSize;
 };
-}; // namespace LUS
+}; // namespace Ship

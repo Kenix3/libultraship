@@ -196,7 +196,7 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
             ShowWindow(dxgi.h_wnd, SW_MAXIMIZE);
         } else {
             std::tuple<HMONITOR, RECT, BOOL> Monitor;
-            auto conf = LUS::Context::GetInstance()->GetConfig();
+            auto conf = Ship::Context::GetInstance()->GetConfig();
             dxgi.current_width = conf->GetInt("Window.Width", 640);
             dxgi.current_height = conf->GetInt("Window.Height", 480);
             dxgi.posX = conf->GetInt("Window.PositionX", 100);
@@ -296,9 +296,9 @@ void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Freque
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
-    LUS::WindowEvent event_impl;
+    Ship::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
     switch (message) {
         case WM_SIZE:
