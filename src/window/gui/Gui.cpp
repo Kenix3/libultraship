@@ -31,10 +31,6 @@
 #include <SDL2/SDL_video.h>
 #endif
 
-#ifdef __SWITCH__
-#include "port/switch/SwitchImpl.h"
-#endif
-
 #if defined(__ANDROID__) || defined(__IOS__)
 #include "port/mobile/MobileImpl.h"
 #endif
@@ -104,10 +100,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize,
                                                           &iconsConfig, sIconsRanges);
 
-#ifdef __SWITCH__
-    Ship::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
-#endif
-
 #if defined(__ANDROID__)
     // Scale everything by 2 for Android
     ImGui::GetStyle().ScaleAllSizes(2.0f);
@@ -141,16 +133,9 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
     ImGuiWMInit();
     ImGuiBackendInit();
-#ifdef __SWITCH__
-    ImGui::GetStyle().ScaleAllSizes(2);
-#endif
 
     CVarClear("gNewFileDropped");
     CVarClear("gDroppedFile");
-
-#ifdef __SWITCH__
-    Switch::ApplyOverclock();
-#endif
 }
 
 void Gui::ImGuiWMInit() {
@@ -228,10 +213,6 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
 }
 
 bool Gui::SupportsViewports() {
-#ifdef __SWITCH__
-    return false;
-#endif
-
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::DX11:
             return true;
@@ -253,9 +234,7 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
-#ifdef __SWITCH__
-            Ship::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
-#elif defined(__ANDROID__) || defined(__IOS__)
+#if defined(__ANDROID__) || defined(__IOS__)
             Ship::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;

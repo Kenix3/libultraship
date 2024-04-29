@@ -38,8 +38,5 @@
 #ifdef __APPLE__
 #include "utils/AppleFolderManager.h"
 #endif
-#ifdef __SWITCH__
-#include "port/switch/SwitchImpl.h"
-#endif
 #endif
 #endif
