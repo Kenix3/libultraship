@@ -15,8 +15,6 @@
 
 #ifdef __APPLE__
 #include "utils/AppleFolderManager.h"
-#elif defined(__SWITCH__)
-#include "port/switch/SwitchImpl.h"
 #endif
 
 namespace Ship {
@@ -259,10 +257,6 @@ std::shared_ptr<Gui> Window::GetGui() {
 }
 
 bool Window::SupportsWindowedFullscreen() {
-#ifdef __SWITCH__
-    return false;
-#endif
-
     if (GetWindowBackend() == WindowBackend::SDL_OPENGL || GetWindowBackend() == WindowBackend::SDL_METAL) {
         return true;
     }

@@ -82,11 +82,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
         }
 
         auto controller = SDL_GameControllerOpen(sdlIndex);
-#ifdef __SWITCH__
-        bool hasRumble = false;
-#else
         bool hasRumble = SDL_GameControllerHasRumble(controller);
-#endif
+
         if (hasRumble) {
             sdlControllersWithRumble[lusIndex] = SDL_GameControllerOpen(sdlIndex);
         } else {

@@ -25,9 +25,6 @@ if((CMAKE_SYSTEM_NAME MATCHES "Windows") AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES
         target_link_libraries(storm ${CLANG_RT_BUILTINS_LIBRARY})
     endif()
 endif()
-if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
-    target_compile_definitions(storm PRIVATE -D_POSIX_C_SOURCE=200809L)
-endif()
 
 #=================== ImGui ===================
 
@@ -43,10 +40,6 @@ target_sources(ImGui
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/imgui.cpp
 )
-
-if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
-    target_include_directories(ImGui PRIVATE ${DEVKITPRO}/portlibs/switch/include/)
-endif()
 
 target_sources(ImGui
     PRIVATE

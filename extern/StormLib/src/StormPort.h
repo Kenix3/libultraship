@@ -171,35 +171,6 @@
 #endif
 
 //-----------------------------------------------------------------------------
-// Defines for Switch platform
-
-#if !defined(STORMLIB_PLATFORM_DEFINED) && defined(__SWITCH__)
-
-  #include <sys/types.h>
-  #include <sys/stat.h>
-  #include <fcntl.h>
-  #include <unistd.h>
-  #include <stdint.h>
-  #include <stdlib.h>
-  #include <stdio.h>
-  #include <stdarg.h>
-  #include <string.h>
-  #include <strings.h>
-  #include <ctype.h>
-  #include <assert.h>
-  #include <errno.h>
-
-  #ifndef __BIG_ENDIAN__
-    #define STORMLIB_LITTLE_ENDIAN
-  #endif
-
-  #define STORMLIB_MAC                              // Use Mac compatible code
-  #define STORMLIB_SWITCH
-  #define STORMLIB_PLATFORM_DEFINED
-
-#endif
-
-//-----------------------------------------------------------------------------
 // Defines for 3DS platform
 
 #if !defined(STORMLIB_PLATFORM_DEFINED) && defined(__3DS__)
