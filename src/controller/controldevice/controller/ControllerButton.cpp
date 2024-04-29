@@ -170,39 +170,6 @@ bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
                        [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
 
-#ifdef __WIIU__
-bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
-    std::shared_ptr<ControllerButtonMapping> mapping =
-        ButtonMappingFactory::CreateButtonMappingFromWiiUInput(mPortIndex, bitmask);
-
-    if (mapping == nullptr) {
-        return false;
-    }
-
-    if (id != "") {
-        ClearButtonMapping(id);
-    }
-
-    AddButtonMapping(mapping);
-    mapping->SaveToConfig();
-    SaveButtonMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
-    return true;
-}
-
-void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
-    for (auto mapping : ButtonMappingFactory::CreateDefaultWiiUButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
-        AddButtonMapping(mapping);
-    }
-
-    for (auto [id, mapping] : mButtonMappings) {
-        mapping->SaveToConfig();
-    }
-    SaveButtonMappingIdsToConfig();
-}
-#else
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
@@ -270,5 +237,4 @@ void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
     }
     SaveButtonMappingIdsToConfig();
 }
-#endif
 } // namespace Ship

@@ -19,7 +19,7 @@ void ResourceManager::Init(const std::vector<std::string>& otrFiles, const std::
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
     GetArchiveManager()->Init(otrFiles, validHashes);
-#if defined(__SWITCH__) || defined(__WIIU__)
+#if defined(__SWITCH__)
     size_t threadCount = 1;
 #else
     // the extra `- 1` is because we reserve an extra thread for spdlog

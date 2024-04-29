@@ -7,216 +7,18 @@
 #include "ControllerDisconnectedWindow.h"
 #include "ControllerReorderingWindow.h"
 
-#ifdef __WIIU__
-#include "controller/controldevice/controller/mapping/wiiu/WiiUMapping.h"
-#include "port/wiiu/WiiUImpl.h"
-#else
 #include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
-#endif
 
 #include <sstream>
 
 namespace Ship {
 ShipDeviceIndexMappingManager::ShipDeviceIndexMappingManager() : mIsInitialized(false) {
-#ifdef __WIIU__
-    UpdateExtensionTypesFromConfig();
-#else
     UpdateControllerNamesFromConfig();
-#endif
 }
 
 ShipDeviceIndexMappingManager::~ShipDeviceIndexMappingManager() {
 }
 
-#ifdef __WIIU__
-void ShipDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> wiiuDeviceChannels) {
-    mShipDeviceIndexToPhysicalDeviceIndexMappings.clear();
-    uint8_t port = 0;
-    for (auto channel : wiiuDeviceChannels) {
-        // todo: don't just use INT32_MAX to mean gamepad
-        if (channel == INT32_MAX) {
-            InitializeWiiUMappingsForPort(port, true, channel);
-        } else {
-            InitializeWiiUMappingsForPort(port, false, channel);
-        }
-        port++;
-    }
-    mIsInitialized = true;
-    Ship::WiiU::SetControllersInitialized();
-}
-
-void ShipDeviceIndexMappingManager::InitializeWiiUMappingsForPort(uint8_t n64port, bool isGamepad,
-                                                                  int32_t wiiuChannel) {
-    KPADError error;
-    KPADStatus* status = !isGamepad ? Ship::WiiU::GetKPADStatus(static_cast<WPADChan>(wiiuChannel), &error) : nullptr;
-
-    if (!isGamepad && status == nullptr) {
-        return;
-    }
-
-    std::vector<ShipDeviceIndex> matchingLusIndices;
-    auto mappings = GetAllDeviceIndexMappingsFromConfig();
-    for (auto [lusIndex, mapping] : mappings) {
-        auto wiiuMapping = std::dynamic_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(mapping);
-        if (wiiuMapping == nullptr) {
-            continue;
-        }
-
-        if (isGamepad) {
-            if (wiiuMapping->IsWiiUGamepad()) {
-                matchingLusIndices.push_back(lusIndex);
-            }
-            continue;
-        }
-
-        if (wiiuMapping->HasEquivalentExtensionType(status->extensionType)) {
-            matchingLusIndices.push_back(lusIndex);
-        }
-    }
-
-    // set this device to the lowest available lus index with a compatable extension type
-    for (auto lusIndex : matchingLusIndices) {
-        if (GetDeviceIndexMappingFromShipDeviceIndex(lusIndex) != nullptr) {
-            // we already loaded this one
-            continue;
-        }
-
-        auto mapping = mappings[lusIndex];
-        auto wiiuMapping = std::dynamic_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(mapping);
-
-        if (!isGamepad) {
-            wiiuMapping->SetDeviceChannel(wiiuChannel);
-        }
-        SetShipDeviceIndexToPhysicalDeviceIndexMapping(wiiuMapping);
-
-        // if we have mappings for this LUS device on this port, we're good and don't need to move any mappings
-        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->HasMappingsForShipDeviceIndex(
-                lusIndex)) {
-            return;
-        }
-
-        // move mappings from other port to this one
-        for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
-            if (portIndex == n64port) {
-                continue;
-            }
-
-            if (!Context::GetInstance()
-                     ->GetControlDeck()
-                     ->GetControllerByPort(portIndex)
-                     ->HasMappingsForShipDeviceIndex(lusIndex)) {
-                continue;
-            }
-
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->MoveMappingsToDifferentController(
-                Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port), lusIndex);
-            return;
-        }
-
-        // we shouldn't get here
-        return;
-    }
-
-    // if we didn't find a mapping, make defaults
-    auto lusIndex = GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    auto deviceIndexMapping = std::make_shared<ShipDeviceIndexToWiiUDeviceIndexMapping>(
-        lusIndex, wiiuChannel, isGamepad, !isGamepad ? status->extensionType : -1);
-    mShipDeviceIndexToWiiUDeviceTypes[lusIndex] = { isGamepad, !isGamepad ? status->extensionType : -1 };
-    deviceIndexMapping->SaveToConfig();
-    SetShipDeviceIndexToPhysicalDeviceIndexMapping(deviceIndexMapping);
-    SaveMappingIdsToConfig();
-    Context::GetInstance()->GetControlDeck()->GetControllerByPort(n64port)->AddDefaultMappings(lusIndex);
-}
-
-bool ShipDeviceIndexMappingManager::IsValidWiiUExtensionType(int32_t extensionType) {
-    switch (extensionType) {
-        case WPAD_EXT_CORE:
-        case WPAD_EXT_NUNCHUK:
-        case WPAD_EXT_CLASSIC:
-        case WPAD_EXT_MPLUS:
-        case WPAD_EXT_MPLUS_NUNCHUK:
-        case WPAD_EXT_MPLUS_CLASSIC:
-        case WPAD_EXT_PRO_CONTROLLER:
-            return true;
-        default:
-            return false;
-    }
-}
-
-std::shared_ptr<ShipDeviceIndexToPhysicalDeviceIndexMapping>
-ShipDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id) {
-    const std::string mappingCvarKey = "gControllers.DeviceMappings." + id;
-    const std::string mappingClass =
-        CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
-
-    if (mappingClass == "ShipDeviceIndexToWiiUDeviceIndexMapping") {
-        int32_t shipDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
-
-        bool isGamepad = CVarGetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), false);
-
-        int32_t wiiuDeviceChannel =
-            CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceChannel", mappingCvarKey.c_str()).c_str(), -1);
-
-        int32_t wiiuExtensionType =
-            CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), -1);
-
-        if (shipDeviceIndex < 0 || (!isGamepad && !IsValidWiiUExtensionType(wiiuExtensionType))) {
-            // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
-            return nullptr;
-        }
-
-        return std::make_shared<ShipDeviceIndexToWiiUDeviceIndexMapping>(
-            static_cast<ShipDeviceIndex>(shipDeviceIndex), isGamepad, wiiuDeviceChannel, wiiuExtensionType);
-    }
-
-    return nullptr;
-}
-
-void ShipDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
-}
-
-void ShipDeviceIndexMappingManager::UpdateExtensionTypesFromConfig() {
-    // todo: this efficently (when we build out cvar array support?)
-    // i don't expect it to really be a problem with the small number of mappings we have
-    // for each controller (especially compared to include/exclude locations in rando), and
-    // the audio editor pattern doesn't work for this because that looks for ids that are either
-    // hardcoded or provided by an otr file
-    std::stringstream mappingIdsStringStream(CVarGetString("gControllers.DeviceMappingIds", ""));
-    std::string mappingIdString;
-    while (getline(mappingIdsStringStream, mappingIdString, ',')) {
-        const std::string mappingCvarKey = "gControllers.DeviceMappings." + mappingIdString;
-        const std::string mappingClass =
-            CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
-
-        if (mappingClass == "ShipDeviceIndexToWiiUDeviceIndexMapping") {
-            mShipDeviceIndexToWiiUDeviceTypes[static_cast<ShipDeviceIndex>(
-                CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1))] = {
-                CVarGetInteger(StringHelper::Sprintf("%s.IsGamepad", mappingCvarKey.c_str()).c_str(), -1),
-                CVarGetInteger(StringHelper::Sprintf("%s.WiiUDeviceExtensionType", mappingCvarKey.c_str()).c_str(), -1)
-            };
-        }
-    }
-}
-
-std::pair<bool, int32_t> ShipDeviceIndexMappingManager::GetWiiUDeviceTypeFromShipDeviceIndex(ShipDeviceIndex index) {
-    return mShipDeviceIndexToWiiUDeviceTypes[index];
-}
-
-void ShipDeviceIndexMappingManager::HandlePhysicalDevicesChanged() {
-    auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(
-        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
-    if (controllerDisconnectedWindow != nullptr) {
-        // todo: don't use UINT8_MAX-1 to mean we don't know what controller was disconnected
-        controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(UINT8_MAX - 1);
-        controllerDisconnectedWindow->Show();
-    } else {
-        // todo: log error
-    }
-}
-#else
 void ShipDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices) {
     for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
         for (auto mapping :
@@ -762,7 +564,6 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
     // couldn't find one
     return ShipDeviceIndex::Max;
 }
-#endif
 
 ShipDeviceIndex ShipDeviceIndexMappingManager::GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
     for (uint8_t lusIndex = ShipDeviceIndex::Blue; lusIndex < ShipDeviceIndex::Max; lusIndex++) {

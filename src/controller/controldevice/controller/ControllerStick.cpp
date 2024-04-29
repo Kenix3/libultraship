@@ -120,21 +120,7 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
                                               std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
-#ifdef __WIIU__
-void ControllerStick::AddDefaultMappings(ShipDeviceIndex lusIndex) {
-    for (auto mapping :
-         AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
-        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
-    }
 
-    for (auto [direction, directionMappings] : mAxisDirectionMappings) {
-        for (auto [id, mapping] : directionMappings) {
-            mapping->SaveToConfig();
-        }
-    }
-    SaveAxisDirectionMappingIdsToConfig();
-}
-#else
 void ControllerStick::AddDefaultMappings(ShipDeviceIndex lusIndex) {
     for (auto mapping :
          AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
@@ -155,7 +141,6 @@ void ControllerStick::AddDefaultMappings(ShipDeviceIndex lusIndex) {
     }
     SaveAxisDirectionMappingIdsToConfig();
 }
-#endif
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
     auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(mPortIndex, mStick, id);
@@ -277,28 +262,6 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     y = copysign(uy, sy);
 }
 
-#ifdef __WIIU__
-bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
-    std::shared_ptr<ControllerAxisDirectionMapping> mapping =
-        AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(mPortIndex, mStick, direction);
-
-    if (mapping == nullptr) {
-        return false;
-    }
-
-    if (id != "") {
-        ClearAxisDirectionMapping(direction, id);
-    }
-
-    AddAxisDirectionMapping(direction, mapping);
-    mapping->SaveToConfig();
-    SaveAxisDirectionMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
-    return true;
-}
-#else
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
@@ -331,7 +294,6 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     CVarSave();
     return true;
 }
-#endif
 
 std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction,
                                                                                              std::string id) {
@@ -351,7 +313,6 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
     Process(x, y);
 }
 
-#ifndef __WIIU__
 bool ControllerStick::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
     if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
         mKeyboardScancodeForNewMapping = scancode;
@@ -372,7 +333,6 @@ bool ControllerStick::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::Kb
     }
     return result;
 }
-#endif
 
 void ControllerStick::SetSensitivity(uint8_t sensitivityPercentage) {
     mSensitivityPercentage = sensitivityPercentage;
