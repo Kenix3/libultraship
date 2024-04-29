@@ -1627,19 +1627,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             if (clampS) {
                 buf_vbo[buf_vbo_len++] = (tex_width2[t] - 0.5f) / tex_width[t];
             }
-#ifdef __WIIU__
-            else {
-                buf_vbo[buf_vbo_len++] = 0.0f;
-            }
-#endif
+
             if (clampT) {
                 buf_vbo[buf_vbo_len++] = (tex_height2[t] - 0.5f) / tex_height[t];
             }
-#ifdef __WIIU__
-            else {
-                buf_vbo[buf_vbo_len++] = 0.0f;
-            }
-#endif
         }
 
         if (use_fog) {
@@ -1717,12 +1708,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                     buf_vbo[buf_vbo_len++] = color->r / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->g / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->b / 255.0f;
-#ifdef __WIIU__
-                    // padding
-                    if (!use_alpha) {
-                        buf_vbo[buf_vbo_len++] = 1.0f;
-                    }
-#endif
                 } else {
                     if (use_fog && color == &v_arr[i]->color) {
                         // Shade alpha is 100% for fog
@@ -3769,10 +3754,10 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     gfx_current_dimensions.internal_mul = CVarGetFloat("gInternalResolution", 1);
 #endif
     gfx_msaa_level = CVarGetInteger("gMSAAValue", 1);
-#ifndef __WIIU__ // Wii U overrides dimentions in gfx_wapi->init to match framebuffer size
+
     gfx_current_dimensions.width = width;
     gfx_current_dimensions.height = height;
-#endif
+
     game_framebuffer = gfx_rapi->create_framebuffer();
     game_framebuffer_msaa_resolved = gfx_rapi->create_framebuffer();
 

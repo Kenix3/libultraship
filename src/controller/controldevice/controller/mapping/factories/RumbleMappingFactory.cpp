@@ -1,9 +1,5 @@
 #include "RumbleMappingFactory.h"
-#ifdef __WIIU__
-#include "controller/controldevice/controller/mapping/wiiu/WiiURumbleMapping.h"
-#else
 #include "controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h"
-#endif
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
@@ -30,22 +26,6 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
         return nullptr;
     }
 
-#ifdef __WIIU__
-    if (mappingClass == "WiiURumbleMapping") {
-        int32_t shipDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
-
-        if (shipDeviceIndex < 0) {
-            // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
-            return nullptr;
-        }
-
-        return std::make_shared<WiiURumbleMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex,
-                                                   lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
-    }
-#else
     if (mappingClass == "SDLRumbleMapping") {
         int32_t shipDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
@@ -60,127 +40,10 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
         return std::make_shared<SDLRumbleMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex,
                                                   lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
     }
-#endif
 
     return nullptr;
 }
 
-#ifdef __WIIU__
-std::vector<std::shared_ptr<ControllerRumbleMapping>>
-RumbleMappingFactory::CreateDefaultWiiURumbleMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex) {
-    auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(
-        Context::GetInstance()
-            ->GetControlDeck()
-            ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDeviceIndex(shipDeviceIndex));
-    if (wiiuIndexMapping == nullptr) {
-        return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
-    }
-
-    std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<WiiURumbleMapping>(
-        shipDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-        DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
-
-    return mappings;
-}
-
-std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromWiiUInput(uint8_t portIndex) {
-    for (auto [shipDeviceIndex, indexMapping] :
-         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
-
-        if (wiiuIndexMapping == nullptr) {
-            continue;
-        }
-
-        if (wiiuIndexMapping->IsWiiUGamepad()) {
-            VPADReadError verror;
-            VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
-
-            if (vstatus == nullptr || verror != VPAD_READ_SUCCESS) {
-                continue;
-            }
-
-            for (uint32_t i = VPAD_BUTTON_SYNC; i <= VPAD_STICK_L_EMULATION_LEFT; i <<= 1) {
-                if (!(vstatus->hold & i)) {
-                    continue;
-                }
-
-                return std::make_shared<WiiURumbleMapping>(shipDeviceIndex, portIndex,
-                                                           DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                           DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
-            }
-
-            continue;
-        }
-
-        KPADError kerror;
-        KPADStatus* kstatus =
-            Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(wiiuIndexMapping->GetDeviceChannel()), &kerror);
-
-        if (kstatus == nullptr || kerror != KPAD_ERROR_OK) {
-            continue;
-        }
-
-        if (wiiuIndexMapping->GetExtensionType() == WPAD_EXT_PRO_CONTROLLER) {
-            for (uint32_t i = WPAD_PRO_BUTTON_UP; i <= WPAD_PRO_STICK_R_EMULATION_UP; i <<= 1) {
-                if (!(kstatus->pro.hold & i)) {
-                    continue;
-                }
-
-                return std::make_shared<WiiURumbleMapping>(shipDeviceIndex, portIndex,
-                                                           DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                           DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
-            }
-
-            continue;
-        }
-
-        switch (wiiuIndexMapping->GetExtensionType()) {
-            case WPAD_EXT_NUNCHUK:
-            case WPAD_EXT_MPLUS_NUNCHUK:
-                for (auto i : { WPAD_NUNCHUK_STICK_EMULATION_LEFT, WPAD_NUNCHUK_STICK_EMULATION_RIGHT,
-                                WPAD_NUNCHUK_STICK_EMULATION_DOWN, WPAD_NUNCHUK_STICK_EMULATION_UP,
-                                WPAD_NUNCHUK_BUTTON_Z, WPAD_NUNCHUK_BUTTON_C }) {
-                    if (!(kstatus->nunchuck.hold & i)) {
-                        continue;
-                    }
-
-                    return std::make_shared<WiiURumbleMapping>(shipDeviceIndex, portIndex,
-                                                               DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                               DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
-                }
-                break;
-            case WPAD_EXT_CLASSIC:
-            case WPAD_EXT_MPLUS_CLASSIC:
-                for (uint32_t i = WPAD_CLASSIC_BUTTON_UP; i <= WPAD_CLASSIC_STICK_R_EMULATION_UP; i <<= 1) {
-                    if (!(kstatus->classic.hold & i)) {
-                        continue;
-                    }
-
-                    return std::make_shared<WiiURumbleMapping>(shipDeviceIndex, portIndex,
-                                                               DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                               DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
-                }
-                break;
-        }
-
-        for (auto i : { WPAD_BUTTON_LEFT, WPAD_BUTTON_RIGHT, WPAD_BUTTON_DOWN, WPAD_BUTTON_UP, WPAD_BUTTON_PLUS,
-                        WPAD_BUTTON_2, WPAD_BUTTON_1, WPAD_BUTTON_B, WPAD_BUTTON_A, WPAD_BUTTON_MINUS, WPAD_BUTTON_Z,
-                        WPAD_BUTTON_C, WPAD_BUTTON_HOME }) {
-            if (!(kstatus->hold & i)) {
-                continue;
-            }
-
-            return std::make_shared<WiiURumbleMapping>(shipDeviceIndex, portIndex,
-                                                       DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                       DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
-        }
-    }
-
-    return nullptr;
-}
-#else
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
 RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex) {
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
@@ -271,5 +134,4 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 
     return mapping;
 }
-#endif
 } // namespace Ship

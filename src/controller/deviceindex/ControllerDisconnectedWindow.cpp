@@ -3,11 +3,6 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include "Context.h"
-#ifdef __WIIU__
-#include <vpad/input.h>
-#include <padscore/kpad.h>
-#include "port/wiiu/WiiUImpl.h"
-#endif
 
 namespace Ship {
 
@@ -19,7 +14,6 @@ void ControllerDisconnectedWindow::InitElement() {
 }
 
 void ControllerDisconnectedWindow::UpdateElement() {
-#ifndef __WIIU__
     SDL_PumpEvents();
     SDL_Event event;
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEADDED) > 0) {
@@ -35,55 +29,8 @@ void ControllerDisconnectedWindow::UpdateElement() {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceDisconnect(
             event.cdevice.which);
     }
-#endif
 }
 
-#ifdef __WIIU__
-bool ControllerDisconnectedWindow::AnyWiiUDevicesAreConnected() {
-    VPADReadError verror;
-    VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
-
-    if (vstatus != nullptr && verror == VPAD_READ_SUCCESS) {
-        return true;
-    }
-
-    for (uint32_t channel = 0; channel < 4; channel++) {
-        KPADError kerror;
-        KPADStatus* kstatus = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
-
-        if (kstatus != nullptr && kerror == KPAD_ERROR_OK) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-int32_t ControllerDisconnectedWindow::GetWiiUDeviceFromWiiUInput() {
-    VPADReadError verror;
-    VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
-
-    if (vstatus != nullptr && verror == VPAD_READ_SUCCESS) {
-        if (vstatus->hold) {
-            // todo: don't just use INT32_MAX to mean gamepad
-            return INT32_MAX;
-        }
-    }
-
-    for (int32_t channel = 0; channel < 4; channel++) {
-        KPADError kerror;
-        KPADStatus* kstatus = Ship::WiiU::GetKPADStatus(static_cast<KPADChan>(channel), &kerror);
-
-        if (kstatus != nullptr && kerror == KPAD_ERROR_OK) {
-            if (kstatus->hold) {
-                return channel;
-            }
-        }
-    }
-
-    return -1;
-}
-#else
 int32_t ControllerDisconnectedWindow::GetSDLIndexFromSDLInput() {
     int32_t sdlDeviceIndex = -1;
 
@@ -122,9 +69,7 @@ int32_t ControllerDisconnectedWindow::GetSDLIndexFromSDLInput() {
 
     return sdlDeviceIndex;
 }
-#endif
 
-#ifndef __WIIU__
 void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
     ImGui::Text("Controller for port %d disconnected.\nPress any button or move any axis\non an unused controller "
                 "for port %d.",
@@ -166,23 +111,7 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
         Hide();
     }
 }
-#endif
 
-#ifdef __WIIU__
-void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected() {
-    ImGui::Text("Connected controller(s) have been added/removed/modified.");
-
-    if (AnyWiiUDevicesAreConnected() && ImGui::Button("Reorder controllers###reorderControllersButton")) {
-        auto reorderingWindow = Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering");
-        if (reorderingWindow != nullptr) {
-            mPortIndexOfDisconnectedController = UINT8_MAX;
-            ImGui::CloseCurrentPopup();
-            reorderingWindow->Show();
-            Hide();
-        }
-    }
-}
-#else
 void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected() {
     ImGui::Text("Controller(s) disconnected.");
 
@@ -203,22 +132,7 @@ void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected(
         Hide();
     }
 }
-#endif
 
-#ifdef __WIIU__
-void ControllerDisconnectedWindow::DrawElement() {
-    // todo: don't use UINT8_MAX to mean we don't have a disconnected controller
-    if (mPortIndexOfDisconnectedController == UINT8_MAX) {
-        return;
-    }
-
-    ImGui::OpenPopup("Connected Controllers Changed");
-    if (ImGui::BeginPopupModal("Connected Controllers Changed", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        DrawUnknownOrMultipleControllersDisconnected();
-        ImGui::EndPopup();
-    }
-}
-#else
 void ControllerDisconnectedWindow::DrawElement() {
     // todo: don't use UINT8_MAX to mean we don't have a disconnected controller
     if (mPortIndexOfDisconnectedController == UINT8_MAX) {
@@ -236,7 +150,6 @@ void ControllerDisconnectedWindow::DrawElement() {
         ImGui::EndPopup();
     }
 }
-#endif
 
 void ControllerDisconnectedWindow::SetPortIndexOfDisconnectedController(uint8_t portIndex) {
     // todo: don't use UINT8_MAX to mean we don't have a disconnected controller

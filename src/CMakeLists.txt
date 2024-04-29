@@ -36,15 +36,6 @@ target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
 file(GLOB_RECURSE Source_Files__Controller RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "controller/*.h" "controller/*.cpp")
 
-if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/controldevice/controller/mapping/keyboard/*")
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/controldevice/controller/mapping/sdl/*")
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.*")
-else()
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/controldevice/controller/mapping/wiiu/*")
-    list(FILTER Source_Files__Controller EXCLUDE REGEX "controller/deviceindex/ShipDeviceIndexToWiiUDeviceIndexMapping.*")
-endif()
-
 source_group("controller" FILES ${Source_Files__Controller})
 target_sources(libultraship PRIVATE ${Source_Files__Controller})
 
@@ -120,12 +111,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Utils__BinaryTools})
 
 #=================== Port ===================
 
-if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    set(Source_Files__Port
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUImpl.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/port/wiiu/WiiUImpl.cpp
-    )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
     set(Source_Files__Port
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchImpl.h
         ${CMAKE_CURRENT_SOURCE_DIR}/port/switch/SwitchImpl.cpp
@@ -175,14 +161,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_opengl*")
 endif()
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_wiiu*")
-    list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gx2*")
-else()
-    list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_opengl*")
-    list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_sdl*")
-endif()
-
 source_group("graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
@@ -192,19 +170,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
 endif()
 
-#=================== STB ===================
-# hack: no idea why wii u doesn't want to link this when we build it
-#       as a separate static lib
-if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    set(Source_Files__Lib__stb
-        "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_image_write.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb/stb_impl.c"
-    )
-    source_group("extern/stb" FILES ${Source_Files__Lib__stb})
-    target_sources(libultraship PRIVATE ${Source_Files__Lib__stb})
-endif()
-
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
@@ -212,15 +177,9 @@ target_include_directories(libultraship
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb ${ADDITIONAL_LIB_INCLUDES}
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_include_directories(${PROJECT_NAME} PRIVATE
-        ${DEVKITPRO}/portlibs/wiiu/include/
-    )
-endif()
-
 #=================== Linking ===================
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS" AND NOT CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(libultraship PUBLIC "$<LINK_LIBRARY:WHOLE_ARCHIVE,storm>")
 else()
     target_link_libraries(libultraship PUBLIC storm)
@@ -230,11 +189,7 @@ target_link_libraries(libultraship
     PUBLIC ZAPDUtils ImGui tinyxml2
 )
 
-# hack cont.: wii u just includes these files, everyone
-#             else handles linking it just fine
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_link_libraries(libultraship PRIVATE stb)
-endif()
+target_link_libraries(libultraship PRIVATE stb)
 
 if (GFX_DEBUG_DISASSEMBLER)
     target_link_libraries(libultraship PRIVATE libgfxd)
@@ -287,16 +242,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     )
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_compile_definitions(libultraship PRIVATE
-        $<$<CONFIG:Debug>:_DEBUG>
-        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        SPDLOG_NO_THREAD_ID
-        SPDLOG_NO_TLS
-        STBI_NO_THREAD_LOCALS
-        SPDLOG_ACTIVE_LEVEL=3
-    )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_compile_definitions(libultraship PRIVATE
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>

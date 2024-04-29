@@ -215,7 +215,7 @@ void GameOverlay::Draw() {
             const float duration = overlay.duration / overlay.fadeTime;
 
             const ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, duration);
-#if defined(__WIIU__) || defined(__ANDROID__)
+#ifdef __ANDROID__
             const float textWidth = GetStringWidth(overlay.Value.c_str()) * 2.0f;
             const float textOffset = 40.0f * 2.0f;
 #else

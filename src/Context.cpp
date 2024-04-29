@@ -15,8 +15,6 @@
 #include "utils/AppleFolderManager.h"
 #elif defined(__SWITCH__)
 #include "port/switch/SwitchImpl.h"
-#elif defined(__WIIU__)
-#include "port/wiiu/WiiUImpl.h"
 #endif
 
 namespace Ship {
@@ -100,7 +98,7 @@ void Context::InitLogging() {
         spdlog::init_thread_pool(8192, 1);
         std::vector<spdlog::sink_ptr> sinks;
 
-#if (!defined(_WIN32) && !defined(__WIIU__)) || defined(_DEBUG)
+#if (!defined(_WIN32)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
         // LLVM on Windows allocs a hidden console in its entrypoint function.
         // We free that console here to create our own.
@@ -137,7 +135,6 @@ void Context::InitLogging() {
         sinks.push_back(systemConsoleSink);
 #endif
 
-#ifndef __WIIU__
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
@@ -146,7 +143,6 @@ void Context::InitLogging() {
         fileSink->set_level(spdlog::level::debug);
 #endif
         sinks.push_back(fileSink);
-#endif
 
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
@@ -160,11 +156,7 @@ void Context::InitLogging() {
         GetLogger()->flush_on(spdlog::level::trace);
 #endif
 
-#ifndef __WIIU__
         GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
-#else
-        GetLogger()->set_pattern("[%s:%#] [%l] %v");
-#endif
 
         spdlog::register_logger(GetLogger());
         spdlog::set_default_logger(GetLogger());
@@ -210,8 +202,6 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     if (!GetResourceManager()->DidLoadSuccessfully()) {
 #if defined(__SWITCH__)
         printf("Main OTR file not found!\n");
-#elif defined(__WIIU__)
-        Ship::WiiU::ThrowMissingOTR(mMainPath.c_str());
 #else
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);

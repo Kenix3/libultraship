@@ -1,7 +1,5 @@
 #include "LEDMappingFactory.h"
-#ifndef __WIIU__
 #include "controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h"
-#endif
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
@@ -10,7 +8,6 @@
 
 namespace Ship {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
-#ifndef __WIIU__
     const std::string mappingCvarKey = "gControllers.LEDMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -41,12 +38,10 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
         return std::make_shared<SDLLEDMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, colorSource,
                                                savedColor);
     }
-#endif
 
     return nullptr;
 }
 
-#ifndef __WIIU__
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
     std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllersWithLEDs;
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
@@ -111,5 +106,4 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
 
     return mapping;
 }
-#endif
 } // namespace Ship

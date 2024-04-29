@@ -8,8 +8,6 @@
 #include "graphic/Fast3D/gfx_dxgi.h"
 #include "graphic/Fast3D/gfx_opengl.h"
 #include "graphic/Fast3D/gfx_metal.h"
-#include "graphic/Fast3D/gfx_gx2.h"
-#include "graphic/Fast3D/gfx_wiiu.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
@@ -19,8 +17,6 @@
 #include "utils/AppleFolderManager.h"
 #elif defined(__SWITCH__)
 #include "port/switch/SwitchImpl.h"
-#elif defined(__WIIU__)
-#include "port/wiiu/WiiUImpl.h"
 #endif
 
 namespace Ship {
@@ -86,20 +82,15 @@ void Window::Init() {
         mAvailableWindowBackends->push_back(WindowBackend::SDL_METAL);
     }
 #endif
-#ifdef __WIIU__
-    mAvailableWindowBackends->push_back(WindowBackend::GX2);
-#else
     mAvailableWindowBackends->push_back(WindowBackend::SDL_OPENGL);
-#endif
 
     InitWindowManager();
 
     gfx_init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,
              mHeight, mPosX, mPosY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
-#ifndef __WIIU__
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
-#endif
+
     SetTextureFilter((FilteringMode)CVarGetInteger("gTextureFilter", FILTER_THREE_POINT));
 }
 
@@ -144,7 +135,6 @@ void Window::MainLoop(void (*mainFunction)(void)) {
     mWindowManagerApi->main_loop(mainFunction);
 }
 
-#ifndef __WIIU__
 bool Window::KeyUp(int32_t scancode) {
     if (scancode == Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", KbScancode::LUS_KB_F11)) {
         Context::GetInstance()->GetWindow()->ToggleFullscreen();
@@ -167,7 +157,6 @@ void Window::AllKeysUp(void) {
     Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
                                                                    KbScancode::LUS_KB_UNKNOWN);
 }
-#endif
 
 void Window::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
@@ -241,12 +230,6 @@ void Window::InitWindowManager() {
         case WindowBackend::SDL_METAL:
             mRenderingApi = &gfx_metal_api;
             mWindowManagerApi = &gfx_sdl;
-            break;
-#endif
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            mRenderingApi = &gfx_gx2_api;
-            mWindowManagerApi = &gfx_wiiu;
             break;
 #endif
         default:
