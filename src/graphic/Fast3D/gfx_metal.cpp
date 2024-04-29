@@ -1194,7 +1194,12 @@ void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t heigh
     MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
     MTL::Size thread_group_count = MTL::Size::Make(width, height, 1);
 
-    compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    // We validate if the device supports non-uniform threadgroup sizes
+    if (mctx.non_uniform_threadgroup_supported) {
+        compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    } else {
+        compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
+    }
     compute_encoder->endEncoding();
 
     // Use a completion handler to wait for the GPU to be done without blocking the thread
