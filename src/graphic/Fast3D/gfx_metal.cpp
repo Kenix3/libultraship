@@ -1064,7 +1064,7 @@ gfx_metal_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
     MTL::Size thread_group_count = MTL::Size::Make(coordinates.size(), 1, 1);
 
     // We validate if the device supports non-uniform threadgroup sizes
-    if(mctx.non_uniform_threadgroup_supported){
+    if (mctx.non_uniform_threadgroup_supported) {
         compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
     } else {
         compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
