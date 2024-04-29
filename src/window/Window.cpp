@@ -84,7 +84,6 @@ void Window::Init() {
 #endif
     mAvailableWindowBackends->push_back(WindowBackend::SDL_OPENGL);
 
-
     InitWindowManager();
 
     gfx_init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), mIsFullscreen, mWidth,

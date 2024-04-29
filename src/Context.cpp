@@ -135,7 +135,6 @@ void Context::InitLogging() {
         sinks.push_back(systemConsoleSink);
 #endif
 
-
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
@@ -144,7 +143,6 @@ void Context::InitLogging() {
         fileSink->set_level(spdlog::level::debug);
 #endif
         sinks.push_back(fileSink);
-
 
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
