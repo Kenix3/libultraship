@@ -205,8 +205,8 @@ bool Metal_NonUniformThreadGroupSupported() {
     // iOS devices with A11 or later support dispatch threads
     return mctx.device->supportsFamily(MTL::GPUFamilyApple4);
 #else
-    // We assume that all macOS devices support dispatch threads for now
-    return true;
+    // macOS devices with Metal 2 support dispatch threads
+    return mctx.device->supportsFamily(MTL::GPUFamilyMac2);
 #endif
 }
 
