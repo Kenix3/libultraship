@@ -1,3 +1,5 @@
+include(../cmake/cvars.cmake)
+
 add_library(libultraship STATIC)
 set_target_properties(libultraship PROPERTIES PREFIX "")
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)

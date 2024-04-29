@@ -13,7 +13,7 @@
 namespace LUS {
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromConfig(uint8_t portIndex,
                                                                                        std::string id) {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".GyroMappings." + id;
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "");
 

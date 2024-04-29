@@ -48,7 +48,7 @@ std::string LUSDeviceIndexToSDLDeviceIndexMapping::GetSDLControllerName() {
 }
 
 void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".DeviceMappings." + GetMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),
                   "LUSDeviceIndexToSDLDeviceIndexMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(), mLUSDeviceIndex);
@@ -65,7 +65,7 @@ void LUSDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
 }
 
 void LUSDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".DeviceMappings." + GetMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + GetMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());

@@ -319,7 +319,7 @@ void ConsoleWindow::DrawElement() {
         mLog[mCurrentChannel].clear();
     }
 
-    if (CVarGetInteger(CVAR_SINK_ENABLED, 0)) {
+    if (CVarGetInteger("gSinkEnabled", 0)) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(150);
         if (ImGui::BeginCombo("##channel", mCurrentChannel.c_str())) {

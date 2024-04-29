@@ -13,7 +13,7 @@
 namespace LUS {
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromConfig(uint8_t portIndex,
                                                                                              std::string id) {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".RumbleMappings." + id;
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
 

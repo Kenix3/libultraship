@@ -142,7 +142,7 @@ bool LUSDeviceIndexMappingManager::IsValidWiiUExtensionType(int32_t extensionTyp
 
 std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>
 LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id) {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".DeviceMappings." + id;
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
@@ -181,10 +181,10 @@ void LUSDeviceIndexMappingManager::UpdateExtensionTypesFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_BLOCK_CONTROLLERS ".DeviceMappingIds", ""));
+    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_PREFIX_CONTROLLERS ".DeviceMappingIds", ""));
     std::string mappingIdString;
     while (getline(mappingIdsStringStream, mappingIdString, ',')) {
-        const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".DeviceMappings." + mappingIdString;
+        const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + mappingIdString;
         const std::string mappingClass =
             CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
@@ -320,7 +320,7 @@ void LUSDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port,
 
 std::shared_ptr<LUSDeviceIndexToPhysicalDeviceIndexMapping>
 LUSDeviceIndexMappingManager::CreateDeviceIndexMappingFromConfig(std::string id) {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".DeviceMappings." + id;
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
@@ -387,10 +387,10 @@ void LUSDeviceIndexMappingManager::UpdateControllerNamesFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_BLOCK_CONTROLLERS ".DeviceMappingIds", ""));
+    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_PREFIX_CONTROLLERS ".DeviceMappingIds", ""));
     std::string mappingIdString;
     while (getline(mappingIdsStringStream, mappingIdString, ',')) {
-        const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".DeviceMappings." + mappingIdString;
+        const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + mappingIdString;
         const std::string mappingClass =
             CVarGetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
@@ -784,7 +784,7 @@ void LUSDeviceIndexMappingManager::SaveMappingIdsToConfig() {
     // todo: this efficently (when we build out cvar array support?)
 
     std::set<std::string> ids;
-    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_BLOCK_CONTROLLERS ".DeviceMappingIds", ""));
+    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_PREFIX_CONTROLLERS ".DeviceMappingIds", ""));
     std::string mappingIdString;
     while (getline(mappingIdsStringStream, mappingIdString, ',')) {
         ids.insert(mappingIdString);
@@ -801,9 +801,9 @@ void LUSDeviceIndexMappingManager::SaveMappingIdsToConfig() {
     }
 
     if (mappingIdListString == "") {
-        CVarClear(CVAR_BLOCK_CONTROLLERS ".DeviceMappingIds");
+        CVarClear(CVAR_PREFIX_CONTROLLERS ".DeviceMappingIds");
     } else {
-        CVarSetString(CVAR_BLOCK_CONTROLLERS ".DeviceMappingIds", mappingIdListString.c_str());
+        CVarSetString(CVAR_PREFIX_CONTROLLERS ".DeviceMappingIds", mappingIdListString.c_str());
     }
 
     CVarSave();
@@ -818,7 +818,7 @@ LUSDeviceIndexMappingManager::GetAllDeviceIndexMappingsFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_BLOCK_CONTROLLERS ".DeviceMappingIds", ""));
+    std::stringstream mappingIdsStringStream(CVarGetString(CVAR_PREFIX_CONTROLLERS ".DeviceMappingIds", ""));
     std::string mappingIdString;
     while (getline(mappingIdsStringStream, mappingIdString, ',')) {
         auto mapping = CreateDeviceIndexMappingFromConfig(mappingIdString);

@@ -26,7 +26,7 @@ std::string KeyboardKeyToAxisDirectionMapping::GetAxisDirectionMappingId() {
 }
 
 void KeyboardKeyToAxisDirectionMapping::SaveToConfig() {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
@@ -36,7 +36,7 @@ void KeyboardKeyToAxisDirectionMapping::SaveToConfig() {
 }
 
 void KeyboardKeyToAxisDirectionMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());

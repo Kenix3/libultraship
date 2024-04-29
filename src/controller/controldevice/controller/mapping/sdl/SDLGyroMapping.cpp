@@ -50,7 +50,7 @@ std::string SDLGyroMapping::GetGyroMappingId() {
 }
 
 void SDLGyroMapping::SaveToConfig() {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
     CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
@@ -64,7 +64,7 @@ void SDLGyroMapping::SaveToConfig() {
 }
 
 void SDLGyroMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = CVAR_BLOCK_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
