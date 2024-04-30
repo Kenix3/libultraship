@@ -16,10 +16,10 @@ jobs:
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.11
       with:
-        key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+        key: ${{ runner.os }}-mac-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-ccache-${{ github.ref }}
-          ${{ runner.os }}-ccache-
+          ${{ runner.os }}-mac-ccache-${{ github.ref }}
+          ${{ runner.os }}-mac-ccache-
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -38,10 +38,10 @@ jobs:
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.11
       with:
-        key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+        key: ${{ runner.os }}-ios-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-ccache-${{ github.ref }}
-          ${{ runner.os }}-ccache-
+          ${{ runner.os }}-ios-ccache-${{ github.ref }}
+          ${{ runner.os }}-ios-ccache-
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
