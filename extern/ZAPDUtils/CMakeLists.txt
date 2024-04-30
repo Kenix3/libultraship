@@ -24,7 +24,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE tinyxml2)
+find_package(tinyxml2 REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE tinyxml2::tinyxml2)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")

@@ -36,9 +36,7 @@ class ControllerButton {
 
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
-#ifndef __WIIU__
     bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
-#endif
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 

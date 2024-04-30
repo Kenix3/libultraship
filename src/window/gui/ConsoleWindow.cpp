@@ -423,11 +423,7 @@ void ConsoleWindow::DrawElement() {
         constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackEdit |
                                               ImGuiInputTextFlags_CallbackCompletion |
                                               ImGuiInputTextFlags_CallbackHistory;
-#ifdef __WIIU__
-        ImGui::PushItemWidth(-53.0f * 2.0f);
-#else
         ImGui::PushItemWidth(-53.0f);
-#endif
         if (ImGui::InputTextWithHint("##CMDInput", ">", mInputBuffer, gMaxBufferSize, flags,
                                      &ConsoleWindow::CallbackStub, this)) {
             inputFocus = true;
@@ -450,11 +446,8 @@ void ConsoleWindow::DrawElement() {
         }
 
         ImGui::SameLine();
-#ifdef __WIIU__
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - 50 * 2.0f);
-#else
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - 50);
-#endif
+
         if (ImGui::Button("Submit") && !inputFocus && mInputBuffer[0] != '\0' && mInputBuffer[0] != ' ') {
             Dispatch(std::string(mInputBuffer));
             memset(mInputBuffer, 0, gMaxBufferSize);

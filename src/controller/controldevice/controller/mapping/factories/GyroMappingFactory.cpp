@@ -1,9 +1,5 @@
 #include "GyroMappingFactory.h"
-#ifdef __WIIU__
-#include "controller/controldevice/controller/mapping/wiiu/WiiUGyroMapping.h"
-#else
 #include "controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h"
-#endif
 #include "public/bridge/consolevariablebridge.h"
 #include <Utils/StringHelper.h>
 #include "libultraship/libultra/controller.h"
@@ -24,27 +20,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         CVarSave();
         return nullptr;
     }
-#ifdef __WIIU__
-    if (mappingClass == "WiiUGyroMapping") {
-        int32_t shipDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (shipDeviceIndex < 0) {
-            // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
-            return nullptr;
-        }
-
-        float neutralPitch =
-            CVarGetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), 0.0f);
-        float neutralYaw = CVarGetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
-        float neutralRoll = CVarGetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
-
-        return std::make_shared<WiiUGyroMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, sensitivity,
-                                                 neutralPitch, neutralYaw, neutralRoll);
-    }
-#else
     if (mappingClass == "SDLGyroMapping") {
         int32_t shipDeviceIndex =
             CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
@@ -64,41 +40,10 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         return std::make_shared<SDLGyroMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, sensitivity,
                                                 neutralPitch, neutralYaw, neutralRoll);
     }
-#endif
-    return nullptr;
-}
-
-#ifdef __WIIU__
-std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromWiiUInput(uint8_t portIndex) {
-    for (auto [lusIndex, indexMapping] :
-         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto wiiuIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToWiiUDeviceIndexMapping>(indexMapping);
-
-        if (wiiuIndexMapping == nullptr) {
-            continue;
-        }
-
-        if (wiiuIndexMapping->IsWiiUGamepad()) {
-            VPADReadError verror;
-            VPADStatus* vstatus = Ship::WiiU::GetVPADStatus(&verror);
-
-            if (vstatus == nullptr || verror != VPAD_READ_SUCCESS) {
-                continue;
-            }
-
-            for (uint32_t i = VPAD_BUTTON_SYNC; i <= VPAD_STICK_L_EMULATION_LEFT; i <<= 1) {
-                if (!(vstatus->hold & i)) {
-                    continue;
-                }
-
-                return std::make_shared<WiiUGyroMapping>(lusIndex, portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
-            }
-        }
-    }
 
     return nullptr;
 }
-#else
+
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromSDLInput(uint8_t portIndex) {
     std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllersWithGyro;
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
@@ -165,5 +110,4 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
 
     return mapping;
 }
-#endif
 } // namespace Ship

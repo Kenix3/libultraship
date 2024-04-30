@@ -225,9 +225,6 @@ WindowBackend Config::GetWindowBackend() {
 #ifdef ENABLE_DX11
     return WindowBackend::DX11;
 #endif
-#ifdef __WIIU__
-    return WindowBackend::GX2;
-#endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
         return WindowBackend::SDL_METAL;

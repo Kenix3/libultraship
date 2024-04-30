@@ -173,7 +173,6 @@ void Controller::ReadToPad(OSContPad* pad) {
     }
 }
 
-#ifndef __WIIU__
 bool Controller::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
     bool result = false;
     for (auto [bitmask, button] : GetAllButtons()) {
@@ -183,7 +182,6 @@ bool Controller::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScanc
     result = GetRightStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     return result;
 }
-#endif
 
 bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {

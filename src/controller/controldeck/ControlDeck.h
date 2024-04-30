@@ -26,9 +26,7 @@ class ControlDeck {
     void SetSinglePlayerMappingMode(bool singlePlayer);
     bool IsSinglePlayerMappingMode();
 
-#ifndef __WIIU__
     bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
-#endif
 
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 

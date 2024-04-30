@@ -31,9 +31,6 @@
 #elif __APPLE__
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
-#elif __SWITCH__
-#include <SDL2/SDL.h>
-#include <glad/glad.h>
 #elif USE_OPENGLES
 #include <SDL2/SDL.h>
 #include <GLES3/gl3.h>
@@ -752,7 +749,7 @@ static void gfx_opengl_upload_texture(const uint8_t* rgba32_buf, uint32_t width,
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
 }
 
-#if defined(__SWITCH__) || defined(USE_OPENGLES)
+#ifdef USE_OPENGLES
 #define GL_MIRROR_CLAMP_TO_EDGE 0x8743
 #endif
 
@@ -847,7 +844,7 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
 }
 
 static void gfx_opengl_init(void) {
-#if !defined(__SWITCH__) && !defined(__linux__)
+#ifndef __linux__
     glewInit();
 #endif
 

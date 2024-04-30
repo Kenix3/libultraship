@@ -26,10 +26,6 @@ void StatsWindow::DrawElement() {
     ImGui::Text("Platform: iOS");
 #elif defined(__APPLE__)
     ImGui::Text("Platform: macOS");
-#elif defined(__SWITCH__)
-    ImGui::Text("Platform: Nintendo Switch");
-#elif defined(__WIIU__)
-    ImGui::Text("Platform: Nintendo Wii U");
 #elif defined(__linux__)
     ImGui::Text("Platform: Linux");
 #else

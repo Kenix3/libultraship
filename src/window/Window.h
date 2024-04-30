@@ -57,11 +57,9 @@ class Window {
     void SaveWindowSizeToConfig(std::shared_ptr<Config> conf);
 
   private:
-#ifndef __WIIU__
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp(void);
-#endif
     static void OnFullscreenChanged(bool isNowFullscreen);
 
     std::shared_ptr<Gui> mGui;
