@@ -35,16 +35,18 @@ jobs:
     runs-on: macos-12
     steps:
     - uses: actions/checkout@v2
-    - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2.11
+    - name: Cache build folder
+      uses: actions/cache@v4
       with:
-        key: ${{ runner.os }}-ios-ccache-${{ github.ref }}-${{ github.sha }}
+        save-always: true
+        key: ${{ runner.os }}-ios-build-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-ios-ccache-${{ github.ref }}
-          ${{ runner.os }}-ios-ccache-
+          ${{ runner.os }}-ios-build-${{ github.ref }}
+          ${{ runner.os }}-ios-build-
+        path: |
+          build-cmake
     - name: Build libultraship
       run: |
-        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
         cmake --build build-cmake --config Release --parallel 10
     - name: Upload build
@@ -111,9 +113,24 @@ jobs:
         Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
     - uses: actions/checkout@v2
     - name: ccache
-      uses: dcvz/ccache-action@27b9f33213c0079872f064f6b6ba0233dfa16ba2
+      uses: hendrikmuhs/ccache-action@v1.2.11
       with:
-        key: ${{ runner.os }}-ccache
+        variant: sccache
+        key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-${{ github.ref }}
+          ${{ runner.os }}-ccache-
+    - name: Cache build folder
+      uses: actions/cache@v4
+      with:
+        save-always: true
+        key: ${{ runner.os }}-build-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ github.ref }}
+          ${{ runner.os }}-build-
+        path: |
+          build-cmake
+          D:/a/vcpkg
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
     - name: Build libultraship
@@ -121,10 +138,10 @@ jobs:
         VCPKG_ROOT: D:/a/vcpkg
       run: |
         set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
-        cmake --no-warn-unused-cli -S. -Bbuild-cmake -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64
+        cmake --no-warn-unused-cli -S. -Bbuild-cmake -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64
         cmake --build build-cmake --config Release --parallel 10
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-windows
         path: build-cmake/src/**/*.lib
