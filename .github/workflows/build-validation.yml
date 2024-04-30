@@ -31,7 +31,7 @@ jobs:
         name: soh-mac
         path: build-cmake/src/*.a
         if-no-files-found: error
-  build-ios:
+  build-ios: 
     runs-on: macos-12
     steps:
     - uses: actions/checkout@v2
