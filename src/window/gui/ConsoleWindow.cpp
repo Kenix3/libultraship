@@ -5,7 +5,6 @@
 #include <Utils/StringHelper.h>
 #include "utils/Utils.h"
 #include <sstream>
-#include <algorithm>
 
 namespace Ship {
 
