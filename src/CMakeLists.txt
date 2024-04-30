@@ -72,7 +72,7 @@ file(GLOB Source_Files__Log RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "log/*.h" "log/
 
 source_group("log" FILES ${Source_Files__Log})
 
-target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
+target_sources(libultraship PRIVATE ${Source_Files__Log})
 
 #=================== Window ===================
 
