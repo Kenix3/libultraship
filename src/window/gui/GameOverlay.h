@@ -12,10 +12,6 @@
 
 namespace Ship {
 
-#ifndef CVAR_GAME_OVERLAY_FONT
-#define CVAR_GAME_OVERLAY_FONT "gOverlayFont"
-#endif
-
 enum class OverlayType { TEXT, IMAGE, NOTIFICATION };
 
 struct Overlay {
