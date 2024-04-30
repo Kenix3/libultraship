@@ -126,7 +126,7 @@ jobs:
           ${{ runner.os }}-build-${{ github.ref }}
           ${{ runner.os }}-build-
         path: |
-          build-windows
+          build-cmake
           vcpkg
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
