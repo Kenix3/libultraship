@@ -30,6 +30,8 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     include(cmake/dependencies/ios.cmake)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     include(cmake/dependencies/windows.cmake)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    include(cmake/dependencies/mac.cmake)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
