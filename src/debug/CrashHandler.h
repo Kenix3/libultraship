@@ -13,6 +13,10 @@
 #include <SDL.h>
 #endif
 
+#if _WIN32
+#include <windows.h>
+#endif
+
 namespace Ship {
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 

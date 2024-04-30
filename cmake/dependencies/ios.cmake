@@ -1,7 +1,8 @@
+include(FetchContent)
+
 #=================== SDL2 ===================
 find_package(SDL2 QUIET)
 if (NOT ${SDL2_FOUND})
-    include(FetchContent)
     FetchContent_Declare(
         SDL2
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
@@ -34,6 +35,18 @@ if (NOT ${tinyxml2_FOUND})
         OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(tinyxml2)
+endif()
+
+#=================== spdlog ===================
+find_package(spdlog QUIET)
+if (NOT ${spdlog_FOUND})
+    FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.14.1
+        OVERRIDE_FIND_PACKAGE
+    )
+    FetchContent_MakeAvailable(spdlog)
 endif()
 
 #=================== libzip ===================

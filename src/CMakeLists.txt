@@ -74,7 +74,7 @@ file(GLOB Source_Files__Log RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "log/*.h" "log/
 
 source_group("log" FILES ${Source_Files__Log})
 
-target_sources(libultraship PRIVATE ${Source_Files__Log} ${Source_Files__Log__SPDLog})
+target_sources(libultraship PRIVATE ${Source_Files__Log})
 
 #=================== Window ===================
 
@@ -170,7 +170,7 @@ endif()
 
 target_include_directories(libultraship
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR} $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:${CMAKE_CURRENT_SOURCE_DIR}/../../ZAPDTR/lib/libgfxd>
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb ${ADDITIONAL_LIB_INCLUDES}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb ${ADDITIONAL_LIB_INCLUDES}
 )
 
 #=================== Linking ===================
@@ -199,6 +199,9 @@ target_link_libraries(libultraship PUBLIC nlohmann_json::nlohmann_json)
 
 find_package(tinyxml2 REQUIRED)
 target_link_libraries(libultraship PUBLIC tinyxml2::tinyxml2)
+
+find_package(spdlog REQUIRED)
+target_link_libraries(libultraship PUBLIC spdlog::spdlog)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -232,6 +235,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         _CONSOLE
         _CRT_SECURE_NO_WARNINGS
         ENABLE_DX11
+        NOMINMAX
     )
 endif()
 
