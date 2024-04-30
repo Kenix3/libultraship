@@ -9,10 +9,10 @@ jobs:
   build-macos:
     runs-on: macos-12
     steps:
+    - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        brew install sdl2 libpng glew ninja libzip nlohmann-json tinyxml2 spdlog
-    - uses: actions/checkout@v2
+        brew install $(cat .github/workflows/brew-deps.txt)
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.11
       with:
@@ -59,7 +59,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build nlohmann-json3-dev libtinyxml2-dev libspdlog-dev
+        sudo apt-get install -y $(cat .github/workflows/apt-deps.txt)
     - uses: actions/checkout@v2
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.11
