@@ -14,9 +14,12 @@ jobs:
         brew install sdl2 libpng glew ninja libzip nlohmann-json
     - uses: actions/checkout@v2
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.11
       with:
-        key: ${{ runner.os }}-ccache
+        key: ${{ runner.os }}-mac-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-mac-ccache-${{ github.ref }}
+          ${{ runner.os }}-mac-ccache-
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -33,9 +36,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.11
       with:
-        key: ${{ runner.os }}-ccache
+        key: ${{ runner.os }}-ios-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-ios-ccache-${{ github.ref }}
+          ${{ runner.os }}-ios-ccache-
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -56,9 +62,12 @@ jobs:
         sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build nlohmann-json3-dev
     - uses: actions/checkout@v2
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.11
       with:
-        key: ${{ runner.os }}-ccache
+        key: ${{ matrix.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ matrix.os }}-ccache-${{ github.ref }}
+          ${{ matrix.os }}-ccache-
     - name: Install latest SDL
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
