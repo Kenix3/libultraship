@@ -48,7 +48,7 @@ std::string ShipDeviceIndexToSDLDeviceIndexMapping::GetSDLControllerName() {
 }
 
 void ShipDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),
                   "ShipDeviceIndexToSDLDeviceIndexMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), mShipDeviceIndex);
@@ -65,7 +65,7 @@ void ShipDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
 }
 
 void ShipDeviceIndexToSDLDeviceIndexMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.DeviceMappings." + GetMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + GetMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());

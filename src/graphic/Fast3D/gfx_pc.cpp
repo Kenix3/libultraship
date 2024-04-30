@@ -3751,9 +3751,9 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 #ifdef __APPLE__
     gfx_current_dimensions.internal_mul = 1;
 #else
-    gfx_current_dimensions.internal_mul = CVarGetFloat("gInternalResolution", 1);
+    gfx_current_dimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
 #endif
-    gfx_msaa_level = CVarGetInteger("gMSAAValue", 1);
+    gfx_msaa_level = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
     gfx_current_dimensions.width = width;
     gfx_current_dimensions.height = height;
