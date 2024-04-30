@@ -1,3 +1,5 @@
+include(FetchContent)
+
 #=================== spdlog ===================
 # macports has issues with this because of fmt
 # brew doesn't support building multiarch
