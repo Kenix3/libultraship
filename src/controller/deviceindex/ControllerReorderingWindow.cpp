@@ -78,7 +78,7 @@ void ControllerReorderingWindow::DrawElement() {
     }
 
     // we have more than one controller, prompt the user for order
-    if (static_cast<size_t>(mCurrentPortNumber) <= std::min(connectedSdlControllerIndices.size(), static_cast<size_t>(MAXCONTROLLERS))) {
+    if (mCurrentPortNumber <= std::min(connectedSdlControllerIndices.size(), static_cast<size_t>(MAXCONTROLLERS))) {
         ImGui::OpenPopup("Set Controller");
         if (ImGui::BeginPopupModal("Set Controller", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Press any button or move any axis\non the controller for port %d", mCurrentPortNumber);

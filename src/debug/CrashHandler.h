@@ -14,7 +14,7 @@
 #endif
 
 #if _WIN32
-#include <winnt.h>
+#include <windows.h>
 #endif
 
 namespace Ship {
