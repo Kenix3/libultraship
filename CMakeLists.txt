@@ -18,7 +18,6 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_compile_definitions(NOMINMAX)
 endif()
 
 include(cmake/Utils.cmake)
