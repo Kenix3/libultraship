@@ -1,11 +1,5 @@
 find_package(OpenGL QUIET)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-    find_package(SDL2 CONFIG REQUIRED)
-elseif (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
-    find_package(SDL2 REQUIRED)
-endif()
-
 #=================== DrLibs ===================
 
 set(DRLIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dr_libs)
@@ -23,73 +17,6 @@ if((CMAKE_SYSTEM_NAME MATCHES "Windows") AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES
     get_filename_component(LIBDIR "${CLANG_RT_BUILTINS_LIBRARY}" DIRECTORY)
     if(IS_DIRECTORY "${LIBDIR}")
         target_link_libraries(storm ${CLANG_RT_BUILTINS_LIBRARY})
-    endif()
-endif()
-
-#=================== ImGui ===================
-
-set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ImGui)
-add_library(ImGui STATIC)
-set_property(TARGET ImGui PROPERTY CXX_STANDARD 20)
-
-target_sources(ImGui
-    PRIVATE
-    ${IMGUI_DIR}/imgui_demo.cpp
-    ${IMGUI_DIR}/imgui_draw.cpp
-    ${IMGUI_DIR}/imgui_tables.cpp
-    ${IMGUI_DIR}/imgui_widgets.cpp
-    ${IMGUI_DIR}/imgui.cpp
-)
-
-target_sources(ImGui
-    PRIVATE
-    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-    ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
-)
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_sources(ImGui
-        PRIVATE
-        ${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_win32.cpp
-    )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    target_sources(ImGui
-        PRIVATE
-        ${IMGUI_DIR}/backends/imgui_impl_metal.mm
-    )
-endif()
-
-target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/metal-cpp)
-    target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
-endif()
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    target_link_libraries(ImGui PUBLIC SDL2::SDL2-static SDL2::SDL2main)
-else()
-    target_link_libraries(ImGui PUBLIC SDL2::SDL2)
-endif()
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    find_package(GLEW REQUIRED)
-    target_link_libraries(ImGui PUBLIC opengl32 GLEW::GLEW)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    find_package(GLEW REQUIRED)
-    target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
-    set_target_properties(ImGui PROPERTIES
-        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
-    )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    if (USE_OPENGLES)
-        target_link_libraries(ImGui PUBLIC ${OPENGL_GLESv2_LIBRARY})
-        add_compile_definitions(IMGUI_IMPL_OPENGL_ES3)
-    else()
-        target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY})
     endif()
 endif()
 
