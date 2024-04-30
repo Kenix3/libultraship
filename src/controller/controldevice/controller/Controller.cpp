@@ -70,7 +70,8 @@ uint8_t Controller::GetPortIndex() {
 }
 
 bool Controller::HasConfig() {
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     return CVarGetInteger(hasConfigCvarKey.c_str(), false);
 }
 
@@ -108,7 +109,8 @@ void Controller::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
     GetLeftStick()->AddDefaultMappings(shipDeviceIndex);
     GetRumble()->AddDefaultMappings(shipDeviceIndex);
 
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
 }
@@ -142,7 +144,7 @@ void Controller::ReadToPad(OSContPad* pad) {
     mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
         auto& padFromBuffer =
-            mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger("gSimulatedInputLag", 0))];
+            mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
 
         pad->button |= padFromBuffer.button;
 

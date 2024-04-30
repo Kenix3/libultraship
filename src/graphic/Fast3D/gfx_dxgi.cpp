@@ -353,8 +353,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            CVarSetString("gDroppedFile", fileName);
-            CVarSetInteger("gNewFileDropped", 1);
+            CVarSetString(CVAR_DROPPED_FILE, fileName);
+            CVarSetInteger(CVAR_NEW_FILE_DROPPED, 1);
             CVarSave();
             break;
         case WM_DISPLAYCHANGE:
@@ -667,9 +667,9 @@ static bool gfx_dxgi_start_frame(void) {
     // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
-    if (dxgi.is_vsync_enabled != CVarGetInteger("gVsyncEnabled", 1)) {
+    if (dxgi.is_vsync_enabled != CVarGetInteger(CVAR_VSYNC_ENABLED, 1)) {
         // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
-        dxgi.is_vsync_enabled = !!CVarGetInteger("gVsyncEnabled", 1);
+        dxgi.is_vsync_enabled = !!CVarGetInteger(CVAR_VSYNC_ENABLED, 1);
     }
     dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
     return true;

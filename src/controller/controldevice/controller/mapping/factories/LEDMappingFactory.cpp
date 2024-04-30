@@ -8,7 +8,7 @@
 
 namespace Ship {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
-    const std::string mappingCvarKey = "gControllers.LEDMappings." + id;
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + id;
     const std::string mappingClass =
         CVarGetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
