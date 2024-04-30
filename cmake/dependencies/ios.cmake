@@ -23,6 +23,18 @@ if (NOT ${nlohmann_json_FOUND})
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
+#=================== tinyxml2 ===================
+find_package(tinyxml2 QUIET)
+if (NOT ${tinyxml2_FOUND})
+    FetchContent_Declare(
+        tinyxml2
+        GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
+        GIT_TAG 10.0.0
+        OVERRIDE_FIND_PACKAGE
+    )
+    FetchContent_MakeAvailable(tinyxml2)
+endif()
+
 #=================== libzip ===================
 find_package(libzip QUIET)
 if (NOT ${libzip_FOUND})
