@@ -11,7 +11,7 @@ jobs:
     steps:
     - name: Install dependencies
       run: |
-        brew install sdl2 libpng glew ninja libzip nlohmann-json
+        brew install sdl2 libpng glew ninja libzip nlohmann-json tinyxml2
     - uses: actions/checkout@v2
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.11
@@ -59,7 +59,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build nlohmann-json3-dev
+        sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build nlohmann-json3-dev libtinyxml2-dev
     - uses: actions/checkout@v2
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.11
@@ -76,6 +76,17 @@ jobs:
         cd SDL2-2.24.1
         ./configure
         make -j 10
+        sudo make install
+    - name: Install latest tinyxml2
+      run: |
+        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+        wget https://github.com/leethomason/tinyxml2/archive/refs/tags/10.0.0.tar.gz
+        tar -xzf 10.0.0.tar.gz
+        cd tinyxml2-10.0.0
+        mkdir build
+        cd build
+        cmake ..
+        make
         sudo make install
     - name: Build libultraship
       run: |
