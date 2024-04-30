@@ -38,14 +38,14 @@ jobs:
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.11
       with:
+        create-symlink: true
         key: ${{ runner.os }}-ios-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-ios-ccache-${{ github.ref }}
           ${{ runner.os }}-ios-ccache-
     - name: Build libultraship
       run: |
-        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
-        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCLANG=clang -DCLANGPLUSPLUS=clang++ -DLD=clang -DLDPLUSPLUS=clang++ -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
+        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
         cmake --build build-cmake --config Release --parallel 10
     - name: Upload build
       uses: actions/upload-artifact@v3
@@ -118,6 +118,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ccache-${{ github.ref }}
           ${{ runner.os }}-ccache-
+    - name: Cache build folder
+      uses: actions/cache@v4
+      with:
+        save-always: true
+        key: ${{ runner.os }}-build-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ github.ref }}
+          ${{ runner.os }}-build-
+        path: |
+          build-windows
+          vcpkg
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
     - name: Build libultraship
