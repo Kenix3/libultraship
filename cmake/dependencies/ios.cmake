@@ -26,6 +26,7 @@ endif()
 #=================== tinyxml2 ===================
 find_package(tinyxml2 QUIET)
 if (NOT ${tinyxml2_FOUND})
+    set(tinyxml2_BUILD_TESTING OFF)
     FetchContent_Declare(
         tinyxml2
         GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
