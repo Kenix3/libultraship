@@ -35,14 +35,13 @@ jobs:
     runs-on: macos-12
     steps:
     - uses: actions/checkout@v2
-    - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2.11
+    - name: cache
+      uses: irgaly/xcode-cache@v1
       with:
-        create-symlink: true
-        key: ${{ runner.os }}-ios-ccache-${{ github.ref }}-${{ github.sha }}
+        key: ${{ runner.os }}-ios-cache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-ios-ccache-${{ github.ref }}
-          ${{ runner.os }}-ios-ccache-
+          ${{ runner.os }}-ios-cache-${{ github.ref }}
+          ${{ runner.os }}-ios-cache-
     - name: Build libultraship
       run: |
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
