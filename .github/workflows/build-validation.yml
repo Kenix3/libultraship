@@ -139,7 +139,7 @@ jobs:
         cmake --build build-cmake --config Release --parallel 10
     - name: Upload build
       uses: actions/upload-artifact@v4
-      with: 
+      with:
         name: soh-windows
         path: build-cmake/src/**/*.lib
         if-no-files-found: error
