@@ -88,8 +88,8 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
         }
 
         const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
-            CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, stickToConfigStickName[mStick].c_str(),
-            directionToConfigDirectionName[direction].c_str());
+            CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1,
+            stickToConfigStickName[mStick].c_str(), directionToConfigDirectionName[direction].c_str());
         if (axisDirectionMappingIdListString == "") {
             CVarClear(axisDirectionMappingIdsCvarKey.c_str());
         } else {
@@ -162,8 +162,8 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     for (auto direction : { LEFT, RIGHT, UP, DOWN }) {
         const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
-            CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, stickToConfigStickName[mStick].c_str(),
-            directionToConfigDirectionName[direction].c_str());
+            CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1,
+            stickToConfigStickName[mStick].c_str(), directionToConfigDirectionName[direction].c_str());
 
         std::stringstream axisDirectionMappingIdsStringStream(
             CVarGetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
@@ -173,18 +173,18 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
         }
     }
 
-    SetSensitivity(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
-                                                        stickToConfigStickName[mStick].c_str())
+    SetSensitivity(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage",
+                                                        mPortIndex + 1, stickToConfigStickName[mStick].c_str())
                                       .c_str(),
                                   DEFAULT_STICK_SENSITIVITY_PERCENTAGE));
 
-    SetDeadzone(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
-                                                     stickToConfigStickName[mStick].c_str())
+    SetDeadzone(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage",
+                                                     mPortIndex + 1, stickToConfigStickName[mStick].c_str())
                                    .c_str(),
                                DEFAULT_STICK_DEADZONE_PERCENTAGE));
 
-    SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                                           stickToConfigStickName[mStick].c_str())
+    SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle",
+                                                           mPortIndex + 1, stickToConfigStickName[mStick].c_str())
                                          .c_str(),
                                      0));
 }
@@ -289,7 +289,8 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     AddAxisDirectionMapping(direction, mapping);
     mapping->SaveToConfig();
     SaveAxisDirectionMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;

@@ -246,9 +246,10 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_SetWindowPosition(wnd, posX, posY);
         SDL_SetWindowSize(wnd, window_width, window_height);
     }
-    if (SDL_SetWindowFullscreen(wnd, on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
-                                                                                       : SDL_WINDOW_FULLSCREEN)
-                                        : 0) >= 0) {
+    if (SDL_SetWindowFullscreen(wnd,
+                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                                                                      : SDL_WINDOW_FULLSCREEN)
+                                   : 0) >= 0) {
         fullscreen_state = on;
     } else {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
