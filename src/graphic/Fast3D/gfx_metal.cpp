@@ -164,6 +164,7 @@ static struct {
     int8_t depth_test;
     int8_t depth_mask;
     int8_t zmode_decal;
+    bool non_uniform_threadgroup_supported;
 } mctx;
 
 // MARK: - Helpers
@@ -199,6 +200,16 @@ bool Metal_IsSupported() {
 #endif
 }
 
+bool Metal_NonUniformThreadGroupSupported() {
+#ifdef __IOS__
+    // iOS devices with A11 or later support dispatch threads
+    return mctx.device->supportsFamily(MTL::GPUFamilyApple4);
+#else
+    // macOS devices with Metal 2 support dispatch threads
+    return mctx.device->supportsFamily(MTL::GPUFamilyMac2);
+#endif
+}
+
 bool Metal_Init(SDL_Renderer* renderer) {
     mctx.renderer = renderer;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
@@ -216,6 +227,7 @@ bool Metal_Init(SDL_Renderer* renderer) {
     }
 
     autorelease_pool->release();
+    mctx.non_uniform_threadgroup_supported = Metal_NonUniformThreadGroupSupported();
 
     return ImGui_ImplMetal_Init(mctx.device);
 }
@@ -1051,7 +1063,13 @@ gfx_metal_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
     MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
     MTL::Size thread_group_count = MTL::Size::Make(coordinates.size(), 1, 1);
 
-    compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    // We validate if the device supports non-uniform threadgroup sizes
+    if (mctx.non_uniform_threadgroup_supported) {
+        compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    } else {
+        compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
+    }
+
     compute_encoder->endEncoding();
 
     command_buffer->commit();
@@ -1176,7 +1194,12 @@ void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t heigh
     MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
     MTL::Size thread_group_count = MTL::Size::Make(width, height, 1);
 
-    compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    // We validate if the device supports non-uniform threadgroup sizes
+    if (mctx.non_uniform_threadgroup_supported) {
+        compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    } else {
+        compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
+    }
     compute_encoder->endEncoding();
 
     // Use a completion handler to wait for the GPU to be done without blocking the thread
