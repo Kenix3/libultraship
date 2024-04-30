@@ -8,7 +8,7 @@
 
 class BinaryReader;
 
-namespace LUS {
+namespace Ship {
 
 class BinaryReader {
   public:
@@ -45,4 +45,4 @@ class BinaryReader {
     std::shared_ptr<Stream> mStream;
     Endianness mEndianness = Endianness::Native;
 };
-} // namespace LUS
+} // namespace Ship

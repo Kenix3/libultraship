@@ -18,7 +18,7 @@
 #include "controller/controldevice/ControlDevice.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
-namespace LUS {
+namespace Ship {
 
 class Controller : public ControlDevice {
   public:
@@ -33,8 +33,8 @@ class Controller : public ControlDevice {
     void Disconnect();
 
     void ClearAllMappings();
-    void ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
-    void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
+    void ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex);
+    void AddDefaultMappings(ShipDeviceIndex shipDeviceIndex);
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> GetAllButtons();
     std::shared_ptr<ControllerButton> GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask);
     std::shared_ptr<ControllerButton> GetButton(CONTROLLERBUTTONS_T bitmask);
@@ -48,12 +48,10 @@ class Controller : public ControlDevice {
     uint8_t GetPortIndex();
     std::vector<std::shared_ptr<ControllerMapping>> GetAllMappings();
 
-#ifndef __WIIU__
-    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
-#endif
+    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
 
-    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
-    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, LUSDeviceIndex lusIndex);
+    bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
+    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceIndex lusIndex);
 
   private:
     void LoadButtonMappingFromConfig(std::string id);
@@ -67,4 +65,4 @@ class Controller : public ControlDevice {
 
     std::deque<OSContPad> mPadBuffer;
 };
-} // namespace LUS
+} // namespace Ship

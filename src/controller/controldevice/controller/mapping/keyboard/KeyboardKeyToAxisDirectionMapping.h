@@ -1,7 +1,7 @@
 #include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "KeyboardKeyToAnyMapping.h"
 
-namespace LUS {
+namespace Ship {
 class KeyboardKeyToAxisDirectionMapping final : public KeyboardKeyToAnyMapping, public ControllerAxisDirectionMapping {
   public:
     KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick, Direction direction, KbScancode scancode);
@@ -11,4 +11,4 @@ class KeyboardKeyToAxisDirectionMapping final : public KeyboardKeyToAnyMapping, 
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };
-} // namespace LUS
+} // namespace Ship

@@ -1,8 +1,8 @@
 #include "ResourceFactoryXML.h"
 #include "spdlog/spdlog.h"
 
-namespace LUS {
-bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<File> file) {
+namespace Ship {
+bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<Ship::File> file) {
     if (file->InitData->Format != RESOURCE_FORMAT_XML) {
         SPDLOG_ERROR("resource file format does not match factory format.");
         return false;
@@ -16,4 +16,4 @@ bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<File> file)
 
     return true;
 };
-} // namespace LUS
+} // namespace Ship

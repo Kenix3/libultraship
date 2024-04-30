@@ -7,7 +7,7 @@
 #include "endianness.h"
 #include "Stream.h"
 
-namespace LUS {
+namespace Ship {
 class BinaryWriter {
   public:
     BinaryWriter();
@@ -42,4 +42,4 @@ class BinaryWriter {
     std::shared_ptr<Stream> mStream;
     Endianness mEndianness = Endianness::Native;
 };
-} // namespace LUS
+} // namespace Ship

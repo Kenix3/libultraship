@@ -20,7 +20,7 @@
 #define M_TAU 2 * M_PI
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
-namespace LUS {
+namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
     : mPortIndex(portIndex), mStick(stick), mUseKeydownEventToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN) {
@@ -46,11 +46,11 @@ void ControllerStick::ClearAllMappings() {
     SetNotchSnapAngle(0);
 }
 
-void ControllerStick::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
+void ControllerStick::ClearAllMappingsForDevice(ShipDeviceIndex lusIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
-            if (mapping->GetLUSDeviceIndex() == lusIndex) {
+            if (mapping->GetShipDeviceIndex() == lusIndex) {
                 mapping->EraseFromConfig();
                 mappingIdsToRemove.push_back(id);
             }
@@ -120,28 +120,14 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
                                               std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
-#ifdef __WIIU__
-void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
-    for (auto mapping :
-         AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
-        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
-    }
 
-    for (auto [direction, directionMappings] : mAxisDirectionMappings) {
-        for (auto [id, mapping] : directionMappings) {
-            mapping->SaveToConfig();
-        }
-    }
-    SaveAxisDirectionMappingIdsToConfig();
-}
-#else
-void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
+void ControllerStick::AddDefaultMappings(ShipDeviceIndex lusIndex) {
     for (auto mapping :
          AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
         AddAxisDirectionMapping(mapping->GetDirection(), mapping);
     }
 
-    if (lusIndex == LUSDeviceIndex::Keyboard) {
+    if (lusIndex == ShipDeviceIndex::Keyboard) {
         for (auto mapping :
              AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
@@ -155,7 +141,6 @@ void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
     }
     SaveAxisDirectionMappingIdsToConfig();
 }
-#endif
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
     auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(mPortIndex, mStick, id);
@@ -277,28 +262,6 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     y = copysign(uy, sy);
 }
 
-#ifdef __WIIU__
-bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
-    std::shared_ptr<ControllerAxisDirectionMapping> mapping =
-        AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(mPortIndex, mStick, direction);
-
-    if (mapping == nullptr) {
-        return false;
-    }
-
-    if (id != "") {
-        ClearAxisDirectionMapping(direction, id);
-    }
-
-    AddAxisDirectionMapping(direction, mapping);
-    mapping->SaveToConfig();
-    SaveAxisDirectionMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
-    return true;
-}
-#else
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
@@ -331,7 +294,6 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     CVarSave();
     return true;
 }
-#endif
 
 std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction,
                                                                                              std::string id) {
@@ -351,8 +313,7 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
     Process(x, y);
 }
 
-#ifndef __WIIU__
-bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
+bool ControllerStick::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
     if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
         mKeyboardScancodeForNewMapping = scancode;
         return true;
@@ -372,7 +333,6 @@ bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbSc
     }
     return result;
 }
-#endif
 
 void ControllerStick::SetSensitivity(uint8_t sensitivityPercentage) {
     mSensitivityPercentage = sensitivityPercentage;
@@ -439,12 +399,12 @@ bool ControllerStick::NotchSnapAngleIsDefault() {
     return mNotchSnapAngle == DEFAULT_NOTCH_SNAP_ANGLE;
 }
 
-bool ControllerStick::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerStick::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     return std::any_of(mAxisDirectionMappings.begin(), mAxisDirectionMappings.end(),
                        [lusIndex](const auto& directionMappings) {
                            return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
                                               [lusIndex](const auto& mappingPair) {
-                                                  return mappingPair.second->GetLUSDeviceIndex() == lusIndex;
+                                                  return mappingPair.second->GetShipDeviceIndex() == lusIndex;
                                               });
                        });
 }
@@ -457,4 +417,4 @@ ControllerStick::GetAllAxisDirectionMappings() {
 Stick ControllerStick::LeftOrRightStick() {
     return mStick;
 }
-} // namespace LUS
+} // namespace Ship

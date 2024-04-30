@@ -12,7 +12,7 @@
 #include <set>
 #include "controller/controldevice/controller/Controller.h"
 
-namespace LUS {
+namespace Ship {
 
 class InputEditorWindow : public GuiWindow {
   public:
@@ -66,17 +66,17 @@ class InputEditorWindow : public GuiWindow {
     void UpdateBitmaskToMappingIds(uint8_t port);
     void UpdateStickDirectionToMappingIds(uint8_t port);
 
-    void GetButtonColorsForLUSDeviceIndex(LUSDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
+    void GetButtonColorsForShipDeviceIndex(ShipDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
     void DrawPortTab(uint8_t portIndex);
     void DrawDevicesTab();
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
     void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks);
-    void DrawAnalogStickDeviceIcons(uint8_t portIndex, LUS::Stick stick);
+    void DrawAnalogStickDeviceIcons(uint8_t portIndex, Ship::Stick stick);
     void DrawRumbleDeviceIcons(uint8_t portIndex);
     void DrawGyroDeviceIcons(uint8_t portIndex);
     void DrawLEDDeviceIcons(uint8_t portIndex);
     bool mInputEditorPopupOpen;
     void DrawSetDefaultsButton(uint8_t portIndex);
 };
-} // namespace LUS
+} // namespace Ship

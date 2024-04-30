@@ -7,7 +7,7 @@
 
 #include "controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
-namespace LUS {
+namespace Ship {
 ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -61,10 +61,10 @@ void ControllerLED::ClearAllMappings() {
     SaveLEDMappingIdsToConfig();
 }
 
-void ControllerLED::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
+void ControllerLED::ClearAllMappingsForDevice(ShipDeviceIndex lusIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mLEDMappings) {
-        if (mapping->GetLUSDeviceIndex() == lusIndex) {
+        if (mapping->GetShipDeviceIndex() == lusIndex) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -109,23 +109,6 @@ std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> Controlle
     return mLEDMappings;
 }
 
-#ifdef __WIIU__
-bool ControllerLED::AddLEDMappingFromRawPress() {
-    return false;
-    // std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
-
-    // mapping = LEDMappingFactory::CreateLEDMappingFromSDLInput(mPortIndex);
-
-    // if (mapping == nullptr) {
-    //     return false;
-    // }
-
-    // AddLEDMapping(mapping);
-    // mapping->SaveToConfig();
-    // SaveLEDMappingIdsToConfig();
-    // return true;
-}
-#else
 bool ControllerLED::AddLEDMappingFromRawPress() {
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
@@ -143,10 +126,9 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
     CVarSave();
     return true;
 }
-#endif
 
-bool ControllerLED::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerLED::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     return std::any_of(mLEDMappings.begin(), mLEDMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
+                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
-} // namespace LUS
+} // namespace Ship

@@ -1,8 +1,8 @@
 #include "Resource.h"
 #include <spdlog/spdlog.h>
 
-namespace LUS {
-IResource::IResource(std::shared_ptr<ResourceInitData> initData) : mInitData(initData) {
+namespace Ship {
+IResource::IResource(std::shared_ptr<Ship::ResourceInitData> initData) : mInitData(initData) {
 }
 
 IResource::~IResource() {
@@ -17,7 +17,7 @@ void IResource::Dirty() {
     mIsDirty = true;
 }
 
-std::shared_ptr<ResourceInitData> IResource::GetInitData() {
+std::shared_ptr<Ship::ResourceInitData> IResource::GetInitData() {
     return mInitData;
 }
-} // namespace LUS
+} // namespace Ship

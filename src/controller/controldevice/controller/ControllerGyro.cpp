@@ -4,7 +4,7 @@
 #include <Utils/StringHelper.h>
 #include "controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
 
-namespace LUS {
+namespace Ship {
 ControllerGyro::ControllerGyro(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -19,25 +19,6 @@ void ControllerGyro::SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mappi
     mGyroMapping = mapping;
 }
 
-#ifdef __WIIU__
-bool ControllerGyro::SetGyroMappingFromRawPress() {
-    std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
-
-    mapping = GyroMappingFactory::CreateGyroMappingFromWiiUInput(mPortIndex);
-
-    if (mapping == nullptr) {
-        return false;
-    }
-
-    SetGyroMapping(mapping);
-    mapping->SaveToConfig();
-    SaveGyroMappingIdToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
-    return true;
-}
-#else
 bool ControllerGyro::SetGyroMappingFromRawPress() {
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
 
@@ -55,7 +36,6 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     CVarSave();
     return true;
 }
-#endif
 
 void ControllerGyro::UpdatePad(float& x, float& y) {
     if (mGyroMapping == nullptr) {
@@ -103,11 +83,11 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     SaveGyroMappingIdToConfig();
 }
 
-bool ControllerGyro::HasMappingForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerGyro::HasMappingForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     if (mGyroMapping == nullptr) {
         return false;
     }
 
-    return mGyroMapping->GetLUSDeviceIndex() == lusIndex;
+    return mGyroMapping->GetShipDeviceIndex() == lusIndex;
 }
-} // namespace LUS
+} // namespace Ship

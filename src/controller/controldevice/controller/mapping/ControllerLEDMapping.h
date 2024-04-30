@@ -5,7 +5,7 @@
 #include "ControllerMapping.h"
 #include "libultraship/color.h"
 
-namespace LUS {
+namespace Ship {
 
 #define LED_COLOR_SOURCE_OFF 0
 #define LED_COLOR_SOURCE_SET 1
@@ -13,7 +13,8 @@ namespace LUS {
 
 class ControllerLEDMapping : public ControllerMapping {
   public:
-    ControllerLEDMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
+    ControllerLEDMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+                         Color_RGB8 savedColor);
     ~ControllerLEDMapping();
 
     void SetColorSource(uint8_t colorSource);
@@ -32,4 +33,4 @@ class ControllerLEDMapping : public ControllerMapping {
     uint8_t mColorSource;
     Color_RGB8 mSavedColor;
 };
-} // namespace LUS
+} // namespace Ship

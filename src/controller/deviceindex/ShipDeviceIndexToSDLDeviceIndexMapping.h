@@ -2,16 +2,17 @@
 
 #include <cstdint>
 #include <string>
-#include "LUSDeviceIndexToPhysicalDeviceIndexMapping.h"
+#include "ShipDeviceIndexToPhysicalDeviceIndexMapping.h"
 
-namespace LUS {
+namespace Ship {
 
-class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDeviceIndexMapping {
+class ShipDeviceIndexToSDLDeviceIndexMapping : public ShipDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    LUSDeviceIndexToSDLDeviceIndexMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlDeviceIndex,
-                                          std::string sdlJoystickGuid, std::string sdlControllerName,
-                                          int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage);
-    ~LUSDeviceIndexToSDLDeviceIndexMapping();
+    ShipDeviceIndexToSDLDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlDeviceIndex,
+                                           std::string sdlJoystickGuid, std::string sdlControllerName,
+                                           int32_t stickAxisThresholdPercentage,
+                                           int32_t triggerAxisThresholdPercentage);
+    ~ShipDeviceIndexToSDLDeviceIndexMapping();
     std::string GetJoystickGUID();
     std::string GetSDLControllerName();
 
@@ -34,4 +35,4 @@ class LUSDeviceIndexToSDLDeviceIndexMapping : public LUSDeviceIndexToPhysicalDev
     int32_t mStickAxisThresholdPercentage;
     int32_t mTriggerAxisThresholdPercentage;
 };
-} // namespace LUS
+} // namespace Ship

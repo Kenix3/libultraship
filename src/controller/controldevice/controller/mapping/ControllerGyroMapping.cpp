@@ -1,8 +1,8 @@
 #include "ControllerGyroMapping.h"
 
-namespace LUS {
-ControllerGyroMapping::ControllerGyroMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, float sensitivity)
-    : ControllerInputMapping(lusDeviceIndex), mPortIndex(portIndex), mSensitivity(sensitivity) {
+namespace Ship {
+ControllerGyroMapping::ControllerGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity)
+    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mSensitivity(sensitivity) {
     mSensitivityPercent = mSensitivity * 100;
 }
 
@@ -34,4 +34,4 @@ bool ControllerGyroMapping::SensitivityIsDefault() {
 void ControllerGyroMapping::SetPortIndex(uint8_t portIndex) {
     mPortIndex = portIndex;
 }
-} // namespace LUS
+} // namespace Ship

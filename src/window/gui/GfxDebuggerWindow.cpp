@@ -130,7 +130,7 @@ static inline void* seg_addr(uintptr_t w1) {
 
 // static int s_dbgcnt = 0;
 void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& gfx_path) const {
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
 
     auto node_with_text = [dbg, this, &gfx_path](const Gfx* cmd, const std::string& text,
                                                  const Gfx* sub = nullptr) mutable {
@@ -251,7 +251,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                 node_with_text(cmd0, fmt::format("G_SETTIMG_OTR_HASH: {}", name));
 
                 // std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-                //     LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
+                //     Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
                 cmd++;
                 break;
             }
@@ -365,7 +365,7 @@ static bool bpEquals(const std::vector<const Gfx*>& x, const std::vector<const G
 
 void GfxDebuggerWindow::DrawDisas() {
 
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
     auto dlist = dbg->GetDisplayList();
     ImGui::Text("dlist: %p", dlist);
     std::string bp = "";
@@ -383,7 +383,7 @@ void GfxDebuggerWindow::DrawDisas() {
     std::string TO_LOAD_TEX = "GfxDebuggerWindowTextureToLoad";
 
     const Gfx* cmd = dlist;
-    auto gui = LUS::Context::GetInstance()->GetWindow()->GetGui();
+    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
 
     ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
     {
@@ -486,7 +486,7 @@ void GfxDebuggerWindow::DrawDisas() {
 }
 
 void GfxDebuggerWindow::DrawElement() {
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
 
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
     ImGui::Begin("GFX Debugger", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);

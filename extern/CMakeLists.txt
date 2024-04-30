@@ -25,9 +25,6 @@ if((CMAKE_SYSTEM_NAME MATCHES "Windows") AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES
         target_link_libraries(storm ${CLANG_RT_BUILTINS_LIBRARY})
     endif()
 endif()
-if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
-    target_compile_definitions(storm PRIVATE -D_POSIX_C_SOURCE=200809L)
-endif()
 
 #=================== ImGui ===================
 
@@ -44,17 +41,11 @@ target_sources(ImGui
     ${IMGUI_DIR}/imgui.cpp
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
-    target_include_directories(ImGui PRIVATE ${DEVKITPRO}/portlibs/switch/include/)
-endif()
-
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_sources(ImGui
-        PRIVATE
-        ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
-    )
-endif()
+target_sources(ImGui
+    PRIVATE
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
+)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_sources(ImGui
@@ -62,30 +53,24 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         ${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
         ${IMGUI_DIR}/backends/imgui_impl_win32.cpp
     )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_sources(ImGui
         PRIVATE
         ${IMGUI_DIR}/backends/imgui_impl_metal.mm
-    )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_sources(ImGui
-        PRIVATE
-        ${IMGUI_DIR}/backends/wiiu/imgui_impl_wiiu.cpp
-        ${IMGUI_DIR}/backends/wiiu/imgui_impl_gx2.cpp
     )
 endif()
 
 target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/metal-cpp)
     target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
-    target_link_libraries(ImGui PUBLIC SDL2::SDL2-static)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    target_link_libraries(ImGui PUBLIC SDL2::SDL2-static SDL2::SDL2main)
 else()
     target_link_libraries(ImGui PUBLIC SDL2::SDL2)
 endif()
@@ -97,7 +82,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_package(GLEW REQUIRED)
     target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY} GLEW::GLEW)
     set_target_properties(ImGui PROPERTIES
-        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES 
+        XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if (USE_OPENGLES)

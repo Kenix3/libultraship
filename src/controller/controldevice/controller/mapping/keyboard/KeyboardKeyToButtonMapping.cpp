@@ -4,11 +4,11 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-namespace LUS {
+namespace Ship {
 KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                        KbScancode scancode)
-    : ControllerInputMapping(LUSDeviceIndex::Keyboard),
-      ControllerButtonMapping(LUSDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
+    : ControllerInputMapping(ShipDeviceIndex::Keyboard),
+      ControllerButtonMapping(ShipDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
 }
 
 void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
@@ -49,4 +49,4 @@ void KeyboardKeyToButtonMapping::EraseFromConfig() {
 
     CVarSave();
 }
-} // namespace LUS
+} // namespace Ship

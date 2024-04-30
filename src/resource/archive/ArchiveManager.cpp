@@ -7,14 +7,10 @@
 #include "resource/archive/OtrArchive.h"
 #include "resource/archive/O2rArchive.h"
 #include "Utils/StringHelper.h"
+#include "utils/glob.h"
 #include <StrHash64.h>
 
-// TODO: Delete me and find an implementation
-// Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
-// NOLINTNEXTLINE
-extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
-
-namespace LUS {
+namespace Ship {
 ArchiveManager::ArchiveManager() {
 }
 
@@ -40,8 +36,8 @@ bool ArchiveManager::IsArchiveLoaded() {
     return !mArchives.empty();
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath,
-                                               std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<Ship::File> ArchiveManager::LoadFile(const std::string& filePath,
+                                                     std::shared_ptr<Ship::ResourceInitData> initData) {
     if (filePath == "") {
         return nullptr;
     }
@@ -49,7 +45,7 @@ std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath,
     return LoadFile(CRC64(filePath.c_str()), initData);
 }
 
-std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<Ship::File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<Ship::ResourceInitData> initData) {
     const auto archive = mFileToArchive[hash];
     if (archive == nullptr) {
         return nullptr;
@@ -72,9 +68,8 @@ std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::s
     auto list = ListFiles();
     auto result = std::make_shared<std::vector<std::string>>();
 
-    std::copy_if(list->begin(), list->end(), std::back_inserter(*result), [filter](const std::string& filePath) {
-        return SFileCheckWildCard(filePath.c_str(), filter.c_str());
-    });
+    std::copy_if(list->begin(), list->end(), std::back_inserter(*result),
+                 [filter](const std::string& filePath) { return glob_match(filter.c_str(), filePath.c_str()); });
 
     return result;
 }
@@ -198,4 +193,4 @@ bool ArchiveManager::IsGameVersionValid(uint32_t gameVersion) {
     return mValidGameVersions.empty() || mValidGameVersions.contains(gameVersion);
 }
 
-} // namespace LUS
+} // namespace Ship

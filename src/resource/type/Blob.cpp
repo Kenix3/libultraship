@@ -1,7 +1,7 @@
 #include "Blob.h"
 
 namespace LUS {
-Blob::Blob() : Resource(std::shared_ptr<ResourceInitData>()) {
+Blob::Blob() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
 }
 
 void* Blob::GetPointer() {

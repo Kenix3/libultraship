@@ -4,7 +4,7 @@
 #include "libultraship/libultra/types.h"
 
 namespace LUS {
-class Matrix : public Resource<Mtx> {
+class Matrix : public Ship::Resource<Mtx> {
   public:
     using Resource::Resource;
 

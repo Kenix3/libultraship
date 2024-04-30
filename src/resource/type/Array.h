@@ -66,7 +66,7 @@ enum class ArrayResourceType {
     Audio
 };
 
-class Array : public Resource<void> {
+class Array : public Ship::Resource<void> {
   public:
     using Resource::Resource;
 

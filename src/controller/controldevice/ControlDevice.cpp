@@ -1,10 +1,10 @@
 #include "ControlDevice.h"
 
-namespace LUS {
+namespace Ship {
 ControlDevice::ControlDevice(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
 ControlDevice::~ControlDevice() {
 }
 
-} // namespace LUS
+} // namespace Ship

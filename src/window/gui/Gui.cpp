@@ -19,16 +19,6 @@
 
 #include "window/gui/GfxDebuggerWindow.h"
 
-#ifdef __WIIU__
-#include <gx2/registers.h> // GX2SetViewport / GX2SetScissor
-
-#include <ImGui/backends/wiiu/imgui_impl_gx2.h>
-#include <ImGui/backends/wiiu/imgui_impl_wiiu.h>
-
-#include "graphic/Fast3D/gfx_wiiu.h"
-#include "graphic/Fast3D/gfx_gx2.h"
-#endif
-
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
@@ -41,12 +31,8 @@
 #include <SDL2/SDL_video.h>
 #endif
 
-#ifdef __SWITCH__
-#include "port/switch/SwitchImpl.h"
-#endif
-
-#ifdef __ANDROID__
-#include "port/android/AndroidImpl.h"
+#if defined(__ANDROID__) || defined(__IOS__)
+#include "port/mobile/MobileImpl.h"
 #endif
 
 #ifdef ENABLE_OPENGL
@@ -65,7 +51,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 
 #endif
 
-namespace LUS {
+namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
@@ -83,7 +69,7 @@ Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVari
     AddGuiWindow(
         std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
-    AddGuiWindow(std::make_shared<GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
+    AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
 }
 
 Gui::Gui() : Gui(nullptr) {
@@ -114,28 +100,14 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize,
                                                           &iconsConfig, sIconsRanges);
 
-#ifdef __SWITCH__
-    LUS::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
-#endif
-
 #if defined(__ANDROID__)
     // Scale everything by 2 for Android
     ImGui::GetStyle().ScaleAllSizes(2.0f);
     mImGuiIo->FontGlobalScale = 2.0f;
 #endif
 
-#ifdef __WIIU__
-    // Scale everything by 2 for the Wii U
-    ImGui::GetStyle().ScaleAllSizes(2.0f);
-    mImGuiIo->FontGlobalScale = 2.0f;
-
-    // Setup display sizes
-    mImGuiIo->DisplaySize.x = mImpl.Gx2.Width;
-    mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
-#endif
-
-    auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
-    auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
+    auto imguiIniPath = Ship::Context::GetPathRelativeToAppDirectory("imgui.ini");
+    auto imguiLogPath = Ship::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     mImGuiIo->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
@@ -161,31 +133,18 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
     ImGuiWMInit();
     ImGuiBackendInit();
-#ifdef __SWITCH__
-    ImGui::GetStyle().ScaleAllSizes(2);
-#endif
 
     CVarClear("gNewFileDropped");
     CVarClear("gDroppedFile");
-
-#ifdef __SWITCH__
-    Switch::ApplyOverclock();
-#endif
 }
 
 void Gui::ImGuiWMInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            ImGui_ImplWiiU_Init();
-            break;
-#else
         case WindowBackend::SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
-#endif
 #if __APPLE__
         case WindowBackend::SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
@@ -205,11 +164,7 @@ void Gui::ImGuiWMInit() {
 
 void Gui::ImGuiBackendInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            ImGui_ImplGX2_Init();
-            break;
-#else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -258,10 +213,6 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
 }
 
 bool Gui::SupportsViewports() {
-#ifdef __SWITCH__
-    return false;
-#endif
-
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::DX11:
             return true;
@@ -280,23 +231,13 @@ void Gui::Update(WindowEvent event) {
     }
 
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
-            break;
-#else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
-
-#ifdef __SWITCH__
-            LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
-#endif
-#ifdef __ANDROID__
-            LUS::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+#if defined(__ANDROID__) || defined(__IOS__)
+            Ship::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
-#endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
@@ -323,7 +264,7 @@ void Gui::UnblockImGuiGamepadNavigation() {
 }
 
 void Gui::DrawMenu() {
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
@@ -380,15 +321,15 @@ void Gui::DrawMenu() {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #endif
@@ -458,24 +399,21 @@ void Gui::DrawMenu() {
 
 void Gui::ImGuiBackendNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
-            ImGui_ImplGX2_NewFrame();
-            break;
-#else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
-#ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
-            Metal_NewFrame(mImpl.Metal.Renderer);
-            break;
-#endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_NewFrame();
+            break;
+#endif
+
+#ifdef __APPLE__
+        case WindowBackend::SDL_METAL:
+            Metal_NewFrame(mImpl.Metal.Renderer);
             break;
 #endif
         default:
@@ -485,15 +423,10 @@ void Gui::ImGuiBackendNewFrame() {
 
 void Gui::ImGuiWMNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            break;
-#else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_NewFrame();
             break;
-#endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplWin32_NewFrame();
@@ -681,11 +614,6 @@ ImTextureID Gui::GetTextureById(int32_t id) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif
-#ifdef __WIIU__
-    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::GX2) {
-        return gfx_gx2_texture_for_imgui(id);
-    }
-#endif
 
     return reinterpret_cast<ImTextureID>(id);
 }
@@ -710,25 +638,19 @@ ImVec2 Gui::GetTextureSize(const std::string& name) {
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            ImGui_ImplGX2_RenderDrawData(data);
 
-            // Reset viewport and scissor for drawing the keyboard
-            GX2SetViewport(0.0f, 0.0f, mImGuiIo->DisplaySize.x, mImGuiIo->DisplaySize.y, 0.0f, 1.0f);
-            GX2SetScissor(0, 0, mImGuiIo->DisplaySize.x, mImGuiIo->DisplaySize.y);
-            ImGui_ImplWiiU_DrawKeyboardOverlay();
-            break;
-#else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
+
 #ifdef __APPLE__
         case WindowBackend::SDL_METAL:
             Metal_RenderDrawData(data);
             break;
 #endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_RenderDrawData(data);
@@ -946,4 +868,4 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
 std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
     return mMenuBar;
 }
-} // namespace LUS
+} // namespace Ship

@@ -12,14 +12,10 @@
 #endif
 
 #ifdef __APPLE__
-#include "utils/OSXFolderManager.h"
-#elif defined(__SWITCH__)
-#include "port/switch/SwitchImpl.h"
-#elif defined(__WIIU__)
-#include "port/wiiu/WiiUImpl.h"
+#include "utils/AppleFolderManager.h"
 #endif
 
-namespace LUS {
+namespace Ship {
 std::weak_ptr<Context> Context::mContext;
 
 std::shared_ptr<Context> Context::GetInstance() {
@@ -100,7 +96,7 @@ void Context::InitLogging() {
         spdlog::init_thread_pool(8192, 1);
         std::vector<spdlog::sink_ptr> sinks;
 
-#if (!defined(_WIN32) && !defined(__WIIU__)) || defined(_DEBUG)
+#if (!defined(_WIN32)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
         // LLVM on Windows allocs a hidden console in its entrypoint function.
         // We free that console here to create our own.
@@ -137,7 +133,6 @@ void Context::InitLogging() {
         sinks.push_back(systemConsoleSink);
 #endif
 
-#ifndef __WIIU__
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
@@ -146,7 +141,6 @@ void Context::InitLogging() {
         fileSink->set_level(spdlog::level::debug);
 #endif
         sinks.push_back(fileSink);
-#endif
 
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
@@ -160,11 +154,7 @@ void Context::InitLogging() {
         GetLogger()->flush_on(spdlog::level::trace);
 #endif
 
-#ifndef __WIIU__
         GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
-#else
-        GetLogger()->set_pattern("[%s:%#] [%l] %v");
-#endif
 
         spdlog::register_logger(GetLogger());
         spdlog::set_default_logger(GetLogger());
@@ -208,20 +198,15 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     }
 
     if (!GetResourceManager()->DidLoadSuccessfully()) {
-#if defined(__SWITCH__)
-        printf("Main OTR file not found!\n");
-#elif defined(__WIIU__)
-        LUS::WiiU::ThrowMissingOTR(mMainPath.c_str());
-#else
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
+#ifdef __IOS__
+        // We need this exit to close the app when we dismiss the dialog
+        exit(0);
 #endif
         return;
     }
-#ifdef __SWITCH__
-    LUS::Switch::Init(PostInitPhase);
-#endif
 }
 
 void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
@@ -254,7 +239,7 @@ void Context::InitGfxDebugger() {
         return;
     }
 
-    mGfxDebugger = std::make_shared<GfxDebugger>();
+    mGfxDebugger = std::make_shared<LUS::GfxDebugger>();
 }
 
 void Context::InitConsole() {
@@ -311,7 +296,7 @@ std::shared_ptr<Audio> Context::GetAudio() {
     return mAudio;
 }
 
-std::shared_ptr<GfxDebugger> Context::GetGfxDebugger() {
+std::shared_ptr<LUS::GfxDebugger> Context::GetGfxDebugger() {
     return mGfxDebugger;
 }
 
@@ -334,6 +319,12 @@ std::string Context::GetAppBundlePath() {
         return externaldir;
     }
 #endif
+
+#ifdef __IOS__
+    const char* home = getenv("HOME");
+    return std::string(home) + "/Documents";
+#endif
+
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
@@ -368,6 +359,11 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     if (externaldir != NULL) {
         return externaldir;
     }
+#endif
+
+#ifdef __IOS__
+    const char* home = getenv("HOME");
+    return std::string(home) + "/Documents";
 #endif
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -417,4 +413,4 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     return "./" + std::string(path);
 }
 
-} // namespace LUS
+} // namespace Ship

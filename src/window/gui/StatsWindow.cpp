@@ -6,7 +6,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "spdlog/spdlog.h"
 
-namespace LUS {
+namespace Ship {
 StatsWindow::~StatsWindow() {
     SPDLOG_TRACE("destruct stats window");
 }
@@ -22,12 +22,10 @@ void StatsWindow::DrawElement() {
 
 #if defined(_WIN32)
     ImGui::Text("Platform: Windows");
+#elif defined(__IOS__)
+    ImGui::Text("Platform: iOS");
 #elif defined(__APPLE__)
     ImGui::Text("Platform: macOS");
-#elif defined(__SWITCH__)
-    ImGui::Text("Platform: Nintendo Switch");
-#elif defined(__WIIU__)
-    ImGui::Text("Platform: Nintendo Wii U");
 #elif defined(__linux__)
     ImGui::Text("Platform: Linux");
 #else
@@ -40,4 +38,4 @@ void StatsWindow::DrawElement() {
 
 void StatsWindow::UpdateElement() {
 }
-} // namespace LUS
+} // namespace Ship

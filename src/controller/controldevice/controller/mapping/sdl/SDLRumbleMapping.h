@@ -1,10 +1,10 @@
 #include "controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
 #include "SDLMapping.h"
 
-namespace LUS {
+namespace Ship {
 class SDLRumbleMapping final : public ControllerRumbleMapping, public SDLMapping {
   public:
-    SDLRumbleMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+    SDLRumbleMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                      uint8_t highFrequencyIntensityPercentage);
 
     void StartRumble() override;
@@ -23,4 +23,4 @@ class SDLRumbleMapping final : public ControllerRumbleMapping, public SDLMapping
     uint16_t mLowFrequencyIntensity;
     uint16_t mHighFrequencyIntensity;
 };
-} // namespace LUS
+} // namespace Ship
