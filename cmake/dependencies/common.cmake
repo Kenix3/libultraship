@@ -37,7 +37,6 @@ if(TRUE)
         StormLib
         GIT_REPOSITORY https://github.com/ladislav-zezula/StormLib.git
         GIT_TAG v9.25
-        OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(StormLib)
     list(APPEND ADDITIONAL_LIB_INCLUDES ${stormlib_SOURCE_DIR}/src)
