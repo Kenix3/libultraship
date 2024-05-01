@@ -4,7 +4,7 @@
 #include "resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "utils/glob.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"

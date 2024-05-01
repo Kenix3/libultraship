@@ -1,6 +1,6 @@
 #include "KeyboardKeyToButtonMapping.h"
 #include <spdlog/spdlog.h>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 

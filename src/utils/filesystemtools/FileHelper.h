@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 #include "PathHelper.h"
-#include "Utils/StringHelper.h"
-#include "Utils/Directory.h"
+#include "utils/StringHelper.h"
+#include "utils/filesystemtools/Directory.h"
 
 namespace Ship {
 class FileHelper {

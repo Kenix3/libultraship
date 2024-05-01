@@ -3,7 +3,7 @@
 #include "Context.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 
 namespace Ship {
 SDLMapping::SDLMapping(ShipDeviceIndex shipDeviceIndex) : ControllerMapping(shipDeviceIndex), mController(nullptr) {

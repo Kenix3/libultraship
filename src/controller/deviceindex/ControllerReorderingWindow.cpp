@@ -1,5 +1,5 @@
 #include "ControllerReorderingWindow.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include "Context.h"

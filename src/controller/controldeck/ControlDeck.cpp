@@ -2,7 +2,7 @@
 
 #include "Context.h"
 #include "controller/controldevice/controller/Controller.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
