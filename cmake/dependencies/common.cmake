@@ -1,5 +1,7 @@
 include(FetchContent)
 
+find_package(OpenGL QUIET)
+
 #=================== ImGui ===================
 FetchContent_Declare(
     ImGui

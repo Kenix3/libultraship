@@ -1,5 +1,3 @@
-find_package(OpenGL QUIET)
-
 #=================== DrLibs ===================
 
 set(DRLIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dr_libs)
