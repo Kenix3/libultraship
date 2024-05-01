@@ -23,16 +23,30 @@ endif()
 include(cmake/Utils.cmake)
 set(ADDITIONAL_LIB_INCLUDES "")
 
+# ======== Dependencies ================
 include(cmake/dependencies/common.cmake)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
 	include(cmake/dependencies/android.cmake)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    include(cmake/dependencies/ios.cmake)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    include(cmake/dependencies/windows.cmake)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     include(cmake/dependencies/mac.cmake)
 endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    include(cmake/dependencies/ios.cmake)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    include(cmake/dependencies/linux.cmake)
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    include(cmake/dependencies/windows.cmake)
+endif()
+
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(PLATFORM "OS64COMBINED")
