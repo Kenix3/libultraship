@@ -5,8 +5,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_internal.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <memory>
 #include <string>
 #include <unordered_map>

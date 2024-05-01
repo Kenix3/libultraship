@@ -10,3 +10,5 @@ if (NOT ${SDL2_FOUND})
     FetchContent_MakeAvailable(SDL2)
     message("SDL2 downloaded to " ${FETCHCONTENT_BASE_DIR}/sdl2-src)
 endif()
+
+target_link_libraries(ImGui PUBLIC SDL2::SDL2)
