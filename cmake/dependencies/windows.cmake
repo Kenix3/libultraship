@@ -25,4 +25,3 @@ target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
 
 find_package(GLEW REQUIRED)
 target_link_libraries(ImGui PUBLIC opengl32 GLEW::GLEW)
-
