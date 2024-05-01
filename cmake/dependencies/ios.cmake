@@ -75,7 +75,7 @@ target_sources(ImGui
     ${imgui_SOURCE_DIR}/backends/imgui_impl_metal.mm
 )
 
-target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/metal-cpp)
+target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/extern/metal-cpp)
 target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
 
 target_link_libraries(ImGui PUBLIC SDL2::SDL2-static SDL2::SDL2main)
