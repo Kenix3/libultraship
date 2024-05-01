@@ -855,7 +855,7 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
     TextureData& tex = d3d.textures[fb.texture_id];
 
     width = ((width) > (1U) ? (width) : (1U));
-    height = ((width) > (1U) ? (width) : (1U));
+    height = ((height) > (1U) ? (height) : (1U));
     // We can't use MSAA the way we are using it on Feature Level 10.0 Hardware, so disable it altogether.
     msaa_level = d3d.feature_level < D3D_FEATURE_LEVEL_10_1 ? 1 : msaa_level;
     while (msaa_level > 1 && d3d.msaa_num_quality_levels[msaa_level - 1] == 0) {
