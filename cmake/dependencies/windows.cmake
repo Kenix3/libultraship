@@ -16,8 +16,8 @@ endif()
 #=================== ImGui ===================
 target_sources(ImGui
 	PRIVATE
-	${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
-	${IMGUI_DIR}/backends/imgui_impl_win32.cpp
+	${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
+	${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
 )
 
 find_package(SDL2 CONFIG REQUIRED)
