@@ -19,7 +19,7 @@
 
 namespace Ship {
 
-Window::Window(std::shared_ptr<GuiWindow> customInputEditorWindow) {
+Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mIsFullscreen = false;
@@ -27,10 +27,10 @@ Window::Window(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     mHeight = 240;
     mPosX = 100;
     mPosY = 100;
-    mGui = std::make_shared<Gui>(customInputEditorWindow);
+    mGui = std::make_shared<Gui>(guiWindows);
 }
 
-Window::Window() : Window(nullptr) {
+Window::Window() : Window(std::vector<std::shared_ptr<GuiWindow>>()) {
 }
 
 Window::~Window() {

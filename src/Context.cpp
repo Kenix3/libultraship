@@ -251,12 +251,12 @@ void Context::InitConsole() {
     GetConsole()->Init();
 }
 
-void Context::InitWindow(std::shared_ptr<GuiWindow> customInputEditorWindow) {
+void Context::InitWindow(std::vector<std::shared_ptr<GuiWindow>> guiWindows) {
     if (GetWindow() != nullptr) {
         return;
     }
 
-    mWindow = std::make_shared<Window>(customInputEditorWindow);
+    mWindow = std::make_shared<Window>(guiWindows);
     GetWindow()->Init();
 }
 
