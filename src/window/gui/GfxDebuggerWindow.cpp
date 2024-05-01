@@ -1,5 +1,5 @@
 #include "GfxDebuggerWindow.h"
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <spdlog/spdlog.h>
 #include "Context.h"
 #include "debug/GfxDebugger.h"

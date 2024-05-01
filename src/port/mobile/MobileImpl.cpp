@@ -3,7 +3,7 @@
 #include <SDL2/SDL.h>
 #include "public/bridge/consolevariablebridge.h"
 
-#include <ImGui/imgui_internal.h>
+#include <imgui_internal.h>
 
 static bool isShowingVirtualKeyboard = true;
 

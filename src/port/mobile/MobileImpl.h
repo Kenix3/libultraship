@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-#include <ImGui/imgui.h>
+#include <imgui.h>
 
 namespace Ship {
 
