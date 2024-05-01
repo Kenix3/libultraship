@@ -175,7 +175,7 @@ else()
 endif()
 target_link_libraries(libultraship
     PRIVATE StrHash64
-    PUBLIC ZAPDUtils ImGui
+    PUBLIC ImGui
 )
 
 target_link_libraries(libultraship PRIVATE stb)
