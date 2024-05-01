@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_set>
 #include <vector>
+#include <unordered_map>
 #include <spdlog/spdlog.h>
 #include "config/Config.h"
 #include "resource/ResourceManager.h"
@@ -67,7 +68,7 @@ class Context {
     void InitAudio();
     void InitGfxDebugger();
     void InitConsole();
-    void InitWindow(std::shared_ptr<GuiWindow> customInputEditorWindow = nullptr);
+    void InitWindow(std::vector<std::shared_ptr<GuiWindow>> guiWindows = {});
 
   protected:
     Context() = default;

@@ -55,24 +55,42 @@ namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
-Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVariableSave(false) {
+Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
 
-    AddGuiWindow(std::make_shared<StatsWindow>(CVAR_STATS_WINDOW_OPEN, "Stats"));
-    if (customInputEditorWindow == nullptr) {
-        AddGuiWindow(std::make_shared<InputEditorWindow>(CVAR_CONTROLLER_CONFIGURATION_WINDOW_OPEN, "Input Editor"));
-    } else {
-        AddGuiWindow(customInputEditorWindow);
+    for (auto& guiWindow : guiWindows) {
+        AddGuiWindow(guiWindow);
     }
-    AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>(CVAR_CONTROLLER_DISCONNECTED_WINDOW_OPEN,
-                                                                "Controller Disconnected"));
-    AddGuiWindow(
-        std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN, "Controller Reordering"));
-    AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console"));
-    AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "GfxDebuggerWindow"));
+
+    // Add default windows if we don't already have one by the name
+    if (GetGuiWindow("Stats") == nullptr) {
+        AddGuiWindow(std::make_shared<StatsWindow>(CVAR_STATS_WINDOW_OPEN, "Stats"));
+    }
+
+    if (GetGuiWindow("Input Editor") == nullptr) {
+        AddGuiWindow(std::make_shared<InputEditorWindow>(CVAR_CONTROLLER_CONFIGURATION_WINDOW_OPEN, "Input Editor"));
+    }
+
+    if (GetGuiWindow("Controller Disconnected") == nullptr) {
+        AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>(CVAR_CONTROLLER_DISCONNECTED_WINDOW_OPEN,
+                                                                    "Controller Disconnected"));
+    }
+
+    if (GetGuiWindow("Controller Reordering") == nullptr) {
+        AddGuiWindow(std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN,
+                                                                  "Controller Reordering"));
+    }
+
+    if (GetGuiWindow("Console") == nullptr) {
+        AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console"));
+    }
+
+    if (GetGuiWindow("GfxDebuggerWindow") == nullptr) {
+        AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "GfxDebuggerWindow"));
+    }
 }
 
-Gui::Gui() : Gui(nullptr) {
+Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
 }
 
 Gui::~Gui() {

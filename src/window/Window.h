@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <filesystem>
+#include <string>
+#include <vector>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
 #include "graphic/Fast3D/gfx_window_manager_api.h"
@@ -18,7 +20,7 @@ class Window {
 
   public:
     Window();
-    Window(std::shared_ptr<GuiWindow> customInputEditorWindow);
+    Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
     ~Window();
 
     void MainLoop(void (*mainFunction)(void));
