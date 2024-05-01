@@ -5,19 +5,6 @@ add_library(DrLibs INTERFACE)
 
 target_include_directories(DrLibs INTERFACE ${DRLIBS_DIR})
 
-#=================== Storm ===================
-
-set(STORMLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StormLib)
-add_subdirectory(${STORMLIB_DIR})
-if((CMAKE_SYSTEM_NAME MATCHES "Windows") AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang"))
-    include(../cmake/HandleCompilerRT.cmake)
-    find_compiler_rt_library(builtins CLANG_RT_BUILTINS_LIBRARY)
-    get_filename_component(LIBDIR "${CLANG_RT_BUILTINS_LIBRARY}" DIRECTORY)
-    if(IS_DIRECTORY "${LIBDIR}")
-        target_link_libraries(storm ${CLANG_RT_BUILTINS_LIBRARY})
-    endif()
-endif()
-
 #=================== ZAPDUtils ===================
 
 set(ZAPDUTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ZAPDUtils)

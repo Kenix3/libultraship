@@ -30,3 +30,15 @@ target_sources(ImGui
 )
 
 target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+
+# ========= StormLib =============
+if(TRUE)
+    FetchContent_Declare(
+        StormLib
+        GIT_REPOSITORY https://github.com/ladislav-zezula/StormLib.git
+        GIT_TAG v9.25
+        OVERRIDE_FIND_PACKAGE
+    )
+    FetchContent_MakeAvailable(StormLib)
+    list(APPEND ADDITIONAL_LIB_INCLUDES ${stormlib_SOURCE_DIR}/src)
+endif()
