@@ -7,6 +7,7 @@ FetchContent_Declare(
     GIT_TAG ce0d0ac8298ce164b5d862577e8b087d92f6e90e # docking 1.90.0
 )
 FetchContent_Populate(ImGui)
+list(APPEND ADDITIONAL_LIB_INCLUDES ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 
 add_library(ImGui STATIC)
 set_property(TARGET ImGui PROPERTY CXX_STANDARD 20)

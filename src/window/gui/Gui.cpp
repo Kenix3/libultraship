@@ -25,7 +25,7 @@
 
 #include "graphic/Fast3D/gfx_metal.h"
 #include <ImGui/backends/imgui_impl_metal.h>
-#include <ImGui/backends/imgui_impl_sdl2.h>
+#include <imgui_impl_sdl2.h>
 #else
 #include <SDL2/SDL_hints.h>
 #include <SDL2/SDL_video.h>
@@ -36,8 +36,8 @@
 #endif
 
 #ifdef ENABLE_OPENGL
-#include <ImGui/backends/imgui_impl_opengl3.h>
-#include <ImGui/backends/imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl2.h>
 
 #endif
 
