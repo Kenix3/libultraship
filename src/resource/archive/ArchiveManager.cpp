@@ -151,7 +151,7 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
 
     SPDLOG_INFO("Reading archive: {}", path.string());
 
-    if (StringHelper::IEquals(extension, ".zip") || StringHelper::IEquals(extension, ".zip")) {
+    if (StringHelper::IEquals(extension, ".o2r") || StringHelper::IEquals(extension, ".zip")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
 #ifndef EXCLUDE_MPQ_SUPPORT
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
