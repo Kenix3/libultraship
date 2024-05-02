@@ -6,12 +6,6 @@
 #include "Context.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/binarytools/BinaryReader.h"
-#include "factory/TextureFactory.h"
-#include "factory/VertexFactory.h"
-#include "factory/ArrayFactory.h"
-#include "factory/BlobFactory.h"
-#include "factory/DisplayListFactory.h"
-#include "factory/MatrixFactory.h"
 #include "factory/JsonFactory.h"
 
 namespace Ship {
