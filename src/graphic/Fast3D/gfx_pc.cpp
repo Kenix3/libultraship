@@ -1830,10 +1830,13 @@ static void gfx_sp_movemem_f3d(uint8_t index, uint8_t offset, const void* data) 
         case G_MV_VIEWPORT:
             gfx_calc_and_set_viewport((const Vp_t*)data);
             break;
+// This is a pain but it makes the define easier to read
+#ifdef G_MV_LOOKATY
         case G_MV_LOOKATY:
         case G_MV_LOOKATX:
             memcpy(g_rsp.lookat + (index - G_MV_LOOKATY) / 2, data, sizeof(Light_t));
             break;
+#endif
         case G_MV_L0:
         case G_MV_L1:
         case G_MV_L2:
@@ -3640,6 +3643,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
 };
 #endif
 
+#if (defined(F3DEX_GBI) || defined(F3D_GBI)) && !defined(F3DEX_GBI_2)
 const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
     { G_NOOP, gfx_noop_handler_f3dex2 },
     { G_CULLDL, gfx_cull_dl_handler_f3dex2 },
@@ -3671,6 +3675,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
     { G_SPNOOP, gfx_spnoop_command_handler_f3dex2 },
     { G_RDPHALF_1, gfx_stubbed_command_handler },
 };
+#endif
 
 const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
     { G_BG_COPY, gfx_bg_copy_handler_s2dex },
