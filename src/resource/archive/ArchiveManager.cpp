@@ -10,7 +10,7 @@
 #include "resource/archive/O2rArchive.h"
 #include "utils/StringHelper.h"
 #include "utils/glob.h"
-#include <StrHash64.h>
+#include "utils/StrHash64.h"
 
 namespace Ship {
 ArchiveManager::ArchiveManager() {

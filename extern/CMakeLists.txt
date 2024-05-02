@@ -35,15 +35,6 @@ if (GFX_DEBUG_DISASSEMBLER)
     target_include_directories(libgfxd PUBLIC ${LIBGFXD_DIR})
 endif()
 
-#=================== StrHash64 ===================
-
-set(STRHASH64_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StrHash64)
-add_library(StrHash64 STATIC)
-
-target_sources(StrHash64 PRIVATE ${STRHASH64_DIR}/StrHash64.cpp)
-
-target_include_directories(StrHash64 PUBLIC ${STRHASH64_DIR})
-
 #=================== thread-pool ===================
 
 set(THREADPOOL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thread-pool)
