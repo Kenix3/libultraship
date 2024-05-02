@@ -24,7 +24,7 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
                           const std::unordered_set<uint32_t>& validGameVersions) {
     mValidGameVersions = validGameVersions;
     auto archives = GetArchiveListInPaths(archivePaths);
-    for (const auto archive : archives) {
+    for (const auto& archive : archives) {
         AddArchive(archive);
     }
 }
