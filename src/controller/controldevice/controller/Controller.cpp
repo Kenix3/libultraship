@@ -7,7 +7,6 @@
 #else
 #include <SDL2/SDL_events.h>
 #endif
-
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
 
