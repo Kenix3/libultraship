@@ -1,7 +1,7 @@
 #include "SDLRumbleMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 
 namespace Ship {
 SDLRumbleMapping::SDLRumbleMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,

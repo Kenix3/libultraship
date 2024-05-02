@@ -8,7 +8,7 @@
 #include <SDL2/SDL_events.h>
 #endif
 #include <spdlog/spdlog.h>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9

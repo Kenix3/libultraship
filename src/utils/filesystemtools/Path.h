@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <string>
-#include "Utils/StringHelper.h"
+#include "utils/StringHelper.h"
 
 #if __has_include(<filesystem>)
 #include <filesystem>
@@ -12,8 +12,7 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
-namespace Ship {
-class PathHelper {
+class Path {
   public:
     static std::string GetFileName(const fs::path& input) {
         // https://en.cppreference.com/w/cpp/filesystem/path/filename
@@ -34,9 +33,8 @@ class PathHelper {
         fs::path output;
 
         for (std::string str : split) {
-            if (str.find_last_of(".") == std::string::npos) {
+            if (str.find_last_of(".") == std::string::npos)
                 output /= str;
-            }
         }
 
         return output;
@@ -46,4 +44,3 @@ class PathHelper {
         return path.parent_path();
     };
 };
-} // namespace Ship

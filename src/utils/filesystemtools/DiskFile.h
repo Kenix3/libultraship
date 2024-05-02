@@ -5,12 +5,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "PathHelper.h"
-#include "Utils/StringHelper.h"
-#include "Utils/Directory.h"
+#include "Path.h"
+#include "utils/StringHelper.h"
+#include "Directory.h"
 
-namespace Ship {
-class FileHelper {
+class DiskFile {
   public:
     static bool Exists(const fs::path& filePath) {
         std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
@@ -20,24 +19,14 @@ class FileHelper {
     static std::vector<uint8_t> ReadAllBytes(const fs::path& filePath) {
         std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
 
-        if (!file) {
+        if (!file)
             return std::vector<uint8_t>();
-        }
 
         int32_t fileSize = (int32_t)file.tellg();
         file.seekg(0);
-        char* data = nullptr;
-        std::vector<uint8_t> result;
-
-        try {
-            data = new char[fileSize];
-            file.read(data, fileSize);
-            result = std::vector<uint8_t>(data, data + fileSize);
-        } catch (const std::exception& e) {
-            delete[] data;
-            throw e;
-        }
-
+        char* data = new char[fileSize];
+        file.read(data, fileSize);
+        std::vector<uint8_t> result = std::vector<uint8_t>(data, data + fileSize);
         delete[] data;
 
         return result;
@@ -47,19 +36,10 @@ class FileHelper {
         std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
         int32_t fileSize = (int32_t)file.tellg();
         file.seekg(0);
-        char* data = nullptr;
-        std::string str;
-
-        try {
-            data = new char[fileSize + 1];
-            memset(data, 0, fileSize + 1);
-            file.read(data, fileSize);
-            str = std::string((const char*)data);
-        } catch (const std::exception& e) {
-            delete[] data;
-            throw e;
-        }
-
+        char* data = new char[fileSize + 1];
+        memset(data, 0, fileSize + 1);
+        file.read(data, fileSize);
+        std::string str = std::string((const char*)data);
         delete[] data;
 
         return str;
@@ -78,8 +58,8 @@ class FileHelper {
     };
 
     static void WriteAllBytes(const std::string& filePath, const std::vector<char>& data) {
-        if (!Directory::Exists(PathHelper::GetDirectoryName(filePath))) {
-            Directory::MakeDirectory(PathHelper::GetDirectoryName(filePath).string());
+        if (!Directory::Exists(Path::GetDirectoryName(filePath))) {
+            Directory::MakeDirectory(Path::GetDirectoryName(filePath).string());
         }
 
         std::ofstream file(filePath, std::ios::binary);
@@ -92,8 +72,10 @@ class FileHelper {
     };
 
     static void WriteAllText(const fs::path& filePath, const std::string& text) {
+        if (!Directory::Exists(Path::GetDirectoryName(filePath))) {
+            Directory::MakeDirectory(Path::GetDirectoryName(filePath).string());
+        }
         std::ofstream file(filePath, std::ios::out);
         file.write(text.c_str(), text.size());
     }
 };
-} // namespace Ship

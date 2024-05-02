@@ -1,7 +1,7 @@
 #include "GyroMappingFactory.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h"
 #include "public/bridge/consolevariablebridge.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
 #include "Context.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"

@@ -5,7 +5,7 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
 

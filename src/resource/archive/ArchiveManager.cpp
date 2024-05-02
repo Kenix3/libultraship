@@ -6,7 +6,7 @@
 #include "resource/archive/Archive.h"
 #include "resource/archive/OtrArchive.h"
 #include "resource/archive/O2rArchive.h"
-#include "Utils/StringHelper.h"
+#include "utils/StringHelper.h"
 #include "utils/glob.h"
 #include <StrHash64.h>
 

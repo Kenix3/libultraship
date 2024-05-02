@@ -1,7 +1,7 @@
 #include "OtrArchive.h"
 
 #include "Context.h"
-#include "utils/binarytools/FileHelper.h"
+#include "utils/filesystemtools/FileHelper.h"
 #include "resource/ResourceManager.h"
 #include "resource/archive/ArchiveManager.h"
 

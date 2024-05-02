@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <any>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 
 #ifdef __APPLE__
 #include "graphic/Fast3D/gfx_metal.h"

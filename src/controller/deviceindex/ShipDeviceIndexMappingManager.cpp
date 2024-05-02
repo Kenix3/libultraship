@@ -1,6 +1,6 @@
 #include "ShipDeviceIndexMappingManager.h"
 #include <SDL2/SDL.h>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include <vector>
 #include "Context.h"

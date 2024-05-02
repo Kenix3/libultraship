@@ -2,7 +2,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "utils/Utils.h"
 #include <sstream>
 

@@ -5,11 +5,6 @@ add_library(DrLibs INTERFACE)
 
 target_include_directories(DrLibs INTERFACE ${DRLIBS_DIR})
 
-#=================== ZAPDUtils ===================
-
-set(ZAPDUTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ZAPDUtils)
-add_subdirectory(${ZAPDUTILS_DIR})
-
 #=================== libgfxd ===================
 # This used to be included from ZAPDTR, meaning setting GFX_DEBUG_DISASSEMBLER
 # required the port include ZAPDTR. The version in extern is the version that was

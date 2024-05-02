@@ -1,5 +1,5 @@
 #include "ShipDeviceIndexToSDLDeviceIndexMapping.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 
 namespace Ship {
