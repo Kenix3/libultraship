@@ -24,9 +24,9 @@ include(cmake/Utils.cmake)
 set(ADDITIONAL_LIB_INCLUDES "")
 
 # ========= Configuration Options =========
-set(MPQ_SUPPORT TRUE CACHE BOOL "Include StormLib and support using MPQ archives")
-if(MPQ_SUPPORT)
-    add_compile_definitions(MPQ_SUPPORT)
+set(EXCLUDE_MPQ_SUPPORT FALSE CACHE BOOL "Exclude StormLib and MPQ archive support")
+if(EXCLUDE_MPQ_SUPPORT)
+    add_compile_definitions(EXCLUDE_MPQ_SUPPORT)
 endif()
 
 # =========== Dependencies =============

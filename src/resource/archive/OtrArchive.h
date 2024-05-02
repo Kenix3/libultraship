@@ -1,6 +1,6 @@
-#pragma once
+#ifndef EXCLUDE_MPQ_SUPPORT
 
-#ifdef MPQ_SUPPORT
+#pragma once
 
 #undef _DLL
 
@@ -38,4 +38,4 @@ class OtrArchive : virtual public Archive {
 };
 } // namespace Ship
 
-#endif // MPQ_SUPPORT
+#endif // EXCLUDE_MPQ_SUPPORT

@@ -1,4 +1,4 @@
-#ifdef MPQ_SUPPORT
+#ifndef EXCLUDE_MPQ_SUPPORT
 
 #include "OtrArchive.h"
 
@@ -103,4 +103,4 @@ bool OtrArchive::Close() {
 
 } // namespace Ship
 
-#endif // MPQ_SUPPORT
+#endif // EXCLUDE_MPQ_SUPPORT
