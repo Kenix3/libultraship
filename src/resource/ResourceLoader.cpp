@@ -6,12 +6,6 @@
 #include "Context.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/binarytools/BinaryReader.h"
-#include "factory/TextureFactory.h"
-#include "factory/VertexFactory.h"
-#include "factory/ArrayFactory.h"
-#include "factory/BlobFactory.h"
-#include "factory/DisplayListFactory.h"
-#include "factory/MatrixFactory.h"
 #include "factory/JsonFactory.h"
 
 namespace Ship {
@@ -24,24 +18,6 @@ ResourceLoader::~ResourceLoader() {
 }
 
 void ResourceLoader::RegisterGlobalResourceFactories() {
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryTextureV0>(), RESOURCE_FORMAT_BINARY, "Texture",
-                            static_cast<uint32_t>(LUS::ResourceType::Texture), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryTextureV1>(), RESOURCE_FORMAT_BINARY, "Texture",
-                            static_cast<uint32_t>(LUS::ResourceType::Texture), 1);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryVertexV0>(), RESOURCE_FORMAT_BINARY, "Vertex",
-                            static_cast<uint32_t>(LUS::ResourceType::Vertex), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryXMLVertexV0>(), RESOURCE_FORMAT_XML, "Vertex",
-                            static_cast<uint32_t>(LUS::ResourceType::Vertex), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryDisplayListV0>(), RESOURCE_FORMAT_BINARY,
-                            "DisplayList", static_cast<uint32_t>(LUS::ResourceType::DisplayList), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryXMLDisplayListV0>(), RESOURCE_FORMAT_XML,
-                            "DisplayList", static_cast<uint32_t>(LUS::ResourceType::DisplayList), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryMatrixV0>(), RESOURCE_FORMAT_BINARY, "Matrix",
-                            static_cast<uint32_t>(LUS::ResourceType::Matrix), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryArrayV0>(), RESOURCE_FORMAT_BINARY, "Array",
-                            static_cast<uint32_t>(LUS::ResourceType::Array), 0);
-    RegisterResourceFactory(std::make_shared<LUS::ResourceFactoryBinaryBlobV0>(), RESOURCE_FORMAT_BINARY, "Blob",
-                            static_cast<uint32_t>(LUS::ResourceType::Blob), 0);
     RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryJsonV0>(), RESOURCE_FORMAT_BINARY, "Json",
                             static_cast<uint32_t>(Ship::ResourceType::Json), 0);
 }
