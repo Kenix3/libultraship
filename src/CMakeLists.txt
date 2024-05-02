@@ -167,12 +167,14 @@ target_include_directories(libultraship
 )
 
 #=================== Linking ===================
-
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_link_libraries(libultraship PUBLIC "$<LINK_LIBRARY:WHOLE_ARCHIVE,storm>")
-else()
-    target_link_libraries(libultraship PUBLIC storm)
+if(NOT EXCLUDE_MPQ_SUPPORT)
+    if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        target_link_libraries(libultraship PUBLIC "$<LINK_LIBRARY:WHOLE_ARCHIVE,storm>")
+    else()
+        target_link_libraries(libultraship PUBLIC storm)
+    endif()
 endif()
+
 target_link_libraries(libultraship
     PRIVATE StrHash64
     PUBLIC ImGui
