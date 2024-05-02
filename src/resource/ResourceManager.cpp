@@ -152,11 +152,13 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
 
     const auto newFilePath = std::string(filePath);
 
-    if (priority) {
-        return mThreadPool->submit_front(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact, initData);
-    } else {
-        return mThreadPool->submit_back(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact, initData);
-    }
+    // if (priority) {
+    //     static int32_t pri = 1;
+    //     pri++;
+        return mThreadPool->submit_task(std::bind(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact, initData), BS::pr::highest);
+    // } else {
+        return mThreadPool->submit_task(std::bind(&ResourceManager::LoadResourceProcess, this, newFilePath, loadExact, initData));
+    // }
 }
 
 std::shared_ptr<Ship::IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,

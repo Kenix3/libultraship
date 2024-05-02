@@ -41,3 +41,16 @@ if(NOT EXCLUDE_MPQ_SUPPORT)
     FetchContent_MakeAvailable(StormLib)
     list(APPEND ADDITIONAL_LIB_INCLUDES ${stormlib_SOURCE_DIR}/src)
 endif()
+
+#======== thread-pool ========
+FetchContent_Declare(
+    ThreadPool
+    GIT_REPOSITORY https://github.com/bshoshany/thread-pool.git
+    GIT_TAG v4.1.0
+)
+FetchContent_MakeAvailable(ThreadPool)
+
+# add_library(ThreadPool INTERFACE)
+# target_include_directories(ThreadPool INTERFACE ${threadpool_SOURCE_DIR})
+
+list(APPEND ADDITIONAL_LIB_INCLUDES ${threadpool_SOURCE_DIR}/include)
