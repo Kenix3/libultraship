@@ -2,7 +2,6 @@
 
 extern "C" {
 
-#ifndef __WIIU__
 Uint32 __lusViCallback(Uint32 interval, void* param) {
     __OSEventState* es = &__osEventStateTab[OS_EVENT_VI];
 
@@ -12,12 +11,9 @@ Uint32 __lusViCallback(Uint32 interval, void* param) {
 
     return interval;
 }
-#endif
 
 void osCreateViManager(OSPri pri) {
-#ifndef __WIIU__
     SDL_AddTimer(16, &__lusViCallback, NULL);
-#endif
 }
 
 void osViSetEvent(OSMesgQueue* queue, OSMesg mesg, uint32_t c) {
