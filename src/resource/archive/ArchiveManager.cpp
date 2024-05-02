@@ -4,7 +4,9 @@
 #include "spdlog/spdlog.h"
 
 #include "resource/archive/Archive.h"
+#ifndef EXCLUDE_MPQ_SUPPORT
 #include "resource/archive/OtrArchive.h"
+#endif
 #include "resource/archive/O2rArchive.h"
 #include "utils/StringHelper.h"
 #include "utils/glob.h"
@@ -22,7 +24,7 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
                           const std::unordered_set<uint32_t>& validGameVersions) {
     mValidGameVersions = validGameVersions;
     auto archives = GetArchiveListInPaths(archivePaths);
-    for (const auto archive : archives) {
+    for (const auto& archive : archives) {
         AddArchive(archive);
     }
 }
@@ -149,10 +151,12 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
 
     SPDLOG_INFO("Reading archive: {}", path.string());
 
-    if (StringHelper::IEquals(extension, ".zip") || StringHelper::IEquals(extension, ".zip")) {
+    if (StringHelper::IEquals(extension, ".o2r") || StringHelper::IEquals(extension, ".zip")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
+#ifndef EXCLUDE_MPQ_SUPPORT
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath));
+#endif
     } else {
         // Not recognized file extension, trying with o2r
         SPDLOG_WARN("File extension \"{}\" not recognized, trying to create an o2r archive.", extension);
