@@ -153,12 +153,6 @@ endif()
 source_group("graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 
-#=================== metal-cpp ===================
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
-endif()
-
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship

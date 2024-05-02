@@ -14,13 +14,22 @@ if (NOT ${spdlog_FOUND})
     FetchContent_MakeAvailable(spdlog)
 endif()
 
+#=================== Metal-cpp ===================
+FetchContent_Declare(
+    metalcpp
+    GIT_REPOSITORY https://github.com/briaguya-ai/single-header-metal-cpp.git
+    GIT_TAG origin/metal-cpp_macOS12_iOS15
+)
+FetchContent_MakeAvailable(metalcpp)
+list(APPEND ADDITIONAL_LIB_INCLUDES ${metalcpp_SOURCE_DIR})
+
 #=================== ImGui ===================
 target_sources(ImGui
     PRIVATE
     ${imgui_SOURCE_DIR}/backends/imgui_impl_metal.mm
 )
 
-target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/extern/metal-cpp)
+target_include_directories(ImGui PRIVATE ${metalcpp_SOURCE_DIR})
 target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
 
 find_package(SDL2 REQUIRED)
