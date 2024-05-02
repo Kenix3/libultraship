@@ -1,5 +1,5 @@
 #include "Console.h"
-#include "Utils/StringHelper.h"
+#include "utils/StringHelper.h"
 #include "Context.h"
 
 namespace Ship {

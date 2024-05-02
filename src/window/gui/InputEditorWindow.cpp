@@ -1,7 +1,7 @@
 #include "InputEditorWindow.h"
 #include "Context.h"
 #include "Gui.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"

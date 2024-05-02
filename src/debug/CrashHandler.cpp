@@ -1,5 +1,5 @@
 #include <spdlog/spdlog.h>
-#include "Utils/StringHelper.h"
+#include "utils/StringHelper.h"
 #include "CrashHandler.h"
 #include "Context.h"
 

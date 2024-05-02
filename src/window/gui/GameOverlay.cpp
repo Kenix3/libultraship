@@ -7,7 +7,7 @@
 #include "resource/archive/Archive.h"
 #include "resource/ResourceManager.h"
 #include "Context.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 
 namespace Ship {
 GameOverlay::GameOverlay() {

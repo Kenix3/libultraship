@@ -5,7 +5,7 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "Context.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 

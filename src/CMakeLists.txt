@@ -92,7 +92,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Window__Gui})
 
 #=================== Utils ===================
 
-file(GLOB Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/*.h" "utils/*.cpp" "utils/*.c")
+file(GLOB_RECURSE Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/*.h" "utils/*.cpp" "utils/*.c")
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm)
@@ -103,13 +103,6 @@ endif()
 
 source_group("utils" FILES ${Source_Files__Utils})
 target_sources(libultraship PRIVATE ${Source_Files__Utils})
-
-#=================== BinaryTools ==================
-
-file(GLOB Source_Files__Utils__BinaryTools RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/binarytools/*.h" "utils/binarytools/*.cpp")
-
-source_group("utils/binarytools" FILES ${Source_Files__Utils__BinaryTools})
-target_sources(libultraship PRIVATE ${Source_Files__Utils__BinaryTools})
 
 #=================== Port ===================
 
@@ -182,7 +175,7 @@ else()
 endif()
 target_link_libraries(libultraship
     PRIVATE StrHash64
-    PUBLIC ZAPDUtils ImGui
+    PUBLIC ImGui
 )
 
 target_link_libraries(libultraship PRIVATE stb)
