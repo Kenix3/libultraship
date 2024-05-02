@@ -49,11 +49,11 @@ using namespace std;
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
-#define SCALE_5_8(VAL_) (((VAL_)*0xFF) / 0x1F)
+#define SCALE_5_8(VAL_) (((VAL_) * 0xFF) / 0x1F)
 #define SCALE_8_5(VAL_) ((((VAL_) + 4) * 0x1F) / 0xFF)
-#define SCALE_4_8(VAL_) ((VAL_)*0x11)
+#define SCALE_4_8(VAL_) ((VAL_) * 0x11)
 #define SCALE_8_4(VAL_) ((VAL_) / 0x11)
-#define SCALE_3_8(VAL_) ((VAL_)*0x24)
+#define SCALE_3_8(VAL_) ((VAL_) * 0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
 // SCREEN_WIDTH and SCREEN_HEIGHT are defined in the headerfile
@@ -3693,11 +3693,11 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
 
 const static std::array<const std::unordered_map<int8_t, GfxOpcodeHandlerFunc>*, UcodeHandlers::ucode_max>
     ucode_handlers = {
-    #ifdef F3DEX_GBI_2
+#ifdef F3DEX_GBI_2
         &f3dex2Handlers,
-    #else
+#else
         &f3dexHandlers,
-    #endif
+#endif
         &s2dexHandlers,
     };
 
