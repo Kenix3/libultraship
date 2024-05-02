@@ -8,7 +8,7 @@
 #include "resource/ResourceLoader.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/glob.h"
-#include <StrHash64.h>
+#include "utils/StrHash64.h"
 #include <nlohmann/json.hpp>
 
 namespace Ship {
