@@ -7,7 +7,6 @@
 #else
 #include <SDL2/SDL_events.h>
 #endif
-#include "Context.h"
 
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
@@ -75,17 +74,6 @@ bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     return CVarGetInteger(hasConfigCvarKey.c_str(), false);
-}
-
-bool Controller::IsConnected() {
-    const auto deck = Context::GetInstance()->GetControlDeck();
-    for (uint8_t lusIndex = Blue; lusIndex < Max; lusIndex++) {
-        if (this->HasMappingsForLUSDeviceIndex(static_cast<LUSDeviceIndex>(lusIndex))) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 void Controller::ClearAllMappings() {
