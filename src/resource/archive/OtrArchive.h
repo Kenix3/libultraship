@@ -1,3 +1,5 @@
+#ifndef EXCLUDE_MPQ_SUPPORT
+
 #pragma once
 
 #undef _DLL
@@ -35,3 +37,5 @@ class OtrArchive : virtual public Archive {
     HANDLE mHandle;
 };
 } // namespace Ship
+
+#endif // EXCLUDE_MPQ_SUPPORT
