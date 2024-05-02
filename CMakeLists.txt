@@ -23,6 +23,12 @@ endif()
 include(cmake/Utils.cmake)
 set(ADDITIONAL_LIB_INCLUDES "")
 
+# ========= Configuration Options =========
+set(MPQ_SUPPORT FALSE CACHE BOOL "Include StormLib and support using MPQ archives")
+if(MPQ_SUPPORT)
+    add_compile_definitions(MPQ_SUPPORT)
+endif()
+
 # =========== Dependencies =============
 include(cmake/dependencies/common.cmake)
 

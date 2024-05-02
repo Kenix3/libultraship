@@ -4,7 +4,9 @@
 #include "spdlog/spdlog.h"
 
 #include "resource/archive/Archive.h"
+#ifdef MPQ_SUPPORT
 #include "resource/archive/OtrArchive.h"
+#endif
 #include "resource/archive/O2rArchive.h"
 #include "utils/StringHelper.h"
 #include "utils/glob.h"
@@ -151,8 +153,10 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
 
     if (StringHelper::IEquals(extension, ".zip") || StringHelper::IEquals(extension, ".zip")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
+#ifdef MPQ_SUPPORT
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
         archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath));
+#endif
     } else {
         // Not recognized file extension, trying with o2r
         SPDLOG_WARN("File extension \"{}\" not recognized, trying to create an o2r archive.", extension);

@@ -1,3 +1,5 @@
+#ifdef MPQ_SUPPORT
+
 #include "OtrArchive.h"
 
 #include "Context.h"
@@ -100,3 +102,5 @@ bool OtrArchive::Close() {
 }
 
 } // namespace Ship
+
+#endif // MPQ_SUPPORT

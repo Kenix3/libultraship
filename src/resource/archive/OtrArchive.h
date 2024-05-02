@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef MPQ_SUPPORT
+
 #undef _DLL
 
 #include <string>
@@ -35,3 +37,5 @@ class OtrArchive : virtual public Archive {
     HANDLE mHandle;
 };
 } // namespace Ship
+
+#endif // MPQ_SUPPORT
