@@ -7,7 +7,7 @@
 
 #ifdef __APPLE__
 
-#include <Metal/Metal.hpp>
+#include "metal-cpp/Metal.hpp"
 
 #include "gfx_metal_shader.h"
 

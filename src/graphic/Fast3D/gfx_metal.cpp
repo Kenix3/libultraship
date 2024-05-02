@@ -26,7 +26,7 @@
 #define NS_PRIVATE_IMPLEMENTATION
 #define CA_PRIVATE_IMPLEMENTATION
 #define MTL_PRIVATE_IMPLEMENTATION
-#include <Metal/Metal.hpp>
+#include "metal-cpp/Metal.hpp"
 #include <SDL_render.h>
 #include <imgui_impl_metal.h>
 #include <spdlog/spdlog.h>

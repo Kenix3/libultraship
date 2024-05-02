@@ -134,7 +134,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Re
 
 #=================== Graphic ===================
 
-file(GLOB Source_Files__Graphic RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "graphic/Fast3D/*.h" "graphic/Fast3D/*.cpp" "graphic/Fast3D/*.c")
+file(GLOB Source_Files__Graphic RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "graphic/Fast3D/*.h" "graphic/Fast3D/*.hpp" "graphic/Fast3D/*.cpp" "graphic/Fast3D/*.c")
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_dxgi*")
@@ -144,6 +144,7 @@ endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_metal*")
+    list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/metal-cpp/*")
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
@@ -152,12 +153,6 @@ endif()
 
 source_group("graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
-
-#=================== metal-cpp ===================
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern/metal-cpp)
-endif()
 
 #=================== Packages & Includes ===================
 
