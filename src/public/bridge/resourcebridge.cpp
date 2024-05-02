@@ -2,7 +2,7 @@
 #include "Context.h"
 #include <string>
 #include <algorithm>
-#include <StrHash64.h>
+#include "utils/StrHash64.h"
 
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name) {
     return Ship::Context::GetInstance()->GetResourceManager()->LoadResource(name);
