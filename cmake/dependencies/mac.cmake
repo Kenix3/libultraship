@@ -18,7 +18,7 @@ endif()
 FetchContent_Declare(
     metalcpp
     GIT_REPOSITORY https://github.com/briaguya-ai/single-header-metal-cpp.git
-    GIT_TAG origin/metal-cpp_macOS13_iOS16
+    GIT_TAG macOS13_iOS16
 )
 FetchContent_MakeAvailable(metalcpp)
 list(APPEND ADDITIONAL_LIB_INCLUDES ${metalcpp_SOURCE_DIR})
