@@ -45,7 +45,6 @@ endif()
 #=================== STB ===================
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/stb")
 file(DOWNLOAD "https://github.com/nothings/stb/raw/0bc88af4de5fb022db643c2d8e549a0927749354/stb_image.h" "${CMAKE_BINARY_DIR}/_deps/stb/stb_image.h")
-file(DOWNLOAD "https://github.com/nothings/stb/raw/1ee679ca2ef753a528db5ba6801e1067b40481b8/stb_image_write.h" "${CMAKE_BINARY_DIR}/_deps/stb/stb_image_write.h")
 file(WRITE "${CMAKE_BINARY_DIR}/_deps/stb/stb_impl.c" "#define STB_IMAGE_IMPLEMENTATION\n#include \"stb_image.h\"")
 
 set(STB_DIR ${CMAKE_BINARY_DIR}/_deps/stb)
@@ -53,7 +52,6 @@ add_library(stb STATIC)
 
 target_sources(stb PRIVATE
     ${STB_DIR}/stb_image.h
-    ${STB_DIR}/stb_image_write.h
     ${STB_DIR}/stb_impl.c
 )
 
