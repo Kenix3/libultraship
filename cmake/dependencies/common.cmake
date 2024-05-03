@@ -56,3 +56,31 @@ target_sources(stb PRIVATE
 
 target_include_directories(stb PUBLIC ${STB_DIR})
 list(APPEND ADDITIONAL_LIB_INCLUDES ${STB_DIR})
+
+#=================== libgfxd ===================
+if (GFX_DEBUG_DISASSEMBLER)
+    FetchContent_Declare(
+        libgfxd
+        GIT_REPOSITORY https://github.com/glankk/libgfxd.git
+        GIT_TAG 008f73dca8ebc9151b205959b17773a19c5bd0da
+    )
+    FetchContent_MakeAvailable(libgfxd)
+
+    add_library(libgfxd STATIC)
+    set_property(TARGET libgfxd PROPERTY C_STANDARD 11)
+
+    target_sources(libgfxd PRIVATE
+        ${libgfxd_SOURCE_DIR}/gbi.h
+        ${libgfxd_SOURCE_DIR}/gfxd.h
+        ${libgfxd_SOURCE_DIR}/priv.h
+        ${libgfxd_SOURCE_DIR}/gfxd.c
+        ${libgfxd_SOURCE_DIR}/uc.c
+        ${libgfxd_SOURCE_DIR}/uc_f3d.c
+        ${libgfxd_SOURCE_DIR}/uc_f3db.c
+        ${libgfxd_SOURCE_DIR}/uc_f3dex.c
+        ${libgfxd_SOURCE_DIR}/uc_f3dex2.c
+        ${libgfxd_SOURCE_DIR}/uc_f3dexb.c
+    )
+
+    target_include_directories(libgfxd PUBLIC ${libgfxd_SOURCE_DIR})
+endif()
