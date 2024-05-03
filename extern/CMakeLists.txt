@@ -41,16 +41,3 @@ set(THREADPOOL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thread-pool)
 add_library(ThreadPool INTERFACE)
 
 target_include_directories(ThreadPool INTERFACE ${THREADPOOL_DIR})
-
-#=================== STB ===================
-
-set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb)
-add_library(stb STATIC)
-
-target_sources(stb PRIVATE
-    ${STB_DIR}/stb_image.h
-    ${STB_DIR}/stb_image_write.h
-    ${STB_DIR}/stb_impl.c
-)
-
-target_include_directories(stb PUBLIC ${STB_DIR})

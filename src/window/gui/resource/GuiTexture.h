@@ -1,7 +1,7 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 namespace Ship {
 #define RESOURCE_TYPE_GUI_TEXTURE 0x47544558 // GTEX
