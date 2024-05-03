@@ -13,7 +13,7 @@
 #include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "resource/File.h"
-#include <stb/stb_image.h>
+#include <stb_image.h>
 #include "window/gui/Fonts.h"
 #include "window/gui/resource/GuiTextureFactory.h"
 
