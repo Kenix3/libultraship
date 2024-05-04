@@ -35,7 +35,9 @@ static const char* GetOpName(uint32_t op) {
         CASE(G_RDPPIPESYNC);
         CASE(G_RDPFULLSYNC);
         CASE(G_RDPLOADSYNC);
+#ifdef G_LOAD_UCODE
         CASE(G_LOAD_UCODE);
+#endif
         CASE(G_MARKER);
         CASE(G_INVALTEXCACHE);
         CASE(G_NOOP);
@@ -49,23 +51,27 @@ static const char* GetOpName(uint32_t op) {
         CASE(G_VTX_OTR_HASH);
         CASE(G_VTX_OTR_FILEPATH);
         CASE(G_DL_OTR_FILEPATH);
+#ifdef G_MODIFYVTX
         CASE(G_MODIFYVTX);
+#endif
         CASE(G_DL);
         CASE(G_DL_OTR_HASH);
         CASE(G_PUSHCD);
         CASE(G_BRANCH_Z_OTR);
         CASE(G_ENDDL);
-#ifndef F3DEX_GBI
+#ifdef G_GEOMETRYMODE
         CASE(G_GEOMETRYMODE);
 #endif
         // CASE(G_SETGEOMETRYMODE);
         // CASE(G_CLEARGEOMETRYMODE);
         CASE(G_TRI1_OTR);
         CASE(G_TRI1);
-#ifndef F3DEX_GBI
+#ifdef G_QUAD
         CASE(G_QUAD);
 #endif
+#ifdef G_TRI2
         CASE(G_TRI2);
+#endif
         CASE(G_SETOTHERMODE_L);
         CASE(G_SETOTHERMODE_H);
         CASE(G_SETTIMG);

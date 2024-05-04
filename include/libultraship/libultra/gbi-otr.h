@@ -115,14 +115,6 @@
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gSPDisableFiltering(pkt, state)                \
-    {                                                  \
-        Gfx* _g = (Gfx*)(pkt);                         \
-                                                       \
-        _g->words.w0 = _SHIFTL(G_SETFILTERING, 24, 8); \
-        _g->words.w1 = state;                          \
-    }
-
 #define gsSPDisableFiltering(state) \
     { (_SHIFTL(G_SETFILTERING, 24, 8)), (state) }
 

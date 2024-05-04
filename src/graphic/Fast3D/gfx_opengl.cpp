@@ -582,13 +582,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha) {
-        append_line(fs_buf, &fs_len, "float gamma = 1.9;");
+        append_line(fs_buf, &fs_len, "float gamma = 1.0;");
         append_line(fs_buf, &fs_len, "float alphaValue = texel.a;");
 
-        if (cc_features.opt_alpha_threshold) {
-            append_line(fs_buf, &fs_len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
-            append_line(fs_buf, &fs_len, "if (alphaValue < alphaTestValue) discard;");
-        }
+        //if (cc_features.opt_alpha_threshold) {
+        //     append_line(fs_buf, &fs_len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
+        //     append_line(fs_buf, &fs_len, "if (alphaValue < alphaTestValue) discard;");
+        // }
         if (cc_features.opt_invisible) {
             append_line(fs_buf, &fs_len, "texel.a = 0.0;");
         }

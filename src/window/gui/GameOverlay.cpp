@@ -134,10 +134,10 @@ void GameOverlay::Init() {
     Context::GetInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
         std::make_shared<ResourceFactoryBinaryFontV0>(), RESOURCE_FORMAT_BINARY, "Font",
         static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
-    LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
-    LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);
-    const std::string defaultFont = mFonts.begin()->first;
+    // LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
+    // LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);    
     if (!mFonts.empty()) {
+        const std::string defaultFont = mFonts.begin()->first;
         const std::string font = CVarGetString("gOverlayFont", defaultFont.c_str());
         for (auto& [name, _] : mFonts) {
             if (font.starts_with(name)) {

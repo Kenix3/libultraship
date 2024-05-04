@@ -230,7 +230,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
         } else if (childName == "SetTexturePersp") {
             g = gsDPSetTexturePersp(child->IntAttribute("Enable"));
         } else if (childName == "PerspNormalize") {
-            g = gsSPPerspNormalize(child->IntAttribute("S"));
+            g = gsSPPerspNormalize((uintptr_t) child->IntAttribute("S"));
         } else if (childName == "FogPosition") {
             g = gsSPFogPosition(child->IntAttribute("Min"), child->IntAttribute("Max"));
         } else if (childName == "FogFactor") {
@@ -388,9 +388,9 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
             g.words.w1 |= v01 << 16;
             g.words.w1 |= v02 << 0;
         } else if (childName == "Triangles2") {
-            g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
-                               child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
-                               child->IntAttribute("V12"), child->IntAttribute("Flag1"));
+            // g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
+            //                    child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
+            //                    child->IntAttribute("V12"), child->IntAttribute("Flag1"));
         } else if (childName == "LoadVertices") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;

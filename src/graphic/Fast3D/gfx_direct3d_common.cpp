@@ -452,10 +452,10 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
     if (cc_features.opt_alpha) {
         append_line(buf, &len, "    float alphaValue = texel.a;");
 
-        if (cc_features.opt_alpha_threshold) {
-            append_line(buf, &len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
-            append_line(buf, &len, "if (alphaValue < alphaTestValue) discard;");
-        }
+        // if (cc_features.opt_alpha_threshold) {
+        //     append_line(buf, &len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
+        //     append_line(buf, &len, "if (alphaValue < alphaTestValue) discard;");
+        // }
         if (cc_features.opt_invisible) {
             append_line(buf, &len, "    texel.a = 0.0;");
         }

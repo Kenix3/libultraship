@@ -1831,7 +1831,7 @@ static void gfx_sp_movemem_f3dex2(uint8_t index, uint8_t offset, const void* dat
 #endif
 }
 
-#ifdef F3DEX_GBI
+#if defined(F3DEX_GBI) || defined(F3D_OLD)
 static void gfx_sp_movemem_f3d(uint8_t index, uint8_t offset, const void* data) {
     switch (index) {
         case G_MV_VIEWPORT:
@@ -1879,7 +1879,7 @@ static void gfx_sp_moveword_f3d(uint8_t index, uint16_t offset, uintptr_t data) 
         case G_MW_NUMLIGHT:
             // Ambient light is included
             // The 31th bit is a flag that lights should be recalculated
-            g_rsp.current_num_lights = ((data - 0x80000000) >> 5) - 1;
+            g_rsp.current_num_lights = (data - 0x80000000U) / 32;
             g_rsp.lights_changed = 1;
             break;
         case G_MW_FOG:
@@ -3686,7 +3686,7 @@ const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dex2Handlers = {
 };
 #endif
 
-const static std::unordered_map<uint8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
     { G_NOOP, gfx_noop_handler_f3dex2 },
     { G_CULLDL, gfx_cull_dl_handler_f3dex2 },
     { G_MARKER, gfx_marker_handler_f3dex2 },
@@ -3703,22 +3703,22 @@ const static std::unordered_map<uint8_t, GfxOpcodeHandlerFunc> f3dexHandlers = {
 #ifdef F3DEX_GBI
     { G_VTX, gfx_vtx_handler_f3dex },
     { G_TRI1, gfx_tri1_handler_f3dex },
+    { G_MODIFYVTX, gfx_modify_vtx_handler_f3dex2 },
+    { G_TRI2, gfx_tri2_handler_f3dex },
 #else
     { G_VTX, gfx_vtx_handler_f3d },
     { G_TRI1, gfx_tri1_handler_f3d },
 #endif
-    { G_MODIFYVTX, gfx_modify_vtx_handler_f3dex2 },
     { G_DL, gfx_dl_handler_common },
     { G_DL_INDEX, gfx_dl_index_handler },
     { G_PUSHCD, gfx_pushcd_handler_f3dex2 },
     { G_ENDDL, gfx_end_dl_handler_common },
-    { G_TRI2, gfx_tri2_handler_f3dex },
     // Commands to implement
     { G_SPNOOP, gfx_spnoop_command_handler_f3dex2 },
     { G_RDPHALF_1, gfx_stubbed_command_handler },
 };
 
-const static std::unordered_map<uint8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
+const static std::unordered_map<int8_t, GfxOpcodeHandlerFunc> s2dexHandlers = {
     { G_BG_COPY, gfx_bg_copy_handler_s2dex },
     { G_BG_1CYC, gfx_bg_1cyc_handler_s2dex },
     { G_OBJ_RENDERMODE, gfx_stubbed_command_handler },
@@ -3758,14 +3758,16 @@ static void gfx_step() {
         SPDLOG_INFO("Trace Line: {}", cmd->words.trace.idx);
     }
 
-    uint8_t opcode = static_cast<uint8_t>(cmd->words.w0 >> 24);
+    int8_t opcode = static_cast<int8_t>(cmd->words.w0 >> 24);
 
+#ifdef G_LOAD_UCODE
     if (opcode == G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
         ++cmd;
         return;
         // Instead of having a handler for each ucode for switching ucode, just check for it early and return.
     }
+#endif
 
     if(markerOn){
         // SPDLOG_INFO("OPCODE: 0x{:02X}", (uint8_t)opcode);
