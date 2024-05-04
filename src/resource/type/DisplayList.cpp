@@ -9,6 +9,6 @@ Gfx* DisplayList::GetPointer() {
 }
 
 size_t DisplayList::GetPointerSize() {
-    return Instructions.size() * sizeof(F3DGfx);
+    return Instructions.size() * sizeof(Gfx);
 }
 } // namespace LUS

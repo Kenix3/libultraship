@@ -40,16 +40,16 @@ std::unordered_map<std::string, uint32_t> renderModes = {
     { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 },
 };
 
-static F3DGfx GsSpVertexOtR2P1(char* filePathPtr) {
-    F3DGfx g;
+static Gfx GsSpVertexOtR2P1(char* filePathPtr) {
+    Gfx g;
     g.words.w0 = G_VTX_OTR_FILEPATH << 24;
     g.words.w1 = (uintptr_t)filePathPtr;
 
     return g;
 }
 
-static F3DGfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
-    F3DGfx g;
+static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
+    Gfx g;
     g.words.w0 = (uintptr_t)vtxCnt;
     g.words.w1 = (uintptr_t)((vtxBufOffset << 16) | vtxDataOffset);
 
@@ -146,7 +146,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
     }
 
     while (true) {
-        F3DGfx command;
+        Gfx command;
         command.words.w0 = reader->ReadUInt32();
         command.words.w1 = reader->ReadUInt32();
 
@@ -183,7 +183,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
     while (child != nullptr) {
         std::string childName = child->Name();
 
-        F3DGfx g = gsDPPipeSync();
+        Gfx g = gsDPPipeSync();
 
         if (childName == "PipeSync") {
             g = gsDPPipeSync();
@@ -870,24 +870,24 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
 
-            F3DGfx g2[7];
+            Gfx g2[7];
 
             if (siz == 0) {
-                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_4b, width, height, 0, cms, cmt, maskS, maskT,
+                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_4b, width, height, 0, cms, cmt, maskS, maskT,
                                                       shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(F3DGfx));
+                memcpy(g2, g3, 7 * sizeof(Gfx));
             } else if (siz == 1) {
-                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
+                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
                                                       shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(F3DGfx));
+                memcpy(g2, g3, 7 * sizeof(Gfx));
             } else if (siz == 2) {
-                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
+                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
                                                       shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(F3DGfx));
+                memcpy(g2, g3, 7 * sizeof(Gfx));
             } else if (siz == 3) {
-                F3DGfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
+                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
                                                       shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(F3DGfx));
+                memcpy(g2, g3, 7 * sizeof(Gfx));
             }
 
             g = { gsDPSetTextureImage(fmt, siz, width + 1, 0) };
@@ -912,32 +912,32 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
             g = gsSPCullDisplayList(start, end);
         } else if (childName == "ClipRatio") {
             uint32_t ratio = child->IntAttribute("Start");
-            F3DGfx g2[4];
+            Gfx g2[4];
 
             switch (ratio) {
                 case 1: {
-                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_1) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
+                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_1) };
+                    memcpy(g2, g3, sizeof(Gfx) * 4);
                 } break;
                 case 2: {
-                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_2) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
+                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_2) };
+                    memcpy(g2, g3, sizeof(Gfx) * 4);
                 } break;
                 case 3: {
-                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_3) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
+                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_3) };
+                    memcpy(g2, g3, sizeof(Gfx) * 4);
                 } break;
                 case 4: {
-                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_4) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
+                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_4) };
+                    memcpy(g2, g3, sizeof(Gfx) * 4);
                 } break;
                 case 5: {
-                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_5) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
+                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_5) };
+                    memcpy(g2, g3, sizeof(Gfx) * 4);
                 } break;
                 case 6: {
-                    F3DGfx g3[4] = { gsSPClipRatio(FRUSTRATIO_6) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 4);
+                    Gfx g3[4] = { gsSPClipRatio(FRUSTRATIO_6) };
+                    memcpy(g2, g3, sizeof(Gfx) * 4);
                 } break;
             }
 
@@ -1023,40 +1023,40 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
             int n = child->IntAttribute("N");
             uint32_t col = child->IntAttribute("Col");
 
-            F3DGfx g2[2];
+            Gfx g2[2];
 
             switch (n) {
                 case 1: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_1, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_1, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
                 case 2: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_2, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_2, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
                 case 3: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_3, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_3, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
                 case 4: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_4, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_4, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
                 case 5: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_5, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_5, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
                 case 6: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_6, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_6, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
                 case 7: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_7, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_7, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
                 case 8: {
-                    F3DGfx g3[2] = { gsSPLightColor(LIGHT_8, col) };
-                    memcpy(g2, g3, sizeof(F3DGfx) * 2);
+                    Gfx g3[2] = { gsSPLightColor(LIGHT_8, col) };
+                    memcpy(g2, g3, sizeof(Gfx) * 2);
                 } break;
             }
 
