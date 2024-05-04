@@ -16,33 +16,33 @@
 #ifndef F3DEX_GBI
 #define F3DEX_GBI
 #endif
-constexpr int8_t F3DEX2_G_NOOP = 0x00;
-constexpr int8_t F3DEX2_G_RDPHALF_2 = 0xf1;
-constexpr int8_t F3DEX2_G_SETOTHERMODE_H = 0xe3;
-constexpr int8_t F3DEX2_G_SETOTHERMODE_L = 0xe2;
-constexpr int8_t F3DEX2_G_RDPHALF_1 = 0xe1;
-constexpr int8_t F3DEX2_G_SPNOOP = 0xe0;
-constexpr int8_t F3DEX2_G_ENDDL = 0xdf;
-constexpr int8_t F3DEX2_G_DL = 0xde;
+constexpr int8_t F3DEX2_G_NOOP = (int8_t)0x00;
+constexpr int8_t F3DEX2_G_RDPHALF_2 = (int8_t)0xf1;
+constexpr int8_t F3DEX2_G_SETOTHERMODE_H = (int8_t)0xe3;
+constexpr int8_t F3DEX2_G_SETOTHERMODE_L = (int8_t)0xe2;
+constexpr int8_t F3DEX2_G_RDPHALF_1 = (int8_t)0xe1;
+constexpr int8_t F3DEX2_G_SPNOOP = (int8_t)0xe0;
+constexpr int8_t F3DEX2_G_ENDDL = (int8_t)0xdf;
+constexpr int8_t F3DEX2_G_DL = (int8_t)0xde;
 #define G_LOAD_UCODE 0xdd
-constexpr int8_t F3DEX2_G_MOVEMEM = 0xdc;
-constexpr int8_t F3DEX2_G_MOVEWORD = 0xdb;
-constexpr int8_t F3DEX2_G_MTX = 0xda;
-constexpr int8_t F3DEX2_G_GEOMETRYMODE = 0xd9;
-constexpr int8_t F3DEX2_G_POPMTX = 0xd8;
-constexpr int8_t F3DEX2_G_TEXTURE = 0xd7;
+constexpr int8_t F3DEX2_G_MOVEMEM = (int8_t)0xdc;
+constexpr int8_t F3DEX2_G_MOVEWORD = (int8_t)0xdb;
+constexpr int8_t F3DEX2_G_MTX = (int8_t)0xda;
+constexpr int8_t F3DEX2_G_GEOMETRYMODE = (int8_t)0xd9;
+constexpr int8_t F3DEX2_G_POPMTX = (int8_t)0xd8;
+constexpr int8_t F3DEX2_G_TEXTURE = (int8_t)0xd7;
 #define G_DMA_IO 0xd6
 #define G_SPECIAL_1 0xd5
 #define G_SPECIAL_2 0xd4
 #define G_SPECIAL_3 0xd3
 
-constexpr int8_t F3DEX2_G_VTX = 0x01;
-constexpr int8_t F3DEX2_G_MODIFYVTX = 0x02;
-constexpr int8_t F3DEX2_G_CULLDL = 0x03;
-constexpr int8_t F3DEX2_G_BRANCH_Z = 0x04;
-constexpr int8_t F3DEX2_G_TRI1 = 0x05;
-constexpr int8_t F3DEX2_G_TRI2 = 0x06;
-constexpr int8_t F3DEX2_G_QUAD = 0x07;
+constexpr int8_t F3DEX2_G_VTX = (int8_t)0x01;
+constexpr int8_t F3DEX2_G_MODIFYVTX = (int8_t)0x02;
+constexpr int8_t F3DEX2_G_CULLDL = (int8_t)0x03;
+constexpr int8_t F3DEX2_G_BRANCH_Z = (int8_t)0x04;
+constexpr int8_t F3DEX2_G_TRI1 = (int8_t)0x05;
+constexpr int8_t F3DEX2_G_TRI2 = (int8_t)0x06;
+constexpr int8_t F3DEX2_G_QUAD = (int8_t)0x07;
 #define G_LINE3D 0x08
 #else              /* F3DEX_GBI_2 */
 
@@ -94,64 +94,64 @@ constexpr int8_t G_CLEARGEOMETRYMODE - (G_IMMFIRST - 9);
 #endif /* F3DEX_GBI_2 */
 
 /* RDP commands: */
-constexpr int8_t RDP_G_SETCIMG = 0xff;         /*  -1 */
-constexpr int8_t RDP_G_SETZIMG = 0xfe;         /*  -2 */
-constexpr int8_t RDP_G_SETTIMG = 0xfd;         /*  -3 */
-constexpr int8_t RDP_G_SETCOMBINE = 0xfc;      /*  -4 */
-constexpr int8_t RDP_G_SETENVCOLOR = 0xfb;     /*  -5 */
-constexpr int8_t RDP_G_SETPRIMCOLOR = 0xfa;    /*  -6 */
-constexpr int8_t RDP_G_SETBLENDCOLOR = 0xf9;   /*  -7 */
-constexpr int8_t RDP_G_SETFOGCOLOR = 0xf8;     /*  -8 */
-constexpr int8_t RDP_G_SETFILLCOLOR = 0xf7;    /*  -9 */
-constexpr int8_t RDP_G_FILLRECT = 0xf6;        /* -10 */
-constexpr int8_t RDP_G_SETTILE = 0xf5;         /* -11 */
-constexpr int8_t RDP_G_LOADTILE = 0xf4;        /* -12 */
-constexpr int8_t RDP_G_LOADBLOCK = 0xf3;       /* -13 */
-constexpr int8_t RDP_G_SETTILESIZE = 0xf2;     /* -14 */
-constexpr int8_t RDP_G_LOADTLUT = 0xf0;        /* -16 */
-constexpr int8_t RDP_G_RDPSETOTHERMODE = 0xef; /* -17 */
-constexpr int8_t RDP_G_SETPRIMDEPTH = 0xee;    /* -18 */
-constexpr int8_t RDP_G_SETSCISSOR = 0xed;      /* -19 */
-constexpr int8_t RDP_G_SETCONVERT = 0xec;      /* -20 */
-constexpr int8_t RDP_G_SETKEYR = 0xeb;         /* -21 */
-constexpr int8_t RDP_G_SETKEYGB = 0xea;        /* -22 */
-constexpr int8_t RDP_G_RDPFULLSYNC = 0xe9;     /* -23 */
-constexpr int8_t RDP_G_RDPTILESYNC = 0xe8;     /* -24 */
-constexpr int8_t RDP_G_RDPPIPESYNC = 0xe7;     /* -25 */
-constexpr int8_t RDP_G_RDPLOADSYNC = 0xe6;     /* -26 */
-constexpr int8_t RDP_G_TEXRECTFLIP = 0xe5;     /* -27 */
-constexpr int8_t RDP_G_TEXRECT = 0xe4;         /* -28 */
+constexpr int8_t RDP_G_SETCIMG = (int8_t)0xff;         /*  -1 */
+constexpr int8_t RDP_G_SETZIMG = (int8_t)0xfe;         /*  -2 */
+constexpr int8_t RDP_G_SETTIMG = (int8_t)0xfd;         /*  -3 */
+constexpr int8_t RDP_G_SETCOMBINE = (int8_t)0xfc;      /*  -4 */
+constexpr int8_t RDP_G_SETENVCOLOR = (int8_t)0xfb;     /*  -5 */
+constexpr int8_t RDP_G_SETPRIMCOLOR = (int8_t)0xfa;    /*  -6 */
+constexpr int8_t RDP_G_SETBLENDCOLOR = (int8_t)0xf9;   /*  -7 */
+constexpr int8_t RDP_G_SETFOGCOLOR = (int8_t)0xf8;     /*  -8 */
+constexpr int8_t RDP_G_SETFILLCOLOR = (int8_t)0xf7;    /*  -9 */
+constexpr int8_t RDP_G_FILLRECT = (int8_t)0xf6;        /* -10 */
+constexpr int8_t RDP_G_SETTILE = (int8_t)0xf5;         /* -11 */
+constexpr int8_t RDP_G_LOADTILE = (int8_t)0xf4;        /* -12 */
+constexpr int8_t RDP_G_LOADBLOCK = (int8_t)0xf3;       /* -13 */
+constexpr int8_t RDP_G_SETTILESIZE = (int8_t)0xf2;     /* -14 */
+constexpr int8_t RDP_G_LOADTLUT = (int8_t)0xf0;        /* -16 */
+constexpr int8_t RDP_G_RDPSETOTHERMODE = (int8_t)0xef; /* -17 */
+constexpr int8_t RDP_G_SETPRIMDEPTH = (int8_t)0xee;    /* -18 */
+constexpr int8_t RDP_G_SETSCISSOR = (int8_t)0xed;      /* -19 */
+constexpr int8_t RDP_G_SETCONVERT = (int8_t)0xec;      /* -20 */
+constexpr int8_t RDP_G_SETKEYR = (int8_t)0xeb;         /* -21 */
+constexpr int8_t RDP_G_SETKEYGB = (int8_t)0xea;        /* -22 */
+constexpr int8_t RDP_G_RDPFULLSYNC = (int8_t)0xe9;     /* -23 */
+constexpr int8_t RDP_G_RDPTILESYNC = (int8_t)0xe8;     /* -24 */
+constexpr int8_t RDP_G_RDPPIPESYNC = (int8_t)0xe7;     /* -25 */
+constexpr int8_t RDP_G_RDPLOADSYNC = (int8_t)0xe6;     /* -26 */
+constexpr int8_t RDP_G_TEXRECTFLIP = (int8_t)0xe5;     /* -27 */
+constexpr int8_t RDP_G_TEXRECT = (int8_t)0xe4;         /* -28 */
 
 // CUSTOM OTR COMMANDS
-constexpr int8_t OTR_G_SETTIMG_OTR_HASH = 0x20;
-constexpr int8_t OTR_G_SETFB = 0x21;
-constexpr int8_t OTR_G_RESETFB = 0x22;
-constexpr int8_t OTR_G_SETTIMG_FB = 0x23;
-constexpr int8_t OTR_G_VTX_OTR_FILEPATH = 0x24;
-constexpr int8_t OTR_G_SETTIMG_OTR_FILEPATH = 0x25;
-constexpr int8_t OTR_G_TRI1_OTR = 0x26;
-constexpr int8_t OTR_G_DL_OTR_FILEPATH = 0x27;
-constexpr int8_t OTR_G_PUSHCD = 0x28;
-constexpr int8_t OTR_G_MTX_OTR2 = 0x29;
-constexpr int8_t OTR_G_DL_OTR_HASH = 0x31;
-constexpr int8_t OTR_G_VTX_OTR_HASH = 0x32;
-constexpr int8_t OTR_G_MARKER = 0x33;
-constexpr int8_t OTR_G_INVALTEXCACHE = 0x34;
-constexpr int8_t OTR_G_BRANCH_Z_OTR = 0x35;
-constexpr int8_t OTR_G_MTX_OTR = 0x36;
-constexpr int8_t OTR_G_TEXRECT_WIDE = 0x37;
-constexpr int8_t OTR_G_FILLWIDERECT = 0x38;
+constexpr int8_t OTR_G_SETTIMG_OTR_HASH = (int8_t)0x20;
+constexpr int8_t OTR_G_SETFB = (int8_t)0x21;
+constexpr int8_t OTR_G_RESETFB = (int8_t)0x22;
+constexpr int8_t OTR_G_SETTIMG_FB = (int8_t)0x23;
+constexpr int8_t OTR_G_VTX_OTR_FILEPATH = (int8_t)0x24;
+constexpr int8_t OTR_G_SETTIMG_OTR_FILEPATH = (int8_t)0x25;
+constexpr int8_t OTR_G_TRI1_OTR = (int8_t)0x26;
+constexpr int8_t OTR_G_DL_OTR_FILEPATH = (int8_t)0x27;
+constexpr int8_t OTR_G_PUSHCD = (int8_t)0x28;
+constexpr int8_t OTR_G_MTX_OTR2 = (int8_t)0x29;
+constexpr int8_t OTR_G_DL_OTR_HASH = (int8_t)0x31;
+constexpr int8_t OTR_G_VTX_OTR_HASH = (int8_t)0x32;
+constexpr int8_t OTR_G_MARKER = (int8_t)0x33;
+constexpr int8_t OTR_G_INVALTEXCACHE = (int8_t)0x34;
+constexpr int8_t OTR_G_BRANCH_Z_OTR = (int8_t)0x35;
+constexpr int8_t OTR_G_MTX_OTR = (int8_t)0x36;
+constexpr int8_t OTR_G_TEXRECT_WIDE = (int8_t)0x37;
+constexpr int8_t OTR_G_FILLWIDERECT = (int8_t)0x38;
 
 /* GFX Effects */
 
 // RDP Cmd
-constexpr int8_t OTR_G_SETGRAYSCALE = 0x39;
-constexpr int8_t OTR_G_EXTRAGEOMETRYMODE = 0x3a;
-constexpr int8_t OTR_G_COPYFB = 0x3b;
-constexpr int8_t OTR_G_IMAGERECT = 0x3c;
-constexpr int8_t OTR_G_DL_INDEX = 0x3d;
-constexpr int8_t OTR_G_READFB = 0x3e;
-constexpr int8_t OTR_G_SETINTENSITY = 0x40;
+constexpr int8_t OTR_G_SETGRAYSCALE = (int8_t)0x39;
+constexpr int8_t OTR_G_EXTRAGEOMETRYMODE = (int8_t)0x3a;
+constexpr int8_t OTR_G_COPYFB = (int8_t)0x3b;
+constexpr int8_t OTR_G_IMAGERECT = (int8_t)0x3c;
+constexpr int8_t OTR_G_DL_INDEX = (int8_t)0x3d;
+constexpr int8_t OTR_G_READFB = (int8_t)0x3e;
+constexpr int8_t OTR_G_SETINTENSITY = (int8_t)0x40;
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1341,19 +1341,19 @@ typedef union F3DGfx {
  *===========================================================================*/
 /* GBI Header */
 #ifdef F3DEX_GBI_2
-constexpr int8_t S2DEX_G_OBJ_RECTANGLE_R = 0xda;
+constexpr int8_t S2DEX_G_OBJ_RECTANGLE_R = (int8_t)0xda;
 #define G_OBJ_MOVEMEM 0xdc
 #define G_RDPHALF_0 0xe4
-constexpr int8_t S2DEX_G_OBJ_RECTANGLE = 0x01;
+constexpr int8_t S2DEX_G_OBJ_RECTANGLE = (int8_t)0x01;
 #define G_OBJ_SPRITE 0x02
 #define G_SELECT_DL 0x04
 #define G_OBJ_LOADTXTR 0x05
 #define G_OBJ_LDTX_SPRITE 0x06
 #define G_OBJ_LDTX_RECT 0x07
 #define G_OBJ_LDTX_RECT_R 0x08
-constexpr int8_t S2DEX_G_BG_1CYC = 0x09;
-constexpr int8_t S2DEX_G_BG_COPY = 0x0a;
-constexpr int8_t S2DEX_G_OBJ_RENDERMODE = 0x0b;
+constexpr int8_t S2DEX_G_BG_1CYC = (int8_t)0x09;
+constexpr int8_t S2DEX_G_BG_COPY = (int8_t)0x0a;
+constexpr int8_t S2DEX_G_OBJ_RENDERMODE = (int8_t)0x0b;
 #else
 #define G_BG_1CYC 0x01
 #define G_BG_COPY 0x02
