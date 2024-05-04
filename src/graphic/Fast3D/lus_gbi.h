@@ -1341,19 +1341,19 @@ typedef union F3DGfx {
  *===========================================================================*/
 /* GBI Header */
 #ifdef F3DEX_GBI_2
-constexpr int8_t S2DEX_G_OBJ_RECTANGLE_R = (int8_t)0xda;
+constexpr int8_t F3DEX2_G_OBJ_RECTANGLE_R = (int8_t)0xda;
 #define G_OBJ_MOVEMEM 0xdc
 #define G_RDPHALF_0 0xe4
-constexpr int8_t S2DEX_G_OBJ_RECTANGLE = (int8_t)0x01;
+constexpr int8_t F3DEX2_G_OBJ_RECTANGLE = (int8_t)0x01;
 #define G_OBJ_SPRITE 0x02
 #define G_SELECT_DL 0x04
 #define G_OBJ_LOADTXTR 0x05
 #define G_OBJ_LDTX_SPRITE 0x06
 #define G_OBJ_LDTX_RECT 0x07
 #define G_OBJ_LDTX_RECT_R 0x08
-constexpr int8_t S2DEX_G_BG_1CYC = (int8_t)0x09;
-constexpr int8_t S2DEX_G_BG_COPY = (int8_t)0x0a;
-constexpr int8_t S2DEX_G_OBJ_RENDERMODE = (int8_t)0x0b;
+constexpr int8_t F3DEX2_G_BG_1CYC = (int8_t)0x09;
+constexpr int8_t F3DEX2_G_BG_COPY = (int8_t)0x0a;
+constexpr int8_t F3DEX2_G_OBJ_RENDERMODE = (int8_t)0x0b;
 #else
 #define G_BG_1CYC 0x01
 #define G_BG_COPY 0x02
