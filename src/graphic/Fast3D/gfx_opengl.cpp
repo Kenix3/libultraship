@@ -57,8 +57,10 @@ struct ShaderProgram {
     GLint attrib_locations[16];
     uint8_t attrib_sizes[16];
     uint8_t num_attribs;
+    bool used_alpha_threshold;
     GLint frame_count_location;
     GLint noise_scale_location;
+    GLint alpha_test_val_location;
 };
 
 struct Framebuffer {
@@ -82,6 +84,7 @@ static uint32_t frame_count;
 static vector<Framebuffer> framebuffers;
 static size_t current_framebuffer;
 static float current_noise_scale;
+static float current_alpha_test_value = 0.0f;
 static FilteringMode current_filter_mode = FILTER_THREE_POINT;
 
 GLint max_msaa_level = 1;
@@ -117,6 +120,9 @@ static void gfx_opengl_vertex_array_set_attribs(struct ShaderProgram* prg) {
 static void gfx_opengl_set_uniforms(struct ShaderProgram* prg) {
     glUniform1i(prg->frame_count_location, frame_count);
     glUniform1f(prg->noise_scale_location, current_noise_scale);
+    if (prg->used_alpha_threshold) {
+        glUniform1f(prg->alpha_test_val_location, current_alpha_test_value);
+    }
 }
 
 static void gfx_opengl_unload_shader(struct ShaderProgram* old_prg) {
@@ -412,8 +418,29 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "uniform sampler2D uTexBlend1;");
     }
 
+    if (cc_features.opt_alpha_threshold) {
+        append_line(fs_buf, &fs_len, "uniform float alphaTestValue;");
+        append_line(fs_buf, &fs_len, "#define WRAP(x, low, high) (mod((x)-(low), (high)-(low)) + (low));");
+    }
+
     append_line(fs_buf, &fs_len, "uniform int frame_count;");
     append_line(fs_buf, &fs_len, "uniform float noise_scale;");
+
+    append_line(fs_buf, &fs_len, "vec3 colorDither(float _noise_val, vec3 _color)");
+    append_line(fs_buf, &fs_len, "{");
+    append_line(fs_buf, &fs_len, "    vec3 _noise = vec3(_noise_val, _noise_val, _noise_val);");
+    append_line(fs_buf, &fs_len, "    vec3 threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(fs_buf, &fs_len, "    _color = clamp(_color + threshold, 0.0, 1.0);");
+    append_line(fs_buf, &fs_len, "    _color.rgb = round(_color.rgb * 32.0) / 32.0;");
+    append_line(fs_buf, &fs_len, "    return _color;");
+    append_line(fs_buf, &fs_len, "}");
+    append_line(fs_buf, &fs_len, "float alphaDither(float _noise, float _alpha)");
+    append_line(fs_buf, &fs_len, "{");
+    append_line(fs_buf, &fs_len, "    float threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(fs_buf, &fs_len, "    _alpha = clamp(_alpha + threshold, 0.0, 1.0);");
+    append_line(fs_buf, &fs_len, "    _alpha = round(_alpha * 32.0) / 32.0;");
+    append_line(fs_buf, &fs_len, "    return _alpha;");
+    append_line(fs_buf, &fs_len, "}");
 
     append_line(fs_buf, &fs_len, "float random(in vec3 value) {");
     append_line(fs_buf, &fs_len, "    float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
@@ -551,9 +578,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha && cc_features.opt_noise) {
+        append_line(
+            fs_buf, &fs_len,
+            "texel.a = alphaDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), texel.a);");
+    } else if (cc_features.opt_noise) {
         append_line(fs_buf, &fs_len,
-                    "texel.a *= floor(clamp(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + "
-                    "texel.a, 0.0, 1.0));");
+                    "texel.rgb = colorDither(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))), "
+                    "texel.rgb);");
     }
 
     if (cc_features.opt_grayscale) {
@@ -563,8 +594,11 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_alpha) {
+        append_line(fs_buf, &fs_len, "float alphaValue = texel.a;");
+
         if (cc_features.opt_alpha_threshold) {
-            append_line(fs_buf, &fs_len, "if (texel.a < 8.0 / 256.0) discard;");
+            append_line(fs_buf, &fs_len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
+            append_line(fs_buf, &fs_len, "if (alphaValue < alphaTestValue) discard;");
         }
         if (cc_features.opt_invisible) {
             append_line(fs_buf, &fs_len, "texel.a = 0.0;");
@@ -688,6 +722,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 
     prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
     prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
+    prg->alpha_test_val_location = glGetUniformLocation(shader_program, "alphaTestValue");
 
     gfx_opengl_load_shader(prg);
 
@@ -714,6 +749,13 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     if (cc_features.used_blend[1]) {
         GLint sampler_location = glGetUniformLocation(shader_program, "uTexBlend1");
         glUniform1i(sampler_location, 5);
+    }
+
+    if (cc_features.opt_alpha_threshold) {
+        prg->alpha_test_val_location = glGetUniformLocation(shader_program, "alphaTestValue");
+        prg->used_alpha_threshold = true;
+    } else {
+        prg->used_alpha_threshold = false;
     }
 
     return prg;
@@ -976,9 +1018,10 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
     fb.invert_y = opengl_invert_y;
 }
 
-void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale) {
+void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale, float alpha_test_value) {
     Framebuffer& fb = framebuffers[fb_id];
 
+    current_alpha_test_value = alpha_test_value;
     if (noise_scale != 0.0f) {
         current_noise_scale = 1.0f / noise_scale;
     }

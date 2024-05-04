@@ -194,6 +194,24 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
     append_line(buf, &len, "cbuffer PerFrameCB : register(b0) {");
     append_line(buf, &len, "    uint noise_frame;");
     append_line(buf, &len, "    float noise_scale;");
+    append_line(buf, &len, "    float alpha_test_value;");
+    append_line(buf, &len, "}");
+
+    append_line(buf, &len, "float3 colorDither(in float _noise_val, in float3 _color)");
+    append_line(buf, &len, "{");
+    append_line(buf, &len, "    float3 _noise = float3(_noise_val, _noise_val, _noise_val);");
+    append_line(buf, &len, "    float3 threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(buf, &len, "    _color = clamp(_color + threshold, 0.0, 1.0);");
+    append_line(buf, &len, "    _color.rgb = round(_color.rgb * 32.0) / 32.0;");
+    append_line(buf, &len, "    return _color;");
+    append_line(buf, &len, "}");
+
+    append_line(buf, &len, "float alphaDither(in float _noise, in float _alpha)");
+    append_line(buf, &len, "{");
+    append_line(buf, &len, "    float threshold = 7.0 / 255.0 * (_noise - 0.5);");
+    append_line(buf, &len, "    _alpha = clamp(_alpha + threshold, 0.0, 1.0);");
+    append_line(buf, &len, "    _alpha = round(_alpha * 32.0) / 32.0;");
+    append_line(buf, &len, "    return _alpha;");
     append_line(buf, &len, "}");
 
     append_line(buf, &len, "float random(in float3 value) {");
@@ -428,14 +446,22 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
     }
 
     if (cc_features.opt_alpha && cc_features.opt_noise) {
-        append_line(buf, &len, "    float2 coords = screenSpace.xy * noise_scale;");
         append_line(buf, &len,
-                    "    texel.a *= round(saturate(random(float3(floor(coords), noise_frame)) + texel.a - 0.5));");
+                    "    texel.a = alphaDither(random(float3(floor(screenSpace.xy * noise_scale), "
+                    "float(noise_frame))), texel.a);");
+    } else if (cc_features.opt_noise) {
+        append_line(
+            buf, &len,
+            "    texel.rgb = colorDither(random(float3(floor(screenSpace.xy * noise_scale), float(frame_count))), "
+            "    texel.rgb);");
     }
 
     if (cc_features.opt_alpha) {
+        append_line(buf, &len, "    float alphaValue = texel.a;");
+
         if (cc_features.opt_alpha_threshold) {
-            append_line(buf, &len, "    if (texel.a < 8.0 / 256.0) discard;");
+            append_line(buf, &len, "alphaValue = clamp(alphaValue, 0.0, 1.0);");
+            append_line(buf, &len, "if (alphaValue < alpha_test_value) discard;");
         }
         if (cc_features.opt_invisible) {
             append_line(buf, &len, "    texel.a = 0.0;");

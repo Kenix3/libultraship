@@ -57,7 +57,7 @@ struct GfxRenderingAPI {
     void (*update_framebuffer_parameters)(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                           bool opengl_invert_y, bool render_target, bool has_depth_buffer,
                                           bool can_extract_depth);
-    void (*start_draw_to_framebuffer)(int fb_id, float noise_scale);
+    void (*start_draw_to_framebuffer)(int fb_id, float noise_scale, float alpha_test_value);
     void (*copy_framebuffer)(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
                              int dstY0, int dstX1, int dstY1);
     void (*clear_framebuffer)(void);

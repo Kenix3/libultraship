@@ -1412,12 +1412,16 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                      (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16);
     bool use_fog = (g_rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (g_rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
-    bool use_noise = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
+    bool use_noise = ((g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) < G_CYC_COPY) &&
+                     ((g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER ||
+                      (g_rdp.other_mode_h & (3U << G_MDSFT_ALPHADITHER)) == G_AD_NOISE ||
+                      (g_rdp.other_mode_h & (3U << G_MDSFT_COLORDITHER)) == G_CD_NOISE);
     bool use_2cyc = (g_rdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
     bool alpha_threshold = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
     bool invisible =
         (g_rdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = g_rdp.grayscale;
+    g_rdp.alpha_test_value = 0.0f;
 
     if (texture_edge) {
         use_alpha = true;
@@ -1440,6 +1444,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
     if (alpha_threshold) {
         cc_options |= (uint64_t)SHADER_OPT_ALPHA_THRESHOLD;
+        g_rdp.alpha_test_value = g_rdp.blend_color.a;
     }
     if (invisible) {
         cc_options |= (uint64_t)SHADER_OPT_INVISIBLE;
@@ -2169,7 +2174,10 @@ static void gfx_dp_set_fog_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 static void gfx_dp_set_blend_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    // TODO: Implement this command..
+    g_rdp.blend_color.r = r;
+    g_rdp.blend_color.g = g;
+    g_rdp.blend_color.b = b;
+    g_rdp.blend_color.a = a;
 }
 
 static void gfx_dp_set_fill_color(uint32_t packed_color) {
@@ -3268,11 +3276,15 @@ bool gfx_set_fb_handler_custom(Gfx** cmd0) {
     return false;
 }
 
+float gfx_calculate_noise_scale() {
+    return ((float)gfx_current_dimensions.height / gfx_native_dimensions.height) * 0.5f;
+}
+
 bool gfx_reset_fb_handler_custom(Gfx** cmd0) {
     gfx_flush();
     fbActive = 0;
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale(),
+                                        g_rdp.alpha_test_value);
     return false;
 }
 
@@ -3881,8 +3893,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                                             gfx_current_window_dimensions.height, 1, false, true, true,
                                             !game_renders_to_framebuffer);
     gfx_rapi->start_frame();
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, gfx_calculate_noise_scale(),
+                                        g_rdp.alpha_test_value);
     gfx_rapi->clear_framebuffer();
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
@@ -3907,7 +3919,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     currentDir = std::stack<std::string>();
 
     if (game_renders_to_framebuffer) {
-        gfx_rapi->start_draw_to_framebuffer(0, 1);
+        gfx_rapi->start_draw_to_framebuffer(0, 1, 0);
         gfx_rapi->clear_framebuffer();
 
         if (gfx_msaa_level > 1) {
@@ -3963,7 +3975,7 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
 }
 
 void gfx_set_framebuffer(int fb, float noise_scale) {
-    gfx_rapi->start_draw_to_framebuffer(fb, noise_scale);
+    gfx_rapi->start_draw_to_framebuffer(fb, noise_scale, g_rdp.alpha_test_value);
     gfx_rapi->clear_framebuffer();
 }
 
@@ -4011,7 +4023,7 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
 }
 
 void gfx_reset_framebuffer() {
-    gfx_rapi->start_draw_to_framebuffer(0, (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    gfx_rapi->start_draw_to_framebuffer(0, gfx_calculate_noise_scale(), g_rdp.alpha_test_value);
     gfx_rapi->clear_framebuffer();
 }
 
