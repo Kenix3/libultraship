@@ -1,7 +1,7 @@
 #include "resource/factory/VertexFactory.h"
 #include "resource/type/Vertex.h"
 #include "spdlog/spdlog.h"
-#include "graphic/Fast3D/lus_gbi.h"
+#include "libultraship/libultra/gbi.h"
 
 namespace LUS {
 std::shared_ptr<Ship::IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<Ship::File> file) {
@@ -16,7 +16,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryVertexV0::ReadResource(std
     vertex->VertexList.reserve(count);
 
     for (uint32_t i = 0; i < count; i++) {
-        F3DVtx data;
+        Vtx data;
         data.v.ob[0] = reader->ReadInt16();
         data.v.ob[1] = reader->ReadInt16();
         data.v.ob[2] = reader->ReadInt16();
@@ -47,7 +47,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLVertexV0::ReadResource(std::s
         std::string childName = child->Name();
 
         if (childName == "Vtx") {
-            F3DVtx data;
+            Vtx data;
             data.v.ob[0] = child->IntAttribute("X");
             data.v.ob[1] = child->IntAttribute("Y");
             data.v.ob[2] = child->IntAttribute("Z");

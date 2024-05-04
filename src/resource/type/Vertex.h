@@ -3,18 +3,18 @@
 #include "resource/Resource.h"
 #include <vector>
 
-union F3DVtx;
+union Vtx;
 
 namespace LUS {
-class Vertex : public Ship::Resource<F3DVtx> {
+class Vertex : public Ship::Resource<Vtx> {
   public:
     using Resource::Resource;
 
     Vertex();
 
-    F3DVtx* GetPointer() override;
+    Vtx* GetPointer() override;
     size_t GetPointerSize() override;
 
-    std::vector<F3DVtx> VertexList;
+    std::vector<Vtx> VertexList;
 };
 } // namespace LUS
