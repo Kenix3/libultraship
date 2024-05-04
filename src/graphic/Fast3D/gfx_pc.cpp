@@ -3672,14 +3672,14 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     // Commands to implement
 };
 
-// LUSTODO figure out how to deal with non f3dex2. It seems that the opcode numbers are different.
-// Are the actual implementations different?
+// LUSTODO: These S2DEX commands have different opcode numbers on F3DEX2 vs other ucodes. More research needs to be done
+// to see if the implementations are different.
 const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> s2dexHandlers = {
-    { S2DEX_G_BG_COPY, { "G_BG_COPY", gfx_bg_copy_handler_s2dex } },
-    { S2DEX_G_BG_1CYC, { "G_BG_1CYC", gfx_bg_1cyc_handler_s2dex } },
-    { S2DEX_G_OBJ_RENDERMODE, { "G_OBJ_RENDERMODE", gfx_stubbed_command_handler } },
-    { S2DEX_G_OBJ_RECTANGLE_R, { "G_OBJ_RECTANGLE_R", gfx_stubbed_command_handler } },
-    { S2DEX_G_OBJ_RECTANGLE, { "G_OBJ_RECTANGLE", gfx_obj_rectangle_handler_s2dex } },
+    { F3DEX2_G_BG_COPY, { "G_BG_COPY", gfx_bg_copy_handler_s2dex } },
+    { F3DEX2_G_BG_1CYC, { "G_BG_1CYC", gfx_bg_1cyc_handler_s2dex } },
+    { F3DEX2_G_OBJ_RENDERMODE, { "G_OBJ_RENDERMODE", gfx_stubbed_command_handler } },
+    { F3DEX2_G_OBJ_RECTANGLE_R, { "G_OBJ_RECTANGLE_R", gfx_stubbed_command_handler } },
+    { F3DEX2_G_OBJ_RECTANGLE, { "G_OBJ_RECTANGLE", gfx_obj_rectangle_handler_s2dex } },
     { F3DEX2_G_DL, { "G_DL", gfx_dl_handler_common } },
     { F3DEX2_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
 };
