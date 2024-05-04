@@ -4,11 +4,11 @@
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_internal.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include "window/gui/GuiElement.h"
 
-namespace LUS {
+namespace Ship {
 class GuiWindow : public GuiElement {
   public:
     GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name);
@@ -24,4 +24,4 @@ class GuiWindow : public GuiElement {
     std::string mName;
     ImVector<ImRect> mGroupPanelLabelStack;
 };
-} // namespace LUS
+} // namespace Ship

@@ -170,7 +170,7 @@ static void create_depth_stencil_objects(uint32_t width, uint32_t height, uint32
     texture_desc.ArraySize = 1;
     texture_desc.Format =
         d3d.feature_level >= D3D_FEATURE_LEVEL_10_0 ? DXGI_FORMAT_R32_TYPELESS : DXGI_FORMAT_R24G8_TYPELESS;
-    texture_desc.SampleDesc.Count = d3d.feature_level >= D3D_FEATURE_LEVEL_10_1 ? msaa_count : 1;
+    texture_desc.SampleDesc.Count = msaa_count;
     texture_desc.SampleDesc.Quality = 0;
     texture_desc.Usage = D3D11_USAGE_DEFAULT;
     texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | (srv != nullptr ? D3D11_BIND_SHADER_RESOURCE : 0);
@@ -385,9 +385,9 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     // Create ImGui
 
-    LUS::GuiWindowInitData window_impl;
+    Ship::GuiWindowInitData window_impl;
     window_impl.Dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 }
 
 static int gfx_d3d11_get_max_texture_size() {
@@ -712,7 +712,8 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2;
-        switch (LUS::Context::GetInstance()->GetConsoleVariables()->GetInteger("gZFightingMode", 0)) {
+
+        switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)d3d.render_target_height / n64modeFactor;
                 break;
@@ -854,8 +855,10 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
     Framebuffer& fb = d3d.framebuffers[fb_id];
     TextureData& tex = d3d.textures[fb.texture_id];
 
-    width = max(width, 1U);
-    height = max(height, 1U);
+    width = ((width) > (1U) ? (width) : (1U));
+    height = ((height) > (1U) ? (height) : (1U));
+    // We can't use MSAA the way we are using it on Feature Level 10.0 Hardware, so disable it altogether.
+    msaa_level = d3d.feature_level < D3D_FEATURE_LEVEL_10_1 ? 1 : msaa_level;
     while (msaa_level > 1 && d3d.msaa_num_quality_levels[msaa_level - 1] == 0) {
         --msaa_level;
     }
@@ -875,7 +878,7 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             texture_desc.MiscFlags = 0;
             texture_desc.ArraySize = 1;
             texture_desc.MipLevels = 1;
-            texture_desc.SampleDesc.Count = d3d.feature_level >= D3D_FEATURE_LEVEL_10_1 ? msaa_level : 1;
+            texture_desc.SampleDesc.Count = msaa_level;
             texture_desc.SampleDesc.Quality = 0;
 
             ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, tex.texture.ReleaseAndGetAddressOf()));
@@ -1162,7 +1165,7 @@ gfx_d3d11_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
 
     D3D11_MAPPED_SUBRESOURCE ms;
 
-    if (fb.msaa_level > 1 && d3d.feature_level >= D3D_FEATURE_LEVEL_10_1 && d3d.compute_shader_msaa.Get() == nullptr) {
+    if (fb.msaa_level > 1 && d3d.compute_shader_msaa.Get() == nullptr) {
         ThrowIfFailed(d3d.device->CreateComputeShader(d3d.compute_shader_msaa_blob->GetBufferPointer(),
                                                       d3d.compute_shader_msaa_blob->GetBufferSize(), nullptr,
                                                       d3d.compute_shader_msaa.GetAddressOf()));

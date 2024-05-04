@@ -7,7 +7,7 @@
 #include "libultraship/libultra/controller.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
-namespace LUS {
+namespace Ship {
 
 #define BUTTON_BITMASKS                                                                                             \
     BTN_A, BTN_B, BTN_L, BTN_R, BTN_Z, BTN_START, BTN_CLEFT, BTN_CRIGHT, BTN_CUP, BTN_CDOWN, BTN_DLEFT, BTN_DRIGHT, \
@@ -15,7 +15,7 @@ namespace LUS {
 
 class ControllerButton {
   public:
-    ControllerButton(uint8_t portIndex, uint16_t bitmask);
+    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
     ~ControllerButton();
 
     std::shared_ptr<ControllerButtonMapping> GetButtonMappingById(std::string id);
@@ -24,31 +24,29 @@ class ControllerButton {
     void ClearButtonMappingId(std::string id);
     void ClearButtonMapping(std::string id);
     void ClearButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
-    void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
+    void AddDefaultMappings(ShipDeviceIndex shipDeviceIndex);
 
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
     void ReloadAllMappingsFromConfig();
     void ClearAllButtonMappings();
-    void ClearAllButtonMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
+    void ClearAllButtonMappingsForDevice(ShipDeviceIndex shipDeviceIndex);
 
-    bool AddOrEditButtonMappingFromRawPress(uint16_t bitmask, std::string id);
+    bool AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id);
 
-    void UpdatePad(uint16_t& padButtons);
+    void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
-#ifndef __WIIU__
-    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
-#endif
+    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
 
-    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 
   private:
     uint8_t mPortIndex;
-    uint16_t mBitmask;
+    CONTROLLERBUTTONS_T mBitmask;
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
-    std::string GetConfigNameFromBitmask(uint16_t bitmask);
+    std::string GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask);
 
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
 };
-} // namespace LUS
+} // namespace Ship

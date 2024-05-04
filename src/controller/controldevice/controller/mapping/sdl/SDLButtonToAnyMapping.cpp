@@ -1,11 +1,11 @@
 #include "SDLButtonToAnyMapping.h"
 
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
 
-namespace LUS {
-SDLButtonToAnyMapping::SDLButtonToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerButton)
-    : ControllerInputMapping(lusDeviceIndex), SDLMapping(lusDeviceIndex) {
+namespace Ship {
+SDLButtonToAnyMapping::SDLButtonToAnyMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlControllerButton)
+    : ControllerInputMapping(shipDeviceIndex), SDLMapping(shipDeviceIndex) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 
@@ -218,4 +218,4 @@ std::string SDLButtonToAnyMapping::GetPhysicalDeviceName() {
 bool SDLButtonToAnyMapping::PhysicalDeviceIsConnected() {
     return ControllerLoaded();
 }
-} // namespace LUS
+} // namespace Ship

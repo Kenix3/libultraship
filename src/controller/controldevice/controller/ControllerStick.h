@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
-namespace LUS {
+namespace Ship {
 
 #define DEFAULT_STICK_SENSITIVITY_PERCENTAGE 100
 #define DEFAULT_STICK_DEADZONE_PERCENTAGE 20
@@ -18,10 +18,10 @@ class ControllerStick {
     ~ControllerStick();
 
     void ReloadAllMappingsFromConfig();
-    void AddDefaultMappings(LUSDeviceIndex lusIndex);
+    void AddDefaultMappings(ShipDeviceIndex lusIndex);
 
     void ClearAllMappings();
-    void ClearAllMappingsForDevice(LUSDeviceIndex lusIndex);
+    void ClearAllMappingsForDevice(ShipDeviceIndex lusIndex);
     void UpdatePad(int8_t& x, int8_t& y);
     std::shared_ptr<ControllerAxisDirectionMapping> GetAxisDirectionMappingById(Direction direction, std::string id);
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
@@ -51,11 +51,9 @@ class ControllerStick {
     uint8_t GetNotchSnapAngle();
     bool NotchSnapAngleIsDefault();
 
-#ifndef __WIIU__
-    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
-#endif
+    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
 
-    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     Stick LeftOrRightStick();
 
   private:
@@ -80,4 +78,4 @@ class ControllerStick {
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
 };
-} // namespace LUS
+} // namespace Ship

@@ -3,9 +3,9 @@
 #include "resource/Resource.h"
 #include "resource/ResourceFactoryBinary.h"
 
-namespace LUS {
+namespace Ship {
 class ResourceFactoryBinaryFontV0 : public ResourceFactoryBinary {
   public:
     std::shared_ptr<IResource> ReadResource(std::shared_ptr<File> file) override;
 };
-}; // namespace LUS
+}; // namespace Ship

@@ -1,10 +1,10 @@
 #include "ControllerGyro.h"
 
 #include "public/bridge/consolevariablebridge.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
 
-namespace LUS {
+namespace Ship {
 ControllerGyro::ControllerGyro(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -19,25 +19,6 @@ void ControllerGyro::SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mappi
     mGyroMapping = mapping;
 }
 
-#ifdef __WIIU__
-bool ControllerGyro::SetGyroMappingFromRawPress() {
-    std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
-
-    mapping = GyroMappingFactory::CreateGyroMappingFromWiiUInput(mPortIndex);
-
-    if (mapping == nullptr) {
-        return false;
-    }
-
-    SetGyroMapping(mapping);
-    mapping->SaveToConfig();
-    SaveGyroMappingIdToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
-    return true;
-}
-#else
 bool ControllerGyro::SetGyroMappingFromRawPress() {
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
 
@@ -50,12 +31,12 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     SetGyroMapping(mapping);
     mapping->SaveToConfig();
     SaveGyroMappingIdToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;
 }
-#endif
 
 void ControllerGyro::UpdatePad(float& x, float& y) {
     if (mGyroMapping == nullptr) {
@@ -67,7 +48,7 @@ void ControllerGyro::UpdatePad(float& x, float& y) {
 
 void ControllerGyro::SaveGyroMappingIdToConfig() {
     const std::string gyroMappingIdCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.Gyro.GyroMappingId", mPortIndex + 1);
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     if (mGyroMapping == nullptr) {
         CVarClear(gyroMappingIdCvarKey.c_str());
@@ -90,7 +71,7 @@ void ControllerGyro::ClearGyroMapping() {
 
 void ControllerGyro::ReloadGyroMappingFromConfig() {
     const std::string gyroMappingIdCvarKey =
-        StringHelper::Sprintf("gControllers.Port%d.Gyro.GyroMappingId", mPortIndex + 1);
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     std::string id = CVarGetString(gyroMappingIdCvarKey.c_str(), "");
     if (id == "") {
@@ -103,11 +84,11 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     SaveGyroMappingIdToConfig();
 }
 
-bool ControllerGyro::HasMappingForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerGyro::HasMappingForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     if (mGyroMapping == nullptr) {
         return false;
     }
 
-    return mGyroMapping->GetLUSDeviceIndex() == lusIndex;
+    return mGyroMapping->GetShipDeviceIndex() == lusIndex;
 }
-} // namespace LUS
+} // namespace Ship

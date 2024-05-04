@@ -1,5 +1,15 @@
 #pragma once
 
+namespace Ship {
+
+enum class ResourceType {
+    // Not set
+    None = 0x00000000,
+
+    Json = 0x4A534F4E, // JSON
+};
+} // namespace Ship
+
 namespace LUS {
 
 enum class ResourceType {

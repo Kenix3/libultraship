@@ -466,8 +466,8 @@ static bool gfx_texture_cache_lookup(int i, const TextureCacheKey& key) {
 }
 
 static std::string gfx_get_base_texture_path(const std::string& path) {
-    if (path.starts_with(LUS::IResource::gAltAssetPrefix)) {
-        return path.substr(LUS::IResource::gAltAssetPrefix.length());
+    if (path.starts_with(Ship::IResource::gAltAssetPrefix)) {
+        return path.substr(Ship::IResource::gAltAssetPrefix.length());
     }
 
     return path;
@@ -1245,8 +1245,8 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const F3DVtx* ve
                 dotx /= 127.0f;
                 doty /= 127.0f;
 
-                dotx = LUS::Math::clamp(dotx, -1.0f, 1.0f);
-                doty = LUS::Math::clamp(doty, -1.0f, 1.0f);
+                dotx = Ship::Math::clamp(dotx, -1.0f, 1.0f);
+                doty = Ship::Math::clamp(doty, -1.0f, 1.0f);
 
                 if (g_rsp.geometry_mode & G_TEXTURE_GEN_LINEAR) {
                     // Not sure exactly what formula we should use to get accurate values
@@ -1309,7 +1309,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const F3DVtx* ve
             }
 
             float fog_z = z * winv * g_rsp.fog_mul + g_rsp.fog_offset;
-            fog_z = LUS::Math::clamp(fog_z, 0.0f, 255.0f);
+            fog_z = Ship::Math::clamp(fog_z, 0.0f, 255.0f);
             d->color.a = fog_z; // Use alpha variable to store fog factor
         } else {
             d->color.a = v->cn[3];
@@ -1627,19 +1627,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             if (clampS) {
                 buf_vbo[buf_vbo_len++] = (tex_width2[t] - 0.5f) / tex_width[t];
             }
-#ifdef __WIIU__
-            else {
-                buf_vbo[buf_vbo_len++] = 0.0f;
-            }
-#endif
+
             if (clampT) {
                 buf_vbo[buf_vbo_len++] = (tex_height2[t] - 0.5f) / tex_height[t];
             }
-#ifdef __WIIU__
-            else {
-                buf_vbo[buf_vbo_len++] = 0.0f;
-            }
-#endif
         }
 
         if (use_fog) {
@@ -1717,12 +1708,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                     buf_vbo[buf_vbo_len++] = color->r / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->g / 255.0f;
                     buf_vbo[buf_vbo_len++] = color->b / 255.0f;
-#ifdef __WIIU__
-                    // padding
-                    if (!use_alpha) {
-                        buf_vbo[buf_vbo_len++] = 1.0f;
-                    }
-#endif
                 } else {
                     if (use_fog && color == &v_arr[i]->color) {
                         // Shade alpha is 100% for fog
@@ -2464,7 +2449,7 @@ static void gfx_s2dex_bg_copy(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
-            LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2503,7 +2488,7 @@ static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
-            LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2914,7 +2899,7 @@ bool gfx_dl_otr_filepath_handler_custom(F3DGfx** cmd0) {
         g_exec_stack.call(*cmd0, nDL);
     } else {
         if (nDL != nullptr) {
-            cmd = nDL;
+            (*cmd0) = nDL;
             g_exec_stack.branch(*cmd0);
             return true; // shortcut cmd increment
         } else {
@@ -2945,7 +2930,7 @@ bool gfx_dl_handler_common(F3DGfx** cmd0) {
         }
     } else {
         (*cmd0) = subGFX;
-        g_exec_stack.branch(cmd);
+        g_exec_stack.branch(*cmd0);
         return true; // shortcut cmd increment
     }
     return false;
@@ -2987,8 +2972,8 @@ bool gfx_dl_index_handler(F3DGfx** cmd0) {
             g_exec_stack.call((*cmd0), subGFX);
         }
     } else {
-        cmd = subGFX;
-        g_exec_stack.branch((*cmd0));
+        (*cmd0) = subGFX;
+        g_exec_stack.branch(*cmd0);
         return true; // shortcut cmd increment
     }
     return false;
@@ -3154,7 +3139,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
-                LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+                Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
             i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
             texFlags = tex->Flags;
@@ -3182,7 +3167,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     RawTexMetadata rawTexMetadata = {};
 
     std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-        LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -3245,7 +3230,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
     RawTexMetadata rawTexMetadata = {};
 
     std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-        LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -3306,6 +3291,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     int32_t width, height, ulx, uly;
     uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
+    bool bswap = C0(8, 1);
     ++(*cmd0);
     cmd = *cmd0;
     // Specifying the upper left origin value is unused and unsupported at the renderer level
@@ -3316,6 +3302,16 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
 
     gfx_flush();
     gfx_rapi->read_framebuffer_to_cpu(fbId, width, height, rgba16Buffer);
+
+#ifndef IS_BIGENDIAN
+    // byteswap the output to BE
+    if (bswap) {
+        for (size_t i = 0; i < width * height; i++) {
+            rgba16Buffer[i] = BE16SWAP(rgba16Buffer[i]);
+        }
+    }
+#endif
+
     return false;
 }
 
@@ -3771,13 +3767,13 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 #ifdef __APPLE__
     gfx_current_dimensions.internal_mul = 1;
 #else
-    gfx_current_dimensions.internal_mul = CVarGetFloat("gInternalResolution", 1);
+    gfx_current_dimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
 #endif
-    gfx_msaa_level = CVarGetInteger("gMSAAValue", 1);
-#ifndef __WIIU__ // Wii U overrides dimentions in gfx_wapi->init to match framebuffer size
+    gfx_msaa_level = CVarGetInteger(CVAR_MSAA_VALUE, 1);
+
     gfx_current_dimensions.width = width;
     gfx_current_dimensions.height = height;
-#endif
+
     game_framebuffer = gfx_rapi->create_framebuffer();
     game_framebuffer_msaa_resolved = gfx_rapi->create_framebuffer();
 
@@ -3815,7 +3811,7 @@ void gfx_start_frame(void) {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
                              &gfx_current_window_position_x, &gfx_current_window_position_y);
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
     has_drawn_imgui_menu = true;
     if (gfx_current_dimensions.height == 0) {
         // Avoid division by zero
@@ -3883,8 +3879,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
         if (has_drawn_imgui_menu) {
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->EndFrame();
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->EndFrame();
             has_drawn_imgui_menu = false;
         }
         return;
@@ -3892,7 +3888,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     dropped_frame = false;
 
     if (!has_drawn_imgui_menu) {
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
     }
 
     current_mtx_replacements = &mtx_replacements;
@@ -3908,7 +3904,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     rendering_state.viewport = {};
     rendering_state.scissor = {};
 
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
     g_exec_stack.start((F3DGfx*)commands);
     while (!g_exec_stack.cmd_stack.empty()) {
         auto cmd = g_exec_stack.cmd_stack.top();
@@ -3944,8 +3940,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
             gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
     }
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
     has_drawn_imgui_menu = false;
@@ -4084,7 +4080,7 @@ int32_t gfx_check_image_signature(const char* imgData) {
     }
 
     if (i != 0) {
-        return LUS::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+        return Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
     }
 
     return 0;
@@ -4097,7 +4093,7 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
         LUS::Texture* tex = std::static_pointer_cast<LUS::Texture>(
-                                LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
                                     reinterpret_cast<char*>(replacement)))
                                 .get();
 

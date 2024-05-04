@@ -1,21 +1,21 @@
 #include "SDLAxisDirectionToAxisDirectionMapping.h"
 #include <spdlog/spdlog.h>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
-namespace LUS {
-SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(LUSDeviceIndex lusDeviceIndex,
+namespace Ship {
+SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex,
                                                                                uint8_t portIndex, Stick stick,
                                                                                Direction direction,
                                                                                int32_t sdlControllerAxis,
                                                                                int32_t axisDirection)
-    : ControllerInputMapping(lusDeviceIndex),
-      ControllerAxisDirectionMapping(lusDeviceIndex, portIndex, stick, direction),
-      SDLAxisDirectionToAnyMapping(lusDeviceIndex, sdlControllerAxis, axisDirection) {
+    : ControllerInputMapping(shipDeviceIndex),
+      ControllerAxisDirectionMapping(shipDeviceIndex, portIndex, stick, direction),
+      SDLAxisDirectionToAnyMapping(shipDeviceIndex, sdlControllerAxis, axisDirection) {
 }
 
 float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
@@ -40,29 +40,29 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
 
 std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() {
     return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mStick, mDirection,
-                                 ControllerInputMapping::mLUSDeviceIndex, mControllerAxis,
+                                 ControllerInputMapping::mShipDeviceIndex, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 
 void SDLAxisDirectionToAxisDirectionMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + GetAxisDirectionMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLAxisDirectionToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mLUSDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
+                   ControllerInputMapping::mShipDeviceIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
     CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
     CVarSave();
 }
 
 void SDLAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.AxisDirectionMappings." + GetAxisDirectionMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.LUSDeviceIndex", mappingCvarKey.c_str()).c_str());
+    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
     CVarSave();
@@ -71,4 +71,4 @@ void SDLAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
 uint8_t SDLAxisDirectionToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
-} // namespace LUS
+} // namespace Ship

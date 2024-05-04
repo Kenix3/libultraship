@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-namespace LUS {
+namespace Ship {
 enum class SeekOffsetType { Start, Current, End };
 
 class Stream {
@@ -30,4 +30,4 @@ class Stream {
   protected:
     uint64_t mBaseAddress;
 };
-} // namespace LUS
+} // namespace Ship

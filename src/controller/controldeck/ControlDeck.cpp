@@ -2,25 +2,26 @@
 
 #include "Context.h"
 #include "controller/controldevice/controller/Controller.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 #include <imgui.h>
-#include "controller/deviceindex/LUSDeviceIndexMappingManager.h"
+#include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
 
-namespace LUS {
+namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<uint16_t> additionalBitmasks) : mPads(nullptr), mSinglePlayerMappingMode(false) {
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : mPads(nullptr), mSinglePlayerMappingMode(false) {
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
         mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
     }
 
-    mDeviceIndexMappingManager = std::make_shared<LUSDeviceIndexMappingManager>();
+    mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
 }
 
-ControlDeck::ControlDeck() : ControlDeck(std::vector<uint16_t>()) {
+ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
 }
 
 ControlDeck::~ControlDeck() {
@@ -37,17 +38,14 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         }
     }
 
-#ifndef __WIIU__
     // if we don't have a config for controller 1, set default keyboard bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
-        mPorts[0]->GetConnectedController()->AddDefaultMappings(LUSDeviceIndex::Keyboard);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Keyboard);
     }
-#endif
 
     Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
 }
 
-#ifndef __WIIU__
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
     bool result = false;
     for (auto port : mPorts) {
@@ -60,7 +58,6 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
 
     return result;
 }
-#endif
 
 bool ControlDeck::AllGameInputBlocked() {
     return !mGameInputBlockers.empty();
@@ -68,7 +65,8 @@ bool ControlDeck::AllGameInputBlocked() {
 
 bool ControlDeck::GamepadGameInputBlocked() {
     // block controller input when using the controller to navigate imgui menus
-    return AllGameInputBlocked() || (CVarGetInteger("gOpenMenuBar", 0) && CVarGetInteger("gControlNav", 0));
+    return AllGameInputBlocked() ||
+           (CVarGetInteger(CVAR_MENU_BAR_OPEN, 0) && CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0));
 }
 
 bool ControlDeck::KeyboardGameInputBlocked() {
@@ -77,9 +75,7 @@ bool ControlDeck::KeyboardGameInputBlocked() {
 }
 
 void ControlDeck::WriteToPad(OSContPad* pad) {
-#ifndef __WIIU__
     SDL_PumpEvents();
-#endif
 
     if (AllGameInputBlocked()) {
         return;
@@ -112,7 +108,7 @@ void ControlDeck::UnblockGameInput(int32_t blockId) {
     mGameInputBlockers.erase(blockId);
 }
 
-std::shared_ptr<LUSDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
+std::shared_ptr<ShipDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
     return mDeviceIndexMappingManager;
 }
 
@@ -123,4 +119,4 @@ void ControlDeck::SetSinglePlayerMappingMode(bool singlePlayer) {
 bool ControlDeck::IsSinglePlayerMappingMode() {
     return mSinglePlayerMappingMode;
 }
-} // namespace LUS
+} // namespace Ship

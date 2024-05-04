@@ -4,16 +4,12 @@
 #include "resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
+#include "utils/glob.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-// TODO: Delete me and find an implementation
-// Comes from stormlib. May not be the most efficient, but it's also important to be consistent.
-// NOLINTNEXTLINE
-extern bool SFileCheckWildCard(const char* szString, const char* szWildCard);
-
-namespace LUS {
+namespace Ship {
 
 ResourceManager::ResourceManager() {
 }
@@ -23,12 +19,10 @@ void ResourceManager::Init(const std::vector<std::string>& otrFiles, const std::
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
     GetArchiveManager()->Init(otrFiles, validHashes);
-#if defined(__SWITCH__) || defined(__WIIU__)
-    size_t threadCount = 1;
-#else
+
     // the extra `- 1` is because we reserve an extra thread for spdlog
     size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
-#endif
+
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
     if (!DidLoadSuccessfully()) {
@@ -45,8 +39,8 @@ bool ResourceManager::DidLoadSuccessfully() {
     return mArchiveManager != nullptr && mArchiveManager->IsArchiveLoaded();
 }
 
-std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath,
-                                                       std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<Ship::File> ResourceManager::LoadFileProcess(const std::string& filePath,
+                                                             std::shared_ptr<Ship::ResourceInitData> initData) {
     auto file = mArchiveManager->LoadFile(filePath, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
@@ -56,8 +50,9 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     return file;
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact,
-                                                                std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<Ship::IResource>
+ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact,
+                                     std::shared_ptr<Ship::ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         const auto newFilePath = filePath.substr(7);
@@ -66,7 +61,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
 
     // Attempt to load the alternate version of the asset, if we fail then we continue trying to load the standard
     // asset.
-    if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(IResource::gAltAssetPrefix)) {
+    if (!loadExact && CVarGetInteger(CVAR_ALT_ASSETS, 0) && !filePath.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + filePath;
         auto altResource = LoadResourceProcess(altPath, loadExact, initData);
 
@@ -85,7 +80,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
 
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
-    if (!loadExact && CVarGetInteger("gAltAssets", 0) && filePath.starts_with(IResource::gAltAssetPrefix)) {
+    if (!loadExact && CVarGetInteger(CVAR_ALT_ASSETS, 0) && filePath.starts_with(IResource::gAltAssetPrefix)) {
         if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
             try {
                 // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
@@ -138,9 +133,9 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
     return resource;
 }
 
-std::shared_future<std::shared_ptr<IResource>>
+std::shared_future<std::shared_ptr<Ship::IResource>>
 ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, bool priority,
-                                   std::shared_ptr<ResourceInitData> initData) {
+                                   std::shared_ptr<Ship::ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
         auto newFilePath = filePath.substr(7);
@@ -150,7 +145,7 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
     // Check the cache before queueing the job.
     auto cacheCheck = GetCachedResource(filePath, loadExact);
     if (cacheCheck) {
-        auto promise = std::make_shared<std::promise<std::shared_ptr<IResource>>>();
+        auto promise = std::make_shared<std::promise<std::shared_ptr<Ship::IResource>>>();
         promise->set_value(cacheCheck);
         return promise->get_future().share();
     }
@@ -164,8 +159,8 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
     }
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
-                                                         std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<Ship::IResource> ResourceManager::LoadResource(const std::string& filePath, bool loadExact,
+                                                               std::shared_ptr<Ship::ResourceInitData> initData) {
     auto resource = LoadResourceAsync(filePath, loadExact, true, initData).get();
     if (resource == nullptr) {
         SPDLOG_ERROR("Failed to load resource file at path {}", filePath);
@@ -173,15 +168,15 @@ std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& file
     return resource;
 }
 
-std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
+std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<Ship::IResource>>
 ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
-    if (!loadExact && CVarGetInteger("gAltAssets", 0) && !filePath.starts_with(IResource::gAltAssetPrefix)) {
+    if (!loadExact && CVarGetInteger(CVAR_ALT_ASSETS, 0) && !filePath.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + filePath;
         auto altCacheResult = CheckCache(altPath, loadExact);
 
         // If the type held at this cache index is a resource, then we return it.
         // Else we attempt to load standard definition assets.
-        if (std::holds_alternative<std::shared_ptr<IResource>>(altCacheResult)) {
+        if (std::holds_alternative<std::shared_ptr<Ship::IResource>>(altCacheResult)) {
             return altCacheResult;
         }
     }
@@ -196,17 +191,17 @@ ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
     return resourceCacheFind->second;
 }
 
-std::shared_ptr<IResource> ResourceManager::GetCachedResource(const std::string& filePath, bool loadExact) {
+std::shared_ptr<Ship::IResource> ResourceManager::GetCachedResource(const std::string& filePath, bool loadExact) {
     // Gets the cached resource based on filePath.
     return GetCachedResource(CheckCache(filePath, loadExact));
 }
 
-std::shared_ptr<IResource>
-ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine) {
+std::shared_ptr<Ship::IResource>
+ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<Ship::IResource>> cacheLine) {
     // Gets the cached resource based on a cache line std::variant from the cache map.
-    if (std::holds_alternative<std::shared_ptr<IResource>>(cacheLine)) {
+    if (std::holds_alternative<std::shared_ptr<Ship::IResource>>(cacheLine)) {
         try {
-            auto resource = std::get<std::shared_ptr<IResource>>(cacheLine);
+            auto resource = std::get<std::shared_ptr<Ship::IResource>>(cacheLine);
 
             if (resource.use_count() <= 0) {
                 return nullptr;
@@ -225,9 +220,9 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
     return nullptr;
 }
 
-std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
+std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Ship::IResource>>>>
 ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority) {
-    auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
+    auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Ship::IResource>>>>();
     auto fileList = GetArchiveManager()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
 
@@ -240,9 +235,10 @@ ResourceManager::LoadDirectoryAsync(const std::string& searchMask, bool priority
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
+std::shared_ptr<std::vector<std::shared_ptr<Ship::IResource>>>
+ResourceManager::LoadDirectory(const std::string& searchMask) {
     auto futureList = LoadDirectoryAsync(searchMask, true);
-    auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
+    auto loadedList = std::make_shared<std::vector<std::shared_ptr<Ship::IResource>>>();
 
     for (size_t i = 0; i < futureList->size(); i++) {
         const auto future = futureList->at(i);
@@ -287,7 +283,7 @@ size_t ResourceManager::UnloadResource(const std::string& filePath) {
     // Store a shared pointer here so that erase doesn't destruct the resource.
     // The resource will attempt to load other resources on the destructor, and this will fail because we already hold
     // the mutex.
-    std::variant<ResourceLoadError, std::shared_ptr<IResource>> value = nullptr;
+    std::variant<ResourceLoadError, std::shared_ptr<Ship::IResource>> value = nullptr;
     size_t ret = 0;
     {
         const std::lock_guard<std::mutex> lock(mMutex);
@@ -303,4 +299,4 @@ bool ResourceManager::OtrSignatureCheck(const char* fileName) {
     return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
 }
 
-} // namespace LUS
+} // namespace Ship

@@ -199,7 +199,7 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
             ShowWindow(dxgi.h_wnd, SW_MAXIMIZE);
         } else {
             std::tuple<HMONITOR, RECT, BOOL> Monitor;
-            auto conf = LUS::Context::GetInstance()->GetConfig();
+            auto conf = Ship::Context::GetInstance()->GetConfig();
             dxgi.current_width = conf->GetInt("Window.Width", 640);
             dxgi.current_height = conf->GetInt("Window.Height", 480);
             dxgi.posX = conf->GetInt("Window.PositionX", 100);
@@ -299,9 +299,9 @@ void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Freque
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
-    LUS::WindowEvent event_impl;
+    Ship::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
     switch (message) {
         case WM_SIZE:
@@ -356,9 +356,10 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            LUS::Context::GetInstance()->GetConsoleVariables()->GetString("gDroppedFile", fileName);
-            LUS::Context::GetInstance()->GetConsoleVariables()->GetInteger("gNewFileDropped", 1);
-            LUS::Context::GetInstance()->GetConsoleVariables()->Save();
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetString(CVAR_DROPPED_FILE, fileName);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_NEW_FILE_DROPPED, 1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+
             break;
         case WM_DISPLAYCHANGE:
             dxgi.monitor_list = GetMonitorList();
@@ -670,9 +671,11 @@ static bool gfx_dxgi_start_frame(void) {
     // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
-    if (dxgi.is_vsync_enabled != LUS::Context::GetInstance()->GetConsoleVariables()->GetInteger("gVsyncEnabled", 1)) {
+    if (dxgi.is_vsync_enabled !=
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1)) {
         // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
-        dxgi.is_vsync_enabled = !!LUS::Context::GetInstance()->GetConsoleVariables()->GetInteger("gVsyncEnabled", 1);
+        dxgi.is_vsync_enabled =
+            !!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
     }
     dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
     return true;
@@ -704,13 +707,12 @@ static void gfx_dxgi_swap_buffers_begin(void) {
             li.QuadPart = -left;
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
             WaitForSingleObject(dxgi.timer, INFINITE);
-
-            do {
-                YieldProcessor();
-                QueryPerformanceCounter(&t);
-                t.QuadPart = qpc_to_100ns(t.QuadPart);
-            } while (t.QuadPart < next);
         }
+        do {
+            YieldProcessor();
+            QueryPerformanceCounter(&t);
+            t.QuadPart = qpc_to_100ns(t.QuadPart);
+        } while (t.QuadPart < next);
     }
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;

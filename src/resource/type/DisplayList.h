@@ -8,7 +8,7 @@
 union Gfx;
 
 namespace LUS {
-class DisplayList : public Resource<Gfx> {
+class DisplayList : public Ship::Resource<Gfx> {
   public:
     using Resource::Resource;
 

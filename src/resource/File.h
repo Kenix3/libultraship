@@ -9,7 +9,7 @@
 #include "resource/ResourceType.h"
 #include "utils/binarytools/BinaryReader.h"
 
-namespace LUS {
+namespace Ship {
 class Archive;
 
 #define RESOURCE_FORMAT_BINARY 0
@@ -27,9 +27,9 @@ struct ResourceInitData {
 
 struct File {
     std::shared_ptr<Archive> Parent;
-    std::shared_ptr<ResourceInitData> InitData;
+    std::shared_ptr<Ship::ResourceInitData> InitData;
     std::shared_ptr<std::vector<char>> Buffer;
-    std::variant<std::shared_ptr<tinyxml2::XMLDocument>, std::shared_ptr<BinaryReader>> Reader;
+    std::variant<std::shared_ptr<tinyxml2::XMLDocument>, std::shared_ptr<Ship::BinaryReader>> Reader;
     bool IsLoaded = false;
 };
-} // namespace LUS
+} // namespace Ship

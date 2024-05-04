@@ -2,11 +2,11 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "utils/Utils.h"
 #include <sstream>
 
-namespace LUS {
+namespace Ship {
 
 int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
@@ -24,7 +24,7 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
 
 int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                     std::string* output) {
-    auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
+    auto window = std::static_pointer_cast<Ship::ConsoleWindow>(
         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
     if (!window) {
         if (output) {
@@ -41,7 +41,7 @@ int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std:
 int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
+        auto window = std::static_pointer_cast<Ship::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
             if (output) {
@@ -81,7 +81,7 @@ int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::
 int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                          std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<LUS::ConsoleWindow>(
+        auto window = std::static_pointer_cast<Ship::ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
             if (output) {
@@ -164,19 +164,19 @@ int32_t ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::v
     auto cvar = CVarGet(args[1].c_str());
 
     if (cvar != nullptr) {
-        if (cvar->Type == LUS::ConsoleVariableType::Integer) {
+        if (cvar->Type == Ship::ConsoleVariableType::Integer) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %i", args[1].c_str(), cvar->Integer);
             }
-        } else if (cvar->Type == LUS::ConsoleVariableType::Float) {
+        } else if (cvar->Type == Ship::ConsoleVariableType::Float) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %f", args[1].c_str(), cvar->Float);
             }
-        } else if (cvar->Type == LUS::ConsoleVariableType::String) {
+        } else if (cvar->Type == Ship::ConsoleVariableType::String) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %s", args[1].c_str(), cvar->String.c_str());
             }
-        } else if (cvar->Type == LUS::ConsoleVariableType::Color) {
+        } else if (cvar->Type == Ship::ConsoleVariableType::Color) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %08X", args[1].c_str(), cvar->Color);
             }
@@ -231,19 +231,19 @@ void ConsoleWindow::InitElement() {
     Context::GetInstance()->GetConsole()->AddCommand(
         "set", { SetCommand,
                  "Sets a console variable.",
-                 { { "varName", LUS::ArgumentType::TEXT }, { "varValue", LUS::ArgumentType::TEXT } } });
+                 { { "varName", Ship::ArgumentType::TEXT }, { "varValue", Ship::ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand(
-        "get", { GetCommand, "Bind key as a bool toggle", { { "varName", LUS::ArgumentType::TEXT } } });
+        "get", { GetCommand, "Bind key as a bool toggle", { { "varName", Ship::ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand("help", { HelpCommand, "Shows all the commands" });
     Context::GetInstance()->GetConsole()->AddCommand("clear", { ClearCommand, "Clear the console history" });
     Context::GetInstance()->GetConsole()->AddCommand(
         "bind", { BindCommand,
                   "Binds key to commands",
-                  { { "key", LUS::ArgumentType::TEXT }, { "cmd", LUS::ArgumentType::TEXT } } });
+                  { { "key", Ship::ArgumentType::TEXT }, { "cmd", Ship::ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand(
         "bind-toggle", { BindToggleCommand,
                          "Bind key as a bool toggle",
-                         { { "key", LUS::ArgumentType::TEXT }, { "cmd", LUS::ArgumentType::TEXT } } });
+                         { { "key", Ship::ArgumentType::TEXT }, { "cmd", Ship::ArgumentType::TEXT } } });
 }
 
 void ConsoleWindow::UpdateElement() {
@@ -423,11 +423,7 @@ void ConsoleWindow::DrawElement() {
         constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackEdit |
                                               ImGuiInputTextFlags_CallbackCompletion |
                                               ImGuiInputTextFlags_CallbackHistory;
-#ifdef __WIIU__
-        ImGui::PushItemWidth(-53.0f * 2.0f);
-#else
         ImGui::PushItemWidth(-53.0f);
-#endif
         if (ImGui::InputTextWithHint("##CMDInput", ">", mInputBuffer, gMaxBufferSize, flags,
                                      &ConsoleWindow::CallbackStub, this)) {
             inputFocus = true;
@@ -450,11 +446,8 @@ void ConsoleWindow::DrawElement() {
         }
 
         ImGui::SameLine();
-#ifdef __WIIU__
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - 50 * 2.0f);
-#else
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - 50);
-#endif
+
         if (ImGui::Button("Submit") && !inputFocus && mInputBuffer[0] != '\0' && mInputBuffer[0] != ' ') {
             Dispatch(std::string(mInputBuffer));
             memset(mInputBuffer, 0, gMaxBufferSize);
@@ -618,4 +611,4 @@ void ConsoleWindow::ClearBindings() {
     mBindings.clear();
     mBindingToggle.clear();
 }
-} // namespace LUS
+} // namespace Ship

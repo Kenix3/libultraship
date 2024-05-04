@@ -2,7 +2,7 @@
 #include "stox.h"
 #include <spdlog/spdlog.h>
 
-namespace LUS {
+namespace Ship {
 bool stob(const std::string& s, bool defaultVal) {
     auto result = false; // failure to assert is false
 
@@ -59,4 +59,4 @@ int64_t stoll(const std::string& s, int64_t defaultVal) {
 
     return defaultVal;
 }
-} // namespace LUS
+} // namespace Ship

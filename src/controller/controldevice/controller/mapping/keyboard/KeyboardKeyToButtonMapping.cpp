@@ -1,16 +1,17 @@
 #include "KeyboardKeyToButtonMapping.h"
 #include <spdlog/spdlog.h>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
-namespace LUS {
-KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, uint16_t bitmask, KbScancode scancode)
-    : ControllerInputMapping(LUSDeviceIndex::Keyboard),
-      ControllerButtonMapping(LUSDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
+namespace Ship {
+KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                       KbScancode scancode)
+    : ControllerInputMapping(ShipDeviceIndex::Keyboard),
+      ControllerButtonMapping(ShipDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
 }
 
-void KeyboardKeyToButtonMapping::UpdatePad(uint16_t& padButtons) {
+void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->KeyboardGameInputBlocked()) {
         return;
     }
@@ -31,7 +32,7 @@ std::string KeyboardKeyToButtonMapping::GetButtonMappingId() {
 }
 
 void KeyboardKeyToButtonMapping::SaveToConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
@@ -40,7 +41,7 @@ void KeyboardKeyToButtonMapping::SaveToConfig() {
 }
 
 void KeyboardKeyToButtonMapping::EraseFromConfig() {
-    const std::string mappingCvarKey = "gControllers.ButtonMappings." + GetButtonMappingId();
+    const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
@@ -48,4 +49,4 @@ void KeyboardKeyToButtonMapping::EraseFromConfig() {
 
     CVarSave();
 }
-} // namespace LUS
+} // namespace Ship

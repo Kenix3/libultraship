@@ -28,7 +28,7 @@
 #define MTL_PRIVATE_IMPLEMENTATION
 #include <Metal/Metal.hpp>
 #include <SDL_render.h>
-#include <ImGui/backends/imgui_impl_metal.h>
+#include <imgui_impl_metal.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
 
@@ -163,6 +163,7 @@ static struct {
     int8_t depth_test;
     int8_t depth_mask;
     int8_t zmode_decal;
+    bool non_uniform_threadgroup_supported;
 } mctx;
 
 // MARK: - Helpers
@@ -185,12 +186,27 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 // MARK: - ImGui & SDL Wrappers
 
 bool Metal_IsSupported() {
+#ifdef __IOS__
+    // iOS always supports Metal and MTLCopyAllDevices is not available
+    return true;
+#else
     NS::Array* devices = MTLCopyAllDevices();
     NS::UInteger count = devices->count();
 
     devices->release();
 
     return count > 0;
+#endif
+}
+
+bool Metal_NonUniformThreadGroupSupported() {
+#ifdef __IOS__
+    // iOS devices with A11 or later support dispatch threads
+    return mctx.device->supportsFamily(MTL::GPUFamilyApple4);
+#else
+    // macOS devices with Metal 2 support dispatch threads
+    return mctx.device->supportsFamily(MTL::GPUFamilyMac2);
+#endif
 }
 
 bool Metal_Init(SDL_Renderer* renderer) {
@@ -210,6 +226,7 @@ bool Metal_Init(SDL_Renderer* renderer) {
     }
 
     autorelease_pool->release();
+    mctx.non_uniform_threadgroup_supported = Metal_NonUniformThreadGroupSupported();
 
     return ImGui_ImplMetal_Init(mctx.device);
 }
@@ -273,7 +290,7 @@ static void gfx_metal_init(void) {
         struct CoordUniforms {
             uint2 coords[1024];
         };
-        
+
         kernel void depthKernel(depth2d<float, access::read> depth_texture [[ texture(0) ]],
                                      constant CoordUniforms& query_coords [[ buffer(0) ]],
                                      device float* output_values [[ buffer(1) ]],
@@ -521,7 +538,7 @@ static void gfx_metal_set_scissor(int x, int y, int width, int height) {
     // clamp to viewport size as metal does not support larger values than viewport size
     fb.scissor_rect.x = std::max(0, std::min<int>(x, tex.width));
     fb.scissor_rect.y = std::max(0, std::min<int>(mctx.render_target_height - y - height, tex.height));
-    fb.scissor_rect.width = std::max(0, std::min<int>(x + width, tex.width));
+    fb.scissor_rect.width = std::max(0, std::min<int>(width, tex.width));
     fb.scissor_rect.height = std::max(0, std::min<int>(height, tex.height));
 
     fb.command_encoder->setScissorRect(fb.scissor_rect);
@@ -1045,7 +1062,13 @@ gfx_metal_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
     MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
     MTL::Size thread_group_count = MTL::Size::Make(coordinates.size(), 1, 1);
 
-    compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    // We validate if the device supports non-uniform threadgroup sizes
+    if (mctx.non_uniform_threadgroup_supported) {
+        compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    } else {
+        compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
+    }
+
     compute_encoder->endEncoding();
 
     command_buffer->commit();
@@ -1170,7 +1193,12 @@ void gfx_metal_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t heigh
     MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
     MTL::Size thread_group_count = MTL::Size::Make(width, height, 1);
 
-    compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    // We validate if the device supports non-uniform threadgroup sizes
+    if (mctx.non_uniform_threadgroup_supported) {
+        compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+    } else {
+        compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
+    }
     compute_encoder->endEncoding();
 
     // Use a completion handler to wait for the GPU to be done without blocking the thread

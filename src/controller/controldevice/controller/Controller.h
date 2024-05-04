@@ -18,12 +18,12 @@
 #include "controller/controldevice/ControlDevice.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
-namespace LUS {
+namespace Ship {
 
 class Controller : public ControlDevice {
   public:
     Controller(uint8_t portIndex);
-    Controller(uint8_t portIndex, std::vector<uint16_t> additionalBitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
     ~Controller();
 
     void ReloadAllMappingsFromConfig();
@@ -33,11 +33,11 @@ class Controller : public ControlDevice {
     void Disconnect();
 
     void ClearAllMappings();
-    void ClearAllMappingsForDevice(LUSDeviceIndex lusDeviceIndex);
-    void AddDefaultMappings(LUSDeviceIndex lusDeviceIndex);
-    std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> GetAllButtons();
-    std::shared_ptr<ControllerButton> GetButtonByBitmask(uint16_t bitmask);
-    std::shared_ptr<ControllerButton> GetButton(uint16_t bitmask);
+    void ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex);
+    void AddDefaultMappings(ShipDeviceIndex shipDeviceIndex);
+    std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> GetAllButtons();
+    std::shared_ptr<ControllerButton> GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask);
+    std::shared_ptr<ControllerButton> GetButton(CONTROLLERBUTTONS_T bitmask);
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();
     std::shared_ptr<ControllerGyro> GetGyro();
@@ -48,18 +48,16 @@ class Controller : public ControlDevice {
     uint8_t GetPortIndex();
     std::vector<std::shared_ptr<ControllerMapping>> GetAllMappings();
 
-#ifndef __WIIU__
-    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
-#endif
+    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
 
-    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
-    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, LUSDeviceIndex lusIndex);
+    bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
+    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceIndex lusIndex);
 
   private:
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
 
-    std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> mButtons;
+    std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> mButtons;
     std::shared_ptr<ControllerStick> mLeftStick, mRightStick;
     std::shared_ptr<ControllerGyro> mGyro;
     std::shared_ptr<ControllerRumble> mRumble;
@@ -67,4 +65,4 @@ class Controller : public ControlDevice {
 
     std::deque<OSContPad> mPadBuffer;
 };
-} // namespace LUS
+} // namespace Ship

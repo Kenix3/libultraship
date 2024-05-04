@@ -2,7 +2,7 @@
 #include "graphic/Fast3D/lus_gbi.h"
 
 namespace LUS {
-Vertex::Vertex() : Resource(std::shared_ptr<ResourceInitData>()) {
+Vertex::Vertex() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
 }
 
 F3DVtx* Vertex::GetPointer() {

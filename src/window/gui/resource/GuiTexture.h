@@ -1,9 +1,9 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
-namespace LUS {
+namespace Ship {
 #define RESOURCE_TYPE_GUI_TEXTURE 0x47544558 // GTEX
 
 struct GuiTextureMetadata {
@@ -26,4 +26,4 @@ class GuiTexture : public Resource<void> {
     size_t DataSize;
     GuiTextureMetadata Metadata;
 };
-}; // namespace LUS
+}; // namespace Ship

@@ -7,7 +7,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
 
@@ -20,7 +20,7 @@
 #define M_TAU 2 * M_PI
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
-namespace LUS {
+namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, Stick stick)
     : mPortIndex(portIndex), mStick(stick), mUseKeydownEventToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN) {
@@ -46,11 +46,11 @@ void ControllerStick::ClearAllMappings() {
     SetNotchSnapAngle(0);
 }
 
-void ControllerStick::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
+void ControllerStick::ClearAllMappingsForDevice(ShipDeviceIndex lusIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
-            if (mapping->GetLUSDeviceIndex() == lusIndex) {
+            if (mapping->GetShipDeviceIndex() == lusIndex) {
                 mapping->EraseFromConfig();
                 mappingIdsToRemove.push_back(id);
             }
@@ -88,8 +88,8 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
         }
 
         const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
-            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, stickToConfigStickName[mStick].c_str(),
-            directionToConfigDirectionName[direction].c_str());
+            CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1,
+            stickToConfigStickName[mStick].c_str(), directionToConfigDirectionName[direction].c_str());
         if (axisDirectionMappingIdListString == "") {
             CVarClear(axisDirectionMappingIdsCvarKey.c_str());
         } else {
@@ -120,28 +120,14 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
                                               std::shared_ptr<ControllerAxisDirectionMapping> mapping) {
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
-#ifdef __WIIU__
-void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
-    for (auto mapping :
-         AxisDirectionMappingFactory::CreateDefaultWiiUAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
-        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
-    }
 
-    for (auto [direction, directionMappings] : mAxisDirectionMappings) {
-        for (auto [id, mapping] : directionMappings) {
-            mapping->SaveToConfig();
-        }
-    }
-    SaveAxisDirectionMappingIdsToConfig();
-}
-#else
-void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
+void ControllerStick::AddDefaultMappings(ShipDeviceIndex lusIndex) {
     for (auto mapping :
          AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStick)) {
         AddAxisDirectionMapping(mapping->GetDirection(), mapping);
     }
 
-    if (lusIndex == LUSDeviceIndex::Keyboard) {
+    if (lusIndex == ShipDeviceIndex::Keyboard) {
         for (auto mapping :
              AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStick)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
@@ -155,7 +141,6 @@ void ControllerStick::AddDefaultMappings(LUSDeviceIndex lusIndex) {
     }
     SaveAxisDirectionMappingIdsToConfig();
 }
-#endif
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
     auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(mPortIndex, mStick, id);
@@ -177,8 +162,8 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     for (auto direction : { LEFT, RIGHT, UP, DOWN }) {
         const std::string axisDirectionMappingIdsCvarKey = StringHelper::Sprintf(
-            "gControllers.Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1, stickToConfigStickName[mStick].c_str(),
-            directionToConfigDirectionName[direction].c_str());
+            CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1,
+            stickToConfigStickName[mStick].c_str(), directionToConfigDirectionName[direction].c_str());
 
         std::stringstream axisDirectionMappingIdsStringStream(
             CVarGetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
@@ -188,18 +173,18 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
         }
     }
 
-    SetSensitivity(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.SensitivityPercentage", mPortIndex + 1,
-                                                        stickToConfigStickName[mStick].c_str())
+    SetSensitivity(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage",
+                                                        mPortIndex + 1, stickToConfigStickName[mStick].c_str())
                                       .c_str(),
                                   DEFAULT_STICK_SENSITIVITY_PERCENTAGE));
 
-    SetDeadzone(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1,
-                                                     stickToConfigStickName[mStick].c_str())
+    SetDeadzone(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage",
+                                                     mPortIndex + 1, stickToConfigStickName[mStick].c_str())
                                    .c_str(),
                                DEFAULT_STICK_DEADZONE_PERCENTAGE));
 
-    SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                                           stickToConfigStickName[mStick].c_str())
+    SetNotchSnapAngle(CVarGetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle",
+                                                           mPortIndex + 1, stickToConfigStickName[mStick].c_str())
                                          .c_str(),
                                      0));
 }
@@ -277,28 +262,6 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
     y = copysign(uy, sy);
 }
 
-#ifdef __WIIU__
-bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
-    std::shared_ptr<ControllerAxisDirectionMapping> mapping =
-        AxisDirectionMappingFactory::CreateAxisDirectionMappingFromWiiUInput(mPortIndex, mStick, direction);
-
-    if (mapping == nullptr) {
-        return false;
-    }
-
-    if (id != "") {
-        ClearAxisDirectionMapping(direction, id);
-    }
-
-    AddAxisDirectionMapping(direction, mapping);
-    mapping->SaveToConfig();
-    SaveAxisDirectionMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
-    return true;
-}
-#else
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
@@ -326,12 +289,12 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     AddAxisDirectionMapping(direction, mapping);
     mapping->SaveToConfig();
     SaveAxisDirectionMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;
 }
-#endif
 
 std::shared_ptr<ControllerAxisDirectionMapping> ControllerStick::GetAxisDirectionMappingById(Direction direction,
                                                                                              std::string id) {
@@ -351,8 +314,7 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
     Process(x, y);
 }
 
-#ifndef __WIIU__
-bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode) {
+bool ControllerStick::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
     if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
         mKeyboardScancodeForNewMapping = scancode;
         return true;
@@ -372,12 +334,11 @@ bool ControllerStick::ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbSc
     }
     return result;
 }
-#endif
 
 void ControllerStick::SetSensitivity(uint8_t sensitivityPercentage) {
     mSensitivityPercentage = sensitivityPercentage;
     mSensitivity = sensitivityPercentage / 100.0f;
-    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.SensitivityPercentage", mPortIndex + 1,
+    CVarSetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
                                          stickToConfigStickName[mStick].c_str())
                        .c_str(),
                    mSensitivityPercentage);
@@ -399,7 +360,7 @@ bool ControllerStick::SensitivityIsDefault() {
 void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     mDeadzonePercentage = deadzonePercentage;
     mDeadzone = MAX_AXIS_RANGE * (deadzonePercentage / 100.0f);
-    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.DeadzonePercentage", mPortIndex + 1,
+    CVarSetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
                                          stickToConfigStickName[mStick].c_str())
                        .c_str(),
                    mDeadzonePercentage);
@@ -420,7 +381,7 @@ bool ControllerStick::DeadzoneIsDefault() {
 
 void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
     mNotchSnapAngle = notchSnapAngle;
-    CVarSetInteger(StringHelper::Sprintf("gControllers.Port%d.%s.NotchSnapAngle", mPortIndex + 1,
+    CVarSetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
                                          stickToConfigStickName[mStick].c_str())
                        .c_str(),
                    mNotchSnapAngle);
@@ -439,12 +400,12 @@ bool ControllerStick::NotchSnapAngleIsDefault() {
     return mNotchSnapAngle == DEFAULT_NOTCH_SNAP_ANGLE;
 }
 
-bool ControllerStick::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerStick::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     return std::any_of(mAxisDirectionMappings.begin(), mAxisDirectionMappings.end(),
                        [lusIndex](const auto& directionMappings) {
                            return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
                                               [lusIndex](const auto& mappingPair) {
-                                                  return mappingPair.second->GetLUSDeviceIndex() == lusIndex;
+                                                  return mappingPair.second->GetShipDeviceIndex() == lusIndex;
                                               });
                        });
 }
@@ -457,4 +418,4 @@ ControllerStick::GetAllAxisDirectionMappings() {
 Stick ControllerStick::LeftOrRightStick() {
     return mStick;
 }
-} // namespace LUS
+} // namespace Ship

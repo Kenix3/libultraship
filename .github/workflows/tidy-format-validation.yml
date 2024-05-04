@@ -7,13 +7,13 @@ jobs:
   tidy-format:
     runs-on: ubuntu-latest
     steps:
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libsdl2-dev libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build clang-tidy clang-format-12
       - uses: actions/checkout@v3
         with:
           fetch-depth: 2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y $(cat .github/workflows/apt-deps.txt) clang-tidy clang-format-12
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -30,6 +30,17 @@ jobs:
           cd SDL2-2.24.1
           ./configure
           make -j 10
+          sudo make install
+      - name: Install latest tinyxml2
+        run: |
+          export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+          wget https://github.com/leethomason/tinyxml2/archive/refs/tags/10.0.0.tar.gz
+          tar -xzf 10.0.0.tar.gz
+          cd tinyxml2-10.0.0
+          mkdir build
+          cd build
+          cmake ..
+          make
           sudo make install
       - name: Prepare compile_commands.json
         run: |

@@ -1,13 +1,13 @@
 #include "ControllerLED.h"
 
 #include "public/bridge/consolevariablebridge.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
 
 #include "controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
-namespace LUS {
+namespace Ship {
 ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
 }
 
@@ -28,7 +28,8 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
         ledMappingIdListString += ",";
     }
 
-    const std::string ledMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
+    const std::string ledMappingIdsCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     if (ledMappingIdsCvarKey == "") {
         CVarClear(ledMappingIdsCvarKey.c_str());
     } else {
@@ -61,10 +62,10 @@ void ControllerLED::ClearAllMappings() {
     SaveLEDMappingIdsToConfig();
 }
 
-void ControllerLED::ClearAllMappingsForDevice(LUSDeviceIndex lusIndex) {
+void ControllerLED::ClearAllMappingsForDevice(ShipDeviceIndex lusIndex) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mLEDMappings) {
-        if (mapping->GetLUSDeviceIndex() == lusIndex) {
+        if (mapping->GetShipDeviceIndex() == lusIndex) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -97,7 +98,8 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     // for each controller (especially compared to include/exclude locations in rando), and
     // the audio editor pattern doesn't work for this because that looks for ids that are either
     // hardcoded or provided by an otr file
-    const std::string ledMappingIdsCvarKey = StringHelper::Sprintf("gControllers.Port%d.LEDMappingIds", mPortIndex + 1);
+    const std::string ledMappingIdsCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     std::stringstream ledMappingIdsStringStream(CVarGetString(ledMappingIdsCvarKey.c_str(), ""));
     std::string ledMappingIdString;
     while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
@@ -109,23 +111,6 @@ std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> Controlle
     return mLEDMappings;
 }
 
-#ifdef __WIIU__
-bool ControllerLED::AddLEDMappingFromRawPress() {
-    return false;
-    // std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
-
-    // mapping = LEDMappingFactory::CreateLEDMappingFromSDLInput(mPortIndex);
-
-    // if (mapping == nullptr) {
-    //     return false;
-    // }
-
-    // AddLEDMapping(mapping);
-    // mapping->SaveToConfig();
-    // SaveLEDMappingIdsToConfig();
-    // return true;
-}
-#else
 bool ControllerLED::AddLEDMappingFromRawPress() {
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
@@ -138,15 +123,15 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
     AddLEDMapping(mapping);
     mapping->SaveToConfig();
     SaveLEDMappingIdsToConfig();
-    const std::string hasConfigCvarKey = StringHelper::Sprintf("gControllers.Port%d.HasConfig", mPortIndex + 1);
+    const std::string hasConfigCvarKey =
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
     CVarSetInteger(hasConfigCvarKey.c_str(), true);
     CVarSave();
     return true;
 }
-#endif
 
-bool ControllerLED::HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex) {
+bool ControllerLED::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     return std::any_of(mLEDMappings.begin(), mLEDMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetLUSDeviceIndex() == lusIndex; });
+                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
-} // namespace LUS
+} // namespace Ship

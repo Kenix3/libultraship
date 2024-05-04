@@ -1,12 +1,12 @@
 #include "SDLAxisDirectionToAnyMapping.h"
 
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
 
-namespace LUS {
-SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(LUSDeviceIndex lusDeviceIndex, int32_t sdlControllerAxis,
+namespace Ship {
+SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlControllerAxis,
                                                            int32_t axisDirection)
-    : ControllerInputMapping(lusDeviceIndex), SDLMapping(lusDeviceIndex) {
+    : ControllerInputMapping(shipDeviceIndex), SDLMapping(shipDeviceIndex) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }
@@ -78,4 +78,4 @@ bool SDLAxisDirectionToAnyMapping::AxisIsStick() {
     return mControllerAxis == SDL_CONTROLLER_AXIS_LEFTX || mControllerAxis == SDL_CONTROLLER_AXIS_LEFTY ||
            mControllerAxis == SDL_CONTROLLER_AXIS_RIGHTX || mControllerAxis == SDL_CONTROLLER_AXIS_RIGHTY;
 }
-} // namespace LUS
+} // namespace Ship

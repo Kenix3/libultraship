@@ -5,17 +5,21 @@
 
 #include "ControllerInputMapping.h"
 
-namespace LUS {
+namespace Ship {
+
+#ifndef CONTROLLERBUTTONS_T
+#define CONTROLLERBUTTONS_T uint16_t
+#endif
 
 class ControllerButtonMapping : virtual public ControllerInputMapping {
   public:
-    ControllerButtonMapping(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask);
+    ControllerButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
     ~ControllerButtonMapping();
 
     virtual std::string GetButtonMappingId() = 0;
 
-    uint16_t GetBitmask();
-    virtual void UpdatePad(uint16_t& padButtons) = 0;
+    CONTROLLERBUTTONS_T GetBitmask();
+    virtual void UpdatePad(CONTROLLERBUTTONS_T& padButtons) = 0;
     virtual uint8_t GetMappingType();
     void SetPortIndex(uint8_t portIndex);
 
@@ -24,6 +28,6 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
 
   protected:
     uint8_t mPortIndex;
-    uint16_t mBitmask;
+    CONTROLLERBUTTONS_T mBitmask;
 };
-} // namespace LUS
+} // namespace Ship

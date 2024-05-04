@@ -9,9 +9,9 @@
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
-#include <ImGui/imgui.h>
+#include <imgui.h>
 
-namespace LUS {
+namespace Ship {
 
 class Console;
 typedef std::function<int32_t(std::shared_ptr<Console> console, std::vector<std::string> args, std::string* output)>
@@ -50,4 +50,4 @@ class Console {
     std::map<std::string, CommandEntry> mCommands;
 };
 
-} // namespace LUS
+} // namespace Ship

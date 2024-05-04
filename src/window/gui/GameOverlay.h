@@ -10,7 +10,7 @@
 #include <imgui.h>
 #include <unordered_map>
 
-namespace LUS {
+namespace Ship {
 
 enum class OverlayType { TEXT, IMAGE, NOTIFICATION };
 
@@ -27,6 +27,8 @@ class GameOverlay {
     ~GameOverlay();
 
     void Init();
+    void LoadFont(const std::string& name, const std::string& path, float fontSize);
+    void SetCurrentFont(const std::string& name);
     void Draw();
     void DrawSettings();
     float GetStringWidth(const char* text);
@@ -47,6 +49,5 @@ class GameOverlay {
     bool mNeedsCleanup = false;
 
     void CleanupNotifications();
-    void LoadFont(const std::string& name, const std::string& path, float fontSize);
 };
-} // namespace LUS
+} // namespace Ship

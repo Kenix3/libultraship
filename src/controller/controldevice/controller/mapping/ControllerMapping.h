@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include "controller/deviceindex/LUSDeviceIndex.h"
+#include "controller/deviceindex/ShipDeviceIndex.h"
 
-namespace LUS {
+namespace Ship {
 
 #define MAPPING_TYPE_GAMEPAD 0
 #define MAPPING_TYPE_KEYBOARD 1
@@ -11,13 +11,13 @@ namespace LUS {
 
 class ControllerMapping {
   public:
-    ControllerMapping(LUSDeviceIndex lusDeviceIndex);
+    ControllerMapping(ShipDeviceIndex shipDeviceIndex);
     ~ControllerMapping();
     virtual std::string GetPhysicalDeviceName();
-    LUSDeviceIndex GetLUSDeviceIndex();
+    ShipDeviceIndex GetShipDeviceIndex();
     virtual bool PhysicalDeviceIsConnected() = 0;
 
   protected:
-    LUSDeviceIndex mLUSDeviceIndex;
+    ShipDeviceIndex mShipDeviceIndex;
 };
-} // namespace LUS
+} // namespace Ship

@@ -13,80 +13,84 @@
 #include "resource/type/Texture.h"
 #include "graphic/Fast3D/gfx_pc.h"
 #include "resource/File.h"
-#include <stb/stb_image.h>
+#include <stb_image.h>
 #include "window/gui/Fonts.h"
 #include "window/gui/resource/GuiTextureFactory.h"
 
 #include "window/gui/GfxDebuggerWindow.h"
-
-#ifdef __WIIU__
-#include <gx2/registers.h> // GX2SetViewport / GX2SetScissor
-
-#include <ImGui/backends/wiiu/imgui_impl_gx2.h>
-#include <ImGui/backends/wiiu/imgui_impl_wiiu.h>
-
-#include "graphic/Fast3D/gfx_wiiu.h"
-#include "graphic/Fast3D/gfx_gx2.h"
-#endif
 
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
 
 #include "graphic/Fast3D/gfx_metal.h"
-#include <ImGui/backends/imgui_impl_metal.h>
-#include <ImGui/backends/imgui_impl_sdl2.h>
+#include <imgui_impl_metal.h>
+#include <imgui_impl_sdl2.h>
 #else
 #include <SDL2/SDL_hints.h>
 #include <SDL2/SDL_video.h>
 #endif
 
-#ifdef __SWITCH__
-#include "port/switch/SwitchImpl.h"
-#endif
-
-#ifdef __ANDROID__
-#include "port/android/AndroidImpl.h"
+#if defined(__ANDROID__) || defined(__IOS__)
+#include "port/mobile/MobileImpl.h"
 #endif
 
 #ifdef ENABLE_OPENGL
-#include <ImGui/backends/imgui_impl_opengl3.h>
-#include <ImGui/backends/imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl2.h>
 
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 #include <graphic/Fast3D/gfx_direct3d11.h>
-#include <ImGui/backends/imgui_impl_dx11.h>
-#include <ImGui/backends/imgui_impl_win32.h>
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
 
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif
 
-namespace LUS {
+namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
-Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVariableSave(false) {
+Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
 
-    AddGuiWindow(std::make_shared<StatsWindow>("gStatsEnabled", "Stats"));
-    if (customInputEditorWindow == nullptr) {
-        AddGuiWindow(std::make_shared<InputEditorWindow>("gControllerConfigurationEnabled", "Input Editor"));
-    } else {
-        AddGuiWindow(customInputEditorWindow);
+    for (auto& guiWindow : guiWindows) {
+        AddGuiWindow(guiWindow);
     }
-    AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>("gControllerDisconnectedWindowEnabled",
-                                                                "Controller Disconnected"));
-    AddGuiWindow(
-        std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
-    AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
-    AddGuiWindow(std::make_shared<GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
+
+    // Add default windows if we don't already have one by the name
+    if (GetGuiWindow("Stats") == nullptr) {
+        AddGuiWindow(std::make_shared<StatsWindow>(CVAR_STATS_WINDOW_OPEN, "Stats"));
+    }
+
+    if (GetGuiWindow("Input Editor") == nullptr) {
+        AddGuiWindow(std::make_shared<InputEditorWindow>(CVAR_CONTROLLER_CONFIGURATION_WINDOW_OPEN, "Input Editor"));
+    }
+
+    if (GetGuiWindow("Controller Disconnected") == nullptr) {
+        AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>(CVAR_CONTROLLER_DISCONNECTED_WINDOW_OPEN,
+                                                                    "Controller Disconnected"));
+    }
+
+    if (GetGuiWindow("Controller Reordering") == nullptr) {
+        AddGuiWindow(std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN,
+                                                                  "Controller Reordering"));
+    }
+
+    if (GetGuiWindow("Console") == nullptr) {
+        AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console"));
+    }
+
+    if (GetGuiWindow("GfxDebuggerWindow") == nullptr) {
+        AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "GfxDebuggerWindow"));
+    }
 }
 
-Gui::Gui() : Gui(nullptr) {
+Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
 }
 
 Gui::~Gui() {
@@ -114,36 +118,22 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize,
                                                           &iconsConfig, sIconsRanges);
 
-#ifdef __SWITCH__
-    LUS::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
-#endif
-
 #if defined(__ANDROID__)
     // Scale everything by 2 for Android
     ImGui::GetStyle().ScaleAllSizes(2.0f);
     mImGuiIo->FontGlobalScale = 2.0f;
 #endif
 
-#ifdef __WIIU__
-    // Scale everything by 2 for the Wii U
-    ImGui::GetStyle().ScaleAllSizes(2.0f);
-    mImGuiIo->FontGlobalScale = 2.0f;
-
-    // Setup display sizes
-    mImGuiIo->DisplaySize.x = mImpl.Gx2.Width;
-    mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
-#endif
-
-    auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
-    auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
+    auto imguiIniPath = Ship::Context::GetPathRelativeToAppDirectory("imgui.ini");
+    auto imguiLogPath = Ship::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     mImGuiIo->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
-    if (SupportsViewports() && CVarGetInteger("gEnableMultiViewports", 1)) {
+    if (SupportsViewports() && CVarGetInteger(CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -161,31 +151,18 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
     ImGuiWMInit();
     ImGuiBackendInit();
-#ifdef __SWITCH__
-    ImGui::GetStyle().ScaleAllSizes(2);
-#endif
 
-    CVarClear("gNewFileDropped");
-    CVarClear("gDroppedFile");
-
-#ifdef __SWITCH__
-    Switch::ApplyOverclock();
-#endif
+    CVarClear(CVAR_NEW_FILE_DROPPED);
+    CVarClear(CVAR_DROPPED_FILE);
 }
 
 void Gui::ImGuiWMInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            ImGui_ImplWiiU_Init();
-            break;
-#else
         case WindowBackend::SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
-#endif
 #if __APPLE__
         case WindowBackend::SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
@@ -205,11 +182,7 @@ void Gui::ImGuiWMInit() {
 
 void Gui::ImGuiBackendInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            ImGui_ImplGX2_Init();
-            break;
-#else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -258,10 +231,6 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
 }
 
 bool Gui::SupportsViewports() {
-#ifdef __SWITCH__
-    return false;
-#endif
-
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::DX11:
             return true;
@@ -280,23 +249,13 @@ void Gui::Update(WindowEvent event) {
     }
 
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            if (!ImGui_ImplWiiU_ProcessInput((ImGui_ImplWiiU_ControllerInput*)event.Gx2.Input)) {}
-            break;
-#else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
-
-#ifdef __SWITCH__
-            LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
-#endif
-#ifdef __ANDROID__
-            LUS::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+#if defined(__ANDROID__) || defined(__IOS__)
+            Ship::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
-#endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
@@ -317,13 +276,13 @@ void Gui::BlockImGuiGamepadNavigation() {
 }
 
 void Gui::UnblockImGuiGamepadNavigation() {
-    if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
 }
 
 void Gui::DrawMenu() {
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
@@ -365,12 +324,13 @@ void Gui::DrawMenu() {
 
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
-    if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
+    if (ImGui::IsKeyPressed(TOGGLE_BTN) ||
+        (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
         GetMenuBar()->ToggleVisibility();
         if (wnd->IsFullscreen()) {
             Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
         }
-        if (CVarGetInteger("gControlNav", 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+        if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -380,15 +340,15 @@ void Gui::DrawMenu() {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #endif
@@ -425,11 +385,11 @@ void Gui::DrawMenu() {
     gfx_current_game_window_viewport.width = (int16_t)size.x;
     gfx_current_game_window_viewport.height = (int16_t)size.y;
 
-    if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
+    if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
         ApplyResolutionChanges();
     }
 
-    switch (CVarGetInteger("gLowResMode", 0)) {
+    switch (CVarGetInteger(CVAR_LOW_RES_MODE, 0)) {
         case 1: { // N64 Mode
             gfx_current_dimensions.width = 320;
             gfx_current_dimensions.height = 240;
@@ -458,24 +418,21 @@ void Gui::DrawMenu() {
 
 void Gui::ImGuiBackendNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            mImGuiIo->DeltaTime = (float)frametime / 1000.0f / 1000.0f;
-            ImGui_ImplGX2_NewFrame();
-            break;
-#else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
-#ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
-            Metal_NewFrame(mImpl.Metal.Renderer);
-            break;
-#endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_NewFrame();
+            break;
+#endif
+
+#ifdef __APPLE__
+        case WindowBackend::SDL_METAL:
+            Metal_NewFrame(mImpl.Metal.Renderer);
             break;
 #endif
         default:
@@ -485,15 +442,10 @@ void Gui::ImGuiBackendNewFrame() {
 
 void Gui::ImGuiWMNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            break;
-#else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
             ImGui_ImplSDL2_NewFrame();
             break;
-#endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplWin32_NewFrame();
@@ -507,10 +459,11 @@ void Gui::ImGuiWMNewFrame() {
 void Gui::ApplyResolutionChanges() {
     ImVec2 size = ImGui::GetContentRegionAvail();
 
-    const float aspectRatioX = CVarGetFloat("gAdvancedResolution.AspectRatioX", 16.0f);
-    const float aspectRatioY = CVarGetFloat("gAdvancedResolution.AspectRatioY", 9.0f);
-    const uint32_t verticalPixelCount = CVarGetInteger("gAdvancedResolution.VerticalPixelCount", 480);
-    const bool verticalResolutionToggle = CVarGetInteger("gAdvancedResolution.VerticalResolutionToggle", 0);
+    const float aspectRatioX = CVarGetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
+    const float aspectRatioY = CVarGetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
+    const uint32_t verticalPixelCount = CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
+    const bool verticalResolutionToggle =
+        CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
 
     const bool aspectRatioIsEnabled = (aspectRatioX > 0.0f) && (aspectRatioY > 0.0f);
 
@@ -559,10 +512,10 @@ void Gui::ApplyResolutionChanges() {
 }
 
 int16_t Gui::GetIntegerScaleFactor() {
-    if (!CVarGetInteger("gAdvancedResolution.IntegerScale.FitAutomatically", 0)) {
-        int16_t factor = CVarGetInteger("gAdvancedResolution.IntegerScale.Factor", 1);
+    if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
+        int16_t factor = CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
 
-        if (CVarGetInteger("gAdvancedResolution.IntegerScale.NeverExceedBounds", 1)) {
+        if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
             // Screen bounds take priority over whatever Factor is set to.
 
             // The same comparison as below, but checked against the configured factor
@@ -598,7 +551,7 @@ int16_t Gui::GetIntegerScaleFactor() {
         }
 
         // Add screen bounds offset, if set.
-        factor += CVarGetInteger("gAdvancedResolution.IntegerScale.ExceedBoundsBy", 0);
+        factor += CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
 
         if (factor < 1) {
             factor = 1;
@@ -611,13 +564,13 @@ void Gui::StartFrame() {
     const ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (CVarGetInteger("gLowResMode", 0) == 1) { // N64 Mode takes priority
+    if (CVarGetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(floor(size.x / 2 - sw / 2), 0);
         size = ImVec2(sw, size.y);
-    } else if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
-        if (!CVarGetInteger("gAdvancedResolution.PixelPerfectMode", 0)) {
-            if (!CVarGetInteger("gAdvancedResolution.IgnoreAspectCorrection", 0)) {
+    } else if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
+        if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
+            if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
                 float sWdth = size.y * gfx_current_dimensions.width / gfx_current_dimensions.height;
                 float sHght = size.x * gfx_current_dimensions.height / gfx_current_dimensions.width;
                 float sPosX = floor(size.x / 2.0f - sWdth / 2.0f);
@@ -681,11 +634,6 @@ ImTextureID Gui::GetTextureById(int32_t id) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif
-#ifdef __WIIU__
-    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::GX2) {
-        return gfx_gx2_texture_for_imgui(id);
-    }
-#endif
 
     return reinterpret_cast<ImTextureID>(id);
 }
@@ -710,25 +658,19 @@ ImVec2 Gui::GetTextureSize(const std::string& name) {
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __WIIU__
-        case WindowBackend::GX2:
-            ImGui_ImplGX2_RenderDrawData(data);
 
-            // Reset viewport and scissor for drawing the keyboard
-            GX2SetViewport(0.0f, 0.0f, mImGuiIo->DisplaySize.x, mImGuiIo->DisplaySize.y, 0.0f, 1.0f);
-            GX2SetScissor(0, 0, mImGuiIo->DisplaySize.x, mImGuiIo->DisplaySize.y);
-            ImGui_ImplWiiU_DrawKeyboardOverlay();
-            break;
-#else
+#ifdef ENABLE_OPENGL
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
+
 #ifdef __APPLE__
         case WindowBackend::SDL_METAL:
             Metal_RenderDrawData(data);
             break;
 #endif
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
         case WindowBackend::DX11:
             ImGui_ImplDX11_RenderDrawData(data);
@@ -946,4 +888,4 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
 std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
     return mMenuBar;
 }
-} // namespace LUS
+} // namespace Ship

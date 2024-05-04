@@ -5,25 +5,18 @@
 #include <string>
 #include <vector>
 
-namespace LUS {
+namespace Ship {
 class ButtonMappingFactory {
   public:
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromConfig(uint8_t portIndex, std::string id);
-#ifdef __WIIU__
-    static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultWiiUButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask);
-
-    static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromWiiUInput(uint8_t portIndex,
-                                                                                     uint16_t bitmask);
-#else
-    static std::vector<std::shared_ptr<ControllerButtonMapping>> CreateDefaultKeyboardButtonMappings(uint8_t portIndex,
-                                                                                                     uint16_t bitmask);
 
     static std::vector<std::shared_ptr<ControllerButtonMapping>>
-    CreateDefaultSDLButtonMappings(LUSDeviceIndex lusDeviceIndex, uint8_t portIndex, uint16_t bitmask);
+    CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+
+    static std::vector<std::shared_ptr<ControllerButtonMapping>>
+    CreateDefaultSDLButtonMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromSDLInput(uint8_t portIndex,
-                                                                                    uint16_t bitmask);
-#endif
+                                                                                    CONTROLLERBUTTONS_T bitmask);
 };
-} // namespace LUS
+} // namespace Ship

@@ -4,14 +4,14 @@
 #include <vector>
 #include <config/Config.h>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "controller/deviceindex/LUSDeviceIndexMappingManager.h"
+#include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
 
-namespace LUS {
+namespace Ship {
 
 class ControlDeck {
   public:
     ControlDeck();
-    ControlDeck(std::vector<uint16_t> additionalBitmasks);
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);
@@ -26,11 +26,9 @@ class ControlDeck {
     void SetSinglePlayerMappingMode(bool singlePlayer);
     bool IsSinglePlayerMappingMode();
 
-#ifndef __WIIU__
-    bool ProcessKeyboardEvent(LUS::KbEventType eventType, LUS::KbScancode scancode);
-#endif
+    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
 
-    std::shared_ptr<LUSDeviceIndexMappingManager> GetDeviceIndexMappingManager();
+    std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 
   private:
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
@@ -40,6 +38,6 @@ class ControlDeck {
 
     bool AllGameInputBlocked();
     std::unordered_map<int32_t, bool> mGameInputBlockers;
-    std::shared_ptr<LUSDeviceIndexMappingManager> mDeviceIndexMappingManager;
+    std::shared_ptr<ShipDeviceIndexMappingManager> mDeviceIndexMappingManager;
 };
-} // namespace LUS
+} // namespace Ship

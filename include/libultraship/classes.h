@@ -36,13 +36,7 @@
 #endif
 #include "audio/SDLAudioPlayer.h"
 #ifdef __APPLE__
-#include "utils/OSXFolderManager.h"
-#endif
-#ifdef __SWITCH__
-#include "port/switch/SwitchImpl.h"
-#endif
-#ifdef __WIIU__
-#include "port/wiiu/WiiUImpl.h"
+#include "utils/AppleFolderManager.h"
 #endif
 #endif
 #endif

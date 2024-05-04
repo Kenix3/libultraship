@@ -1,5 +1,5 @@
 #include "GfxDebuggerWindow.h"
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <spdlog/spdlog.h>
 #include "Context.h"
 #include "debug/GfxDebugger.h"
@@ -7,6 +7,7 @@
 #include <spdlog/fmt/fmt.h>
 #include "libultraship/bridge.h"
 #include <graphic/Fast3D/gfx_pc.h>
+#include <optional>
 #ifdef GFX_DEBUG_DISASSEMBLER
 #include <gfxd.h>
 #endif
@@ -52,7 +53,7 @@ static inline void* seg_addr(uintptr_t w1) {
 
 // static int s_dbgcnt = 0;
 void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfx_path) const {
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
 
     auto node_with_text = [dbg, this, &gfx_path](const F3DGfx* cmd, const std::string& text,
                                                  const F3DGfx* sub = nullptr) mutable {
@@ -173,7 +174,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 node_with_text(cmd0, fmt::format("G_SETTIMG_OTR_HASH: {}", name));
 
                 // std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
-                //     LUS::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
+                //     Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
                 cmd++;
                 break;
             }
@@ -287,7 +288,7 @@ static bool bpEquals(const std::vector<const F3DGfx*>& x, const std::vector<cons
 
 void GfxDebuggerWindow::DrawDisas() {
 
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
     auto dlist = dbg->GetDisplayList();
     ImGui::Text("dlist: %p", dlist);
     std::string bp = "";
@@ -305,7 +306,7 @@ void GfxDebuggerWindow::DrawDisas() {
     std::string TO_LOAD_TEX = "GfxDebuggerWindowTextureToLoad";
 
     const F3DGfx* cmd = dlist;
-    auto gui = LUS::Context::GetInstance()->GetWindow()->GetGui();
+    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
 
     ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
     {
@@ -408,7 +409,7 @@ void GfxDebuggerWindow::DrawDisas() {
 }
 
 void GfxDebuggerWindow::DrawElement() {
-    auto dbg = LUS::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
 
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
     ImGui::Begin("GFX Debugger", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);

@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <any>
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 
 #ifdef __APPLE__
 #include "graphic/Fast3D/gfx_metal.h"
@@ -13,7 +13,7 @@
 
 namespace fs = std::filesystem;
 
-namespace LUS {
+namespace Ship {
 Config::Config(std::string path) : mPath(std::move(path)), mIsNewInstance(false) {
     Reload();
 }
@@ -225,9 +225,6 @@ WindowBackend Config::GetWindowBackend() {
 #ifdef ENABLE_DX11
     return WindowBackend::DX11;
 #endif
-#ifdef __WIIU__
-    return WindowBackend::GX2;
-#endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
         return WindowBackend::SDL_METAL;
@@ -284,4 +281,4 @@ uint32_t ConfigVersionUpdater::GetVersion() {
     return mVersion;
 }
 
-} // namespace LUS
+} // namespace Ship

@@ -2,13 +2,15 @@
 
 #include <memory>
 #include <filesystem>
+#include <string>
+#include <vector>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "window/gui/Gui.h"
 
-namespace LUS {
+namespace Ship {
 enum class WindowBackend { DX11, DX12, GLX_OPENGL, SDL_OPENGL, SDL_METAL, GX2, BACKEND_COUNT };
 
 class Config;
@@ -18,7 +20,7 @@ class Window {
 
   public:
     Window();
-    Window(std::shared_ptr<GuiWindow> customInputEditorWindow);
+    Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
     ~Window();
 
     void MainLoop(void (*mainFunction)(void));
@@ -57,11 +59,9 @@ class Window {
     void SaveWindowSizeToConfig(std::shared_ptr<Config> conf);
 
   private:
-#ifndef __WIIU__
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp(void);
-#endif
     static void OnFullscreenChanged(bool isNowFullscreen);
 
     std::shared_ptr<Gui> mGui;
@@ -77,4 +77,4 @@ class Window {
     int32_t mPosY;
     int32_t mLastScancode;
 };
-} // namespace LUS
+} // namespace Ship

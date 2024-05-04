@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include "resource/File.h"
 
-namespace LUS {
+namespace Ship {
 struct File;
 class Archive;
 
@@ -20,8 +20,9 @@ class ArchiveManager {
     ~ArchiveManager();
 
     bool IsArchiveLoaded();
-    std::shared_ptr<File> LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<File> LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<Ship::File> LoadFile(const std::string& filePath,
+                                         std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
+    std::shared_ptr<Ship::File> LoadFile(uint64_t hash, std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
     bool HasFile(const std::string& filePath);
     bool HasFile(uint64_t hash);
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& filter);
@@ -46,4 +47,4 @@ class ArchiveManager {
     std::unordered_map<uint64_t, std::string> mHashes;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
 };
-} // namespace LUS
+} // namespace Ship

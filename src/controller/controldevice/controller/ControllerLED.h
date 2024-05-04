@@ -7,7 +7,7 @@
 
 #include "controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 
-namespace LUS {
+namespace Ship {
 class ControllerLED {
   public:
     ControllerLED(uint8_t portIndex);
@@ -19,7 +19,7 @@ class ControllerLED {
     void ClearLEDMapping(std::string id);
     void SaveLEDMappingIdsToConfig();
     void ClearAllMappings();
-    void ClearAllMappingsForDevice(LUSDeviceIndex lusIndex);
+    void ClearAllMappingsForDevice(ShipDeviceIndex lusIndex);
     void LoadLEDMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();
 
@@ -27,10 +27,10 @@ class ControllerLED {
 
     void SetLEDColor(Color_RGB8 color);
 
-    bool HasMappingsForLUSDeviceIndex(LUSDeviceIndex lusIndex);
+    bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 
   private:
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> mLEDMappings;
 };
-} // namespace LUS
+} // namespace Ship

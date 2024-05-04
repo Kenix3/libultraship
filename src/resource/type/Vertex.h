@@ -6,7 +6,7 @@
 union F3DVtx;
 
 namespace LUS {
-class Vertex : public Resource<F3DVtx> {
+class Vertex : public Ship::Resource<F3DVtx> {
   public:
     using Resource::Resource;
 

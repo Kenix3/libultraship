@@ -5,13 +5,13 @@
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include "controller/controldevice/controller/Controller.h"
 
-namespace LUS {
+namespace Ship {
 
 class ControllerReorderingWindow : public GuiWindow {
   public:
@@ -24,13 +24,8 @@ class ControllerReorderingWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
-#ifdef __WIIU__
-    std::vector<int32_t> GetConnectedWiiUDevices();
-    int32_t GetWiiUDeviceFromWiiUInput();
-#else
     int32_t GetSDLIndexFromSDLInput();
-#endif
     std::vector<int32_t> mDeviceIndices;
     uint8_t mCurrentPortNumber;
 };
-} // namespace LUS
+} // namespace Ship

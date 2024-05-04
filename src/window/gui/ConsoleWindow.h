@@ -10,10 +10,10 @@
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
-#include <ImGui/imgui.h>
+#include <imgui.h>
 #include <spdlog/spdlog.h>
 
-namespace LUS {
+namespace Ship {
 
 class ConsoleWindow : public GuiWindow {
   public:
@@ -90,4 +90,4 @@ class ConsoleWindow : public GuiWindow {
     };
     static constexpr size_t gMaxBufferSize = 255;
 };
-} // namespace LUS
+} // namespace Ship

@@ -7,9 +7,9 @@
 #include "resource/archive/Archive.h"
 #include "resource/ResourceManager.h"
 #include "Context.h"
-#include <Utils/StringHelper.h>
+#include "utils/StringHelper.h"
 
-namespace LUS {
+namespace Ship {
 GameOverlay::GameOverlay() {
 }
 
@@ -25,9 +25,13 @@ void GameOverlay::LoadFont(const std::string& name, const std::string& path, flo
     initData->ResourceVersion = 0;
     std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
         Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
-    if (font != nullptr) {
-        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
+
+    if (font == nullptr) {
+        SPDLOG_ERROR("Failed to load font: {}", name);
+        return;
     }
+
+    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
 }
 
 void GameOverlay::TextDraw(float x, float y, bool shadow, ImVec4 color, const char* fmt, ...) {
@@ -134,19 +138,17 @@ void GameOverlay::Init() {
     Context::GetInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
         std::make_shared<ResourceFactoryBinaryFontV0>(), RESOURCE_FORMAT_BINARY, "Font",
         static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
-    LoadFont("Press Start 2P", "fonts/PressStart2P-Regular.ttf", 12.0f);
-    LoadFont("Fipps", "fonts/Fipps-Regular.otf", 32.0f);
-    const std::string defaultFont = mFonts.begin()->first;
-    if (!mFonts.empty()) {
-        const std::string font = CVarGetString("gOverlayFont", defaultFont.c_str());
-        for (auto& [name, _] : mFonts) {
-            if (font.starts_with(name)) {
-                mCurrentFont = name;
-                break;
-            }
-            mCurrentFont = defaultFont;
-        }
+}
+
+void GameOverlay::SetCurrentFont(const std::string& name) {
+    if (mFonts[name] == nullptr) {
+        SPDLOG_ERROR("Failed to set current font: {}", name);
+        return;
     }
+
+    mCurrentFont = name;
+    CVarSetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
+    Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
 }
 
 void GameOverlay::DrawSettings() {
@@ -154,9 +156,7 @@ void GameOverlay::DrawSettings() {
     if (ImGui::BeginCombo("##TextFont", mCurrentFont.c_str())) {
         for (auto& [name, font] : mFonts) {
             if (ImGui::Selectable(name.c_str(), name == mCurrentFont)) {
-                mCurrentFont = name;
-                CVarSetString("gOverlayFont", name.c_str());
-                LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+                SetCurrentFont(name);
             }
         }
         ImGui::EndCombo();
@@ -215,7 +215,7 @@ void GameOverlay::Draw() {
             const float duration = overlay.duration / overlay.fadeTime;
 
             const ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, duration);
-#if defined(__WIIU__) || defined(__ANDROID__)
+#ifdef __ANDROID__
             const float textWidth = GetStringWidth(overlay.Value.c_str()) * 2.0f;
             const float textOffset = 40.0f * 2.0f;
 #else
@@ -232,4 +232,4 @@ void GameOverlay::Draw() {
 
     ImGui::End();
 }
-} // namespace LUS
+} // namespace Ship

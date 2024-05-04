@@ -6,13 +6,13 @@
 #include <string>
 #include "controller/controldevice/controller/mapping/ControllerMapping.h"
 
-namespace LUS {
+namespace Ship {
 enum Axis { X = 0, Y = 1 };
 enum AxisDirection { NEGATIVE = -1, POSITIVE = 1 };
 
 class SDLMapping : public ControllerMapping {
   public:
-    SDLMapping(LUSDeviceIndex lusDeviceIndex);
+    SDLMapping(ShipDeviceIndex shipDeviceIndex);
     ~SDLMapping();
     int32_t GetJoystickInstanceId();
     int32_t GetCurrentSDLDeviceIndex();
@@ -36,4 +36,4 @@ class SDLMapping : public ControllerMapping {
     bool OpenController();
     std::string GetSDLControllerName();
 };
-} // namespace LUS
+} // namespace Ship
