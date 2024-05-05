@@ -874,19 +874,19 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
 
             if (siz == 0) {
                 Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_4b, width, height, 0, cms, cmt, maskS, maskT,
-                                                      shiftS, shiftT) };
+                                                   shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             } else if (siz == 1) {
                 Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
-                                                      shiftS, shiftT) };
+                                                   shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             } else if (siz == 2) {
                 Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
-                                                      shiftS, shiftT) };
+                                                   shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             } else if (siz == 3) {
                 Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
-                                                      shiftS, shiftT) };
+                                                   shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             }
 
