@@ -1,8 +1,9 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "libultraship/libultra/gbi.h"
 #include <vector>
+
+union Vtx;
 
 namespace LUS {
 class Vertex : public Ship::Resource<Vtx> {

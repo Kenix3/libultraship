@@ -1,6 +1,7 @@
 #include "resource/factory/ArrayFactory.h"
 #include "resource/type/Array.h"
 #include "spdlog/spdlog.h"
+#include "graphic/Fast3D/lus_gbi.h"
 
 namespace LUS {
 std::shared_ptr<Ship::IResource> ResourceFactoryBinaryArrayV0::ReadResource(std::shared_ptr<Ship::File> file) {
@@ -17,7 +18,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryArrayV0::ReadResource(std:
     for (uint32_t i = 0; i < array->ArrayCount; i++) {
         if (array->ArrayType == ArrayResourceType::Vertex) {
             // OTRTODO: Implement Vertex arrays as just a vertex resource.
-            Vtx data;
+            F3DVtx data;
             data.v.ob[0] = reader->ReadInt16();
             data.v.ob[1] = reader->ReadInt16();
             data.v.ob[2] = reader->ReadInt16();

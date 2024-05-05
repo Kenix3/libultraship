@@ -25,86 +25,9 @@ void GfxDebuggerWindow::InitElement() {
 void GfxDebuggerWindow::UpdateElement() {
 }
 
-static const char* GetOpName(uint32_t op) {
-    switch (op) {
-#define CASE(x) \
-    case x:     \
-        return #x
-
-        CASE(G_RDPHALF_1);
-        CASE(G_RDPHALF_2);
-        CASE(G_RDPPIPESYNC);
-        CASE(G_RDPFULLSYNC);
-        CASE(G_RDPLOADSYNC);
-        CASE(G_LOAD_UCODE);
-        CASE(G_MARKER);
-        CASE(G_INVALTEXCACHE);
-        CASE(G_NOOP);
-        CASE(G_MTX);
-        CASE(G_MTX_OTR);
-        CASE(G_POPMTX);
-        CASE(G_MOVEMEM);
-        CASE(G_MOVEWORD);
-        CASE(G_TEXTURE);
-        CASE(G_VTX);
-        CASE(G_VTX_OTR_HASH);
-        CASE(G_VTX_OTR_FILEPATH);
-        CASE(G_DL_OTR_FILEPATH);
-        CASE(G_MODIFYVTX);
-        CASE(G_DL);
-        CASE(G_DL_OTR_HASH);
-        CASE(G_PUSHCD);
-        CASE(G_BRANCH_Z_OTR);
-        CASE(G_ENDDL);
-        CASE(G_GEOMETRYMODE);
-        // CASE(G_SETGEOMETRYMODE);
-        // CASE(G_CLEARGEOMETRYMODE);
-        CASE(G_TRI1_OTR);
-        CASE(G_TRI1);
-        CASE(G_QUAD);
-        CASE(G_TRI2);
-        CASE(G_SETOTHERMODE_L);
-        CASE(G_SETOTHERMODE_H);
-        CASE(G_SETTIMG);
-        CASE(G_SETTIMG_OTR_HASH);
-        CASE(G_SETTIMG_OTR_FILEPATH);
-        CASE(G_SETFB);
-        CASE(G_RESETFB);
-        CASE(G_SETTIMG_FB);
-        CASE(G_SETGRAYSCALE);
-        CASE(G_LOADBLOCK);
-        CASE(G_LOADTILE);
-        CASE(G_SETTILE);
-        CASE(G_SETTILESIZE);
-        CASE(G_LOADTLUT);
-        CASE(G_SETENVCOLOR);
-        CASE(G_SETPRIMCOLOR);
-        CASE(G_SETFOGCOLOR);
-        CASE(G_SETFILLCOLOR);
-        CASE(G_SETINTENSITY);
-        CASE(G_SETCOMBINE);
-        CASE(G_TEXRECT);
-        CASE(G_TEXRECTFLIP);
-        CASE(G_TEXRECT_WIDE);
-        CASE(G_FILLRECT);
-        CASE(G_FILLWIDERECT);
-        CASE(G_SETSCISSOR);
-        CASE(G_SETZIMG);
-        CASE(G_SETCIMG);
-        CASE(G_RDPSETOTHERMODE);
-        // CASE(G_BG_COPY);
-        CASE(G_EXTRAGEOMETRYMODE);
-        CASE(G_SETBLENDCOLOR);
-        CASE(G_RDPTILESYNC);
-        CASE(G_SPNOOP);
-        CASE(G_CULLDL);
-        CASE(G_IMAGERECT);
-        CASE(G_COPYFB);
-        default:
-            return nullptr;
-            // return "UNKNOWN";
-#undef CASE
-    }
+// LUSTODO handle switching ucodes
+static const char* GetOpName(int8_t op) {
+    return GfxGetOpcodeName(op);
 }
 
 static inline void* seg_addr(uintptr_t w1) {
@@ -129,11 +52,11 @@ static inline void* seg_addr(uintptr_t w1) {
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
 // static int s_dbgcnt = 0;
-void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& gfx_path) const {
+void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfx_path) const {
     auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
 
-    auto node_with_text = [dbg, this, &gfx_path](const Gfx* cmd, const std::string& text,
-                                                 const Gfx* sub = nullptr) mutable {
+    auto node_with_text = [dbg, this, &gfx_path](const F3DGfx* cmd, const std::string& text,
+                                                 const F3DGfx* sub = nullptr) mutable {
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
         gfx_path.push_back(cmd);
@@ -155,10 +78,10 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
         gfx_path.pop_back();
     };
 
-    auto simple_node = [dbg, node_with_text](const Gfx* cmd, uint32_t opcode) mutable {
+    auto simple_node = [dbg, node_with_text](const F3DGfx* cmd, int8_t opcode) mutable {
         const char* opname = GetOpName(opcode);
-        size_t size = 1;
-        if (opcode == G_TEXRECT)
+        [[maybe_unused]] size_t size = 1;
+        if (opcode == RDP_G_TEXRECT)
             size = 3;
         if (opname) {
 #ifdef GFX_DEBUG_DISASSEMBLER
@@ -183,17 +106,17 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
             node_with_text(cmd, fmt::format("{}", opname));
 #endif
         } else {
-            uint32_t opcode = cmd->words.w0 >> 24;
+            int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
             node_with_text(cmd, fmt::format("UNK: 0x{:X}", opcode));
         }
     };
 
     while (true) {
-        uint32_t opcode = cmd->words.w0 >> 24;
-        const Gfx* cmd0 = cmd;
+        int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
+        const F3DGfx* cmd0 = cmd;
         switch (opcode) {
 
-            case G_NOOP: {
+            case F3DEX2_G_NOOP: {
                 const char* filename = (const char*)cmd->words.w1;
                 uint32_t p = C0(16, 8);
                 uint32_t l = C0(0, 16);
@@ -210,7 +133,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                 break;
             }
 
-            case G_MARKER: {
+            case OTR_G_MARKER: {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 const char* dlName = ResourceGetNameByCrc(hash);
@@ -222,7 +145,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                 break;
             }
 
-            case G_DL_OTR_HASH: {
+            case OTR_G_DL_OTR_HASH: {
 
                 if (C0(16, 1) == 0) {
                     cmd++;
@@ -231,7 +154,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                     if (!dlName)
                         dlName = "UNKNOWN";
 
-                    Gfx* subGfx = (Gfx*)ResourceGetDataByCrc(hash);
+                    F3DGfx* subGfx = (F3DGfx*)ResourceGetDataByCrc(hash);
                     // node_with_text(cmd0, fmt::format("G_DL_OTR_HASH: {}", "UNKOWN"), subGfx);
                     node_with_text(cmd0, fmt::format("G_DL_OTR_HASH: {}", dlName), subGfx);
                     cmd++;
@@ -241,7 +164,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                 break;
             }
 
-            case G_SETTIMG_OTR_HASH: {
+            case OTR_G_SETTIMG_OTR_HASH: {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 const char* name = ResourceGetNameByCrc(hash);
@@ -256,7 +179,7 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                 break;
             }
 
-            case G_VTX_OTR_HASH: {
+            case OTR_G_VTX_OTR_HASH: {
                 cmd++;
                 uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
                 const char* name = ResourceGetNameByCrc(hash);
@@ -270,8 +193,8 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                 break;
             };
 
-            case G_DL: {
-                Gfx* subGFX = (Gfx*)seg_addr(cmd->words.w1);
+            case F3DEX2_G_DL: {
+                F3DGfx* subGFX = (F3DGfx*)seg_addr(cmd->words.w1);
                 if (C0(16, 1) == 0) {
                     node_with_text(cmd0, fmt::format("G_DL: 0x{:x} -> {}", cmd->words.w1, (void*)subGFX), subGFX);
                     cmd++;
@@ -283,30 +206,30 @@ void GfxDebuggerWindow::DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& g
                 break;
             }
 
-            case G_ENDDL: {
+            case F3DEX2_G_ENDDL: {
                 simple_node(cmd, opcode);
                 return;
             }
 
-            case G_TEXRECT: {
+            case RDP_G_TEXRECT: {
                 simple_node(cmd, opcode);
                 cmd += 3;
                 break;
             }
 
-            case G_IMAGERECT: {
+            case OTR_G_IMAGERECT: {
                 node_with_text(cmd0, fmt::format("G_IMAGERECT"));
                 cmd += 3;
                 break;
             }
 
-            case G_SETTIMG_FB: {
+            case OTR_G_SETTIMG_FB: {
                 node_with_text(cmd0, fmt::format("G_SETTIMG_FB: src {}", cmd->words.w1));
                 cmd++;
                 break;
             }
 
-            case G_COPYFB: {
+            case OTR_G_COPYFB: {
                 node_with_text(cmd0, fmt::format("G_COPYFB: src {}, dest {}, new frames only {}", C0(0, 11), C0(11, 11),
                                                  C0(22, 1)));
                 cmd++;
@@ -348,7 +271,7 @@ static const char* getTexType(LUS::TextureType type) {
     }
 }
 
-static bool bpEquals(const std::vector<const Gfx*>& x, const std::vector<const Gfx*>& y) {
+static bool bpEquals(const std::vector<const F3DGfx*>& x, const std::vector<const F3DGfx*>& y) {
     if (x.size() != y.size())
         return false;
 
@@ -382,7 +305,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
     std::string TO_LOAD_TEX = "GfxDebuggerWindowTextureToLoad";
 
-    const Gfx* cmd = dlist;
+    const F3DGfx* cmd = dlist;
     auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
 
     ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
@@ -479,7 +402,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
     ImGui::BeginChild("##Disassembler", ImVec2(0.0f, 0.0f), true);
     {
-        std::vector<const Gfx*> gfx_path;
+        std::vector<const F3DGfx*> gfx_path;
         DrawDisasNode(dlist, gfx_path);
     }
     ImGui::EndChild();

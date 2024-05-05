@@ -12,5 +12,5 @@ bool GfxDebuggerIsDebuggingRequested(void) {
     return Ship::Context::GetInstance()->GetGfxDebugger()->IsDebuggingRequested();
 }
 void GfxDebuggerDebugDisplayList(void* cmds) {
-    Ship::Context::GetInstance()->GetGfxDebugger()->DebugDisplayList((Gfx*)cmds);
+    Ship::Context::GetInstance()->GetGfxDebugger()->DebugDisplayList((F3DGfx*)cmds);
 }
