@@ -1,6 +1,7 @@
 #include "resource/factory/VertexFactory.h"
 #include "resource/type/Vertex.h"
 #include "spdlog/spdlog.h"
+#include "libultraship/libultra/gbi.h"
 
 namespace LUS {
 std::shared_ptr<Ship::IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<Ship::File> file) {

@@ -5,7 +5,7 @@ DisplayList::DisplayList() : Resource(std::shared_ptr<Ship::ResourceInitData>())
 }
 
 Gfx* DisplayList::GetPointer() {
-    return Instructions.data();
+    return (Gfx*)Instructions.data();
 }
 
 size_t DisplayList::GetPointerSize() {

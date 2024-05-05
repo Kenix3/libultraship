@@ -1,7 +1,5 @@
 #include <stdio.h>
 
-#include "libultraship/libultraship.h"
-
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
 #ifdef __MINGW32__
@@ -9,6 +7,9 @@
 #else
 #define FOR_WINDOWS 0
 #endif
+
+#include "Context.h"
+#include "config/ConsoleVariable.h"
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
@@ -507,9 +508,9 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            CVarSetString(CVAR_DROPPED_FILE, event.drop.file);
-            CVarSetInteger(CVAR_NEW_FILE_DROPPED, 1);
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetString(CVAR_DROPPED_FILE, event.drop.file);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_NEW_FILE_DROPPED, 1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             break;
         case SDL_QUIT:
             is_running = false;

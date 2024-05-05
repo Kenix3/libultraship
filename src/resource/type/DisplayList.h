@@ -2,7 +2,8 @@
 
 #include <vector>
 #include "resource/Resource.h"
-#include "libultraship/libultra/gbi.h"
+
+#include <libultraship/libultra/gbi.h>
 
 namespace LUS {
 class DisplayList : public Ship::Resource<Gfx> {

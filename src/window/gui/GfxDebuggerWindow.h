@@ -1,8 +1,9 @@
 #pragma once
 
 #include "window/gui/GuiWindow.h"
-#include "libultraship/libultra/gbi.h"
 #include <vector>
+
+union F3DGfx;
 
 namespace LUS {
 
@@ -17,11 +18,11 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
     void DrawElement() override;
 
   private:
-    void DrawDisasNode(const Gfx* cmd, std::vector<const Gfx*>& gfx_path) const;
+    void DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfx_path) const;
     void DrawDisas();
 
   private:
-    std::vector<const Gfx*> mLastBreakPoint = {};
+    std::vector<const F3DGfx*> mLastBreakPoint = {};
 };
 
 } // namespace LUS

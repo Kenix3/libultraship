@@ -3,9 +3,7 @@
 #include <string>
 #include <vector>
 
-extern "C" {
-#include "libultraship/libultra/gbi.h"
-}
+union F3DGfx;
 
 namespace LUS {
 
@@ -15,23 +13,23 @@ class GfxDebugger {
     bool IsDebugging() const;
     bool IsDebuggingRequested() const;
 
-    void DebugDisplayList(Gfx* cmds);
+    void DebugDisplayList(F3DGfx* cmds);
 
     void ResumeGame();
 
-    const Gfx* GetDisplayList() const;
+    const F3DGfx* GetDisplayList() const;
 
-    const std::vector<const Gfx*>& GetBreakPoint() const;
+    const std::vector<const F3DGfx*>& GetBreakPoint() const;
 
-    bool HasBreakPoint(const std::vector<const Gfx*>& path) const;
+    bool HasBreakPoint(const std::vector<const F3DGfx*>& path) const;
 
-    void SetBreakPoint(const std::vector<const Gfx*>& bp);
+    void SetBreakPoint(const std::vector<const F3DGfx*>& bp);
 
   private:
     bool mIsDebugging = false;
     bool mIsDebuggingRequested = false;
-    Gfx* mDlist = nullptr;
-    std::vector<const Gfx*> mBreakPoint = {};
+    F3DGfx* mDlist = nullptr;
+    std::vector<const F3DGfx*> mBreakPoint = {};
 };
 
 } // namespace LUS
