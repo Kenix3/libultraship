@@ -626,7 +626,9 @@ ShipDeviceIndexMappingManager::GetAllDeviceIndexMappingsFromConfig() {
     std::string mappingIdString;
     while (getline(mappingIdsStringStream, mappingIdString, ',')) {
         auto mapping = CreateDeviceIndexMappingFromConfig(mappingIdString);
-        mappings[mapping->GetShipDeviceIndex()] = mapping;
+        if (mapping != nullptr) {
+            mappings[mapping->GetShipDeviceIndex()] = mapping;
+        }
     }
 
     return mappings;
