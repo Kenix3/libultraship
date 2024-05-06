@@ -1110,11 +1110,21 @@ typedef union {
 } F3DHilite;
 
 /*
+ * Trace structure
+ */
+typedef struct {
+    const char* file;
+    int idx;
+    bool valid;
+} F3DTrace;
+
+/*
  * Generic Gfx Packet
  */
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
+    F3DTrace trace;
 } F3DGwords;
 
 #ifdef __cplusplus
