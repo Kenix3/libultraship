@@ -1735,20 +1735,20 @@ typedef union Gfx {
 #define gsDma1p(c, s, l, p) \
     { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s), MakeTrace() }
 
-#define gDma2p(pkt, c, adrs, len, idx, ofs)                                                                            \
-    _DW({                                                                                                              \
-        Gfx* _g = (Gfx*)(pkt);                                                                                         \
-        _g->words.w0 =                                                                                                 \
-            (_SHIFTL((c), 24, 8) | _SHIFTL(((len) - 1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)); \
-        _g->words.w1 = (uintptr_t)(adrs);                                                                              \
-        _g->words.trace.file = __FILE__;                                                                               \
-        _g->words.trace.idx = __LINE__;                                                                                \
-        _g->words.trace.valid = true;                                                                                  \
+#define gDma2p(pkt, c, adrs, len, idx, ofs)                                                                          \
+    _DW({                                                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                                                       \
+        _g->words.w0 =                                                                                               \
+            (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)); \
+        _g->words.w1 = (uintptr_t)(adrs);                                                                            \
+        _g->words.trace.file = __FILE__;                                                                             \
+        _g->words.trace.idx = __LINE__;                                                                              \
+        _g->words.trace.valid = true;                                                                                \
     })
-#define gsDma2p(c, adrs, len, idx, ofs)                                                                            \
-    {                                                                                                              \
-        (_SHIFTL((c), 24, 8) | _SHIFTL(((len) - 1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)), \
-            (uintptr_t)(adrs), MakeTrace()                                                                         \
+#define gsDma2p(c, adrs, len, idx, ofs)                                                                          \
+    {                                                                                                            \
+        (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)), \
+            (uintptr_t)(adrs), MakeTrace()                                                                       \
     }
 
 #define gSPNoOp(pkt) gDma0p(pkt, G_SPNOOP, 0, 0)
