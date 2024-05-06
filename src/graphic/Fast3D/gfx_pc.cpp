@@ -1386,20 +1386,19 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             cross = -cross;
         }
 
-        switch (g_rsp.geometry_mode & cull_both) {
-            case cull_front:
-                if (cross <= 0) {
-                    return;
-                }
-                break;
-            case cull_back:
-                if (cross >= 0) {
-                    return;
-                }
-                break;
-            case cull_both:
-                // Why is this even an option?
+        auto cull_type = g_rsp.geometry_mode & cull_both;
+
+        if (cull_type == cull_front) {
+            if (cross <= 0) {
                 return;
+            }
+        } else if (cull_type == cull_back) {
+            if (cross >= 0) {
+                return;
+            }
+        } else if (cull_type == cull_both) {
+            // Why is this even an option?
+            return;
         }
     }
 
