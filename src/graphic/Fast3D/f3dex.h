@@ -137,19 +137,6 @@ constexpr int8_t F3DEX_G_MWO_bLIGHT_8 = 0xe4;
  *	GBI Commands for S2DEX microcode
  *===========================================================================*/
 /* GBI Header */
-constexpr int8_t F3DEX2_G_OBJ_RECTANGLE_R = OPCODE(0xda);
-constexpr int8_t F3DEX2_G_OBJ_MOVEMEM = OPCODE(0xdc);
-constexpr int8_t F3DEX2_G_RDPHALF_0 = OPCODE(0xe4);
-constexpr int8_t F3DEX2_G_OBJ_RECTANGLE = OPCODE(0x01);
-constexpr int8_t F3DEX2_G_OBJ_SPRITE = OPCODE(0x02);
-constexpr int8_t F3DEX2_G_SELECT_DL = OPCODE(0x04);
-constexpr int8_t F3DEX2_G_OBJ_LOADTXTR = OPCODE(0x05);
-constexpr int8_t F3DEX2_G_OBJ_LDTX_SPRITE = OPCODE(0x06);
-constexpr int8_t F3DEX2_G_OBJ_LDTX_RECT = OPCODE(0x07);
-constexpr int8_t F3DEX2_G_OBJ_LDTX_RECT_R = OPCODE(0x08);
-constexpr int8_t F3DEX2_G_BG_1CYC = OPCODE(0x09);
-constexpr int8_t F3DEX2_G_BG_COPY = OPCODE(0x0a);
-constexpr int8_t F3DEX2_G_OBJ_RENDERMODE = OPCODE(0x0b);
 constexpr int8_t F3DEX_G_BG_1CYC = OPCODE(0x01);
 constexpr int8_t F3DEX_G_BG_COPY = OPCODE(0x02);
 constexpr int8_t F3DEX_G_OBJ_RECTANGLE = OPCODE(0x03);
