@@ -2868,16 +2868,6 @@ bool gfx_vtx_handler_f3d(F3DGfx** cmd0) {
     return false;
 }
 
-bool gfx_vtx_handler_dynamic(F3DGfx** cmd0) {
-    switch (ucode_handler_index) {
-        case UcodeHandlers::ucode_f3d:
-            return gfx_vtx_handler_f3d(cmd0);
-        case UcodeHandlers::ucode_f3dex:
-            return gfx_vtx_handler_f3dex(cmd0);
-            return false;
-    }
-}
-
 bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
     // Offset added to the start of the vertices
     const uintptr_t offset = (*cmd0)->words.w1;
@@ -3109,16 +3099,6 @@ bool gfx_tri1_handler_f3d(F3DGfx** cmd0) {
     gfx_sp_tri1(C1(16, 8) / 10, C1(8, 8) / 10, C1(0, 8) / 10, false);
 
     return false;
-}
-
-bool gfx_tri1_handler_dynamic(F3DGfx** cmd0) {
-    switch (ucode_handler_index) {
-        case UcodeHandlers::ucode_f3d:
-            return gfx_tri1_handler_f3d(cmd0);
-        case UcodeHandlers::ucode_f3dex:
-            return gfx_tri1_handler_f3dex(cmd0);
-            return false;
-    }
 }
 
 // F3DEX, and F3DEX2 share a tri2 function, however F3DEX has a different quad function.
@@ -3733,8 +3713,30 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3d } },
     { F3DEX_G_SETGEOMETRYMODE, { "G_SETGEOMETRYMODE", gfx_set_geometry_mode_handler_f3dex } },
     { F3DEX_G_CLEARGEOMETRYMODE, { "G_CLEARGEOMETRYMODE", gfx_clear_geometry_mode_handler_f3dex } },
-    { F3DEX_G_VTX, { "G_VTX", gfx_vtx_handler_dynamic } },
-    { F3DEX_G_TRI1, { "G_TRI1", gfx_tri1_handler_dynamic } },
+    { F3DEX_G_VTX, { "G_VTX", gfx_vtx_handler_f3dex } },
+    { F3DEX_G_TRI1, { "G_TRI1", gfx_tri1_handler_f3dex } },
+    { F3DEX_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
+    { F3DEX_G_DL, { "G_DL", gfx_dl_handler_common } },
+    { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
+    { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
+    { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
+    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } }
+};
+
+const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dHandlers = {
+    { F3DEX_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
+    { F3DEX_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
+    { F3DEX_G_MTX, { "G_MTX", gfx_mtx_handler_f3d } },
+    { F3DEX_G_POPMTX, { "G_POPMTX", gfx_pop_mtx_handler_f3d } },
+    { F3DEX_G_MOVEMEM, { "G_POPMEM", gfx_movemem_handler_f3d } },
+    { F3DEX_G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3d } },
+    { F3DEX_G_TEXTURE, { "G_TEXTURE", gfx_texture_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3d } },
+    { F3DEX_G_SETGEOMETRYMODE, { "G_SETGEOMETRYMODE", gfx_set_geometry_mode_handler_f3dex } },
+    { F3DEX_G_CLEARGEOMETRYMODE, { "G_CLEARGEOMETRYMODE", gfx_clear_geometry_mode_handler_f3dex } },
+    { F3DEX_G_VTX, { "G_VTX", gfx_vtx_handler_f3d } },
+    { F3DEX_G_TRI1, { "G_TRI1", gfx_tri1_handler_f3d } },
     { F3DEX_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
     { F3DEX_G_DL, { "G_DL", gfx_dl_handler_common } },
     { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
@@ -3756,7 +3758,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
 };
 
 static constexpr std::array ucode_handlers = {
-    &f3dexHandlers,
+    &f3dHandlers,
     &f3dex2Handlers,
     &s2dexHandlers,
 };

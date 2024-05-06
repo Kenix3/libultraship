@@ -1,3 +1,4 @@
+#pragma once
 
 #define G_IMMFIRST -65
 

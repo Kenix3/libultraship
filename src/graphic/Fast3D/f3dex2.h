@@ -1,3 +1,5 @@
+#pragma once
+
 constexpr int8_t F3DEX2_G_NOOP = OPCODE(0x00);
 constexpr int8_t F3DEX2_G_RDPHALF_2 = OPCODE(0xf1);
 constexpr int8_t F3DEX2_G_SETOTHERMODE_H = OPCODE(0xe3);
