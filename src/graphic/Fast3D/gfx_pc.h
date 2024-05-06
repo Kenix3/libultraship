@@ -193,6 +193,18 @@ struct RDP {
     void* color_image_address;
 };
 
+typedef enum Attribute {
+    MTX_PROJECTION,
+    MTX_LOAD,
+    MTX_PUSH,
+    MTX_NOPUSH,
+    CULL_FRONT,
+    CULL_BACK,
+    CULL_BOTH,
+    MV_VIEWPORT,
+    MV_LIGHT,
+};
+
 extern RDP g_rdp;
 extern RSP g_rsp;
 
