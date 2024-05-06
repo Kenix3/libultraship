@@ -72,7 +72,7 @@ uint32_t osAiGetLength() {
     return 0;
 }
 
-int32_t osAiSetNextBuffer(void* buff, uint32_t len) {
+int32_t osAiSetNextBuffer(void* buff, size_t len) {
     // TODO: Implement
     return 0;
 }

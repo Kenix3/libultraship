@@ -141,7 +141,7 @@ OSPiHandle* osCartRomInit(void);
 s32 osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction);
 
 s32 osAiSetFrequency(u32);
-s32 osAiSetNextBuffer(void*, u32);
+s32 osAiSetNextBuffer(void*, size_t);
 u32 osAiGetLength(void);
 
 #ifdef __cplusplus
