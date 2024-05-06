@@ -1090,6 +1090,7 @@ static void gfx_sp_matrix(uint8_t parameters, const int32_t* addr) {
 
     const int8_t mtx_projection = get_attr(MTX_PROJECTION);
     const int8_t mtx_load = get_attr(MTX_LOAD);
+    const int8_t mtx_push = get_attr(MTX_PUSH);
 
     if (parameters & mtx_projection) {
         if (parameters & mtx_load) {
@@ -1098,7 +1099,7 @@ static void gfx_sp_matrix(uint8_t parameters, const int32_t* addr) {
             gfx_matrix_mul(g_rsp.P_matrix, matrix, g_rsp.P_matrix);
         }
     } else { // G_MTX_MODELVIEW
-        if ((parameters & MTX_PUSH) && g_rsp.modelview_matrix_stack_size < 11) {
+        if ((parameters & mtx_push) && g_rsp.modelview_matrix_stack_size < 11) {
             ++g_rsp.modelview_matrix_stack_size;
             memcpy(g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1],
                    g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 2], sizeof(matrix));
