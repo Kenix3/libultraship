@@ -64,12 +64,12 @@ constexpr int8_t F3DEX2_G_MTX_PUSH = 0x01;
  * See the man page for gSP1Triangle().
  *
  */
-constexpr int8_t F3DEX2_G_CLIPPING = 0x00000000;
-constexpr int8_t F3DEX2_G_TEXTURE_ENABLE = 0x00000000;
-constexpr int8_t F3DEX2_G_SHADING_SMOOTH = 0x00200000;
-constexpr int8_t F3DEX2_G_CULL_FRONT = 0x00000200;
-constexpr int8_t F3DEX2_G_CULL_BACK = 0x00000400;
-constexpr int8_t F3DEX2_G_CULL_BOTH = 0x00000600;
+constexpr int32_t F3DEX2_G_CLIPPING = 0x00800000;
+constexpr int32_t F3DEX2_G_TEXTURE_ENABLE = 0x00000000;
+constexpr int32_t F3DEX2_G_SHADING_SMOOTH = 0x00200000;
+constexpr int32_t F3DEX2_G_CULL_FRONT = 0x00000200;
+constexpr int32_t F3DEX2_G_CULL_BACK = 0x00000400;
+constexpr int32_t F3DEX2_G_CULL_BOTH = 0x00000600;
 
 /*
  * MOVEMEM indices
@@ -85,16 +85,16 @@ constexpr int8_t F3DEX2_G_MV_VIEWPORT = 8;
 constexpr int8_t F3DEX2_G_MV_LIGHT = 10;
 constexpr int8_t F3DEX2_G_MV_POINT = 12;
 constexpr int8_t F3DEX2_G_MV_MATRIX = 14;
-constexpr int8_t F3DEX2_G_MVO_LOOKATX = (0 * 24);
-constexpr int8_t F3DEX2_G_MVO_LOOKATY = (1 * 24);
-constexpr int8_t F3DEX2_G_MVO_L0 = (2 * 24);
-constexpr int8_t F3DEX2_G_MVO_L1 = (3 * 24);
-constexpr int8_t F3DEX2_G_MVO_L2 = (4 * 24);
-constexpr int8_t F3DEX2_G_MVO_L3 = (5 * 24);
-constexpr int8_t F3DEX2_G_MVO_L4 = (6 * 24);
-constexpr int8_t F3DEX2_G_MVO_L5 = (7 * 24);
-constexpr int8_t F3DEX2_G_MVO_L6 = (8 * 24);
-constexpr int8_t F3DEX2_G_MVO_L7 = (9 * 24);
+constexpr int8_t F3DEX2_G_MVO_LOOKATX = 0 * 24;
+constexpr int8_t F3DEX2_G_MVO_LOOKATY = 1 * 24;
+constexpr int8_t F3DEX2_G_MVO_L0 = 2 * 24;
+constexpr int8_t F3DEX2_G_MVO_L1 = 3 * 24;
+constexpr int8_t F3DEX2_G_MVO_L2 = 4 * 24;
+constexpr int8_t F3DEX2_G_MVO_L3 = 5 * 24;
+constexpr int8_t F3DEX2_G_MVO_L4 = 6 * 24;
+constexpr int8_t F3DEX2_G_MVO_L5 = 7 * 24;
+constexpr int8_t F3DEX2_G_MVO_L6 = 8 * 24;
+constexpr int8_t F3DEX2_G_MVO_L7 = 9 * 24;
 
 /*
  * MOVEWORD indices

@@ -72,12 +72,12 @@ constexpr int8_t F3DEX_G_MTX_PUSH = 0x04;
  *
  */
 
-constexpr int8_t F3DEX_G_CLIPPING = 0x00800000;
-constexpr int8_t F3DEX_G_TEXTURE_ENABLE = 0x00000002;
-constexpr int8_t F3DEX_G_SHADING_SMOOTH = 0x00000200;
-constexpr int8_t F3DEX_G_CULL_FRONT = 0x00001000;
-constexpr int8_t F3DEX_G_CULL_BACK = 0x00002000;
-constexpr int8_t F3DEX_G_CULL_BOTH = 0x00003000;
+constexpr int32_t F3DEX_G_CLIPPING = 0x00800000;
+constexpr int32_t F3DEX_G_TEXTURE_ENABLE = 0x00000002;
+constexpr int32_t F3DEX_G_SHADING_SMOOTH = 0x00000200;
+constexpr int32_t F3DEX_G_CULL_FRONT = 0x00001000;
+constexpr int32_t F3DEX_G_CULL_BACK = 0x00002000;
+constexpr int32_t F3DEX_G_CULL_BOTH = 0x00003000;
 
 /*
  * MOVEMEM indices

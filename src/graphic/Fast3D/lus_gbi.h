@@ -5,10 +5,6 @@
 #include "f3dex.h"
 #include "f3dex2.h"
 
-#define G_MARKER 0x33
-#define G_INVALTEXCACHE 0x34
-#define G_DL_INDEX 0x3d
-
 /* RDP commands: */
 constexpr int8_t RDP_G_SETCIMG = OPCODE(0xff);         /*  -1 */
 constexpr int8_t RDP_G_SETZIMG = OPCODE(0xfe);         /*  -2 */

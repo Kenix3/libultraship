@@ -161,7 +161,7 @@ const static std::unordered_map<Attribute, int8_t> f3dexAttrHandler = {
     { CULL_BOTH, F3DEX_G_CULL_BOTH },           { MV_VIEWPORT, F3DEX_G_MOVEMEM },   { MV_LIGHT, F3DEX_G_MOVEMEM }
 };
 
-const static std::array<const std::unordered_map<Attribute, int8_t>*, UcodeHandlers::ucode_max> ucode_attr_handlers = {
+static constexpr std::array<const std::unordered_map<Attribute, int8_t>*, ucode_max> ucode_attr_handlers = {
     &f3dexAttrHandler, &f3dexAttrHandler, &f3dex2AttrHandler
 };
 
@@ -1089,7 +1089,7 @@ static void gfx_sp_matrix(uint8_t parameters, const int32_t* addr) {
     }
 
     const int8_t mtx_projection = get_attr(MTX_PROJECTION);
-    const int8_t mtx_load = get_attr(MTX_PROJECTION);
+    const int8_t mtx_load = get_attr(MTX_LOAD);
 
     if (parameters & mtx_projection) {
         if (parameters & mtx_load) {
@@ -1364,9 +1364,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
         return;
     }
 
-    const int8_t cull_both = get_attr(CULL_BOTH);
-    const int8_t cull_front = get_attr(CULL_FRONT);
-    const int8_t cull_back = get_attr(CULL_BACK);
+    const int32_t cull_both = get_attr(CULL_BOTH);
+    const int32_t cull_front = get_attr(CULL_FRONT);
+    const int32_t cull_back = get_attr(CULL_BACK);
 
     if ((g_rsp.geometry_mode & cull_both) != 0) {
         float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
@@ -3664,11 +3664,9 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { OTR_G_MARKER, { "G_MARKER", gfx_marker_handler_otr } },                                // G_MARKER (0X33)
     { OTR_G_INVALTEXCACHE, { "G_INVALTEXCACHE", gfx_invalidate_tex_cache_handler_f3dex2 } }, // G_INVALTEXCACHE (0X34)
     { OTR_G_BRANCH_Z_OTR, { "G_BRANCH_Z_OTR", gfx_branch_z_otr_handler_f3dex2 } },           // G_BRANCH_Z_OTR (0x35)
-    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom_f3dex2 } },                   // G_MTX_OTR (0x36)
-    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } }, // G_MTX_OTR2 (0x29) Is this the right code?
-    { OTR_G_TEXRECT_WIDE, { "G_TEXRECT_WIDE", gfx_tex_rect_wide_handler_custom } },  // G_TEXRECT_WIDE (0x37)
-    { OTR_G_FILLWIDERECT, { "G_FILLWIDERECT", gfx_fill_wide_rect_handler_custom } }, // G_FILLWIDERECT (0x38)
-    { OTR_G_SETGRAYSCALE, { "G_SETGRAYSCALE", gfx_set_grayscale_handler_custom } },  // G_SETGRAYSCALE (0x39)
+    { OTR_G_TEXRECT_WIDE, { "G_TEXRECT_WIDE", gfx_tex_rect_wide_handler_custom } },          // G_TEXRECT_WIDE (0x37)
+    { OTR_G_FILLWIDERECT, { "G_FILLWIDERECT", gfx_fill_wide_rect_handler_custom } },         // G_FILLWIDERECT (0x38)
+    { OTR_G_SETGRAYSCALE, { "G_SETGRAYSCALE", gfx_set_grayscale_handler_custom } },          // G_SETGRAYSCALE (0x39)
     { OTR_G_EXTRAGEOMETRYMODE,
       { "G_EXTRAGEOMETRYMODE", gfx_extra_geometry_mode_handler_custom } },          // G_EXTRAGEOMETRYMODE (0x3a)
     { OTR_G_COPYFB, { "G_COPYFB", gfx_copy_fb_handler_custom } },                   // G_COPYFB (0x3b)
@@ -3686,18 +3684,17 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX2_G_MOVEMEM, { "G_MOVEMEM", gfx_movemem_handler_f3dex2 } },
     { F3DEX2_G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3dex2 } },
     { F3DEX2_G_TEXTURE, { "G_TEXTURE", gfx_texture_handler_f3dex2 } },
-    { F3DEX2_G_GEOMETRYMODE, { "G_GEOMETRYMODE", gfx_geometry_mode_handler_f3dex2 } },
-    { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex2 } },
-    { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
-    { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
     { F3DEX2_G_VTX, { "G_VTX", gfx_vtx_handler_f3dex2 } },
     { F3DEX2_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
     { F3DEX2_G_DL, { "G_DL", gfx_dl_handler_common } },
     { F3DEX2_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
+    { F3DEX2_G_GEOMETRYMODE, { "G_GEOMETRYMODE", gfx_geometry_mode_handler_f3dex2 } },
     { F3DEX2_G_TRI1, { "G_TRI1", gfx_tri1_handler_f3dex2 } },
     { F3DEX2_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
-    { F3DEX2_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
-    { F3DEX2_G_RDPHALF_1, { "R_RDPHALF_1", gfx_stubbed_command_handler } },
+    { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex2 } },
+    { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
+    { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
+    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom_f3dex2 } },
 };
 
 const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dexHandlers = {
@@ -3719,7 +3716,8 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
-    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } }
+    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } },
+    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } } // G_MTX_OTR2 (0x29) Is this the right code?
 };
 
 const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dHandlers = {
@@ -3758,6 +3756,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
 
 static constexpr std::array ucode_handlers = {
     &f3dHandlers,
+    &f3dexHandlers,
     &f3dex2Handlers,
     &s2dexHandlers,
 };
@@ -3765,9 +3764,13 @@ static constexpr std::array ucode_handlers = {
 const char* GfxGetOpcodeName(int8_t opcode) {
     if (otrHandlers.contains(opcode)) {
         return otrHandlers.at(opcode).first;
-    } else if (rdpHandlers.contains(opcode)) {
+    }
+
+    if (rdpHandlers.contains(opcode)) {
         return rdpHandlers.at(opcode).first;
-    } else if (ucode_handler_index < ucode_handlers.size()) {
+    }
+
+    if (ucode_handler_index < ucode_handlers.size()) {
         if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
             return ucode_handlers[ucode_handler_index]->at(opcode).first;
         } else {
