@@ -945,7 +945,6 @@ typedef union {
     long long int force_structure_alignment;
 } F3DVp;
 
-
 /*
  * MOVEWORD indices
  *
