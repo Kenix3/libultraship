@@ -3314,6 +3314,11 @@ bool gfx_reset_fb_handler_custom(F3DGfx** cmd0) {
     fbActive = 0;
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
                                         (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    // Force viewport and scissor to reapply against the main framebuffer, in case a previous smaller
+    // framebuffer truncated the values
+    g_rdp.viewport_or_scissor_changed = true;
+    rendering_state.viewport = {};
+    rendering_state.scissor = {};
     return false;
 }
 
