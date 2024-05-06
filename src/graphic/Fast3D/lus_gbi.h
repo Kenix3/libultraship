@@ -1,157 +1,73 @@
 #pragma once
 #include <stdint.h>
-/* To enable Fast3DEX grucode support, define F3DEX_GBI. */
+#define OPCODE(x) (int8_t)(x)
 
-/* Types */
+#include "f3dex.h"
+#include "f3dex2.h"
 
-/* Private macro to wrap other macros in do {...} while (0) */
-#define _DW(macro) \
-    do {           \
-        macro      \
-    } while (0)
-
-#define F3DEX_GBI_2
-
-#ifdef F3DEX_GBI_2
-#ifndef F3DEX_GBI
-#define F3DEX_GBI
-#endif
-constexpr int8_t F3DEX2_G_NOOP = (int8_t)0x00;
-constexpr int8_t F3DEX2_G_RDPHALF_2 = (int8_t)0xf1;
-constexpr int8_t F3DEX2_G_SETOTHERMODE_H = (int8_t)0xe3;
-constexpr int8_t F3DEX2_G_SETOTHERMODE_L = (int8_t)0xe2;
-constexpr int8_t F3DEX2_G_RDPHALF_1 = (int8_t)0xe1;
-constexpr int8_t F3DEX2_G_SPNOOP = (int8_t)0xe0;
-constexpr int8_t F3DEX2_G_ENDDL = (int8_t)0xdf;
-constexpr int8_t F3DEX2_G_DL = (int8_t)0xde;
-#define G_LOAD_UCODE 0xdd
-constexpr int8_t F3DEX2_G_MOVEMEM = (int8_t)0xdc;
-constexpr int8_t F3DEX2_G_MOVEWORD = (int8_t)0xdb;
-constexpr int8_t F3DEX2_G_MTX = (int8_t)0xda;
-constexpr int8_t F3DEX2_G_GEOMETRYMODE = (int8_t)0xd9;
-constexpr int8_t F3DEX2_G_POPMTX = (int8_t)0xd8;
-constexpr int8_t F3DEX2_G_TEXTURE = (int8_t)0xd7;
-#define G_DMA_IO 0xd6
-#define G_SPECIAL_1 0xd5
-#define G_SPECIAL_2 0xd4
-#define G_SPECIAL_3 0xd3
-
-constexpr int8_t F3DEX2_G_VTX = (int8_t)0x01;
-constexpr int8_t F3DEX2_G_MODIFYVTX = (int8_t)0x02;
-constexpr int8_t F3DEX2_G_CULLDL = (int8_t)0x03;
-constexpr int8_t F3DEX2_G_BRANCH_Z = (int8_t)0x04;
-constexpr int8_t F3DEX2_G_TRI1 = (int8_t)0x05;
-constexpr int8_t F3DEX2_G_TRI2 = (int8_t)0x06;
-constexpr int8_t F3DEX2_G_QUAD = (int8_t)0x07;
-#define G_LINE3D 0x08
-#else              /* F3DEX_GBI_2 */
-
-/* DMA commands: */
-#define G_SPNOOP 0 /* handle 0 gracefully */
-#define G_MTX 1
-#define G_RESERVED0 2 /* not implemeted */
-constexpr int8_t G_MOVEMEM 3 /* move a block of memory (up to 4 words) to dmem */
-#define G_VTX 4
-#define G_RESERVED1 5 /* not implemeted */
-#define G_DL 6
-#define G_RESERVED2 7     /* not implemeted */
-#define G_RESERVED3 8     /* not implemeted */
-#define G_SPRITE2D_BASE 9 /* sprite command */
-
-/* IMMEDIATE commands: */
-#define G_IMMFIRST -65
-#define G_TRI1 (G_IMMFIRST - 0)
-#define G_CULLDL (G_IMMFIRST - 1)
-#define G_POPMTX (G_IMMFIRST - 2)
-    constexpr int8_t G_MOVEWORD = (G_IMMFIRST - 3);
-#define G_TEXTURE (G_IMMFIRST - 4)
-#define G_SETOTHERMODE_H (G_IMMFIRST - 5)
-#define G_SETOTHERMODE_L (G_IMMFIRST - 6)
-#define G_ENDDL (G_IMMFIRST - 7)
-constexpr int8_t G_SETGEOMETRYMODE = (G_IMMFIRST - 8);
-constexpr int8_t G_CLEARGEOMETRYMODE - (G_IMMFIRST - 9);
-#define G_LINE3D (G_IMMFIRST - 10)
-#define G_RDPHALF_1 (G_IMMFIRST - 11)
-#define G_RDPHALF_2 (G_IMMFIRST - 12)
-#if (defined(F3DEX_GBI) || defined(F3DLP_GBI))
-#define G_MODIFYVTX (G_IMMFIRST - 13)
-#define G_TRI2 (G_IMMFIRST - 14)
-#define G_BRANCH_Z (G_IMMFIRST - 15)
-#define G_LOAD_UCODE (G_IMMFIRST - 16)
-#else
-#define G_RDPHALF_CONT (G_IMMFIRST - 13)
-#endif
-
-/* We are overloading 2 of the immediate commands
-   to keep the byte alignment of dmem the same */
-
-#define G_SPRITE2D_SCALEFLIP (G_IMMFIRST - 1)
-#define G_SPRITE2D_DRAW (G_IMMFIRST - 2)
+#define G_MARKER 0x33
+#define G_INVALTEXCACHE 0x34
+#define G_DL_INDEX 0x3d
 
 /* RDP commands: */
-#define G_NOOP 0xc0 /*   0 */
-
-#endif /* F3DEX_GBI_2 */
-
-/* RDP commands: */
-constexpr int8_t RDP_G_SETCIMG = (int8_t)0xff;         /*  -1 */
-constexpr int8_t RDP_G_SETZIMG = (int8_t)0xfe;         /*  -2 */
-constexpr int8_t RDP_G_SETTIMG = (int8_t)0xfd;         /*  -3 */
-constexpr int8_t RDP_G_SETCOMBINE = (int8_t)0xfc;      /*  -4 */
-constexpr int8_t RDP_G_SETENVCOLOR = (int8_t)0xfb;     /*  -5 */
-constexpr int8_t RDP_G_SETPRIMCOLOR = (int8_t)0xfa;    /*  -6 */
-constexpr int8_t RDP_G_SETBLENDCOLOR = (int8_t)0xf9;   /*  -7 */
-constexpr int8_t RDP_G_SETFOGCOLOR = (int8_t)0xf8;     /*  -8 */
-constexpr int8_t RDP_G_SETFILLCOLOR = (int8_t)0xf7;    /*  -9 */
-constexpr int8_t RDP_G_FILLRECT = (int8_t)0xf6;        /* -10 */
-constexpr int8_t RDP_G_SETTILE = (int8_t)0xf5;         /* -11 */
-constexpr int8_t RDP_G_LOADTILE = (int8_t)0xf4;        /* -12 */
-constexpr int8_t RDP_G_LOADBLOCK = (int8_t)0xf3;       /* -13 */
-constexpr int8_t RDP_G_SETTILESIZE = (int8_t)0xf2;     /* -14 */
-constexpr int8_t RDP_G_LOADTLUT = (int8_t)0xf0;        /* -16 */
-constexpr int8_t RDP_G_RDPSETOTHERMODE = (int8_t)0xef; /* -17 */
-constexpr int8_t RDP_G_SETPRIMDEPTH = (int8_t)0xee;    /* -18 */
-constexpr int8_t RDP_G_SETSCISSOR = (int8_t)0xed;      /* -19 */
-constexpr int8_t RDP_G_SETCONVERT = (int8_t)0xec;      /* -20 */
-constexpr int8_t RDP_G_SETKEYR = (int8_t)0xeb;         /* -21 */
-constexpr int8_t RDP_G_SETKEYGB = (int8_t)0xea;        /* -22 */
-constexpr int8_t RDP_G_RDPFULLSYNC = (int8_t)0xe9;     /* -23 */
-constexpr int8_t RDP_G_RDPTILESYNC = (int8_t)0xe8;     /* -24 */
-constexpr int8_t RDP_G_RDPPIPESYNC = (int8_t)0xe7;     /* -25 */
-constexpr int8_t RDP_G_RDPLOADSYNC = (int8_t)0xe6;     /* -26 */
-constexpr int8_t RDP_G_TEXRECTFLIP = (int8_t)0xe5;     /* -27 */
-constexpr int8_t RDP_G_TEXRECT = (int8_t)0xe4;         /* -28 */
+constexpr int8_t RDP_G_SETCIMG = OPCODE(0xff);         /*  -1 */
+constexpr int8_t RDP_G_SETZIMG = OPCODE(0xfe);         /*  -2 */
+constexpr int8_t RDP_G_SETTIMG = OPCODE(0xfd);         /*  -3 */
+constexpr int8_t RDP_G_SETCOMBINE = OPCODE(0xfc);      /*  -4 */
+constexpr int8_t RDP_G_SETENVCOLOR = OPCODE(0xfb);     /*  -5 */
+constexpr int8_t RDP_G_SETPRIMCOLOR = OPCODE(0xfa);    /*  -6 */
+constexpr int8_t RDP_G_SETBLENDCOLOR = OPCODE(0xf9);   /*  -7 */
+constexpr int8_t RDP_G_SETFOGCOLOR = OPCODE(0xf8);     /*  -8 */
+constexpr int8_t RDP_G_SETFILLCOLOR = OPCODE(0xf7);    /*  -9 */
+constexpr int8_t RDP_G_FILLRECT = OPCODE(0xf6);        /* -10 */
+constexpr int8_t RDP_G_SETTILE = OPCODE(0xf5);         /* -11 */
+constexpr int8_t RDP_G_LOADTILE = OPCODE(0xf4);        /* -12 */
+constexpr int8_t RDP_G_LOADBLOCK = OPCODE(0xf3);       /* -13 */
+constexpr int8_t RDP_G_SETTILESIZE = OPCODE(0xf2);     /* -14 */
+constexpr int8_t RDP_G_LOADTLUT = OPCODE(0xf0);        /* -16 */
+constexpr int8_t RDP_G_RDPSETOTHERMODE = OPCODE(0xef); /* -17 */
+constexpr int8_t RDP_G_SETPRIMDEPTH = OPCODE(0xee);    /* -18 */
+constexpr int8_t RDP_G_SETSCISSOR = OPCODE(0xed);      /* -19 */
+constexpr int8_t RDP_G_SETCONVERT = OPCODE(0xec);      /* -20 */
+constexpr int8_t RDP_G_SETKEYR = OPCODE(0xeb);         /* -21 */
+constexpr int8_t RDP_G_SETKEYGB = OPCODE(0xea);        /* -22 */
+constexpr int8_t RDP_G_RDPFULLSYNC = OPCODE(0xe9);     /* -23 */
+constexpr int8_t RDP_G_RDPTILESYNC = OPCODE(0xe8);     /* -24 */
+constexpr int8_t RDP_G_RDPPIPESYNC = OPCODE(0xe7);     /* -25 */
+constexpr int8_t RDP_G_RDPLOADSYNC = OPCODE(0xe6);     /* -26 */
+constexpr int8_t RDP_G_TEXRECTFLIP = OPCODE(0xe5);     /* -27 */
+constexpr int8_t RDP_G_TEXRECT = OPCODE(0xe4);         /* -28 */
 
 // CUSTOM OTR COMMANDS
-constexpr int8_t OTR_G_SETTIMG_OTR_HASH = (int8_t)0x20;
-constexpr int8_t OTR_G_SETFB = (int8_t)0x21;
-constexpr int8_t OTR_G_RESETFB = (int8_t)0x22;
-constexpr int8_t OTR_G_SETTIMG_FB = (int8_t)0x23;
-constexpr int8_t OTR_G_VTX_OTR_FILEPATH = (int8_t)0x24;
-constexpr int8_t OTR_G_SETTIMG_OTR_FILEPATH = (int8_t)0x25;
-constexpr int8_t OTR_G_TRI1_OTR = (int8_t)0x26;
-constexpr int8_t OTR_G_DL_OTR_FILEPATH = (int8_t)0x27;
-constexpr int8_t OTR_G_PUSHCD = (int8_t)0x28;
-constexpr int8_t OTR_G_MTX_OTR2 = (int8_t)0x29;
-constexpr int8_t OTR_G_DL_OTR_HASH = (int8_t)0x31;
-constexpr int8_t OTR_G_VTX_OTR_HASH = (int8_t)0x32;
-constexpr int8_t OTR_G_MARKER = (int8_t)0x33;
-constexpr int8_t OTR_G_INVALTEXCACHE = (int8_t)0x34;
-constexpr int8_t OTR_G_BRANCH_Z_OTR = (int8_t)0x35;
-constexpr int8_t OTR_G_MTX_OTR = (int8_t)0x36;
-constexpr int8_t OTR_G_TEXRECT_WIDE = (int8_t)0x37;
-constexpr int8_t OTR_G_FILLWIDERECT = (int8_t)0x38;
+constexpr int8_t OTR_G_SETTIMG_OTR_HASH = OPCODE(0x20);
+constexpr int8_t OTR_G_SETFB = OPCODE(0x21);
+constexpr int8_t OTR_G_RESETFB = OPCODE(0x22);
+constexpr int8_t OTR_G_SETTIMG_FB = OPCODE(0x23);
+constexpr int8_t OTR_G_VTX_OTR_FILEPATH = OPCODE(0x24);
+constexpr int8_t OTR_G_SETTIMG_OTR_FILEPATH = OPCODE(0x25);
+constexpr int8_t OTR_G_TRI1_OTR = OPCODE(0x26);
+constexpr int8_t OTR_G_DL_OTR_FILEPATH = OPCODE(0x27);
+constexpr int8_t OTR_G_PUSHCD = OPCODE(0x28);
+constexpr int8_t OTR_G_MTX_OTR2 = OPCODE(0x29);
+constexpr int8_t OTR_G_DL_OTR_HASH = OPCODE(0x31);
+constexpr int8_t OTR_G_VTX_OTR_HASH = OPCODE(0x32);
+constexpr int8_t OTR_G_MARKER = OPCODE(0x33);
+constexpr int8_t OTR_G_INVALTEXCACHE = OPCODE(0x34);
+constexpr int8_t OTR_G_BRANCH_Z_OTR = OPCODE(0x35);
+constexpr int8_t OTR_G_MTX_OTR = OPCODE(0x36);
+constexpr int8_t OTR_G_TEXRECT_WIDE = OPCODE(0x37);
+constexpr int8_t OTR_G_FILLWIDERECT = OPCODE(0x38);
 
 /* GFX Effects */
 
 // RDP Cmd
-constexpr int8_t OTR_G_SETGRAYSCALE = (int8_t)0x39;
-constexpr int8_t OTR_G_EXTRAGEOMETRYMODE = (int8_t)0x3a;
-constexpr int8_t OTR_G_COPYFB = (int8_t)0x3b;
-constexpr int8_t OTR_G_IMAGERECT = (int8_t)0x3c;
-constexpr int8_t OTR_G_DL_INDEX = (int8_t)0x3d;
-constexpr int8_t OTR_G_READFB = (int8_t)0x3e;
-constexpr int8_t OTR_G_SETINTENSITY = (int8_t)0x40;
+constexpr int8_t OTR_G_SETGRAYSCALE = OPCODE(0x39);
+constexpr int8_t OTR_G_EXTRAGEOMETRYMODE = OPCODE(0x3a);
+constexpr int8_t OTR_G_COPYFB = OPCODE(0x3b);
+constexpr int8_t OTR_G_IMAGERECT = OPCODE(0x3c);
+constexpr int8_t OTR_G_DL_INDEX = OPCODE(0x3d);
+constexpr int8_t OTR_G_READFB = OPCODE(0x3e);
+constexpr int8_t OTR_G_SETINTENSITY = OPCODE(0x40);
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -212,7 +128,7 @@ constexpr int8_t OTR_G_SETINTENSITY = (int8_t)0x40;
 
 /* macros for command parsing: */
 #define GDMACMD(x) (x)
-#define GIMMCMD(x) (G_IMMFIRST - (x))
+#define GIMMCMD(x) = OPCODE(G_IMMFIRST - (x))
 #define GRDPCMD(x) (0xff - (x))
 
 #define G_DMACMDSIZ 128
@@ -246,25 +162,6 @@ constexpr int8_t OTR_G_SETINTENSITY = (int8_t)0x40;
 #define GPACK_ZDZ(z, dz) ((z) << 2 | (dz))
 
 /*
- * G_MTX: parameter flags
- */
-#ifdef F3DEX_GBI_2
-#define G_MTX_MODELVIEW 0x00 /* matrix types */
-#define G_MTX_PROJECTION 0x04
-#define G_MTX_MUL 0x00 /* concat or load */
-#define G_MTX_LOAD 0x02
-#define G_MTX_NOPUSH 0x00 /* push or not */
-#define G_MTX_PUSH 0x01
-#else                        /* F3DEX_GBI_2 */
-#define G_MTX_MODELVIEW 0x00 /* matrix types */
-#define G_MTX_PROJECTION 0x01
-#define G_MTX_MUL 0x00 /* concat or load */
-#define G_MTX_LOAD 0x02
-#define G_MTX_NOPUSH 0x00 /* push or not */
-#define G_MTX_PUSH 0x04
-#endif /* F3DEX_GBI_2 */
-
-/*
  * flags for G_SETGEOMETRYMODE
  * (this rendering state is maintained in RSP)
  *
@@ -289,33 +186,15 @@ constexpr int8_t OTR_G_SETINTENSITY = (int8_t)0x40;
  * See the man page for gSP1Triangle().
  *
  */
+
 #define G_ZBUFFER 0x00000001
-#define G_SHADE 0x00000004 /* enable Gouraud interp */
-                           /* rest of low byte reserved for setup ucode */
-#ifdef F3DEX_GBI_2
-#define G_TEXTURE_ENABLE 0x00000000 /* Ignored               */
-#define G_SHADING_SMOOTH 0x00200000 /* flat or smooth shaded */
-#define G_CULL_FRONT 0x00000200
-#define G_CULL_BACK 0x00000400
-#define G_CULL_BOTH 0x00000600 /* To make code cleaner */
-#else
-#define G_TEXTURE_ENABLE 0x00000002 /* Microcode use only */
-#define G_SHADING_SMOOTH 0x00000200 /* flat or smooth shaded */
-#define G_CULL_FRONT 0x00001000
-#define G_CULL_BACK 0x00002000
-#define G_CULL_BOTH 0x00003000 /* To make code cleaner */
-#endif
+#define G_SHADE 0x00000004
 #define G_FOG 0x00010000
 #define G_LIGHTING 0x00020000
 #define G_TEXTURE_GEN 0x00040000
 #define G_TEXTURE_GEN_LINEAR 0x00080000
-#define G_LOD 0x00100000 /* NOT IMPLEMENTED */
+#define G_LOD 0x00100000
 #define G_LIGHTING_POSITIONAL 0x00400000
-#if (defined(F3DEX_GBI) || defined(F3DLP_GBI))
-#define G_CLIPPING 0x00800000
-#else
-#define G_CLIPPING 0x00000000
-#endif
 
 /*
  * G_EXTRAGEOMETRY flags: set extra custom geometry modes
@@ -1066,50 +945,6 @@ typedef union {
     long long int force_structure_alignment;
 } F3DVp;
 
-/*
- * MOVEMEM indices
- *
- * Each of these indexes an entry in a dmem table
- * which points to a 1-4 word block of dmem in
- * which to store a 1-4 word DMA.
- *
- */
-#ifdef F3DEX_GBI_2
-/* 0,4 are reserved by G_MTX */
-#define G_MV_MMTX 2
-#define G_MV_PMTX 6
-#define G_MV_VIEWPORT 8
-#define G_MV_LIGHT 10
-#define G_MV_POINT 12
-#define G_MV_MATRIX 14 /* NOTE: this is in moveword table */
-#define G_MVO_LOOKATX (0 * 24)
-#define G_MVO_LOOKATY (1 * 24)
-#define G_MVO_L0 (2 * 24)
-#define G_MVO_L1 (3 * 24)
-#define G_MVO_L2 (4 * 24)
-#define G_MVO_L3 (5 * 24)
-#define G_MVO_L4 (6 * 24)
-#define G_MVO_L5 (7 * 24)
-#define G_MVO_L6 (8 * 24)
-#define G_MVO_L7 (9 * 24)
-#else /* F3DEX_GBI_2 */
-#define G_MV_VIEWPORT 0x80
-#define G_MV_LOOKATY 0x82
-#define G_MV_LOOKATX 0x84
-#define G_MV_L0 0x86
-#define G_MV_L1 0x88
-#define G_MV_L2 0x8a
-#define G_MV_L3 0x8c
-#define G_MV_L4 0x8e
-#define G_MV_L5 0x90
-#define G_MV_L6 0x92
-#define G_MV_L7 0x94
-#define G_MV_TXTATT 0x96
-#define G_MV_MATRIX_1 0x9e /* NOTE: this is in moveword table */
-#define G_MV_MATRIX_2 0x98
-#define G_MV_MATRIX_3 0x9a
-#define G_MV_MATRIX_4 0x9c
-#endif /* F3DEX_GBI_2 */
 
 /*
  * MOVEWORD indices
@@ -1125,11 +960,6 @@ typedef union {
 #define G_MW_SEGMENT 0x06
 #define G_MW_FOG 0x08
 #define G_MW_LIGHTCOL 0x0a
-#ifdef F3DEX_GBI_2
-#define G_MW_FORCEMTX 0x0c
-#else /* F3DEX_GBI_2 */
-#define G_MW_POINTS 0x0c
-#endif /* F3DEX_GBI_2 */
 #define G_MW_PERSPNORM 0x0e
 
 /*
@@ -1159,37 +989,6 @@ typedef union {
 #define G_MWO_FOG 0x00
 #define G_MWO_aLIGHT_1 0x00
 #define G_MWO_bLIGHT_1 0x04
-#ifdef F3DEX_GBI_2
-#define G_MWO_aLIGHT_2 0x18
-#define G_MWO_bLIGHT_2 0x1c
-#define G_MWO_aLIGHT_3 0x30
-#define G_MWO_bLIGHT_3 0x34
-#define G_MWO_aLIGHT_4 0x48
-#define G_MWO_bLIGHT_4 0x4c
-#define G_MWO_aLIGHT_5 0x60
-#define G_MWO_bLIGHT_5 0x64
-#define G_MWO_aLIGHT_6 0x78
-#define G_MWO_bLIGHT_6 0x7c
-#define G_MWO_aLIGHT_7 0x90
-#define G_MWO_bLIGHT_7 0x94
-#define G_MWO_aLIGHT_8 0xa8
-#define G_MWO_bLIGHT_8 0xac
-#else
-#define G_MWO_aLIGHT_2 0x20
-#define G_MWO_bLIGHT_2 0x24
-#define G_MWO_aLIGHT_3 0x40
-#define G_MWO_bLIGHT_3 0x44
-#define G_MWO_aLIGHT_4 0x60
-#define G_MWO_bLIGHT_4 0x64
-#define G_MWO_aLIGHT_5 0x80
-#define G_MWO_bLIGHT_5 0x84
-#define G_MWO_aLIGHT_6 0xa0
-#define G_MWO_bLIGHT_6 0xa4
-#define G_MWO_aLIGHT_7 0xc0
-#define G_MWO_bLIGHT_7 0xc4
-#define G_MWO_aLIGHT_8 0xe0
-#define G_MWO_bLIGHT_8 0xe4
-#endif
 #define G_MWO_MATRIX_XX_XY_I 0x00
 #define G_MWO_MATRIX_XZ_XW_I 0x04
 #define G_MWO_MATRIX_YX_YY_I 0x08
@@ -1340,36 +1139,6 @@ typedef union F3DGfx {
  *	GBI Commands for S2DEX microcode
  *===========================================================================*/
 /* GBI Header */
-#ifdef F3DEX_GBI_2
-constexpr int8_t F3DEX2_G_OBJ_RECTANGLE_R = (int8_t)0xda;
-#define G_OBJ_MOVEMEM 0xdc
-#define G_RDPHALF_0 0xe4
-constexpr int8_t F3DEX2_G_OBJ_RECTANGLE = (int8_t)0x01;
-#define G_OBJ_SPRITE 0x02
-#define G_SELECT_DL 0x04
-#define G_OBJ_LOADTXTR 0x05
-#define G_OBJ_LDTX_SPRITE 0x06
-#define G_OBJ_LDTX_RECT 0x07
-#define G_OBJ_LDTX_RECT_R 0x08
-constexpr int8_t F3DEX2_G_BG_1CYC = (int8_t)0x09;
-constexpr int8_t F3DEX2_G_BG_COPY = (int8_t)0x0a;
-constexpr int8_t F3DEX2_G_OBJ_RENDERMODE = (int8_t)0x0b;
-#else
-#define G_BG_1CYC 0x01
-#define G_BG_COPY 0x02
-#define G_OBJ_RECTANGLE 0x03
-#define G_OBJ_SPRITE 0x04
-#define G_OBJ_MOVEMEM 0x05
-#define G_SELECT_DL 0xb0
-#define G_OBJ_RENDERMODE 0xb1
-#define G_OBJ_RECTANGLE_R 0xb2
-#define G_OBJ_LOADTXTR 0xc1
-#define G_OBJ_LDTX_SPRITE 0xc2
-#define G_OBJ_LDTX_RECT 0xc3
-#define G_OBJ_LDTX_RECT_R 0xc4
-#define G_RDPHALF_0 0xe4
-#endif
-
 #define G_BGLT_LOADBLOCK 0x0033
 #define G_BGLT_LOADTILE 0xfff4
 

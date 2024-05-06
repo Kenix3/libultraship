@@ -147,7 +147,27 @@ struct MaskedTextureEntry {
 
 static map<string, MaskedTextureEntry> masked_textures;
 
-static UcodeHandlers ucode_handler_index = UcodeHandlers::ucode_f3dex2;
+static UcodeHandlers ucode_handler_index = ucode_f3dex2;
+
+const static std::unordered_map<Attribute, int8_t> f3dex2AttrHandler = {
+    { MTX_PROJECTION, F3DEX2_G_MTX_PROJECTION }, { MTX_LOAD, F3DEX2_G_MTX_LOAD },     { MTX_PUSH, F3DEX2_G_MTX_PUSH },
+    { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },          { CULL_FRONT, F3DEX2_G_CULL_FRONT }, { CULL_BACK, F3DEX2_G_CULL_BACK },
+    { CULL_BOTH, F3DEX2_G_CULL_BOTH },           { MV_VIEWPORT, F3DEX2_G_MOVEMEM },   { MV_LIGHT, F3DEX2_G_MOVEMEM }
+};
+
+const static std::unordered_map<Attribute, int8_t> f3dexAttrHandler = {
+    { MTX_PROJECTION, F3DEX_G_MTX_PROJECTION }, { MTX_LOAD, F3DEX_G_MTX_LOAD },     { MTX_PUSH, F3DEX_G_MTX_PUSH },
+    { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },         { CULL_FRONT, F3DEX_G_CULL_FRONT }, { CULL_BACK, F3DEX_G_CULL_BACK },
+    { CULL_BOTH, F3DEX_G_CULL_BOTH },           { MV_VIEWPORT, F3DEX_G_MOVEMEM },   { MV_LIGHT, F3DEX_G_MOVEMEM }
+};
+
+const static std::array<const std::unordered_map<Attribute, int8_t>*, UcodeHandlers::ucode_max> ucode_attr_handlers = {
+    &f3dex2AttrHandler, &f3dexAttrHandler
+};
+
+static int8_t get_attr(Attribute attr) {
+    return ucode_attr_handlers[ucode_handler_index]->at(attr);
+}
 
 static std::string GetPathWithoutFileName(char* filePath) {
     size_t len = strlen(filePath);
@@ -1068,19 +1088,22 @@ static void gfx_sp_matrix(uint8_t parameters, const int32_t* addr) {
 #endif
     }
 
-    if (parameters & G_MTX_PROJECTION) {
-        if (parameters & G_MTX_LOAD) {
+    const int8_t mtx_projection = get_attr(MTX_PROJECTION);
+    const int8_t mtx_load = get_attr(MTX_PROJECTION);
+
+    if (parameters & mtx_projection) {
+        if (parameters & mtx_load) {
             memcpy(g_rsp.P_matrix, matrix, sizeof(matrix));
         } else {
             gfx_matrix_mul(g_rsp.P_matrix, matrix, g_rsp.P_matrix);
         }
     } else { // G_MTX_MODELVIEW
-        if ((parameters & G_MTX_PUSH) && g_rsp.modelview_matrix_stack_size < 11) {
+        if ((parameters & MTX_PUSH) && g_rsp.modelview_matrix_stack_size < 11) {
             ++g_rsp.modelview_matrix_stack_size;
             memcpy(g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1],
                    g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 2], sizeof(matrix));
         }
-        if (parameters & G_MTX_LOAD) {
+        if (parameters & mtx_load) {
             if (g_rsp.modelview_matrix_stack_size == 0)
                 ++g_rsp.modelview_matrix_stack_size;
             memcpy(g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1], matrix, sizeof(matrix));
@@ -1341,7 +1364,11 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
         return;
     }
 
-    if ((g_rsp.geometry_mode & G_CULL_BOTH) != 0) {
+    const int8_t cull_both = get_attr(CULL_BOTH);
+    const int8_t cull_front = get_attr(CULL_FRONT);
+    const int8_t cull_back = get_attr(CULL_BACK);
+
+    if ((g_rsp.geometry_mode & cull_both) != 0) {
         float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
         float dy1 = v1->y / (v1->w) - v2->y / (v2->w);
         float dx2 = v3->x / (v3->w) - v2->x / (v2->w);
@@ -1359,18 +1386,18 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
             cross = -cross;
         }
 
-        switch (g_rsp.geometry_mode & G_CULL_BOTH) {
-            case G_CULL_FRONT:
+        switch (g_rsp.geometry_mode & cull_both) {
+            case cull_front:
                 if (cross <= 0) {
                     return;
                 }
                 break;
-            case G_CULL_BACK:
+            case cull_back:
                 if (cross >= 0) {
                     return;
                 }
                 break;
-            case G_CULL_BOTH:
+            case cull_both:
                 // Why is this even an option?
                 return;
         }
@@ -1795,10 +1822,10 @@ static void gfx_calc_and_set_viewport(const F3DVp_t* viewport) {
 
 static void gfx_sp_movemem_f3dex2(uint8_t index, uint8_t offset, const void* data) {
     switch (index) {
-        case G_MV_VIEWPORT:
+        case F3DEX2_G_MV_VIEWPORT:
             gfx_calc_and_set_viewport((const F3DVp_t*)data);
             break;
-        case G_MV_LIGHT: {
+        case F3DEX2_G_MV_LIGHT: {
             int lightidx = offset / 24 - 2;
             if (lightidx >= 0 && lightidx <= MAX_LIGHTS) { // skip lookat
                 // NOTE: reads out of bounds if it is an ambient light
@@ -1811,21 +1838,21 @@ static void gfx_sp_movemem_f3dex2(uint8_t index, uint8_t offset, const void* dat
     }
 }
 
-// TODO remove these when headers are handled differently
-#define G_MV_L0 0x86
-#define G_MV_L1 0x88
-#define G_MV_L2 0x8a
-
 static void gfx_sp_movemem_f3d(uint8_t index, uint8_t offset, const void* data) {
     switch (index) {
-        case G_MV_VIEWPORT:
+        case F3DEX_G_MV_VIEWPORT:
             gfx_calc_and_set_viewport((const F3DVp_t*)data);
             break;
-        case G_MV_L0:
-        case G_MV_L1:
-        case G_MV_L2:
+        case F3DEX_G_MV_L0:
+        case F3DEX_G_MV_L1:
+        case F3DEX_G_MV_L2:
+        case F3DEX_G_MV_L3:
+        case F3DEX_G_MV_L4:
+        case F3DEX_G_MV_L5:
+        case F3DEX_G_MV_L6:
+        case F3DEX_G_MV_L7:
             // NOTE: reads out of bounds if it is an ambient light
-            memcpy(g_rsp.current_lights + (index - G_MV_L0) / 2, data, sizeof(F3DLight_t));
+            memcpy(g_rsp.current_lights + (index - F3DEX_G_MV_L0) / 2, data, sizeof(F3DLight_t));
             break;
     }
 }
@@ -2699,7 +2726,7 @@ bool gfx_mtx_handler_f3dex2(F3DGfx** cmd0) {
         mtxAddr = clearMtx;
     }
 
-    gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, (const int32_t*)seg_addr(mtxAddr));
+    gfx_sp_matrix(C0(0, 8) ^ F3DEX2_G_MTX_PUSH, (const int32_t*)seg_addr(mtxAddr));
 
     return false;
 }
@@ -2732,7 +2759,7 @@ bool gfx_mtx_otr_handler_custom_f3dex2(F3DGfx** cmd0) {
 
     if (mtx != NULL) {
         cmd--;
-        gfx_sp_matrix(C0(0, 8) ^ G_MTX_PUSH, mtx);
+        gfx_sp_matrix(C0(0, 8) ^ F3DEX2_G_MTX_PUSH, mtx);
         cmd++;
     }
 
@@ -2839,6 +2866,16 @@ bool gfx_vtx_handler_f3d(F3DGfx** cmd0) {
     gfx_sp_vertex((C0(0, 16)) / sizeof(F3DVtx), C0(16, 4), (const F3DVtx*)seg_addr(cmd->words.w1));
 
     return false;
+}
+
+bool gfx_vtx_handler_dynamic(F3DGfx** cmd0) {
+    switch (ucode_handler_index) {
+        case UcodeHandlers::ucode_f3d:
+            return gfx_vtx_handler_f3d(cmd0);
+        case UcodeHandlers::ucode_f3dex:
+            return gfx_vtx_handler_f3dex(cmd0);
+            return false;
+    }
 }
 
 bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
@@ -3074,6 +3111,16 @@ bool gfx_tri1_handler_f3d(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_tri1_handler_dynamic(F3DGfx** cmd0) {
+    switch (ucode_handler_index) {
+        case UcodeHandlers::ucode_f3d:
+            return gfx_tri1_handler_f3d(cmd0);
+        case UcodeHandlers::ucode_f3dex:
+            return gfx_tri1_handler_f3dex(cmd0);
+            return false;
+    }
+}
+
 // F3DEX, and F3DEX2 share a tri2 function, however F3DEX has a different quad function.
 bool gfx_tri2_handler_f3dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
@@ -3117,6 +3164,20 @@ bool gfx_othermode_h_handler_f3dex2(F3DGfx** cmd0) {
 
     gfx_sp_set_other_mode(63 - C0(8, 8) - C0(0, 8), C0(0, 8) + 1, (uint64_t)cmd->words.w1 << 32);
 
+    return false;
+}
+
+// Only on F3DEX and older
+bool gfx_set_geometry_mode_handler_f3dex(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    gfx_sp_geometry_mode(0, (uint32_t)cmd->words.w1);
+    return false;
+}
+
+// Only on F3DEX and older
+bool gfx_clear_geometry_mode_handler_f3dex(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    gfx_sp_geometry_mode((uint32_t)cmd->words.w1, 0);
     return false;
 }
 
@@ -3624,11 +3685,8 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { OTR_G_MARKER, { "G_MARKER", gfx_marker_handler_otr } },                                // G_MARKER (0X33)
     { OTR_G_INVALTEXCACHE, { "G_INVALTEXCACHE", gfx_invalidate_tex_cache_handler_f3dex2 } }, // G_INVALTEXCACHE (0X34)
     { OTR_G_BRANCH_Z_OTR, { "G_BRANCH_Z_OTR", gfx_branch_z_otr_handler_f3dex2 } },           // G_BRANCH_Z_OTR (0x35)
-#ifdef F3DEX_GBI_2
-    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom_f3dex2 } }, // G_MTX_OTR (0x36)
-#else
+    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom_f3dex2 } },                   // G_MTX_OTR (0x36)
     { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } }, // G_MTX_OTR2 (0x29) Is this the right code?
-#endif
     { OTR_G_TEXRECT_WIDE, { "G_TEXRECT_WIDE", gfx_tex_rect_wide_handler_custom } },  // G_TEXRECT_WIDE (0x37)
     { OTR_G_FILLWIDERECT, { "G_FILLWIDERECT", gfx_fill_wide_rect_handler_custom } }, // G_FILLWIDERECT (0x38)
     { OTR_G_SETGRAYSCALE, { "G_SETGRAYSCALE", gfx_set_grayscale_handler_custom } },  // G_SETGRAYSCALE (0x39)
@@ -3646,30 +3704,43 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX2_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
     { F3DEX2_G_MTX, { "G_MTX", gfx_mtx_handler_f3dex2 } },
     { F3DEX2_G_POPMTX, { "G_POPMTX", gfx_pop_mtx_handler_f3dex2 } },
-#ifdef F3DEX_GBI_2
     { F3DEX2_G_MOVEMEM, { "G_MOVEMEM", gfx_movemem_handler_f3dex2 } },
     { F3DEX2_G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3dex2 } },
-#else
-    { G_MOVEMEM, { "G_MOVEMEM", gfx_movemem_handler_f3d } },
-    { G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3d } },
-#endif
     { F3DEX2_G_TEXTURE, { "G_TEXTURE", gfx_texture_handler_f3dex2 } },
+    { F3DEX2_G_GEOMETRYMODE, { "G_GEOMETRYMODE", gfx_geometry_mode_handler_f3dex2 } },
+    { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex2 } },
+    { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
+    { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
     { F3DEX2_G_VTX, { "G_VTX", gfx_vtx_handler_f3dex2 } },
     { F3DEX2_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
     { F3DEX2_G_DL, { "G_DL", gfx_dl_handler_common } },
     { F3DEX2_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
-#ifdef F3DEX_GBI_2
-    { F3DEX2_G_GEOMETRYMODE, { "G_GEOMETRYMODE", gfx_geometry_mode_handler_f3dex2 } },
-#else
-    { G_SETGEOMETRYMODE, { "G_SETGEOMETRYMODE", gfx_set_geometry_mode_handler_f3d } },
-    { G_CLEARGEOMETRYMODE, { "G_CLEARGEOMETRYMODE", gfx_clear_geometry_mode_handler_f3d } },
-#endif
     { F3DEX2_G_TRI1, { "G_TRI1", gfx_tri1_handler_f3dex2 } },
     { F3DEX2_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
-    { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex2 } },
-    { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
-    { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
-    // Commands to implement
+    { F3DEX2_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
+    { F3DEX2_G_RDPHALF_1, { "R_RDPHALF_1", gfx_stubbed_command_handler } },
+};
+
+const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dexHandlers = {
+    { F3DEX_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
+    { F3DEX_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
+    { F3DEX_G_MTX, { "G_MTX", gfx_mtx_handler_f3d } },
+    { F3DEX_G_POPMTX, { "G_POPMTX", gfx_pop_mtx_handler_f3d } },
+    { F3DEX_G_MOVEMEM, { "G_POPMEM", gfx_movemem_handler_f3d } },
+    { F3DEX_G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3d } },
+    { F3DEX_G_TEXTURE, { "G_TEXTURE", gfx_texture_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3d } },
+    { F3DEX_G_SETGEOMETRYMODE, { "G_SETGEOMETRYMODE", gfx_set_geometry_mode_handler_f3dex } },
+    { F3DEX_G_CLEARGEOMETRYMODE, { "G_CLEARGEOMETRYMODE", gfx_clear_geometry_mode_handler_f3dex } },
+    { F3DEX_G_VTX, { "G_VTX", gfx_vtx_handler_dynamic } },
+    { F3DEX_G_TRI1, { "G_TRI1", gfx_tri1_handler_dynamic } },
+    { F3DEX_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
+    { F3DEX_G_DL, { "G_DL", gfx_dl_handler_common } },
+    { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
+    { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
+    { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
+    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } }
 };
 
 // LUSTODO: These S2DEX commands have different opcode numbers on F3DEX2 vs other ucodes. More research needs to be done
@@ -3684,12 +3755,11 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX2_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
 };
 
-const static std::array<const std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>>*,
-                        UcodeHandlers::ucode_max>
-    ucode_handlers = {
-        &f3dex2Handlers,
-        &s2dexHandlers,
-    };
+static constexpr std::array ucode_handlers = {
+    &f3dexHandlers,
+    &f3dex2Handlers,
+    &s2dexHandlers,
+};
 
 const char* GfxGetOpcodeName(int8_t opcode) {
     if (otrHandlers.contains(opcode)) {
@@ -3719,7 +3789,7 @@ static void gfx_step() {
     auto cmd0 = cmd;
     int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
-    if (opcode == (int8_t)G_LOAD_UCODE) {
+    if (opcode == F3DEX2_G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
         ++cmd;
         return;
