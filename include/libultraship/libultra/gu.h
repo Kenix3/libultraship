@@ -47,6 +47,10 @@ typedef struct {
     float a1, a2; /* actual color = col/(a1*dist + a2) */
 } PositionalLight;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Function Prototypes
  */
@@ -191,5 +195,9 @@ typedef struct {
 void guSprite2DInit(uSprite* SpritePointer, void* SourceImagePointer, void* TlutPointer, int Stride, int SubImageWidth,
                     int SubImageHeight, int SourceImageType, int SourceImageBitSize, int SourceImageOffsetS,
                     int SourceImageOffsetT);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
