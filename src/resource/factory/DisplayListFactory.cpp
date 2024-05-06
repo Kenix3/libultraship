@@ -174,7 +174,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
 
         int8_t opcode = (int8_t)(command.words.w0 >> 24);
         bool isExpanded = opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
-            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR;
+                          opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR;
 
         // These are 128-bit commands, so read an extra 64 bits...
         if (isExpanded) {
