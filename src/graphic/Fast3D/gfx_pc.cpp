@@ -162,7 +162,7 @@ const static std::unordered_map<Attribute, int8_t> f3dexAttrHandler = {
 };
 
 const static std::array<const std::unordered_map<Attribute, int8_t>*, UcodeHandlers::ucode_max> ucode_attr_handlers = {
-    &f3dex2AttrHandler, &f3dexAttrHandler
+    &f3dexAttrHandler, &f3dexAttrHandler, &f3dex2AttrHandler
 };
 
 static int8_t get_attr(Attribute attr) {
