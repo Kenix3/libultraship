@@ -1131,7 +1131,7 @@ typedef struct {
 } F3DGwords;
 
 #ifdef __cplusplus
-static_assert(sizeof(F3DGwords) == 2 * sizeof(void*), "Display list size is bad");
+static_assert(sizeof(F3DGwords) == 2 * sizeof(void*) + sizeof(F3DTrace), "Display list size is bad");
 #endif
 
 /*
