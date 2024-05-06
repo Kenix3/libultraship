@@ -40,7 +40,7 @@ typedef union {
         u16 fracPart[4][4];
     };
     long long int forc_structure_alignment;
-} Mtx;
+} MtxS;
 
 typedef float MtxF_t[4][4];
 typedef union {
@@ -49,5 +49,11 @@ typedef union {
         float xx, yx, zx, wx, xy, yy, zy, wy, xz, yz, zz, wz, xw, yw, zw, ww;
     };
 } MtxF;
+
+#ifndef GBI_FLOATS
+typedef MtxS Mtx;
+#else
+typedef MtxF Mtx;
+#endif
 
 #endif
