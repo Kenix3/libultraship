@@ -84,3 +84,13 @@ if (GFX_DEBUG_DISASSEMBLER)
 
     target_include_directories(libgfxd PUBLIC ${libgfxd_SOURCE_DIR})
 endif()
+
+#======== thread-pool ========
+FetchContent_Declare(
+    ThreadPool
+    GIT_REPOSITORY https://github.com/bshoshany/thread-pool.git
+    GIT_TAG v4.1.0
+)
+FetchContent_MakeAvailable(ThreadPool)
+
+list(APPEND ADDITIONAL_LIB_INCLUDES ${threadpool_SOURCE_DIR}/include)
