@@ -58,5 +58,4 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 endif()
 
 # =========== Sources =============
-add_subdirectory("extern")
 add_subdirectory("src")
