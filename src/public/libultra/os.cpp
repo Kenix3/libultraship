@@ -12,6 +12,7 @@ uint8_t __osMaxControllers = MAXCONTROLLERS;
 
 int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status) {
     *controllerBits = 0;
+    status->status |= 1;
 
     if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
         SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
@@ -54,34 +55,41 @@ uint32_t osGetCount(void) {
         .count();
 }
 
-void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msgBuf, int32_t count) {
-    mq->validCount = 0;
-    mq->first = 0;
-    mq->msgCount = count;
-    mq->msg = msgBuf;
-    return;
+OSPiHandle* osCartRomInit(void) {
+    return NULL;
 }
 
-int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
-    int32_t index;
-    if (mq->validCount >= mq->msgCount) {
-        return -1;
-    }
-    index = (mq->first + mq->validCount) % mq->msgCount;
-    mq->msg[index] = msg;
-    mq->validCount++;
+int osSetTimer(OSTimer* t, OSTime countdown, OSTime interval, OSMesgQueue* mq, OSMesg msg) {
     return 0;
 }
 
-int32_t osRecvMesg(OSMesgQueue* mq, OSMesg* msg, int32_t flag) {
-    if (mq->validCount == 0) {
-        return -1;
+int32_t osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, int32_t direction) {
+    return 0;
+}
+
+uint32_t osAiGetLength() {
+    // TODO: Implement
+    return 0;
+}
+
+int32_t osAiSetNextBuffer(void* buff, size_t len) {
+    // TODO: Implement
+    return 0;
+}
+
+int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
+    auto io = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(pfs->channel)->GetRumble();
+    if (vibrate) {
+        io->StartRumble();
+    } else {
+        io->StopRumble();
     }
-    if (msg != NULL) {
-        *msg = *(mq->first + mq->msg);
-    }
-    mq->first = (mq->first + 1) % mq->msgCount;
-    mq->validCount--;
+
+    return 0;
+}
+
+int32_t osMotorInit(OSMesgQueue* ctrlrqueue, OSPfs* pfs, int32_t channel) {
+    pfs->channel = channel;
     return 0;
 }
 }

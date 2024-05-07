@@ -2,6 +2,8 @@
 #define ULTRA64_RCP_H
 
 #define HW_REG(reg, type) *(volatile type*)((reg) | 0xA0000000)
+#define IO_READ(addr) (*(vu32*)PHYS_TO_K1(addr))
+#define IO_WRITE(addr, data) (*(vu32*)PHYS_TO_K1(addr) = (u32)(data))
 
 #define AI_DRAM_ADDR_REG 0x04500000
 #define AI_LEN_REG 0x04500004
@@ -9,6 +11,9 @@
 #define AI_STATUS_REG 0x0450000C
 #define AI_DACRATE_REG 0x04500010
 #define AI_BITRATE_REG 0x04500014
+
+#define AI_CONTROL_DMA_ON 0x01
+#define AI_CONTROL_DMA_OFF 0x00
 
 #define AI_STATUS_AI_FULL (1 << 31)
 #define AI_STATUS_AI_BUSY (1 << 30)
