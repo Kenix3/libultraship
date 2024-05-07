@@ -42,6 +42,49 @@ if(NOT EXCLUDE_MPQ_SUPPORT)
     list(APPEND ADDITIONAL_LIB_INCLUDES ${stormlib_SOURCE_DIR}/src)
 endif()
 
+#=================== STB ===================
+set(STB_DIR ${CMAKE_BINARY_DIR}/_deps/stb)
+file(DOWNLOAD "https://github.com/nothings/stb/raw/0bc88af4de5fb022db643c2d8e549a0927749354/stb_image.h" "${STB_DIR}/stb_image.h")
+file(WRITE "${STB_DIR}/stb_impl.c" "#define STB_IMAGE_IMPLEMENTATION\n#include \"stb_image.h\"")
+
+add_library(stb STATIC)
+
+target_sources(stb PRIVATE
+    ${STB_DIR}/stb_image.h
+    ${STB_DIR}/stb_impl.c
+)
+
+target_include_directories(stb PUBLIC ${STB_DIR})
+list(APPEND ADDITIONAL_LIB_INCLUDES ${STB_DIR})
+
+#=================== libgfxd ===================
+if (GFX_DEBUG_DISASSEMBLER)
+    FetchContent_Declare(
+        libgfxd
+        GIT_REPOSITORY https://github.com/glankk/libgfxd.git
+        GIT_TAG 008f73dca8ebc9151b205959b17773a19c5bd0da
+    )
+    FetchContent_MakeAvailable(libgfxd)
+
+    add_library(libgfxd STATIC)
+    set_property(TARGET libgfxd PROPERTY C_STANDARD 11)
+
+    target_sources(libgfxd PRIVATE
+        ${libgfxd_SOURCE_DIR}/gbi.h
+        ${libgfxd_SOURCE_DIR}/gfxd.h
+        ${libgfxd_SOURCE_DIR}/priv.h
+        ${libgfxd_SOURCE_DIR}/gfxd.c
+        ${libgfxd_SOURCE_DIR}/uc.c
+        ${libgfxd_SOURCE_DIR}/uc_f3d.c
+        ${libgfxd_SOURCE_DIR}/uc_f3db.c
+        ${libgfxd_SOURCE_DIR}/uc_f3dex.c
+        ${libgfxd_SOURCE_DIR}/uc_f3dex2.c
+        ${libgfxd_SOURCE_DIR}/uc_f3dexb.c
+    )
+
+    target_include_directories(libgfxd PUBLIC ${libgfxd_SOURCE_DIR})
+endif()
+
 #======== thread-pool ========
 FetchContent_Declare(
     ThreadPool
@@ -54,3 +97,4 @@ FetchContent_MakeAvailable(ThreadPool)
 # target_include_directories(ThreadPool INTERFACE ${threadpool_SOURCE_DIR})
 
 list(APPEND ADDITIONAL_LIB_INCLUDES ${threadpool_SOURCE_DIR}/include)
+

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "resource/Resource.h"
-#include "Vertex.h"
 
+union F3DVtx;
 namespace LUS {
 typedef union ScalarData {
     uint8_t u8;
@@ -80,6 +80,6 @@ class Array : public Ship::Resource<void> {
     size_t ArrayCount;
     // OTRTODO: Should be a vector of resource pointers...
     std::vector<ScalarData> Scalars;
-    std::vector<Vtx> Vertices;
+    std::vector<F3DVtx> Vertices;
 };
 } // namespace LUS

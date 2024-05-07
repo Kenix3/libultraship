@@ -1,4 +1,5 @@
 #include "resource/type/Vertex.h"
+#include "libultraship/libultra/gbi.h"
 
 namespace LUS {
 Vertex::Vertex() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {

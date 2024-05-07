@@ -7,7 +7,7 @@
 namespace LUS {
 class ResourceFactoryDisplayList {
   protected:
-    uint32_t GetCombineLERPValue(std::string valStr);
+    uint32_t GetCombineLERPValue(const char* valStr);
 };
 
 class ResourceFactoryBinaryDisplayListV0 : public ResourceFactoryDisplayList, public Ship::ResourceFactoryBinary {
