@@ -1,19 +1,18 @@
 #pragma once
 
-#define BS_THREAD_POOL_ENABLE_PRIORITY
-#define BS_THREAD_POOL_ENABLE_PAUSE
-#include <BS_thread_pool.hpp>
-
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
 #include <mutex>
-#include <future>
 #include <queue>
 #include <variant>
 #include "resource/Resource.h"
 #include "resource/ResourceLoader.h"
 #include "resource/archive/ArchiveManager.h"
+
+#define BS_THREAD_POOL_ENABLE_PRIORITY
+#define BS_THREAD_POOL_ENABLE_PAUSE
+#include <BS_thread_pool.hpp>
 
 namespace Ship {
 struct File;

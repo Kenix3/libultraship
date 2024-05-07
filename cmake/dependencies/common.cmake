@@ -93,8 +93,4 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ThreadPool)
 
-# add_library(ThreadPool INTERFACE)
-# target_include_directories(ThreadPool INTERFACE ${threadpool_SOURCE_DIR})
-
 list(APPEND ADDITIONAL_LIB_INCLUDES ${threadpool_SOURCE_DIR}/include)
-
