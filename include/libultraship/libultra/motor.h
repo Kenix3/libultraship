@@ -9,7 +9,14 @@
 #define osMotorStart(x) __osMotorAccess((x), MOTOR_START)
 #define osMotorStop(x) __osMotorAccess((x), MOTOR_STOP)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 s32 __osMotorAccess(OSPfs* pfs, u32 vibrate);
 s32 osMotorInit(OSMesgQueue* ctrlrqueue, OSPfs* pfs, s32 channel);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
