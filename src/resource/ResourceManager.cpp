@@ -133,7 +133,7 @@ ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact
 }
 
 std::shared_future<std::shared_ptr<Ship::IResource>>
-ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, int16_t priority,
+ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, BS::priority_t priority,
                                    std::shared_ptr<Ship::ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(filePath.c_str())) {
@@ -217,7 +217,7 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Ship::IResource>>>>
-ResourceManager::LoadDirectoryAsync(const std::string& searchMask, int16_t priority) {
+ResourceManager::LoadDirectoryAsync(const std::string& searchMask, BS::priority_t priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<Ship::IResource>>>>();
     auto fileList = GetArchiveManager()->ListFiles(searchMask);
     loadedList->reserve(fileList->size());
