@@ -9,7 +9,10 @@
 #include "resource/Resource.h"
 #include "resource/ResourceLoader.h"
 #include "resource/archive/ArchiveManager.h"
-#include "thread-pool/BS_thread_pool.hpp"
+
+#define BS_THREAD_POOL_ENABLE_PRIORITY
+#define BS_THREAD_POOL_ENABLE_PAUSE
+#include <BS_thread_pool.hpp>
 
 namespace Ship {
 struct File;
@@ -36,11 +39,11 @@ class ResourceManager {
                                                          std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
     size_t UnloadResource(const std::string& filePath);
     std::shared_future<std::shared_ptr<Ship::IResource>>
-    LoadResourceAsync(const std::string& filePath, bool loadExact = false, bool priority = false,
+    LoadResourceAsync(const std::string& filePath, bool loadExact = false, BS::priority_t priority = BS::pr::normal,
                       std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
     std::shared_ptr<std::vector<std::shared_ptr<Ship::IResource>>> LoadDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<Ship::IResource>>>>
-    LoadDirectoryAsync(const std::string& searchMask, bool priority = false);
+    LoadDirectoryAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectory(const std::string& searchMask);
     bool OtrSignatureCheck(const char* fileName);
