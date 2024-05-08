@@ -14,7 +14,6 @@ struct GfxWindowManagerAPI {
     void (*set_fullscreen)(bool enable);
     void (*get_active_window_refresh_rate)(uint32_t* refresh_rate);
     void (*set_cursor_visibility)(bool visible);
-    void (*main_loop)(void (*run_one_game_iter)(void));
     void (*get_dimensions)(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
     void (*handle_events)(void);
     bool (*start_frame)(void);
@@ -24,7 +23,10 @@ struct GfxWindowManagerAPI {
     void (*set_target_fps)(int fps);
     void (*set_maximum_frame_latency)(int latency);
     const char* (*get_key_name)(int scancode);
-    bool (*can_disable_vsync)();
+    bool (*can_disable_vsync)(void);
+    bool (*is_running)(void);
+    void (*destroy)(void);
+    bool (*is_fullscreen)(void);
 };
 
 #endif
