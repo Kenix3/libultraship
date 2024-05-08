@@ -27,11 +27,12 @@ int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
 }
 
 int32_t osJamMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
-    mq->first = (mq->first + mq->msgCount - 1) % mq->msgCount;
-    mq->msg[mq->first] = msg;
     if (mq->validCount == 0) {
         return -1;
     }
+
+    mq->first = (mq->first + mq->msgCount - 1) % mq->msgCount;
+    mq->msg[mq->first] = msg;
     mq->validCount++;
 
     return 0;
