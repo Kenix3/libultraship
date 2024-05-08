@@ -6,8 +6,6 @@
 #include <vector>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
-#include "graphic/Fast3D/gfx_window_manager_api.h"
-#include "graphic/Fast3D/gfx_rendering_api.h"
 #include "window/gui/Gui.h"
 
 namespace Ship {
@@ -23,58 +21,45 @@ class Window {
     Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
     ~Window();
 
-    void MainLoop(void (*mainFunction)(void));
-    void Init();
-    void Close();
-    void StartFrame();
-    void SetTargetFps(int32_t fps);
-    void SetMaximumFrameLatency(int32_t latency);
-    void GetPixelDepthPrepare(float x, float y);
-    uint16_t GetPixelDepth(float x, float y);
-    void ToggleFullscreen();
-    void SetFullscreen(bool isFullscreen);
-    void SetCursorVisibility(bool visible);
-    uint32_t GetWidth();
-    uint32_t GetHeight();
-    int32_t GetPosX();
-    int32_t GetPosY();
-    uint32_t GetCurrentRefreshRate();
-    bool CanDisableVerticalSync();
-    float GetCurrentAspectRatio();
-    bool IsFullscreen();
-    const char* GetKeyName(int32_t scancode);
-    int32_t GetLastScancode();
-    void SetLastScancode(int32_t scanCode);
-    void InitWindowManager();
-    bool SupportsWindowedFullscreen();
-    void SetResolutionMultiplier(float multiplier);
-    void SetMsaaLevel(uint32_t value);
-    void SetTextureFilter(FilteringMode filteringMode);
-    std::shared_ptr<Gui> GetGui();
+    virtual void Init() = 0;
+    virtual void Close() = 0;
+    virtual void StartFrame() = 0;
+    virtual void EndFrame() = 0;
+    virtual void SetCursorVisibility(bool visible) = 0;
+    virtual uint32_t GetWidth() = 0;
+    virtual uint32_t GetHeight() = 0;
+    virtual int32_t GetPosX() = 0;
+    virtual int32_t GetPosY() = 0;
+    virtual uint32_t GetCurrentRefreshRate() = 0;
+    virtual bool SupportsWindowedFullscreen() = 0;
+    virtual bool CanDisableVerticalSync() = 0;
+    virtual void SetResolutionMultiplier(float multiplier) = 0;
+    virtual void SetMsaaLevel(uint32_t value) = 0;
+    virtual void SetFullscreen(bool isFullscreen) = 0;
+    virtual bool IsFullscreen() = 0;
+    virtual bool IsRunning() = 0;
+    virtual const char* GetKeyName(int32_t scancode) = 0;
+
     WindowBackend GetWindowBackend();
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
+    int32_t GetLastScancode();
+    void SetLastScancode(int32_t scanCode);
+    void ToggleFullscreen();
+    float GetCurrentAspectRatio();
+    void SaveWindowToConfig();
+    std::shared_ptr<Gui> GetGui();
 
   protected:
     void SetWindowBackend(WindowBackend backend);
-    void SaveWindowSizeToConfig(std::shared_ptr<Config> conf);
+    void AddAvailableWindowBackend(WindowBackend backend);
 
   private:
-    static bool KeyDown(int32_t scancode);
-    static bool KeyUp(int32_t scancode);
-    static void AllKeysUp(void);
-    static void OnFullscreenChanged(bool isNowFullscreen);
-
     std::shared_ptr<Gui> mGui;
+    int32_t mLastScancode;
     WindowBackend mWindowBackend;
     std::shared_ptr<std::vector<WindowBackend>> mAvailableWindowBackends;
-    GfxRenderingAPI* mRenderingApi;
-    GfxWindowManagerAPI* mWindowManagerApi;
-    bool mIsFullscreen;
-    uint32_t mRefreshRate;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    int32_t mPosX;
-    int32_t mPosY;
-    int32_t mLastScancode;
+    // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton
+    // is no longer available.
+    std::shared_ptr<Config> mConfig;
 };
 } // namespace Ship

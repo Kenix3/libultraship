@@ -413,6 +413,8 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
 static void gfx_sdl_close(void) {
     is_running = false;
+    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
 }
 
 static void gfx_sdl_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
@@ -436,15 +438,6 @@ static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bo
     on_key_down_callback = on_key_down;
     on_key_up_callback = on_key_up;
     on_all_keys_up_callback = on_all_keys_up;
-}
-
-static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
-    while (is_running) {
-        run_one_game_iter();
-    }
-
-    SDL_DestroyRenderer(renderer);
-    SDL_Quit();
 }
 
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
@@ -605,6 +598,21 @@ bool gfx_sdl_can_disable_vsync() {
     return false;
 }
 
+bool gfx_sdl_is_running(void) {
+    return is_running;
+}
+
+void gfx_sdl_destroy(void) {
+    // TODO: destroy _any_ resources used by SDL
+
+    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
+}
+
+bool gfx_sdl_is_fullscreen(void) {
+    return fullscreen_state;
+}
+
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_close,
                                        gfx_sdl_set_keyboard_callbacks,
@@ -612,7 +620,6 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_fullscreen,
                                        gfx_sdl_get_active_window_refresh_rate,
                                        gfx_sdl_set_cursor_visibility,
-                                       gfx_sdl_main_loop,
                                        gfx_sdl_get_dimensions,
                                        gfx_sdl_handle_events,
                                        gfx_sdl_start_frame,
@@ -622,6 +629,9 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_target_fps,
                                        gfx_sdl_set_maximum_frame_latency,
                                        gfx_sdl_get_key_name,
-                                       gfx_sdl_can_disable_vsync };
+                                       gfx_sdl_can_disable_vsync,
+                                       gfx_sdl_is_running,
+                                       gfx_sdl_destroy,
+                                       gfx_sdl_is_fullscreen };
 
 #endif

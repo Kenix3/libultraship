@@ -85,7 +85,6 @@ static struct {
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
-    void (*run_one_game_iter)(void);
     bool (*on_key_down)(int scancode);
     bool (*on_key_up)(int scancode);
     void (*on_all_keys_up)(void);
@@ -494,13 +493,6 @@ static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), b
     dxgi.on_all_keys_up = on_all_keys_up;
 }
 
-static void gfx_dxgi_main_loop(void (*run_one_game_iter)(void)) {
-    dxgi.run_one_game_iter = run_one_game_iter;
-    while (dxgi.is_running) {
-        dxgi.run_one_game_iter();
-    }
-}
-
 static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     *width = dxgi.current_width;
     *height = dxgi.current_height;
@@ -856,6 +848,10 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     dxgi.before_destroy_swap_chain_fn = std::move(before_destroy_fn);
 }
 
+bool gfx_dxgi_is_running(void) {
+    return dxgi.is_running;
+}
+
 HWND gfx_dxgi_get_h_wnd(void) {
     return dxgi.h_wnd;
 }
@@ -890,6 +886,14 @@ bool gfx_dxgi_can_disable_vsync() {
     return dxgi.tearing_support;
 }
 
+void gfx_dxgi_destroy(void) {
+    // TODO: destroy _any_ resources used by dxgi, including the window handle
+}
+
+bool gfx_dxgi_is_fullscreen(void) {
+    return dxgi.is_full_screen;
+}
+
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
@@ -897,7 +901,6 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_fullscreen,
                                                        gfx_dxgi_get_active_window_refresh_rate,
                                                        gfx_dxgi_set_cursor_visibility,
-                                                       gfx_dxgi_main_loop,
                                                        gfx_dxgi_get_dimensions,
                                                        gfx_dxgi_handle_events,
                                                        gfx_dxgi_start_frame,
@@ -907,6 +910,9 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_target_fps,
                                                        gfx_dxgi_set_maximum_frame_latency,
                                                        gfx_dxgi_get_key_name,
-                                                       gfx_dxgi_can_disable_vsync };
+                                                       gfx_dxgi_can_disable_vsync,
+                                                       gfx_dxgi_is_running,
+                                                       gfx_dxgi_destroy,
+                                                       gfx_dxgi_is_fullscreen };
 
 #endif
