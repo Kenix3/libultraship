@@ -2935,7 +2935,7 @@ bool gfx_dl_otr_filepath_handler_custom(F3DGfx** cmd0) {
     } else {
         if (nDL != nullptr) {
             (*cmd0) = nDL;
-            g_exec_stack.branch(*cmd0);
+            g_exec_stack.branch(cmd);
             return true; // shortcut cmd increment
         } else {
             assert(0 && "???");
@@ -2965,7 +2965,7 @@ bool gfx_dl_handler_common(F3DGfx** cmd0) {
         }
     } else {
         (*cmd0) = subGFX;
-        g_exec_stack.branch(*cmd0);
+        g_exec_stack.branch(cmd);
         return true; // shortcut cmd increment
     }
     return false;
@@ -3008,7 +3008,7 @@ bool gfx_dl_index_handler(F3DGfx** cmd0) {
         }
     } else {
         (*cmd0) = subGFX;
-        g_exec_stack.branch(*cmd0);
+        g_exec_stack.branch(cmd);
         return true; // shortcut cmd increment
     }
     return false;
@@ -3023,6 +3023,7 @@ bool gfx_pushcd_handler_custom(F3DGfx** cmd0) {
 // TODO handle special OTR opcodes later...
 bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
     // Push return address
+    F3DGfx* cmd = (*cmd0);
 
     uint8_t vbidx = (uint8_t)((*cmd0)->words.w0 & 0x00000FFF);
     uint32_t zval = (uint32_t)((*cmd0)->words.w1);
@@ -3036,7 +3037,8 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
 
         if (gfx != 0) {
             (*cmd0) = gfx;
-            return true;
+            g_exec_stack.branch(cmd);
+            return true; // shortcut cmd increment
         }
     }
     return false;
