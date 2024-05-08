@@ -28,31 +28,13 @@ void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msgBuf, int32_t count) {
 }
 
 int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
-
-    // mq is not initialised by osCreateMesgQueue
-    if (!__lusMesgLockMap.contains(mq))
-        return -1;
-
-    std::unique_lock<std::mutex> ul(MQ_MUTEX(mq));
-
-    while (MQ_IS_FULL(mq)) {
-        if (flag == OS_MESG_NOBLOCK)
-            return -1;
-
-        // Wait for space in the queue.
-        MQ_CVAR(mq).wait(ul);
-    }
-
+    int32_t index;
     if (mq->validCount >= mq->msgCount) {
         return -1;
     }
-
-    int32_t last = (mq->first + mq->validCount) % mq->msgCount;
-    mq->msg[last] = msg;
+    index = (mq->first + mq->validCount) % mq->msgCount;
+    mq->msg[index] = msg;
     mq->validCount++;
-
-    // Wake threads waiting on this queue.
-    MQ_CVAR(mq).notify_all();
 
     return 0;
 }
@@ -85,30 +67,14 @@ int32_t osJamMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
 }
 
 int32_t osRecvMesg(OSMesgQueue* mq, OSMesg* msg, int32_t flag) {
-
-    // mq is not initialised by osCreateMesgQueue
-    if (!__lusMesgLockMap.contains(mq))
+    if (mq->validCount == 0) {
         return -1;
-
-    std::unique_lock ul(MQ_MUTEX(mq));
-
-    while (MQ_IS_EMPTY(mq)) {
-        if (flag == OS_MESG_NOBLOCK)
-            return -1;
-
-        // Wait for mesg
-        MQ_CVAR(mq).wait(ul);
     }
-
-    if (msg != nullptr) {
-        *msg = mq->msg[mq->first];
+    if (msg != NULL) {
+        *msg = *(mq->first + mq->msg);
     }
-
     mq->first = (mq->first + 1) % mq->msgCount;
     mq->validCount--;
-
-    // Wake threads waiting on this queue.
-    MQ_CVAR(mq).notify_all();
 
     return 0;
 }
