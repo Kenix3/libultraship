@@ -11,6 +11,8 @@
 #include "graphic/Fast3D/gfx_direct3d12.h"
 #include "graphic/Fast3D/gfx_pc.h"
 
+#include <fstream>
+
 namespace Fast {
 Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>>()) {
 }
