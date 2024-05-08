@@ -95,7 +95,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
 
             gfxd_input_buffer(input.data(), sizeof(uint32_t) * size * 2);
             gfxd_endian(gfxd_endian_host, sizeof(uint32_t));
-            char buff[256] = { 0 };
+            char buff[512] = { 0 };
             gfxd_output_buffer(buff, sizeof(buff));
             gfxd_enable(gfxd_emit_dec_color);
             gfxd_target(gfxd_f3dex2);
