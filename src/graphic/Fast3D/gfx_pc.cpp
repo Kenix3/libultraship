@@ -156,18 +156,22 @@ const static std::unordered_map<Attribute, std::any> f3dex2AttrHandler = {
     { CULL_BOTH, F3DEX2_G_CULL_BOTH },
 };
 
-const static std::unordered_map<Attribute, std::any> f3dexAttrHandler = {
-    { MTX_PROJECTION, F3DEX_G_MTX_PROJECTION }, { MTX_LOAD, F3DEX_G_MTX_LOAD },     { MTX_PUSH, F3DEX_G_MTX_PUSH },
-    { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },         { CULL_FRONT, F3DEX_G_CULL_FRONT }, { CULL_BACK, F3DEX_G_CULL_BACK },
-    { CULL_BOTH, F3DEX_G_CULL_BOTH }
-};
+const static std::unordered_map<Attribute, std::any> f3dexAttrHandler = { { MTX_PROJECTION, F3DEX_G_MTX_PROJECTION },
+                                                                          { MTX_LOAD, F3DEX_G_MTX_LOAD },
+                                                                          { MTX_PUSH, F3DEX_G_MTX_PUSH },
+                                                                          { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },
+                                                                          { CULL_FRONT, F3DEX_G_CULL_FRONT },
+                                                                          { CULL_BACK, F3DEX_G_CULL_BACK },
+                                                                          { CULL_BOTH, F3DEX_G_CULL_BOTH } };
 
 static constexpr std::array ucode_attr_handlers = {
-    &f3dexAttrHandler, &f3dexAttrHandler, &f3dex2AttrHandler, &f3dex2AttrHandler,
+    &f3dexAttrHandler,
+    &f3dexAttrHandler,
+    &f3dex2AttrHandler,
+    &f3dex2AttrHandler,
 };
 
-template <typename T>
-static constexpr T get_attr(Attribute attr) {
+template <typename T> static constexpr T get_attr(Attribute attr) {
     const auto ucode_map = ucode_attr_handlers[ucode_handler_index];
     assert(ucode_map->contains(attr) && "Attribute not found in the current ucode handler");
     return std::any_cast<T>(ucode_map->at(attr));
