@@ -4,8 +4,6 @@ extern "C" {
 
 __OSEventState __osEventStateTab[OS_NUM_EVENTS] = { 0 };
 
-
-
 void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msgBuf, int32_t count) {
     mq->validCount = 0;
     mq->first = 0;
