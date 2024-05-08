@@ -9,11 +9,13 @@
 extern "C" {
 #endif
 
-uint32_t WindowGetWidth();
-uint32_t WindowGetHeight();
-float WindowGetAspectRatio();
-void WindowGetPixelDepthPrepare(float x, float y);
-uint16_t WindowGetPixelDepth(float x, float y);
+bool WindowIsRunning(void);
+uint32_t WindowGetWidth(void);
+uint32_t WindowGetHeight(void);
+float WindowGetAspectRatio(void);
+int32_t WindowGetPosX(void);
+int32_t WindowGetPosY(void);
+bool WindowIsFullscreen(void);
 
 #ifdef __cplusplus
 };
