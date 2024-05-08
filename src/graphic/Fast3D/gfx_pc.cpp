@@ -3694,6 +3694,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
 
 const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dex2Handlers = {
     { F3DEX2_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
+    { F3DEX2_G_SPNOOP, { "G_SPNOOP", gfx_noop_handler_f3dex2 } },
     { F3DEX2_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
     { F3DEX2_G_MTX, { "G_MTX", gfx_mtx_handler_f3dex2 } },
     { F3DEX2_G_POPMTX, { "G_POPMTX", gfx_pop_mtx_handler_f3dex2 } },
