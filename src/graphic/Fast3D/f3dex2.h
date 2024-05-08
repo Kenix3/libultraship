@@ -64,12 +64,12 @@ constexpr int8_t F3DEX2_G_MTX_PUSH = 0x01;
  * See the man page for gSP1Triangle().
  *
  */
-constexpr int32_t F3DEX2_G_CLIPPING = 0x00800000;
-constexpr int32_t F3DEX2_G_TEXTURE_ENABLE = 0x00000000;
-constexpr int32_t F3DEX2_G_SHADING_SMOOTH = 0x00200000;
-constexpr int32_t F3DEX2_G_CULL_FRONT = 0x00000200;
-constexpr int32_t F3DEX2_G_CULL_BACK = 0x00000400;
-constexpr int32_t F3DEX2_G_CULL_BOTH = 0x00000600;
+constexpr uint32_t F3DEX2_G_CLIPPING = 0x00800000;
+constexpr uint32_t F3DEX2_G_TEXTURE_ENABLE = 0x00000000;
+constexpr uint32_t F3DEX2_G_SHADING_SMOOTH = 0x00200000;
+constexpr uint32_t F3DEX2_G_CULL_FRONT = 0x00000200;
+constexpr uint32_t F3DEX2_G_CULL_BACK = 0x00000400;
+constexpr uint32_t F3DEX2_G_CULL_BOTH = 0x00000600;
 
 /*
  * MOVEMEM indices

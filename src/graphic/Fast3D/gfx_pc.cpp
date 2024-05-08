@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <any>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -149,24 +150,27 @@ static map<string, MaskedTextureEntry> masked_textures;
 
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
-const static std::unordered_map<Attribute, int8_t> f3dex2AttrHandler = {
+const static std::unordered_map<Attribute, std::any> f3dex2AttrHandler = {
     { MTX_PROJECTION, F3DEX2_G_MTX_PROJECTION }, { MTX_LOAD, F3DEX2_G_MTX_LOAD },     { MTX_PUSH, F3DEX2_G_MTX_PUSH },
     { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },          { CULL_FRONT, F3DEX2_G_CULL_FRONT }, { CULL_BACK, F3DEX2_G_CULL_BACK },
-    { CULL_BOTH, F3DEX2_G_CULL_BOTH },           { MV_VIEWPORT, F3DEX2_G_MOVEMEM },   { MV_LIGHT, F3DEX2_G_MOVEMEM }
+    { CULL_BOTH, F3DEX2_G_CULL_BOTH },
 };
 
-const static std::unordered_map<Attribute, int8_t> f3dexAttrHandler = {
+const static std::unordered_map<Attribute, std::any> f3dexAttrHandler = {
     { MTX_PROJECTION, F3DEX_G_MTX_PROJECTION }, { MTX_LOAD, F3DEX_G_MTX_LOAD },     { MTX_PUSH, F3DEX_G_MTX_PUSH },
     { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },         { CULL_FRONT, F3DEX_G_CULL_FRONT }, { CULL_BACK, F3DEX_G_CULL_BACK },
-    { CULL_BOTH, F3DEX_G_CULL_BOTH },           { MV_VIEWPORT, F3DEX_G_MOVEMEM },   { MV_LIGHT, F3DEX_G_MOVEMEM }
+    { CULL_BOTH, F3DEX_G_CULL_BOTH }
 };
 
-static constexpr std::array<const std::unordered_map<Attribute, int8_t>*, ucode_max> ucode_attr_handlers = {
-    &f3dexAttrHandler, &f3dexAttrHandler, &f3dex2AttrHandler
+static constexpr std::array ucode_attr_handlers = {
+    &f3dexAttrHandler, &f3dexAttrHandler, &f3dex2AttrHandler, &f3dex2AttrHandler,
 };
 
-static int8_t get_attr(Attribute attr) {
-    return ucode_attr_handlers[ucode_handler_index]->at(attr);
+template <typename T>
+static constexpr T get_attr(Attribute attr) {
+    const auto ucode_map = ucode_attr_handlers[ucode_handler_index];
+    assert(ucode_map->contains(attr) && "Attribute not found in the current ucode handler");
+    return std::any_cast<T>(ucode_map->at(attr));
 }
 
 static std::string GetPathWithoutFileName(char* filePath) {
@@ -1088,9 +1092,9 @@ static void gfx_sp_matrix(uint8_t parameters, const int32_t* addr) {
 #endif
     }
 
-    const int8_t mtx_projection = get_attr(MTX_PROJECTION);
-    const int8_t mtx_load = get_attr(MTX_LOAD);
-    const int8_t mtx_push = get_attr(MTX_PUSH);
+    const auto mtx_projection = get_attr<int8_t>(MTX_PROJECTION);
+    const auto mtx_load = get_attr<int8_t>(MTX_LOAD);
+    const auto mtx_push = get_attr<int8_t>(MTX_PUSH);
 
     if (parameters & mtx_projection) {
         if (parameters & mtx_load) {
@@ -1365,9 +1369,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
         return;
     }
 
-    const int32_t cull_both = get_attr(CULL_BOTH);
-    const int32_t cull_front = get_attr(CULL_FRONT);
-    const int32_t cull_back = get_attr(CULL_BACK);
+    const auto cull_both = get_attr<uint32_t>(CULL_BOTH);
+    const auto cull_front = get_attr<uint32_t>(CULL_FRONT);
+    const auto cull_back = get_attr<uint32_t>(CULL_BACK);
 
     if ((g_rsp.geometry_mode & cull_both) != 0) {
         float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
