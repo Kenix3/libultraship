@@ -1,0 +1,123 @@
+From ff338b230544f8b2bb68d2fbe075175ed2fd758c Mon Sep 17 00:00:00 2001
+From: briaguya <70942617+briaguya-ai@users.noreply.github.com>
+Date: Wed, 8 May 2024 02:44:49 -0400
+Subject: [PATCH] bring back  optimizations
+
+Co-authored-by: GaryOderNichts <12049776+GaryOderNichts@users.noreply.github.com>
+---
+ src/SBaseCommon.cpp        |  6 +++++-
+ src/SFileCreateArchive.cpp |  2 ++
+ src/SFileListFile.cpp      | 35 ++++++++++++++++++-----------------
+ src/StormLib.h             |  3 +++
+ 4 files changed, 28 insertions(+), 18 deletions(-)
+
+diff --git a/src/SBaseCommon.cpp b/src/SBaseCommon.cpp
+index 77590d6..6fed00e 100644
+--- a/src/SBaseCommon.cpp
++++ b/src/SBaseCommon.cpp
+@@ -884,8 +884,10 @@ ULONGLONG FindFreeMpqSpace(TMPQArchive * ha)
+     ULONGLONG FreeSpacePos = ha->pHeader->dwHeaderSize;
+     DWORD dwChunkCount;
+ 
++    TFileEntry* startEntry = (ha->useFreeSpaceOptimization && ha->lastFreeSpaceEntry != nullptr) ? ha->lastFreeSpaceEntry : ha->pFileTable;
++
+     // Parse the entire block table
+-    for(pFileEntry = ha->pFileTable; pFileEntry < pFileTableEnd; pFileEntry++)
++    for(pFileEntry = startEntry; pFileEntry < pFileTableEnd; pFileEntry++)
+     {
+         // Only take existing files with nonzero size
+         if((pFileEntry->dwFlags & MPQ_FILE_EXISTS) && (pFileEntry->dwCmpSize != 0))
+@@ -906,6 +908,8 @@ ULONGLONG FindFreeMpqSpace(TMPQArchive * ha)
+                     dwChunkCount = ((pFileEntry->dwCmpSize - 1) / pHeader->dwRawChunkSize) + 1;
+                     FreeSpacePos += dwChunkCount * MD5_DIGEST_SIZE;
+                 }
++
++                ha->lastFreeSpaceEntry = pFileEntry;
+             }
+         }
+     }
+diff --git a/src/SFileCreateArchive.cpp b/src/SFileCreateArchive.cpp
+index c0ea367..d392a83 100644
+--- a/src/SFileCreateArchive.cpp
++++ b/src/SFileCreateArchive.cpp
+@@ -224,6 +224,8 @@ bool WINAPI SFileCreateArchive2(const TCHAR * szMpqName, PSFILE_CREATE_MPQ pCrea
+         ha->dwFileFlags3     = pCreateInfo->dwFileFlags3 ? MPQ_FILE_EXISTS : 0;
+         ha->dwAttrFlags      = pCreateInfo->dwAttrFlags;
+         ha->dwFlags          = dwMpqFlags | MPQ_FLAG_CHANGED;
++        ha->useFreeSpaceOptimization        = true;
++        ha->lastFreeSpaceEntry              = nullptr;
+         pStream = NULL;
+ 
+         // Fill the MPQ header
+diff --git a/src/SFileListFile.cpp b/src/SFileListFile.cpp
+index b2a3a3c..d0c3c67 100644
+--- a/src/SFileListFile.cpp
++++ b/src/SFileListFile.cpp
+@@ -409,6 +409,7 @@ static LPBYTE CreateListFile(TMPQArchive * ha, DWORD * pcbListFile)
+ static DWORD SListFileCreateNodeForAllLocales(TMPQArchive * ha, const char * szFileName)
+ {
+     TFileEntry * pFileEntry;
++    TMPQHash * pFirstHash;
+     TMPQHash * pHashEnd;
+     TMPQHash * pHash;
+     DWORD dwName1;
+@@ -443,25 +444,25 @@ static DWORD SListFileCreateNodeForAllLocales(TMPQArchive * ha, const char * szF
+             pHashEnd = ha->pHashTable + (ha->dwRealHashTableSize / sizeof(TMPQHash));
+ 
+         // Go through the hash table and put the name in each item that has the same name pair
+-        for(pHash = ha->pHashTable; pHash < pHashEnd; pHash++)
+-        {
+-            if(pHash->dwName1 == dwName1 && pHash->dwName2 == dwName2 && MPQ_BLOCK_INDEX(pHash) < ha->dwFileTableSize)
+-            {
+-                // Allocate file name for the file entry
+-                AllocateFileName(ha, ha->pFileTable + MPQ_BLOCK_INDEX(pHash), szFileName);
+-            }
+-        }
++        // for(pHash = ha->pHashTable; pHash < pHashEnd; pHash++)
++        // {
++        //     if(pHash->dwName1 == dwName1 && pHash->dwName2 == dwName2 && MPQ_BLOCK_INDEX(pHash) < ha->dwFileTableSize)
++        //     {
++        //         // Allocate file name for the file entry
++        //         AllocateFileName(ha, ha->pFileTable + MPQ_BLOCK_INDEX(pHash), szFileName);
++        //     }
++        // }
+ 
+         // Go while we found something
+-        //pFirstHash = pHash = GetFirstHashEntry(ha, szFileName);
+-        //while(pHash != NULL)
+-        //{
+-        //    // Allocate file name for the file entry
+-        //    AllocateFileName(ha, ha->pFileTable + MPQ_BLOCK_INDEX(pHash), szFileName);
+-
+-        //    // Now find the next language version of the file
+-        //    pHash = GetNextHashEntry(ha, pFirstHash, pHash);
+-        //}
++        pFirstHash = pHash = GetFirstHashEntry(ha, szFileName);
++        while(pHash != NULL)
++        {
++           // Allocate file name for the file entry
++           AllocateFileName(ha, ha->pFileTable + MPQ_BLOCK_INDEX(pHash), szFileName);
++
++           // Now find the next language version of the file
++           pHash = GetNextHashEntry(ha, pFirstHash, pHash);
++        }
+ 
+         return ERROR_SUCCESS;
+     }
+diff --git a/src/StormLib.h b/src/StormLib.h
+index 4aa51c1..bda11d3 100644
+--- a/src/StormLib.h
++++ b/src/StormLib.h
+@@ -860,6 +860,9 @@ typedef struct _TMPQArchive
+     ULONGLONG      CompactBytesProcessed;       // Amount of bytes that have been processed during a particular compact call
+     ULONGLONG      CompactTotalBytes;           // Total amount of bytes to be compacted
+     void         * pvCompactUserData;           // User data thats passed to the callback
++
++    TFileEntry* lastFreeSpaceEntry;
++    bool           useFreeSpaceOptimization;
+ } TMPQArchive;
+ 
+ // File handle structure
+-- 
+2.43.0
+
