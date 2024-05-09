@@ -1,7 +1,14 @@
 #include "resource/type/DisplayList.h"
+#include <memory>
 
 namespace LUS {
 DisplayList::DisplayList() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
+}
+
+DisplayList::~DisplayList() {
+    for (char* string : Strings) {
+        free(string);
+    }
 }
 
 Gfx* DisplayList::GetPointer() {

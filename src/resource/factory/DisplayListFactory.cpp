@@ -278,7 +278,9 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
 
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_MTX_OTR2 << 24);
-                g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
+                char* str = (char*)malloc(fName.size() + 1);
+                g.words.w1 = (uintptr_t)str;
+                dl->Strings.push_back(str);
                 strcpy((char*)g.words.w1, fName.data());
             }
         } else if (childName == "SetCycleType") {
@@ -395,10 +397,11 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
 
-            char* filePath = (char*)malloc(fName.size() + 1);
-            strcpy(filePath, fName.data());
+            char* str = (char*)malloc(fName.size() + 1);
+            dl->Strings.push_back(str);
+            strcpy((char*)str, fName.data());
 
-            g = GsSpVertexOtR2P1(filePath);
+            g = GsSpVertexOtR2P1(str);
 
             dl->Instructions.push_back(g);
 
@@ -450,7 +453,9 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
                 g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, 0) };
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
-                g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
+                char* str = (char*)malloc(fName.size() + 1);
+                dl->Strings.push_back(str);
+                g.words.w1 = (uintptr_t)str;
                 strcpy((char*)g.words.w1, fName.data());
             }
 
@@ -893,7 +898,9 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
             g = { gsDPSetTextureImage(fmt, siz, width + 1, 0) };
             g.words.w0 &= 0x00FFFFFF;
             g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
-            g.words.w1 = (uintptr_t)malloc(fName.size() + 1);
+            char* str = (char*)malloc(fName.size() + 1);
+            dl->Strings.push_back(str);
+            g.words.w1 = (uintptr_t)str;
             strcpy((char*)g.words.w1, fName.data());
 
             dl->Instructions.push_back(g);
@@ -952,6 +959,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
                 g = { gsSPBranchListOTRHash(seg | 1) };
             } else {
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
+                dl->Strings.push_back(dlPath2);
                 strcpy(dlPath2, dlPath.c_str());
 
                 g = gsSPBranchListOTRFilePath(dlPath2);
@@ -963,6 +971,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
                 g = { gsSPDisplayList(seg | 1) };
             } else {
                 char* dlPath2 = (char*)malloc(strlen(dlPath.c_str()) + 1);
+                dl->Strings.push_back(dlPath2);
                 strcpy(dlPath2, dlPath.c_str());
 
                 g = gsSPDisplayListOTRFilePath(dlPath2);
