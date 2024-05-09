@@ -1,7 +1,8 @@
 #ifndef ULTRA64_GU_H
 #define ULTRA64_GU_H
 
-#include "../libultraship.h"
+#include "types.h"
+#include "gbi.h"
 #include "sptask.h"
 
 #define GU_PI 3.1415926
