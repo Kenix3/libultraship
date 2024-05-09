@@ -37,22 +37,29 @@ enum {
     SHADER_NOISE
 };
 
-#define SHADER_OPT_ALPHA (1 << 0)
-#define SHADER_OPT_FOG (1 << 1)
-#define SHADER_OPT_TEXTURE_EDGE (1 << 2)
-#define SHADER_OPT_NOISE (1 << 3)
-#define SHADER_OPT_2CYC (1 << 4)
-#define SHADER_OPT_ALPHA_THRESHOLD (1 << 5)
-#define SHADER_OPT_INVISIBLE (1 << 6)
-#define SHADER_OPT_GRAYSCALE (1 << 7)
-#define SHADER_OPT_TEXEL0_CLAMP_S (1 << 8)
-#define SHADER_OPT_TEXEL0_CLAMP_T (1 << 9)
-#define SHADER_OPT_TEXEL1_CLAMP_S (1 << 10)
-#define SHADER_OPT_TEXEL1_CLAMP_T (1 << 11)
-#define SHADER_OPT_TEXEL0_MASK (1 << 12)
-#define SHADER_OPT_TEXEL1_MASK (1 << 13)
-#define SHADER_OPT_TEXEL0_BLEND (1 << 14)
-#define SHADER_OPT_TEXEL1_BLEND (1 << 15)
+#ifdef __cplusplus
+enum class ShaderOpts {
+    ALPHA,
+    FOG,
+    TEXTURE_EDGE,
+    NOISE,
+    _2CYC,
+    ALPHA_THRESHOLD,
+    INVISIBLE,
+    GRAYSCALE,
+    TEXEL0_CLAMP_S,
+    TEXEL0_CLAMP_T,
+    TEXEL1_CLAMP_S,
+    TEXEL1_CLAMP_T,
+    TEXEL0_MASK,
+    TEXEL1_MASK,
+    TEXEL0_BLEND,
+    TEXEL1_BLEND,
+    MAX
+};
+
+#define SHADER_OPT(opt) ((uint64_t)(1 << static_cast<int>(ShaderOpts::opt)))
+#endif
 
 struct ColorCombinerKey {
     uint64_t combine_mode;

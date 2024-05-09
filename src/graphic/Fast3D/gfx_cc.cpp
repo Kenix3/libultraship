@@ -4,24 +4,24 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 4; k++) {
-                cc_features->c[i][j][k] = (shader_id0 >> (i * 32 + j * 16 + k * 4)) & 0xf;
+                cc_features->c[i][j][k] = shader_id0 >> i * 32 + j * 16 + k * 4 & 0xf;
             }
         }
     }
 
-    cc_features->opt_alpha = (shader_id1 & SHADER_OPT_ALPHA) != 0;
-    cc_features->opt_fog = (shader_id1 & SHADER_OPT_FOG) != 0;
-    cc_features->opt_texture_edge = (shader_id1 & SHADER_OPT_TEXTURE_EDGE) != 0;
-    cc_features->opt_noise = (shader_id1 & SHADER_OPT_NOISE) != 0;
-    cc_features->opt_2cyc = (shader_id1 & SHADER_OPT_2CYC) != 0;
-    cc_features->opt_alpha_threshold = (shader_id1 & SHADER_OPT_ALPHA_THRESHOLD) != 0;
-    cc_features->opt_invisible = (shader_id1 & SHADER_OPT_INVISIBLE) != 0;
-    cc_features->opt_grayscale = (shader_id1 & SHADER_OPT_GRAYSCALE) != 0;
+    cc_features->opt_alpha = (shader_id1 & SHADER_OPT(ALPHA)) != 0;
+    cc_features->opt_fog = (shader_id1 & SHADER_OPT(FOG)) != 0;
+    cc_features->opt_texture_edge = (shader_id1 & SHADER_OPT(TEXTURE_EDGE)) != 0;
+    cc_features->opt_noise = (shader_id1 & SHADER_OPT(NOISE)) != 0;
+    cc_features->opt_2cyc = (shader_id1 & SHADER_OPT(_2CYC)) != 0;
+    cc_features->opt_alpha_threshold = (shader_id1 & SHADER_OPT(ALPHA_THRESHOLD)) != 0;
+    cc_features->opt_invisible = (shader_id1 & SHADER_OPT(INVISIBLE)) != 0;
+    cc_features->opt_grayscale = (shader_id1 & SHADER_OPT(GRAYSCALE)) != 0;
 
-    cc_features->clamp[0][0] = (shader_id1 & SHADER_OPT_TEXEL0_CLAMP_S);
-    cc_features->clamp[0][1] = (shader_id1 & SHADER_OPT_TEXEL0_CLAMP_T);
-    cc_features->clamp[1][0] = (shader_id1 & SHADER_OPT_TEXEL1_CLAMP_S);
-    cc_features->clamp[1][1] = (shader_id1 & SHADER_OPT_TEXEL1_CLAMP_T);
+    cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
+    cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
+    cc_features->clamp[1][0] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_S);
+    cc_features->clamp[1][1] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_T);
 
     cc_features->used_textures[0] = false;
     cc_features->used_textures[1] = false;
@@ -56,21 +56,20 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
         cc_features->do_multiply[c][1] = cc_features->c[c][1][1] == SHADER_0 && cc_features->c[c][1][3] == SHADER_0;
         cc_features->do_mix[c][0] = cc_features->c[c][0][1] == cc_features->c[c][0][3];
         cc_features->do_mix[c][1] = cc_features->c[c][1][1] == cc_features->c[c][1][3];
-        cc_features->color_alpha_same[c] =
-            ((shader_id0 >> c * 32) & 0xffff) == ((shader_id0 >> (c * 32 + 16)) & 0xffff);
+        cc_features->color_alpha_same[c] = (shader_id0 >> c * 32 & 0xffff) == (shader_id0 >> c * 32 + 16 & 0xffff);
     }
 
-    if (cc_features->used_textures[0] && (shader_id1 & SHADER_OPT_TEXEL0_MASK)) {
+    if (cc_features->used_textures[0] && shader_id1 & SHADER_OPT(TEXEL0_MASK)) {
         cc_features->used_masks[0] = true;
     }
-    if (cc_features->used_textures[1] && (shader_id1 & SHADER_OPT_TEXEL1_MASK)) {
+    if (cc_features->used_textures[1] && shader_id1 & SHADER_OPT(TEXEL1_MASK)) {
         cc_features->used_masks[1] = true;
     }
 
-    if (cc_features->used_textures[0] && (shader_id1 & SHADER_OPT_TEXEL0_BLEND)) {
+    if (cc_features->used_textures[0] && shader_id1 & SHADER_OPT(TEXEL0_BLEND)) {
         cc_features->used_blend[0] = true;
     }
-    if (cc_features->used_textures[1] && (shader_id1 & SHADER_OPT_TEXEL1_BLEND)) {
+    if (cc_features->used_textures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
         cc_features->used_blend[1] = true;
     }
 }
