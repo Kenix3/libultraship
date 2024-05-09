@@ -249,7 +249,7 @@ static const char* acmux_to_string(uint32_t acmux) {
 }
 
 static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& key) {
-    bool is_2cyc = (key.options & (uint64_t)SHADER_OPT_2CYC) != 0;
+    bool is_2cyc = (key.options & SHADER_OPT(_2CYC)) != 0;
 
     uint8_t c[2][2][4];
     uint64_t shader_id0 = 0;
@@ -1459,50 +1459,50 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     }
 
     if (use_alpha) {
-        cc_options |= (uint64_t)SHADER_OPT_ALPHA;
+        cc_options |= SHADER_OPT(ALPHA);
     }
     if (use_fog) {
-        cc_options |= (uint64_t)SHADER_OPT_FOG;
+        cc_options |= SHADER_OPT(FOG);
     }
     if (texture_edge) {
-        cc_options |= (uint64_t)SHADER_OPT_TEXTURE_EDGE;
+        cc_options |= SHADER_OPT(TEXTURE_EDGE);
     }
     if (use_noise) {
-        cc_options |= (uint64_t)SHADER_OPT_NOISE;
+        cc_options |= SHADER_OPT(NOISE);
     }
     if (use_2cyc) {
-        cc_options |= (uint64_t)SHADER_OPT_2CYC;
+        cc_options |= SHADER_OPT(_2CYC);
     }
     if (alpha_threshold) {
-        cc_options |= (uint64_t)SHADER_OPT_ALPHA_THRESHOLD;
+        cc_options |= SHADER_OPT(ALPHA_THRESHOLD);
     }
     if (invisible) {
-        cc_options |= (uint64_t)SHADER_OPT_INVISIBLE;
+        cc_options |= SHADER_OPT(INVISIBLE);
     }
     if (use_grayscale) {
-        cc_options |= (uint64_t)SHADER_OPT_GRAYSCALE;
+        cc_options |= SHADER_OPT(GRAYSCALE);
     }
     if (g_rdp.loaded_texture[0].masked) {
-        cc_options |= (uint64_t)SHADER_OPT_TEXEL0_MASK;
+        cc_options |= SHADER_OPT(TEXEL0_MASK);
     }
     if (g_rdp.loaded_texture[1].masked) {
-        cc_options |= (uint64_t)SHADER_OPT_TEXEL1_MASK;
+        cc_options |= SHADER_OPT(TEXEL1_MASK);
     }
     if (g_rdp.loaded_texture[0].blended) {
-        cc_options |= (uint64_t)SHADER_OPT_TEXEL0_BLEND;
+        cc_options |= SHADER_OPT(TEXEL0_BLEND);
     }
     if (g_rdp.loaded_texture[1].blended) {
-        cc_options |= (uint64_t)SHADER_OPT_TEXEL1_BLEND;
-    }
-
-    // If we are not using alpha, clear the alpha components of the combiner as they have no effect
-    if (!use_alpha) {
-        cc_options &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
+        cc_options |= SHADER_OPT(TEXEL1_BLEND);
     }
 
     ColorCombinerKey key;
     key.combine_mode = g_rdp.combine_mode;
     key.options = cc_options;
+
+    // If we are not using alpha, clear the alpha components of the combiner as they have no effect
+    if (!use_alpha) {
+        key.combine_mode &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
+    }
 
     ColorCombiner* comb = gfx_lookup_or_create_color_combiner(key);
 
@@ -1587,7 +1587,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     struct ShaderProgram* prg = comb->prg[tm];
     if (prg == NULL) {
         comb->prg[tm] = prg =
-            gfx_lookup_or_create_shader_program(comb->shader_id0, comb->shader_id1 | (tm * SHADER_OPT_TEXEL0_CLAMP_S));
+            gfx_lookup_or_create_shader_program(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
     }
     if (prg != rendering_state.shader_program) {
         gfx_flush();
