@@ -11,10 +11,12 @@ class DisplayList : public Ship::Resource<Gfx> {
     using Resource::Resource;
 
     DisplayList();
+    ~DisplayList();
 
     Gfx* GetPointer() override;
     size_t GetPointerSize() override;
 
     std::vector<Gfx> Instructions;
+    std::vector<char*> Strings;
 };
 } // namespace LUS
