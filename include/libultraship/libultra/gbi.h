@@ -48,41 +48,10 @@
     } while (0)
 
 #define F3DEX_GBI_2
-
 #ifdef F3DEX_GBI_2
 #ifndef F3DEX_GBI
 #define F3DEX_GBI
 #endif
-#define G_NOOP 0x00
-#define G_RDPHALF_2 0xf1
-#define G_SETOTHERMODE_H 0xe3
-#define G_SETOTHERMODE_L 0xe2
-#define G_RDPHALF_1 0xe1
-#define G_SPNOOP 0xe0
-#define G_ENDDL 0xdf
-#define G_DL 0xde
-#define G_LOAD_UCODE 0xdd
-#define G_MOVEMEM 0xdc
-#define G_MOVEWORD 0xdb
-#define G_MTX 0xda
-#define G_GEOMETRYMODE 0xd9
-#define G_POPMTX 0xd8
-#define G_TEXTURE 0xd7
-#define G_DMA_IO 0xd6
-#define G_SPECIAL_1 0xd5
-#define G_SPECIAL_2 0xd4
-#define G_SPECIAL_3 0xd3
-
-#define G_VTX 0x01
-#define G_MODIFYVTX 0x02
-#define G_CULLDL 0x03
-#define G_BRANCH_Z 0x04
-#define G_TRI1 0x05
-#define G_TRI2 0x06
-#define G_QUAD 0x07
-#define G_LINE3D 0x08
-#else              /* F3DEX_GBI_2 */
-
 /* DMA commands: */
 #define G_SPNOOP 0 /* handle 0 gracefully */
 #define G_MTX 1
@@ -94,6 +63,8 @@
 #define G_RESERVED2 7     /* not implemeted */
 #define G_RESERVED3 8     /* not implemeted */
 #define G_SPRITE2D_BASE 9 /* sprite command */
+
+#define G_GEOMETRYMODE 0xd9
 
 /* IMMEDIATE commands: */
 #define G_IMMFIRST -65
@@ -115,6 +86,7 @@
 #define G_TRI2 (G_IMMFIRST - 14)
 #define G_BRANCH_Z (G_IMMFIRST - 15)
 #define G_LOAD_UCODE (G_IMMFIRST - 16)
+#define G_QUAD G_TRI2
 #else
 #define G_RDPHALF_CONT (G_IMMFIRST - 13)
 #endif
@@ -1639,19 +1611,27 @@ typedef struct {
     unsigned long w3;
 } TexRect;
 
+typedef struct {
+    const char* file;
+    int idx;
+    bool valid;
+} Trace;
+
+#define MakeTrace() { __FILE__, __LINE__, true }
+
 /*
  * Generic Gfx Packet
  */
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
-
+    Trace trace;
     // unsigned long long w0;
     // unsigned long long w1;
 } Gwords;
 
 #ifdef __cplusplus
-static_assert(sizeof(Gwords) == 2 * sizeof(void*), "Display list size is bad");
+//static_assert(sizeof(Gwords) == 2 * sizeof(void*), "Display list size is bad");
 #endif
 
 /*
@@ -1706,17 +1686,26 @@ typedef union Gfx {
                                                                                           \
         _g->words.w0 = (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)); \
         _g->words.w1 = (uintptr_t)(s);                                                    \
+        _g->words.trace.file = __FILE__;                                                  \
+        _g->words.trace.idx = __LINE__;                                                   \
+        _g->words.trace.valid = true;  
     })
 
-#define gsDma1p(c, s, l, p) \
-    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s) }
+#define gsDma1p(c, s, l, p)                                                                   \
+    {                                                                                         \
+        { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s),  \
+        MakeTrace() } \
+    }
 
 #define gDma2p(pkt, c, adrs, len, idx, ofs)                                                                          \
-    _DW({                                                                                                            \
+    _DW({                                                                                                                \
         Gfx* _g = (Gfx*)(pkt);                                                                                       \
         _g->words.w0 =                                                                                               \
             (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)); \
         _g->words.w1 = (uintptr_t)(adrs);                                                                            \
+        _g->words.trace.file = __FILE__;                                                                             \
+        _g->words.trace.idx = __LINE__;                                                                              \
+        _g->words.trace.valid = true;                                                                                \
     })
 #define gsDma2p(c, adrs, len, idx, ofs)                                                                          \
     {                                                                                                            \
@@ -2878,7 +2867,7 @@ typedef union Gfx {
 #define gDPSetMaskImage(pkt, i) gDPSetDepthImage(pkt, i)
 #define gsDPSetMaskImage(i) gsDPSetDepthImage(i)
 
-#define __gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
+#define gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
 #define gsDPSetTextureImage(f, s, w, i) gsSetImage(G_SETTIMG, f, s, w, i)
 #define __gDPSetTextureImageFB(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG_FB, f, s, w, i)
 
