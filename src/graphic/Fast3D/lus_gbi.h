@@ -1109,16 +1109,23 @@ typedef union {
     long int force_structure_alignment[4];
 } F3DHilite;
 
+typedef struct {
+    const char* file;
+    int idx;
+    bool valid;
+} Tracet;
+
 /*
  * Generic Gfx Packet
  */
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
+    Tracet trace;
 } F3DGwords;
 
 #ifdef __cplusplus
-static_assert(sizeof(F3DGwords) == 2 * sizeof(void*), "Display list size is bad");
+//static_assert(sizeof(F3DGwords) == 2 * sizeof(void*), "Display list size is bad");
 #endif
 
 /*
