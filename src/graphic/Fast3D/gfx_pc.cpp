@@ -148,7 +148,7 @@ struct MaskedTextureEntry {
 
 static map<string, MaskedTextureEntry> masked_textures;
 
-static UcodeHandlers ucode_handler_index = ucode_f3dex2;
+static UcodeHandlers ucode_handler_index = ucode_f3dex;
 
 const static std::unordered_map<Attribute, std::any> f3dex2AttrHandler = {
     { MTX_PROJECTION, F3DEX2_G_MTX_PROJECTION }, { MTX_LOAD, F3DEX2_G_MTX_LOAD },     { MTX_PUSH, F3DEX2_G_MTX_PUSH },
@@ -3791,7 +3791,7 @@ const char* GfxGetOpcodeName(int8_t opcode) {
         if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
             return ucode_handlers[ucode_handler_index]->at(opcode).first;
         } else {
-            SPDLOG_CRITICAL("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
             return nullptr;
         }
     }
@@ -3809,6 +3809,9 @@ static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
     int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
+
+            SPDLOG_INFO("Trace File: {}", cmd->words.trace.file);
+        SPDLOG_INFO("Trace Line: {}", cmd->words.trace.idx);
 
     if (opcode == F3DEX2_G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
@@ -3831,7 +3834,7 @@ static void gfx_step() {
                 return;
             }
         } else {
-            SPDLOG_CRITICAL("Unhandled OP code: {}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
         }
     }
 
@@ -3881,7 +3884,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
         tex_upload_buffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
 
-    ucode_handler_index = UcodeHandlers::ucode_f3dex2;
+    ucode_handler_index = UcodeHandlers::ucode_f3dex;
 }
 
 void gfx_destroy(void) {
