@@ -3791,7 +3791,7 @@ const char* GfxGetOpcodeName(int8_t opcode) {
         if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
             return ucode_handlers[ucode_handler_index]->at(opcode).first;
         } else {
-            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint32_t)opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
             return nullptr;
         }
     }
@@ -3831,7 +3831,7 @@ static void gfx_step() {
                 return;
             }
         } else {
-            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint32_t)opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
         }
     }
 
