@@ -166,8 +166,66 @@ void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue)
 
 void ConsoleVariable::ClearVariable(const char* name) {
     std::shared_ptr<Config> conf = Ship::Context::GetInstance()->GetConfig();
+    auto var = Get(name);
+    if (var != nullptr) {
+        bool color = var->Type == ConsoleVariableType::Color ||
+                     var->Type == ConsoleVariableType::Color24;
+        if (color) {
+            std::string a = StringHelper::Sprintf("%s.%s", name, "A");
+            std::string b = StringHelper::Sprintf("%s.%s", name, "B");
+            std::string g = StringHelper::Sprintf("%s.%s", name, "G");
+            std::string r = StringHelper::Sprintf("%s.%s", name, "R");
+            std::string t = StringHelper::Sprintf("%s.%s", name, "Type");
+            mVariables.erase(a);
+            mVariables.erase(b);
+            mVariables.erase(g);
+            mVariables.erase(r);
+            mVariables.erase(t);
+            conf->Erase(std::string("CVars.") + a);
+            conf->Erase(std::string("CVars.") + b);
+            conf->Erase(std::string("CVars.") + g);
+            conf->Erase(std::string("CVars.") + r);
+            conf->Erase(std::string("CVars.") + t);
+        }
+    }
     mVariables.erase(name);
     conf->Erase(StringHelper::Sprintf("CVars.%s", name));
+}
+
+void ConsoleVariable::ClearBlock(const char* name) {
+    std::shared_ptr<Config> conf = Ship::Context::GetInstance()->GetConfig();
+    conf->EraseBlock(StringHelper::Sprintf("CVars.%s", name));
+    Load();
+}
+
+void ConsoleVariable::CopyVariable(const char* from, const char* to) {
+    auto& variableFrom = mVariables[from];
+    if (!variableFrom) {
+        return;
+    }
+    auto& variableTo = mVariables[to];
+    if (!variableTo) {
+        variableTo = std::make_shared<CVar>();
+    }
+
+    variableTo->Type = variableFrom->Type;
+    switch (variableTo->Type) {
+        case ConsoleVariableType::Integer:
+            variableTo->Integer = variableFrom->Integer;
+            break;
+        case ConsoleVariableType::Float:
+            variableTo->Float = variableFrom->Float;
+            break;
+        case ConsoleVariableType::String:
+            variableTo->String = variableFrom->String;
+            break;
+        case ConsoleVariableType::Color:
+            variableTo->Color = variableFrom->Color;
+            break;
+        case ConsoleVariableType::Color24:
+            variableTo->Color24 = variableFrom->Color24;
+            break;
+    }
 }
 
 void ConsoleVariable::Save() {
@@ -176,8 +234,7 @@ void ConsoleVariable::Save() {
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
 
-        if (variable.second->Type == ConsoleVariableType::String && variable.second != nullptr &&
-            variable.second->String.length() > 0) {
+        if (variable.second->Type == ConsoleVariableType::String && variable.second != nullptr) {
             conf->SetString(key, std::string(variable.second->String));
         } else if (variable.second->Type == ConsoleVariableType::Integer) {
             conf->SetInt(key, variable.second->Integer);
@@ -210,6 +267,9 @@ void ConsoleVariable::Save() {
 void ConsoleVariable::Load() {
     std::shared_ptr<Config> conf = Ship::Context::GetInstance()->GetConfig();
     conf->Reload();
+    if (!mVariables.empty()) {
+        mVariables.clear();
+    }
 
     LoadFromPath("", conf->GetNestedJson()["CVars"].items());
 
