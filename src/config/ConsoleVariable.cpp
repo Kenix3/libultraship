@@ -168,8 +168,7 @@ void ConsoleVariable::ClearVariable(const char* name) {
     std::shared_ptr<Config> conf = Ship::Context::GetInstance()->GetConfig();
     auto var = Get(name);
     if (var != nullptr) {
-        bool color = var->Type == ConsoleVariableType::Color ||
-                     var->Type == ConsoleVariableType::Color24;
+        bool color = var->Type == ConsoleVariableType::Color || var->Type == ConsoleVariableType::Color24;
         if (color) {
             std::string a = StringHelper::Sprintf("%s.%s", name, "A");
             std::string b = StringHelper::Sprintf("%s.%s", name, "B");

@@ -142,7 +142,7 @@ void Config::EraseBlock(const std::string& key) {
                     if (curDot == dots.size()) {
                         gjson2.erase(dot);
                     } else {
-                        gjson2 = gjson2[dot].items();
+                        gjson2 = gjson2[dot];
                     }
                 }
             }
