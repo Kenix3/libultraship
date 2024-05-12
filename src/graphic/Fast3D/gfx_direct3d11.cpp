@@ -982,13 +982,20 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
     TextureData& td_src = d3d.textures[fb_src.texture_id];
 
     // Textures are the same size so we can do a direct copy or resolve
-    if (td_src.height == td_dst.height) {
+    if (td_src.height == td_dst.height && td_src.width == td_dst.width) {
         if (fb_src.msaa_level <= 1) {
             d3d.context->CopyResource(td_dst.texture.Get(), td_src.texture.Get());
         } else {
             d3d.context->ResolveSubresource(td_dst.texture.Get(), 0, td_src.texture.Get(), 0,
                                             DXGI_FORMAT_R8G8B8A8_UNORM);
         }
+        return;
+    }
+
+    if (srcY1 > (int)td_src.height || srcX1 > (int)td_src.width || srcX0 < 0 || srcY0 < 0 ||
+        dstY1 > (int)td_dst.height || dstX1 > (int)td_dst.width || dstX0 < 0 || dstY0 < 0) {
+        // Using a source region larger than the source resource or copy outside of the destination resource is
+        // considered undefined behavior and could lead to removal of the rendering device
         return;
     }
 
