@@ -46,6 +46,8 @@ class ConsoleVariable {
     void RegisterColor24(const char* name, Color_RGB8 defaultValue);
 
     void ClearVariable(const char* name);
+    void ClearBlock(const char* name);
+    void CopyVariable(const char* from, const char* to);
 
     void Save();
     void Load();

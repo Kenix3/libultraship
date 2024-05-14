@@ -70,6 +70,14 @@ void CVarClear(const char* name) {
     Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(name);
 }
 
+void CVarClearBlock(const char* name) {
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearBlock(name);
+}
+
+void CVarCopy(const char* from, const char* to) {
+    Ship::Context::GetInstance()->GetConsoleVariables()->CopyVariable(from, to);
+}
+
 void CVarLoad() {
     Ship::Context::GetInstance()->GetConsoleVariables()->Load();
 }

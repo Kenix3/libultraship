@@ -33,6 +33,9 @@ void CVarRegisterColor(const char* name, Color_RGBA8 defaultValue);
 void CVarRegisterColor24(const char* name, Color_RGB8 defaultValue);
 
 void CVarClear(const char* name);
+bool CVarExists(const char* name);
+void CVarClearBlock(const char* name);
+void CVarCopy(const char* from, const char* to);
 
 void CVarLoad();
 void CVarSave();
