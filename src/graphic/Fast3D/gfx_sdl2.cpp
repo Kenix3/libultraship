@@ -501,8 +501,8 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            Ship::Context::GetInstance()->GetConsoleVariables()->GetString(CVAR_DROPPED_FILE, event.drop.file);
-            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_NEW_FILE_DROPPED, 1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, event.drop.file);
+            Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
             Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             break;
         case SDL_QUIT:

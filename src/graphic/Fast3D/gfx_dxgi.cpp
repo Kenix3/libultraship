@@ -355,8 +355,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            Ship::Context::GetInstance()->GetConsoleVariables()->GetString(CVAR_DROPPED_FILE, fileName);
-            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_NEW_FILE_DROPPED, 1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
+            Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
             Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 
             break;
