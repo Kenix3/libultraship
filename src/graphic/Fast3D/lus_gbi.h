@@ -1,69 +1,69 @@
 #pragma once
 #include <stdint.h>
-#define OPCODE(x) (int8_t)(x)
+#define OPCODE(x) (uint8_t)(x)
 
 #include "f3dex.h"
 #include "f3dex2.h"
 
 /* RDP commands: */
-constexpr int8_t RDP_G_SETCIMG = OPCODE(0xff);         /*  -1 */
-constexpr int8_t RDP_G_SETZIMG = OPCODE(0xfe);         /*  -2 */
-constexpr int8_t RDP_G_SETTIMG = OPCODE(0xfd);         /*  -3 */
-constexpr int8_t RDP_G_SETCOMBINE = OPCODE(0xfc);      /*  -4 */
-constexpr int8_t RDP_G_SETENVCOLOR = OPCODE(0xfb);     /*  -5 */
-constexpr int8_t RDP_G_SETPRIMCOLOR = OPCODE(0xfa);    /*  -6 */
-constexpr int8_t RDP_G_SETBLENDCOLOR = OPCODE(0xf9);   /*  -7 */
-constexpr int8_t RDP_G_SETFOGCOLOR = OPCODE(0xf8);     /*  -8 */
-constexpr int8_t RDP_G_SETFILLCOLOR = OPCODE(0xf7);    /*  -9 */
-constexpr int8_t RDP_G_FILLRECT = OPCODE(0xf6);        /* -10 */
-constexpr int8_t RDP_G_SETTILE = OPCODE(0xf5);         /* -11 */
-constexpr int8_t RDP_G_LOADTILE = OPCODE(0xf4);        /* -12 */
-constexpr int8_t RDP_G_LOADBLOCK = OPCODE(0xf3);       /* -13 */
-constexpr int8_t RDP_G_SETTILESIZE = OPCODE(0xf2);     /* -14 */
-constexpr int8_t RDP_G_LOADTLUT = OPCODE(0xf0);        /* -16 */
-constexpr int8_t RDP_G_RDPSETOTHERMODE = OPCODE(0xef); /* -17 */
-constexpr int8_t RDP_G_SETPRIMDEPTH = OPCODE(0xee);    /* -18 */
-constexpr int8_t RDP_G_SETSCISSOR = OPCODE(0xed);      /* -19 */
-constexpr int8_t RDP_G_SETCONVERT = OPCODE(0xec);      /* -20 */
-constexpr int8_t RDP_G_SETKEYR = OPCODE(0xeb);         /* -21 */
-constexpr int8_t RDP_G_SETKEYGB = OPCODE(0xea);        /* -22 */
-constexpr int8_t RDP_G_RDPFULLSYNC = OPCODE(0xe9);     /* -23 */
-constexpr int8_t RDP_G_RDPTILESYNC = OPCODE(0xe8);     /* -24 */
-constexpr int8_t RDP_G_RDPPIPESYNC = OPCODE(0xe7);     /* -25 */
-constexpr int8_t RDP_G_RDPLOADSYNC = OPCODE(0xe6);     /* -26 */
-constexpr int8_t RDP_G_TEXRECTFLIP = OPCODE(0xe5);     /* -27 */
-constexpr int8_t RDP_G_TEXRECT = OPCODE(0xe4);         /* -28 */
+constexpr uint8_t RDP_G_SETCIMG = OPCODE(0xff);         /*  -1 */
+constexpr uint8_t RDP_G_SETZIMG = OPCODE(0xfe);         /*  -2 */
+constexpr uint8_t RDP_G_SETTIMG = OPCODE(0xfd);         /*  -3 */
+constexpr uint8_t RDP_G_SETCOMBINE = OPCODE(0xfc);      /*  -4 */
+constexpr uint8_t RDP_G_SETENVCOLOR = OPCODE(0xfb);     /*  -5 */
+constexpr uint8_t RDP_G_SETPRIMCOLOR = OPCODE(0xfa);    /*  -6 */
+constexpr uint8_t RDP_G_SETBLENDCOLOR = OPCODE(0xf9);   /*  -7 */
+constexpr uint8_t RDP_G_SETFOGCOLOR = OPCODE(0xf8);     /*  -8 */
+constexpr uint8_t RDP_G_SETFILLCOLOR = OPCODE(0xf7);    /*  -9 */
+constexpr uint8_t RDP_G_FILLRECT = OPCODE(0xf6);        /* -10 */
+constexpr uint8_t RDP_G_SETTILE = OPCODE(0xf5);         /* -11 */
+constexpr uint8_t RDP_G_LOADTILE = OPCODE(0xf4);        /* -12 */
+constexpr uint8_t RDP_G_LOADBLOCK = OPCODE(0xf3);       /* -13 */
+constexpr uint8_t RDP_G_SETTILESIZE = OPCODE(0xf2);     /* -14 */
+constexpr uint8_t RDP_G_LOADTLUT = OPCODE(0xf0);        /* -16 */
+constexpr uint8_t RDP_G_RDPSETOTHERMODE = OPCODE(0xef); /* -17 */
+constexpr uint8_t RDP_G_SETPRIMDEPTH = OPCODE(0xee);    /* -18 */
+constexpr uint8_t RDP_G_SETSCISSOR = OPCODE(0xed);      /* -19 */
+constexpr uint8_t RDP_G_SETCONVERT = OPCODE(0xec);      /* -20 */
+constexpr uint8_t RDP_G_SETKEYR = OPCODE(0xeb);         /* -21 */
+constexpr uint8_t RDP_G_SETKEYGB = OPCODE(0xea);        /* -22 */
+constexpr uint8_t RDP_G_RDPFULLSYNC = OPCODE(0xe9);     /* -23 */
+constexpr uint8_t RDP_G_RDPTILESYNC = OPCODE(0xe8);     /* -24 */
+constexpr uint8_t RDP_G_RDPPIPESYNC = OPCODE(0xe7);     /* -25 */
+constexpr uint8_t RDP_G_RDPLOADSYNC = OPCODE(0xe6);     /* -26 */
+constexpr uint8_t RDP_G_TEXRECTFLIP = OPCODE(0xe5);     /* -27 */
+constexpr uint8_t RDP_G_TEXRECT = OPCODE(0xe4);         /* -28 */
 
 // CUSTOM OTR COMMANDS
-constexpr int8_t OTR_G_SETTIMG_OTR_HASH = OPCODE(0x20);
-constexpr int8_t OTR_G_SETFB = OPCODE(0x21);
-constexpr int8_t OTR_G_RESETFB = OPCODE(0x22);
-constexpr int8_t OTR_G_SETTIMG_FB = OPCODE(0x23);
-constexpr int8_t OTR_G_VTX_OTR_FILEPATH = OPCODE(0x24);
-constexpr int8_t OTR_G_SETTIMG_OTR_FILEPATH = OPCODE(0x25);
-constexpr int8_t OTR_G_TRI1_OTR = OPCODE(0x26);
-constexpr int8_t OTR_G_DL_OTR_FILEPATH = OPCODE(0x27);
-constexpr int8_t OTR_G_PUSHCD = OPCODE(0x28);
-constexpr int8_t OTR_G_MTX_OTR2 = OPCODE(0x29);
-constexpr int8_t OTR_G_DL_OTR_HASH = OPCODE(0x31);
-constexpr int8_t OTR_G_VTX_OTR_HASH = OPCODE(0x32);
-constexpr int8_t OTR_G_MARKER = OPCODE(0x33);
-constexpr int8_t OTR_G_INVALTEXCACHE = OPCODE(0x34);
-constexpr int8_t OTR_G_BRANCH_Z_OTR = OPCODE(0x35);
-constexpr int8_t OTR_G_MTX_OTR = OPCODE(0x36);
-constexpr int8_t OTR_G_TEXRECT_WIDE = OPCODE(0x37);
-constexpr int8_t OTR_G_FILLWIDERECT = OPCODE(0x38);
+constexpr uint8_t OTR_G_SETTIMG_OTR_HASH = OPCODE(0x20);
+constexpr uint8_t OTR_G_SETFB = OPCODE(0x21);
+constexpr uint8_t OTR_G_RESETFB = OPCODE(0x22);
+constexpr uint8_t OTR_G_SETTIMG_FB = OPCODE(0x23);
+constexpr uint8_t OTR_G_VTX_OTR_FILEPATH = OPCODE(0x24);
+constexpr uint8_t OTR_G_SETTIMG_OTR_FILEPATH = OPCODE(0x25);
+constexpr uint8_t OTR_G_TRI1_OTR = OPCODE(0x26);
+constexpr uint8_t OTR_G_DL_OTR_FILEPATH = OPCODE(0x27);
+constexpr uint8_t OTR_G_PUSHCD = OPCODE(0x28);
+constexpr uint8_t OTR_G_MTX_OTR2 = OPCODE(0x29);
+constexpr uint8_t OTR_G_DL_OTR_HASH = OPCODE(0x31);
+constexpr uint8_t OTR_G_VTX_OTR_HASH = OPCODE(0x32);
+constexpr uint8_t OTR_G_MARKER = OPCODE(0x33);
+constexpr uint8_t OTR_G_INVALTEXCACHE = OPCODE(0x34);
+constexpr uint8_t OTR_G_BRANCH_Z_OTR = OPCODE(0x35);
+constexpr uint8_t OTR_G_MTX_OTR = OPCODE(0x36);
+constexpr uint8_t OTR_G_TEXRECT_WIDE = OPCODE(0x37);
+constexpr uint8_t OTR_G_FILLWIDERECT = OPCODE(0x38);
 
 /* GFX Effects */
 
 // RDP Cmd
-constexpr int8_t OTR_G_SETGRAYSCALE = OPCODE(0x39);
-constexpr int8_t OTR_G_EXTRAGEOMETRYMODE = OPCODE(0x3a);
-constexpr int8_t OTR_G_COPYFB = OPCODE(0x3b);
-constexpr int8_t OTR_G_IMAGERECT = OPCODE(0x3c);
-constexpr int8_t OTR_G_DL_INDEX = OPCODE(0x3d);
-constexpr int8_t OTR_G_READFB = OPCODE(0x3e);
-constexpr int8_t OTR_G_SETINTENSITY = OPCODE(0x40);
+constexpr uint8_t OTR_G_SETGRAYSCALE = OPCODE(0x39);
+constexpr uint8_t OTR_G_EXTRAGEOMETRYMODE = OPCODE(0x3a);
+constexpr uint8_t OTR_G_COPYFB = OPCODE(0x3b);
+constexpr uint8_t OTR_G_IMAGERECT = OPCODE(0x3c);
+constexpr uint8_t OTR_G_DL_INDEX = OPCODE(0x3d);
+constexpr uint8_t OTR_G_READFB = OPCODE(0x3e);
+constexpr uint8_t OTR_G_SETINTENSITY = OPCODE(0x40);
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1110,15 +1110,25 @@ typedef union {
 } F3DHilite;
 
 /*
+ * Trace structure
+ */
+typedef struct {
+    const char* file;
+    int idx;
+    bool valid;
+} F3DTrace;
+
+/*
  * Generic Gfx Packet
  */
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
+    F3DTrace trace;
 } F3DGwords;
 
 #ifdef __cplusplus
-static_assert(sizeof(F3DGwords) == 2 * sizeof(void*), "Display list size is bad");
+static_assert(sizeof(F3DGwords) == 2 * sizeof(void*) + sizeof(F3DTrace), "Display list size is bad");
 #endif
 
 /*

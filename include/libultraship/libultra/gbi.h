@@ -47,7 +47,7 @@
         macro      \
     } while (0)
 
-#define F3DEX_GBI_2
+#define F3DEX_GBI
 
 #ifdef F3DEX_GBI_2
 #ifndef F3DEX_GBI
@@ -115,6 +115,7 @@
 #define G_TRI2 (G_IMMFIRST - 14)
 #define G_BRANCH_Z (G_IMMFIRST - 15)
 #define G_LOAD_UCODE (G_IMMFIRST - 16)
+#define G_QUAD (G_IMMFIRST - 10)
 #else
 #define G_RDPHALF_CONT (G_IMMFIRST - 13)
 #endif
@@ -1640,18 +1641,28 @@ typedef struct {
 } TexRect;
 
 /*
+ * Trace structure
+ */
+typedef struct {
+    const char* file;
+    int idx;
+    bool valid;
+} Trace;
+
+#define MakeTrace() \
+    { __FILE__, __LINE__, true }
+
+/*
  * Generic Gfx Packet
  */
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
-
-    // unsigned long long w0;
-    // unsigned long long w1;
+    Trace trace;
 } Gwords;
 
 #ifdef __cplusplus
-static_assert(sizeof(Gwords) == 2 * sizeof(void*), "Display list size is bad");
+static_assert((sizeof(Gwords) == 2 * sizeof(void*) + sizeof(Trace)), "Display list size is bad");
 #endif
 
 /*
@@ -1706,10 +1717,13 @@ typedef union Gfx {
                                                                                           \
         _g->words.w0 = (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)); \
         _g->words.w1 = (uintptr_t)(s);                                                    \
+        _g->words.trace.file = __FILE__;                                                  \
+        _g->words.trace.idx = __LINE__;                                                   \
+        _g->words.trace.valid = true;                                                     \
     })
 
 #define gsDma1p(c, s, l, p) \
-    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s) }
+    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s), MakeTrace() }
 
 #define gDma2p(pkt, c, adrs, len, idx, ofs)                                                                          \
     _DW({                                                                                                            \
@@ -1717,11 +1731,14 @@ typedef union Gfx {
         _g->words.w0 =                                                                                               \
             (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)); \
         _g->words.w1 = (uintptr_t)(adrs);                                                                            \
+        _g->words.trace.file = __FILE__;                                                                             \
+        _g->words.trace.idx = __LINE__;                                                                              \
+        _g->words.trace.valid = true;                                                                                \
     })
 #define gsDma2p(c, adrs, len, idx, ofs)                                                                          \
     {                                                                                                            \
         (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)), \
-            (uintptr_t)(adrs)                                                                                    \
+            (uintptr_t)(adrs), MakeTrace()                                                                       \
     }
 
 #define gSPNoOp(pkt) gDma0p(pkt, G_SPNOOP, 0, 0)
@@ -1750,9 +1767,12 @@ typedef union Gfx {
         Gfx* _g = (Gfx*)(pkt);                                                                  \
         _g->words.w0 = _SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7); \
         _g->words.w1 = (uintptr_t)(v);                                                          \
+        _g->words.trace.file = __FILE__;                                                        \
+        _g->words.trace.idx = __LINE__;                                                         \
+        _g->words.trace.valid = true;                                                           \
     })
 #define gsSPVertex(v, n, v0) \
-    { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v) }
+    { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v), MakeTrace() }
 
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
 /*
@@ -1764,10 +1784,10 @@ typedef union Gfx {
  *        | |seg|          address            |
  *        +-+---+-----------------------------+
  */
-#define gSPVertex(pkt, v, n, v0) gDma1p((pkt), G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
+#define __gSPVertex(pkt, v, n, v0) gDma1p((pkt), G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #define gsSPVertex(v, n, v0) gsDma1p(G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #else
-#define gSPVertex(pkt, v, n, v0) gDma1p(pkt, G_VTX, v, sizeof(Vtx) * (n), ((n)-1) << 4 | (v0))
+#define __gSPVertex(pkt, v, n, v0) gDma1p(pkt, G_VTX, v, sizeof(Vtx) * (n), ((n)-1) << 4 | (v0))
 #define gsSPVertex(v, n, v0) gsDma1p(G_VTX, v, sizeof(Vtx) * (n), ((n)-1) << 4 | (v0))
 #endif
 
@@ -1916,6 +1936,8 @@ typedef union Gfx {
     (_SHIFTL((flag), 24, 8) | _SHIFTL((v0)*10, 16, 8) | _SHIFTL((v1)*10, 8, 8) | _SHIFTL((wd), 0, 8))
 #endif
 
+#define gsSP1TriangleOTR(v0, v1, v2, flag) \
+    { _SHIFTL(G_TRI1_OTR, 24, 8) | __gsSP1Triangle_w1f(v0, v1, v2, flag), 0 }
 #ifdef F3DEX_GBI_2
 /***
  ***  1 Triangle
@@ -1930,8 +1952,6 @@ typedef union Gfx {
 #define gsSP1Triangle(v0, v1, v2, flag) \
     { _SHIFTL(G_TRI1, 24, 8) | __gsSP1Triangle_w1f(v0, v1, v2, flag), 0 }
 
-#define gsSP1TriangleOTR(v0, v1, v2, flag) \
-    { _SHIFTL(G_TRI1_OTR, 24, 8) | __gsSP1Triangle_w1f(v0, v1, v2, flag), 0 }
 
 /***
  ***  Line
@@ -2878,7 +2898,7 @@ typedef union Gfx {
 #define gDPSetMaskImage(pkt, i) gDPSetDepthImage(pkt, i)
 #define gsDPSetMaskImage(i) gsDPSetDepthImage(i)
 
-#define __gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
+#define gDPSetTextureImage(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG, f, s, w, i)
 #define gsDPSetTextureImage(f, s, w, i) gsSetImage(G_SETTIMG, f, s, w, i)
 #define __gDPSetTextureImageFB(pkt, f, s, w, i) gSetImage(pkt, G_SETTIMG_FB, f, s, w, i)
 

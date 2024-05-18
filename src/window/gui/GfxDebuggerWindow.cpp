@@ -26,7 +26,7 @@ void GfxDebuggerWindow::UpdateElement() {
 }
 
 // LUSTODO handle switching ucodes
-static const char* GetOpName(int8_t op) {
+static const char* GetOpName(uint8_t op) {
     return GfxGetOpcodeName(op);
 }
 
@@ -78,7 +78,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
         gfx_path.pop_back();
     };
 
-    auto simple_node = [dbg, node_with_text](const F3DGfx* cmd, int8_t opcode) mutable {
+    auto simple_node = [dbg, node_with_text](const F3DGfx* cmd, uint8_t opcode) mutable {
         const char* opname = GetOpName(opcode);
         [[maybe_unused]] size_t size = 1;
         if (opcode == RDP_G_TEXRECT)
@@ -106,13 +106,13 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
             node_with_text(cmd, fmt::format("{}", opname));
 #endif
         } else {
-            int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
+            uint8_t opcode = (uint8_t)(cmd->words.w0 >> 24);
             node_with_text(cmd, fmt::format("UNK: 0x{:X}", opcode));
         }
     };
 
     while (true) {
-        int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
+        uint8_t opcode = (uint8_t)(cmd->words.w0 >> 24);
         const F3DGfx* cmd0 = cmd;
         switch (opcode) {
 
@@ -146,7 +146,6 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
             }
 
             case OTR_G_DL_OTR_HASH: {
-
                 if (C0(16, 1) == 0) {
                     cmd++;
                     uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;

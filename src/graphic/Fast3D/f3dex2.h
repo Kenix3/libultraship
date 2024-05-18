@@ -1,43 +1,43 @@
 #pragma once
 
-constexpr int8_t F3DEX2_G_NOOP = OPCODE(0x00);
-constexpr int8_t F3DEX2_G_RDPHALF_2 = OPCODE(0xf1);
-constexpr int8_t F3DEX2_G_SETOTHERMODE_H = OPCODE(0xe3);
-constexpr int8_t F3DEX2_G_SETOTHERMODE_L = OPCODE(0xe2);
-constexpr int8_t F3DEX2_G_RDPHALF_1 = OPCODE(0xe1);
-constexpr int8_t F3DEX2_G_SPNOOP = OPCODE(0xe0);
-constexpr int8_t F3DEX2_G_ENDDL = OPCODE(0xdf);
-constexpr int8_t F3DEX2_G_DL = OPCODE(0xde);
-constexpr int8_t F3DEX2_G_LOAD_UCODE = OPCODE(0xdd);
-constexpr int8_t F3DEX2_G_MOVEMEM = OPCODE(0xdc);
-constexpr int8_t F3DEX2_G_MOVEWORD = OPCODE(0xdb);
-constexpr int8_t F3DEX2_G_MTX = OPCODE(0xda);
-constexpr int8_t F3DEX2_G_GEOMETRYMODE = OPCODE(0xd9);
-constexpr int8_t F3DEX2_G_POPMTX = OPCODE(0xd8);
-constexpr int8_t F3DEX2_G_TEXTURE = OPCODE(0xd7);
-constexpr int8_t F3DEX2_G_DMA_IO = OPCODE(0xd6);
-constexpr int8_t F3DEX2_G_SPECIAL_1 = OPCODE(0xd5);
-constexpr int8_t F3DEX2_G_SPECIAL_2 = OPCODE(0xd4);
-constexpr int8_t F3DEX2_G_SPECIAL_3 = OPCODE(0xd3);
+constexpr uint8_t F3DEX2_G_NOOP = OPCODE(0x00);
+constexpr uint8_t F3DEX2_G_RDPHALF_2 = OPCODE(0xf1);
+constexpr uint8_t F3DEX2_G_SETOTHERMODE_H = OPCODE(0xe3);
+constexpr uint8_t F3DEX2_G_SETOTHERMODE_L = OPCODE(0xe2);
+constexpr uint8_t F3DEX2_G_RDPHALF_1 = OPCODE(0xe1);
+constexpr uint8_t F3DEX2_G_SPNOOP = OPCODE(0xe0);
+constexpr uint8_t F3DEX2_G_ENDDL = OPCODE(0xdf);
+constexpr uint8_t F3DEX2_G_DL = OPCODE(0xde);
+constexpr uint8_t F3DEX2_G_LOAD_UCODE = OPCODE(0xdd);
+constexpr uint8_t F3DEX2_G_MOVEMEM = OPCODE(0xdc);
+constexpr uint8_t F3DEX2_G_MOVEWORD = OPCODE(0xdb);
+constexpr uint8_t F3DEX2_G_MTX = OPCODE(0xda);
+constexpr uint8_t F3DEX2_G_GEOMETRYMODE = OPCODE(0xd9);
+constexpr uint8_t F3DEX2_G_POPMTX = OPCODE(0xd8);
+constexpr uint8_t F3DEX2_G_TEXTURE = OPCODE(0xd7);
+constexpr uint8_t F3DEX2_G_DMA_IO = OPCODE(0xd6);
+constexpr uint8_t F3DEX2_G_SPECIAL_1 = OPCODE(0xd5);
+constexpr uint8_t F3DEX2_G_SPECIAL_2 = OPCODE(0xd4);
+constexpr uint8_t F3DEX2_G_SPECIAL_3 = OPCODE(0xd3);
 
-constexpr int8_t F3DEX2_G_VTX = OPCODE(0x01);
-constexpr int8_t F3DEX2_G_MODIFYVTX = OPCODE(0x02);
-constexpr int8_t F3DEX2_G_CULLDL = OPCODE(0x03);
-constexpr int8_t F3DEX2_G_BRANCH_Z = OPCODE(0x04);
-constexpr int8_t F3DEX2_G_TRI1 = OPCODE(0x05);
-constexpr int8_t F3DEX2_G_TRI2 = OPCODE(0x06);
-constexpr int8_t F3DEX2_G_QUAD = OPCODE(0x07);
-constexpr int8_t F3DEX2_G_LINE3D = OPCODE(0x08);
+constexpr uint8_t F3DEX2_G_VTX = OPCODE(0x01);
+constexpr uint8_t F3DEX2_G_MODIFYVTX = OPCODE(0x02);
+constexpr uint8_t F3DEX2_G_CULLDL = OPCODE(0x03);
+constexpr uint8_t F3DEX2_G_BRANCH_Z = OPCODE(0x04);
+constexpr uint8_t F3DEX2_G_TRI1 = OPCODE(0x05);
+constexpr uint8_t F3DEX2_G_TRI2 = OPCODE(0x06);
+constexpr uint8_t F3DEX2_G_QUAD = OPCODE(0x07);
+constexpr uint8_t F3DEX2_G_LINE3D = OPCODE(0x08);
 
 /*
  * G_MTX: parameter flags
  */
-constexpr int8_t F3DEX2_G_MTX_MODELVIEW = 0x00;
-constexpr int8_t F3DEX2_G_MTX_PROJECTION = 0x04;
-constexpr int8_t F3DEX2_G_MTX_MUL = 0x00;
-constexpr int8_t F3DEX2_G_MTX_LOAD = 0x02;
-constexpr int8_t F3DEX2_G_MTX_NOPUSH = 0x00;
-constexpr int8_t F3DEX2_G_MTX_PUSH = 0x01;
+constexpr uint8_t F3DEX2_G_MTX_MODELVIEW = 0x00;
+constexpr uint8_t F3DEX2_G_MTX_PROJECTION = 0x04;
+constexpr uint8_t F3DEX2_G_MTX_MUL = 0x00;
+constexpr uint8_t F3DEX2_G_MTX_LOAD = 0x02;
+constexpr uint8_t F3DEX2_G_MTX_NOPUSH = 0x00;
+constexpr uint8_t F3DEX2_G_MTX_PUSH = 0x01;
 
 /*
  * flags for G_SETGEOMETRYMODE
@@ -79,22 +79,22 @@ constexpr uint32_t F3DEX2_G_CULL_BOTH = 0x00000600;
  * which to store a 1-4 word DMA.
  *
  */
-constexpr int8_t F3DEX2_G_MV_MMTX = 2;
-constexpr int8_t F3DEX2_G_MV_PMTX = 6;
-constexpr int8_t F3DEX2_G_MV_VIEWPORT = 8;
-constexpr int8_t F3DEX2_G_MV_LIGHT = 10;
-constexpr int8_t F3DEX2_G_MV_POINT = 12;
-constexpr int8_t F3DEX2_G_MV_MATRIX = 14;
-constexpr int8_t F3DEX2_G_MVO_LOOKATX = 0 * 24;
-constexpr int8_t F3DEX2_G_MVO_LOOKATY = 1 * 24;
-constexpr int8_t F3DEX2_G_MVO_L0 = 2 * 24;
-constexpr int8_t F3DEX2_G_MVO_L1 = 3 * 24;
-constexpr int8_t F3DEX2_G_MVO_L2 = 4 * 24;
-constexpr int8_t F3DEX2_G_MVO_L3 = 5 * 24;
-constexpr int8_t F3DEX2_G_MVO_L4 = 6 * 24;
-constexpr int8_t F3DEX2_G_MVO_L5 = 7 * 24;
-constexpr int8_t F3DEX2_G_MVO_L6 = 8 * 24;
-constexpr int8_t F3DEX2_G_MVO_L7 = 9 * 24;
+constexpr uint8_t F3DEX2_G_MV_MMTX = 2;
+constexpr uint8_t F3DEX2_G_MV_PMTX = 6;
+constexpr uint8_t F3DEX2_G_MV_VIEWPORT = 8;
+constexpr uint8_t F3DEX2_G_MV_LIGHT = 10;
+constexpr uint8_t F3DEX2_G_MV_POINT = 12;
+constexpr uint8_t F3DEX2_G_MV_MATRIX = 14;
+constexpr uint8_t F3DEX2_G_MVO_LOOKATX = 0 * 24;
+constexpr uint8_t F3DEX2_G_MVO_LOOKATY = 1 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L0 = 2 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L1 = 3 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L2 = 4 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L3 = 5 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L4 = 6 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L5 = 7 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L6 = 8 * 24;
+constexpr uint8_t F3DEX2_G_MVO_L7 = 9 * 24;
 
 /*
  * MOVEWORD indices
@@ -104,7 +104,7 @@ constexpr int8_t F3DEX2_G_MVO_L7 = 9 * 24;
  * an immediate word will be stored.
  *
  */
-constexpr int8_t F3DEX2_G_MW_FORCEMTX = 0x0c;
+constexpr uint8_t F3DEX2_G_MW_FORCEMTX = 0x0c;
 
 /*
  * MOVEWORD indices
@@ -115,35 +115,35 @@ constexpr int8_t F3DEX2_G_MW_FORCEMTX = 0x0c;
  *
  * These are offsets from the address in the dmem table
  */
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_2 = 0x18;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_2 = 0x1c;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_3 = 0x30;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_3 = 0x34;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_4 = 0x48;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_4 = 0x4c;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_5 = 0x60;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_5 = 0x64;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_6 = 0x78;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_6 = 0x7c;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_7 = 0x90;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_7 = 0x94;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_8 = 0xa8;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_8 = 0xac;
+constexpr uint8_t F3DEX2_G_MWO_aLIGHT_2 = 0x18;
+constexpr uint8_t F3DEX2_G_MWO_bLIGHT_2 = 0x1c;
+constexpr uint8_t F3DEX2_G_MWO_aLIGHT_3 = 0x30;
+constexpr uint8_t F3DEX2_G_MWO_bLIGHT_3 = 0x34;
+constexpr uint8_t F3DEX2_G_MWO_aLIGHT_4 = 0x48;
+constexpr uint8_t F3DEX2_G_MWO_bLIGHT_4 = 0x4c;
+constexpr uint8_t F3DEX2_G_MWO_aLIGHT_5 = 0x60;
+constexpr uint8_t F3DEX2_G_MWO_bLIGHT_5 = 0x64;
+constexpr uint8_t F3DEX2_G_MWO_aLIGHT_6 = 0x78;
+constexpr uint8_t F3DEX2_G_MWO_bLIGHT_6 = 0x7c;
+constexpr uint8_t F3DEX2_G_MWO_aLIGHT_7 = 0x90;
+constexpr uint8_t F3DEX2_G_MWO_bLIGHT_7 = 0x94;
+constexpr uint8_t F3DEX2_G_MWO_aLIGHT_8 = 0xa8;
+constexpr uint8_t F3DEX2_G_MWO_bLIGHT_8 = 0xac;
 
 /*===========================================================================*
  *	GBI Commands for S2DEX microcode
  *===========================================================================*/
 /* GBI Header */
-constexpr int8_t F3DEX2_G_OBJ_RECTANGLE_R = OPCODE(0xda);
-constexpr int8_t F3DEX2_G_OBJ_MOVEMEM = OPCODE(0xdc);
-constexpr int8_t F3DEX2_G_RDPHALF_0 = OPCODE(0xe4);
-constexpr int8_t F3DEX2_G_OBJ_RECTANGLE = OPCODE(0x01);
-constexpr int8_t F3DEX2_G_OBJ_SPRITE = OPCODE(0x02);
-constexpr int8_t F3DEX2_G_SELECT_DL = OPCODE(0x04);
-constexpr int8_t F3DEX2_G_OBJ_LOADTXTR = OPCODE(0x05);
-constexpr int8_t F3DEX2_G_OBJ_LDTX_SPRITE = OPCODE(0x06);
-constexpr int8_t F3DEX2_G_OBJ_LDTX_RECT = OPCODE(0x07);
-constexpr int8_t F3DEX2_G_OBJ_LDTX_RECT_R = OPCODE(0x08);
-constexpr int8_t F3DEX2_G_BG_1CYC = OPCODE(0x09);
-constexpr int8_t F3DEX2_G_BG_COPY = OPCODE(0x0a);
-constexpr int8_t F3DEX2_G_OBJ_RENDERMODE = OPCODE(0x0b);
+constexpr uint8_t F3DEX2_G_OBJ_RECTANGLE_R = OPCODE(0xda);
+constexpr uint8_t F3DEX2_G_OBJ_MOVEMEM = OPCODE(0xdc);
+constexpr uint8_t F3DEX2_G_RDPHALF_0 = OPCODE(0xe4);
+constexpr uint8_t F3DEX2_G_OBJ_RECTANGLE = OPCODE(0x01);
+constexpr uint8_t F3DEX2_G_OBJ_SPRITE = OPCODE(0x02);
+constexpr uint8_t F3DEX2_G_SELECT_DL = OPCODE(0x04);
+constexpr uint8_t F3DEX2_G_OBJ_LOADTXTR = OPCODE(0x05);
+constexpr uint8_t F3DEX2_G_OBJ_LDTX_SPRITE = OPCODE(0x06);
+constexpr uint8_t F3DEX2_G_OBJ_LDTX_RECT = OPCODE(0x07);
+constexpr uint8_t F3DEX2_G_OBJ_LDTX_RECT_R = OPCODE(0x08);
+constexpr uint8_t F3DEX2_G_BG_1CYC = OPCODE(0x09);
+constexpr uint8_t F3DEX2_G_BG_COPY = OPCODE(0x0a);
+constexpr uint8_t F3DEX2_G_OBJ_RENDERMODE = OPCODE(0x0b);
