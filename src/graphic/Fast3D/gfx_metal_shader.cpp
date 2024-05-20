@@ -8,6 +8,7 @@
 #ifdef __APPLE__
 
 #include <Metal/Metal.hpp>
+#include <public/bridge/consolevariablebridge.h>
 
 #include "gfx_metal_shader.h"
 
@@ -395,7 +396,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
         }
         append_line(buf, &len, ";");
 
-        if (c == 0) {
+        if (c == 0 && !CVarGetInteger(CVAR_DISABLE_CLOSE_COLOR_WRAP, 0)) {
             append_str(buf, &len, "texel.xyz = WRAP(texel.xyz, -1.01, 1.01);");
         }
     }
