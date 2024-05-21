@@ -58,7 +58,7 @@ std::string ResourceLoader::DecodeASCII(uint32_t value) {
 std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, uint32_t type, uint32_t version) {
     ResourceFactoryKey key{ .resourceFormat = format, .resourceType = type, .resourceVersion = version };
     if (!mFactories.contains(key)) {
-        SPDLOG_ERROR("GetFactory failed find an import factory for resource of type {} as hex: 0x{:X}. Format: {}, Version: {}",
+        SPDLOG_ERROR("GetFactory failed to find an import factory for resource of type {} as hex: 0x{:X}. Format: {}, Version: {}",
                      DecodeASCII(type), type, format, version);
         return nullptr;
     }
