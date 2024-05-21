@@ -152,7 +152,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
 
         displayList->Instructions.push_back(command);
 
-        uint8_t opcode = (uint8_t)(command.words.w0 >> 24);
+        int8_t opcode = (int8_t)(command.words.w0 >> 24);
 
         // These are 128-bit commands, so read an extra 64 bits...
         if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||

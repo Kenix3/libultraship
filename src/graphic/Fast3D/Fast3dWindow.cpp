@@ -138,6 +138,10 @@ void Fast3dWindow::SetTextureFilter(FilteringMode filteringMode) {
     gfx_get_current_rendering_api()->set_texture_filter(filteringMode);
 }
 
+void Fast3dWindow::SetRendererUCode(UcodeHandlers ucode) {
+    gfx_set_target_ucode(ucode);
+}
+
 void Fast3dWindow::Close() {
     mWindowManagerApi->close();
 }

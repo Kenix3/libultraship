@@ -3,10 +3,6 @@
 
 #include "stdint.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum UcodeHandlers {
     ucode_f3d,
     ucode_f3dex,
@@ -14,6 +10,10 @@ typedef enum UcodeHandlers {
     ucode_s2dex,
     ucode_max,
 } UcodeHandlers;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void GfxSetNativeDimensions(uint32_t width, uint32_t height);
 void GfxGetPixelDepthPrepare(float x, float y);

@@ -373,7 +373,7 @@ extern void guS2D2EmuSetScissor(u32, u32, u32, u32, u8);
 extern void guS2D2EmuBgRect1Cyc(Gfx**, uObjBg*);
 #else
 extern void guS2DEmuSetScissor(u32, u32, u32, u32, u8);
-extern void guS2DEmuBgRect1Cyc(F3DGfx**, uObjBg*);
+extern void guS2DEmuBgRect1Cyc(Gfx**, uObjBg*);
 #endif
 
 #ifdef _LANGUAGE_C_PLUS_PLUS
