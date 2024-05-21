@@ -17,7 +17,7 @@ class SDLMapping : public ControllerMapping {
     int32_t GetJoystickInstanceId();
     int32_t GetCurrentSDLDeviceIndex();
     bool CloseController();
-    bool ControllerLoaded();
+    bool ControllerLoaded(bool closeIfDisconnected = false);
 
   protected:
     SDL_GameControllerType GetSDLControllerType();
