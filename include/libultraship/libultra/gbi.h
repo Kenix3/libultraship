@@ -115,6 +115,7 @@
 #define G_TRI2 (G_IMMFIRST - 14)
 #define G_BRANCH_Z (G_IMMFIRST - 15)
 #define G_LOAD_UCODE (G_IMMFIRST - 16)
+#define G_QUAD (G_IMMFIRST - 10)
 #else
 #define G_RDPHALF_CONT (G_IMMFIRST - 13)
 #endif
