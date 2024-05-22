@@ -3738,7 +3738,8 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
     { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } },
-    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } } // G_MTX_OTR2 (0x29) Is this the right code?
+    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } }, // G_MTX_OTR2 (0x29) Is this the right code?
+    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } }
 };
 
 const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dHandlers = {
