@@ -12,8 +12,6 @@
 #include <gfxd.h>
 #endif
 
-extern uintptr_t gSegmentPointers[16];
-
 namespace LUS {
 
 GfxDebuggerWindow::~GfxDebuggerWindow() {
