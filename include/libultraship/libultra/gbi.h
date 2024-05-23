@@ -1756,7 +1756,7 @@ typedef union Gfx {
         _g->words.w0 = _SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7); \
         _g->words.w1 = (uintptr_t)(v);                                                          \
     })
-#define __gSPVertex(v, n, v0) \
+#define gsSPVertex(v, n, v0) \
     { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v) }
 
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
