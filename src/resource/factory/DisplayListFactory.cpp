@@ -163,7 +163,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
             displayList->Instructions.push_back(command);
         }
 
-        if (opcode ==  (int8_t) G_ENDDL) {
+        if (opcode == (int8_t)G_ENDDL) {
             break;
         }
     }
