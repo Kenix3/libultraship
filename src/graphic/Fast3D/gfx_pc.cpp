@@ -1391,7 +1391,8 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
         }
 
         // If inverted culling is requested, negate the cross
-        if ((g_rsp.extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
+        if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 &&
+            (g_rsp.extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
             cross = -cross;
         }
 
@@ -1850,6 +1851,10 @@ static void gfx_sp_movemem_f3d(uint8_t index, uint8_t offset, const void* data) 
     switch (index) {
         case F3DEX_G_MV_VIEWPORT:
             gfx_calc_and_set_viewport((const F3DVp_t*)data);
+            break;
+        case F3DEX_G_MV_LOOKATY:
+        case F3DEX_G_MV_LOOKATX:
+            memcpy(g_rsp.lookat + (index - F3DEX_G_MV_LOOKATY) / 2, data, sizeof(F3DLight_t));
             break;
         case F3DEX_G_MV_L0:
         case F3DEX_G_MV_L1:
@@ -2863,7 +2868,7 @@ bool gfx_vtx_handler_f3dex2(F3DGfx** cmd0) {
 
 bool gfx_vtx_handler_f3dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
-    gfx_sp_vertex(C0(10, 6), C0(16, 8) / 2, (const F3DVtx*)seg_addr(cmd->words.w1));
+    gfx_sp_vertex(C0(10, 6), C0(17, 7), (const F3DVtx*)seg_addr(cmd->words.w1));
 
     return false;
 }
@@ -3098,7 +3103,7 @@ bool gfx_tri1_handler_f3dex2(F3DGfx** cmd0) {
 bool gfx_tri1_handler_f3dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
-    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+    gfx_sp_tri1(C1(17, 7), C1(9, 7), C1(1, 7), false);
 
     return false;
 }
@@ -3115,8 +3120,8 @@ bool gfx_tri1_handler_f3d(F3DGfx** cmd0) {
 bool gfx_tri2_handler_f3dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
-    gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
-    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+    gfx_sp_tri1(C0(17, 7), C0(9, 7), C0(1, 7), false);
+    gfx_sp_tri1(C1(17, 7), C1(9, 7), C1(1, 7), false);
     return false;
 }
 
@@ -3216,6 +3221,11 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     const char* fileName = ResourceGetNameByCrc(hash);
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
+
+    if (fileName == nullptr) {
+        (*cmd0)++;
+        return false;
+    }
 
     std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
         Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
@@ -4044,6 +4054,10 @@ void gfx_end_frame(void) {
         gfx_rapi->finish_render();
         gfx_wapi->swap_buffers_end();
     }
+}
+
+void gfx_set_target_ucode(UcodeHandlers ucode) {
+    ucode_handler_index = ucode;
 }
 
 void gfx_set_target_fps(int fps) {

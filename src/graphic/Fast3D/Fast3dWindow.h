@@ -2,6 +2,7 @@
 #include "window/Window.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
+#include "public/bridge/gfxbridge.h"
 
 namespace Fast {
 class Fast3dWindow : public Ship::Window {
@@ -35,6 +36,7 @@ class Fast3dWindow : public Ship::Window {
     void GetPixelDepthPrepare(float x, float y);
     uint16_t GetPixelDepth(float x, float y);
     void SetTextureFilter(FilteringMode filteringMode);
+    void SetRendererUCode(UcodeHandlers ucode);
 
   protected:
     static bool KeyDown(int32_t scancode);
