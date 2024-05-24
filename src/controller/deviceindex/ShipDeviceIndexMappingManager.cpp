@@ -300,6 +300,30 @@ void ShipDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevic
     }
 
     if (Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+        std::set<Ship::ShipDeviceIndex> alreadyConnectedDevices;
+        for (auto mapping : Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->GetAllMappings()) {
+            auto sdlMapping = std::dynamic_pointer_cast<SDLMapping>(mapping);
+            if (sdlMapping == nullptr) {
+                continue;
+            }
+
+            if (sdlMapping->ControllerLoaded()) {
+                alreadyConnectedDevices.insert(sdlMapping->GetShipDeviceIndex());
+            }
+        }
+
+        for (auto [lusIndex, mapping] : mShipDeviceIndexToPhysicalDeviceIndexMappings) {
+            auto sdlMapping = dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(mapping);
+            if (sdlMapping == nullptr) {
+                continue;
+            }
+
+            if (alreadyConnectedDevices.contains(lusIndex)) {
+                sdlMapping->SetSDLDeviceIndex(GetNewSDLDeviceIndexFromShipDeviceIndex(lusIndex));
+                sdlMapping->SaveToConfig();
+            }
+        }
+
         InitializeSDLMappingsForPort(0, sdlDeviceIndex);
         return;
     } else {
@@ -506,6 +530,8 @@ uint8_t ShipDeviceIndexMappingManager::GetPortIndexOfDisconnectedPhysicalDevice(
 
 ShipDeviceIndex
 ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(int32_t sdlJoystickInstanceId) {
+    auto shipDeviceIndex = ShipDeviceIndex::Max;
+
     for (uint8_t portIndex = 0; portIndex < 4; portIndex++) {
         auto controller = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex);
 
@@ -516,7 +542,8 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
                     continue;
                 }
                 if (sdlButtonMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
-                    return sdlButtonMapping->GetShipDeviceIndex();
+                    shipDeviceIndex = sdlButtonMapping->GetShipDeviceIndex();
+                    sdlButtonMapping->CloseController();
                 }
             }
         }
@@ -529,7 +556,8 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
                         continue;
                     }
                     if (sdlAxisDirectionMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
-                        return sdlAxisDirectionMapping->GetShipDeviceIndex();
+                        shipDeviceIndex = sdlAxisDirectionMapping->GetShipDeviceIndex();
+                        sdlAxisDirectionMapping->CloseController();
                     }
                 }
             }
@@ -537,7 +565,8 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
 
         auto sdlGyroMapping = std::dynamic_pointer_cast<SDLMapping>(controller->GetGyro()->GetGyroMapping());
         if (sdlGyroMapping != nullptr && sdlGyroMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
-            return sdlGyroMapping->GetShipDeviceIndex();
+            shipDeviceIndex = sdlGyroMapping->GetShipDeviceIndex();
+            sdlGyroMapping->CloseController();
         }
 
         for (auto [id, rumbleMapping] : controller->GetRumble()->GetAllRumbleMappings()) {
@@ -546,7 +575,8 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
                 continue;
             }
             if (sdlRumbleMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
-                return sdlRumbleMapping->GetShipDeviceIndex();
+                shipDeviceIndex = sdlRumbleMapping->GetShipDeviceIndex();
+                sdlRumbleMapping->CloseController();
             }
         }
 
@@ -556,13 +586,13 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
                 continue;
             }
             if (sdlLEDMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
-                return sdlLEDMapping->GetShipDeviceIndex();
+                shipDeviceIndex = sdlLEDMapping->GetShipDeviceIndex();
+                sdlLEDMapping->CloseController();
             }
         }
     }
 
-    // couldn't find one
-    return ShipDeviceIndex::Max;
+    return shipDeviceIndex;
 }
 
 ShipDeviceIndex ShipDeviceIndexMappingManager::GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {

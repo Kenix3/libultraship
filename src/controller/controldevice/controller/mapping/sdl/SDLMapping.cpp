@@ -45,11 +45,15 @@ bool SDLMapping::CloseController() {
     return true;
 }
 
-bool SDLMapping::ControllerLoaded() {
+bool SDLMapping::ControllerLoaded(bool closeIfDisconnected) {
     SDL_GameControllerUpdate();
 
-    // If the controller is disconnected, close it.
+    // If the controller is disconnected
     if (mController != nullptr && !SDL_GameControllerGetAttached(mController)) {
+        if (!closeIfDisconnected) {
+            return false;
+        }
+
         CloseController();
     }
 
