@@ -44,10 +44,23 @@ bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> fa
     return true;
 }
 
+std::string ResourceLoader::DecodeASCII(uint32_t value) {
+    std::string str(4, '\0'); // Initialize the string with 4 null characters
+
+    str[0] = (value >> 24) & 0xFF;
+    str[1] = (value >> 16) & 0xFF;
+    str[2] = (value >> 8) & 0xFF;
+    str[3] = value & 0xFF;
+
+    return str;
+}
+
 std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, uint32_t type, uint32_t version) {
     ResourceFactoryKey key{ .resourceFormat = format, .resourceType = type, .resourceVersion = version };
     if (!mFactories.contains(key)) {
-        SPDLOG_ERROR("Could not find resource factory with key {}{}{}", format, type, version);
+        SPDLOG_ERROR("GetFactory failed to find an import factory for resource of type {} as hex: 0x{:X}. Format: {}, "
+                     "Version: {}",
+                     DecodeASCII(type), type, format, version);
         return nullptr;
     }
 
@@ -77,13 +90,7 @@ std::shared_ptr<Ship::IResource> ResourceLoader::LoadResource(std::shared_ptr<Sh
     auto factory =
         GetFactory(fileToLoad->InitData->Format, fileToLoad->InitData->Type, fileToLoad->InitData->ResourceVersion);
     if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: Factory does not exist.\n"
-                     "Path: {}\n"
-                     "Type: {}\n"
-                     "Format: {}\n"
-                     "Version: {}",
-                     fileToLoad->InitData->Path, fileToLoad->InitData->Type, fileToLoad->InitData->Format,
-                     fileToLoad->InitData->ResourceVersion);
+        SPDLOG_ERROR("LoadResource failed to find factory for the resource at path: {}", fileToLoad->InitData->Path);
         return nullptr;
     }
 
