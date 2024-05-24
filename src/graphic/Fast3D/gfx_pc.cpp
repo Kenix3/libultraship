@@ -3820,6 +3820,11 @@ static void gfx_step() {
     auto cmd0 = cmd;
     int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
+    if (cmd->words.trace.valid && CVarGetInteger("gEnableGFXTrace", 0)) {
+        SPDLOG_INFO("Trace File: {}", cmd->words.trace.file);
+        SPDLOG_INFO("Trace Line: {}", cmd->words.trace.idx);
+    }
+
     if (opcode == F3DEX2_G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
         ++cmd;
