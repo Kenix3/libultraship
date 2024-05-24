@@ -3134,7 +3134,11 @@ bool gfx_quad_handler_f3dex2(F3DGfx** cmd0) {
 }
 
 bool gfx_quad_handler_f3dex(F3DGfx** cmd0) {
-    // TODO implement this command...
+    F3DGfx* cmd = *cmd0;
+    gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
+    gfx_sp_tri1(C0(8, 8) / 2, C0(0, 8) / 2, C0(24, 0) / 2, false);
+    gfx_sp_tri1(C1(0, 8) / 2, C1(24, 8) / 2, C1(16, 8) / 2, false);
+    gfx_sp_tri1(C1(24, 8) / 2, C1(16, 8) / 2, C1(8, 8) / 2, false);
     return false;
 }
 
@@ -3744,7 +3748,8 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
     { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } },
-    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } } // G_MTX_OTR2 (0x29) Is this the right code?
+    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } }, // G_MTX_OTR2 (0x29) Is this the right code?
+    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } }
 };
 
 const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dHandlers = {
