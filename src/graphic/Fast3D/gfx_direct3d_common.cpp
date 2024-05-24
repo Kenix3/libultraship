@@ -4,6 +4,7 @@
 
 #include "gfx_direct3d_common.h"
 #include "gfx_cc.h"
+#include <public/bridge/consolevariablebridge.h>
 
 static void append_str(char* buf, size_t* len, const char* str) {
     while (*str != '\0')
@@ -401,7 +402,7 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         }
         append_line(buf, &len, ";");
 
-        if (c == 0) {
+        if (c == 0 && !CVarGetInteger(CVAR_DISABLE_CLOSE_COLOR_WRAP, 0)) {
             append_str(buf, &len, "texel.rgb = WRAP(texel.rgb, -1.01, 1.01);");
         }
     }

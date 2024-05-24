@@ -529,7 +529,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         }
         append_line(fs_buf, &fs_len, ";");
 
-        if (c == 0) {
+        if (c == 0 && !CVarGetInteger(CVAR_DISABLE_CLOSE_COLOR_WRAP, 0)) {
             append_str(fs_buf, &fs_len, "texel.rgb = WRAP(texel.rgb, -1.01, 1.01);");
         }
     }
