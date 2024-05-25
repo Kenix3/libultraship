@@ -414,8 +414,6 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
 static void gfx_sdl_close(void) {
     is_running = false;
-    SDL_DestroyRenderer(renderer);
-    SDL_Quit();
 }
 
 static void gfx_sdl_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
