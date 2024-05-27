@@ -145,25 +145,30 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
         reader->ReadInt8();
     }
 
+    size_t idx = 0;
     while (true) {
         Gfx command;
         command.words.w0 = reader->ReadUInt32();
         command.words.w1 = reader->ReadUInt32();
 
-        displayList->Instructions.push_back(command);
-
-        uint8_t opcode = (uint8_t)(command.words.w0 >> 24);
+        int8_t opcode = (int8_t)(command.words.w0 >> 24);
+        bool isExpanded = opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
+                          opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR;
 
         // These are 128-bit commands, so read an extra 64 bits...
-        if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
-            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR) {
+        if (isExpanded) {
+            displayList->Instructions.push_back(command);
             command.words.w0 = reader->ReadUInt32();
             command.words.w1 = reader->ReadUInt32();
-
-            displayList->Instructions.push_back(command);
         }
 
-        if (opcode == G_ENDDL) {
+        command.words.trace.file = file->InitData->Path.c_str();
+        command.words.trace.idx = idx++;
+        command.words.trace.valid = true;
+
+        displayList->Instructions.push_back(command);
+
+        if (opcode == (int8_t)G_ENDDL) {
             break;
         }
     }
@@ -390,9 +395,11 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
             g.words.w1 |= v01 << 16;
             g.words.w1 |= v02 << 0;
         } else if (childName == "Triangles2") {
+#ifdef F3DEX_GBI_2
             g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
                                child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
                                child->IntAttribute("V12"), child->IntAttribute("Flag1"));
+#endif
         } else if (childName == "LoadVertices") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;

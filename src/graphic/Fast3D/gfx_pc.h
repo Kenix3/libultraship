@@ -12,6 +12,7 @@
 
 #include "graphic/Fast3D/lus_gbi.h"
 #include "libultraship/libultra/types.h"
+#include "public/bridge/gfxbridge.h"
 
 #include "resource/type/Texture.h"
 #include "resource/Resource.h"
@@ -234,6 +235,7 @@ void gfx_start_frame(void);
 // Since this function is "exposted" to the games, it needs to take a normal Gfx
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
 void gfx_end_frame(void);
+void gfx_set_target_ucode(UcodeHandlers ucode);
 void gfx_set_target_fps(int);
 void gfx_set_maximum_frame_latency(int latency);
 void gfx_texture_cache_delete(const uint8_t* orig_addr);
