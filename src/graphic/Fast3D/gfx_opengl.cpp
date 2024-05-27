@@ -988,8 +988,7 @@ void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale) {
 void gfx_opengl_clear_framebuffer() {
     glDisable(GL_SCISSOR_TEST);
     glDepthMask(GL_TRUE);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
     glDepthMask(current_depth_mask ? GL_TRUE : GL_FALSE);
     glEnable(GL_SCISSOR_TEST);
 }
