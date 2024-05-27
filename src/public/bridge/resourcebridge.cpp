@@ -73,7 +73,7 @@ void* ResourceGetDataByCrc(uint64_t crc) {
     auto name = ResourceGetNameByCrc(crc);
 
     if (name == nullptr || strlen(name) == 0) {
-        SPDLOG_TRACE("ResourceGetDataByCrc: Unknown crc {}\n", crc);
+        SPDLOG_TRACE("ResourceGetDataByCrc: Unknown crc 0x{:X}\n", crc);
         return nullptr;
     }
 
