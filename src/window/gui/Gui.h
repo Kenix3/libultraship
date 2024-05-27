@@ -9,6 +9,7 @@
 #include <imgui_internal.h>
 #include <memory>
 #include <string>
+#include <map>
 #include <unordered_map>
 #include <vector>
 #include <SDL2/SDL.h>
@@ -114,7 +115,7 @@ class Gui {
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
-    std::unordered_map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
+    std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
 };
 } // namespace Ship
 
