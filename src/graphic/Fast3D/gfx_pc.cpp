@@ -3030,7 +3030,7 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
 
     (*cmd0)++;
 
-    if (g_rsp.loaded_vertices[vbidx].z <= zval) {
+    if (g_rsp.loaded_vertices[vbidx].z <= zval || (g_rsp.extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
         F3DGfx* gfx = (F3DGfx*)ResourceGetDataByCrc(hash);

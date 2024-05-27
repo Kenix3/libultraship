@@ -369,6 +369,7 @@
  * G_EXTRAGEOMETRY flags: set extra custom geometry modes
  */
 #define G_EX_INVERT_CULLING 0x00000001
+#define G_EX_ALWAYS_EXECUTE_BRANCH 0x00000002
 
 /* Need these defined for Sprite Microcode */
 #ifdef _LANGUAGE_ASSEMBLY

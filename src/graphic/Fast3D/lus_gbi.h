@@ -196,6 +196,7 @@ constexpr int8_t OTR_G_SETINTENSITY = OPCODE(0x40);
  * G_EXTRAGEOMETRY flags: set extra custom geometry modes
  */
 #define G_EX_INVERT_CULLING 0x00000001
+#define G_EX_ALWAYS_EXECUTE_BRANCH 0x00000002
 
 /*
  * G_SETIMG fmt: set image formats
