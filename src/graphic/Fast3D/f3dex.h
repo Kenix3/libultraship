@@ -87,22 +87,22 @@ constexpr uint32_t F3DEX_G_CULL_BOTH = 0x00003000;
  * which to store a 1-4 word DMA.
  *
  */
-constexpr int8_t F3DEX_G_MV_VIEWPORT = 0x80;
-constexpr int8_t F3DEX_G_MV_LOOKATY = 0x82;
-constexpr int8_t F3DEX_G_MV_LOOKATX = 0x84;
-constexpr int8_t F3DEX_G_MV_L0 = 0x86;
-constexpr int8_t F3DEX_G_MV_L1 = 0x88;
-constexpr int8_t F3DEX_G_MV_L2 = 0x8a;
-constexpr int8_t F3DEX_G_MV_L3 = 0x8c;
-constexpr int8_t F3DEX_G_MV_L4 = 0x8e;
-constexpr int8_t F3DEX_G_MV_L5 = 0x90;
-constexpr int8_t F3DEX_G_MV_L6 = 0x92;
-constexpr int8_t F3DEX_G_MV_L7 = 0x94;
-constexpr int8_t F3DEX_G_MV_TXTATT = 0x96;
-constexpr int8_t F3DEX_G_MV_MATRIX_1 = 0x9e;
-constexpr int8_t F3DEX_G_MV_MATRIX_2 = 0x98;
-constexpr int8_t F3DEX_G_MV_MATRIX_3 = 0x9a;
-constexpr int8_t F3DEX_G_MV_MATRIX_4 = 0x9c;
+constexpr uint8_t F3DEX_G_MV_VIEWPORT = 0x80;
+constexpr uint8_t F3DEX_G_MV_LOOKATY = 0x82;
+constexpr uint8_t F3DEX_G_MV_LOOKATX = 0x84;
+constexpr uint8_t F3DEX_G_MV_L0 = 0x86;
+constexpr uint8_t F3DEX_G_MV_L1 = 0x88;
+constexpr uint8_t F3DEX_G_MV_L2 = 0x8a;
+constexpr uint8_t F3DEX_G_MV_L3 = 0x8c;
+constexpr uint8_t F3DEX_G_MV_L4 = 0x8e;
+constexpr uint8_t F3DEX_G_MV_L5 = 0x90;
+constexpr uint8_t F3DEX_G_MV_L6 = 0x92;
+constexpr uint8_t F3DEX_G_MV_L7 = 0x94;
+constexpr uint8_t F3DEX_G_MV_TXTATT = 0x96;
+constexpr uint8_t F3DEX_G_MV_MATRIX_1 = 0x9e;
+constexpr uint8_t F3DEX_G_MV_MATRIX_2 = 0x98;
+constexpr uint8_t F3DEX_G_MV_MATRIX_3 = 0x9a;
+constexpr uint8_t F3DEX_G_MV_MATRIX_4 = 0x9c;
 
 /*
  * MOVEWORD indices
