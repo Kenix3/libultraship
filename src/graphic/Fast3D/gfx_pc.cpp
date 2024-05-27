@@ -3901,6 +3901,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 
 void gfx_destroy(void) {
     // TODO: should also destroy rapi, and any other resources acquired in fast3d
+    free(tex_upload_buffer);
     gfx_wapi->destroy();
 
     // Texture cache and loaded textures store references to Resources which need to be unreferenced.
