@@ -29,6 +29,7 @@ constexpr int8_t F3DEX_G_RDPHALF_CONT = OPCODE(G_IMMFIRST - 13);
 constexpr int8_t F3DEX_G_TRI2 = OPCODE(G_IMMFIRST - 14);
 constexpr int8_t F3DEX_G_BRANCH_Z = OPCODE(G_IMMFIRST - 15);
 constexpr int8_t F3DEX_G_LOAD_UCODE = OPCODE(G_IMMFIRST - 16);
+constexpr int8_t F3DEX_G_QUAD = OPCODE(G_IMMFIRST - 10);
 
 // S2DEX
 constexpr int8_t F3DEX_G_SPRITE2D_BASE = OPCODE(9);
