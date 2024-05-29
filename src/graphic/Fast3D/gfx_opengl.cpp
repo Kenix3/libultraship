@@ -342,6 +342,9 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         vs_len += sprintf(vs_buf + vs_len, "vInput%d = aInput%d;\n", i + 1, i + 1);
     }
     append_line(vs_buf, &vs_len, "gl_Position = aVtxPos;");
+#if defined(USE_OPENGLES) // workaround for no GL_DEPTH_CLAMP
+    append_line(vs_buf, &vs_len, "gl_Position.z *= 0.3f;");
+#endif
     append_line(vs_buf, &vs_len, "}");
 
     // Fragment shader
