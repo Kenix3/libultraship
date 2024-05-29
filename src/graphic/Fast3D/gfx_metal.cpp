@@ -560,8 +560,9 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
 
         MTL::DepthStencilDescriptor* depth_descriptor = MTL::DepthStencilDescriptor::alloc()->init();
         depth_descriptor->setDepthWriteEnabled(mctx.depth_mask);
-        depth_descriptor->setDepthCompareFunction(mctx.depth_test ? MTL::CompareFunctionLessEqual
-                                                                  : MTL::CompareFunctionAlways);
+        depth_descriptor->setDepthCompareFunction(
+            mctx.depth_test ? (mctx.zmode_decal ? MTL::CompareFunctionLessEqual : MTL::CompareFunctionLess)
+                            : MTL::CompareFunctionAlways);
 
         MTL::DepthStencilState* depth_stencil_state = mctx.device->newDepthStencilState(depth_descriptor);
         current_framebuffer.command_encoder->setDepthStencilState(depth_stencil_state);
