@@ -47,6 +47,8 @@ class ResourceManager {
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectory(const std::string& searchMask);
     bool OtrSignatureCheck(const char* fileName);
+    bool IsAltAssetsEnabled();
+    void SetAltAssetsEnabled(bool isEnabled);
 
   protected:
     std::shared_ptr<Ship::File> LoadFileProcess(const std::string& filePath,
@@ -57,6 +59,7 @@ class ResourceManager {
                                                                                  bool loadExact = false);
 
   private:
+    bool altAssetsEnabled = false;
     std::unordered_map<std::string, std::variant<ResourceLoadError, std::shared_ptr<Ship::IResource>>> mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
