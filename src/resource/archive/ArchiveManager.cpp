@@ -187,6 +187,10 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     }
     const auto fileList = archive->ListFiles();
     for (auto& [hash, filename] : *fileList.get()) {
+        if (filename.ends_with("/")) {
+            continue;
+        }
+
         mHashes[hash] = filename;
         mFileToArchive[hash] = archive;
     }
