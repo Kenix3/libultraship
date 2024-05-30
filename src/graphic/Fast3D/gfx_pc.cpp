@@ -4039,7 +4039,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     while (!g_exec_stack.cmd_stack.empty()) {
         auto cmd = g_exec_stack.cmd_stack.top();
 
-        if (GfxDebuggerIsDebugging()) {
+        if (dbg->IsDebugging()) {
             g_exec_stack.gfx_path.push_back(cmd);
             if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
                 break;
