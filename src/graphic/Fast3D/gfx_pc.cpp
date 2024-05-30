@@ -3650,9 +3650,11 @@ bool gfx_spnoop_command_handler_f3dex2(F3DGfx** cmd0) {
 }
 
 class UcodeHandler {
-public:
-    inline constexpr UcodeHandler(std::initializer_list<std::pair<int8_t, std::pair<const char*, GfxOpcodeHandlerFunc>>> initializer) {
-        std::fill(std::begin(mHandlers), std::end(mHandlers), std::pair<const char*, GfxOpcodeHandlerFunc>(nullptr, nullptr));
+  public:
+    inline constexpr UcodeHandler(
+        std::initializer_list<std::pair<int8_t, std::pair<const char*, GfxOpcodeHandlerFunc>>> initializer) {
+        std::fill(std::begin(mHandlers), std::end(mHandlers),
+                  std::pair<const char*, GfxOpcodeHandlerFunc>(nullptr, nullptr));
 
         for (const auto& [opcode, handler] : initializer) {
             mHandlers[static_cast<uint8_t>(opcode)] = handler;
@@ -3667,7 +3669,7 @@ public:
         return mHandlers[static_cast<uint8_t>(opcode)];
     }
 
-private:
+  private:
     std::pair<const char*, GfxOpcodeHandlerFunc> mHandlers[std::numeric_limits<uint8_t>::max() + 1];
 };
 
