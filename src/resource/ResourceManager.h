@@ -59,11 +59,11 @@ class ResourceManager {
                                                                                  bool loadExact = false);
 
   private:
-    bool mAltAssetsEnabled = false;
     std::unordered_map<std::string, std::variant<ResourceLoadError, std::shared_ptr<Ship::IResource>>> mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
     std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
+    bool mAltAssetsEnabled = false;
 };
 } // namespace Ship
