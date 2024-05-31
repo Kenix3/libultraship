@@ -23,7 +23,6 @@ void ResourceManager::Init(const std::vector<std::string>& otrFiles, const std::
     // the extra `- 1` is because we reserve an extra thread for spdlog
     size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
-    mAltAssetsEnabled = CVarGetInteger(CVAR_ALT_ASSETS, 0);
 
     if (!DidLoadSuccessfully()) {
         // Nothing ever unpauses the thread pool since nothing will ever try to load the archive again.
