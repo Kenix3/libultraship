@@ -28,6 +28,7 @@ set(EXCLUDE_MPQ_SUPPORT FALSE CACHE BOOL "Exclude StormLib and MPQ archive suppo
 if(EXCLUDE_MPQ_SUPPORT)
     add_compile_definitions(EXCLUDE_MPQ_SUPPORT)
 endif()
+option(USE_F3DEX2 "Use F3DEX_GBI_2" OFF)
 
 # =========== Dependencies =============
 include(cmake/dependencies/common.cmake)
