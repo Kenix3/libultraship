@@ -3649,7 +3649,31 @@ bool gfx_spnoop_command_handler_f3dex2(F3DGfx** cmd0) {
     return false;
 }
 
-const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> rdpHandlers = {
+class UcodeHandler {
+  public:
+    inline constexpr UcodeHandler(
+        std::initializer_list<std::pair<int8_t, std::pair<const char*, GfxOpcodeHandlerFunc>>> initializer) {
+        std::fill(std::begin(mHandlers), std::end(mHandlers),
+                  std::pair<const char*, GfxOpcodeHandlerFunc>(nullptr, nullptr));
+
+        for (const auto& [opcode, handler] : initializer) {
+            mHandlers[static_cast<uint8_t>(opcode)] = handler;
+        }
+    }
+
+    inline bool contains(int8_t opcode) const {
+        return mHandlers[static_cast<uint8_t>(opcode)].first != nullptr;
+    }
+
+    inline std::pair<const char*, GfxOpcodeHandlerFunc> at(int8_t opcode) const {
+        return mHandlers[static_cast<uint8_t>(opcode)];
+    }
+
+  private:
+    std::pair<const char*, GfxOpcodeHandlerFunc> mHandlers[std::numeric_limits<uint8_t>::max() + 1];
+};
+
+static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "G_RDPLOADSYNC", gfx_stubbed_command_handler } },         // G_RDPLOADSYNC (-26)
@@ -3676,7 +3700,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { RDP_G_SETCIMG, { "G_SETCIMG", gfx_set_c_img_handler_rdp } },                   // G_SETCIMG (-1)
 };
 
-const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> otrHandlers = {
+static constexpr UcodeHandler otrHandlers = {
     { OTR_G_SETTIMG_OTR_HASH,
       { "G_SETTIMG_OTR_HASH", gfx_set_timg_otr_hash_handler_custom } },       // G_SETTIMG_OTR_HASH (0x20)
     { OTR_G_SETFB, { "G_SETFB", gfx_set_fb_handler_custom } },                // G_SETFB (0x21)
@@ -3706,7 +3730,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
 };
 
-const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dex2Handlers = {
+static constexpr UcodeHandler f3dex2Handlers = {
     { F3DEX2_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
     { F3DEX2_G_SPNOOP, { "G_SPNOOP", gfx_noop_handler_f3dex2 } },
     { F3DEX2_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
@@ -3728,7 +3752,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom_f3dex2 } },
 };
 
-const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dexHandlers = {
+static constexpr UcodeHandler f3dexHandlers = {
     { F3DEX_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
     { F3DEX_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
     { F3DEX_G_MTX, { "G_MTX", gfx_mtx_handler_f3d } },
@@ -3752,7 +3776,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
     { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } }
 };
 
-const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> f3dHandlers = {
+static constexpr UcodeHandler f3dHandlers = {
     { F3DEX_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
     { F3DEX_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
     { F3DEX_G_MTX, { "G_MTX", gfx_mtx_handler_f3d } },
@@ -3776,7 +3800,7 @@ const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHa
 
 // LUSTODO: These S2DEX commands have different opcode numbers on F3DEX2 vs other ucodes. More research needs to be done
 // to see if the implementations are different.
-const static std::unordered_map<int8_t, const std::pair<const char*, GfxOpcodeHandlerFunc>> s2dexHandlers = {
+static constexpr UcodeHandler s2dexHandlers = {
     { F3DEX2_G_BG_COPY, { "G_BG_COPY", gfx_bg_copy_handler_s2dex } },
     { F3DEX2_G_BG_1CYC, { "G_BG_1CYC", gfx_bg_1cyc_handler_s2dex } },
     { F3DEX2_G_OBJ_RENDERMODE, { "G_OBJ_RENDERMODE", gfx_stubbed_command_handler } },
@@ -4017,7 +4041,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     while (!g_exec_stack.cmd_stack.empty()) {
         auto cmd = g_exec_stack.cmd_stack.top();
 
-        if (GfxDebuggerIsDebugging()) {
+        if (dbg->IsDebugging()) {
             g_exec_stack.gfx_path.push_back(cmd);
             if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
                 break;
