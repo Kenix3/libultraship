@@ -688,7 +688,9 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
 
         depth_stencil_desc.DepthEnable = d3d.depth_test || d3d.depth_mask;
         depth_stencil_desc.DepthWriteMask = d3d.depth_mask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-        depth_stencil_desc.DepthFunc = d3d.depth_test ? D3D11_COMPARISON_LESS_EQUAL : D3D11_COMPARISON_ALWAYS;
+        depth_stencil_desc.DepthFunc = d3d.depth_test
+                                           ? (d3d.zmode_decal ? D3D11_COMPARISON_LESS_EQUAL : D3D11_COMPARISON_LESS)
+                                           : D3D11_COMPARISON_ALWAYS;
         depth_stencil_desc.StencilEnable = false;
 
         ThrowIfFailed(d3d.device->CreateDepthStencilState(&depth_stencil_desc, d3d.depth_stencil_state.GetAddressOf()));
