@@ -60,7 +60,7 @@ ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact
 
     // Attempt to load the alternate version of the asset, if we fail then we continue trying to load the standard
     // asset.
-    if (!loadExact && CVarGetInteger(CVAR_ALT_ASSETS, 0) && !filePath.starts_with(IResource::gAltAssetPrefix)) {
+    if (!loadExact && mAltAssetsEnabled && !filePath.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + filePath;
         auto altResource = LoadResourceProcess(altPath, loadExact, initData);
 
@@ -79,7 +79,7 @@ ResourceManager::LoadResourceProcess(const std::string& filePath, bool loadExact
 
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
-    if (!loadExact && CVarGetInteger(CVAR_ALT_ASSETS, 0) && filePath.starts_with(IResource::gAltAssetPrefix)) {
+    if (!loadExact && mAltAssetsEnabled && filePath.starts_with(IResource::gAltAssetPrefix)) {
         if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
             try {
                 // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
@@ -166,7 +166,7 @@ std::shared_ptr<Ship::IResource> ResourceManager::LoadResource(const std::string
 
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<Ship::IResource>>
 ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
-    if (!loadExact && CVarGetInteger(CVAR_ALT_ASSETS, 0) && !filePath.starts_with(IResource::gAltAssetPrefix)) {
+    if (!loadExact && mAltAssetsEnabled && !filePath.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + filePath;
         auto altCacheResult = CheckCache(altPath, loadExact);
 
@@ -293,6 +293,14 @@ size_t ResourceManager::UnloadResource(const std::string& filePath) {
 bool ResourceManager::OtrSignatureCheck(const char* fileName) {
     static const char* sOtrSignature = "__OTR__";
     return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
+}
+
+bool ResourceManager::IsAltAssetsEnabled() {
+    return mAltAssetsEnabled;
+}
+
+void ResourceManager::SetAltAssetsEnabled(bool isEnabled) {
+    mAltAssetsEnabled = isEnabled;
 }
 
 } // namespace Ship
