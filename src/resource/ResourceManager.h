@@ -59,7 +59,7 @@ class ResourceManager {
                                                                                  bool loadExact = false);
 
   private:
-    bool altAssetsEnabled = false;
+    bool mAltAssetsEnabled = false;
     std::unordered_map<std::string, std::variant<ResourceLoadError, std::shared_ptr<Ship::IResource>>> mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
