@@ -69,6 +69,12 @@ bool O2rArchive::Open() {
     for (auto i = 0; i < zipNumEntries; i++) {
         auto zipEntryName = zip_get_name(mZipArchive, i, 0);
 
+        // It is possible for directories to have entries in a zip
+        // file, we don't want those indexed as files in the archive
+        if (zipEntryName[strlen(zipEntryName) - 1] == '/') {
+            continue;
+        }
+
         IndexFile(zipEntryName);
     }
 
