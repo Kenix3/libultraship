@@ -234,7 +234,8 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
 
 bool Gui::SupportsViewports() {
 #ifdef __linux__
-    if (std::string(std::getenv("XDG_CURRENT_DESKTOP")) == "gamescope") {
+    const char* currentDesktop = std::getenv("XDG_CURRENT_DESKTOP");
+    if (currentDesktop && std::string(currentDesktop) == "gamescope") {
         return false;
     }
 #endif
