@@ -159,20 +159,20 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
 void Gui::ImGuiWMInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
 #if __APPLE__
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case WindowBackend::DX11:
+        case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplWin32_Init(mImpl.Dx11.Window);
             break;
 #endif
@@ -184,7 +184,7 @@ void Gui::ImGuiWMInit() {
 void Gui::ImGuiBackendInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
-        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
 #elif USE_OPENGLES
@@ -196,13 +196,13 @@ void Gui::ImGuiBackendInit() {
 #endif
 
 #ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_METAL:
             Metal_Init(mImpl.Metal.Renderer);
             break;
 #endif
 
-#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case WindowBackend::DX11:
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(mImpl.Dx11.Device),
                                 static_cast<ID3D11DeviceContext*>(mImpl.Dx11.DeviceContext));
             break;
@@ -244,10 +244,10 @@ bool Gui::SupportsViewports() {
 #endif
 
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-        case WindowBackend::DX11:
+        case WindowBackend::FAST3D_DXGI_DX11:
             return true;
-        case WindowBackend::SDL_OPENGL:
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_METAL:
             return true;
         default:
             return false;
@@ -261,15 +261,15 @@ void Gui::Update(WindowEvent event) {
     }
 
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-        case WindowBackend::SDL_OPENGL:
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 #if defined(__ANDROID__) || defined(__IOS__)
             Ship::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
-#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case WindowBackend::DX11:
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
                                            event.Win32.Param2);
             break;
@@ -431,19 +431,19 @@ void Gui::DrawMenu() {
 void Gui::ImGuiBackendNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
-        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
 
-#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case WindowBackend::DX11:
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplDX11_NewFrame();
             break;
 #endif
 
 #ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_METAL:
             Metal_NewFrame(mImpl.Metal.Renderer);
             break;
 #endif
@@ -454,12 +454,12 @@ void Gui::ImGuiBackendNewFrame() {
 
 void Gui::ImGuiWMNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-        case WindowBackend::SDL_OPENGL:
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_METAL:
             ImGui_ImplSDL2_NewFrame();
             break;
-#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case WindowBackend::DX11:
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplWin32_NewFrame();
             break;
 #endif
@@ -619,7 +619,7 @@ void Gui::RenderViewports() {
     ImGuiRenderDrawData(ImGui::GetDrawData());
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
-        if ((backend == WindowBackend::SDL_OPENGL || backend == WindowBackend::SDL_METAL) &&
+        if ((backend == WindowBackend::FAST3D_SDL_OPENGL || backend == WindowBackend::FAST3D_SDL_METAL) &&
             mImpl.Opengl.Context != nullptr) {
             SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
             SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
@@ -672,19 +672,19 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 
 #ifdef ENABLE_OPENGL
-        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
 
 #ifdef __APPLE__
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_METAL:
             Metal_RenderDrawData(data);
             break;
 #endif
 
-#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-        case WindowBackend::DX11:
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplDX11_RenderDrawData(data);
             break;
 #endif
