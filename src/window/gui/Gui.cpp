@@ -637,12 +637,12 @@ void Gui::RenderViewports() {
 
 ImTextureID Gui::GetTextureById(int32_t id) {
 #ifdef ENABLE_DX11
-    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::DX11) {
+    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_DXGI_DX11) {
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif
 #ifdef __APPLE__
-    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::SDL_METAL) {
+    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_SDL_METAL) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif
