@@ -2734,7 +2734,10 @@ bool gfx_mtx_handler_f3dex2(F3DGfx** cmd0) {
         mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
         mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
         mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
-        mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
+        mtxAddr == SEG_ADDR(0, 0xFCD40) ||  // PAL1.1
+        mtxAddr == SEG_ADDR(0, 0xFEDB1) ||  // NTSC 1.0
+        mtxAddr == SEG_ADDR(0, 0xFEF71) ||  // NTSC 1.1
+        mtxAddr == SEG_ADDR(0, 0xFF3F1)     // NTSC 1.2
     ) {
         mtxAddr = clearMtx;
     }
@@ -2753,7 +2756,9 @@ bool gfx_mtx_handler_f3d(F3DGfx** cmd0) {
         mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
         mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
         mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
-        mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
+        mtxAddr == SEG_ADDR(0, 0xFEDB1) ||  // NTSC 1.0
+        mtxAddr == SEG_ADDR(0, 0xFEF71) ||  // NTSC 1.1
+        mtxAddr == SEG_ADDR(0, 0xFF3F1)     // NTSC 1.2
     ) {
         mtxAddr = clearMtx;
     }
