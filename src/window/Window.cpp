@@ -81,7 +81,8 @@ bool Window::IsAvailableWindowBackend(int32_t backendId) {
     }
 
     // Verify the backend is available
-    return std::find(mAvailableWindowBackends->begin(), mAvailableWindowBackends->end(), backend) != mAvailableWindowBackends->end();
+    return std::find(mAvailableWindowBackends->begin(), mAvailableWindowBackends->end(), backend) !=
+           mAvailableWindowBackends->end();
 }
 
 void Window::SetWindowBackend(WindowBackend backend) {
