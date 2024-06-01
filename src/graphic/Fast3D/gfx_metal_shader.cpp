@@ -255,9 +255,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
     // end vertex shader
 
     append_line(buf, &len, "float mod(float a, float b) {");
-    append_line(
-        buf, &len,
-        "    return float(a - b * floor(a / b));");
+    append_line(buf, &len, "    return float(a - b * floor(a / b));");
     append_line(buf, &len, "}");
 
     append_line(buf, &len, "float3 mod(float3 a, float3 b) {");
@@ -267,9 +265,9 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
     append_line(buf, &len, "}");
 
     append_line(buf, &len, "float4 mod(float4 a, float4 b) {");
-    append_line(
-        buf, &len,
-        "    return float4(a.x - b.x * floor(a.x / b.x), a.y - b.y * floor(a.y / b.y), a.z - b.z * floor(a.z / b.z), a.w - b.w * floor(a.w / b.w));");
+    append_line(buf, &len,
+                "    return float4(a.x - b.x * floor(a.x / b.x), a.y - b.y * floor(a.y / b.y), a.z - b.z * floor(a.z / "
+                "b.z), a.w - b.w * floor(a.w / b.w));");
     append_line(buf, &len, "}");
 
     append_line(buf, &len, "#define WRAP(x, low, high) mod((x)-(low), (high)-(low)) + (low)");
