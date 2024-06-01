@@ -67,6 +67,15 @@ std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends()
     return mAvailableWindowBackends;
 }
 
+bool Window::IsAvailableWindowBackend(int32_t backendId) {
+    // Verify the id is a valid backend enum value
+    switch (backendId) {
+        
+    }
+
+    return std::find(mAvailableWindowBackends->begin(), mAvailableWindowBackends->end(), backend) != mAvailableWindowBackends->end();
+}
+
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
     Ship::Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());

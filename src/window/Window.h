@@ -42,6 +42,7 @@ class Window {
 
     WindowBackend GetWindowBackend();
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
+    bool IsAvailableWindowBackend(int32_t backendId);
     int32_t GetLastScancode();
     void SetLastScancode(int32_t scanCode);
     void ToggleFullscreen();

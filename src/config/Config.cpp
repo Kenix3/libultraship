@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <any>
 #include "utils/StringHelper.h"
+#include "Context.h"
 
 #ifdef __APPLE__
 #include "graphic/Fast3D/gfx_metal.h"
@@ -245,7 +246,10 @@ void Config::SetAudioBackend(AudioBackend backend) {
 
 WindowBackend Config::GetWindowBackend() {
     WindowBackend backend;
-    int backendId = GetInt("Window.Backend.Id", -1);
+    auto backendId = GetInt("Window.Backend.Id", -1);
+    if (Context::GetInstance()->GetWindow()->IsAvailableWindowBackend(static_cast<WindowBackend>(backendId))) {
+
+    }
     if (backendId != -1 && backendId < static_cast<int>(WindowBackend::BACKEND_COUNT)) {
         return static_cast<WindowBackend>(backendId);
     }
