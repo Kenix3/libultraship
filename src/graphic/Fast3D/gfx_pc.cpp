@@ -3201,7 +3201,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
             std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
-            if(tex == nullptr) {
+            if (tex == nullptr) {
                 (*cmd0)++;
                 return false;
             }
