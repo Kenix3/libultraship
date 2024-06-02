@@ -336,18 +336,30 @@ static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& 
                     case G_CCMUX_TEXEL0:
                         val = SHADER_TEXEL0;
                         used_textures[0] = true;
+                        if (is_2cyc) {
+                            used_textures[1] = true;
+                        }
                         break;
                     case G_CCMUX_TEXEL1:
                         val = SHADER_TEXEL1;
                         used_textures[1] = true;
+                        if (is_2cyc) {
+                            used_textures[0] = true;
+                        }
                         break;
                     case G_CCMUX_TEXEL0_ALPHA:
                         val = SHADER_TEXEL0A;
                         used_textures[0] = true;
+                        if (is_2cyc) {
+                            used_textures[1] = true;
+                        }
                         break;
                     case G_CCMUX_TEXEL1_ALPHA:
                         val = SHADER_TEXEL1A;
                         used_textures[1] = true;
+                        if (is_2cyc) {
+                            used_textures[0] = true;
+                        }
                         break;
                     case G_CCMUX_NOISE:
                         val = SHADER_NOISE;
@@ -389,10 +401,16 @@ static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& 
                     case G_ACMUX_TEXEL0:
                         val = SHADER_TEXEL0;
                         used_textures[0] = true;
+                        if (is_2cyc) {
+                            used_textures[1] = true;
+                        }
                         break;
                     case G_ACMUX_TEXEL1:
                         val = SHADER_TEXEL1;
                         used_textures[1] = true;
+                        if (is_2cyc) {
+                            used_textures[0] = true;
+                        }
                         break;
                     case G_ACMUX_LOD_FRACTION:
                         // case G_ACMUX_COMBINED: same numerical value
