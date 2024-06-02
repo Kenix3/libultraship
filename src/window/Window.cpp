@@ -68,19 +68,13 @@ std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends()
 }
 
 bool Window::IsAvailableWindowBackend(int32_t backendId) {
-    auto backend = static_cast<WindowBackend>(backendId);
-
     // Verify the id is a valid backend enum value
-    switch (backend) {
-        case WindowBackend::FAST3D_DXGI_DX11:
-        case WindowBackend::FAST3D_SDL_OPENGL:
-        case WindowBackend::FAST3D_SDL_METAL:
-            break;
-        default:
-            return false;
+    if (backendId < 0 || backendId >= static_cast<int>(WindowBackend::WINDOW_BACKEND_COUNT)) {
+        return false;
     }
 
     // Verify the backend is available
+    auto backend = static_cast<WindowBackend>(backendId);
     return std::find(mAvailableWindowBackends->begin(), mAvailableWindowBackends->end(), backend) !=
            mAvailableWindowBackends->end();
 }
