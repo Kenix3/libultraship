@@ -57,7 +57,7 @@ class InputEditorWindow : public GuiWindow {
     int32_t mGameInputBlockTimer;
     int32_t mMappingInputBlockTimer;
     int32_t mRumbleTimer;
-    std::shared_ptr<Ship::ControllerRumbleMapping> mRumbleMappingToTest;
+    std::shared_ptr<ControllerRumbleMapping> mRumbleMappingToTest;
 
     // mBitmaskToMappingIds[port][bitmask] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::string>>> mBitmaskToMappingIds;
@@ -74,7 +74,7 @@ class InputEditorWindow : public GuiWindow {
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
     void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks);
-    void DrawAnalogStickDeviceIcons(uint8_t portIndex, Ship::Stick stick);
+    void DrawAnalogStickDeviceIcons(uint8_t portIndex, Stick stick);
     void DrawRumbleDeviceIcons(uint8_t portIndex);
     void DrawGyroDeviceIcons(uint8_t portIndex);
     void DrawLEDDeviceIcons(uint8_t portIndex);
@@ -82,7 +82,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawSetDefaultsButton(uint8_t portIndex);
     void DrawClearAllButton(uint8_t portIndex);
 
-    std::map<Ship::ShipDeviceIndex, bool> mDeviceIndexVisiblity;
+    std::map<ShipDeviceIndex, bool> mDeviceIndexVisiblity;
     void DrawDeviceVisibilityButtons();
 };
 } // namespace Ship

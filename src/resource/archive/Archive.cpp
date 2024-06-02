@@ -30,7 +30,7 @@ void Archive::Load() {
         mHasGameVersion = true;
         auto stream = std::make_shared<MemoryStream>(t->Buffer->data(), t->Buffer->size());
         auto reader = std::make_shared<BinaryReader>(stream);
-        Ship::Endianness endianness = (Endianness)reader->ReadUByte();
+        Endianness endianness = (Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
         SetGameVersion(reader->ReadUInt32());
         isGameVersionValid =
@@ -109,8 +109,8 @@ void Archive::IndexFile(const std::string& filePath) {
     (*mHashes)[CRC64(filePath.c_str())] = filePath;
 }
 
-std::shared_ptr<Ship::ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath,
-                                                                      std::shared_ptr<Ship::File> metaFileToLoad) {
+std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::string& filePath,
+                                                                std::shared_ptr<File> metaFileToLoad) {
     auto initData = CreateDefaultResourceInitData();
 
     // just using metaFileToLoad->Buffer->data() leads to garbage at the end
@@ -137,8 +137,8 @@ std::shared_ptr<Ship::ResourceInitData> Archive::ReadResourceInitData(const std:
     return initData;
 }
 
-std::shared_ptr<Ship::ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
-                                                                            std::shared_ptr<Ship::File> fileToLoad) {
+std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                      std::shared_ptr<File> fileToLoad) {
     // Determine if file is binary or XML...
     if (fileToLoad->Buffer->at(0) == '<') {
         // File is XML
@@ -177,14 +177,14 @@ std::shared_ptr<Ship::ResourceInitData> Archive::ReadResourceInitDataLegacy(cons
     }
 }
 
-std::shared_ptr<Ship::BinaryReader> Archive::CreateBinaryReader(std::shared_ptr<Ship::File> fileToLoad) {
+std::shared_ptr<BinaryReader> Archive::CreateBinaryReader(std::shared_ptr<File> fileToLoad) {
     auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
     auto reader = std::make_shared<BinaryReader>(stream);
     reader->SetEndianness(fileToLoad->InitData->ByteOrder);
     return reader;
 }
 
-std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<Ship::File> fileToLoad) {
+std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<File> fileToLoad) {
     auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
     auto binaryReader = std::make_shared<BinaryReader>(stream);
 
@@ -199,9 +199,8 @@ std::shared_ptr<tinyxml2::XMLDocument> Archive::CreateXMLReader(std::shared_ptr<
     return xmlReader;
 }
 
-std::shared_ptr<Ship::File> Archive::LoadFile(const std::string& filePath,
-                                              std::shared_ptr<Ship::ResourceInitData> initData) {
-    std::shared_ptr<Ship::File> fileToLoad = nullptr;
+std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData) {
+    std::shared_ptr<File> fileToLoad = nullptr;
 
     if (initData != nullptr) {
         fileToLoad = LoadFileRaw(filePath);
@@ -237,13 +236,13 @@ std::shared_ptr<Ship::File> Archive::LoadFile(const std::string& filePath,
     return fileToLoad;
 }
 
-std::shared_ptr<Ship::File> Archive::LoadFile(uint64_t hash, std::shared_ptr<Ship::ResourceInitData> initData) {
+std::shared_ptr<File> Archive::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
     const std::string& filePath =
         *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath, initData);
 }
 
-std::shared_ptr<Ship::ResourceInitData> Archive::CreateDefaultResourceInitData() {
+std::shared_ptr<ResourceInitData> Archive::CreateDefaultResourceInitData() {
     auto resourceInitData = std::make_shared<ResourceInitData>();
     resourceInitData->Id = 0xDEADBEEFDEADBEEF;
     resourceInitData->Type = static_cast<uint32_t>(ResourceType::None);
@@ -254,8 +253,8 @@ std::shared_ptr<Ship::ResourceInitData> Archive::CreateDefaultResourceInitData()
     return resourceInitData;
 }
 
-std::shared_ptr<Ship::ResourceInitData>
-Archive::ReadResourceInitDataBinary(const std::string& filePath, std::shared_ptr<Ship::BinaryReader> headerReader) {
+std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataBinary(const std::string& filePath,
+                                                                      std::shared_ptr<BinaryReader> headerReader) {
     auto resourceInitData = CreateDefaultResourceInitData();
     resourceInitData->Path = filePath;
 
@@ -294,8 +293,8 @@ Archive::ReadResourceInitDataBinary(const std::string& filePath, std::shared_ptr
     return resourceInitData;
 }
 
-std::shared_ptr<Ship::ResourceInitData>
-Archive::ReadResourceInitDataXml(const std::string& filePath, std::shared_ptr<tinyxml2::XMLDocument> document) {
+std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataXml(const std::string& filePath,
+                                                                   std::shared_ptr<tinyxml2::XMLDocument> document) {
     auto resourceInitData = CreateDefaultResourceInitData();
     resourceInitData->Path = filePath;
 

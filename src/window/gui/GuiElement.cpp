@@ -60,7 +60,7 @@ void GuiElement::SyncVisibilityConsoleVariable() {
     }
 
     if (shouldSave) {
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
     }
 }
 

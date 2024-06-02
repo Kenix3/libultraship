@@ -125,8 +125,8 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->FontGlobalScale = 2.0f;
 #endif
 
-    auto imguiIniPath = Ship::Context::GetPathRelativeToAppDirectory("imgui.ini");
-    auto imguiLogPath = Ship::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
+    auto imguiIniPath = Context::GetPathRelativeToAppDirectory("imgui.ini");
+    auto imguiLogPath = Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     mImGuiIo->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
@@ -266,7 +266,7 @@ void Gui::Update(WindowEvent event) {
         case WindowBackend::FAST3D_SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 #if defined(__ANDROID__) || defined(__IOS__)
-            Ship::Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+            Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
 #ifdef ENABLE_DX11
@@ -295,7 +295,7 @@ void Gui::UnblockImGuiGamepadNavigation() {
 }
 
 void Gui::DrawMenu() {
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
+    Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
@@ -353,15 +353,15 @@ void Gui::DrawMenu() {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<ConsoleWindow>(
+            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<ConsoleWindow>(
+            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #endif

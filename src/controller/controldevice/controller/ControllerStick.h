@@ -51,7 +51,7 @@ class ControllerStick {
     uint8_t GetNotchSnapAngle();
     bool NotchSnapAngleIsDefault();
 
-    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
+    bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     Stick LeftOrRightStick();

@@ -23,10 +23,9 @@ class Archive {
     void Load();
     void Unload();
 
-    virtual std::shared_ptr<Ship::File> LoadFile(const std::string& filePath,
-                                                 std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
-    virtual std::shared_ptr<Ship::File> LoadFile(uint64_t hash,
-                                                 std::shared_ptr<Ship::ResourceInitData> initData = nullptr);
+    virtual std::shared_ptr<File> LoadFile(const std::string& filePath,
+                                           std::shared_ptr<ResourceInitData> initData = nullptr);
+    virtual std::shared_ptr<File> LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles();
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> ListFiles(const std::string& filter);
     bool HasFile(const std::string& filePath);
@@ -43,21 +42,21 @@ class Archive {
     void SetLoaded(bool isLoaded);
     void SetGameVersion(uint32_t gameVersion);
     void IndexFile(const std::string& filePath);
-    virtual std::shared_ptr<Ship::File> LoadFileRaw(const std::string& filePath) = 0;
-    virtual std::shared_ptr<Ship::File> LoadFileRaw(uint64_t hash) = 0;
+    virtual std::shared_ptr<File> LoadFileRaw(const std::string& filePath) = 0;
+    virtual std::shared_ptr<File> LoadFileRaw(uint64_t hash) = 0;
 
   private:
-    static std::shared_ptr<Ship::ResourceInitData> CreateDefaultResourceInitData();
-    std::shared_ptr<Ship::ResourceInitData> ReadResourceInitData(const std::string& filePath,
-                                                                 std::shared_ptr<Ship::File> metaFileToLoad);
-    std::shared_ptr<Ship::ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath,
-                                                                       std::shared_ptr<Ship::File> fileToLoad);
-    static std::shared_ptr<Ship::ResourceInitData>
-    ReadResourceInitDataBinary(const std::string& filePath, std::shared_ptr<Ship::BinaryReader> headerReader);
-    static std::shared_ptr<Ship::ResourceInitData>
-    ReadResourceInitDataXml(const std::string& filePath, std::shared_ptr<tinyxml2::XMLDocument> document);
-    std::shared_ptr<Ship::BinaryReader> CreateBinaryReader(std::shared_ptr<Ship::File> fileToLoad);
-    std::shared_ptr<tinyxml2::XMLDocument> CreateXMLReader(std::shared_ptr<Ship::File> fileToLoad);
+    static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();
+    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
+                                                           std::shared_ptr<File> metaFileToLoad);
+    std::shared_ptr<ResourceInitData> ReadResourceInitDataLegacy(const std::string& filePath,
+                                                                 std::shared_ptr<File> fileToLoad);
+    static std::shared_ptr<ResourceInitData> ReadResourceInitDataBinary(const std::string& filePath,
+                                                                        std::shared_ptr<BinaryReader> headerReader);
+    static std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
+                                                                     std::shared_ptr<tinyxml2::XMLDocument> document);
+    std::shared_ptr<BinaryReader> CreateBinaryReader(std::shared_ptr<File> fileToLoad);
+    std::shared_ptr<tinyxml2::XMLDocument> CreateXMLReader(std::shared_ptr<File> fileToLoad);
 
     bool mIsLoaded;
     bool mHasGameVersion;

@@ -300,7 +300,7 @@ void ShipDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevic
     }
 
     if (Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
-        std::set<Ship::ShipDeviceIndex> alreadyConnectedDevices;
+        std::set<ShipDeviceIndex> alreadyConnectedDevices;
         for (auto mapping : Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->GetAllMappings()) {
             auto sdlMapping = std::dynamic_pointer_cast<SDLMapping>(mapping);
             if (sdlMapping == nullptr) {

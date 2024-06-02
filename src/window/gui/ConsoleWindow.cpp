@@ -24,8 +24,8 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
 
 int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                     std::string* output) {
-    auto window = std::static_pointer_cast<Ship::ConsoleWindow>(
-        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+    auto window =
+        std::static_pointer_cast<ConsoleWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
     if (!window) {
         if (output) {
             *output += "A console window is necessary for Clear";
@@ -41,7 +41,7 @@ int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std:
 int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<Ship::ConsoleWindow>(
+        auto window = std::static_pointer_cast<ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
             if (output) {
@@ -81,7 +81,7 @@ int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::
 int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                          std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<Ship::ConsoleWindow>(
+        auto window = std::static_pointer_cast<ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
         if (!window) {
             if (output) {
@@ -164,19 +164,19 @@ int32_t ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::v
     auto cvar = CVarGet(args[1].c_str());
 
     if (cvar != nullptr) {
-        if (cvar->Type == Ship::ConsoleVariableType::Integer) {
+        if (cvar->Type == ConsoleVariableType::Integer) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %i", args[1].c_str(), cvar->Integer);
             }
-        } else if (cvar->Type == Ship::ConsoleVariableType::Float) {
+        } else if (cvar->Type == ConsoleVariableType::Float) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %f", args[1].c_str(), cvar->Float);
             }
-        } else if (cvar->Type == Ship::ConsoleVariableType::String) {
+        } else if (cvar->Type == ConsoleVariableType::String) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %s", args[1].c_str(), cvar->String.c_str());
             }
-        } else if (cvar->Type == Ship::ConsoleVariableType::Color) {
+        } else if (cvar->Type == ConsoleVariableType::Color) {
             if (output) {
                 *output += StringHelper::Sprintf("[LUS] Variable %s is %08X", args[1].c_str(), cvar->Color);
             }
@@ -231,19 +231,18 @@ void ConsoleWindow::InitElement() {
     Context::GetInstance()->GetConsole()->AddCommand(
         "set", { SetCommand,
                  "Sets a console variable.",
-                 { { "varName", Ship::ArgumentType::TEXT }, { "varValue", Ship::ArgumentType::TEXT } } });
+                 { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand(
-        "get", { GetCommand, "Bind key as a bool toggle", { { "varName", Ship::ArgumentType::TEXT } } });
+        "get", { GetCommand, "Bind key as a bool toggle", { { "varName", ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand("help", { HelpCommand, "Shows all the commands" });
     Context::GetInstance()->GetConsole()->AddCommand("clear", { ClearCommand, "Clear the console history" });
     Context::GetInstance()->GetConsole()->AddCommand(
-        "bind", { BindCommand,
-                  "Binds key to commands",
-                  { { "key", Ship::ArgumentType::TEXT }, { "cmd", Ship::ArgumentType::TEXT } } });
+        "bind",
+        { BindCommand, "Binds key to commands", { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand(
         "bind-toggle", { BindToggleCommand,
                          "Bind key as a bool toggle",
-                         { { "key", Ship::ArgumentType::TEXT }, { "cmd", Ship::ArgumentType::TEXT } } });
+                         { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
 }
 
 void ConsoleWindow::UpdateElement() {

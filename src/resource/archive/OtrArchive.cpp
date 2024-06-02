@@ -18,7 +18,7 @@ OtrArchive::~OtrArchive() {
     SPDLOG_TRACE("destruct otrarchive: {}", GetPath());
 }
 
-std::shared_ptr<Ship::File> OtrArchive::LoadFileRaw(const std::string& filePath) {
+std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
     if (mHandle == nullptr) {
         SPDLOG_TRACE("Failed to open file {} from mpq archive {}. Archive not open.", filePath, GetPath());
         return nullptr;
@@ -57,7 +57,7 @@ std::shared_ptr<Ship::File> OtrArchive::LoadFileRaw(const std::string& filePath)
     return fileToLoad;
 }
 
-std::shared_ptr<Ship::File> OtrArchive::LoadFileRaw(uint64_t hash) {
+std::shared_ptr<File> OtrArchive::LoadFileRaw(uint64_t hash) {
     const std::string& filePath =
         *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
     return LoadFileRaw(filePath);
