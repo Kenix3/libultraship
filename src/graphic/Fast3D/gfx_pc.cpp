@@ -2607,8 +2607,6 @@ static inline void* seg_addr(uintptr_t w1) {
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
-uintptr_t clearMtx;
-
 void GfxExecStack::start(F3DGfx* dlist) {
     while (!cmd_stack.empty())
         cmd_stack.pop();
@@ -2729,34 +2727,13 @@ bool gfx_mtx_handler_f3dex2(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     uintptr_t mtxAddr = cmd->words.w1;
 
-    if (mtxAddr == SEG_ADDR(0, 0x12DB20) || // GC MQ D
-        mtxAddr == SEG_ADDR(0, 0x12DB40) || // GC NMQ D
-        mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
-        mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
-        mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
-        mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
-    ) {
-        mtxAddr = clearMtx;
-    }
-
     gfx_sp_matrix(C0(0, 8) ^ F3DEX2_G_MTX_PUSH, (const int32_t*)seg_addr(mtxAddr));
-
     return false;
 }
 // Seems to be the same for all other non F3DEX2 microcodes...
 bool gfx_mtx_handler_f3d(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     uintptr_t mtxAddr = cmd->words.w1;
-
-    if (mtxAddr == SEG_ADDR(0, 0x12DB20) || // GC MQ D
-        mtxAddr == SEG_ADDR(0, 0x12DB40) || // GC NMQ D
-        mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
-        mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
-        mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
-        mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
-    ) {
-        mtxAddr = clearMtx;
-    }
 
     gfx_sp_matrix(C0(16, 8), (const int32_t*)seg_addr(cmd->words.w1));
     return false;
