@@ -2589,7 +2589,7 @@ static void gfx_s2dex_rect_copy(F3DuObjSprite* spr) {
 
 static inline void* seg_addr(uintptr_t w1) {
     // Segmented?
-    if (w1 & 1) {
+    if (IS_SEGMENTED(w1)) {
         uint32_t segNum = (uint32_t)(w1 >> 24);
 
         uint32_t offset = w1 & 0x00FFFFFE;
@@ -3196,7 +3196,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetdata = {};
 
-    if ((i & 1) != 1) {
+    if ((IS_SEGMENTED(i)) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
@@ -4211,7 +4211,7 @@ void gfx_push_current_dir(char* path) {
 int32_t gfx_check_image_signature(const char* imgData) {
     uintptr_t i = (uintptr_t)(imgData);
 
-    if ((i & 1) == 1) {
+    if ((IS_SEGMENTED(i)) == 1) {
         return 0;
     }
 
