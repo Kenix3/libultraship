@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <any>
 #include "utils/StringHelper.h"
+#include "Context.h"
 
 #ifdef __APPLE__
 #include "graphic/Fast3D/gfx_metal.h"
@@ -245,46 +246,37 @@ void Config::SetAudioBackend(AudioBackend backend) {
 
 WindowBackend Config::GetWindowBackend() {
     WindowBackend backend;
-    int backendId = GetInt("Window.Backend.Id", -1);
-    if (backendId != -1 && backendId < static_cast<int>(WindowBackend::BACKEND_COUNT)) {
+    auto backendId = GetInt("Window.Backend.Id", -1);
+    if (Context::GetInstance()->GetWindow()->IsAvailableWindowBackend(backendId)) {
         return static_cast<WindowBackend>(backendId);
     }
 
-    SPDLOG_TRACE("Could not find WindowBackend matching id from config file ({}). Returning default WindowBackend.",
-                 backendId);
-#ifdef ENABLE_DX12
-    return WindowBackend::DX12;
-#endif
+    SPDLOG_TRACE(
+        "Could not find available WindowBackend matching id from config file ({}). Returning default WindowBackend.",
+        backendId);
 #ifdef ENABLE_DX11
-    return WindowBackend::DX11;
+    return WindowBackend::FAST3D_DXGI_DX11;
 #endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
-        return WindowBackend::SDL_METAL;
+        return WindowBackend::FAST3D_SDL_METAL;
     }
 #endif
-    return WindowBackend::SDL_OPENGL;
+    return WindowBackend::FAST3D_SDL_OPENGL;
 }
 
 void Config::SetWindowBackend(WindowBackend backend) {
     SetInt("Window.Backend.Id", static_cast<int>(backend));
 
     switch (backend) {
-        case WindowBackend::DX11:
+        case WindowBackend::FAST3D_DXGI_DX11:
             SetString("Window.Backend.Name", "DirectX 11");
             break;
-        case WindowBackend::DX12:
-            SetString("Window.Backend.Name", "DirectX 12");
-            break;
-        case WindowBackend::GLX_OPENGL:
-        case WindowBackend::SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
             SetString("Window.Backend.Name", "OpenGL");
             break;
-        case WindowBackend::SDL_METAL:
+        case WindowBackend::FAST3D_SDL_METAL:
             SetString("Window.Backend.Name", "Metal");
-            break;
-        case WindowBackend::GX2:
-            SetString("Window.Backend.Name", "GX2");
             break;
         default:
             SetString("Window.Backend.Name", "");
