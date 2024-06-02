@@ -3201,6 +3201,11 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
             std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
+            if(tex == nullptr) {
+                (*cmd0)++;
+                return false;
+            }
+
             i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
             texFlags = tex->Flags;
             rawTexMetdata.width = tex->Width;
@@ -3795,7 +3800,6 @@ static constexpr UcodeHandler f3dHandlers = {
     { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
-    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } }
 };
 
 // LUSTODO: These S2DEX commands have different opcode numbers on F3DEX2 vs other ucodes. More research needs to be done
