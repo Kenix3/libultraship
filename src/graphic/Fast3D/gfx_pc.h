@@ -21,6 +21,9 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 
+#define SEGMENT_NUMBER(x) (((uint32_t)(x) >> 24) & 0xFF)
+#define IS_SEGMENTED(x) ((SEGMENT_NUMBER(x) > 0) && (SEGMENT_NUMBER(x) < 0x20))
+
 extern uintptr_t gSegmentPointers[];
 extern uintptr_t gfxFramebuffer;
 
