@@ -21,7 +21,6 @@ enum class ResourceType {
     DisplayList = 0x4F444C54, // ODLT
     Vertex = 0x4F565458,      // OVTX
     Matrix = 0x4F4D5458,      // OMTX
-    Array = 0x4F415252,       // OARR
     Blob = 0x4F424C42,        // OBLB
     Texture = 0x4F544558,     // OTEX
 };
