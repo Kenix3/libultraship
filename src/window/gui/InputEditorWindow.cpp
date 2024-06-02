@@ -1462,7 +1462,7 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d###port%d", portIndex + 1, portIndex).c_str())) {
         DrawClearAllButton(portIndex);
         DrawSetDefaultsButton(portIndex);
-        if (!Ship::Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+        if (!Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
             ImGui::SameLine();
             if (ImGui::Button("Reorder controllers")) {
                 Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();

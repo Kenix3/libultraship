@@ -81,8 +81,8 @@ bool Window::IsAvailableWindowBackend(int32_t backendId) {
 
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
-    Ship::Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
-    Ship::Context::GetInstance()->GetConfig()->Save();
+    Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
+    Context::GetInstance()->GetConfig()->Save();
 }
 
 void Window::AddAvailableWindowBackend(WindowBackend backend) {

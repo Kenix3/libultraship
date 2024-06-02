@@ -14,7 +14,7 @@ SDLMapping::~SDLMapping() {
 
 bool SDLMapping::OpenController() {
     auto deviceIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
-        Ship::Context::GetInstance()
+        Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
             ->GetDeviceIndexMappingFromShipDeviceIndex(mShipDeviceIndex));
@@ -116,7 +116,7 @@ bool SDLMapping::UsesGameCubeLayout() {
 
 int32_t SDLMapping::GetSDLDeviceIndex() {
     auto deviceIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
-        Ship::Context::GetInstance()
+        Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
             ->GetDeviceIndexMappingFromShipDeviceIndex(mShipDeviceIndex));
@@ -130,7 +130,7 @@ int32_t SDLMapping::GetSDLDeviceIndex() {
 }
 
 std::string SDLMapping::GetSDLControllerName() {
-    return Ship::Context::GetInstance()
+    return Context::GetInstance()
         ->GetControlDeck()
         ->GetDeviceIndexMappingManager()
         ->GetSDLControllerNameFromShipDeviceIndex(mShipDeviceIndex);

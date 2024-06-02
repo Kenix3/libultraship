@@ -18,8 +18,8 @@ ResourceLoader::~ResourceLoader() {
 }
 
 void ResourceLoader::RegisterGlobalResourceFactories() {
-    RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryJsonV0>(), RESOURCE_FORMAT_BINARY, "Json",
-                            static_cast<uint32_t>(Ship::ResourceType::Json), 0);
+    RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryJsonV0>(), RESOURCE_FORMAT_BINARY, "Json",
+                            static_cast<uint32_t>(ResourceType::Json), 0);
 }
 
 bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format,
@@ -76,7 +76,7 @@ std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, std
     return GetFactory(format, mResourceTypes[typeName], version);
 }
 
-std::shared_ptr<Ship::IResource> ResourceLoader::LoadResource(std::shared_ptr<Ship::File> fileToLoad) {
+std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
     if (fileToLoad == nullptr) {
         SPDLOG_ERROR("Failed to load resource: File not loaded");
         return nullptr;

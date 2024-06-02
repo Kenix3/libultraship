@@ -27,9 +27,9 @@ struct ResourceInitData {
 
 struct File {
     std::shared_ptr<Archive> Parent;
-    std::shared_ptr<Ship::ResourceInitData> InitData;
+    std::shared_ptr<ResourceInitData> InitData;
     std::shared_ptr<std::vector<char>> Buffer;
-    std::variant<std::shared_ptr<tinyxml2::XMLDocument>, std::shared_ptr<Ship::BinaryReader>> Reader;
+    std::variant<std::shared_ptr<tinyxml2::XMLDocument>, std::shared_ptr<BinaryReader>> Reader;
     bool IsLoaded = false;
 };
 } // namespace Ship

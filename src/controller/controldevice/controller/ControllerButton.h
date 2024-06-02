@@ -36,7 +36,7 @@ class ControllerButton {
 
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
-    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
+    bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 

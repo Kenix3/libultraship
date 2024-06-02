@@ -48,7 +48,7 @@ class Controller : public ControlDevice {
     uint8_t GetPortIndex();
     std::vector<std::shared_ptr<ControllerMapping>> GetAllMappings();
 
-    bool ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode);
+    bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceIndex lusIndex);
