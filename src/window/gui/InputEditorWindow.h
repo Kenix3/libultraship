@@ -24,6 +24,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawInputChip(const char* buttonName, ImVec4 color);
     void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);
     void DrawControllerSchema();
+    bool TestingRumble();
 
   protected:
     void InitElement() override;
@@ -55,6 +56,8 @@ class InputEditorWindow : public GuiWindow {
 
     int32_t mGameInputBlockTimer;
     int32_t mMappingInputBlockTimer;
+    int32_t mRumbleTimer;
+    std::shared_ptr<Ship::ControllerRumbleMapping> mRumbleMappingToTest;
 
     // mBitmaskToMappingIds[port][bitmask] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::string>>> mBitmaskToMappingIds;
@@ -68,7 +71,6 @@ class InputEditorWindow : public GuiWindow {
 
     void GetButtonColorsForShipDeviceIndex(ShipDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
     void DrawPortTab(uint8_t portIndex);
-    void DrawDevicesTab();
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
     void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks);
@@ -78,5 +80,9 @@ class InputEditorWindow : public GuiWindow {
     void DrawLEDDeviceIcons(uint8_t portIndex);
     bool mInputEditorPopupOpen;
     void DrawSetDefaultsButton(uint8_t portIndex);
+    void DrawClearAllButton(uint8_t portIndex);
+
+    std::map<Ship::ShipDeviceIndex, bool> mDeviceIndexVisiblity;
+    void DrawDeviceVisibilityButtons();
 };
 } // namespace Ship
