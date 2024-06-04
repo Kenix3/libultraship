@@ -21,7 +21,7 @@ static void append_line(char* buf, size_t* len, const char* str) {
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
 static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
-                                      bool hint_single_element) {
+                                      bool hint_single_element, bool first_cycle) {
     if (!only_alpha) {
         switch (item) {
             default:
@@ -38,17 +38,27 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_INPUT_4:
                 return with_alpha || !inputs_have_alpha ? "input.input4" : "input.input4.rgb";
             case SHADER_TEXEL0:
-                return with_alpha ? "texVal0" : "texVal0.rgb";
+                return first_cycle ? (with_alpha ? "texVal0" : "texVal0.rgb")
+                                   : (with_alpha ? "texVal1" : "texVal1.rgb");
             case SHADER_TEXEL0A:
-                return hint_single_element ? "texVal0.a"
-                                           : (with_alpha ? "float4(texVal0.a, texVal0.a, texVal0.a, texVal0.a)"
-                                                         : "float3(texVal0.a, texVal0.a, texVal0.a)");
+                return first_cycle
+                           ? (hint_single_element ? "texVal0.a"
+                                                  : (with_alpha ? "float4(texVal0.a, texVal0.a, texVal0.a, texVal0.a)"
+                                                                : "float3(texVal0.a, texVal0.a, texVal0.a)"))
+                           : (hint_single_element ? "texVal1.a"
+                                                  : (with_alpha ? "float4(texVal1.a, texVal1.a, texVal1.a, texVal1.a)"
+                                                                : "float3(texVal1.a, texVal1.a, texVal1.a)"));
             case SHADER_TEXEL1A:
-                return hint_single_element ? "texVal1.a"
-                                           : (with_alpha ? "float4(texVal1.a, texVal1.a, texVal1.a, texVal1.a)"
-                                                         : "float3(texVal1.a, texVal1.a, texVal1.a)");
+                return first_cycle
+                           ? (hint_single_element ? "texVal1.a"
+                                                  : (with_alpha ? "float4(texVal1.a, texVal1.a, texVal1.a, texVal1.a)"
+                                                                : "float3(texVal1.a, texVal1.a, texVal1.a)"))
+                           : (hint_single_element ? "texVal0.a"
+                                                  : (with_alpha ? "float4(texVal0.a, texVal0.a, texVal0.a, texVal0.a)"
+                                                                : "float3(texVal0.a, texVal0.a, texVal0.a)"));
             case SHADER_TEXEL1:
-                return with_alpha ? "texVal1" : "texVal1.rgb";
+                return first_cycle ? (with_alpha ? "texVal1" : "texVal1.rgb")
+                                   : (with_alpha ? "texVal0" : "texVal0.rgb");
             case SHADER_COMBINED:
                 return with_alpha ? "texel" : "texel.rgb";
             case SHADER_NOISE:
@@ -71,13 +81,13 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_INPUT_4:
                 return "input.input4.a";
             case SHADER_TEXEL0:
-                return "texVal0.a";
+                return first_cycle ? "texVal0.a" : "texVal1.a";
             case SHADER_TEXEL0A:
-                return "texVal0.a";
+                return first_cycle ? "texVal0.a" : "texVal1.a";
             case SHADER_TEXEL1A:
-                return "texVal1.a";
+                return first_cycle ? "texVal1.a" : "texVal0.a";
             case SHADER_TEXEL1:
-                return "texVal1.a";
+                return first_cycle ? "texVal1.a" : "texVal0.a";
             case SHADER_COMBINED:
                 return "texel.a";
             case SHADER_NOISE:
@@ -89,30 +99,40 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
 #undef RAND_NOISE
 
 static void append_formula(char* buf, size_t* len, const uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix,
-                           bool with_alpha, bool only_alpha, bool opt_alpha) {
+                           bool with_alpha, bool only_alpha, bool opt_alpha, bool first_cycle) {
     if (do_single) {
-        append_str(buf, len, shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, false));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, first_cycle, false));
     } else if (do_multiply) {
-        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
         append_str(buf, len, " * ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
     } else if (do_mix) {
         append_str(buf, len, "lerp(");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, false));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, first_cycle, false));
         append_str(buf, len, ", ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
         append_str(buf, len, ", ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
         append_str(buf, len, ")");
     } else {
         append_str(buf, len, "(");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, false));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
         append_str(buf, len, " - ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, false));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, first_cycle, false));
         append_str(buf, len, ") * ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, true));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
         append_str(buf, len, " + ");
-        append_str(buf, len, shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, false));
+        append_str(buf, len,
+                   shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, first_cycle, false));
     }
 }
 
@@ -407,14 +427,14 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         if (!cc_features.color_alpha_same[c] && cc_features.opt_alpha) {
             append_str(buf, &len, "float4(");
             append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0],
-                           cc_features.do_mix[c][0], false, false, true);
+                           cc_features.do_mix[c][0], false, false, true, c == 0);
             append_str(buf, &len, ", ");
             append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][1], cc_features.do_multiply[c][1],
-                           cc_features.do_mix[c][1], true, true, true);
+                           cc_features.do_mix[c][1], true, true, true, c == 0);
             append_str(buf, &len, ")");
         } else {
             append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0],
-                           cc_features.do_mix[c][0], cc_features.opt_alpha, false, cc_features.opt_alpha);
+                           cc_features.do_mix[c][0], cc_features.opt_alpha, false, cc_features.opt_alpha, c == 0);
         }
         append_line(buf, &len, ";");
     }
