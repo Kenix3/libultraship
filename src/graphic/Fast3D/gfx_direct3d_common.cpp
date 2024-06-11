@@ -21,7 +21,7 @@ static void append_line(char* buf, size_t* len, const char* str) {
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
 static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
-                                      bool hint_single_element, bool first_cycle) {
+                                      bool first_cycle, bool hint_single_element) {
     if (!only_alpha) {
         switch (item) {
             default:
