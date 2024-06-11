@@ -57,12 +57,15 @@ using namespace std;
 #define SCALE_3_8(VAL_) ((VAL_)*0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
-// Based off the current set native dimensions
-#define HALF_SCREEN_WIDTH (gfx_native_dimensions.width / 2)
-#define HALF_SCREEN_HEIGHT (gfx_native_dimensions.height / 2)
+// Based off the current set native dimensions or active framebuffer
+#define HALF_SCREEN_WIDTH ((fbActive ? active_fb->second.orig_width : gfx_native_dimensions.width) / 2)
+#define HALF_SCREEN_HEIGHT ((fbActive ? active_fb->second.orig_height : gfx_native_dimensions.height) / 2)
 
-#define RATIO_X (gfx_current_dimensions.width / (2.0f * HALF_SCREEN_WIDTH))
-#define RATIO_Y (gfx_current_dimensions.height / (2.0f * HALF_SCREEN_HEIGHT))
+// Ratios for current window dimensions or active framebuffer scaled size
+#define RATIO_X \
+    ((fbActive ? active_fb->second.applied_width : gfx_current_dimensions.width) / (2.0f * HALF_SCREEN_WIDTH))
+#define RATIO_Y \
+    ((fbActive ? active_fb->second.applied_height : gfx_current_dimensions.height) / (2.0f * HALF_SCREEN_HEIGHT))
 
 #define TEXTURE_CACHE_MAX_SIZE 500
 
@@ -2272,8 +2275,15 @@ static void gfx_draw_rectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lr
     ur->w = 1.0f;
 
     // The coordinates for texture rectangle shall bypass the viewport setting
-    struct XYWidthHeight default_viewport = { 0, gfx_native_dimensions.height, gfx_native_dimensions.width,
-                                              gfx_native_dimensions.height };
+    struct XYWidthHeight default_viewport;
+    if (!fbActive) {
+        default_viewport = { 0, (int16_t)gfx_native_dimensions.height, gfx_native_dimensions.width,
+                             gfx_native_dimensions.height };
+    } else {
+        default_viewport = { 0, (int16_t)active_fb->second.orig_height, active_fb->second.orig_width,
+                             active_fb->second.orig_height };
+    }
+
     struct XYWidthHeight viewport_saved = g_rdp.viewport;
     uint32_t geometry_mode_saved = g_rsp.geometry_mode;
 
