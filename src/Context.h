@@ -66,7 +66,7 @@ class Context {
     void InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks = {});
     void InitCrashHandler();
     void InitAudio();
-    void InitGfxDebugger();
+    void InitGfxDebugger(uint32_t ucode);
     void InitConsole();
     void InitWindow(std::vector<std::shared_ptr<GuiWindow>> guiWindows = {});
 
