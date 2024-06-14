@@ -178,10 +178,10 @@ void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHI
     ImGui::EndDisabled();
 }
 
-void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask) {
+void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    auto popupId = StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask);
-    if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(),
+    auto popupId = StringHelper::Sprintf("addButtonMappingPopup##%d-%d-%d", port, bitmask, specialButton);
+    if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d-%d", ICON_FA_PLUS, port, bitmask, specialButton).c_str(),
                       ImVec2(20.0f, 0.0f))) {
         ImGui::OpenPopup(popupId.c_str());
     };
@@ -198,8 +198,8 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERB
         if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
-                                                        ->GetButton(bitmask)
-                                                        ->AddOrEditButtonMappingFromRawPress(bitmask, "")) {
+                                                        ->GetButton(bitmask, specialButton)
+                                                        ->AddOrEditButtonMappingFromRawPress(bitmask, specialButton, "")) {
             mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
@@ -207,11 +207,11 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERB
     }
 }
 
-void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, std::string id) {
+void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, std::string id) {
     auto mapping = Ship::Context::GetInstance()
                        ->GetControlDeck()
                        ->GetControllerByPort(port)
-                       ->GetButton(bitmask)
+                       ->GetButton(bitmask, specialButton)
                        ->GetButtonMappingById(id);
     if (mapping == nullptr) {
         return;
@@ -257,8 +257,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
         if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
-                                                        ->GetButton(bitmask)
-                                                        ->AddOrEditButtonMappingFromRawPress(bitmask, id)) {
+                                                        ->GetButton(bitmask, specialButton)
+                                                        ->AddOrEditButtonMappingFromRawPress(bitmask, specialButton, id)) {
             mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
@@ -339,7 +339,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
         Ship::Context::GetInstance()
             ->GetControlDeck()
             ->GetControllerByPort(port)
-            ->GetButton(bitmask)
+            ->GetButton(bitmask, specialButton)
             ->ClearButtonMapping(id);
     };
     ImGui::PopStyleColor();
@@ -348,16 +348,16 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     ImGui::SameLine(0, 4.0f);
 }
 
-void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask,
+void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton = 0,
                                        ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine(32.0f);
     DrawInputChip(buttonName, color);
     ImGui::SameLine(86.0f);
     for (auto id : mBitmaskToMappingIds[port][bitmask]) {
-        DrawButtonLineEditMappingButton(port, bitmask, id);
+        DrawButtonLineEditMappingButton(port, bitmask, specialButton, id);
     }
-    DrawButtonLineAddMappingButton(port, bitmask);
+    DrawButtonLineAddMappingButton(port, bitmask, specialButton);
 }
 
 void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction) {
@@ -604,6 +604,16 @@ void InputEditorWindow::UpdateBitmaskToMappingIds(uint8_t port) {
             if (std::find(mBitmaskToMappingIds[port][bitmask].begin(), mBitmaskToMappingIds[port][bitmask].end(), id) ==
                 mBitmaskToMappingIds[port][bitmask].end()) {
                 mBitmaskToMappingIds[port][bitmask].push_back(id);
+            }
+        }
+    }
+    for (auto [specialButton, button] :
+         Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllSpecialButtons()) {
+        
+        for (auto [id, mapping] : button->GetAllButtonMappings()) {
+            if (std::find(mBitmaskToMappingIds[port][button->mBitmask].begin(), mBitmaskToMappingIds[port][button->mBitmask].end(), id) ==
+                mBitmaskToMappingIds[port][button->mBitmask].end()) {
+                mBitmaskToMappingIds[port][button->mBitmask].push_back(id);
             }
         }
     }
@@ -1154,19 +1164,21 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
 
         if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
             DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
-            DrawButtonLine("A", portIndex, BTN_A, CHIP_COLOR_N64_BLUE);
-            DrawButtonLine("B", portIndex, BTN_B, CHIP_COLOR_N64_GREEN);
-            DrawButtonLine("Start", portIndex, BTN_START, CHIP_COLOR_N64_RED);
+            DrawButtonLine("A", portIndex, BTN_A, 0, CHIP_COLOR_N64_BLUE);
+            DrawButtonLine("B", portIndex, BTN_B, 0, CHIP_COLOR_N64_GREEN);
+            DrawButtonLine("Start", portIndex, BTN_START, 0, CHIP_COLOR_N64_RED);
             DrawButtonLine("L", portIndex, BTN_L);
             DrawButtonLine("R", portIndex, BTN_R);
             DrawButtonLine("Z", portIndex, BTN_Z);
-            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_CUP,
+            DrawButtonLine("Roll button", portIndex, 0, 1);
+            DrawButtonLine("Interact button", portIndex, 0, 2);
+            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_CUP, 0,
                            CHIP_COLOR_N64_YELLOW);
-            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_CDOWN,
+            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_CDOWN, 0,
                            CHIP_COLOR_N64_YELLOW);
-            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_CLEFT,
+            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_CLEFT, 0,
                            CHIP_COLOR_N64_YELLOW);
-            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT,
+            DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT, 0,
                            CHIP_COLOR_N64_YELLOW);
         } else {
             DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);

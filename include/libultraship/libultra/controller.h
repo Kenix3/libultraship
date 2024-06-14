@@ -120,6 +120,16 @@ typedef struct {
     /* 0x03 */ uint8_t err_no;
 } OSContStatus; // size = 0x04
 
+typedef struct IntentControls IntentControls;
+struct IntentControls {
+    uint8_t (*checkIntentButton)(uint16_t intentId);
+    void(*registerButtonState)(uint16_t specialButtonId, uint8_t);
+    void(*updateCurState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    void(*updatePrevState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    void(*updatePressState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    void(*updateRelState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+};
+
 typedef struct {
     /* 0x00 */ CONTROLLERBUTTONS_T button;
     /* 0x02 */ int8_t stick_x;
@@ -129,7 +139,10 @@ typedef struct {
     /* 0x09 */ float gyro_y;
     /* 0x1C */ int8_t right_stick_x;
     /* 0x20 */ int8_t right_stick_y;
+    IntentControls* intentControls;
 } OSContPad; // size = 0x24
+
+#define GET_INTENTS(pad, f, default) (pad->intentControls == NULL ? default : pad->intentControls->f)
 
 typedef struct {
     /* 0x00 */ void* address;

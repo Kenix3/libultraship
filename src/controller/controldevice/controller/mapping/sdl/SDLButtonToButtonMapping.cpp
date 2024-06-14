@@ -4,11 +4,12 @@
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
+#include <iostream>
 
 namespace Ship {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
-                                                   CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton)
-    : ControllerInputMapping(shipDeviceIndex), ControllerButtonMapping(shipDeviceIndex, portIndex, bitmask),
+                                                   CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, int32_t sdlControllerButton)
+    : ControllerInputMapping(shipDeviceIndex), ControllerButtonMapping(shipDeviceIndex, portIndex, bitmask, specialButton),
       SDLButtonToAnyMapping(shipDeviceIndex, sdlControllerButton) {
 }
 
@@ -21,7 +22,8 @@ void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
         return;
     }
 
-    if (SDL_GameControllerGetButton(mController, mControllerButton)) {
+    this->pressed = SDL_GameControllerGetButton(mController, mControllerButton);
+    if (this->pressed) {
         padButtons |= mBitmask;
     }
 }
@@ -31,7 +33,7 @@ uint8_t SDLButtonToButtonMapping::GetMappingType() {
 }
 
 std::string SDLButtonToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask,
+    return StringHelper::Sprintf("P%d-B%d-S%d-LUSI%d-SDLB%d", mPortIndex, mBitmask, mSpecialButton,
                                  ControllerInputMapping::mShipDeviceIndex, mControllerButton);
 }
 

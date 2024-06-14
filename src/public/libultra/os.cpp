@@ -37,7 +37,9 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 }
 
 void osContGetReadData(OSContPad* pad) {
+    IntentControls* intentControls = pad->intentControls;
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
+    pad->intentControls = intentControls;
 
     Ship::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
 }

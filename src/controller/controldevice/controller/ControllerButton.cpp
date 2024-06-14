@@ -10,9 +10,9 @@
 #include <algorithm>
 
 namespace Ship {
-ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, IntentControls* intentControls, uint16_t specialButtonId)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN) {
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mSpecialButtonId(specialButtonId), intentControls(intentControls) {
 }
 
 ControllerButton::~ControllerButton() {
@@ -172,16 +172,16 @@ bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
                        [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
 
-bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
+bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
     mUseKeydownEventToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
-        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
+        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, specialButton, mKeyboardScancodeForNewMapping);
     }
 
     if (mapping == nullptr) {
-        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
+        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask, specialButton);
     }
 
     if (mapping == nullptr) {
@@ -225,7 +225,7 @@ bool ControllerButton::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::K
 }
 
 void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
-    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
+    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDeviceIndex, mPortIndex, mBitmask, mSpecialButtonId)) {
         AddButtonMapping(mapping);
     }
 

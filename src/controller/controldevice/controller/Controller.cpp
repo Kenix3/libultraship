@@ -10,18 +10,28 @@
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
 
+// TODO: move this around better
+typedef struct {
+    bool eventRollEnabled;
+    bool eventInteractEnabled;
+} DefaultStorage;
+extern DefaultStorage eventControlStorage;
+
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace Ship {
 
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : ControlDevice(portIndex) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, IntentControls* intentControls, std::vector<uint16_t> specialButtons)
+    : ControlDevice(portIndex), intentControls(intentControls) {
     for (auto bitmask : { BUTTON_BITMASKS }) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
+        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask, nullptr, 0);
     }
     for (auto bitmask : additionalBitmasks) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
+        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask, nullptr, 0);
+    }
+    for (auto button : specialButtons) {
+        mSpecialButtons[button] = std::make_shared<ControllerButton>(portIndex, 0, intentControls, button);
     }
     mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK);
     mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK);
@@ -30,7 +40,7 @@ Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> addit
     mLED = std::make_shared<ControllerLED>(portIndex);
 }
 
-Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}) {
+Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}, nullptr, {}) {
 }
 
 Controller::~Controller() {
@@ -40,9 +50,15 @@ Controller::~Controller() {
 std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> Controller::GetAllButtons() {
     return mButtons;
 }
+std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> Controller::GetAllSpecialButtons() {
+    return mSpecialButtons;
+}
 
-std::shared_ptr<ControllerButton> Controller::GetButton(CONTROLLERBUTTONS_T bitmask) {
-    return mButtons[bitmask];
+std::shared_ptr<ControllerButton> Controller::GetButton(CONTROLLERBUTTONS_T bitmask, uint16_t specialButton) {
+    if(bitmask != 0){
+        return mButtons[bitmask];
+    }
+    return mSpecialButtons[specialButton];
 }
 
 std::shared_ptr<ControllerStick> Controller::GetLeftStick() {
@@ -133,6 +149,18 @@ void Controller::ReadToPad(OSContPad* pad) {
     for (auto [bitmask, button] : mButtons) {
         button->UpdatePad(padToBuffer.button);
     }
+    
+    padToBuffer.intentControls = intentControls;
+    
+    for (auto [specialButton, button] : mSpecialButtons) {
+        button->UpdatePad(padToBuffer.button);
+        uint8_t pressed = 0;
+        for (auto m : button->GetAllButtonMappings()){
+            if(specialButton > 0 && padToBuffer.intentControls != NULL && padToBuffer.intentControls->registerButtonState != NULL){
+                padToBuffer.intentControls->registerButtonState(specialButton, m.second->pressed);
+            }
+        }
+    }
 
     // Stick Inputs
     GetLeftStick()->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
@@ -147,6 +175,7 @@ void Controller::ReadToPad(OSContPad* pad) {
             mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
 
         pad->button |= padFromBuffer.button;
+        pad->intentControls = padToBuffer.intentControls;
 
         if (pad->stick_x == 0) {
             pad->stick_x = padFromBuffer.stick_x;

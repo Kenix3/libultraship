@@ -4,7 +4,7 @@
 namespace Ship {
 class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, public SDLAxisDirectionToAnyMapping {
   public:
-    SDLAxisDirectionToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+    SDLAxisDirectionToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton,
                                     int32_t sdlControllerAxis, int32_t axisDirection);
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
     uint8_t GetMappingType() override;

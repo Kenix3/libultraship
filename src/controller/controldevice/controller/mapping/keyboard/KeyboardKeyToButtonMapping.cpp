@@ -5,16 +5,18 @@
 #include "Context.h"
 
 namespace Ship {
-KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton,
                                                        KbScancode scancode)
     : ControllerInputMapping(ShipDeviceIndex::Keyboard),
-      ControllerButtonMapping(ShipDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
+      ControllerButtonMapping(ShipDeviceIndex::Keyboard, portIndex, bitmask, specialButton), KeyboardKeyToAnyMapping(scancode) {
 }
 
 void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->KeyboardGameInputBlocked()) {
         return;
     }
+
+    this->pressed = mKeyPressed;
 
     if (!mKeyPressed) {
         return;

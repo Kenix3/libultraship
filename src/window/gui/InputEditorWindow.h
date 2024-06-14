@@ -33,9 +33,9 @@ class InputEditorWindow : public GuiWindow {
   private:
     void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                 ImVec4 color);
-    void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, ImVec4 color);
-    void DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, std::string id);
-    void DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask);
+    void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, ImVec4 color);
+    void DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, std::string id);
+    void DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton);
 
     void DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction, std::string id);
     void DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction);

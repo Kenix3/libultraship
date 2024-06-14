@@ -7,6 +7,7 @@
 #include "install_config.h"
 #include "debug/GfxDebugger.h"
 #include "graphic/Fast3D/Fast3dWindow.h"
+#include <map>
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -80,7 +81,25 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConfiguration();
     InitConsoleVariables();
     InitResourceManager(otrFiles, validHashes, reservedThreadCount);
-    InitControlDeck();
+    IntentControls* intentControls = new IntentControls;
+    static std::map<uint16_t, uint8_t>* buttonStates = new std::map<uint16_t, uint8_t>();
+    intentControls->checkIntentButton = +[](uint16_t intentId){
+        buttonStates->try_emplace(intentId, 0);
+        return buttonStates->at(intentId);
+    };
+    intentControls->registerButtonState = [](uint16_t intentId, uint8_t pressed){
+        buttonStates->insert_or_assign(intentId, pressed);
+    };
+    intentControls->updateCurState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
+    intentControls->updatePrevState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
+    intentControls->updatePressState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
+    intentControls->updateRelState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
+
+    InitControlDeck({}, intentControls, {
+        1,
+        2,
+        3
+    });
     InitCrashHandler();
     InitConsole();
     InitWindow();
@@ -211,12 +230,12 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     }
 }
 
-void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
+void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, IntentControls* intentControls, std::vector<uint16_t> specialControls) {
     if (GetControlDeck() != nullptr) {
         return;
     }
 
-    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks);
+    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks, intentControls, specialControls);
 }
 
 void Context::InitCrashHandler() {

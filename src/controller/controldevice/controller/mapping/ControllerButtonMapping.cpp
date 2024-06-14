@@ -7,8 +7,8 @@
 
 namespace Ship {
 ControllerButtonMapping::ControllerButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
-                                                 CONTROLLERBUTTONS_T bitmask)
-    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mBitmask(bitmask) {
+                                                 CONTROLLERBUTTONS_T bitmask, uint16_t specialButton)
+    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mBitmask(bitmask), mSpecialButton(specialButton) {
 }
 
 ControllerButtonMapping::~ControllerButtonMapping() {

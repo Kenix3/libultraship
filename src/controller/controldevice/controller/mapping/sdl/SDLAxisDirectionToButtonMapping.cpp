@@ -7,9 +7,9 @@
 
 namespace Ship {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
-                                                                 CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerAxis,
+                                                                 CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, int32_t sdlControllerAxis,
                                                                  int32_t axisDirection)
-    : ControllerInputMapping(shipDeviceIndex), ControllerButtonMapping(shipDeviceIndex, portIndex, bitmask),
+    : ControllerInputMapping(shipDeviceIndex), ControllerButtonMapping(shipDeviceIndex, portIndex, bitmask, specialButton),
       SDLAxisDirectionToAnyMapping(shipDeviceIndex, sdlControllerAxis, axisDirection) {
 }
 
