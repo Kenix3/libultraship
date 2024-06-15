@@ -121,13 +121,21 @@ typedef struct {
 } OSContStatus; // size = 0x04
 
 typedef struct IntentControls IntentControls;
+
+#define BUTTON_STATE_CUR 0
+#define BUTTON_STATE_PREV 1
+#define BUTTON_STATE_PRESS 2
+#define BUTTON_STATE_REL 3
+
 struct IntentControls {
-    uint8_t (*checkIntentButton)(uint16_t intentId);
-    void(*registerButtonState)(uint16_t specialButtonId, uint8_t);
-    void(*updateCurState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
-    void(*updatePrevState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
-    void(*updatePressState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
-    void(*updateRelState)(IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    void* userData;
+    uint8_t (*checkIntentButton)(void* userData, uint16_t intentId, uint8_t buttonStateVersion);
+    void(*registerButtonState)(void* userData, uint16_t specialButtonId, uint8_t);
+    void(*updateState)(void* userData);
+    // void(*updateCurState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    // void(*updatePrevState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    // void(*updatePressState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    // void(*updateRelState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
 };
 
 typedef struct {

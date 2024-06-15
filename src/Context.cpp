@@ -7,7 +7,7 @@
 #include "install_config.h"
 #include "debug/GfxDebugger.h"
 #include "graphic/Fast3D/Fast3dWindow.h"
-#include <map>
+#include "IntentControlManager.h"
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -81,21 +81,8 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConfiguration();
     InitConsoleVariables();
     InitResourceManager(otrFiles, validHashes, reservedThreadCount);
-    IntentControls* intentControls = new IntentControls;
-    static std::map<uint16_t, uint8_t>* buttonStates = new std::map<uint16_t, uint8_t>();
-    intentControls->checkIntentButton = +[](uint16_t intentId){
-        buttonStates->try_emplace(intentId, 0);
-        return buttonStates->at(intentId);
-    };
-    intentControls->registerButtonState = [](uint16_t intentId, uint8_t pressed){
-        buttonStates->insert_or_assign(intentId, pressed);
-    };
-    intentControls->updateCurState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
-    intentControls->updatePrevState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
-    intentControls->updatePressState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
-    intentControls->updateRelState = +[](IntentControls *cur, IntentControls *prev, IntentControls *press, IntentControls *rel){};
-
-    InitControlDeck({}, intentControls, {
+    IntentControlManager* intentManager = new IntentControlManager();
+    InitControlDeck({}, intentManager->intentControls, {
         1,
         2,
         3

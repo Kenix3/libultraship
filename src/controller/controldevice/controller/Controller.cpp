@@ -157,7 +157,7 @@ void Controller::ReadToPad(OSContPad* pad) {
         uint8_t pressed = 0;
         for (auto m : button->GetAllButtonMappings()){
             if(specialButton > 0 && padToBuffer.intentControls != NULL && padToBuffer.intentControls->registerButtonState != NULL){
-                padToBuffer.intentControls->registerButtonState(specialButton, m.second->pressed);
+                padToBuffer.intentControls->registerButtonState(padToBuffer.intentControls->userData, specialButton, m.second->pressed);
             }
         }
     }
