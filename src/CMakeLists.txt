@@ -217,9 +217,7 @@ endif()
 
 #=================== Compile Options & Defs ===================
 
-if(USE_F3DEX2)
-    target_compile_definitions(libultraship PRIVATE F3DEX_GBI_2)
-endif()
+target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(${PROJECT_NAME} PRIVATE
