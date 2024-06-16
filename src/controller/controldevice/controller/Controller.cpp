@@ -95,6 +95,9 @@ void Controller::ClearAllMappings() {
     for (auto [bitmask, button] : GetAllButtons()) {
         button->ClearAllButtonMappings();
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        button->ClearAllButtonMappings();
+    }
     GetLeftStick()->ClearAllMappings();
     GetRightStick()->ClearAllMappings();
     GetGyro()->ClearGyroMapping();
@@ -104,6 +107,9 @@ void Controller::ClearAllMappings() {
 
 void Controller::ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
+        button->ClearAllButtonMappingsForDevice(shipDeviceIndex);
+    }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
         button->ClearAllButtonMappingsForDevice(shipDeviceIndex);
     }
     GetLeftStick()->ClearAllMappingsForDevice(shipDeviceIndex);
@@ -122,6 +128,9 @@ void Controller::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         button->AddDefaultMappings(shipDeviceIndex);
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        button->AddDefaultMappings(shipDeviceIndex);
+    }
     GetLeftStick()->AddDefaultMappings(shipDeviceIndex);
     GetRumble()->AddDefaultMappings(shipDeviceIndex);
 
@@ -133,6 +142,9 @@ void Controller::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
 
 void Controller::ReloadAllMappingsFromConfig() {
     for (auto [bitmask, button] : GetAllButtons()) {
+        button->ReloadAllMappingsFromConfig();
+    }
+    for (auto [specialButton, button] : GetAllSpecialButtons()) {
         button->ReloadAllMappingsFromConfig();
     }
     GetLeftStick()->ReloadAllMappingsFromConfig();
@@ -152,13 +164,16 @@ void Controller::ReadToPad(OSContPad* pad) {
     
     padToBuffer.intentControls = intentControls;
     
-    for (auto [specialButton, button] : mSpecialButtons) {
-        button->UpdatePad(padToBuffer.button);
-        uint8_t pressed = 0;
-        for (auto m : button->GetAllButtonMappings()){
-            if(specialButton > 0 && padToBuffer.intentControls != NULL && padToBuffer.intentControls->registerButtonState != NULL){
-                padToBuffer.intentControls->registerButtonState(padToBuffer.intentControls->userData, specialButton, m.second->pressed);
+    if(padToBuffer.intentControls != NULL && padToBuffer.intentControls->registerButtonState != NULL){
+        for (auto [specialButton, button] : mSpecialButtons) {
+            button->UpdatePad(padToBuffer.button);
+            uint8_t pressed = false;
+            for (auto m : button->GetAllButtonMappings()){
+                pressed = pressed || m.second->pressed;
             }
+            padToBuffer.intentControls->registerButtonState(
+                padToBuffer.intentControls->userData, specialButton, pressed
+            );
         }
     }
 
@@ -209,6 +224,9 @@ bool Controller::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScanc
     for (auto [bitmask, button] : GetAllButtons()) {
         result = button->ProcessKeyboardEvent(eventType, scancode) || result;
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        result = button->ProcessKeyboardEvent(eventType, scancode) || result;
+    }
     result = GetLeftStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     result = GetRightStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     return result;
@@ -220,6 +238,12 @@ bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
             return true;
         }
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        if (button->HasMappingsForShipDeviceIndex(lusIndex)) {
+            return true;
+        }
+    }
+
     if (GetLeftStick()->HasMappingsForShipDeviceIndex(lusIndex)) {
         return true;
     }
@@ -242,6 +266,9 @@ bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
 std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask) {
     return mButtons[bitmask];
 }
+std::shared_ptr<ControllerButton> Controller::GetButtonBySpecialId(uint16_t id) {
+    return mSpecialButtons[id];
+}
 
 void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController,
                                                    ShipDeviceIndex lusIndex) {
@@ -258,6 +285,23 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
             }
         }
         newController->GetButtonByBitmask(bitmask)->SaveButtonMappingIdsToConfig();
+        for (auto id : buttonMappingIdsToRemove) {
+            button->ClearButtonMappingId(id);
+        }
+    }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        std::vector<std::string> buttonMappingIdsToRemove;
+        for (auto [id, mapping] : button->GetAllButtonMappings()) {
+            if (mapping->GetShipDeviceIndex() == lusIndex) {
+                buttonMappingIdsToRemove.push_back(id);
+
+                mapping->SetPortIndex(newController->GetPortIndex());
+                mapping->SaveToConfig();
+
+                newController->GetButtonBySpecialId(specialButtonId)->AddButtonMapping(mapping);
+            }
+        }
+        newController->GetButtonBySpecialId(specialButtonId)->SaveButtonMappingIdsToConfig();
         for (auto id : buttonMappingIdsToRemove) {
             button->ClearButtonMappingId(id);
         }
@@ -336,6 +380,11 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
 std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {
     std::vector<std::shared_ptr<ControllerMapping>> allMappings;
     for (auto [bitmask, button] : GetAllButtons()) {
+        for (auto [id, mapping] : button->GetAllButtonMappings()) {
+            allMappings.push_back(mapping);
+        }
+    }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
         for (auto [id, mapping] : button->GetAllButtonMappings()) {
             allMappings.push_back(mapping);
         }

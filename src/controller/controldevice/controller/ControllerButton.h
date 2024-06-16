@@ -47,6 +47,7 @@ class ControllerButton {
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
     std::string GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask);
+    std::string GetConfigNameFromSpecialButtonId(uint16_t id);
 
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;

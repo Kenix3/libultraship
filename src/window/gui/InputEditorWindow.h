@@ -58,6 +58,7 @@ class InputEditorWindow : public GuiWindow {
 
     // mBitmaskToMappingIds[port][bitmask] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::string>>> mBitmaskToMappingIds;
+    std::unordered_map<uint8_t, std::unordered_map<uint16_t, std::vector<std::string>>> mSpecialIdToMappingIds;
 
     // mStickDirectionToMappingIds[port][stick][direction] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<uint8_t, std::unordered_map<Direction, std::vector<std::string>>>>
@@ -70,8 +71,9 @@ class InputEditorWindow : public GuiWindow {
     void DrawPortTab(uint8_t portIndex);
     void DrawDevicesTab();
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
+    std::set<uint16_t> mSpecialButtonsIds;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
-    void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks);
+    void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks, std::set<uint16_t> specialButtons);
     void DrawAnalogStickDeviceIcons(uint8_t portIndex, Ship::Stick stick);
     void DrawRumbleDeviceIcons(uint8_t portIndex);
     void DrawGyroDeviceIcons(uint8_t portIndex);

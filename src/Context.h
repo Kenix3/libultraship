@@ -63,7 +63,7 @@ class Context {
     void InitConsoleVariables();
     void InitResourceManager(const std::vector<std::string>& otrFiles = {},
                              const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
-    void InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks = {}, IntentControls* intentControls = nullptr, std::vector<uint16_t> specialControls = {});
+    void InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks = {}, std::vector<uint16_t> specialControls = {});
     void InitCrashHandler();
     void InitAudio();
     void InitGfxDebugger();

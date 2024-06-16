@@ -230,6 +230,21 @@ int32_t ShipDeviceIndexMappingManager::GetNewSDLDeviceIndexFromShipDeviceIndex(S
             }
         }
 
+        for (auto [specialButtonId, button] : controller->GetAllSpecialButtons()) {
+            for (auto [id, buttonMapping] : button->GetAllButtonMappings()) {
+                if (buttonMapping->GetShipDeviceIndex() != lusIndex) {
+                    continue;
+                }
+
+                auto sdlButtonMapping = std::dynamic_pointer_cast<SDLMapping>(buttonMapping);
+                if (sdlButtonMapping == nullptr) {
+                    continue;
+                }
+
+                return sdlButtonMapping->GetCurrentSDLDeviceIndex();
+            }
+        }
+
         for (auto stick : { controller->GetLeftStick(), controller->GetRightStick() }) {
             for (auto [direction, axisDirectionMappings] : stick->GetAllAxisDirectionMappings()) {
                 for (auto [id, axisDirectionMapping] : axisDirectionMappings) {
@@ -483,6 +498,17 @@ uint8_t ShipDeviceIndexMappingManager::GetPortIndexOfDisconnectedPhysicalDevice(
                 }
             }
         }
+        for (auto [specialButtonId, button] : controller->GetAllSpecialButtons()) {
+            for (auto [id, buttonMapping] : button->GetAllButtonMappings()) {
+                auto sdlButtonMapping = std::dynamic_pointer_cast<SDLMapping>(buttonMapping);
+                if (sdlButtonMapping == nullptr) {
+                    continue;
+                }
+                if (sdlButtonMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                    return portIndex;
+                }
+            }
+        }
 
         for (auto stick : { controller->GetLeftStick(), controller->GetRightStick() }) {
             for (auto [direction, axisDirectionMappings] : stick->GetAllAxisDirectionMappings()) {
@@ -536,6 +562,18 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
         auto controller = Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex);
 
         for (auto [bitmask, button] : controller->GetAllButtons()) {
+            for (auto [id, buttonMapping] : button->GetAllButtonMappings()) {
+                auto sdlButtonMapping = std::dynamic_pointer_cast<SDLMapping>(buttonMapping);
+                if (sdlButtonMapping == nullptr) {
+                    continue;
+                }
+                if (sdlButtonMapping->GetJoystickInstanceId() == sdlJoystickInstanceId) {
+                    shipDeviceIndex = sdlButtonMapping->GetShipDeviceIndex();
+                    sdlButtonMapping->CloseController();
+                }
+            }
+        }
+        for (auto [specialButtonId, button] : controller->GetAllSpecialButtons()) {
             for (auto [id, buttonMapping] : button->GetAllButtonMappings()) {
                 auto sdlButtonMapping = std::dynamic_pointer_cast<SDLMapping>(buttonMapping);
                 if (sdlButtonMapping == nullptr) {

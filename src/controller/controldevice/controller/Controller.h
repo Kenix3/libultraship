@@ -38,6 +38,7 @@ class Controller : public ControlDevice {
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> GetAllButtons();
     std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> GetAllSpecialButtons();
     std::shared_ptr<ControllerButton> GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask);
+    std::shared_ptr<ControllerButton> GetButtonBySpecialId(uint16_t bitmask);
     std::shared_ptr<ControllerButton> GetButton(CONTROLLERBUTTONS_T bitmask, uint16_t specialButton);
     std::shared_ptr<ControllerStick> GetLeftStick();
     std::shared_ptr<ControllerStick> GetRightStick();

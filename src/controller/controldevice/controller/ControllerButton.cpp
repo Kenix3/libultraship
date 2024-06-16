@@ -18,6 +18,14 @@ ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmas
 ControllerButton::~ControllerButton() {
 }
 
+std::string ControllerButton::GetConfigNameFromSpecialButtonId(uint16_t id){
+    for(uint16_t i = 0; i < intentDefinitionCount; i++){
+        if(intentDefinitions[i].id == id){
+            return intentDefinitions[i].name;
+        }
+    }
+}
+
 std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
     switch (bitmask) {
         case BTN_A:
@@ -105,9 +113,17 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
         buttonMappingIdListString += ",";
     }
 
+    std::string buttonName = "";
+    if(mSpecialButtonId > 0){
+        buttonName = GetConfigNameFromSpecialButtonId(mSpecialButtonId);
+    }
+    else {
+        buttonName = GetConfigNameFromBitmask(mBitmask);
+    }
+
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              GetConfigNameFromBitmask(mBitmask).c_str());
+                                buttonName.c_str());
     if (buttonMappingIdListString == "") {
         CVarClear(buttonMappingIdsCvarKey.c_str());
     } else {
@@ -120,6 +136,11 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
 void ControllerButton::ReloadAllMappingsFromConfig() {
     mButtonMappings.clear();
 
+    std::string configName = GetConfigNameFromBitmask(mBitmask);
+    if(mSpecialButtonId > 0){
+        configName = GetConfigNameFromSpecialButtonId(mSpecialButtonId);
+    }
+
     // todo: this efficently (when we build out cvar array support?)
     // i don't expect it to really be a problem with the small number of mappings we have
     // for each controller (especially compared to include/exclude locations in rando), and
@@ -127,7 +148,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              GetConfigNameFromBitmask(mBitmask).c_str());
+                              configName.c_str());
     std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {

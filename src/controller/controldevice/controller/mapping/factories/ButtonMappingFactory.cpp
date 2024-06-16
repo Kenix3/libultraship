@@ -17,7 +17,7 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     CONTROLLERBUTTONS_T bitmask =
         CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
     CONTROLLERBUTTONS_T specialButton =
-        CVarGetInteger(StringHelper::Sprintf("%s.SpecialButton", mappingCvarKey.c_str()).c_str(), 0);
+        CVarGetInteger(StringHelper::Sprintf("%s.SpecialButtonId", mappingCvarKey.c_str()).c_str(), 0);
     if (!bitmask && ! specialButton) {
         // all button mappings need bitmasks
         CVarClear(mappingCvarKey.c_str());

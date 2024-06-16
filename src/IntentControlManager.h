@@ -49,7 +49,8 @@ class IntentControlManager {
         }
 
         stateVersion->try_emplace(intentId, 0);
-        return stateVersion->at(intentId);
+        uint8_t result = stateVersion->at(intentId);
+        return result;
     }
 
     void registerButtonState(uint16_t intentId, uint8_t pressed){

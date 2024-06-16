@@ -150,7 +150,17 @@ typedef struct {
     IntentControls* intentControls;
 } OSContPad; // size = 0x24
 
+typedef struct {
+    uint16_t id;
+    char* name;
+} IntentControlDefinition;
+
+extern IntentControlDefinition* intentDefinitions;
+extern uint16_t intentDefinitionCount;
+
 #define GET_INTENTS(pad, f, default) (pad->intentControls == NULL ? default : pad->intentControls->f)
+
+#define CHECK_INTENT(intentControls, intent, state, defaultVal) ( intentControls == NULL ? defaultVal : intentControls->checkIntentButton(intentControls->userData, intent, state))
 
 typedef struct {
     /* 0x00 */ void* address;

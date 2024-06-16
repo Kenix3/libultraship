@@ -81,12 +81,11 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConfiguration();
     InitConsoleVariables();
     InitResourceManager(otrFiles, validHashes, reservedThreadCount);
-    IntentControlManager* intentManager = new IntentControlManager();
-    InitControlDeck({}, intentManager->intentControls, {
-        1,
-        2,
-        3
-    });
+    std::vector<uint16_t> specialControls;
+    for(uint16_t i = 0; i < intentDefinitionCount; i++){
+        specialControls.push_back(intentDefinitions[i].id);
+    }
+    InitControlDeck({}, specialControls);
     InitCrashHandler();
     InitConsole();
     InitWindow();
@@ -217,12 +216,12 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     }
 }
 
-void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, IntentControls* intentControls, std::vector<uint16_t> specialControls) {
+void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::vector<uint16_t> specialControls) {
     if (GetControlDeck() != nullptr) {
         return;
     }
 
-    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks, intentControls, specialControls);
+    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks, specialControls);
 }
 
 void Context::InitCrashHandler() {
