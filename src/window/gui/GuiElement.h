@@ -14,6 +14,7 @@ class GuiElement {
     void Init();
     void Draw();
     void Update();
+    virtual void DrawContents() = 0;
 
     void Show();
     void Hide();

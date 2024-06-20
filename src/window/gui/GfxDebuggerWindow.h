@@ -11,6 +11,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
   public:
     using GuiWindow::GuiWindow;
     ~GfxDebuggerWindow();
+    void DrawContents();
 
   protected:
     void InitElement() override;
