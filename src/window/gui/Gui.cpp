@@ -134,7 +134,8 @@ void Gui::Init(GuiWindowInitData windowImpl) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && ((GetMenuBar() && GetMenuBar()->IsVisible()) 
+                || CVarGetInteger("gWindows.Menu", 0))) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -289,7 +290,8 @@ void Gui::BlockImGuiGamepadNavigation() {
 }
 
 void Gui::UnblockImGuiGamepadNavigation() {
-    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && ((GetMenuBar() && GetMenuBar()->IsVisible())
+        || CVarGetInteger("gWindows.Menu", 0))) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
 }
@@ -337,13 +339,15 @@ void Gui::DrawMenu() {
 
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
-    if (ImGui::IsKeyPressed(TOGGLE_BTN) ||
+    if (ImGui::IsKeyPressed(TOGGLE_BTN) || ImGui::IsKeyPressed(ImGuiKey_Escape) ||
         (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
-        GetMenuBar()->ToggleVisibility();
-        if (wnd->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
+        if (!ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            GetMenuBar()->ToggleVisibility();
         }
-        if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+        if (wnd->IsFullscreen()) {
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible() || wnd->ShouldForceCursorVisibility() || CVarGetInteger("gWindows.Menu", 0));
+        }
+        if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && ((GetMenuBar() && GetMenuBar()->IsVisible()) || CVarGetInteger("gWindows.Menu", 0))) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;

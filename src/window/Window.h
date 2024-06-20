@@ -39,6 +39,8 @@ class Window {
     virtual bool IsFullscreen() = 0;
     virtual bool IsRunning() = 0;
     virtual const char* GetKeyName(int32_t scancode) = 0;
+    virtual bool ShouldForceCursorVisibility() = 0;
+    virtual void SetForceCursorVisibility(bool visible) = 0;
 
     WindowBackend GetWindowBackend();
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();

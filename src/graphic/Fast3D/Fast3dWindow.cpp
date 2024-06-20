@@ -74,6 +74,8 @@ void Fast3dWindow::Init() {
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
 
+    mForceCursorVisibility = CVarGetInteger("gForceCursorVisibility", 0);
+
     InitWindowManager();
 
     gfx_init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen, width,
@@ -223,6 +225,16 @@ const char* Fast3dWindow::GetKeyName(int32_t scancode) {
     return mWindowManagerApi->get_key_name(scancode);
 }
 
+bool Fast3dWindow::ShouldForceCursorVisibility() {
+    return mForceCursorVisibility;
+}
+
+void Fast3dWindow::SetForceCursorVisibility(bool visible) {
+    mForceCursorVisibility = visible;
+    CVarSetInteger("gForceCursorVisibility", visible);
+    CVarSave();
+}
+
 bool Fast3dWindow::KeyUp(int32_t scancode) {
     if (scancode ==
         Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", Ship::KbScancode::LUS_KB_F11)) {
@@ -252,7 +264,8 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
 
     if (isNowFullscreen) {
         auto menuBar = wnd->GetGui()->GetMenuBar();
-        wnd->SetCursorVisibility(menuBar && menuBar->IsVisible());
+        wnd->SetCursorVisibility(menuBar && menuBar->IsVisible() || wnd->ShouldForceCursorVisibility() || 
+        CVarGetInteger("gWindows.Menu", 0));
     } else {
         wnd->SetCursorVisibility(true);
     }
