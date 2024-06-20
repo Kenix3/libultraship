@@ -917,6 +917,12 @@ void Gui::SetMenu(std::shared_ptr<GuiWindow> menu) {
     if (GetMenu()) {
         GetMenu()->Init();
     }
+
+    if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(
+            (GetMenu() && GetMenu()->IsVisible()) ||
+            Context::GetInstance()->GetWindow()->ShouldForceCursorVisibility());
+    }
 }
 
 std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
