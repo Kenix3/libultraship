@@ -65,9 +65,8 @@ bool ControlDeck::AllGameInputBlocked() {
 
 bool ControlDeck::GamepadGameInputBlocked() {
     // block controller input when using the controller to navigate imgui menus
-    return AllGameInputBlocked() ||
-        Context::GetInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible()
-               && CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
+    return AllGameInputBlocked() || Context::GetInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible() &&
+                                        CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
 }
 
 bool ControlDeck::KeyboardGameInputBlocked() {

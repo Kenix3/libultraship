@@ -415,8 +415,7 @@ void GfxDebuggerWindow::DrawContents() {
         if (ImGui::Button("Debug")) {
             dbg->RequestDebugging();
         }
-    }
-    else {
+    } else {
         bool resumed = false;
         if (ImGui::Button("Resume Game")) {
             dbg->ResumeGame();

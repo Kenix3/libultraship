@@ -343,7 +343,8 @@ void Gui::DrawMenu() {
             GetMenuBar()->ToggleVisibility();
         }
         if (wnd->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuOrMenubarVisible() || wnd->ShouldForceCursorVisibility());
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuOrMenubarVisible() ||
+                                                                     wnd->ShouldForceCursorVisibility());
         }
         if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -904,8 +905,9 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
     }
 
     if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-        Context::GetInstance()->GetWindow()->SetCursorVisibility((GetMenuBar() && GetMenuBar()->IsVisible()) 
-                                            || Context::GetInstance()->GetWindow()->ShouldForceCursorVisibility());
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(
+            (GetMenuBar() && GetMenuBar()->IsVisible()) ||
+            Context::GetInstance()->GetWindow()->ShouldForceCursorVisibility());
     }
 }
 

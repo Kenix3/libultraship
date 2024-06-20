@@ -17,7 +17,7 @@ class ControllerReorderingWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
     ~ControllerReorderingWindow();
-    void DrawContents() override {};
+    void DrawContents() override{};
 
   protected:
     void InitElement() override;

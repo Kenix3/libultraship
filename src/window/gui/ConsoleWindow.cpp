@@ -275,7 +275,7 @@ void ConsoleWindow::DrawContents() {
         auto console = Context::GetInstance()->GetConsole();
 
         ImGui::SetNextWindowSize(ImVec2(350, std::min(static_cast<int>(mAutoComplete.size()), 3) * 20.f),
-            ImGuiCond_Once);
+                                 ImGuiCond_Once);
         ImGui::SetNextWindowPos(ImVec2(pos.x + 8, pos.y + size.y - 1));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3, 3));
         ImGui::Begin("##WndAutocomplete", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
@@ -337,8 +337,7 @@ void ConsoleWindow::DrawContents() {
             }
             ImGui::EndCombo();
         }
-    }
-    else {
+    } else {
         mCurrentChannel = "Console";
     }
     ImGui::SameLine();
@@ -357,8 +356,7 @@ void ConsoleWindow::DrawContents() {
             }
             ImGui::EndCombo();
         }
-    }
-    else {
+    } else {
         mLevelFilter = spdlog::level::trace;
     }
     ImGui::SameLine();
@@ -371,7 +369,7 @@ void ConsoleWindow::DrawContents() {
     // Renders console history
     const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
     ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false,
-        ImGuiWindowFlags_HorizontalScrollbar);
+                      ImGuiWindowFlags_HorizontalScrollbar);
     ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(.3f, .3f, .3f, 1.0f));
     if (ImGui::BeginTable("History", 1)) {
 
@@ -399,14 +397,13 @@ void ConsoleWindow::DrawContents() {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             const bool isSelected = (mSelectedId == i) || std::find(mSelectedEntries.begin(), mSelectedEntries.end(),
-                i) != mSelectedEntries.end();
+                                                                    i) != mSelectedEntries.end();
             ImGui::PushStyleColor(ImGuiCol_Text, mPriorityColours[line.Priority]);
             if (ImGui::Selectable(id.c_str(), isSelected)) {
                 if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftCtrl)) && !isSelected) {
                     mSelectedEntries.push_back(i);
 
-                }
-                else {
+                } else {
                     mSelectedEntries.clear();
                 }
                 mSelectedId = isSelected ? -1 : i;
@@ -427,11 +424,11 @@ void ConsoleWindow::DrawContents() {
     if (mCurrentChannel == "Console") {
         // Renders input textfield
         constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackEdit |
-            ImGuiInputTextFlags_CallbackCompletion |
-            ImGuiInputTextFlags_CallbackHistory;
+                                              ImGuiInputTextFlags_CallbackCompletion |
+                                              ImGuiInputTextFlags_CallbackHistory;
         ImGui::PushItemWidth(-53.0f);
         if (ImGui::InputTextWithHint("##CMDInput", ">", mInputBuffer, gMaxBufferSize, flags,
-            &ConsoleWindow::CallbackStub, this)) {
+                                     &ConsoleWindow::CallbackStub, this)) {
             inputFocus = true;
             if (mInputBuffer[0] != '\0' && mInputBuffer[0] != ' ') {
                 Dispatch(std::string(mInputBuffer));

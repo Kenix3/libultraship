@@ -25,7 +25,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);
     void DrawControllerSchema();
     bool TestingRumble();
-    void DrawContents() override {};
+    void DrawContents() override{};
 
   protected:
     void InitElement() override;
