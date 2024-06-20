@@ -98,6 +98,9 @@ class Gui {
     bool ImGuiGamepadNavigationEnabled();
     void BlockImGuiGamepadNavigation();
     void UnblockImGuiGamepadNavigation();
+    void SetMenu(std::shared_ptr<GuiWindow> menu);
+    bool GetMenuOrMenubarVisible();
+    std::shared_ptr<GuiWindow> GetMenu();
 
   protected:
     void ImGuiWMInit();
@@ -115,6 +118,7 @@ class Gui {
     bool mNeedsConsoleVariableSave;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
+    std::shared_ptr<GuiWindow> mMenu;
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
 };
