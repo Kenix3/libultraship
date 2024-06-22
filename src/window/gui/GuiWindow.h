@@ -11,6 +11,7 @@
 namespace Ship {
 class GuiWindow : public GuiElement {
   public:
+    GuiWindow() = default;
     GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name);
     GuiWindow(const std::string& consoleVariable, const std::string& name);
 

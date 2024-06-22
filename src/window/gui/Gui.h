@@ -82,6 +82,7 @@ class Gui {
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     void RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     void RemoveGuiWindow(const std::string& name);
+    void RemoveAllGuiWindows();
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
     bool HasTextureByName(const std::string& name);
     void LoadGuiTexture(const std::string& name, const LUS::Texture& tex, const ImVec4& tint);
