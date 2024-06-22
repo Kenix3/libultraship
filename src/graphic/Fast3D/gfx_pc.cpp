@@ -339,28 +339,29 @@ static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& 
                     case G_CCMUX_TEXEL0:
                         val = SHADER_TEXEL0;
                         used_textures[0] = true;
-                        if (is_2cyc) {
+                        // Set the opposite texture when reading from the second cycle color options
+                        if (i != 0) {
                             used_textures[1] = true;
                         }
                         break;
                     case G_CCMUX_TEXEL1:
                         val = SHADER_TEXEL1;
                         used_textures[1] = true;
-                        if (is_2cyc) {
+                        if (i != 0) {
                             used_textures[0] = true;
                         }
                         break;
                     case G_CCMUX_TEXEL0_ALPHA:
                         val = SHADER_TEXEL0A;
                         used_textures[0] = true;
-                        if (is_2cyc) {
+                        if (i != 0) {
                             used_textures[1] = true;
                         }
                         break;
                     case G_CCMUX_TEXEL1_ALPHA:
                         val = SHADER_TEXEL1A;
                         used_textures[1] = true;
-                        if (is_2cyc) {
+                        if (i != 0) {
                             used_textures[0] = true;
                         }
                         break;
@@ -404,14 +405,15 @@ static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& 
                     case G_ACMUX_TEXEL0:
                         val = SHADER_TEXEL0;
                         used_textures[0] = true;
-                        if (is_2cyc) {
+                        // Set the opposite texture when reading from the second cycle color options
+                        if (i != 0) {
                             used_textures[1] = true;
                         }
                         break;
                     case G_ACMUX_TEXEL1:
                         val = SHADER_TEXEL1;
                         used_textures[1] = true;
-                        if (is_2cyc) {
+                        if (i != 0) {
                             used_textures[0] = true;
                         }
                         break;
