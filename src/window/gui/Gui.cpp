@@ -723,6 +723,10 @@ void Gui::RemoveGuiWindow(const std::string& name) {
     mGuiWindows.erase(name);
 }
 
+void Ship::Gui::RemoveAllGuiWindows() {
+    mGuiWindows.clear();
+}
+
 std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
     if (mGuiWindows.contains(name)) {
         return mGuiWindows[name];
