@@ -1,5 +1,7 @@
 #include "GfxDebugger.h"
 #include <spdlog/fmt/fmt.h>
+#include <gfxd.h>
+#include <spdlog/spdlog.h>
 
 namespace LUS {
 
@@ -50,5 +52,30 @@ bool GfxDebugger::HasBreakPoint(const std::vector<const F3DGfx*>& path) const {
 
     return true;
 }
+
+#ifdef GFX_DEBUG_DISASSEMBLER
+
+gfxd_ucode_t GfxDebugger::GetUcode(void) {
+    return mSelectedUcode;
+}
+
+void GfxDebugger::SetUcode(uint32_t ucode) {
+    switch(ucode) {
+        case 0:
+            mSelectedUcode = gfxd_f3d;
+            break;
+        case 1:
+            mSelectedUcode = gfxd_f3dex;
+            break;
+        case 2:
+            mSelectedUcode = gfxd_f3dex2;
+            break;
+        default:
+            SPDLOG_ERROR("Incorrect ucode for GfxDebugger, defaulting to f3dex2");
+            mSelectedUcode = gfxd_f3dex2;
+            break;
+    }
+}
+#endif
 
 } // namespace LUS

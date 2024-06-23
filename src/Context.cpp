@@ -85,7 +85,7 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConsole();
     InitWindow();
     InitAudio();
-    InitGfxDebugger();
+    InitGfxDebugger(0);
 }
 
 void Context::InitLogging() {
@@ -236,12 +236,16 @@ void Context::InitAudio() {
     GetAudio()->Init();
 }
 
-void Context::InitGfxDebugger() {
+void Context::InitGfxDebugger(uint32_t ucode) {
     if (GetGfxDebugger() != nullptr) {
         return;
     }
 
     mGfxDebugger = std::make_shared<LUS::GfxDebugger>();
+
+#ifdef GFX_DEBUG_DISASSEMBLER
+    mGfxDebugger->SetUcode(ucode);
+#endif
 }
 
 void Context::InitConsole() {
