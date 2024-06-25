@@ -10,8 +10,8 @@ GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisi
     }
 }
 
-GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable) 
-    : GuiMenuBar(visibilityConsoleVariable, false) {}
+GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable) : GuiMenuBar(visibilityConsoleVariable, false) {
+}
 
 void GuiMenuBar::Draw() {
     if (!IsVisible()) {
@@ -32,8 +32,7 @@ void GuiMenuBar::SyncVisibilityConsoleVariable() {
 
     if (IsVisible()) {
         CVarSetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
-    }
-    else {
+    } else {
         CVarClear(mVisibilityConsoleVariable.c_str());
     }
 
