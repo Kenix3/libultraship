@@ -11,8 +11,24 @@ GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const s
     }
 }
 
+GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize)
+    : GuiWindow(consoleVariable, isVisible, name, originalSize, ImGuiWindowFlags_None) {}
+
+GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name)
+    : GuiWindow(consoleVariable, isVisible, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {}
+
 GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize, uint32_t windowFlags)
-    : GuiWindow(consoleVariable, false, name, originalSize, windowFlags) {
+    : GuiWindow(consoleVariable, false, name, originalSize, windowFlags) {}
+
+GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize)
+    : GuiWindow(consoleVariable, false, name, originalSize, ImGuiWindowFlags_None) {}
+
+GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name)
+    : GuiWindow(consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {}
+
+void GuiWindow::SetVisiblity(bool visible) {
+    mIsVisible = visible;
+    SyncVisibilityConsoleVariable();
 }
 
 void GuiWindow::SyncVisibilityConsoleVariable() {
@@ -37,9 +53,11 @@ void GuiWindow::Draw() {
     if (!IsVisible()) {
         return;
     }
-    
+    if (mOriginalSize != ImVec2{-1, -1})
     ImGui::SetNextWindowSize(mOriginalSize, ImGuiCond_FirstUseEver);
-    ImGui::Begin("Console", &mIsVisible, mWindowFlags);
+    if (!ImGui::Begin(mName.c_str(), &mIsVisible, mWindowFlags)) {
+        ImGui::End();
+    }
     DrawElement();
     ImGui::End();
     // Sync up the IsVisible flag if it was changed by ImGui

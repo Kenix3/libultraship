@@ -406,7 +406,7 @@ void GfxDebuggerWindow::DrawDisas() {
     ImGui::EndChild();
 }
 
-void GfxDebuggerWindow::DrawContents() {
+void GfxDebuggerWindow::DrawElement() {
     auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
     // const ImVec2 pos = ImGui::GetWindowPos();
     // const ImVec2 size = ImGui::GetWindowSize();
@@ -415,7 +415,8 @@ void GfxDebuggerWindow::DrawContents() {
         if (ImGui::Button("Debug")) {
             dbg->RequestDebugging();
         }
-    } else {
+    }
+    else {
         bool resumed = false;
         if (ImGui::Button("Resume Game")) {
             dbg->ResumeGame();
@@ -426,13 +427,6 @@ void GfxDebuggerWindow::DrawContents() {
             DrawDisas();
         }
     }
-}
-
-void GfxDebuggerWindow::DrawElement() {
-    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    ImGui::Begin("GFX Debugger", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
-    DrawContents();
-    ImGui::End();
 }
 
 } // namespace LUS

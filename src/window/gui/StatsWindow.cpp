@@ -15,15 +15,6 @@ void StatsWindow::InitElement() {
 }
 
 void StatsWindow::DrawElement() {
-    ImGui::Begin("Debug Stats", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
-    DrawContents();
-    ImGui::End();
-}
-
-void StatsWindow::UpdateElement() {
-}
-
-void StatsWindow::DrawContents() {
     const float framerate = ImGui::GetIO().Framerate;
     const float deltatime = ImGui::GetIO().DeltaTime;
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
@@ -41,5 +32,8 @@ void StatsWindow::DrawContents() {
 #endif
     ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", deltatime * 1000.0f, framerate);
     ImGui::PopStyleColor();
+}
+
+void StatsWindow::UpdateElement() {
 }
 } // namespace Ship

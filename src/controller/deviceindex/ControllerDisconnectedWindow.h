@@ -19,7 +19,6 @@ class ControllerDisconnectedWindow : public GuiWindow {
     using GuiWindow::GuiWindow;
     ~ControllerDisconnectedWindow();
     void SetPortIndexOfDisconnectedController(uint8_t portIndex);
-    void DrawContents() override{};
 
   protected:
     void InitElement() override;

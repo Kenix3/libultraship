@@ -7,10 +7,7 @@ GuiElement::GuiElement(bool isVisible)
     : mIsInitialized(false), mIsVisible(isVisible) {
 }
 
-GuiElement::GuiElement(bool isVisible) : GuiElement(isVisible) {
-}
-
-GuiElement::GuiElement() : GuiElement("", false) {
+GuiElement::GuiElement() : GuiElement(false) {
 }
 
 GuiElement::~GuiElement() {

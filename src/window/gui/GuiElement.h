@@ -5,8 +5,6 @@
 namespace Ship {
 class GuiElement {
   public:
-    GuiElement(const std::string& visibilityConsoleVariable, bool isVisible);
-    GuiElement(const std::string& visibilityConsoleVariable);
     GuiElement(bool isVisible);
     GuiElement();
     ~GuiElement();
@@ -20,13 +18,13 @@ class GuiElement {
     void ToggleVisibility();
     bool IsVisible();
     bool IsInitialized();
+    virtual void DrawElement() = 0;
 
   protected:
     virtual void InitElement() = 0;
-    virtual void DrawElement() = 0;
     virtual void UpdateElement() = 0;
 
-    void SetVisiblity(bool visible);
+    virtual void SetVisiblity(bool visible);
     bool mIsVisible;
 
   private:

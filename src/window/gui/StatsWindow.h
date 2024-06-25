@@ -7,7 +7,6 @@ class StatsWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
     ~StatsWindow();
-    void DrawContents() override;
 
   private:
     void InitElement() override;

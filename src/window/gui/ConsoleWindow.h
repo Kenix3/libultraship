@@ -30,12 +30,12 @@ class ConsoleWindow : public GuiWindow {
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, ...);
     std::string GetCurrentChannel();
     void ClearBindings();
+    void DrawElement() override;
 
   protected:
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
     void InitElement() override;
     void UpdateElement() override;
-    void DrawElement() override;
 
   private:
     struct ConsoleLine {
