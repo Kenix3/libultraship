@@ -19,7 +19,6 @@ class ConsoleWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
     ~ConsoleWindow();
-    void DrawContents() override;
 
     void ClearLogs(std::string channel);
     void ClearLogs();

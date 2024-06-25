@@ -12,9 +12,8 @@ class GuiElement {
     ~GuiElement();
 
     void Init();
-    void Draw();
+    virtual void Draw() = 0;
     void Update();
-    virtual void DrawContents() = 0;
 
     void Show();
     void Hide();
@@ -31,9 +30,6 @@ class GuiElement {
     bool mIsVisible;
 
   private:
-    void SyncVisibilityConsoleVariable();
-    std::string mVisibilityConsoleVariable;
-
     bool mIsInitialized;
 };
 

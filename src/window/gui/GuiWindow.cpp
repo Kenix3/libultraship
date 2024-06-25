@@ -1,12 +1,49 @@
 #include "GuiWindow.h"
 
+#include "libultraship/libultraship.h"
+
 namespace Ship {
-GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name)
-    : mName(name), GuiElement(consoleVariable, isVisible) {
+GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize, uint32_t windowFlags)
+    : mName(name), mVisibilityConsoleVariable(consoleVariable), mOriginalSize(originalSize), mWindowFlags(windowFlags), GuiElement(isVisible) {
+    if (!mVisibilityConsoleVariable.empty()) {
+        mIsVisible = CVarGetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
+        SyncVisibilityConsoleVariable();
+    }
 }
 
-GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name)
-    : GuiWindow(consoleVariable, false, name) {
+GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize, uint32_t windowFlags)
+    : GuiWindow(consoleVariable, false, name, originalSize, windowFlags) {
+}
+
+void GuiWindow::SyncVisibilityConsoleVariable() {
+    if (mVisibilityConsoleVariable.empty()) {
+        return;
+    }
+
+    bool shouldSave = CVarGetInteger(mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
+
+    if (IsVisible()) {
+        CVarSetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
+    } else {
+        CVarClear(mVisibilityConsoleVariable.c_str());
+    }
+
+    if (shouldSave) {
+        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+    }
+}
+
+void GuiWindow::Draw() {
+    if (!IsVisible()) {
+        return;
+    }
+    
+    ImGui::SetNextWindowSize(mOriginalSize, ImGuiCond_FirstUseEver);
+    ImGui::Begin("Console", &mIsVisible, mWindowFlags);
+    DrawElement();
+    ImGui::End();
+    // Sync up the IsVisible flag if it was changed by ImGui
+    SyncVisibilityConsoleVariable();
 }
 
 std::string GuiWindow::GetName() {

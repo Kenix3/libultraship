@@ -12,9 +12,9 @@ namespace Ship {
 class GuiWindow : public GuiElement {
   public:
     GuiWindow() = default;
-    GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name);
-    GuiWindow(const std::string& consoleVariable, const std::string& name);
-
+    GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize, uint32_t windowFlags);
+    GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize, uint32_t windowFlags);
+    void Draw() override;
     std::string GetName();
 
   protected:
@@ -22,7 +22,11 @@ class GuiWindow : public GuiElement {
     void EndGroupPanel(float minHeight);
 
   private:
+    void SyncVisibilityConsoleVariable();
+    std::string mVisibilityConsoleVariable;
     std::string mName;
     ImVector<ImRect> mGroupPanelLabelStack;
+    ImVec2 mOriginalSize;
+    uint32_t mWindowFlags;
 };
 } // namespace Ship

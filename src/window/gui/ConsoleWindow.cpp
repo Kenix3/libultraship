@@ -259,13 +259,6 @@ void ConsoleWindow::UpdateElement() {
 }
 
 void ConsoleWindow::DrawElement() {
-    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Console", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
-    DrawContents();
-    ImGui::End();
-}
-
-void ConsoleWindow::DrawContents() {
     bool inputFocus = false;
     const ImVec2 pos = ImGui::GetWindowPos();
     const ImVec2 size = ImGui::GetWindowSize();
