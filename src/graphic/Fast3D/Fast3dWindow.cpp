@@ -74,7 +74,7 @@ void Fast3dWindow::Init() {
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
 
-    mForceCursorVisibility = CVarGetInteger("gForceCursorVisibility", 0);
+    SetForceCursorVisibility(CVarGetInteger("gForceCursorVisibility", 0));
 
     InitWindowManager();
 
@@ -223,16 +223,6 @@ bool Fast3dWindow::IsRunning() {
 
 const char* Fast3dWindow::GetKeyName(int32_t scancode) {
     return mWindowManagerApi->get_key_name(scancode);
-}
-
-bool Fast3dWindow::ShouldForceCursorVisibility() {
-    return mForceCursorVisibility;
-}
-
-void Fast3dWindow::SetForceCursorVisibility(bool visible) {
-    mForceCursorVisibility = visible;
-    CVarSetInteger("gForceCursorVisibility", visible);
-    CVarSave();
 }
 
 bool Fast3dWindow::KeyUp(int32_t scancode) {

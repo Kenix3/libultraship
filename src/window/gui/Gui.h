@@ -101,6 +101,8 @@ class Gui {
     void SetMenu(std::shared_ptr<GuiWindow> menu);
     bool GetMenuOrMenubarVisible();
     std::shared_ptr<GuiWindow> GetMenu();
+    bool GetPadBtnTogglesMenu();
+    void SetPadBtnTogglesMenu();
 
   protected:
     void ImGuiWMInit();
@@ -121,6 +123,7 @@ class Gui {
     std::shared_ptr<GuiWindow> mMenu;
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
+    bool mPadBtnTogglesMenu = false;
 };
 } // namespace Ship
 

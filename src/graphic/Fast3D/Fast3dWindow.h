@@ -29,8 +29,6 @@ class Fast3dWindow : public Ship::Window {
     bool IsFullscreen() override;
     bool IsRunning() override;
     const char* GetKeyName(int32_t scancode) override;
-    bool ShouldForceCursorVisibility();
-    void SetForceCursorVisibility(bool visible);
 
     void InitWindowManager();
     void SetTargetFps(int32_t fps);
@@ -49,6 +47,5 @@ class Fast3dWindow : public Ship::Window {
   private:
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
-    bool mForceCursorVisibility;
 };
 } // namespace Fast
