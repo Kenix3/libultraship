@@ -1,12 +1,76 @@
 #include "GuiWindow.h"
 
+#include "libultraship/libultraship.h"
+
 namespace Ship {
+GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
+                     uint32_t windowFlags)
+    : mName(name), mVisibilityConsoleVariable(consoleVariable), mOriginalSize(originalSize), mWindowFlags(windowFlags),
+      GuiElement(isVisible) {
+    if (!mVisibilityConsoleVariable.empty()) {
+        mIsVisible = CVarGetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
+        SyncVisibilityConsoleVariable();
+    }
+}
+
+GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize)
+    : GuiWindow(consoleVariable, isVisible, name, originalSize, ImGuiWindowFlags_None) {
+}
+
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name)
-    : mName(name), GuiElement(consoleVariable, isVisible) {
+    : GuiWindow(consoleVariable, isVisible, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
+}
+
+GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize,
+                     uint32_t windowFlags)
+    : GuiWindow(consoleVariable, false, name, originalSize, windowFlags) {
+}
+
+GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize)
+    : GuiWindow(consoleVariable, false, name, originalSize, ImGuiWindowFlags_None) {
 }
 
 GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name)
-    : GuiWindow(consoleVariable, false, name) {
+    : GuiWindow(consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
+}
+
+void GuiWindow::SetVisiblity(bool visible) {
+    mIsVisible = visible;
+    SyncVisibilityConsoleVariable();
+}
+
+void GuiWindow::SyncVisibilityConsoleVariable() {
+    if (mVisibilityConsoleVariable.empty()) {
+        return;
+    }
+
+    bool shouldSave = CVarGetInteger(mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
+
+    if (IsVisible()) {
+        CVarSetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
+    } else {
+        CVarClear(mVisibilityConsoleVariable.c_str());
+    }
+
+    if (shouldSave) {
+        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+    }
+}
+
+void GuiWindow::Draw() {
+    if (!IsVisible()) {
+        return;
+    }
+    if (mOriginalSize != ImVec2{ -1, -1 }) {
+        ImGui::SetNextWindowSize(mOriginalSize, ImGuiCond_FirstUseEver);
+    }
+    if (!ImGui::Begin(mName.c_str(), &mIsVisible, mWindowFlags)) {
+        ImGui::End();
+    }
+    DrawElement();
+    ImGui::End();
+    // Sync up the IsVisible flag if it was changed by ImGui
+    SyncVisibilityConsoleVariable();
 }
 
 std::string GuiWindow::GetName() {

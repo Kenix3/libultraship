@@ -260,9 +260,6 @@ void ConsoleWindow::UpdateElement() {
 
 void ConsoleWindow::DrawElement() {
     bool inputFocus = false;
-
-    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Console", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
     const ImVec2 pos = ImGui::GetWindowPos();
     const ImVec2 size = ImGui::GetWindowSize();
 
@@ -458,7 +455,6 @@ void ConsoleWindow::DrawElement() {
         }
         ImGui::PopItemWidth();
     }
-    ImGui::End();
 }
 
 void ConsoleWindow::Dispatch(const std::string& line) {

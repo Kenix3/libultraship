@@ -408,9 +408,6 @@ void GfxDebuggerWindow::DrawDisas() {
 
 void GfxDebuggerWindow::DrawElement() {
     auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
-
-    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    ImGui::Begin("GFX Debugger", &mIsVisible, ImGuiWindowFlags_NoFocusOnAppearing);
     // const ImVec2 pos = ImGui::GetWindowPos();
     // const ImVec2 size = ImGui::GetWindowSize();
 
@@ -429,8 +426,6 @@ void GfxDebuggerWindow::DrawElement() {
             DrawDisas();
         }
     }
-
-    ImGui::End();
 }
 
 } // namespace LUS

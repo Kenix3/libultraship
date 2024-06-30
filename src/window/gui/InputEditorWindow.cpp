@@ -1637,12 +1637,10 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 }
 
 void InputEditorWindow::DrawElement() {
-    ImGui::Begin("Controller Configuration", &mIsVisible);
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
     for (uint8_t i = 0; i < 4; i++) {
         DrawPortTab(i);
     }
     ImGui::EndTabBar();
-    ImGui::End();
 }
 } // namespace Ship

@@ -83,11 +83,13 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
     }
 
     if (GetGuiWindow("Console") == nullptr) {
-        AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console"));
+        AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console", ImVec2(520, 600),
+                                                     ImGuiWindowFlags_NoFocusOnAppearing));
     }
 
     if (GetGuiWindow("GfxDebuggerWindow") == nullptr) {
-        AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "GfxDebuggerWindow"));
+        AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "GfxDebuggerWindow",
+                                                              ImVec2(520, 600)));
     }
 }
 
@@ -134,7 +136,7 @@ void Gui::Init(GuiWindowInitData windowImpl) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -289,7 +291,7 @@ void Gui::BlockImGuiGamepadNavigation() {
 }
 
 void Gui::UnblockImGuiGamepadNavigation() {
-    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
 }
@@ -337,13 +339,19 @@ void Gui::DrawMenu() {
 
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
-    if (ImGui::IsKeyPressed(TOGGLE_BTN) ||
+    if (ImGui::IsKeyPressed(TOGGLE_BTN) || ImGui::IsKeyPressed(ImGuiKey_Escape) ||
         (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
-        GetMenuBar()->ToggleVisibility();
-        if (wnd->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
+        if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && !GetPadBtnTogglesMenu())) {
+            GetMenuBar()->ToggleVisibility();
+        } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) ||
+                   (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && GetPadBtnTogglesMenu())) {
+            GetMenu()->ToggleVisibility();
         }
-        if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuBar() && GetMenuBar()->IsVisible()) {
+        if (wnd->IsFullscreen()) {
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuOrMenubarVisible() ||
+                                                                     wnd->ShouldForceCursorVisibility());
+        }
+        if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -368,6 +376,10 @@ void Gui::DrawMenu() {
 
     if (GetMenuBar()) {
         GetMenuBar()->Draw();
+    }
+
+    if (GetMenu()) {
+        GetMenu()->Draw();
     }
 
     ImGui::End();
@@ -898,11 +910,43 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
     }
 
     if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-        Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(
+            (GetMenuBar() && GetMenuBar()->IsVisible()) ||
+            Context::GetInstance()->GetWindow()->ShouldForceCursorVisibility());
+    }
+}
+
+void Gui::SetMenu(std::shared_ptr<GuiWindow> menu) {
+    mMenu = menu;
+
+    if (GetMenu()) {
+        GetMenu()->Init();
+    }
+
+    if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
+        Context::GetInstance()->GetWindow()->SetCursorVisibility(
+            (GetMenu() && GetMenu()->IsVisible()) ||
+            Context::GetInstance()->GetWindow()->ShouldForceCursorVisibility());
     }
 }
 
 std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
     return mMenuBar;
+}
+
+bool Gui::GetMenuOrMenubarVisible() {
+    return (GetMenuBar() && GetMenuBar()->IsVisible()) || (GetMenu() && GetMenu()->IsVisible());
+}
+
+std::shared_ptr<GuiWindow> Gui::GetMenu() {
+    return mMenu;
+}
+
+bool Gui::GetPadBtnTogglesMenu() {
+    return mPadBtnTogglesMenu;
+}
+
+void Gui::SetPadBtnTogglesMenu() {
+    mPadBtnTogglesMenu = true;
 }
 } // namespace Ship

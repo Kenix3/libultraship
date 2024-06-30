@@ -79,6 +79,16 @@ bool Window::IsAvailableWindowBackend(int32_t backendId) {
            mAvailableWindowBackends->end();
 }
 
+bool Window::ShouldForceCursorVisibility() {
+    return mForceCursorVisibility;
+}
+
+void Window::SetForceCursorVisibility(bool visible) {
+    mForceCursorVisibility = visible;
+    CVarSetInteger("gForceCursorVisibility", visible);
+    CVarSave();
+}
+
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
     Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());

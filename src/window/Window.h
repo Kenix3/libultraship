@@ -49,6 +49,8 @@ class Window {
     float GetCurrentAspectRatio();
     void SaveWindowToConfig();
     std::shared_ptr<Gui> GetGui();
+    bool ShouldForceCursorVisibility();
+    void SetForceCursorVisibility(bool visible);
 
   protected:
     void SetWindowBackend(WindowBackend backend);
@@ -62,5 +64,6 @@ class Window {
     // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton
     // is no longer available.
     std::shared_ptr<Config> mConfig;
+    bool mForceCursorVisibility;
 };
 } // namespace Ship
