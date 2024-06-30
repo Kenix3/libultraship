@@ -1,7 +1,6 @@
 #include "GfxDebugger.h"
-#include <spdlog/fmt/fmt.h>
 
-namespace LUS {
+namespace Fast {
 
 void GfxDebugger::ResumeGame() {
     mIsDebugging = false;
@@ -51,4 +50,4 @@ bool GfxDebugger::HasBreakPoint(const std::vector<const F3DGfx*>& path) const {
     return true;
 }
 
-} // namespace LUS
+} // namespace Fast

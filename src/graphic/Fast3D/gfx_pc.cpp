@@ -19,7 +19,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "debug/GfxDebugger.h"
+#include "graphic/Fast3D/debug/GfxDebugger.h"
 #include "libultraship/libultra/types.h"
 //#include "libultraship/libultra/gs2dex.h"
 #include <string>

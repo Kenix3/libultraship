@@ -1,6 +1,6 @@
 #include "gfxdebuggerbridge.h"
 #include "Context.h"
-#include "debug/GfxDebugger.h"
+#include "graphic/Fast3D/debug/GfxDebugger.h"
 
 void GfxDebuggerRequestDebugging(void) {
     Ship::Context::GetInstance()->GetGfxDebugger()->RequestDebugging();
