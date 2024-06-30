@@ -63,6 +63,7 @@ void GuiWindow::Draw() {
     }
     if (mOriginalSize != ImVec2{ -1, -1 })
         ImGui::SetNextWindowSize(mOriginalSize, ImGuiCond_FirstUseEver);
+}
     if (!ImGui::Begin(mName.c_str(), &mIsVisible, mWindowFlags)) {
         ImGui::End();
     }
