@@ -135,6 +135,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Re
 #=================== Graphic ===================
 
 file(GLOB Source_Files__Graphic RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "graphic/Fast3D/*.h" "graphic/Fast3D/*.cpp" "graphic/Fast3D/*.c")
+file(GLOB Source_Files__Graphic_Debug RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "graphic/Fast3D/debug/*.h" "graphic/Fast3D/debug/*.cpp" "graphic/Fast3D/debug/*.c")
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/gfx_dxgi*")
@@ -151,7 +152,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
 endif()
 
 source_group("graphic" FILES ${Source_Files__Graphic})
+source_group("graphic_debug" FILES ${Source_Files__Graphic_Debug})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
+target_sources(libultraship PRIVATE ${Source_Files__Graphic_Debug})
 
 #=================== Packages & Includes ===================
 

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <string>
 #include <vector>
 
 union F3DGfx;
 
-namespace LUS {
+namespace Fast {
 
 class GfxDebugger {
   public:
@@ -32,4 +31,4 @@ class GfxDebugger {
     std::vector<const F3DGfx*> mBreakPoint = {};
 };
 
-} // namespace LUS
+} // namespace Fast

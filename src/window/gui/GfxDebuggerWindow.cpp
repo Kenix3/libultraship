@@ -2,7 +2,7 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 #include "Context.h"
-#include "debug/GfxDebugger.h"
+#include "graphic/Fast3D/debug/GfxDebugger.h"
 #include <stack>
 #include <spdlog/fmt/fmt.h>
 #include "libultraship/bridge.h"
