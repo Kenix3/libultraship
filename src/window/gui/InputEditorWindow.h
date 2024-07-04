@@ -25,6 +25,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);
     void DrawControllerSchema();
 
+    void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, ImVec4 color);
   protected:
     void InitElement() override;
     void DrawElement() override;
@@ -33,7 +34,6 @@ class InputEditorWindow : public GuiWindow {
   private:
     void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                 ImVec4 color);
-    void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, ImVec4 color);
     void DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, std::string id);
     void DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton);
 
