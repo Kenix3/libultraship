@@ -14,10 +14,7 @@
 #include "window/Window.h"
 #include "config/ConsoleVariable.h"
 #include "debug/Console.h"
-
-namespace LUS {
-class GfxDebugger;
-}
+#include "graphic/Fast3D/debug/GfxDebugger.h"
 
 namespace Ship {
 
@@ -52,7 +49,7 @@ class Context {
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
     std::shared_ptr<Audio> GetAudio();
-    std::shared_ptr<LUS::GfxDebugger> GetGfxDebugger();
+    std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
 
     std::string GetConfigFilePath();
     std::string GetName();
@@ -85,7 +82,7 @@ class Context {
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
     std::shared_ptr<Audio> mAudio;
-    std::shared_ptr<LUS::GfxDebugger> mGfxDebugger;
+    std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
 
     std::string mConfigFilePath;
     std::string mMainPath;
