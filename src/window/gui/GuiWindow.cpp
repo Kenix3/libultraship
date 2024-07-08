@@ -66,9 +66,10 @@ void GuiWindow::Draw() {
     }
     if (!ImGui::Begin(mName.c_str(), &mIsVisible, mWindowFlags)) {
         ImGui::End();
+    } else {
+        DrawElement();
+        ImGui::End();
     }
-    DrawElement();
-    ImGui::End();
     // Sync up the IsVisible flag if it was changed by ImGui
     SyncVisibilityConsoleVariable();
 }
