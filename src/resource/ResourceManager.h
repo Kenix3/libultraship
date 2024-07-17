@@ -44,6 +44,8 @@ class ResourceManager {
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectory(const std::string& searchMask);
     bool OtrSignatureCheck(const char* fileName);
+    bool IsAltAssetsEnabled();
+    void SetAltAssetsEnabled(bool isEnabled);
 
   protected:
     std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
@@ -57,5 +59,6 @@ class ResourceManager {
     std::shared_ptr<Archive> mArchive;
     std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
+    bool mAltAssetsEnabled = false;
 };
 } // namespace LUS
