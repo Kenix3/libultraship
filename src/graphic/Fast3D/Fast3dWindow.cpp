@@ -22,14 +22,14 @@ Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWind
     mRenderingApi = nullptr;
 
 #ifdef _WIN32
-    AddAvailableWindowBackend(Ship::WindowBackend::DX11);
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_DXGI_DX11);
 #endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
-        AddAvailableWindowBackend(Ship::WindowBackend::SDL_METAL);
+        AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_METAL);
     }
 #endif
-    AddAvailableWindowBackend(Ship::WindowBackend::SDL_OPENGL);
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
 }
 
 Fast3dWindow::~Fast3dWindow() {
@@ -105,25 +105,19 @@ void Fast3dWindow::InitWindowManager() {
 
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
-        case Ship::WindowBackend::DX11:
+        case Ship::WindowBackend::FAST3D_DXGI_DX11:
             mRenderingApi = &gfx_direct3d11_api;
             mWindowManagerApi = &gfx_dxgi_api;
             break;
 #endif
-#ifdef ENABLE_DX12
-        case Ship::WindowBackend::DX12:
-            mRenderingApi = &gfx_direct3d12_api;
-            mWindowManagerApi = &gfx_dxgi_api;
-            break;
-#endif
 #ifdef ENABLE_OPENGL
-        case Ship::WindowBackend::SDL_OPENGL:
+        case Ship::WindowBackend::FAST3D_SDL_OPENGL:
             mRenderingApi = &gfx_opengl_api;
             mWindowManagerApi = &gfx_sdl;
             break;
 #endif
 #ifdef __APPLE__
-        case Ship::WindowBackend::SDL_METAL:
+        case Ship::WindowBackend::FAST3D_SDL_METAL:
             mRenderingApi = &gfx_metal_api;
             mWindowManagerApi = &gfx_sdl;
             break;
@@ -192,7 +186,8 @@ uint32_t Fast3dWindow::GetCurrentRefreshRate() {
 }
 
 bool Fast3dWindow::SupportsWindowedFullscreen() {
-    if (GetWindowBackend() == Ship::WindowBackend::SDL_OPENGL || GetWindowBackend() == Ship::WindowBackend::SDL_METAL) {
+    if (GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_OPENGL ||
+        GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_METAL) {
         return true;
     }
 

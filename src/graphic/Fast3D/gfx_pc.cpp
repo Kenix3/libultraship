@@ -57,12 +57,15 @@ using namespace std;
 #define SCALE_3_8(VAL_) ((VAL_)*0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
-// Based off the current set native dimensions
-#define HALF_SCREEN_WIDTH (gfx_native_dimensions.width / 2)
-#define HALF_SCREEN_HEIGHT (gfx_native_dimensions.height / 2)
+// Based off the current set native dimensions or active framebuffer
+#define HALF_SCREEN_WIDTH ((fbActive ? active_fb->second.orig_width : gfx_native_dimensions.width) / 2)
+#define HALF_SCREEN_HEIGHT ((fbActive ? active_fb->second.orig_height : gfx_native_dimensions.height) / 2)
 
-#define RATIO_X (gfx_current_dimensions.width / (2.0f * HALF_SCREEN_WIDTH))
-#define RATIO_Y (gfx_current_dimensions.height / (2.0f * HALF_SCREEN_HEIGHT))
+// Ratios for current window dimensions or active framebuffer scaled size
+#define RATIO_X \
+    ((fbActive ? active_fb->second.applied_width : gfx_current_dimensions.width) / (2.0f * HALF_SCREEN_WIDTH))
+#define RATIO_Y \
+    ((fbActive ? active_fb->second.applied_height : gfx_current_dimensions.height) / (2.0f * HALF_SCREEN_HEIGHT))
 
 #define TEXTURE_CACHE_MAX_SIZE 500
 
@@ -335,19 +338,36 @@ static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& 
                         break;
                     case G_CCMUX_TEXEL0:
                         val = SHADER_TEXEL0;
-                        used_textures[0] = true;
+                        // Set the opposite texture when reading from the second cycle color options
+                        if (i == 0) {
+                            used_textures[0] = true;
+                        } else {
+                            used_textures[1] = true;
+                        }
                         break;
                     case G_CCMUX_TEXEL1:
                         val = SHADER_TEXEL1;
-                        used_textures[1] = true;
+                        if (i == 0) {
+                            used_textures[1] = true;
+                        } else {
+                            used_textures[0] = true;
+                        }
                         break;
                     case G_CCMUX_TEXEL0_ALPHA:
                         val = SHADER_TEXEL0A;
-                        used_textures[0] = true;
+                        if (i == 0) {
+                            used_textures[0] = true;
+                        } else {
+                            used_textures[1] = true;
+                        }
                         break;
                     case G_CCMUX_TEXEL1_ALPHA:
                         val = SHADER_TEXEL1A;
-                        used_textures[1] = true;
+                        if (i == 0) {
+                            used_textures[1] = true;
+                        } else {
+                            used_textures[0] = true;
+                        }
                         break;
                     case G_CCMUX_NOISE:
                         val = SHADER_NOISE;
@@ -388,11 +408,20 @@ static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& 
                         break;
                     case G_ACMUX_TEXEL0:
                         val = SHADER_TEXEL0;
-                        used_textures[0] = true;
+                        // Set the opposite texture when reading from the second cycle color options
+                        if (i == 0) {
+                            used_textures[0] = true;
+                        } else {
+                            used_textures[1] = true;
+                        }
                         break;
                     case G_ACMUX_TEXEL1:
                         val = SHADER_TEXEL1;
-                        used_textures[1] = true;
+                        if (i == 0) {
+                            used_textures[1] = true;
+                        } else {
+                            used_textures[0] = true;
+                        }
                         break;
                     case G_ACMUX_LOD_FRACTION:
                         // case G_ACMUX_COMBINED: same numerical value
@@ -2272,8 +2301,15 @@ static void gfx_draw_rectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lr
     ur->w = 1.0f;
 
     // The coordinates for texture rectangle shall bypass the viewport setting
-    struct XYWidthHeight default_viewport = { 0, gfx_native_dimensions.height, gfx_native_dimensions.width,
-                                              gfx_native_dimensions.height };
+    struct XYWidthHeight default_viewport;
+    if (!fbActive) {
+        default_viewport = { 0, (int16_t)gfx_native_dimensions.height, gfx_native_dimensions.width,
+                             gfx_native_dimensions.height };
+    } else {
+        default_viewport = { 0, (int16_t)active_fb->second.orig_height, active_fb->second.orig_width,
+                             active_fb->second.orig_height };
+    }
+
     struct XYWidthHeight viewport_saved = g_rdp.viewport;
     uint32_t geometry_mode_saved = g_rsp.geometry_mode;
 
@@ -2607,8 +2643,6 @@ static inline void* seg_addr(uintptr_t w1) {
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
-uintptr_t clearMtx;
-
 void GfxExecStack::start(F3DGfx* dlist) {
     while (!cmd_stack.empty())
         cmd_stack.pop();
@@ -2729,34 +2763,13 @@ bool gfx_mtx_handler_f3dex2(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     uintptr_t mtxAddr = cmd->words.w1;
 
-    if (mtxAddr == SEG_ADDR(0, 0x12DB20) || // GC MQ D
-        mtxAddr == SEG_ADDR(0, 0x12DB40) || // GC NMQ D
-        mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
-        mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
-        mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
-        mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
-    ) {
-        mtxAddr = clearMtx;
-    }
-
     gfx_sp_matrix(C0(0, 8) ^ F3DEX2_G_MTX_PUSH, (const int32_t*)seg_addr(mtxAddr));
-
     return false;
 }
 // Seems to be the same for all other non F3DEX2 microcodes...
 bool gfx_mtx_handler_f3d(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     uintptr_t mtxAddr = cmd->words.w1;
-
-    if (mtxAddr == SEG_ADDR(0, 0x12DB20) || // GC MQ D
-        mtxAddr == SEG_ADDR(0, 0x12DB40) || // GC NMQ D
-        mtxAddr == SEG_ADDR(0, 0xFBC20) ||  // GC PAL
-        mtxAddr == SEG_ADDR(0, 0xFBC01) ||  // GC MQ PAL
-        mtxAddr == SEG_ADDR(0, 0xFCD00) ||  // PAL1.0
-        mtxAddr == SEG_ADDR(0, 0xFCD40)     // PAL1.1
-    ) {
-        mtxAddr = clearMtx;
-    }
 
     gfx_sp_matrix(C0(16, 8), (const int32_t*)seg_addr(cmd->words.w1));
     return false;
@@ -3135,10 +3148,8 @@ bool gfx_quad_handler_f3dex2(F3DGfx** cmd0) {
 
 bool gfx_quad_handler_f3dex(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
-    gfx_sp_tri1(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8) / 2, false);
-    gfx_sp_tri1(C0(8, 8) / 2, C0(0, 8) / 2, C0(24, 0) / 2, false);
-    gfx_sp_tri1(C1(0, 8) / 2, C1(24, 8) / 2, C1(16, 8) / 2, false);
-    gfx_sp_tri1(C1(24, 8) / 2, C1(16, 8) / 2, C1(8, 8) / 2, false);
+    gfx_sp_tri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
+    gfx_sp_tri1(C1(16, 8) / 2, C1(0, 8) / 2, C1(24, 8) / 2, false);
     return false;
 }
 
@@ -3200,6 +3211,11 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+
+            if (tex == nullptr) {
+                (*cmd0)++;
+                return false;
+            }
 
             i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
             texFlags = tex->Flags;
@@ -3830,7 +3846,8 @@ const char* GfxGetOpcodeName(int8_t opcode) {
         if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
             return ucode_handlers[ucode_handler_index]->at(opcode).first;
         } else {
-            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
+                            (uint32_t)ucode_handler_index);
             return nullptr;
         }
     }
@@ -3870,7 +3887,8 @@ static void gfx_step() {
                 return;
             }
         } else {
-            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", opcode, (uint32_t)ucode_handler_index);
+            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
+                            (uint32_t)ucode_handler_index);
         }
     }
 

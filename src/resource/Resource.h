@@ -9,7 +9,7 @@ class IResource {
   public:
     inline static const std::string gAltAssetPrefix = "alt/";
 
-    IResource(std::shared_ptr<Ship::ResourceInitData> initData);
+    IResource(std::shared_ptr<ResourceInitData> initData);
     virtual ~IResource();
 
     virtual void* GetRawPointer() = 0;
@@ -17,10 +17,10 @@ class IResource {
 
     bool IsDirty();
     void Dirty();
-    std::shared_ptr<Ship::ResourceInitData> GetInitData();
+    std::shared_ptr<ResourceInitData> GetInitData();
 
   private:
-    std::shared_ptr<Ship::ResourceInitData> mInitData;
+    std::shared_ptr<ResourceInitData> mInitData;
     bool mIsDirty = false;
 };
 

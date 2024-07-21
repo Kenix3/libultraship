@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 
 namespace Ship {
-IResource::IResource(std::shared_ptr<Ship::ResourceInitData> initData) : mInitData(initData) {
+IResource::IResource(std::shared_ptr<ResourceInitData> initData) : mInitData(initData) {
 }
 
 IResource::~IResource() {
@@ -17,7 +17,7 @@ void IResource::Dirty() {
     mIsDirty = true;
 }
 
-std::shared_ptr<Ship::ResourceInitData> IResource::GetInitData() {
+std::shared_ptr<ResourceInitData> IResource::GetInitData() {
     return mInitData;
 }
 } // namespace Ship

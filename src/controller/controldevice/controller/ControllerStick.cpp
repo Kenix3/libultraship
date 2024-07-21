@@ -314,7 +314,7 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
     Process(x, y);
 }
 
-bool ControllerStick::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
+bool ControllerStick::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
     if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
         mKeyboardScancodeForNewMapping = scancode;
         return true;

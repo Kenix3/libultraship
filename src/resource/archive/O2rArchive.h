@@ -24,8 +24,8 @@ class O2rArchive : virtual public Archive {
     bool Close();
 
   protected:
-    std::shared_ptr<Ship::File> LoadFileRaw(const std::string& filePath);
-    std::shared_ptr<Ship::File> LoadFileRaw(uint64_t hash);
+    std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
+    std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
   private:
     zip_t* mZipArchive;
