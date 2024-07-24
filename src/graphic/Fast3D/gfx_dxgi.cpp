@@ -517,13 +517,11 @@ static void gfx_dxgi_handle_events(void) {
 }
 
 static uint64_t qpc_to_ns(uint64_t qpc) {
-    qpc *= 1000000000;
-    return qpc / dxgi.qpc_freq;
+    return qpc / dxgi.qpc_freq * 1000000000 + qpc % dxgi.qpc_freq * 1000000000 / dxgi.qpc_freq;
 }
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
-    qpc *= 10000000;
-    return qpc / dxgi.qpc_freq;
+    return qpc / dxgi.qpc_freq * 10000000 + qpc % dxgi.qpc_freq * 10000000 / dxgi.qpc_freq;
 }
 
 static bool gfx_dxgi_start_frame(void) {
@@ -700,11 +698,14 @@ static void gfx_dxgi_swap_buffers_begin(void) {
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
             WaitForSingleObject(dxgi.timer, INFINITE);
         }
-        do {
+
+        QueryPerformanceCounter(&t);
+        t.QuadPart = qpc_to_100ns(t.QuadPart);
+        while (t.QuadPart < next) {
             YieldProcessor();
             QueryPerformanceCounter(&t);
             t.QuadPart = qpc_to_100ns(t.QuadPart);
-        } while (t.QuadPart < next);
+        }
     }
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;
