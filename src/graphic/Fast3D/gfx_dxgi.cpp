@@ -524,7 +524,8 @@ static uint64_t qpc_to_ns(uint64_t qpc) {
 }
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
-    return qpc / dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND + qpc % dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND / dxgi.qpc_freq;
+    return qpc / dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND +
+           qpc % dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND / dxgi.qpc_freq;
 }
 
 static bool gfx_dxgi_start_frame(void) {
