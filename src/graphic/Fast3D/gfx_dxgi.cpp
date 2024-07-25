@@ -41,6 +41,9 @@
 #define FRAME_INTERVAL_NS_NUMERATOR 1000000000
 #define FRAME_INTERVAL_NS_DENOMINATOR (dxgi.target_fps)
 
+#define NANOSECOND_IN_SECOND 1000000000
+#define _100NANOSECONDS_IN_SECOND 10000000
+
 using namespace Microsoft::WRL; // For ComPtr
 
 static struct {
@@ -517,11 +520,11 @@ static void gfx_dxgi_handle_events(void) {
 }
 
 static uint64_t qpc_to_ns(uint64_t qpc) {
-    return qpc / dxgi.qpc_freq * 1000000000 + qpc % dxgi.qpc_freq * 1000000000 / dxgi.qpc_freq;
+    return qpc / dxgi.qpc_freq * NANOSECOND_IN_SECOND + qpc % dxgi.qpc_freq * NANOSECOND_IN_SECOND / dxgi.qpc_freq;
 }
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
-    return qpc / dxgi.qpc_freq * 10000000 + qpc % dxgi.qpc_freq * 10000000 / dxgi.qpc_freq;
+    return qpc / dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND + qpc % dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND / dxgi.qpc_freq;
 }
 
 static bool gfx_dxgi_start_frame(void) {

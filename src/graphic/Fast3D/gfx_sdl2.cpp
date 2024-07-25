@@ -37,6 +37,7 @@
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
+#define _100NANOSECONDS_IN_SECOND 10000000
 
 static SDL_Window* wnd;
 static SDL_GLContext ctx;
@@ -526,7 +527,7 @@ static bool gfx_sdl_start_frame(void) {
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
     const uint64_t qpc_freq = SDL_GetPerformanceFrequency();
-    return qpc / qpc_freq * 10000000 + qpc % qpc_freq * 10000000 / qpc_freq;
+    return qpc / qpc_freq * _100NANOSECONDS_IN_SECOND + qpc % qpc_freq * _100NANOSECONDS_IN_SECOND / qpc_freq;
 }
 
 static inline void sync_framerate_with_timer(void) {
