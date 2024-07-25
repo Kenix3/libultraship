@@ -33,14 +33,15 @@ target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/
 
 # ========= StormLib =============
 if(NOT EXCLUDE_MPQ_SUPPORT)
-set(stormlib_optimizations_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/stormlib-optimizations.patch)
+    set(stormlib_optimizations_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/stormlib-optimizations.patch)
+    # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
+    set(stormlib_apply_path_if_needed ${stormlib_optimizations_patch} || ${stormlib_optimizations_patch} --reverse --check)
+
     FetchContent_Declare(
         StormLib
         GIT_REPOSITORY https://github.com/ladislav-zezula/StormLib.git
         GIT_TAG v9.25
-        PATCH_COMMAND ${stormlib_optimizations_patch}
-        # don't try to apply the patch multiple times https://stackoverflow.com/a/73725257
-        UPDATE_DISCONNECTED 1
+        PATCH_COMMAND ${stormlib_apply_path_if_needed}
     )
     FetchContent_MakeAvailable(StormLib)
     list(APPEND ADDITIONAL_LIB_INCLUDES ${stormlib_SOURCE_DIR}/src)
