@@ -772,11 +772,14 @@ static void gfx_dxgi_swap_buffers_begin(void) {
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
             WaitForSingleObject(dxgi.timer, INFINITE);
         }
-        do {
+
+        QueryPerformanceCounter(&t);
+        t.QuadPart = qpc_to_100ns(t.QuadPart);
+        while (t.QuadPart < next) {
             YieldProcessor();
             QueryPerformanceCounter(&t);
             t.QuadPart = qpc_to_100ns(t.QuadPart);
-        } while (t.QuadPart < next);
+        }
     }
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;
