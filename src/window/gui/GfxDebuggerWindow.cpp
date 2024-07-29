@@ -96,7 +96,11 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
             char buff[512] = { 0 };
             gfxd_output_buffer(buff, sizeof(buff));
             gfxd_enable(gfxd_emit_dec_color);
+            #if defined(F3DEX_GBI)
+            gfxd_target(gfxd_f3dex);
+            #else
             gfxd_target(gfxd_f3dex2);
+            #endif
             gfxd_execute();
 
             node_with_text(cmd, fmt::format("{}", buff));
@@ -113,8 +117,11 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
         int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
         const F3DGfx* cmd0 = cmd;
         switch (opcode) {
-
+            #if (defined(F3DEX_GBI) || defined(F3DLP_GBI))
+            case F3DEX_G_NOOP: {
+            #else
             case F3DEX2_G_NOOP: {
+            #endif
                 const char* filename = (const char*)cmd->words.w1;
                 uint32_t p = C0(16, 8);
                 uint32_t l = C0(0, 16);
@@ -190,8 +197,11 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 cmd++;
                 break;
             };
-
+            #if (defined(F3DEX_GBI) || defined(F3DLP_GBI))
+            case F3DEX_G_DL: {
+            #else
             case F3DEX2_G_DL: {
+            #endif
                 F3DGfx* subGFX = (F3DGfx*)seg_addr(cmd->words.w1);
                 if (C0(16, 1) == 0) {
                     node_with_text(cmd0, fmt::format("G_DL: 0x{:x} -> {}", cmd->words.w1, (void*)subGFX), subGFX);
@@ -203,8 +213,11 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 }
                 break;
             }
-
+            #if (defined(F3DEX_GBI) || defined(F3DLP_GBI))
+            case F3DEX_G_ENDDL: {
+            #else
             case F3DEX2_G_ENDDL: {
+            #endif
                 simple_node(cmd, opcode);
                 return;
             }
