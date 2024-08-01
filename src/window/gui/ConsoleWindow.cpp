@@ -11,9 +11,30 @@ namespace Ship {
 int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (output) {
-        *output += "Commands:\n";
+        *output += "Commands:";
         for (const auto& cmd : console->GetCommands()) {
-            *output += " - " + cmd.first + "\n";
+            *output += "\n - " + cmd.first + ": " + cmd.second.Description;
+
+            if (!cmd.second.Arguments.empty()) {
+                *output += "\n   - Arguments:";
+                for (int i = 0; i < cmd.second.Arguments.size(); i += 1) {
+                    const CommandArgument& argument = cmd.second.Arguments[i];
+
+                    *output += "\n     - Info=" + argument.Info;
+
+                    if (argument.Type == ArgumentType::NUMBER) {
+                        *output += " Type=Text";
+                    } else if (argument.Type == ArgumentType::TEXT) {
+                        *output += " Type=Number";
+                    } else {
+                        *output += " Type=Unknown";
+                    }
+
+                    if (argument.Optional) {
+                        *output += " [Optional]";
+                    }
+                }
+            }
         }
 
         return 0;
@@ -553,10 +574,23 @@ int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
 
 void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt,
                            va_list args) {
-    char buf[2048];
-    vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
-    buf[IM_ARRAYSIZE(buf) - 1] = 0;
-    mLog[channel].push_back({ std::string(buf), priority });
+    // Determine the size of the formatted string
+    va_list argsCopy;
+    va_copy(argsCopy, args);
+    int size = vsnprintf(nullptr, 0, fmt, argsCopy);
+    va_end(argsCopy);
+
+    if (size < 0) {
+        SPDLOG_ERROR("Error during formatting.");
+        SendErrorMessage("There has been an error during formatting!");
+        return;
+    }
+
+    std::vector<char> buf(size + 1);
+    vsnprintf(buf.data(), buf.size(), fmt, args);
+
+    buf[buf.size() - 1] = 0;
+    mLog[channel].push_back({ std::string(buf.begin(), buf.end()), priority });
 }
 
 void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, ...) {
