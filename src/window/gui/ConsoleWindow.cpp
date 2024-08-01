@@ -553,10 +553,23 @@ int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
 
 void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt,
                            va_list args) {
-    char buf[2048];
-    vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
-    buf[IM_ARRAYSIZE(buf) - 1] = 0;
-    mLog[channel].push_back({ std::string(buf), priority });
+    // Determine the size of the formatted string
+    va_list args_copy;
+    va_copy(args_copy, args);
+    int size = vsnprintf(nullptr, 0, fmt, args_copy);
+    va_end(args_copy);
+
+    if (size < 0) {
+        SPDLOG_ERROR("Error during formatting.");
+        SendErrorMessage("There has been an error during formatting!");
+        return;
+    }
+
+    std::vector<char> buf(size + 1);
+    vsnprintf(buf.data(), buf.size(), fmt, args);
+
+    buf[buf.size() - 1] = 0;
+    mLog[channel].push_back({ std::string(buf.begin(), buf.end()), priority });
 }
 
 void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, ...) {
