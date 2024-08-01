@@ -11,9 +11,30 @@ namespace Ship {
 int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (output) {
-        *output += "Commands:\n";
+        *output += "Commands:";
         for (const auto& cmd : console->GetCommands()) {
-            *output += " - " + cmd.first + "\n";
+            *output += "\n - " + cmd.first + ": " + cmd.second.Description;
+
+            if (!cmd.second.Arguments.empty()) {
+                *output += "\n   - Arguments:";
+                for (int i = 0; i < cmd.second.Arguments.size(); i += 1) {
+                    const CommandArgument& argument = cmd.second.Arguments[i];
+
+                    *output += "\n     - Info=" + argument.Info;
+
+                    if (argument.Type == ArgumentType::NUMBER) {
+                        *output += " Type=Text";
+                    } else if (argument.Type == ArgumentType::TEXT) {
+                        *output += " Type=Number";
+                    } else {
+                        *output += " Type=Unknown";
+                    }
+
+                    if (argument.Optional) {
+                        *output += " [Optional]";
+                    }
+                }
+            }
         }
 
         return 0;
