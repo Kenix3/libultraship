@@ -575,10 +575,10 @@ int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
 void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt,
                            va_list args) {
     // Determine the size of the formatted string
-    va_list args_copy;
-    va_copy(args_copy, args);
-    int size = vsnprintf(nullptr, 0, fmt, args_copy);
-    va_end(args_copy);
+    va_list argsCopy;
+    va_copy(argsCopy, args);
+    int size = vsnprintf(nullptr, 0, fmt, argsCopy);
+    va_end(argsCopy);
 
     if (size < 0) {
         SPDLOG_ERROR("Error during formatting.");
