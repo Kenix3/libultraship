@@ -962,7 +962,9 @@
 #define G_DL_NOPUSH 0x01
 
 #if defined(_MSC_VER) || defined(__GNUC__)
+#ifndef _LANGUAGE_C
 #define _LANGUAGE_C
+#endif
 #endif
 
 /*

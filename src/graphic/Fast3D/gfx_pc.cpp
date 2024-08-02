@@ -183,7 +183,7 @@ template <typename T> static constexpr T get_attr(Attribute attr) {
 static std::string GetPathWithoutFileName(char* filePath) {
     size_t len = strlen(filePath);
 
-    for (size_t i = len - 1; i >= 0; i--) {
+    for (size_t i = len - 1; (long) i >= 0; i--) {
         if (filePath[i] == '/' || filePath[i] == '\\') {
             return std::string(filePath).substr(0, i);
         }
@@ -2601,7 +2601,7 @@ static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
 
 static void gfx_s2dex_rect_copy(F3DuObjSprite* spr) {
     s16 dsdx = 4 << 10;
-    s16 uls = spr->s.objX << 3;
+    __attribute_maybe_unused__ s16 uls = spr->s.objX << 3;
     // Flip flag only flips horizontally
     if (spr->s.imageFlags == G_BG_FLAG_FLIPS) {
         dsdx = -dsdx;
@@ -3374,7 +3374,8 @@ bool gfx_copy_fb_handler_custom(F3DGfx** cmd0) {
 bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
-    int32_t width, height, ulx, uly;
+    int32_t width, height;
+    __attribute_maybe_unused__ int32_t ulx, uly;
     uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
     bool bswap = C0(8, 1);
@@ -3392,7 +3393,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
 #ifndef IS_BIGENDIAN
     // byteswap the output to BE
     if (bswap) {
-        for (size_t i = 0; i < width * height; i++) {
+        for (size_t i = 0; i < (size_t) width * height; i++) {
             rgba16Buffer[i] = BE16SWAP(rgba16Buffer[i]);
         }
     }
@@ -3851,6 +3852,7 @@ const char* GfxGetOpcodeName(int8_t opcode) {
             return nullptr;
         }
     }
+    return nullptr;
 }
 
 // TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be
