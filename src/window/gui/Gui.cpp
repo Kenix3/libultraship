@@ -546,12 +546,12 @@ int16_t Gui::GetIntegerScaleFactor() {
             // The same comparison as below, but checked against the configured factor
             if (((float)gfx_current_game_window_viewport.height / gfx_current_game_window_viewport.width) <
                 ((float)gfx_current_dimensions.height / gfx_current_dimensions.width)) {
-                if (factor > gfx_current_game_window_viewport.height / gfx_current_dimensions.height) {
+                if ((uint32_t)factor > gfx_current_game_window_viewport.height / gfx_current_dimensions.height) {
                     // Scale to window height
                     factor = gfx_current_game_window_viewport.height / gfx_current_dimensions.height;
                 }
             } else {
-                if (factor > gfx_current_game_window_viewport.width / gfx_current_dimensions.width) {
+                if ((uint32_t)factor > gfx_current_game_window_viewport.width / gfx_current_dimensions.width) {
                     // Scale to window width
                     factor = gfx_current_game_window_viewport.width / gfx_current_dimensions.width;
                 }
@@ -586,7 +586,7 @@ int16_t Gui::GetIntegerScaleFactor() {
 }
 
 void Gui::StartFrame() {
-    const ImVec2 mainPos = ImGui::GetWindowPos();
+    __attribute_maybe_unused__ const ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     if (CVarGetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
