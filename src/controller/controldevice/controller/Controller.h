@@ -55,6 +55,7 @@ class Controller : public ControlDevice {
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceIndex lusIndex);
 
+    static IntentControlDefinitionSet intentControlDefinitions;
   private:
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();

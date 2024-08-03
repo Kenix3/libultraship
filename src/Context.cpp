@@ -82,8 +82,9 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConsoleVariables();
     InitResourceManager(otrFiles, validHashes, reservedThreadCount);
     std::vector<uint16_t> specialControls;
-    for(uint16_t i = 0; i < intentDefinitionCount; i++){
-        specialControls.push_back(intentDefinitions[i].id);
+    IntentControlDefinitionSet intentDefs = getIntentControlDefinitions();
+    for(size_t i = 0; i < intentDefs.count; i++){
+        specialControls.push_back(intentDefs.definitions[i].id);
     }
     InitControlDeck({}, specialControls);
     InitCrashHandler();

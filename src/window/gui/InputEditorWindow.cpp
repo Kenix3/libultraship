@@ -1525,8 +1525,9 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
             DrawButtonLine("L", portIndex, BTN_L);
             DrawButtonLine("R", portIndex, BTN_R);
             DrawButtonLine("Z", portIndex, BTN_Z);
-            for(uint16_t i = 0; i < intentDefinitionCount; i++){
-                DrawButtonLine(intentDefinitions[i].name, portIndex, 0, intentDefinitions[i].id);
+            IntentControlDefinitionSet intentDefs = getIntentControlDefinitions();
+            for(uint16_t i = 0; i < intentDefs.count; i++){
+                DrawButtonLine(intentDefs.definitions[i].name, portIndex, 0, intentDefs.definitions[i].id);
             }
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_CUP, 0,
                            CHIP_COLOR_N64_YELLOW);

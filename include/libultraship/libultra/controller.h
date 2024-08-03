@@ -155,8 +155,19 @@ typedef struct {
     char* name;
 } IntentControlDefinition;
 
-extern IntentControlDefinition* intentDefinitions;
-extern uint16_t intentDefinitionCount;
+typedef struct {
+    IntentControlDefinition* definitions;
+    uint16_t count;
+} IntentControlDefinitionSet;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    extern IntentControlDefinitionSet getIntentControlDefinitions();
+    extern void setIntentControlDefinitions(IntentControlDefinitionSet controls);
+#ifdef __cplusplus
+}
+#endif
 
 #define GET_INTENTS(pad, f, default) (pad->intentControls == NULL ? default : pad->intentControls->f)
 

@@ -410,4 +410,14 @@ std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {
 
     return allMappings;
 }
+
+IntentControlDefinitionSet Controller::intentControlDefinitions = {nullptr, 0};
+
 } // namespace Ship
+
+extern "C" IntentControlDefinitionSet getIntentControlDefinitions(){
+    return Ship::Controller::intentControlDefinitions;
+}
+extern "C" void setIntentControlDefinitions(IntentControlDefinitionSet controls){
+    Ship::Controller::intentControlDefinitions = controls;
+}

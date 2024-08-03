@@ -19,9 +19,10 @@ ControllerButton::~ControllerButton() {
 }
 
 std::string ControllerButton::GetConfigNameFromSpecialButtonId(uint16_t id){
-    for(uint16_t i = 0; i < intentDefinitionCount; i++){
-        if(intentDefinitions[i].id == id){
-            return intentDefinitions[i].name;
+    IntentControlDefinitionSet intentDefs = getIntentControlDefinitions();
+    for(uint16_t i = 0; i < intentDefs.count; i++){
+        if(intentDefs.definitions[i].id == id){
+            return intentDefs.definitions[i].name;
         }
     }
 }
