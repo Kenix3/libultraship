@@ -27,6 +27,7 @@ class InputEditorWindow : public GuiWindow {
     bool TestingRumble();
 
     void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, ImVec4 color);
+    void DrawDeviceVisibilityButtons();
   protected:
     void InitElement() override;
     void DrawElement() override;
@@ -85,6 +86,5 @@ class InputEditorWindow : public GuiWindow {
     void DrawClearAllButton(uint8_t portIndex);
 
     std::map<ShipDeviceIndex, bool> mDeviceIndexVisiblity;
-    void DrawDeviceVisibilityButtons();
 };
 } // namespace Ship

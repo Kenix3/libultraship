@@ -198,7 +198,7 @@ void InputEditorWindow::GetButtonColorsForShipDeviceIndex(ShipDeviceIndex lusInd
 void InputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::BeginDisabled();
     ImGui::PushStyleColor(ImGuiCol_Button, color);
-    ImGui::Button(buttonName, ImVec2(SCALE_IMGUI_SIZE(50.0f), 0));
+    ImGui::Button(buttonName);
     ImGui::PopStyleColor();
     ImGui::EndDisabled();
 }
@@ -241,7 +241,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     if (mapping == nullptr) {
         return;
     }
-    if (!mDeviceIndexVisiblity[mapping->GetShipDeviceIndex()]) {
+    Ship::ShipDeviceIndex deviceIndex = mapping->GetShipDeviceIndex();
+    if (!mDeviceIndexVisiblity[deviceIndex]) {
         return;
     }
 
@@ -442,7 +443,7 @@ void InputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, CON
     ImGui::NewLine();
     ImGui::SameLine(SCALE_IMGUI_SIZE(32.0f));
     DrawInputChip(buttonName, color);
-    ImGui::SameLine(SCALE_IMGUI_SIZE(86.0f));
+    ImGui::SameLine();
     if(specialButton == 0){
         for (auto id : mBitmaskToMappingIds[port][bitmask]) {
             DrawButtonLineEditMappingButton(port, bitmask, specialButton, id);
