@@ -15,7 +15,7 @@ namespace Ship {
 
 class ControllerButton {
   public:
-    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, IntentControls* intentControls, uint16_t specialButtonId);
     ~ControllerButton();
 
     std::shared_ptr<ControllerButtonMapping> GetButtonMappingById(std::string id);
@@ -32,7 +32,7 @@ class ControllerButton {
     void ClearAllButtonMappings();
     void ClearAllButtonMappingsForDevice(ShipDeviceIndex shipDeviceIndex);
 
-    bool AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id);
+    bool AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, std::string id);
 
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
@@ -40,11 +40,14 @@ class ControllerButton {
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 
+    uint16_t mSpecialButtonId;
+    CONTROLLERBUTTONS_T mBitmask;
+    IntentControls* intentControls;
   private:
     uint8_t mPortIndex;
-    CONTROLLERBUTTONS_T mBitmask;
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
     std::string GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask);
+    std::string GetConfigNameFromSpecialButtonId(uint16_t id);
 
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;

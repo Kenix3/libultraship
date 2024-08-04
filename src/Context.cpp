@@ -7,6 +7,7 @@
 #include "install_config.h"
 #include "graphic/Fast3D/debug/GfxDebugger.h"
 #include "graphic/Fast3D/Fast3dWindow.h"
+#include "IntentControlManager.h"
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -80,7 +81,12 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitConfiguration();
     InitConsoleVariables();
     InitResourceManager(otrFiles, validHashes, reservedThreadCount);
-    InitControlDeck();
+    std::vector<uint16_t> specialControls;
+    IntentControlDefinitionSet intentDefs = getIntentControlDefinitions();
+    for(size_t i = 0; i < intentDefs.count; i++){
+        specialControls.push_back(intentDefs.definitions[i].id);
+    }
+    InitControlDeck({}, specialControls);
     InitCrashHandler();
     InitConsole();
     InitWindow();
@@ -211,12 +217,12 @@ void Context::InitResourceManager(const std::vector<std::string>& otrFiles,
     }
 }
 
-void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
+void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::vector<uint16_t> specialControls) {
     if (GetControlDeck() != nullptr) {
         return;
     }
 
-    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks);
+    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks, specialControls);
 }
 
 void Context::InitCrashHandler() {

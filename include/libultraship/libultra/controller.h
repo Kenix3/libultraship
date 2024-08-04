@@ -120,6 +120,24 @@ typedef struct {
     /* 0x03 */ uint8_t err_no;
 } OSContStatus; // size = 0x04
 
+typedef struct IntentControls IntentControls;
+
+#define BUTTON_STATE_CUR 0
+#define BUTTON_STATE_PREV 1
+#define BUTTON_STATE_PRESS 2
+#define BUTTON_STATE_REL 3
+
+struct IntentControls {
+    void* userData;
+    uint8_t (*checkIntentButton)(void* userData, uint16_t intentId, uint8_t buttonStateVersion);
+    void(*registerButtonState)(void* userData, uint16_t specialButtonId, uint8_t);
+    void(*updateState)(void* userData);
+    // void(*updateCurState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    // void(*updatePrevState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    // void(*updatePressState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+    // void(*updateRelState)(void* userData, IntentControls* cur, IntentControls* prev, IntentControls* press, IntentControls* rel);
+};
+
 typedef struct {
     /* 0x00 */ CONTROLLERBUTTONS_T button;
     /* 0x02 */ int8_t stick_x;
@@ -129,7 +147,31 @@ typedef struct {
     /* 0x09 */ float gyro_y;
     /* 0x1C */ int8_t right_stick_x;
     /* 0x20 */ int8_t right_stick_y;
+    IntentControls* intentControls;
 } OSContPad; // size = 0x24
+
+typedef struct {
+    uint16_t id;
+    char* name;
+} IntentControlDefinition;
+
+typedef struct {
+    IntentControlDefinition* definitions;
+    uint16_t count;
+} IntentControlDefinitionSet;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    extern IntentControlDefinitionSet getIntentControlDefinitions();
+    extern void setIntentControlDefinitions(IntentControlDefinitionSet controls);
+#ifdef __cplusplus
+}
+#endif
+
+#define GET_INTENTS(pad, f, default) (pad->intentControls == NULL ? default : pad->intentControls->f)
+
+#define CHECK_INTENT(intentControls, intent, state, defaultVal) ( intentControls == NULL ? defaultVal : intentControls->checkIntentButton(intentControls->userData, intent, state))
 
 typedef struct {
     /* 0x00 */ void* address;

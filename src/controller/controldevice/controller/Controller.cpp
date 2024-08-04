@@ -10,18 +10,28 @@
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
 
+// TODO: move this around better
+typedef struct {
+    bool eventRollEnabled;
+    bool eventInteractEnabled;
+} DefaultStorage;
+extern DefaultStorage eventControlStorage;
+
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace Ship {
 
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : ControlDevice(portIndex) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, IntentControls* intentControls, std::vector<uint16_t> specialButtons)
+    : ControlDevice(portIndex), intentControls(intentControls) {
     for (auto bitmask : { BUTTON_BITMASKS }) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
+        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask, nullptr, 0);
     }
     for (auto bitmask : additionalBitmasks) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
+        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask, nullptr, 0);
+    }
+    for (auto button : specialButtons) {
+        mSpecialButtons[button] = std::make_shared<ControllerButton>(portIndex, 0, intentControls, button);
     }
     mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK);
     mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK);
@@ -30,7 +40,7 @@ Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> addit
     mLED = std::make_shared<ControllerLED>(portIndex);
 }
 
-Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}) {
+Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}, nullptr, {}) {
 }
 
 Controller::~Controller() {
@@ -40,9 +50,15 @@ Controller::~Controller() {
 std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> Controller::GetAllButtons() {
     return mButtons;
 }
+std::unordered_map<uint16_t, std::shared_ptr<ControllerButton>> Controller::GetAllSpecialButtons() {
+    return mSpecialButtons;
+}
 
-std::shared_ptr<ControllerButton> Controller::GetButton(CONTROLLERBUTTONS_T bitmask) {
-    return mButtons[bitmask];
+std::shared_ptr<ControllerButton> Controller::GetButton(CONTROLLERBUTTONS_T bitmask, uint16_t specialButton) {
+    if(bitmask != 0){
+        return mButtons[bitmask];
+    }
+    return mSpecialButtons[specialButton];
 }
 
 std::shared_ptr<ControllerStick> Controller::GetLeftStick() {
@@ -79,6 +95,9 @@ void Controller::ClearAllMappings() {
     for (auto [bitmask, button] : GetAllButtons()) {
         button->ClearAllButtonMappings();
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        button->ClearAllButtonMappings();
+    }
     GetLeftStick()->ClearAllMappings();
     GetRightStick()->ClearAllMappings();
     GetGyro()->ClearGyroMapping();
@@ -88,6 +107,9 @@ void Controller::ClearAllMappings() {
 
 void Controller::ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
+        button->ClearAllButtonMappingsForDevice(shipDeviceIndex);
+    }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
         button->ClearAllButtonMappingsForDevice(shipDeviceIndex);
     }
     GetLeftStick()->ClearAllMappingsForDevice(shipDeviceIndex);
@@ -106,6 +128,9 @@ void Controller::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         button->AddDefaultMappings(shipDeviceIndex);
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        button->AddDefaultMappings(shipDeviceIndex);
+    }
     GetLeftStick()->AddDefaultMappings(shipDeviceIndex);
     GetRumble()->AddDefaultMappings(shipDeviceIndex);
 
@@ -117,6 +142,9 @@ void Controller::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
 
 void Controller::ReloadAllMappingsFromConfig() {
     for (auto [bitmask, button] : GetAllButtons()) {
+        button->ReloadAllMappingsFromConfig();
+    }
+    for (auto [specialButton, button] : GetAllSpecialButtons()) {
         button->ReloadAllMappingsFromConfig();
     }
     GetLeftStick()->ReloadAllMappingsFromConfig();
@@ -133,6 +161,21 @@ void Controller::ReadToPad(OSContPad* pad) {
     for (auto [bitmask, button] : mButtons) {
         button->UpdatePad(padToBuffer.button);
     }
+    
+    padToBuffer.intentControls = intentControls;
+    
+    if(padToBuffer.intentControls != NULL && padToBuffer.intentControls->registerButtonState != NULL){
+        for (auto [specialButton, button] : mSpecialButtons) {
+            button->UpdatePad(padToBuffer.button);
+            uint8_t pressed = false;
+            for (auto m : button->GetAllButtonMappings()){
+                pressed = pressed || m.second->pressed;
+            }
+            padToBuffer.intentControls->registerButtonState(
+                padToBuffer.intentControls->userData, specialButton, pressed
+            );
+        }
+    }
 
     // Stick Inputs
     GetLeftStick()->UpdatePad(padToBuffer.stick_x, padToBuffer.stick_y);
@@ -147,6 +190,7 @@ void Controller::ReadToPad(OSContPad* pad) {
             mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
 
         pad->button |= padFromBuffer.button;
+        pad->intentControls = padToBuffer.intentControls;
 
         if (pad->stick_x == 0) {
             pad->stick_x = padFromBuffer.stick_x;
@@ -180,6 +224,9 @@ bool Controller::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode
     for (auto [bitmask, button] : GetAllButtons()) {
         result = button->ProcessKeyboardEvent(eventType, scancode) || result;
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        result = button->ProcessKeyboardEvent(eventType, scancode) || result;
+    }
     result = GetLeftStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     result = GetRightStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     return result;
@@ -191,6 +238,12 @@ bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
             return true;
         }
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        if (button->HasMappingsForShipDeviceIndex(lusIndex)) {
+            return true;
+        }
+    }
+
     if (GetLeftStick()->HasMappingsForShipDeviceIndex(lusIndex)) {
         return true;
     }
@@ -213,6 +266,9 @@ bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
 std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask) {
     return mButtons[bitmask];
 }
+std::shared_ptr<ControllerButton> Controller::GetButtonBySpecialId(uint16_t id) {
+    return mSpecialButtons[id];
+}
 
 void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController,
                                                    ShipDeviceIndex lusIndex) {
@@ -229,6 +285,23 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
             }
         }
         newController->GetButtonByBitmask(bitmask)->SaveButtonMappingIdsToConfig();
+        for (auto id : buttonMappingIdsToRemove) {
+            button->ClearButtonMappingId(id);
+        }
+    }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        std::vector<std::string> buttonMappingIdsToRemove;
+        for (auto [id, mapping] : button->GetAllButtonMappings()) {
+            if (mapping->GetShipDeviceIndex() == lusIndex) {
+                buttonMappingIdsToRemove.push_back(id);
+
+                mapping->SetPortIndex(newController->GetPortIndex());
+                mapping->SaveToConfig();
+
+                newController->GetButtonBySpecialId(specialButtonId)->AddButtonMapping(mapping);
+            }
+        }
+        newController->GetButtonBySpecialId(specialButtonId)->SaveButtonMappingIdsToConfig();
         for (auto id : buttonMappingIdsToRemove) {
             button->ClearButtonMappingId(id);
         }
@@ -311,6 +384,11 @@ std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {
             allMappings.push_back(mapping);
         }
     }
+    for (auto [specialButtonId, button] : GetAllSpecialButtons()) {
+        for (auto [id, mapping] : button->GetAllButtonMappings()) {
+            allMappings.push_back(mapping);
+        }
+    }
 
     for (auto stick : { GetLeftStick(), GetRightStick() }) {
         for (auto [direction, mappings] : stick->GetAllAxisDirectionMappings()) {
@@ -332,4 +410,14 @@ std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {
 
     return allMappings;
 }
+
+IntentControlDefinitionSet Controller::intentControlDefinitions = {nullptr, 0};
+
 } // namespace Ship
+
+extern "C" IntentControlDefinitionSet getIntentControlDefinitions(){
+    return Ship::Controller::intentControlDefinitions;
+}
+extern "C" void setIntentControlDefinitions(IntentControlDefinitionSet controls){
+    Ship::Controller::intentControlDefinitions = controls;
+}

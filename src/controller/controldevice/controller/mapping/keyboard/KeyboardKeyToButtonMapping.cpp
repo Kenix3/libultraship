@@ -5,16 +5,18 @@
 #include "Context.h"
 
 namespace Ship {
-KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton,
                                                        KbScancode scancode)
     : ControllerInputMapping(ShipDeviceIndex::Keyboard),
-      ControllerButtonMapping(ShipDeviceIndex::Keyboard, portIndex, bitmask), KeyboardKeyToAnyMapping(scancode) {
+      ControllerButtonMapping(ShipDeviceIndex::Keyboard, portIndex, bitmask, specialButton), KeyboardKeyToAnyMapping(scancode) {
 }
 
 void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->KeyboardGameInputBlocked()) {
         return;
     }
+
+    this->pressed = mKeyPressed;
 
     if (!mKeyPressed) {
         return;
@@ -35,6 +37,8 @@ void KeyboardKeyToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToButtonMapping");
+    CVarSetInteger(StringHelper::Sprintf("%s.SpecialButtonId", mappingCvarKey.c_str()).c_str(),
+                  mSpecialButton);
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), mKeyboardScancode);
     CVarSave();

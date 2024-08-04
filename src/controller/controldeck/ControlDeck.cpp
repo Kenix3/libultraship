@@ -9,19 +9,21 @@
 #endif
 #include <imgui.h>
 #include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
+#include <IntentControlManager.h>
 
 namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::vector<uint16_t> specialButtons)
     : mPads(nullptr), mSinglePlayerMappingMode(false) {
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
+        IntentControlManager* intentManager = new IntentControlManager();
+        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks, intentManager->intentControls, specialButtons)));
     }
 
     mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
 }
 
-ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
+ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>(), std::vector<uint16_t>()) {
 }
 
 ControlDeck::~ControlDeck() {

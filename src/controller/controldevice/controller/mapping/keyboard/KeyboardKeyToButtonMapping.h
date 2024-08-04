@@ -4,7 +4,7 @@
 namespace Ship {
 class KeyboardKeyToButtonMapping final : public KeyboardKeyToAnyMapping, public ControllerButtonMapping {
   public:
-    KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, KbScancode scancode);
+    KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, KbScancode scancode);
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
     uint8_t GetMappingType() override;
     std::string GetButtonMappingId() override;

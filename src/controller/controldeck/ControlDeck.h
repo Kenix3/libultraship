@@ -11,7 +11,7 @@ namespace Ship {
 class ControlDeck {
   public:
     ControlDeck();
-    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::vector<uint16_t> intentButtons);
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);

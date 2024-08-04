@@ -26,6 +26,8 @@ class InputEditorWindow : public GuiWindow {
     void DrawControllerSchema();
     bool TestingRumble();
 
+    void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, ImVec4 color);
+    void DrawDeviceVisibilityButtons();
   protected:
     void InitElement() override;
     void DrawElement() override;
@@ -34,9 +36,8 @@ class InputEditorWindow : public GuiWindow {
   private:
     void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                 ImVec4 color);
-    void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, ImVec4 color);
-    void DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, std::string id);
-    void DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask);
+    void DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, std::string id);
+    void DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, uint16_t specialButton);
 
     void DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction, std::string id);
     void DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction);
@@ -61,6 +62,7 @@ class InputEditorWindow : public GuiWindow {
 
     // mBitmaskToMappingIds[port][bitmask] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::string>>> mBitmaskToMappingIds;
+    std::unordered_map<uint8_t, std::unordered_map<uint16_t, std::vector<std::string>>> mSpecialIdToMappingIds;
 
     // mStickDirectionToMappingIds[port][stick][direction] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<uint8_t, std::unordered_map<Direction, std::vector<std::string>>>>
@@ -72,8 +74,9 @@ class InputEditorWindow : public GuiWindow {
     void GetButtonColorsForShipDeviceIndex(ShipDeviceIndex lusIndex, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
     void DrawPortTab(uint8_t portIndex);
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
+    std::set<uint16_t> mSpecialButtonsIds;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
-    void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks);
+    void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks, std::set<uint16_t> specialButtons);
     void DrawAnalogStickDeviceIcons(uint8_t portIndex, Stick stick);
     void DrawRumbleDeviceIcons(uint8_t portIndex);
     void DrawGyroDeviceIcons(uint8_t portIndex);
@@ -83,6 +86,5 @@ class InputEditorWindow : public GuiWindow {
     void DrawClearAllButton(uint8_t portIndex);
 
     std::map<ShipDeviceIndex, bool> mDeviceIndexVisiblity;
-    void DrawDeviceVisibilityButtons();
 };
 } // namespace Ship

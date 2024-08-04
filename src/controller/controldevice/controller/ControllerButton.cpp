@@ -10,12 +10,21 @@
 #include <algorithm>
 
 namespace Ship {
-ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, IntentControls* intentControls, uint16_t specialButtonId)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN) {
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mSpecialButtonId(specialButtonId), intentControls(intentControls) {
 }
 
 ControllerButton::~ControllerButton() {
+}
+
+std::string ControllerButton::GetConfigNameFromSpecialButtonId(uint16_t id){
+    IntentControlDefinitionSet intentDefs = getIntentControlDefinitions();
+    for(uint16_t i = 0; i < intentDefs.count; i++){
+        if(intentDefs.definitions[i].id == id){
+            return intentDefs.definitions[i].name;
+        }
+    }
 }
 
 std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
@@ -105,9 +114,17 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
         buttonMappingIdListString += ",";
     }
 
+    std::string buttonName = "";
+    if(mSpecialButtonId > 0){
+        buttonName = GetConfigNameFromSpecialButtonId(mSpecialButtonId);
+    }
+    else {
+        buttonName = GetConfigNameFromBitmask(mBitmask);
+    }
+
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              GetConfigNameFromBitmask(mBitmask).c_str());
+                                buttonName.c_str());
     if (buttonMappingIdListString == "") {
         CVarClear(buttonMappingIdsCvarKey.c_str());
     } else {
@@ -120,6 +137,11 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
 void ControllerButton::ReloadAllMappingsFromConfig() {
     mButtonMappings.clear();
 
+    std::string configName = GetConfigNameFromBitmask(mBitmask);
+    if(mSpecialButtonId > 0){
+        configName = GetConfigNameFromSpecialButtonId(mSpecialButtonId);
+    }
+
     // todo: this efficently (when we build out cvar array support?)
     // i don't expect it to really be a problem with the small number of mappings we have
     // for each controller (especially compared to include/exclude locations in rando), and
@@ -127,7 +149,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
-                              GetConfigNameFromBitmask(mBitmask).c_str());
+                              configName.c_str());
     std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
@@ -172,16 +194,16 @@ bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
                        [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
 }
 
-bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
+bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, uint16_t specialButton, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
     mUseKeydownEventToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
-        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
+        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, specialButton, mKeyboardScancodeForNewMapping);
     }
 
     if (mapping == nullptr) {
-        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
+        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask, specialButton);
     }
 
     if (mapping == nullptr) {
@@ -225,7 +247,7 @@ bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode sc
 }
 
 void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
-    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
+    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDeviceIndex, mPortIndex, mBitmask, mSpecialButtonId)) {
         AddButtonMapping(mapping);
     }
 
