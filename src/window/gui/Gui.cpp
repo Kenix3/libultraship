@@ -375,10 +375,12 @@ void Gui::DrawMenu() {
 #endif
 
     if (GetMenuBar()) {
+        GetMenuBar()->Update();
         GetMenuBar()->Draw();
     }
 
     if (GetMenu()) {
+        GetMenu()->Update();
         GetMenu()->Draw();
     }
 
