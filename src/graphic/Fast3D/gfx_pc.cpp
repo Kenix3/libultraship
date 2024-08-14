@@ -1473,8 +1473,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
     uint64_t cc_id = g_rdp.combine_mode;
     uint64_t cc_options = 0;
-    bool use_alpha = (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
-                     (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16);
+    bool use_alpha = ((g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
+                     (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
+                     ((g_rdp.other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
+                     (g_rdp.other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
     bool use_fog = (g_rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (g_rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
