@@ -156,7 +156,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
 
         // These are 128-bit commands, so read an extra 64 bits...
         if (opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
-            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR) {
+            opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR || opcode == G_MOVEMEM_OTR) {
             command.words.w0 = reader->ReadUInt32();
             command.words.w1 = reader->ReadUInt32();
 

@@ -2839,6 +2839,27 @@ bool gfx_movemem_handler_f3d(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    const uint8_t index = C1(24, 8);
+    const uint8_t offset = C1(16, 8);
+    const uint8_t hasOffset = C1(8, 8);
+
+    (*cmd0)++;
+
+    const uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
+
+    if (ucode_handler_index == ucode_f3dex2) {
+        gfx_sp_movemem_f3dex2(index, offset, ResourceGetDataByCrc(hash));
+    } else {
+        auto light = (LUS::LightEntry*)ResourceGetDataByCrc(hash);
+        uintptr_t data = (uintptr_t)&light->a;
+        gfx_sp_movemem_f3d(index, offset, (void*)(data + (hasOffset == 1 ? 0x8 : 0)));
+    }
+    return false;
+}
+
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
@@ -3746,6 +3767,7 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_DL_INDEX, { "G_DL_INDEX", gfx_dl_index_handler } },                     // G_DL_INDEX (0x3d)
     { OTR_G_READFB, { "G_READFB", gfx_read_fb_handler_custom } },                   // G_READFB (0x3e)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
+    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
