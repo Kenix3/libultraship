@@ -24,7 +24,7 @@ void Audio::InitAudioPlayer() {
             // Failed to initialize system audio player.
             // Fallback to SDL if the native system player does not work.
             SetAudioBackend(AudioBackend::SDL);
-            mAudioPlayer = std::make_shared<SDLAudioPlayer>();
+            mAudioPlayer = std::make_shared<SDLAudioPlayer>(this->mAudioSettings);
             mAudioPlayer->Init();
         }
     }
