@@ -6,39 +6,39 @@
 namespace LUS {
 
 struct LightN64 {
-    uint8_t col[3];
-    int8_t pad1;
-    uint8_t colc[3];
-    int8_t pad2;
-    uint8_t dir[3];
-    int8_t pad3;
+    uint8_t Color[3];
+    int8_t Pad1;
+    uint8_t ColorCopy[3];
+    int8_t Pad2;
+    uint8_t Direction[3];
+    int8_t Pad3;
 };
 
 struct PointLightN64 {
-    uint8_t col[3];
-    uint8_t unk3;
-    uint8_t colc[3];
-    uint8_t unk7;
-    int16_t pos[3];
-    uint8_t unkE;
+    uint8_t Color[3];
+    uint8_t Unk0;
+    uint8_t ColorCopy[3];
+    uint8_t Unk1;
+    int16_t Position[3];
+    uint8_t Unk2;
 };
 
 union LightData {
-    LightN64 l;
-    PointLightN64 p;
-    long long int force_structure_alignment[2];
+    LightN64 Light;
+    PointLightN64 PointLight;
+    long long int ForceAlignment[2];
 };
 
-union Ambient {
-    uint8_t col[3];
-    int8_t pad1;
-    uint8_t colc[3];
-    int8_t pad2;
+union AmbientData {
+    uint8_t Color[3];
+    int8_t Pad1;
+    uint8_t ColorCopy[3];
+    int8_t Pad2;
 };
 
 struct LightEntry {
-    Ambient a;
-    LightData l;
+    AmbientData Ambient;
+    LightData Light;
 };
 
 class Light : public Ship::Resource<LightEntry> {
@@ -51,6 +51,7 @@ class Light : public Ship::Resource<LightEntry> {
     LightEntry* GetPointer();
     size_t GetPointerSize();
 
+  private:
     LightEntry mLight;
     std::vector<LightData> mLightData;
 };

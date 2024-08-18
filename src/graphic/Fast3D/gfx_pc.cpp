@@ -2854,7 +2854,7 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
         gfx_sp_movemem_f3dex2(index, offset, ResourceGetDataByCrc(hash));
     } else {
         auto light = (LUS::LightEntry*)ResourceGetDataByCrc(hash);
-        uintptr_t data = (uintptr_t)&light->a;
+        uintptr_t data = (uintptr_t)&light->Ambient;
         gfx_sp_movemem_f3d(index, offset, (void*)(data + (hasOffset == 1 ? 0x8 : 0)));
     }
     return false;
