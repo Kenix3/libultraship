@@ -2,8 +2,6 @@
 #include <spdlog/spdlog.h>
 
 namespace Ship {
-SDLAudioPlayer::SDLAudioPlayer() : AudioPlayer() {
-}
 
 SDLAudioPlayer::~SDLAudioPlayer() {
     SPDLOG_TRACE("destruct SDL audio player");
@@ -20,7 +18,7 @@ bool SDLAudioPlayer::DoInit(void) {
     want.freq = this->GetSampleRate();
     want.format = AUDIO_S16SYS;
     want.channels = 2;
-    want.samples = 1024;
+    want.samples = this->GetSampleLength();
     want.callback = NULL;
     mDevice = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
     if (mDevice == 0) {
@@ -34,10 +32,6 @@ bool SDLAudioPlayer::DoInit(void) {
 int SDLAudioPlayer::Buffered(void) {
     // 4 is sizeof(int16_t) * num_channels (2 for stereo)
     return SDL_GetQueuedAudioSize(mDevice) / 4;
-}
-
-int SDLAudioPlayer::GetDesiredBuffered(void) {
-    return 2480;
 }
 
 void SDLAudioPlayer::Play(const uint8_t* buf, size_t len) {

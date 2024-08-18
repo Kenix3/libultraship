@@ -25,7 +25,7 @@ class Context {
                                                    const std::string configFilePath,
                                                    const std::vector<std::string>& otrFiles = {},
                                                    const std::unordered_set<uint32_t>& validHashes = {},
-                                                   uint32_t reservedThreadCount = 1);
+                                                   uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {});
     static std::shared_ptr<Context> CreateUninitializedInstance(const std::string name, const std::string shortName,
                                                                 const std::string configFilePath);
     static std::string GetAppBundlePath();
@@ -38,7 +38,7 @@ class Context {
     ~Context();
 
     void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
-              uint32_t reservedThreadCount);
+              uint32_t reservedThreadCount, AudioSettings audioSettings);
 
     std::shared_ptr<spdlog::logger> GetLogger();
     std::shared_ptr<Config> GetConfig();
@@ -62,7 +62,7 @@ class Context {
                              const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
     void InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks = {});
     void InitCrashHandler();
-    void InitAudio();
+    void InitAudio(AudioSettings settings);
     void InitGfxDebugger();
     void InitConsole();
     void InitWindow(std::vector<std::shared_ptr<GuiWindow>> guiWindows = {});
