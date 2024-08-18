@@ -9,7 +9,7 @@ std::shared_ptr<Ship::IResource> LUS::ResourceFactoryBinaryLightV0::ReadResource
     std::shared_ptr<Light> light = std::make_shared<Light>(file->InitData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
 
-    reader->Read((char*)&light->mLight, sizeof(LightEntry));
+    reader->Read((char*)light->GetPointer(), sizeof(LightEntry));
 
     return light;
 }
