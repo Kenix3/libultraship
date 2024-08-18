@@ -52,7 +52,7 @@ class AudioPlayer {
     virtual bool DoInit(void) = 0;
 
   private:
-    bool mInitialized;
+    bool mInitialized = false;
     AudioSettings mAudioSettings;
 };
 } // namespace Ship
