@@ -5,6 +5,13 @@
 
 namespace LUS {
 
+/*
+    We have to keep the Pads since its probably an
+    issue from the sdk, because the documentation expects 
+    RGBA, but 'Color' has space for RGB only.
+    https://ultra64.ca/files/documentation/online-manuals/functions_reference_manual_2.0i/gsp/gSPLight.html
+*/
+
 struct LightN64 {
     uint8_t Color[3];
     int8_t Pad1;
