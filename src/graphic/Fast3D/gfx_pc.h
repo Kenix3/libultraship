@@ -206,7 +206,7 @@ typedef enum Attribute {
     CULL_BOTH,
     MV_VIEWPORT,
     MV_LIGHT,
-};
+} Attribute;
 
 extern RDP g_rdp;
 extern RSP g_rsp;
