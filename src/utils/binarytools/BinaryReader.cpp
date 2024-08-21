@@ -73,6 +73,18 @@ int32_t Ship::BinaryReader::ReadInt32() {
     return result;
 }
 
+int64_t Ship::BinaryReader::ReadInt64() {
+    int64_t result = 0;
+
+    mStream->Read((char*)&result, sizeof(int64_t));
+
+    if (mEndianness != Endianness::Native) {
+        result = BSWAP64(result);
+    }
+
+    return result;
+}
+
 uint8_t Ship::BinaryReader::ReadUByte() {
     return (uint8_t)mStream->ReadByte();
 }
