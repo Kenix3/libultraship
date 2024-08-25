@@ -3849,6 +3849,8 @@ const char* GfxGetOpcodeName(int8_t opcode) {
             SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
                             (uint32_t)ucode_handler_index);
         }
+    } else {
+        SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode, (uint32_t)ucode_handler_index)
     }
 
     return nullptr;
@@ -3891,6 +3893,8 @@ static void gfx_step() {
             SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
                             (uint32_t)ucode_handler_index);
         }
+    } else {
+        SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode, (uint32_t)ucode_handler_index);
     }
 
     ++cmd;
