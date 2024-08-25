@@ -30,8 +30,8 @@ class GuiWindow : public GuiElement {
     void SyncVisibilityConsoleVariable();
 
   private:
-    std::string mVisibilityConsoleVariable;
     std::string mName;
+    std::string mVisibilityConsoleVariable;
     ImVector<ImRect> mGroupPanelLabelStack;
     ImVec2 mOriginalSize;
     uint32_t mWindowFlags;

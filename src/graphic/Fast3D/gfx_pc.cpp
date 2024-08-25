@@ -3848,9 +3848,10 @@ const char* GfxGetOpcodeName(int8_t opcode) {
         } else {
             SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
                             (uint32_t)ucode_handler_index);
-            return nullptr;
         }
     }
+
+    return nullptr;
 }
 
 // TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be
