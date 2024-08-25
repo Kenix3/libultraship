@@ -3850,7 +3850,7 @@ const char* GfxGetOpcodeName(int8_t opcode) {
                             (uint32_t)ucode_handler_index);
         }
     } else {
-        SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode, (uint32_t)ucode_handler_index)
+        SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode, (uint32_t)ucode_handler_index);
     }
 
     return nullptr;
