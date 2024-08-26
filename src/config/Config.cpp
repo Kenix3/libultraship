@@ -137,9 +137,10 @@ void Config::EraseBlock(const std::string& key) {
         nlohmann::json& gjson2 = gjson;
         std::vector<std::string> dots = StringHelper::Split(key, ".");
         if (dots.size() > 1) {
+            size_t curDot = 0;
             for (auto& dot : dots) {
                 if (gjson2.contains(dot)) {
-                    if (dots.size() == 0) {
+                    if (curDot == dots.size()) {
                         gjson2.erase(dot);
                     } else {
                         gjson2 = gjson2[dot];
