@@ -114,8 +114,6 @@ static int game_framebuffer_msaa_resolved;
 
 uint32_t gfx_msaa_level = 1;
 
-static bool has_drawn_imgui_menu;
-
 static bool dropped_frame;
 
 static const std::unordered_map<Mtx*, MtxF>* current_mtx_replacements;
@@ -3963,8 +3961,6 @@ void gfx_start_frame(void) {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
                              &gfx_current_window_position_x, &gfx_current_window_position_y);
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
-    has_drawn_imgui_menu = true;
     if (gfx_current_dimensions.height == 0) {
         // Avoid division by zero
         gfx_current_dimensions.height = 1;
@@ -4030,18 +4026,11 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
-        if (has_drawn_imgui_menu) {
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->EndFrame();
-            has_drawn_imgui_menu = false;
-        }
         return;
     }
     dropped_frame = false;
 
-    if (!has_drawn_imgui_menu) {
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
-    }
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
 
     current_mtx_replacements = &mtx_replacements;
 
@@ -4096,7 +4085,6 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     Ship::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
-    has_drawn_imgui_menu = false;
 }
 
 void gfx_end_frame(void) {
