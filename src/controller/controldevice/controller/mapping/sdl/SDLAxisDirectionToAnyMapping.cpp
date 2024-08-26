@@ -56,6 +56,8 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
                 return "R";
             }
             break;
+        default:
+            break;
     }
 
     return StringHelper::Sprintf("Axis %d %s", mControllerAxis,

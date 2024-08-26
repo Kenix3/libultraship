@@ -71,7 +71,7 @@ std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string 
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : mName(std::move(name)), mShortName(std::move(shortName)), mConfigFilePath(std::move(configFilePath)) {
+    : mConfigFilePath(std::move(configFilePath)), mName(std::move(name)), mShortName(std::move(shortName)) {
 }
 
 void Context::Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,

@@ -17,7 +17,7 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
 
             if (!cmd.second.Arguments.empty()) {
                 *output += "\n   - Arguments:";
-                for (int i = 0; i < cmd.second.Arguments.size(); i += 1) {
+                for (size_t i = 0; i < cmd.second.Arguments.size(); i += 1) {
                     const CommandArgument& argument = cmd.second.Arguments[i];
 
                     *output += "\n     - Info=" + argument.Info;
@@ -399,7 +399,7 @@ void ConsoleWindow::DrawElement() {
         }
 
         const std::vector<ConsoleLine> channel = mLog[mCurrentChannel];
-        for (size_t i = 0; i < static_cast<int32_t>(channel.size()); i++) {
+        for (size_t i = 0; i < channel.size(); i++) {
             ConsoleLine line = channel[i];
             if (!mFilter.empty() && line.Text.find(mFilter) == std::string::npos) {
                 continue;
@@ -410,8 +410,9 @@ void ConsoleWindow::DrawElement() {
             std::string id = line.Text + "##" + std::to_string(i);
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            const bool isSelected = (mSelectedId == i) || std::find(mSelectedEntries.begin(), mSelectedEntries.end(),
-                                                                    i) != mSelectedEntries.end();
+            const bool isSelected =
+                (mSelectedId == (int32_t)i) ||
+                std::find(mSelectedEntries.begin(), mSelectedEntries.end(), i) != mSelectedEntries.end();
             ImGui::PushStyleColor(ImGuiCol_Text, mPriorityColours[line.Priority]);
             if (ImGui::Selectable(id.c_str(), isSelected)) {
                 if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftCtrl)) && !isSelected) {
