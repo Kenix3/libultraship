@@ -41,7 +41,7 @@ void GuiMenuBar::SyncVisibilityConsoleVariable() {
     }
 }
 
-void GuiMenuBar::SetVisiblity(bool visible) {
+void GuiMenuBar::SetVisibility(bool visible) {
     mIsVisible = visible;
     SyncVisibilityConsoleVariable();
 }
