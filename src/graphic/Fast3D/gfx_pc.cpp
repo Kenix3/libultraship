@@ -4019,6 +4019,7 @@ GfxExecStack g_exec_stack = {};
 
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
     gfx_sp_reset();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
 
     // puts("New frame");
     get_pixel_depth_pending.clear();
@@ -4026,11 +4027,11 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->EndFrame();
         return;
     }
     dropped_frame = false;
-
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
 
     current_mtx_replacements = &mtx_replacements;
 

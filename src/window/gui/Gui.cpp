@@ -298,9 +298,6 @@ void Gui::UnblockImGuiGamepadNavigation() {
 
 void Gui::DrawMenu() {
     Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
-    ImGuiBackendNewFrame();
-    ImGuiWMNewFrame();
-    ImGui::NewFrame();
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
@@ -324,7 +321,7 @@ void Gui::DrawMenu() {
     ImGui::Begin("Main - Deck", nullptr, windowFlags);
     ImGui::PopStyleVar(3);
 
-    windowPosBeforeMenuBar = ImGui::GetWindowPos();
+    mWindowPosBeforeMenuBar = ImGui::GetWindowPos();
 
     const ImGuiID dockId = ImGui::GetID("main_dock");
 
@@ -549,8 +546,8 @@ void Gui::StartFrame() {
     ImGui::PopStyleColor();
 
     ImVec2 mainPos = ImGui::GetWindowPos();
-    mainPos.x -= windowPosBeforeMenuBar.x;
-    mainPos.y -= windowPosBeforeMenuBar.y;
+    mainPos.x -= mWindowPosBeforeMenuBar.x;
+    mainPos.y -= mWindowPosBeforeMenuBar.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
     gfx_current_dimensions.width = (uint32_t)(size.x * gfx_current_dimensions.internal_mul);
     gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
