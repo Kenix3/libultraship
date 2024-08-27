@@ -34,7 +34,7 @@ GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name
     : GuiWindow(consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
 }
 
-void GuiWindow::SetVisiblity(bool visible) {
+void GuiWindow::SetVisibility(bool visible) {
     mIsVisible = visible;
     SyncVisibilityConsoleVariable();
 }

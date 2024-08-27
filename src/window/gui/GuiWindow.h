@@ -24,7 +24,7 @@ class GuiWindow : public GuiElement {
     std::string GetName();
 
   protected:
-    void SetVisiblity(bool visible) override;
+    void SetVisibility(bool visible) override;
     void BeginGroupPanel(const char* name, const ImVec2& size);
     void EndGroupPanel(float minHeight);
     void SyncVisibilityConsoleVariable();

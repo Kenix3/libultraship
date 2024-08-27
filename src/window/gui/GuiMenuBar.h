@@ -11,7 +11,7 @@ class GuiMenuBar : public GuiElement {
     void Draw() override;
 
   protected:
-    void SetVisiblity(bool visible) override;
+    void SetVisibility(bool visible) override;
 
   private:
     void SyncVisibilityConsoleVariable();
