@@ -125,7 +125,7 @@ class Gui {
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     bool mPadBtnTogglesMenu = false;
-    ImVec2 mWindowPosBeforeMenuBar;
+    ImVec2 mTemporaryWindowPos;
 };
 } // namespace Ship
 

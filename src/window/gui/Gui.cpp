@@ -321,7 +321,7 @@ void Gui::DrawMenu() {
     ImGui::Begin("Main - Deck", nullptr, windowFlags);
     ImGui::PopStyleVar(3);
 
-    mWindowPosBeforeMenuBar = ImGui::GetWindowPos();
+    mTemporaryWindowPos = ImGui::GetWindowPos();
 
     const ImGuiID dockId = ImGui::GetID("main_dock");
 
@@ -546,8 +546,8 @@ void Gui::StartFrame() {
     ImGui::PopStyleColor();
 
     ImVec2 mainPos = ImGui::GetWindowPos();
-    mainPos.x -= mWindowPosBeforeMenuBar.x;
-    mainPos.y -= mWindowPosBeforeMenuBar.y;
+    mainPos.x -= mTemporaryWindowPos.x;
+    mainPos.y -= mTemporaryWindowPos.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
     gfx_current_dimensions.width = (uint32_t)(size.x * gfx_current_dimensions.internal_mul);
     gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
