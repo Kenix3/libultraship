@@ -2034,7 +2034,6 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
 }
 
 static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
-    SUPPORT_CHECK(tile == G_TX_LOADTILE || tile == 6);
     SUPPORT_CHECK(uls == 0);
     SUPPORT_CHECK(ult == 0);
 
