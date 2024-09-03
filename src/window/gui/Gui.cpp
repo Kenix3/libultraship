@@ -297,6 +297,12 @@ void Gui::UnblockImGuiGamepadNavigation() {
 }
 
 void Gui::DrawMenu() {
+    // TODO: These 3 functions are placed here temporarily until future GUI/Frame refactoring
+    // is finished and gives these a new home
+    ImGuiBackendNewFrame();
+    ImGuiWMNewFrame();
+    ImGui::NewFrame();
+
     Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
