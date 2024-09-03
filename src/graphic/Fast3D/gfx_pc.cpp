@@ -4091,12 +4091,20 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
         if (dbg->IsDebugging()) {
             g_exec_stack.gfx_path.push_back(cmd);
             if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
+                // On a breakpoint with the active framebuffer still set, we need to reset back to prevent
+                // soft locking the renderer
+                if (fbActive) {
+                    fbActive = 0;
+                    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, 1);
+                }
+
                 break;
             }
             g_exec_stack.gfx_path.pop_back();
         }
         gfx_step();
     }
+
     gfx_flush();
     gfxFramebuffer = 0;
     currentDir = std::stack<std::string>();
@@ -4118,7 +4126,14 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
         } else {
             gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
+    } else if (fbActive) {
+        // Failsafe reset to main framebuffer to prevent softlocking the renderer
+        fbActive = 0;
+        gfx_rapi->start_draw_to_framebuffer(0, 1);
+
+        assert(0 && "active framebuffer was never reset back to original");
     }
+
     Ship::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
     Ship::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
     gfx_rapi->end_frame();
