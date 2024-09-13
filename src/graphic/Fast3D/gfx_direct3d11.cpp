@@ -418,7 +418,7 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     size_t len, num_floats;
 
     gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
-                                     d3d.current_filter_mode == FILTER_THREE_POINT);
+                                     d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
 
     ComPtr<ID3DBlob> vs, ps;
     ComPtr<ID3DBlob> error_blob;
@@ -595,7 +595,7 @@ static void gfx_d3d11_upload_texture(const uint8_t* rgba32_buf, uint32_t width, 
     texture_desc.Height = height;
     texture_desc.Usage = D3D11_USAGE_IMMUTABLE;
     texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    texture_desc.Format = d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+    texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     texture_desc.CPUAccessFlags = 0;
     texture_desc.MiscFlags = 0; // D3D11_RESOURCE_MISC_GENERATE_MIPS ?
     texture_desc.ArraySize = 1;
@@ -876,7 +876,7 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             texture_desc.Usage = D3D11_USAGE_DEFAULT;
             texture_desc.BindFlags =
                 (msaa_level <= 1 ? D3D11_BIND_SHADER_RESOURCE : 0) | (render_target ? D3D11_BIND_RENDER_TARGET : 0);
-            texture_desc.Format = d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+            texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
             texture_desc.CPUAccessFlags = 0;
             texture_desc.MiscFlags = 0;
             texture_desc.ArraySize = 1;
@@ -958,8 +958,7 @@ void gfx_d3d11_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
     Framebuffer& fb_src = d3d.framebuffers[fb_id_source];
 
     d3d.context->ResolveSubresource(d3d.textures[fb_dst.texture_id].texture.Get(), 0,
-                                    d3d.textures[fb_src.texture_id].texture.Get(), 0,
-                                    d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM);
+                                    d3d.textures[fb_src.texture_id].texture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 void* gfx_d3d11_get_framebuffer_texture_id(int fb_id) {
@@ -989,8 +988,7 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
             d3d.context->CopyResource(td_dst.texture.Get(), td_src.texture.Get());
         } else {
             d3d.context->ResolveSubresource(td_dst.texture.Get(), 0, td_src.texture.Get(), 0,
-                                            d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
-                                                          : DXGI_FORMAT_R8G8B8A8_UNORM);
+                                            DXGI_FORMAT_R8G8B8A8_UNORM);
         }
         return;
     }
@@ -1024,7 +1022,7 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
         texture_desc.Height = td_src.height;
         texture_desc.Usage = D3D11_USAGE_DEFAULT;
         texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        texture_desc.Format = d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+        texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         texture_desc.CPUAccessFlags = 0;
         texture_desc.MiscFlags = 0;
         texture_desc.ArraySize = 1;
@@ -1036,7 +1034,7 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
 
         // Resolve multi-sample to temporary
         d3d.context->ResolveSubresource(td_resolved.texture.Get(), 0, td_src.texture.Get(), 0,
-                                        d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM);
+                                        DXGI_FORMAT_R8G8B8A8_UNORM);
         // Then copy the region to the destination
         d3d.context->CopySubresourceRegion(td_dst.texture.Get(), dstX0, dstY0, 0, 0, td_resolved.texture.Get(), 0,
                                            &region);
@@ -1058,7 +1056,7 @@ void gfx_d3d11_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t heigh
     texture_desc.Width = width;
     texture_desc.Height = height;
     texture_desc.Usage = D3D11_USAGE_STAGING;
-    texture_desc.Format = d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+    texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
     texture_desc.BindFlags = 0;
     texture_desc.MiscFlags = 0;
