@@ -104,11 +104,12 @@ class Gui {
     bool GetPadBtnTogglesMenu();
     void SetPadBtnTogglesMenu();
 
+    void ImGuiBackendNewFrame();
+    void ImGuiWMNewFrame();
+
   protected:
     void ImGuiWMInit();
     void ImGuiBackendInit();
-    void ImGuiBackendNewFrame();
-    void ImGuiWMNewFrame();
     void ImGuiRenderDrawData(ImDrawData* data);
     ImTextureID GetTextureById(int32_t id);
     void ApplyResolutionChanges();
@@ -124,6 +125,7 @@ class Gui {
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     bool mPadBtnTogglesMenu = false;
+    ImVec2 mTemporaryWindowPos;
 };
 } // namespace Ship
 

@@ -297,10 +297,13 @@ void Gui::UnblockImGuiGamepadNavigation() {
 }
 
 void Gui::DrawMenu() {
-    Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
+    // TODO: These 3 functions are placed here temporarily until future GUI/Frame refactoring
+    // is finished and gives these a new home
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
+
+    Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
 
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
@@ -324,7 +327,7 @@ void Gui::DrawMenu() {
     ImGui::Begin("Main - Deck", nullptr, windowFlags);
     ImGui::PopStyleVar(3);
 
-    ImVec2 topLeftPos = ImGui::GetWindowPos();
+    mTemporaryWindowPos = ImGui::GetWindowPos();
 
     const ImGuiID dockId = ImGui::GetID("main_dock");
 
@@ -394,57 +397,6 @@ void Gui::DrawMenu() {
         windowIter.second->Update();
         windowIter.second->Draw();
     }
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground;
-    ImGui::Begin("Main Game", nullptr, flags);
-    ImGui::PopStyleVar(3);
-    ImGui::PopStyleColor();
-
-    ImVec2 mainPos = ImGui::GetWindowPos();
-    mainPos.x -= topLeftPos.x;
-    mainPos.y -= topLeftPos.y;
-    ImVec2 size = ImGui::GetContentRegionAvail();
-    gfx_current_dimensions.width = (uint32_t)(size.x * gfx_current_dimensions.internal_mul);
-    gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
-    gfx_current_game_window_viewport.x = (int16_t)mainPos.x;
-    gfx_current_game_window_viewport.y = (int16_t)mainPos.y;
-    gfx_current_game_window_viewport.width = (int16_t)size.x;
-    gfx_current_game_window_viewport.height = (int16_t)size.y;
-
-    if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
-        ApplyResolutionChanges();
-    }
-
-    switch (CVarGetInteger(CVAR_LOW_RES_MODE, 0)) {
-        case 1: { // N64 Mode
-            gfx_current_dimensions.width = 320;
-            gfx_current_dimensions.height = 240;
-            /*
-            const int sw = size.y * 320 / 240;
-            gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
-            gfx_current_game_window_viewport.width = sw;*/
-            break;
-        }
-        case 2: { // 240p Widescreen
-            const int vertRes = 240;
-            gfx_current_dimensions.width = vertRes * size.x / size.y;
-            gfx_current_dimensions.height = vertRes;
-            break;
-        }
-        case 3: { // 480p Widescreen
-            const int vertRes = 480;
-            gfx_current_dimensions.width = vertRes * size.x / size.y;
-            gfx_current_dimensions.height = vertRes;
-            break;
-        }
-    }
-
-    GetGameOverlay()->Draw();
 }
 
 void Gui::ImGuiBackendNewFrame() {
@@ -592,8 +544,60 @@ int16_t Gui::GetIntegerScaleFactor() {
 }
 
 void Gui::StartFrame() {
-    const ImVec2 mainPos = ImGui::GetWindowPos();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground;
+
+    ImGui::Begin("Main Game", nullptr, flags);
+    ImGui::PopStyleVar(3);
+    ImGui::PopStyleColor();
+
+    ImVec2 mainPos = ImGui::GetWindowPos();
+    mainPos.x -= mTemporaryWindowPos.x;
+    mainPos.y -= mTemporaryWindowPos.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
+    gfx_current_dimensions.width = (uint32_t)(size.x * gfx_current_dimensions.internal_mul);
+    gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
+    gfx_current_game_window_viewport.x = (int16_t)mainPos.x;
+    gfx_current_game_window_viewport.y = (int16_t)mainPos.y;
+    gfx_current_game_window_viewport.width = (int16_t)size.x;
+    gfx_current_game_window_viewport.height = (int16_t)size.y;
+
+    if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
+        ApplyResolutionChanges();
+    }
+
+    switch (CVarGetInteger(CVAR_LOW_RES_MODE, 0)) {
+        case 1: { // N64 Mode
+            gfx_current_dimensions.width = 320;
+            gfx_current_dimensions.height = 240;
+            /*
+            const int sw = size.y * 320 / 240;
+            gfx_current_game_window_viewport.x += ((int)size.x - sw) / 2;
+            gfx_current_game_window_viewport.width = sw;*/
+            break;
+        }
+        case 2: { // 240p Widescreen
+            const int vertRes = 240;
+            gfx_current_dimensions.width = vertRes * size.x / size.y;
+            gfx_current_dimensions.height = vertRes;
+            break;
+        }
+        case 3: { // 480p Widescreen
+            const int vertRes = 480;
+            gfx_current_dimensions.width = vertRes * size.x / size.y;
+            gfx_current_dimensions.height = vertRes;
+            break;
+        }
+    }
+
+    GetGameOverlay()->Draw();
+
+    mainPos = ImGui::GetWindowPos();
+    size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     if (CVarGetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
@@ -654,6 +658,13 @@ void Gui::RenderViewports() {
     }
 }
 
+void Gui::EndFrame() {
+    ImGui::EndFrame();
+    if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+    }
+}
+
 ImTextureID Gui::GetTextureById(int32_t id) {
 #ifdef ENABLE_DX11
     if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_DXGI_DX11) {
@@ -709,13 +720,6 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
 #endif
         default:
             break;
-    }
-}
-
-void Gui::EndFrame() {
-    ImGui::EndFrame();
-    if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
     }
 }
 
