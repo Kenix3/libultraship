@@ -134,7 +134,7 @@ void Fast3dWindow::SetTextureFilter(FilteringMode filteringMode) {
     gfx_get_current_rendering_api()->set_texture_filter(filteringMode);
 }
 
-void Fast3dWindow::EnableSRGBMode(){
+void Fast3dWindow::EnableSRGBMode() {
     gfx_get_current_rendering_api()->enable_srgb_mode();
 }
 

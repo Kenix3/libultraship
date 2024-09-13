@@ -479,7 +479,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(fs_buf, &fs_len, "out vec4 outColor;");
 #endif
 
-    if(srgb_mode){
+    if (srgb_mode) {
         append_line(fs_buf, &fs_len, "vec4 fromLinear(vec4 linearRGB){");
         append_line(fs_buf, &fs_len, "    bvec3 cutoff = lessThan(linearRGB.rgb, vec3(0.0031308));");
         append_line(fs_buf, &fs_len, "    vec3 higher = vec3(1.055)*pow(linearRGB.rgb, vec3(1.0/2.4)) - vec3(0.055);");
@@ -630,7 +630,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 #endif
     }
 
-    if(srgb_mode){
+    if (srgb_mode) {
 #if defined(__APPLE__) || defined(USE_OPENGLES)
         append_line(fs_buf, &fs_len, "outColor = fromLinear(outColor);");
 #else
@@ -1244,7 +1244,7 @@ FilteringMode gfx_opengl_get_texture_filter(void) {
     return current_filter_mode;
 }
 
-void gfx_opengl_enable_srgb_mode(void){
+void gfx_opengl_enable_srgb_mode(void) {
     srgb_mode = true;
 }
 

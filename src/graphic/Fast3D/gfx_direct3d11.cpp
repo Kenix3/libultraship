@@ -958,7 +958,8 @@ void gfx_d3d11_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
     Framebuffer& fb_src = d3d.framebuffers[fb_id_source];
 
     d3d.context->ResolveSubresource(d3d.textures[fb_dst.texture_id].texture.Get(), 0,
-                                    d3d.textures[fb_src.texture_id].texture.Get(), 0, d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM);
+                                    d3d.textures[fb_src.texture_id].texture.Get(), 0,
+                                    d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 void* gfx_d3d11_get_framebuffer_texture_id(int fb_id) {
@@ -988,7 +989,8 @@ void gfx_d3d11_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
             d3d.context->CopyResource(td_dst.texture.Get(), td_src.texture.Get());
         } else {
             d3d.context->ResolveSubresource(td_dst.texture.Get(), 0, td_src.texture.Get(), 0,
-                                            d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM);
+                                            d3d.srgb_mode ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+                                                          : DXGI_FORMAT_R8G8B8A8_UNORM);
         }
         return;
     }
@@ -1229,7 +1231,7 @@ ImTextureID gfx_d3d11_get_texture_by_id(int id) {
     return d3d.textures[id].resource_view.Get();
 }
 
-void gfx_d3d11_enable_srgb_mode(void){
+void gfx_d3d11_enable_srgb_mode(void) {
     d3d.srgb_mode = true;
 }
 

@@ -370,7 +370,8 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     pipeline_descriptor->setFragmentFunction(fragmentFunc);
     pipeline_descriptor->setVertexDescriptor(vertex_descriptor);
 
-    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(mctx.srgb_mode ? MTL::PixelFormatBGRA8Unorm_sRGB : MTL::PixelFormatBGRA8Unorm);
+    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(mctx.srgb_mode ? MTL::PixelFormatBGRA8Unorm_sRGB
+                                                                                      : MTL::PixelFormatBGRA8Unorm);
     pipeline_descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormatDepth32Float);
     if (cc_features.opt_alpha) {
         pipeline_descriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
@@ -1226,7 +1227,7 @@ ImTextureID gfx_metal_get_texture_by_id(int fb_id) {
     return (void*)mctx.textures[fb_id].texture;
 }
 
-void gfx_metal_enable_srgb_mode(void){
+void gfx_metal_enable_srgb_mode(void) {
     mctx.srgb_mode = true;
 }
 
