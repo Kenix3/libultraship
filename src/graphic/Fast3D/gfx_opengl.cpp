@@ -87,6 +87,7 @@ static int8_t current_zmode_decal;
 static int8_t last_depth_test;
 static int8_t last_depth_mask;
 static int8_t last_zmode_decal;
+static bool srgb_mode = false;
 
 GLint max_msaa_level = 1;
 GLuint pixel_depth_rb, pixel_depth_fb;
@@ -478,6 +479,14 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(fs_buf, &fs_len, "out vec4 outColor;");
 #endif
 
+    if(srgb_mode){
+        append_line(fs_buf, &fs_len, "vec4 fromLinear(vec4 linearRGB){");
+        append_line(fs_buf, &fs_len, "    bvec3 cutoff = lessThan(linearRGB.rgb, vec3(0.0031308));");
+        append_line(fs_buf, &fs_len, "    vec3 higher = vec3(1.055)*pow(linearRGB.rgb, vec3(1.0/2.4)) - vec3(0.055);");
+        append_line(fs_buf, &fs_len, "    vec3 lower = linearRGB.rgb * vec3(12.92);");
+        append_line(fs_buf, &fs_len, "return vec4(mix(higher, lower, cutoff), linearRGB.a);}");
+    }
+
     append_line(fs_buf, &fs_len, "void main() {");
 
     // Reference approach to color wrapping as per GLideN64
@@ -620,6 +629,15 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
         append_line(fs_buf, &fs_len, "gl_FragColor = vec4(texel, 1.0);");
 #endif
     }
+
+    if(srgb_mode){
+#if defined(__APPLE__) || defined(USE_OPENGLES)
+        append_line(fs_buf, &fs_len, "outColor = fromLinear(outColor);");
+#else
+        append_line(fs_buf, &fs_len, "gl_FragColor = fromLinear(gl_FragColor);");
+#endif
+    }
+
     append_line(fs_buf, &fs_len, "}");
 
     vs_buf[vs_len] = '\0';
@@ -1226,6 +1244,10 @@ FilteringMode gfx_opengl_get_texture_filter(void) {
     return current_filter_mode;
 }
 
+void gfx_opengl_enable_srgb_mode(void){
+    srgb_mode = true;
+}
+
 struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
                                           gfx_opengl_get_max_texture_size,
                                           gfx_opengl_get_clip_parameters,
@@ -1261,6 +1283,7 @@ struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
                                           gfx_opengl_select_texture_fb,
                                           gfx_opengl_delete_texture,
                                           gfx_opengl_set_texture_filter,
-                                          gfx_opengl_get_texture_filter };
+                                          gfx_opengl_get_texture_filter,
+                                          gfx_opengl_enable_srgb_mode };
 
 #endif

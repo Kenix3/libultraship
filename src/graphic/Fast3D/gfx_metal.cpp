@@ -163,6 +163,7 @@ static struct {
     int8_t depth_test;
     int8_t depth_mask;
     int8_t zmode_decal;
+    bool srgb_mode = false;
     bool non_uniform_threadgroup_supported;
 } mctx;
 
@@ -369,7 +370,7 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     pipeline_descriptor->setFragmentFunction(fragmentFunc);
     pipeline_descriptor->setVertexDescriptor(vertex_descriptor);
 
-    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
+    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(mctx.srgb_mode ? MTL::PixelFormatBGRA8Unorm_sRGB : MTL::PixelFormatBGRA8Unorm);
     pipeline_descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormatDepth32Float);
     if (cc_features.opt_alpha) {
         pipeline_descriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
@@ -826,7 +827,7 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
         tex_descriptor->setHeight(height);
         tex_descriptor->setSampleCount(1);
         tex_descriptor->setMipmapLevelCount(1);
-        tex_descriptor->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
+        tex_descriptor->setPixelFormat(mctx.srgb_mode ? MTL::PixelFormatBGRA8Unorm_sRGB : MTL::PixelFormatBGRA8Unorm);
         tex_descriptor->setUsage((render_target ? MTL::TextureUsageRenderTarget : 0) | MTL::TextureUsageShaderRead);
 
         if (tex.texture != nullptr)
@@ -1225,6 +1226,10 @@ ImTextureID gfx_metal_get_texture_by_id(int fb_id) {
     return (void*)mctx.textures[fb_id].texture;
 }
 
+void gfx_metal_enable_srgb_mode(void){
+    mctx.srgb_mode = true;
+}
+
 struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_get_max_texture_size,
                                          gfx_metal_get_clip_parameters,
@@ -1260,5 +1265,6 @@ struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_select_texture_fb,
                                          gfx_metal_delete_texture,
                                          gfx_metal_set_texture_filter,
-                                         gfx_metal_get_texture_filter };
+                                         gfx_metal_get_texture_filter,
+                                         gfx_metal_enable_srgb_mode };
 #endif

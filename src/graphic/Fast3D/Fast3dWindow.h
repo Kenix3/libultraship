@@ -37,6 +37,7 @@ class Fast3dWindow : public Ship::Window {
     uint16_t GetPixelDepth(float x, float y);
     void SetTextureFilter(FilteringMode filteringMode);
     void SetRendererUCode(UcodeHandlers ucode);
+    void EnableSRGBMode();
 
   protected:
     static bool KeyDown(int32_t scancode);
