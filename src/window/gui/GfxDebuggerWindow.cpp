@@ -363,9 +363,9 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
-            case OTR_G_MTX_OTR2: {
+            case OTR_G_MTX_OTR_FILEPATH: {
                 const char* fileName = (char*)cmd->words.w1;
-                nodeWithText(cmd0, fmt::format("G_MTX_OTR2: {}", fileName));
+                nodeWithText(cmd0, fmt::format("G_MTX_OTR_FILEPATH: {}", fileName));
 
                 cmd++;
                 break;
