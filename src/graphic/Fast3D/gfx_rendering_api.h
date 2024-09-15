@@ -70,6 +70,7 @@ struct GfxRenderingAPI {
     void (*delete_texture)(uint32_t texID);
     void (*set_texture_filter)(FilteringMode mode);
     FilteringMode (*get_texture_filter)(void);
+    void (*enable_srgb_mode)(void);
 };
 
 #endif
