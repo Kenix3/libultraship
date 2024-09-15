@@ -3463,6 +3463,36 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_register_blended_texture_handler_custom(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    // Flush incase we are replacing a previous blended texture that hasn't been finialized to the GPU
+    gfx_flush();
+
+    char* timg = (char*)cmd->words.w1;
+
+    ++(*cmd0);
+    cmd = *cmd0;
+
+    uint8_t* mask = (uint8_t*)cmd->words.w0;
+    uint8_t* replacementTex = (uint8_t*)cmd->words.w1;
+
+    if (!gfx_check_image_signature(timg)) {
+        SPDLOG_ERROR(
+            "OTR_G_REGBLENDEDTEX: Texture is not a valid OTR resource name, unable to register blended texture");
+        return false;
+    }
+
+    // With no mask, we should clear the blended texture
+    if (mask == nullptr) {
+        gfx_unregister_blended_texture(timg);
+    } else {
+        gfx_register_blended_texture(timg, mask, replacementTex);
+    }
+
+    return false;
+}
+
 bool gfx_set_timg_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
@@ -3803,11 +3833,13 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_FILLWIDERECT, { "G_FILLWIDERECT", gfx_fill_wide_rect_handler_custom } },         // G_FILLWIDERECT (0x38)
     { OTR_G_SETGRAYSCALE, { "G_SETGRAYSCALE", gfx_set_grayscale_handler_custom } },          // G_SETGRAYSCALE (0x39)
     { OTR_G_EXTRAGEOMETRYMODE,
-      { "G_EXTRAGEOMETRYMODE", gfx_extra_geometry_mode_handler_custom } },          // G_EXTRAGEOMETRYMODE (0x3a)
-    { OTR_G_COPYFB, { "G_COPYFB", gfx_copy_fb_handler_custom } },                   // G_COPYFB (0x3b)
-    { OTR_G_IMAGERECT, { "G_IMAGERECT", gfx_image_rect_handler_custom } },          // G_IMAGERECT (0x3c)
-    { OTR_G_DL_INDEX, { "G_DL_INDEX", gfx_dl_index_handler } },                     // G_DL_INDEX (0x3d)
-    { OTR_G_READFB, { "G_READFB", gfx_read_fb_handler_custom } },                   // G_READFB (0x3e)
+      { "G_EXTRAGEOMETRYMODE", gfx_extra_geometry_mode_handler_custom } }, // G_EXTRAGEOMETRYMODE (0x3a)
+    { OTR_G_COPYFB, { "G_COPYFB", gfx_copy_fb_handler_custom } },          // G_COPYFB (0x3b)
+    { OTR_G_IMAGERECT, { "G_IMAGERECT", gfx_image_rect_handler_custom } }, // G_IMAGERECT (0x3c)
+    { OTR_G_DL_INDEX, { "G_DL_INDEX", gfx_dl_index_handler } },            // G_DL_INDEX (0x3d)
+    { OTR_G_READFB, { "G_READFB", gfx_read_fb_handler_custom } },          // G_READFB (0x3e)
+    { OTR_G_REGBLENDEDTEX,
+      { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },
 };

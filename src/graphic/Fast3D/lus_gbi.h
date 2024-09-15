@@ -63,6 +63,7 @@ constexpr int8_t OTR_G_COPYFB = OPCODE(0x3b);
 constexpr int8_t OTR_G_IMAGERECT = OPCODE(0x3c);
 constexpr int8_t OTR_G_DL_INDEX = OPCODE(0x3d);
 constexpr int8_t OTR_G_READFB = OPCODE(0x3e);
+constexpr int8_t OTR_G_REGBLENDEDTEX = OPCODE(0x3f);
 constexpr int8_t OTR_G_SETINTENSITY = OPCODE(0x40);
 constexpr int8_t OTR_G_MOVEMEM_HASH = OPCODE(0x42);
 

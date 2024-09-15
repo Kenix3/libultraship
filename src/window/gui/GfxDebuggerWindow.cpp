@@ -512,6 +512,26 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
+            case OTR_G_REGBLENDEDTEX: {
+                const char* timg = (const char*)cmd->words.w1;
+                cmd++;
+
+                uint8_t* mask = (uint8_t*)cmd->words.w0;
+                uint8_t* replacementTex = (uint8_t*)cmd->words.w1;
+
+                if (Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(timg)) {
+                    timg += 7;
+                    nodeWithText(cmd0, fmt::format("G_REGBLENDEDTEX: src {}, mask {}, blended {}", timg, (void*)mask,
+                                                   (void*)replacementTex));
+                } else {
+                    nodeWithText(cmd0, fmt::format("G_REGBLENDEDTEX: src {}, mask {}, blended {}", (void*)timg,
+                                                   (void*)mask, (void*)replacementTex));
+                }
+
+                cmd++;
+                break;
+            }
+
             default: {
                 simpleNode(cmd, opcode);
                 cmd++;
