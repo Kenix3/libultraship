@@ -2774,12 +2774,43 @@ bool gfx_mtx_handler_f3d(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_mtx_otr_filepath_handler_custom_f3dex2(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    const char* fileName = (const char*)cmd->words.w1;
+    const int32_t* mtx = (const int32_t*)ResourceGetDataByName((const char*)fileName);
+
+    if (mtx != NULL) {
+        gfx_sp_matrix(C0(0, 8) ^ F3DEX2_G_MTX_PUSH, mtx);
+    }
+
+    return false;
+}
+
+bool gfx_mtx_otr_filepath_handler_custom_f3d(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    const char* fileName = (const char*)cmd->words.w1;
+    const int32_t* mtx = (const int32_t*)ResourceGetDataByName((const char*)fileName);
+
+    if (mtx != NULL) {
+        gfx_sp_matrix(C0(16, 8), mtx);
+    }
+
+    return false;
+}
+
+bool gfx_mtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
+    if (ucode_handler_index == ucode_f3dex2) {
+        return gfx_mtx_otr_filepath_handler_custom_f3dex2(cmd0);
+    } else {
+        return gfx_mtx_otr_filepath_handler_custom_f3d(cmd0);
+    }
+}
+
 bool gfx_mtx_otr_handler_custom_f3dex2(F3DGfx** cmd0) {
     (*cmd0)++;
     F3DGfx* cmd = *cmd0;
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-
     const int32_t* mtx = (const int32_t*)ResourceGetDataByCrc(hash);
 
     if (mtx != NULL) {
@@ -2796,12 +2827,23 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-
     const int32_t* mtx = (const int32_t*)ResourceGetDataByCrc(hash);
 
-    gfx_sp_matrix(C0(16, 8), (const int32_t*)seg_addr(cmd->words.w1));
+    if (mtx != NULL) {
+        cmd--;
+        gfx_sp_matrix(C0(16, 8), mtx);
+        cmd++;
+    }
 
     return false;
+}
+
+bool gfx_mtx_otr_handler_custom(F3DGfx** cmd0) {
+    if (ucode_handler_index == ucode_f3dex2) {
+        return gfx_mtx_otr_handler_custom_f3dex2(cmd0);
+    } else {
+        return gfx_mtx_otr_handler_custom_f3d(cmd0);
+    }
 }
 
 bool gfx_pop_mtx_handler_f3dex2(F3DGfx** cmd0) {
@@ -2951,13 +2993,13 @@ bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
 bool gfx_vtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     char* fileName = (char*)cmd->words.w1;
-    cmd++;
+    (*cmd0)++;
+    cmd = *cmd0;
     size_t vtxCnt = cmd->words.w0;
     size_t vtxIdxOff = cmd->words.w1 >> 16;
     size_t vtxDataOff = cmd->words.w1 & 0xFFFF;
     F3DVtx* vtx = (F3DVtx*)ResourceGetDataByName((const char*)fileName);
     vtx += vtxDataOff;
-    cmd--;
 
     gfx_sp_vertex(vtxCnt, vtxIdxOff, vtx);
     return false;
@@ -3747,13 +3789,16 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_SETTIMG_OTR_FILEPATH,
       { "G_SETTIMG_OTR_FILEPATH", gfx_set_timg_otr_filepath_handler_custom } }, // G_SETTIMG_OTR_FILEPATH (0x25)
     { OTR_G_TRI1_OTR, { "G_TRI1_OTR", gfx_tri1_otr_handler_f3dex2 } },          // G_TRI1_OTR (0x26)
-    { OTR_G_DL_OTR_FILEPATH, { "G_DL_OTR_FILEPATH", gfx_dl_otr_filepath_handler_custom } },  // G_DL_OTR_FILEPATH (0x27)
-    { OTR_G_PUSHCD, { "G_PUSHCD", gfx_pushcd_handler_custom } },                             // G_PUSHCD (0x28)
-    { OTR_G_DL_OTR_HASH, { "G_DL_OTR_HASH", gfx_dl_otr_hash_handler_custom } },              // G_DL_OTR_HASH (0x31)
-    { OTR_G_VTX_OTR_HASH, { "G_VTX_OTR_HASH", gfx_vtx_hash_handler_custom } },               // G_VTX_OTR_HASH (0x32)
-    { OTR_G_MARKER, { "G_MARKER", gfx_marker_handler_otr } },                                // G_MARKER (0X33)
+    { OTR_G_DL_OTR_FILEPATH, { "G_DL_OTR_FILEPATH", gfx_dl_otr_filepath_handler_custom } }, // G_DL_OTR_FILEPATH (0x27)
+    { OTR_G_PUSHCD, { "G_PUSHCD", gfx_pushcd_handler_custom } },                            // G_PUSHCD (0x28)
+    { OTR_G_MTX_OTR_FILEPATH,
+      { "G_MTX_OTR_FILEPATH", gfx_mtx_otr_filepath_handler_custom } },          // G_MTX_OTR_FILEPATH (0x29)
+    { OTR_G_DL_OTR_HASH, { "G_DL_OTR_HASH", gfx_dl_otr_hash_handler_custom } }, // G_DL_OTR_HASH (0x31)
+    { OTR_G_VTX_OTR_HASH, { "G_VTX_OTR_HASH", gfx_vtx_hash_handler_custom } },  // G_VTX_OTR_HASH (0x32)
+    { OTR_G_MARKER, { "G_MARKER", gfx_marker_handler_otr } },                   // G_MARKER (0X33)
     { OTR_G_INVALTEXCACHE, { "G_INVALTEXCACHE", gfx_invalidate_tex_cache_handler_f3dex2 } }, // G_INVALTEXCACHE (0X34)
     { OTR_G_BRANCH_Z_OTR, { "G_BRANCH_Z_OTR", gfx_branch_z_otr_handler_f3dex2 } },           // G_BRANCH_Z_OTR (0x35)
+    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom } },                          // G_MTX_OTR (0x36)
     { OTR_G_TEXRECT_WIDE, { "G_TEXRECT_WIDE", gfx_tex_rect_wide_handler_custom } },          // G_TEXRECT_WIDE (0x37)
     { OTR_G_FILLWIDERECT, { "G_FILLWIDERECT", gfx_fill_wide_rect_handler_custom } },         // G_FILLWIDERECT (0x38)
     { OTR_G_SETGRAYSCALE, { "G_SETGRAYSCALE", gfx_set_grayscale_handler_custom } },          // G_SETGRAYSCALE (0x39)
@@ -3786,7 +3831,6 @@ static constexpr UcodeHandler f3dex2Handlers = {
     { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex2 } },
     { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
     { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
-    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom_f3dex2 } },
 };
 
 static constexpr UcodeHandler f3dexHandlers = {
@@ -3809,8 +3853,7 @@ static constexpr UcodeHandler f3dexHandlers = {
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
     { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } },
-    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } }, // G_MTX_OTR2 (0x29) Is this the right code?
-    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } }
+    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } },
 };
 
 static constexpr UcodeHandler f3dHandlers = {
@@ -3832,7 +3875,7 @@ static constexpr UcodeHandler f3dHandlers = {
     { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
-    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } }
+    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } },
 };
 
 // LUSTODO: These S2DEX commands have different opcode numbers on F3DEX2 vs other ucodes. More research needs to be done

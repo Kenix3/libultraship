@@ -168,7 +168,7 @@
 #define G_TRI1_OTR 0x26
 #define G_DL_OTR_FILEPATH 0x27
 #define G_PUSHCD 0x28
-#define G_MTX_OTR2 0x29
+#define G_MTX_OTR_FILEPATH 0x29
 #define G_DL_OTR_HASH 0x31
 #define G_VTX_OTR_HASH 0x32
 #define G_MARKER 0x33

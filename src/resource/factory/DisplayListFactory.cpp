@@ -277,7 +277,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
                 g = { gsSPMatrix(0, paramInt) };
 
                 g.words.w0 &= 0x00FFFFFF;
-                g.words.w0 += (G_MTX_OTR2 << 24);
+                g.words.w0 += (G_MTX_OTR_FILEPATH << 24);
                 char* str = (char*)malloc(fName.size() + 1);
                 g.words.w1 = (uintptr_t)str;
                 dl->Strings.push_back(str);
