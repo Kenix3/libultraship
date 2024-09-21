@@ -708,7 +708,7 @@ static void import_texture_ia16(int tile, bool importReplacement) {
             tex_upload_buffer[4 * i + 1] = g;
             tex_upload_buffer[4 * i + 2] = b;
             tex_upload_buffer[4 * i + 3] = alpha;
-            
+
             i++;
         }
     }
@@ -753,7 +753,7 @@ static void import_texture_i4(int tile, bool importReplacement) {
             tex_upload_buffer[4 * i + 1] = SCALE_4_8(g);
             tex_upload_buffer[4 * i + 2] = SCALE_4_8(b);
             tex_upload_buffer[4 * i + 3] = SCALE_4_8(a);
-            
+
             i++;
         }
     }
