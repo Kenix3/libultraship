@@ -684,7 +684,7 @@ static void import_texture_ia16(int tile, bool importReplacement) {
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    //SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
+    // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     uint32_t width = g_rdp.texture_tile[tile].line_size_bytes / 2;
     uint32_t height = size_bytes / g_rdp.texture_tile[tile].line_size_bytes;
