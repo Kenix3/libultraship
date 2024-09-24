@@ -2,11 +2,17 @@ include(FetchContent)
 
 find_package(OpenGL QUIET)
 
+# When using the Visual Studio generator, it is necessary to suppress stderr output entirely so it does not interrupt the patch command.
+# Redirecting to nul is used here instead of the `--quiet` flag, as that flag was only recently introduced in git 2.25.0 (Jan 2022)
+if (CMAKE_GENERATOR MATCHES "Visual Studio")
+	set(git_hide_output 2> nul)
+endif()
+
 #=================== ImGui ===================
 set(sdl_gamepad_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/sdl-gamepad-fix.patch)
-    # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
-    # The `--quiet` flag is necessary to prevent stderr output from interupting the command when run inside Visual Studio.
-    set(sdl_apply_patch_if_needed ${sdl_gamepad_patch} --quiet || ${sdl_gamepad_patch} --reverse --check)
+
+# Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
+set(sdl_apply_patch_if_needed ${sdl_gamepad_patch} ${git_hide_output} || ${sdl_gamepad_patch} --reverse --check)
 FetchContent_Declare(
     ImGui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -39,9 +45,9 @@ target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/
 # ========= StormLib =============
 if(NOT EXCLUDE_MPQ_SUPPORT)
     set(stormlib_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/stormlib-optimizations.patch)
+	
     # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
-    # The `--quiet` flag is necessary to prevent stderr output from interupting the command when run inside Visual Studio.
-    set(stormlib_apply_patch_if_needed git apply --quiet ${stormlib_patch_file} || git apply --reverse --check ${stormlib_patch_file})
+    set(stormlib_apply_patch_if_needed git apply --quiet ${stormlib_patch_file} ${git_hide_output} || git apply --reverse --check ${stormlib_patch_file})
 
     FetchContent_Declare(
         StormLib
