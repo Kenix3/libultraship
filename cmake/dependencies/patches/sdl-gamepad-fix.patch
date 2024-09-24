@@ -1,0 +1,17 @@
+ backends/imgui_impl_sdl2.cpp | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/backends/imgui_impl_sdl2.cpp b/backends/imgui_impl_sdl2.cpp
+index 569b01d1..c2f84dca 100644
+--- a/backends/imgui_impl_sdl2.cpp
++++ b/backends/imgui_impl_sdl2.cpp
+@@ -770,9 +770,6 @@ static void ImGui_ImplSDL2_UpdateGamepads()
+         bd->WantUpdateGamepadsList = false;
+     }
+ 
+-    // FIXME: Technically feeding gamepad shouldn't depend on this now that they are regular inputs.
+-    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+-        return;
+     io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+     if (bd->Gamepads.Size == 0)
+         return;
