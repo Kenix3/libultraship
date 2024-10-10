@@ -60,7 +60,7 @@ void InputEditorWindow::UpdateElement() {
             }
         }
 
-        Context::GetInstance()->GetWindow()->GetGui()->BlockImGuiGamepadNavigation();
+        Context::GetInstance()->GetWindow()->GetGui()->BlockGamepadNavigation();
     } else {
         if (mGameInputBlockTimer != INT32_MAX) {
             mGameInputBlockTimer--;
@@ -70,13 +70,13 @@ void InputEditorWindow::UpdateElement() {
             }
         }
 
-        if (Context::GetInstance()->GetWindow()->GetGui()->ImGuiGamepadNavigationEnabled()) {
+        if (Context::GetInstance()->GetWindow()->GetGui()->GamepadNavigationEnabled()) {
             mMappingInputBlockTimer = ImGui::GetIO().Framerate / 3;
         } else {
             mMappingInputBlockTimer = INT32_MAX;
         }
 
-        Context::GetInstance()->GetWindow()->GetGui()->UnblockImGuiGamepadNavigation();
+        Context::GetInstance()->GetWindow()->GetGui()->UnblockGamepadNavigation();
     }
 }
 
