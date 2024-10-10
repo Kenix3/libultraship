@@ -23,5 +23,6 @@ enum class ResourceType {
     Matrix = 0x4F4D5458,      // OMTX
     Blob = 0x4F424C42,        // OBLB
     Texture = 0x4F544558,     // OTEX
+    Light = 0x46669697,       // LGTS
 };
 } // namespace LUS

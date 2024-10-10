@@ -154,6 +154,7 @@ static struct {
     int8_t last_depth_test = -1;
     int8_t last_depth_mask = -1;
     int8_t last_zmode_decal = -1;
+    bool srgb_mode = false;
     D3D_PRIMITIVE_TOPOLOGY last_primitive_topology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 } d3d;
 
@@ -417,7 +418,7 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     size_t len, num_floats;
 
     gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
-                                     d3d.current_filter_mode == FILTER_THREE_POINT);
+                                     d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
 
     ComPtr<ID3DBlob> vs, ps;
     ComPtr<ID3DBlob> error_blob;
@@ -1228,6 +1229,10 @@ ImTextureID gfx_d3d11_get_texture_by_id(int id) {
     return d3d.textures[id].resource_view.Get();
 }
 
+void gfx_d3d11_enable_srgb_mode(void) {
+    d3d.srgb_mode = true;
+}
+
 struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
                                               gfx_d3d11_get_max_texture_size,
                                               gfx_d3d11_get_clip_parameters,
@@ -1263,6 +1268,7 @@ struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
                                               gfx_d3d11_select_texture_fb,
                                               gfx_d3d11_delete_texture,
                                               gfx_d3d11_set_texture_filter,
-                                              gfx_d3d11_get_texture_filter };
+                                              gfx_d3d11_get_texture_filter,
+                                              gfx_d3d11_enable_srgb_mode };
 
 #endif

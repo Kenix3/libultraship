@@ -137,7 +137,7 @@ static void append_formula(char* buf, size_t* len, const uint8_t c[2][4], bool d
 }
 
 void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_floats, const CCFeatures& cc_features,
-                                      bool include_root_signature, bool three_point_filtering) {
+                                      bool include_root_signature, bool three_point_filtering, bool use_srgb) {
     len = 0;
     num_floats = 4;
 
@@ -307,6 +307,18 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
     if (include_root_signature) {
         append_line(buf, &len, "[RootSignature(RS)]");
     }
+
+    if (use_srgb) {
+        append_line(buf, &len, "float4 fromLinear(float4 linearRGB){");
+        append_line(buf, &len, "    bool3 cutoff = linearRGB.rgb < float3(0.0031308, 0.0031308, 0.0031308);");
+        append_line(buf, &len,
+                    "    float3 higher = 1.055 * pow(linearRGB.rgb, float3(1.0 / 2.4, 1.0 / 2.4, 1.0 / 2.4)) - "
+                    "float3(0.055, 0.055, 0.055);");
+        append_line(buf, &len, "    float3 lower = linearRGB.rgb * float3(12.92, 12.92, 12.92);");
+        append_line(buf, &len, "    return float4(lerp(higher, lower, cutoff), linearRGB.a);");
+        append_line(buf, &len, "}");
+    }
+
     append_line(buf, &len, "float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {");
 
     // Reference approach to color wrapping as per GLideN64
@@ -473,9 +485,17 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
         if (cc_features.opt_invisible) {
             append_line(buf, &len, "    texel.a = 0.0;");
         }
-        append_line(buf, &len, "    return texel;");
+        if (use_srgb) {
+            append_line(buf, &len, "    return fromLinear(texel);");
+        } else {
+            append_line(buf, &len, "    return texel;");
+        }
     } else {
-        append_line(buf, &len, "    return float4(texel, 1.0);");
+        if (use_srgb) {
+            append_line(buf, &len, "    return fromLinear(float4(texel, 1.0));");
+        } else {
+            append_line(buf, &len, "    return float4(texel, 1.0);");
+        }
     }
     append_line(buf, &len, "}");
 }

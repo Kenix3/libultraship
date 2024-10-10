@@ -8,8 +8,8 @@
 namespace Ship {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
                                                    CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton)
-    : ControllerInputMapping(shipDeviceIndex), ControllerButtonMapping(shipDeviceIndex, portIndex, bitmask),
-      SDLButtonToAnyMapping(shipDeviceIndex, sdlControllerButton) {
+    : ControllerInputMapping(shipDeviceIndex), SDLButtonToAnyMapping(shipDeviceIndex, sdlControllerButton),
+      ControllerButtonMapping(shipDeviceIndex, portIndex, bitmask) {
 }
 
 void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

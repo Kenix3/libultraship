@@ -24,7 +24,7 @@ class GuiElement {
     virtual void InitElement() = 0;
     virtual void UpdateElement() = 0;
 
-    virtual void SetVisiblity(bool visible);
+    virtual void SetVisibility(bool visible);
     bool mIsVisible;
 
   private:

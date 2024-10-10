@@ -7,14 +7,14 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build-macos:
-    runs-on: macos-12
+    runs-on: macos-14
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         brew install $(cat .github/workflows/brew-deps.txt)
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2.11
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
         key: ${{ runner.os }}-mac-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
@@ -26,23 +26,23 @@ jobs:
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release
         cmake --build build-cmake --config Release --parallel 10
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-mac
         path: build-cmake/src/*.a
         if-no-files-found: error
   build-ios:
-    runs-on: macos-12
+    runs-on: macos-14
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Cache build folder
       uses: actions/cache@v4
       with:
         save-always: true
-        key: ${{ runner.os }}-ios-build-${{ github.ref }}-${{ github.sha }}
+        key: ${{ runner.os }}-14-ios-build-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-ios-build-${{ github.ref }}
-          ${{ runner.os }}-ios-build-
+          ${{ runner.os }}-14-ios-build-${{ github.ref }}
+          ${{ runner.os }}-14-ios-build-
         path: |
           build-cmake
     - name: Build libultraship
@@ -50,7 +50,7 @@ jobs:
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
         cmake --build build-cmake --config Release --parallel 10
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-ios
         path: build-cmake/src/*/*.a
@@ -58,13 +58,13 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y $(cat .github/workflows/apt-deps.txt)
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2.11
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
         key: ${{ matrix.os }}-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
@@ -99,7 +99,7 @@ jobs:
         CC: gcc-10
         CXX: g++-10
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-linux
         path: build-cmake/src/*.a
@@ -111,9 +111,9 @@ jobs:
       run: |
         choco install ninja
         Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2.11
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
         variant: sccache
         key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}

@@ -15,6 +15,7 @@
 #include "public/bridge/gfxbridge.h"
 
 #include "resource/type/Texture.h"
+#include "resource/type/Light.h"
 #include "resource/Resource.h"
 
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
@@ -205,7 +206,7 @@ typedef enum Attribute {
     CULL_BOTH,
     MV_VIEWPORT,
     MV_LIGHT,
-};
+} Attribute;
 
 extern RDP g_rdp;
 extern RSP g_rsp;

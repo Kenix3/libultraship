@@ -30,6 +30,7 @@ class BinaryReader {
     int8_t ReadInt8();
     int16_t ReadInt16();
     int32_t ReadInt32();
+    int64_t ReadInt64();
     uint8_t ReadUByte();
     uint16_t ReadUInt16();
     uint32_t ReadUInt32();

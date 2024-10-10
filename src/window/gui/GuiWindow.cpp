@@ -5,8 +5,8 @@
 namespace Ship {
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
                      uint32_t windowFlags)
-    : mName(name), mVisibilityConsoleVariable(consoleVariable), mOriginalSize(originalSize), mWindowFlags(windowFlags),
-      GuiElement(isVisible) {
+    : GuiElement(isVisible), mName(name), mVisibilityConsoleVariable(consoleVariable), mOriginalSize(originalSize),
+      mWindowFlags(windowFlags) {
     if (!mVisibilityConsoleVariable.empty()) {
         mIsVisible = CVarGetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();
@@ -34,7 +34,7 @@ GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name
     : GuiWindow(consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
 }
 
-void GuiWindow::SetVisiblity(bool visible) {
+void GuiWindow::SetVisibility(bool visible) {
     mIsVisible = visible;
     SyncVisibilityConsoleVariable();
 }

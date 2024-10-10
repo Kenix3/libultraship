@@ -13,7 +13,7 @@
 
 namespace Ship {
 Archive::Archive(const std::string& path)
-    : mHasGameVersion(false), mGameVersion(UNKNOWN_GAME_VERSION), mPath(path), mIsLoaded(false) {
+    : mIsLoaded(false), mHasGameVersion(false), mGameVersion(UNKNOWN_GAME_VERSION), mPath(path) {
     mHashes = std::make_shared<std::unordered_map<uint64_t, std::string>>();
 }
 

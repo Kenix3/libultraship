@@ -58,6 +58,8 @@ std::string SDLButtonToAnyMapping::GetGameCubeButtonName() {
             return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_LEFT);
         case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
             return StringHelper::Sprintf("D-Pad %s", ICON_FA_ARROW_RIGHT);
+        default:
+            break;
     }
 
     return GetGenericButtonName();
@@ -112,6 +114,8 @@ std::string SDLButtonToAnyMapping::GetPlaystationButtonName() {
                 return StringHelper::Sprintf("%s", ICON_FA_MICROPHONE_SLASH);
             }
             break;
+        default:
+            break;
     }
 
     return GetGenericButtonName();
@@ -152,6 +156,8 @@ std::string SDLButtonToAnyMapping::GetSwitchButtonName() {
         case SDL_CONTROLLER_BUTTON_MISC1:
             return "Capture"; /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button,
                                  Amazon Luna microphone button */
+        default:
+            break;
     }
 
     return GetGenericButtonName();
@@ -206,6 +212,8 @@ std::string SDLButtonToAnyMapping::GetXboxButtonName() {
             return "P3";
         case SDL_CONTROLLER_BUTTON_PADDLE4:
             return "P4";
+        default:
+            break;
     }
 
     return GetGenericButtonName();

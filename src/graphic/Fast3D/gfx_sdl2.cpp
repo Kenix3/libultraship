@@ -302,6 +302,11 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     window_width = width;
     window_height = height;
 
+#if SDL_VERSION_ATLEAST(2, 24, 0)
+    /* fix DPI scaling issues on Windows */
+    SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
+#endif
+
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);

@@ -16,8 +16,6 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioRenderClient = __uuidof(IAudioRenderClient);
 
 namespace Ship {
-WasapiAudioPlayer::WasapiAudioPlayer()
-    : mRefCount(1), mBufferFrameCount(0), mInitialized(false), mStarted(false), AudioPlayer(){};
 
 void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
     if (FAILED(res)) {
@@ -75,10 +73,6 @@ int WasapiAudioPlayer::Buffered(void) {
         ThrowIfFailed(mClient->GetCurrentPadding(&padding));
         return padding;
     } catch (HRESULT res) { return 0; }
-}
-
-int WasapiAudioPlayer::GetDesiredBuffered(void) {
-    return 2480;
 }
 
 void WasapiAudioPlayer::Play(const uint8_t* buf, size_t len) {
