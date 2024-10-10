@@ -232,8 +232,6 @@ bool Metal_Init(SDL_Renderer* renderer) {
     return ImGui_ImplMetal_Init(mctx.device);
 }
 
-static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height);
-
 void Metal_NewFrame(SDL_Renderer* renderer) {
     int width, height;
     SDL_GetRendererOutputSize(renderer, &width, &height);
