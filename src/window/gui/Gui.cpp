@@ -674,7 +674,6 @@ void Gui::Draw() {
     DrawFloatingWindows();
     // Check if the CVars need to be saved, and do it if so.
     CheckSaveCvars();
-
 }
 
 void Gui::SetupRendererFrame() {
