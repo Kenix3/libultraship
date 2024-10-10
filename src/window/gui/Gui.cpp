@@ -533,25 +533,10 @@ void Gui::StartFrame() {
 }
 
 void Gui::EndFrame() {
+    // Draw the ImGui "viewports" which are the floating windows.
+    ImGui::Render();
+    ImGuiRenderDrawData(ImGui::GetDrawData());
     ImGui::EndFrame();
-    if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
-        // OpenGL requires extra platform handling on the GL context
-        if (backend == WindowBackend::FAST3D_SDL_OPENGL && mImpl.Opengl.Context != nullptr) {
-            // Backup window and context before calling RenderPlatformWindowsDefault
-            SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
-            SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
-
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-
-            // Set back the GL context for next frame
-            SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
-        } else {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
-    }
 }
 
 void Gui::DrawGame() {
@@ -649,9 +634,31 @@ void Gui::DrawGame() {
 }
 
 void Gui::DrawFloatingWindows() {
-    // Draw the ImGui "viewports" which are the floating windows.
-    ImGui::Render();
-    ImGuiRenderDrawData(ImGui::GetDrawData());
+    if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
+        // OpenGL requires extra platform handling on the GL context
+        if (backend == WindowBackend::FAST3D_SDL_OPENGL && mImpl.Opengl.Context != nullptr) {
+            // Backup window and context before calling RenderPlatformWindowsDefault
+            SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
+            SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
+
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+
+            // Set back the GL context for next frame
+            SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
+        } else {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
+    }
+}
+
+void Gui::CheckSaveCvars() {
+    if (mNeedsConsoleVariableSave) {
+        CVarSave();
+        mNeedsConsoleVariableSave = false;
+    }
 }
 
 void Gui::Draw() {
@@ -661,18 +668,24 @@ void Gui::Draw() {
     DrawMenu();
     // Draw the game framebuffer into ImGui
     DrawGame();
-    // Draw the ImGui floating windows.
-    DrawFloatingWindows();
     // End the frame
     EndFrame();
+    // Draw the ImGui floating windows.
+    DrawFloatingWindows();
     // Check if the CVars need to be saved, and do it if so.
     CheckSaveCvars();
+
 }
 
-void Gui::CheckSaveCvars() {
-    if (mNeedsConsoleVariableSave) {
-        CVarSave();
-        mNeedsConsoleVariableSave = false;
+void Gui::SetupRendererFrame() {
+    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
+#ifdef __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL:
+            Metal_SetupFrame(mImpl.Metal.Renderer);
+            break;
+#endif
+        default:
+            break;
     }
 }
 

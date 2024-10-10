@@ -74,6 +74,7 @@ class Gui {
     void Init(GuiWindowInitData windowImpl);
     void Draw();
     void HandleWindowEvents(WindowEvent event);
+    void SetupRendererFrame();
     void SaveConsoleVariablesNextFrame();
     bool SupportsViewports();
 

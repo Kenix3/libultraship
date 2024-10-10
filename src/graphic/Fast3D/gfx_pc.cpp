@@ -4119,6 +4119,8 @@ void gfx_start_frame(void) {
 GfxExecStack g_exec_stack = {};
 
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->SetupRendererFrame();
+
     gfx_sp_reset();
 
     get_pixel_depth_pending.clear();
