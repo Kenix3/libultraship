@@ -37,7 +37,7 @@ void GuiMenuBar::SyncVisibilityConsoleVariable() {
     }
 
     if (shouldSave) {
-        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
     }
 }
 
