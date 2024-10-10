@@ -76,7 +76,7 @@ class Gui {
     void HandleWindowEvents(WindowEvent event);
     void SaveConsoleVariablesNextFrame();
     bool SupportsViewports();
-    
+
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
     void RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
@@ -90,7 +90,7 @@ class Gui {
     ImTextureID GetTextureByName(const std::string& name);
     ImVec2 GetTextureSize(const std::string& name);
     void LoadTextureFromRawImage(const std::string& name, const std::string& path);
-    
+
     std::shared_ptr<GameOverlay> GetGameOverlay();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
