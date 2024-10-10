@@ -535,8 +535,22 @@ void Gui::StartFrame() {
 void Gui::EndFrame() {
     ImGui::EndFrame();
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+        WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
+        // OpenGL requires extra platform handling on the GL context
+        if (backend == WindowBackend::FAST3D_SDL_OPENGL && mImpl.Opengl.Context != nullptr) {
+            // Backup window and context before calling RenderPlatformWindowsDefault
+            SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
+            SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
+
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+
+            // Set back the GL context for next frame
+            SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
+        } else {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
     }
 }
 
@@ -638,15 +652,6 @@ void Gui::DrawFloatingWindows() {
     // Draw the ImGui "viewports" which are the floating windows.
     ImGui::Render();
     ImGuiRenderDrawData(ImGui::GetDrawData());
-    if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
-        if ((backend == WindowBackend::FAST3D_SDL_OPENGL || backend == WindowBackend::FAST3D_SDL_METAL) &&
-            mImpl.Opengl.Context != nullptr) {
-            SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
-            SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
-            SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
-        }
-    }
 }
 
 void Gui::Draw() {
