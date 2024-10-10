@@ -680,7 +680,10 @@ void Gui::SetupRendererFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
-            Metal_SetupFrame(mImpl.Metal.Renderer);
+            // These are stolen from Metal_NewFrame per Archez.
+            int32_t width, height;
+            SDL_GetRendererOutputSize(renderer, &width, &height);
+            gfx_metal_setup_screen_framebuffer(width, height);
             break;
 #endif
         default:
