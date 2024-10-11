@@ -540,12 +540,17 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             break;
 #endif
         case SDL_WINDOWEVENT:
-            if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
-            } else if (event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(wnd)) {
-                // We listen specifically for main window close because closing main window
-                // on macOS does not trigger SDL_Quit.
-                gfx_sdl_close();
+            switch (event.window.event) {
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+                    break;
+                case SDL_WINDOWEVENT_CLOSE:
+                    if (event.window.windowID == SDL_GetWindowID(wnd)) {
+                        // We listen specifically for main window close because closing main window
+                        // on macOS does not trigger SDL_Quit.
+                        gfx_sdl_close();
+                    }
+                    break;
             }
             break;
         case SDL_DROPFILE:
