@@ -149,7 +149,7 @@ void GameOverlay::SetCurrentFont(const std::string& name) {
 
     mCurrentFont = name;
     CVarSetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
-    Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+    Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
 }
 
 void GameOverlay::DrawSettings() {
