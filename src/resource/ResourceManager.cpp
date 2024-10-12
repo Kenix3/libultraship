@@ -107,12 +107,6 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
     // the cache.
     cachedResource = GetCachedResource(filePath, owner, true);
 
-    // Ensure that we have an owner cache map.
-    if (!mResourceCache.contains(owner)) {
-        mResourceCache[owner] =
-            std::unordered_map<std::string, std::variant<ResourceLoadError, std::shared_ptr<IResource>>>();
-    }
-
     {
         const std::lock_guard<std::mutex> lock(mMutex);
 
