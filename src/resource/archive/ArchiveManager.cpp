@@ -105,9 +105,8 @@ void ArchiveManager::ResetVirtualFileSystem() {
     mHashes.clear();
     mFileToArchive.clear();
     for (const auto& archive : archives) {
-        if (!archive->IsLoaded()) {
-            archive->Load();
-        }
+        archive->Unload();
+        archive->Load();
         AddArchive(archive);
     }
 }
@@ -130,9 +129,7 @@ size_t ArchiveManager::RemoveArchive(std::shared_ptr<Archive> archive) {
 }
 
 void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& archives) {
-    for (const auto& archive : mArchives) {
-        archive->Unload();
-    }
+    mArchives = archives;
     ResetVirtualFileSystem();
 }
 
