@@ -475,11 +475,10 @@ void Gui::DrawMenu() {
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || ImGui::IsKeyPressed(ImGuiKey_Escape) ||
         (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
-        if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && !GetPadBtnTogglesMenu())) {
-            GetMenuBar()->ToggleVisibility();
-        } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) ||
-                   (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && GetPadBtnTogglesMenu())) {
+        if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && GetMenu())) {
             GetMenu()->ToggleVisibility();
+        } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && GetMenuBar())) {
+            GetMenuBar()->ToggleVisibility();
         }
         if (wnd->IsFullscreen()) {
             Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuOrMenubarVisible() ||
@@ -973,13 +972,5 @@ bool Gui::GetMenuOrMenubarVisible() {
 
 std::shared_ptr<GuiWindow> Gui::GetMenu() {
     return mMenu;
-}
-
-bool Gui::GetPadBtnTogglesMenu() {
-    return mPadBtnTogglesMenu;
-}
-
-void Gui::SetPadBtnTogglesMenu(bool padBtnTogglesMenu) {
-    mPadBtnTogglesMenu = padBtnTogglesMenu;
 }
 } // namespace Ship
