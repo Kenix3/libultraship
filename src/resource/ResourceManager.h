@@ -30,7 +30,6 @@ class ResourceManager {
               int32_t reservedThreadCount = 1);
     ~ResourceManager();
 
-
     std::shared_ptr<ArchiveManager> GetArchiveManager();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
 
