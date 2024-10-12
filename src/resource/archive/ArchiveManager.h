@@ -23,6 +23,8 @@ class ArchiveManager {
     std::shared_ptr<Archive> AddArchive(std::shared_ptr<Archive> archive);
     std::vector<std::shared_ptr<Archive>> GetArchives();
     void SetArchives(const std::vector<std::shared_ptr<Archive>>& archives);
+    size_t RemoveArchive(std::shared_ptr<Archive> archive);
+    size_t RemoveArchive(const std::string& path);
 
     bool IsArchiveLoaded();
     std::shared_ptr<File> LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData = nullptr);
@@ -38,6 +40,7 @@ class ArchiveManager {
   protected:
     static std::vector<std::string> GetArchiveListInPaths(const std::vector<std::string>& archivePaths);
     void AddGameVersion(uint32_t newGameVersion);
+    void ResetVirtualFileSystem();
 
   private:
     std::vector<std::shared_ptr<Archive>> mArchives;

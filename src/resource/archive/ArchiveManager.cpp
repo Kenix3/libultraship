@@ -96,10 +96,10 @@ std::vector<std::shared_ptr<Archive>> ArchiveManager::GetArchives() {
     return mArchives;
 }
 
-void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& archives) {
-    for (const auto& archive : mArchives) {
-        archive->Unload();
-    }
+void ArchiveManager::ResetVirtualFileSystem() {
+    // Store the original list of archives because we will clear it and re-add them.
+    // The re-add will trigger the file virtual file system to get populated.
+    auto archives = mArchives;
     mArchives.clear();
     mGameVersions.clear();
     mHashes.clear();
@@ -110,6 +110,31 @@ void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& ar
         }
         AddArchive(archive);
     }
+}
+
+
+size_t ArchiveManager::RemoveArchive(const std::string& path) {
+    for (int32_t i = 0; i < mArchives.size(); i++) {
+        if (path == mArchives[i]->GetPath()) {
+            mArchives[i]->Unload();
+            mArchives.erase(mArchives.begin() + i);
+            ResetVirtualFileSystem();
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+size_t ArchiveManager::RemoveArchive(std::shared_ptr<Archive> archive) {
+    return RemoveArchive(archive->GetPath());
+}
+
+void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& archives) {
+    for (const auto& archive : mArchives) {
+        archive->Unload();
+    }
+    ResetVirtualFileSystem();
 }
 
 const std::string* ArchiveManager::HashToString(uint64_t hash) const {
