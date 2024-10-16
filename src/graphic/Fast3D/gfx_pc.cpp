@@ -114,8 +114,6 @@ static int game_framebuffer_msaa_resolved;
 
 uint32_t gfx_msaa_level = 1;
 
-static bool has_drawn_imgui_menu;
-
 static bool dropped_frame;
 
 static const std::unordered_map<Mtx*, MtxF>* current_mtx_replacements;
@@ -1473,8 +1471,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
 
     uint64_t cc_id = g_rdp.combine_mode;
     uint64_t cc_options = 0;
-    bool use_alpha = (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
-                     (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16);
+    bool use_alpha = ((g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
+                      (g_rdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
+                     ((g_rdp.other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
+                      (g_rdp.other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
     bool use_fog = (g_rdp.other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (g_rdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = (g_rdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
@@ -2032,7 +2032,6 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
 }
 
 static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
-    SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(uls == 0);
     SUPPORT_CHECK(ult == 0);
 
@@ -2775,12 +2774,43 @@ bool gfx_mtx_handler_f3d(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_mtx_otr_filepath_handler_custom_f3dex2(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    const char* fileName = (const char*)cmd->words.w1;
+    const int32_t* mtx = (const int32_t*)ResourceGetDataByName((const char*)fileName);
+
+    if (mtx != NULL) {
+        gfx_sp_matrix(C0(0, 8) ^ F3DEX2_G_MTX_PUSH, mtx);
+    }
+
+    return false;
+}
+
+bool gfx_mtx_otr_filepath_handler_custom_f3d(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    const char* fileName = (const char*)cmd->words.w1;
+    const int32_t* mtx = (const int32_t*)ResourceGetDataByName((const char*)fileName);
+
+    if (mtx != NULL) {
+        gfx_sp_matrix(C0(16, 8), mtx);
+    }
+
+    return false;
+}
+
+bool gfx_mtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
+    if (ucode_handler_index == ucode_f3dex2) {
+        return gfx_mtx_otr_filepath_handler_custom_f3dex2(cmd0);
+    } else {
+        return gfx_mtx_otr_filepath_handler_custom_f3d(cmd0);
+    }
+}
+
 bool gfx_mtx_otr_handler_custom_f3dex2(F3DGfx** cmd0) {
     (*cmd0)++;
     F3DGfx* cmd = *cmd0;
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-
     const int32_t* mtx = (const int32_t*)ResourceGetDataByCrc(hash);
 
     if (mtx != NULL) {
@@ -2797,12 +2827,23 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-
     const int32_t* mtx = (const int32_t*)ResourceGetDataByCrc(hash);
 
-    gfx_sp_matrix(C0(16, 8), (const int32_t*)seg_addr(cmd->words.w1));
+    if (mtx != NULL) {
+        cmd--;
+        gfx_sp_matrix(C0(16, 8), mtx);
+        cmd++;
+    }
 
     return false;
+}
+
+bool gfx_mtx_otr_handler_custom(F3DGfx** cmd0) {
+    if (ucode_handler_index == ucode_f3dex2) {
+        return gfx_mtx_otr_handler_custom_f3dex2(cmd0);
+    } else {
+        return gfx_mtx_otr_handler_custom_f3d(cmd0);
+    }
 }
 
 bool gfx_pop_mtx_handler_f3dex2(F3DGfx** cmd0) {
@@ -2834,6 +2875,27 @@ bool gfx_movemem_handler_f3d(F3DGfx** cmd0) {
 
     gfx_sp_movemem_f3d(C0(16, 8), 0, seg_addr(cmd->words.w1));
 
+    return false;
+}
+
+bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    const uint8_t index = C1(24, 8);
+    const uint8_t offset = C1(16, 8);
+    const uint8_t hasOffset = C1(8, 8);
+
+    (*cmd0)++;
+
+    const uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
+
+    if (ucode_handler_index == ucode_f3dex2) {
+        gfx_sp_movemem_f3dex2(index, offset, ResourceGetDataByCrc(hash));
+    } else {
+        auto light = (LUS::LightEntry*)ResourceGetDataByCrc(hash);
+        uintptr_t data = (uintptr_t)&light->Ambient;
+        gfx_sp_movemem_f3d(index, offset, (void*)(data + (hasOffset == 1 ? 0x8 : 0)));
+    }
     return false;
 }
 
@@ -2931,13 +2993,13 @@ bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
 bool gfx_vtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     char* fileName = (char*)cmd->words.w1;
-    cmd++;
+    (*cmd0)++;
+    cmd = *cmd0;
     size_t vtxCnt = cmd->words.w0;
     size_t vtxIdxOff = cmd->words.w1 >> 16;
     size_t vtxDataOff = cmd->words.w1 & 0xFFFF;
     F3DVtx* vtx = (F3DVtx*)ResourceGetDataByName((const char*)fileName);
     vtx += vtxDataOff;
-    cmd--;
 
     gfx_sp_vertex(vtxCnt, vtxIdxOff, vtx);
     return false;
@@ -3402,6 +3464,36 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_register_blended_texture_handler_custom(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    // Flush incase we are replacing a previous blended texture that hasn't been finialized to the GPU
+    gfx_flush();
+
+    char* timg = (char*)cmd->words.w1;
+
+    ++(*cmd0);
+    cmd = *cmd0;
+
+    uint8_t* mask = (uint8_t*)cmd->words.w0;
+    uint8_t* replacementTex = (uint8_t*)cmd->words.w1;
+
+    if (!gfx_check_image_signature(timg)) {
+        SPDLOG_ERROR(
+            "OTR_G_REGBLENDEDTEX: Texture is not a valid OTR resource name, unable to register blended texture");
+        return false;
+    }
+
+    // With no mask, we should clear the blended texture
+    if (mask == nullptr) {
+        gfx_unregister_blended_texture(timg);
+    } else {
+        gfx_register_blended_texture(timg, mask, replacementTex);
+    }
+
+    return false;
+}
+
 bool gfx_set_timg_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
@@ -3728,23 +3820,29 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_SETTIMG_OTR_FILEPATH,
       { "G_SETTIMG_OTR_FILEPATH", gfx_set_timg_otr_filepath_handler_custom } }, // G_SETTIMG_OTR_FILEPATH (0x25)
     { OTR_G_TRI1_OTR, { "G_TRI1_OTR", gfx_tri1_otr_handler_f3dex2 } },          // G_TRI1_OTR (0x26)
-    { OTR_G_DL_OTR_FILEPATH, { "G_DL_OTR_FILEPATH", gfx_dl_otr_filepath_handler_custom } },  // G_DL_OTR_FILEPATH (0x27)
-    { OTR_G_PUSHCD, { "G_PUSHCD", gfx_pushcd_handler_custom } },                             // G_PUSHCD (0x28)
-    { OTR_G_DL_OTR_HASH, { "G_DL_OTR_HASH", gfx_dl_otr_hash_handler_custom } },              // G_DL_OTR_HASH (0x31)
-    { OTR_G_VTX_OTR_HASH, { "G_VTX_OTR_HASH", gfx_vtx_hash_handler_custom } },               // G_VTX_OTR_HASH (0x32)
-    { OTR_G_MARKER, { "G_MARKER", gfx_marker_handler_otr } },                                // G_MARKER (0X33)
+    { OTR_G_DL_OTR_FILEPATH, { "G_DL_OTR_FILEPATH", gfx_dl_otr_filepath_handler_custom } }, // G_DL_OTR_FILEPATH (0x27)
+    { OTR_G_PUSHCD, { "G_PUSHCD", gfx_pushcd_handler_custom } },                            // G_PUSHCD (0x28)
+    { OTR_G_MTX_OTR_FILEPATH,
+      { "G_MTX_OTR_FILEPATH", gfx_mtx_otr_filepath_handler_custom } },          // G_MTX_OTR_FILEPATH (0x29)
+    { OTR_G_DL_OTR_HASH, { "G_DL_OTR_HASH", gfx_dl_otr_hash_handler_custom } }, // G_DL_OTR_HASH (0x31)
+    { OTR_G_VTX_OTR_HASH, { "G_VTX_OTR_HASH", gfx_vtx_hash_handler_custom } },  // G_VTX_OTR_HASH (0x32)
+    { OTR_G_MARKER, { "G_MARKER", gfx_marker_handler_otr } },                   // G_MARKER (0X33)
     { OTR_G_INVALTEXCACHE, { "G_INVALTEXCACHE", gfx_invalidate_tex_cache_handler_f3dex2 } }, // G_INVALTEXCACHE (0X34)
     { OTR_G_BRANCH_Z_OTR, { "G_BRANCH_Z_OTR", gfx_branch_z_otr_handler_f3dex2 } },           // G_BRANCH_Z_OTR (0x35)
+    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom } },                          // G_MTX_OTR (0x36)
     { OTR_G_TEXRECT_WIDE, { "G_TEXRECT_WIDE", gfx_tex_rect_wide_handler_custom } },          // G_TEXRECT_WIDE (0x37)
     { OTR_G_FILLWIDERECT, { "G_FILLWIDERECT", gfx_fill_wide_rect_handler_custom } },         // G_FILLWIDERECT (0x38)
     { OTR_G_SETGRAYSCALE, { "G_SETGRAYSCALE", gfx_set_grayscale_handler_custom } },          // G_SETGRAYSCALE (0x39)
     { OTR_G_EXTRAGEOMETRYMODE,
-      { "G_EXTRAGEOMETRYMODE", gfx_extra_geometry_mode_handler_custom } },          // G_EXTRAGEOMETRYMODE (0x3a)
-    { OTR_G_COPYFB, { "G_COPYFB", gfx_copy_fb_handler_custom } },                   // G_COPYFB (0x3b)
-    { OTR_G_IMAGERECT, { "G_IMAGERECT", gfx_image_rect_handler_custom } },          // G_IMAGERECT (0x3c)
-    { OTR_G_DL_INDEX, { "G_DL_INDEX", gfx_dl_index_handler } },                     // G_DL_INDEX (0x3d)
-    { OTR_G_READFB, { "G_READFB", gfx_read_fb_handler_custom } },                   // G_READFB (0x3e)
+      { "G_EXTRAGEOMETRYMODE", gfx_extra_geometry_mode_handler_custom } }, // G_EXTRAGEOMETRYMODE (0x3a)
+    { OTR_G_COPYFB, { "G_COPYFB", gfx_copy_fb_handler_custom } },          // G_COPYFB (0x3b)
+    { OTR_G_IMAGERECT, { "G_IMAGERECT", gfx_image_rect_handler_custom } }, // G_IMAGERECT (0x3c)
+    { OTR_G_DL_INDEX, { "G_DL_INDEX", gfx_dl_index_handler } },            // G_DL_INDEX (0x3d)
+    { OTR_G_READFB, { "G_READFB", gfx_read_fb_handler_custom } },          // G_READFB (0x3e)
+    { OTR_G_REGBLENDEDTEX,
+      { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
+    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
@@ -3766,7 +3864,6 @@ static constexpr UcodeHandler f3dex2Handlers = {
     { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex2 } },
     { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
     { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
-    { OTR_G_MTX_OTR, { "G_MTX_OTR", gfx_mtx_otr_handler_custom_f3dex2 } },
 };
 
 static constexpr UcodeHandler f3dexHandlers = {
@@ -3789,8 +3886,7 @@ static constexpr UcodeHandler f3dexHandlers = {
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
     { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } },
-    { OTR_G_MTX_OTR2, { "G_MTX_OTR2", gfx_mtx_otr_handler_custom_f3d } }, // G_MTX_OTR2 (0x29) Is this the right code?
-    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } }
+    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } },
 };
 
 static constexpr UcodeHandler f3dHandlers = {
@@ -3812,7 +3908,7 @@ static constexpr UcodeHandler f3dHandlers = {
     { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
-    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } }
+    { F3DEX_G_RDPHALF_1, { "G_RDPHALF_1", gfx_stubbed_command_handler } },
 };
 
 // LUSTODO: These S2DEX commands have different opcode numbers on F3DEX2 vs other ucodes. More research needs to be done
@@ -3849,9 +3945,11 @@ const char* GfxGetOpcodeName(int8_t opcode) {
         } else {
             SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
                             (uint32_t)ucode_handler_index);
-            return nullptr;
         }
+    } else {
+        SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode, (uint32_t)ucode_handler_index);
     }
+
     return nullptr;
 }
 
@@ -3892,6 +3990,8 @@ static void gfx_step() {
             SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
                             (uint32_t)ucode_handler_index);
         }
+    } else {
+        SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode, (uint32_t)ucode_handler_index);
     }
 
     ++cmd;
@@ -3963,8 +4063,6 @@ void gfx_start_frame(void) {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
                              &gfx_current_window_position_x, &gfx_current_window_position_y);
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
-    has_drawn_imgui_menu = true;
     if (gfx_current_dimensions.height == 0) {
         // Avoid division by zero
         gfx_current_dimensions.height = 1;
@@ -4022,26 +4120,19 @@ void gfx_start_frame(void) {
 GfxExecStack g_exec_stack = {};
 
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->SetupRendererFrame();
+
     gfx_sp_reset();
 
-    // puts("New frame");
     get_pixel_depth_pending.clear();
     get_pixel_depth_cached.clear();
 
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
-        if (has_drawn_imgui_menu) {
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->EndFrame();
-            has_drawn_imgui_menu = false;
-        }
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
         return;
     }
     dropped_frame = false;
-
-    if (!has_drawn_imgui_menu) {
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->DrawMenu();
-    }
 
     current_mtx_replacements = &mtx_replacements;
 
@@ -4064,12 +4155,20 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
         if (dbg->IsDebugging()) {
             g_exec_stack.gfx_path.push_back(cmd);
             if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
+                // On a breakpoint with the active framebuffer still set, we need to reset back to prevent
+                // soft locking the renderer
+                if (fbActive) {
+                    fbActive = 0;
+                    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0, 1);
+                }
+
                 break;
             }
             g_exec_stack.gfx_path.pop_back();
         }
         gfx_step();
     }
+
     gfx_flush();
     gfxFramebuffer = 0;
     currentDir = std::stack<std::string>();
@@ -4091,12 +4190,16 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
         } else {
             gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
+    } else if (fbActive) {
+        // Failsafe reset to main framebuffer to prevent softlocking the renderer
+        fbActive = 0;
+        gfx_rapi->start_draw_to_framebuffer(0, 1);
+
+        assert(0 && "active framebuffer was never reset back to original");
     }
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->StartFrame();
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->RenderViewports();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
     gfx_rapi->end_frame();
     gfx_wapi->swap_buffers_begin();
-    has_drawn_imgui_menu = false;
 }
 
 void gfx_end_frame(void) {

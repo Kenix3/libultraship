@@ -15,6 +15,7 @@
 #include "public/bridge/gfxbridge.h"
 
 #include "resource/type/Texture.h"
+#include "resource/type/Light.h"
 #include "resource/Resource.h"
 
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window

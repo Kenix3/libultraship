@@ -8,7 +8,7 @@
 #include "gfx_cc.h"
 
 void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_floats, const CCFeatures& cc_features,
-                                      bool include_root_signature, bool three_point_filtering);
+                                      bool include_root_signature, bool three_point_filtering, bool use_srgb);
 
 #endif
 

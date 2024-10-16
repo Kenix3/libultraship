@@ -302,6 +302,11 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     window_width = width;
     window_height = height;
 
+#if SDL_VERSION_ATLEAST(2, 24, 0)
+    /* fix DPI scaling issues on Windows */
+    SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
+#endif
+
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
@@ -479,7 +484,7 @@ static void gfx_sdl_onkeyup(int scancode) {
 static void gfx_sdl_handle_single_event(SDL_Event& event) {
     Ship::WindowEvent event_impl;
     event_impl.Sdl = { &event };
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->Update(event_impl);
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

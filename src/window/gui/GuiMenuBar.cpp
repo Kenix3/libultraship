@@ -3,7 +3,7 @@
 
 namespace Ship {
 GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)
-    : mVisibilityConsoleVariable(visibilityConsoleVariable), GuiElement(isVisible) {
+    : GuiElement(isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable) {
     if (!mVisibilityConsoleVariable.empty()) {
         mIsVisible = CVarGetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();
@@ -37,11 +37,11 @@ void GuiMenuBar::SyncVisibilityConsoleVariable() {
     }
 
     if (shouldSave) {
-        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
     }
 }
 
-void GuiMenuBar::SetVisiblity(bool visible) {
+void GuiMenuBar::SetVisibility(bool visible) {
     mIsVisible = visible;
     SyncVisibilityConsoleVariable();
 }

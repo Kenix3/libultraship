@@ -1,4 +1,5 @@
 #include "GfxDebugger.h"
+#include <stddef.h>
 
 namespace Fast {
 

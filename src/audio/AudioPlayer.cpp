@@ -2,8 +2,6 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-AudioPlayer::AudioPlayer() : mInitialized(false){};
-
 AudioPlayer::~AudioPlayer() {
     SPDLOG_TRACE("destruct audio player");
 }

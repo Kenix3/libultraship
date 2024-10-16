@@ -18,7 +18,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
     void DrawElement() override;
 
   private:
-    void DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfx_path) const;
+    void DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfxPath, float parentPosY) const;
     void DrawDisas();
 
   private:

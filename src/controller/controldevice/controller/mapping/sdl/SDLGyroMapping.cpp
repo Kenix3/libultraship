@@ -10,7 +10,7 @@ namespace Ship {
 SDLGyroMapping::SDLGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity,
                                float neutralPitch, float neutralYaw, float neutralRoll)
     : ControllerInputMapping(shipDeviceIndex), ControllerGyroMapping(shipDeviceIndex, portIndex, sensitivity),
-      mNeutralPitch(neutralPitch), SDLMapping(shipDeviceIndex), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+      SDLMapping(shipDeviceIndex), mNeutralPitch(neutralPitch), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
 void SDLGyroMapping::Recalibrate() {

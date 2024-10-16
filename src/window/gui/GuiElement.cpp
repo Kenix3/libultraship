@@ -3,7 +3,7 @@
 #include "libultraship/libultraship.h"
 
 namespace Ship {
-GuiElement::GuiElement(bool isVisible) : mIsInitialized(false), mIsVisible(isVisible) {
+GuiElement::GuiElement(bool isVisible) : mIsVisible(isVisible), mIsInitialized(false) {
 }
 
 GuiElement::GuiElement() : GuiElement(false) {
@@ -25,20 +25,20 @@ void GuiElement::Update() {
     UpdateElement();
 }
 
-void GuiElement::SetVisiblity(bool visible) {
+void GuiElement::SetVisibility(bool visible) {
     mIsVisible = visible;
 }
 
 void GuiElement::Show() {
-    SetVisiblity(true);
+    SetVisibility(true);
 }
 
 void GuiElement::Hide() {
-    SetVisiblity(false);
+    SetVisibility(false);
 }
 
 void GuiElement::ToggleVisibility() {
-    SetVisiblity(!IsVisible());
+    SetVisibility(!IsVisible());
 }
 
 bool GuiElement::IsVisible() {

@@ -5,11 +5,11 @@
 namespace Ship {
 class SDLAudioPlayer : public AudioPlayer {
   public:
-    SDLAudioPlayer();
+    SDLAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
+    }
     ~SDLAudioPlayer();
 
     int Buffered(void);
-    int GetDesiredBuffered(void);
     void Play(const uint8_t* buf, size_t len);
 
   protected:

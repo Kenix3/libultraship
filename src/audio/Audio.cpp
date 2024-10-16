@@ -3,8 +3,6 @@
 #include "Context.h"
 
 namespace Ship {
-Audio::Audio() {
-}
 
 Audio::~Audio() {
     SPDLOG_TRACE("destruct audio");
@@ -14,11 +12,11 @@ void Audio::InitAudioPlayer() {
     switch (GetAudioBackend()) {
 #ifdef _WIN32
         case AudioBackend::WASAPI:
-            mAudioPlayer = std::make_shared<WasapiAudioPlayer>();
+            mAudioPlayer = std::make_shared<WasapiAudioPlayer>(this->mAudioSettings);
             break;
 #endif
         default:
-            mAudioPlayer = std::make_shared<SDLAudioPlayer>();
+            mAudioPlayer = std::make_shared<SDLAudioPlayer>(this->mAudioSettings);
     }
 
     if (mAudioPlayer) {
@@ -26,7 +24,7 @@ void Audio::InitAudioPlayer() {
             // Failed to initialize system audio player.
             // Fallback to SDL if the native system player does not work.
             SetAudioBackend(AudioBackend::SDL);
-            mAudioPlayer = std::make_shared<SDLAudioPlayer>();
+            mAudioPlayer = std::make_shared<SDLAudioPlayer>(this->mAudioSettings);
             mAudioPlayer->Init();
         }
     }

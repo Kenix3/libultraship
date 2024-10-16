@@ -168,7 +168,7 @@
 #define G_TRI1_OTR 0x26
 #define G_DL_OTR_FILEPATH 0x27
 #define G_PUSHCD 0x28
-#define G_MTX_OTR2 0x29
+#define G_MTX_OTR_FILEPATH 0x29
 #define G_DL_OTR_HASH 0x31
 #define G_VTX_OTR_HASH 0x32
 #define G_MARKER 0x33
@@ -177,6 +177,8 @@
 #define G_MTX_OTR 0x36
 #define G_TEXRECT_WIDE 0x37
 #define G_FILLWIDERECT 0x38
+#define G_REGBLENDEDTEX 0x3f
+#define G_MOVEMEM_OTR 0x42
 
 /* GFX Effects */
 
@@ -2659,6 +2661,16 @@ typedef union Gfx {
 
 #define gsSPInvalidateTexCache() \
     { _SHIFTL(G_INVALTEXCACHE, 24, 8), 0 }
+
+#define gSPRegisterBlendedTex(pkt, timg, mask, replc)    \
+    {                                                    \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);      \
+                                                         \
+        _g0->words.w0 = _SHIFTL(G_REGBLENDEDTEX, 24, 8); \
+        _g0->words.w1 = (uintptr_t)timg;                 \
+        _g1->words.w0 = (uintptr_t)mask;                 \
+        _g1->words.w1 = (uintptr_t)replc;                \
+    }
 
 #define gsSPSetFB(pkt, fb)                      \
     {                                           \

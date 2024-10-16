@@ -72,47 +72,54 @@ class Gui {
     ~Gui();
 
     void Init(GuiWindowInitData windowImpl);
-    void StartFrame();
-    void EndFrame();
-    void RenderViewports();
-    void DrawMenu();
+    void Draw();
+    void HandleWindowEvents(WindowEvent event);
+    void SetupRendererFrame();
+    void SaveConsoleVariablesNextFrame();
+    bool SupportsViewports();
 
-    void SaveConsoleVariablesOnNextTick();
-    void Update(WindowEvent event);
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
+    std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
     void RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     void RemoveGuiWindow(const std::string& name);
     void RemoveAllGuiWindows();
+
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
     bool HasTextureByName(const std::string& name);
     void LoadGuiTexture(const std::string& name, const LUS::Texture& tex, const ImVec4& tint);
     void UnloadTexture(const std::string& name);
     ImTextureID GetTextureByName(const std::string& name);
     ImVec2 GetTextureSize(const std::string& name);
-    bool SupportsViewports();
-    std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
+    void LoadTextureFromRawImage(const std::string& name, const std::string& path);
+
     std::shared_ptr<GameOverlay> GetGameOverlay();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
     std::shared_ptr<GuiMenuBar> GetMenuBar();
-    void LoadTextureFromRawImage(const std::string& name, const std::string& path);
-    bool ImGuiGamepadNavigationEnabled();
-    void BlockImGuiGamepadNavigation();
-    void UnblockImGuiGamepadNavigation();
     void SetMenu(std::shared_ptr<GuiWindow> menu);
-    bool GetMenuOrMenubarVisible();
     std::shared_ptr<GuiWindow> GetMenu();
-    bool GetPadBtnTogglesMenu();
-    void SetPadBtnTogglesMenu();
+    bool GetMenuOrMenubarVisible();
+
+    bool GamepadNavigationEnabled();
+    void BlockGamepadNavigation();
+    void UnblockGamepadNavigation();
 
   protected:
-    void ImGuiWMInit();
-    void ImGuiBackendInit();
+    void StartFrame();
+    void EndFrame();
+    void DrawFloatingWindows();
+    void DrawMenu();
+    void DrawGame();
+
     void ImGuiBackendNewFrame();
     void ImGuiWMNewFrame();
+    void ImGuiWMInit();
+    void ImGuiBackendInit();
     void ImGuiRenderDrawData(ImDrawData* data);
+
     ImTextureID GetTextureById(int32_t id);
     void ApplyResolutionChanges();
     int16_t GetIntegerScaleFactor();
+    void CheckSaveCvars();
 
   private:
     GuiWindowInitData mImpl;
@@ -123,7 +130,7 @@ class Gui {
     std::shared_ptr<GuiWindow> mMenu;
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
-    bool mPadBtnTogglesMenu = false;
+    ImVec2 mTemporaryWindowPos;
 };
 } // namespace Ship
 

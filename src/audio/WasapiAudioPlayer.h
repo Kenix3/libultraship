@@ -12,10 +12,10 @@ using namespace Microsoft::WRL;
 namespace Ship {
 class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
   public:
-    WasapiAudioPlayer();
+    WasapiAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
+    }
 
     int Buffered(void);
-    int GetDesiredBuffered(void);
     void Play(const uint8_t* buf, size_t len);
 
   protected:
@@ -36,10 +36,10 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     ComPtr<IMMDevice> mDevice;
     ComPtr<IAudioClient> mClient;
     ComPtr<IAudioRenderClient> mRenderClient;
-    LONG mRefCount;
-    UINT32 mBufferFrameCount;
-    bool mInitialized;
-    bool mStarted;
+    LONG mRefCount = 1;
+    UINT32 mBufferFrameCount = 0;
+    bool mInitialized = false;
+    bool mStarted = false;
 };
 } // namespace Ship
 #endif
