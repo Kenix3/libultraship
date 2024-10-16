@@ -281,7 +281,6 @@ endif()
 
 if(MSVC)
     target_compile_options(libultraship PRIVATE
-        -Wno-implicit-function-declaration
         $<$<CONFIG:Debug>:
             /Od;
             /Oi-
@@ -320,4 +319,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
         $<$<COMPILE_LANGUAGE:C,OBJC>:-Wno-implicit-function-declaration>
         $<$<COMPILE_LANGUAGE:C,OBJC>:-Wno-int-conversion>
 	)
+    if (MSVC)
+    target_compile_options(libultraship PRIVATE
+        -Wno-implicit-function-declaration
+    )
+    endif()
 endif()
