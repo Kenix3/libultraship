@@ -1207,7 +1207,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const F3DVtx* ve
         float w = v->ob[0] * g_rsp.MP_matrix[0][3] + v->ob[1] * g_rsp.MP_matrix[1][3] +
                   v->ob[2] * g_rsp.MP_matrix[2][3] + g_rsp.MP_matrix[3][3];
 
-        float world_pos[3] = {0.0};
+        float world_pos[3] = { 0.0 };
         if (g_rsp.geometry_mode & G_LIGHTING_POSITIONAL) {
             float(*mtx)[4] = g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1];
             world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
