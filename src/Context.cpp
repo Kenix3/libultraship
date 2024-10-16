@@ -7,7 +7,6 @@
 #include "install_config.h"
 #include "graphic/Fast3D/debug/GfxDebugger.h"
 #include "graphic/Fast3D/Fast3dWindow.h"
-#include <fstream>
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -317,17 +316,7 @@ std::string Context::GetShortName() {
     return mShortName;
 }
 
-#if defined(__APPLE__)
-//Expanded tilde function to get the full path to the application user directory
-std::string ExpandTilde(const std::string& path) {
-    if (path[0] == '~') {
-        const char* home = getenv("HOME") ? getenv("HOME") : getpwuid(getuid())->pw_dir;
-        return std::string(home) + path.substr(1);
-    }
-    return path;
-}
 #endif
-
 std::string Context::GetAppBundlePath() {
 #if defined(__ANDROID__)
     const char* externaldir = SDL_AndroidGetExternalStoragePath();
@@ -384,24 +373,11 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
 
 #if defined(__APPLE__)
     if (char* fpath = std::getenv("SHIP_HOME")) {
-        std::string expandedPath = ExpandTilde(fpath);
-        std::string modsPath = expandedPath + "/mods";
-        std::string filePath = modsPath + "/custom_otr_files_go_here.txt";
-
-        // Ensure SHIP_HOME and "mods" directory exist
-        if (std::filesystem::create_directories(modsPath)) {
-            std::cout << "Directory created at: " << modsPath << std::endl;
+        if (fpath[0] == '~') {
+            const char* home = getenv("HOME") ? getenv("HOME") : getpwuid(getuid())->pw_dir;
+            return std::string(home) + std::string(fpath).substr(1);
         }
-
-        // Check if the text file exists, if not, create it
-        if (!std::filesystem::exists(filePath)) {
-            std::ofstream(filePath).close();
-            std::cout << "Text file created at: " << filePath << std::endl;
-        } else {
-            std::cout << "Text file already exists at: " << filePath << std::endl;
-        }
-
-        return expandedPath;
+        return std::string(fpath);
     }
 #endif
     
