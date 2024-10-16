@@ -7,7 +7,6 @@
 
 #define SIAccessQueueSize 2
 #define BLOCKSIZE 32
-#define MAXCONTROLLERS 4
 #define PFS_ONE_PAGE 8
 
 #define PFS_PAGE_SIZE (BLOCKSIZE * PFS_ONE_PAGE)
@@ -59,27 +58,6 @@
 #define PFS_LABEL_AREA 7
 
 #define PFS_ERR_NOPACK 1
-
-/* controller errors */
-#define CONT_NO_RESPONSE_ERROR 0x8
-#define CONT_OVERRUN_ERROR 0x4
-
-/* Controller type */
-#define CONT_ABSOLUTE 0x0001
-#define CONT_RELATIVE 0x0002
-#define CONT_JOYPORT 0x0004
-#define CONT_EEPROM 0x8000
-#define CONT_EEP16K 0x4000
-#define CONT_TYPE_MASK 0x1F07
-#define CONT_TYPE_NORMAL 0x0005
-#define CONT_TYPE_MOUSE 0x0002
-#define CONT_TYPE_VOICE 0x0100
-
-/* Controller status */
-#define CONT_CARD_ON 0x01
-#define CONT_CARD_PULL 0x02
-#define CONT_ADDR_CRC_ER 0x04
-#define CONT_EEPROM_BUSY 0x80
 
 #ifndef CONTROLLERBUTTONS_T
 #define CONTROLLERBUTTONS_T uint16_t
@@ -183,5 +161,7 @@ typedef struct {
     /* 0x06 */ int8_t joyX;
     /* 0x07 */ int8_t joyY;
 } __OSContReadHeader; // size = 0x8
+
+#include "os.h"
 
 #endif

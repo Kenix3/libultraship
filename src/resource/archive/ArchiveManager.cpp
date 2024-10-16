@@ -112,7 +112,7 @@ void ArchiveManager::ResetVirtualFileSystem() {
 }
 
 size_t ArchiveManager::RemoveArchive(const std::string& path) {
-    for (int32_t i = 0; i < mArchives.size(); i++) {
+    for (size_t i = 0; i < mArchives.size(); i++) {
         if (path == mArchives[i]->GetPath()) {
             mArchives[i]->Unload();
             mArchives.erase(mArchives.begin() + i);
