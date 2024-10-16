@@ -98,7 +98,9 @@ bool glob_match(char const* pat, char const* str) {
             } break;
             case '\\':
                 d = *pat++;
-                [[fallthrough]];
+#ifndef _WIN32
+                __attribute__((fallthrough));
+#endif
                 //fallthrough;
             default: /* Literal character */
             literal:
