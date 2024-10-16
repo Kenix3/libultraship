@@ -342,7 +342,7 @@ std::string Context::GetAppBundlePath() {
         progpath.resize(len);
 
         // Find the last '/' and remove everything after it
-        int lastSlash = progpath.find_last_of("/");
+        long unsigned int lastSlash = progpath.find_last_of("/");
         if (lastSlash != std::string::npos) {
             progpath.erase(lastSlash);
         }

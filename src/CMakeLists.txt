@@ -281,6 +281,7 @@ endif()
 
 if(MSVC)
     target_compile_options(libultraship PRIVATE
+        -Wno-implicit-function-declaration
         $<$<CONFIG:Debug>:
             /Od;
             /Oi-
