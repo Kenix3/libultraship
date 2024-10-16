@@ -181,7 +181,7 @@ template <typename T> static constexpr T get_attr(Attribute attr) {
 static std::string GetPathWithoutFileName(char* filePath) {
     size_t len = strlen(filePath);
 
-    for (size_t i = len - 1; (long) i >= 0; i--) {
+    for (size_t i = len - 1; (long)i >= 0; i--) {
         if (filePath[i] == '/' || filePath[i] == '\\') {
             return std::string(filePath).substr(0, i);
         }
@@ -3455,7 +3455,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
 #ifndef IS_BIGENDIAN
     // byteswap the output to BE
     if (bswap) {
-        for (size_t i = 0; i < (size_t) width * height; i++) {
+        for (size_t i = 0; i < (size_t)width * height; i++) {
             rgba16Buffer[i] = BE16SWAP(rgba16Buffer[i]);
         }
     }
