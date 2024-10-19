@@ -379,7 +379,7 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
         return std::string(fpath);
     }
 #endif
-    
+
 #if defined(__linux__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {
