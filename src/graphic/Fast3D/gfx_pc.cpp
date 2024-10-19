@@ -181,7 +181,7 @@ template <typename T> static constexpr T get_attr(Attribute attr) {
 static std::string GetPathWithoutFileName(char* filePath) {
     size_t len = strlen(filePath);
 
-    for (size_t i = len - 1; i >= 0; i--) {
+    for (size_t i = len - 1; (long)i >= 0; i--) {
         if (filePath[i] == '/' || filePath[i] == '\\') {
             return std::string(filePath).substr(0, i);
         }
@@ -1207,7 +1207,7 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const F3DVtx* ve
         float w = v->ob[0] * g_rsp.MP_matrix[0][3] + v->ob[1] * g_rsp.MP_matrix[1][3] +
                   v->ob[2] * g_rsp.MP_matrix[2][3] + g_rsp.MP_matrix[3][3];
 
-        float world_pos[3];
+        float world_pos[3] = { 0.0 };
         if (g_rsp.geometry_mode & G_LIGHTING_POSITIONAL) {
             float(*mtx)[4] = g_rsp.modelview_matrix_stack[g_rsp.modelview_matrix_stack_size - 1];
             world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
@@ -2600,7 +2600,7 @@ static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
 
 static void gfx_s2dex_rect_copy(F3DuObjSprite* spr) {
     s16 dsdx = 4 << 10;
-    s16 uls = spr->s.objX << 3;
+    [[maybe_unused]] s16 uls = spr->s.objX << 3;
     // Flip flag only flips horizontally
     if (spr->s.imageFlags == G_BG_FLAG_FLIPS) {
         dsdx = -dsdx;
@@ -3436,7 +3436,8 @@ bool gfx_copy_fb_handler_custom(F3DGfx** cmd0) {
 bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
-    int32_t width, height, ulx, uly;
+    int32_t width, height;
+    [[maybe_unused]] int32_t ulx, uly;
     uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
     bool bswap = C0(8, 1);
@@ -3454,7 +3455,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
 #ifndef IS_BIGENDIAN
     // byteswap the output to BE
     if (bswap) {
-        for (size_t i = 0; i < width * height; i++) {
+        for (size_t i = 0; i < (size_t)width * height; i++) {
             rgba16Buffer[i] = BE16SWAP(rgba16Buffer[i]);
         }
     }
