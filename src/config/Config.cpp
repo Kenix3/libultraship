@@ -134,16 +134,18 @@ void Config::Erase(const std::string& key) {
 void Config::EraseBlock(const std::string& key) {
     nlohmann::json gjson = mFlattenedJson.unflatten();
     if (key.find(".") != std::string::npos) {
-        nlohmann::json& gjson2 = gjson;
+        nlohmann::json* gjson2 = &gjson;
         std::vector<std::string> dots = StringHelper::Split(key, ".");
         if (dots.size() > 1) {
             size_t curDot = 0;
             for (auto& dot : dots) {
-                if (gjson2.contains(dot)) {
-                    if (curDot == dots.size()) {
-                        gjson2.erase(dot);
+                if (gjson2->contains(dot)) {
+                    if (curDot == dots.size() - 1) {
+                        gjson2->at(dot).clear();
+                        gjson2->erase(dot);
                     } else {
-                        gjson2 = gjson2[dot];
+                        gjson2 = &gjson2->at(dot);
+                        curDot++;
                     }
                 }
             }
@@ -154,6 +156,7 @@ void Config::EraseBlock(const std::string& key) {
         }
     }
     mFlattenedJson = gjson.flatten();
+    Save();
 }
 
 void Config::Copy(const std::string& fromKey, const std::string& toKey) {
