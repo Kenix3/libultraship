@@ -559,14 +559,14 @@ static void import_texture_rgba16(int tile, bool importReplacement) {
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     uint32_t width = g_rdp.texture_tile[tile].line_size_bytes / 2;
     uint32_t height = size_bytes / g_rdp.texture_tile[tile].line_size_bytes;
 
     // A single line of pixels should not equal the entire image (height == 1 non-withstanding)
-    if (full_image_line_size_bytes == size_bytes)
+    if (full_image_line_size_bytes == size_bytes) {
         full_image_line_size_bytes = width * 2;
+    }
 
     uint32_t i = 0;
 
@@ -684,22 +684,34 @@ static void import_texture_ia16(int tile, bool importReplacement) {
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
-
-    for (uint32_t i = 0; i < size_bytes / 2; i++) {
-        uint8_t intensity = addr[2 * i];
-        uint8_t alpha = addr[2 * i + 1];
-        uint8_t r = intensity;
-        uint8_t g = intensity;
-        uint8_t b = intensity;
-        tex_upload_buffer[4 * i + 0] = r;
-        tex_upload_buffer[4 * i + 1] = g;
-        tex_upload_buffer[4 * i + 2] = b;
-        tex_upload_buffer[4 * i + 3] = alpha;
-    }
 
     uint32_t width = g_rdp.texture_tile[tile].line_size_bytes / 2;
     uint32_t height = size_bytes / g_rdp.texture_tile[tile].line_size_bytes;
+
+    // A single line of pixels should not equal the entire image (height == 1 non-withstanding)
+    if (full_image_line_size_bytes == size_bytes) {
+        full_image_line_size_bytes = width * 2;
+    }
+
+    uint32_t i = 0;
+
+    for (uint32_t y = 0; y < height; y++) {
+        for (uint32_t x = 0; x < width; x++) {
+            uint32_t clrIdx = (y * (full_image_line_size_bytes / 2)) + (x);
+
+            uint8_t intensity = addr[2 * clrIdx];
+            uint8_t alpha = addr[2 * clrIdx + 1];
+            uint8_t r = intensity;
+            uint8_t g = intensity;
+            uint8_t b = intensity;
+            tex_upload_buffer[4 * i + 0] = r;
+            tex_upload_buffer[4 * i + 1] = g;
+            tex_upload_buffer[4 * i + 2] = b;
+            tex_upload_buffer[4 * i + 3] = alpha;
+
+            i++;
+        }
+    }
 
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
@@ -715,24 +727,36 @@ static void import_texture_i4(int tile, bool importReplacement) {
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
-
-    for (uint32_t i = 0; i < size_bytes * 2; i++) {
-        uint8_t byte = addr[i / 2];
-        uint8_t part = (byte >> (4 - (i % 2) * 4)) & 0xf;
-        uint8_t intensity = part;
-        uint8_t r = intensity;
-        uint8_t g = intensity;
-        uint8_t b = intensity;
-        uint8_t a = intensity;
-        tex_upload_buffer[4 * i + 0] = SCALE_4_8(r);
-        tex_upload_buffer[4 * i + 1] = SCALE_4_8(g);
-        tex_upload_buffer[4 * i + 2] = SCALE_4_8(b);
-        tex_upload_buffer[4 * i + 3] = SCALE_4_8(a);
-    }
 
     uint32_t width = g_rdp.texture_tile[tile].line_size_bytes * 2;
     uint32_t height = size_bytes / g_rdp.texture_tile[tile].line_size_bytes;
+
+    // A single line of pixels should not equal the entire image (height == 1 non-withstanding)
+    if (full_image_line_size_bytes == size_bytes) {
+        full_image_line_size_bytes = width / 2;
+    }
+
+    uint32_t i = 0;
+
+    for (uint32_t y = 0; y < height; y++) {
+        for (uint32_t x = 0; x < width; x++) {
+            uint32_t clrIdx = (y * (full_image_line_size_bytes * 2)) + (x);
+
+            uint8_t byte = addr[clrIdx / 2];
+            uint8_t part = (byte >> (4 - (clrIdx % 2) * 4)) & 0xf;
+            uint8_t intensity = part;
+            uint8_t r = intensity;
+            uint8_t g = intensity;
+            uint8_t b = intensity;
+            uint8_t a = intensity;
+            tex_upload_buffer[4 * i + 0] = SCALE_4_8(r);
+            tex_upload_buffer[4 * i + 1] = SCALE_4_8(g);
+            tex_upload_buffer[4 * i + 2] = SCALE_4_8(b);
+            tex_upload_buffer[4 * i + 3] = SCALE_4_8(a);
+
+            i++;
+        }
+    }
 
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
@@ -748,7 +772,6 @@ static void import_texture_i8(int tile, bool importReplacement) {
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].line_size_bytes;
-    // SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     for (uint32_t i = 0; i < size_bytes; i++) {
         uint8_t intensity = addr[i];
