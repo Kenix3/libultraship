@@ -14,6 +14,8 @@
 
 #ifdef __APPLE__
 #include "utils/AppleFolderManager.h"
+#include <unistd.h>
+#include <pwd.h>
 #endif
 
 namespace Ship {
@@ -368,7 +370,17 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     return std::string(home) + "/Documents";
 #endif
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__APPLE__)
+    if (char* fpath = std::getenv("SHIP_HOME")) {
+        if (fpath[0] == '~') {
+            const char* home = getenv("HOME") ? getenv("HOME") : getpwuid(getuid())->pw_dir;
+            return std::string(home) + std::string(fpath).substr(1);
+        }
+        return std::string(fpath);
+    }
+#endif
+
+#if defined(__linux__)
     char* fpath = std::getenv("SHIP_HOME");
     if (fpath != NULL) {
         return std::string(fpath);
