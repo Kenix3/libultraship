@@ -134,6 +134,23 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(const char* valStr) {
     return G_CCMUX_1;
 }
 
+int8_t GetEndOpcodeByUCode(UcodeHandlers ucode){
+    switch (ucode) {
+        case ucode_f3d:
+        case ucode_f3db:
+        case ucode_f3dex:
+        case ucode_f3dexb:
+            return F3DEX_G_ENDDL;
+        case ucode_f3dex2:
+        case ucode_s2dex: {
+            return F3DEX2_G_ENDDL;
+        }
+        case ucode_max:
+            break;
+    }
+    return -1;
+}
+
 std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
@@ -167,20 +184,8 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
             displayList->Instructions.push_back(command);
         }
 
-        switch (ucode) {
-            case ucode_f3d:
-            case ucode_f3dex:
-                if (opcode == F3DEX_G_ENDDL) {
-                    break;
-                }
-            case ucode_f3dex2:
-            case ucode_s2dex: {
-                if (opcode == F3DEX2_G_ENDDL) {
-                    break;
-                }
-            }
-            default:
-                return nullptr;
+        if (opcode == GetEndOpcodeByUCode(ucode)) {
+            break;
         }
     }
 
