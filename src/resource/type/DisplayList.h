@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "resource/Resource.h"
-#include "gfxbridge.h"
+#include "public/bridge/gfxbridge.h"
 #include <libultraship/libultra/gbi.h>
 
 namespace LUS {

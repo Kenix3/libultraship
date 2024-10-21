@@ -2,7 +2,7 @@
 #include "resource/type/DisplayList.h"
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
-#include "Fast3D/lus_gbi.h"
+#include "graphic/Fast3D/lus_gbi.h"
 
 namespace LUS {
 std::unordered_map<std::string, uint32_t> renderModes = {
