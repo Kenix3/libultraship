@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "resource/Resource.h"
-
+#include "gfxbridge.h"
 #include <libultraship/libultra/gbi.h>
 
 namespace LUS {
@@ -16,6 +16,7 @@ class DisplayList : public Ship::Resource<Gfx> {
     Gfx* GetPointer() override;
     size_t GetPointerSize() override;
 
+    UcodeHandlers UCode;
     std::vector<Gfx> Instructions;
     std::vector<char*> Strings;
 };

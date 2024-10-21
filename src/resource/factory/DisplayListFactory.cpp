@@ -3,7 +3,6 @@
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
 #include "Fast3D/lus_gbi.h"
-#include "gfxbridge.h"
 
 namespace LUS {
 std::unordered_map<std::string, uint32_t> renderModes = {
@@ -143,6 +142,8 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
     auto displayList = std::make_shared<DisplayList>(file->InitData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
     auto ucode = (UcodeHandlers)reader->ReadInt8();
+
+    displayList->UCode = ucode;
 
     while (reader->GetBaseAddress() % 8 != 0) {
         reader->ReadInt8();
