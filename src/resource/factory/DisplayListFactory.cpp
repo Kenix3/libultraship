@@ -142,7 +142,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
 
     auto displayList = std::make_shared<DisplayList>(file->InitData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
-    auto ucode = (UcodeHandlers) reader->ReadInt8();
+    auto ucode = (UcodeHandlers)reader->ReadInt8();
 
     while (reader->GetBaseAddress() % 8 != 0) {
         reader->ReadInt8();
