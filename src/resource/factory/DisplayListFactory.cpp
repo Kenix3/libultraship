@@ -134,7 +134,7 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(const char* valStr) {
     return G_CCMUX_1;
 }
 
-int8_t GetEndOpcodeByUCode(UcodeHandlers ucode){
+int8_t GetEndOpcodeByUCode(UcodeHandlers ucode) {
     switch (ucode) {
         case ucode_f3d:
         case ucode_f3db:
