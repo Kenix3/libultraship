@@ -1619,7 +1619,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                 cmt &= ~G_TX_CLAMP;
             }
 
-            if(rendering_state.textures[i] == nullptr){
+            if (rendering_state.textures[i] == nullptr) {
                 continue;
             }
 
