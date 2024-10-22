@@ -1619,6 +1619,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
                 cmt &= ~G_TX_CLAMP;
             }
 
+            if(rendering_state.textures[i] == nullptr){
+                continue;
+            }
+
             bool linear_filter = (g_rdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
             if (linear_filter != rendering_state.textures[i]->second.linear_filter ||
                 cms != rendering_state.textures[i]->second.cms || cmt != rendering_state.textures[i]->second.cmt) {
