@@ -2,6 +2,7 @@
 #include "resource/type/DisplayList.h"
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
+#include "graphic/Fast3D/lus_gbi.h"
 
 namespace LUS {
 std::unordered_map<std::string, uint32_t> renderModes = {
@@ -133,6 +134,23 @@ uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(const char* valStr) {
     return G_CCMUX_1;
 }
 
+int8_t GetEndOpcodeByUCode(UcodeHandlers ucode) {
+    switch (ucode) {
+        case ucode_f3d:
+        case ucode_f3db:
+        case ucode_f3dex:
+        case ucode_f3dexb:
+            return F3DEX_G_ENDDL;
+        case ucode_f3dex2:
+        case ucode_s2dex: {
+            return F3DEX2_G_ENDDL;
+        }
+        case ucode_max:
+            break;
+    }
+    return -1;
+}
+
 std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
@@ -140,6 +158,9 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
 
     auto displayList = std::make_shared<DisplayList>(file->InitData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
+    auto ucode = (UcodeHandlers)reader->ReadInt8();
+
+    displayList->UCode = ucode;
 
     while (reader->GetBaseAddress() % 8 != 0) {
         reader->ReadInt8();
@@ -163,7 +184,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
             displayList->Instructions.push_back(command);
         }
 
-        if (opcode == (int8_t)G_ENDDL) {
+        if (opcode == GetEndOpcodeByUCode(ucode)) {
             break;
         }
     }

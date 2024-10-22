@@ -166,10 +166,12 @@ const static std::unordered_map<Attribute, std::any> f3dexAttrHandler = { { MTX_
                                                                           { CULL_BOTH, F3DEX_G_CULL_BOTH } };
 
 static constexpr std::array ucode_attr_handlers = {
-    &f3dexAttrHandler,
-    &f3dexAttrHandler,
-    &f3dex2AttrHandler,
-    &f3dex2AttrHandler,
+    &f3dexAttrHandler,  // ucode_f3db
+    &f3dexAttrHandler,  // ucode_f3d
+    &f3dexAttrHandler,  // ucode_f3dex
+    &f3dexAttrHandler,  // ucode_f3exb
+    &f3dex2AttrHandler, // ucode_f3ex2
+    &f3dex2AttrHandler, // ucode_s2dex
 };
 
 template <typename T> static constexpr T get_attr(Attribute attr) {
@@ -3947,10 +3949,12 @@ static constexpr UcodeHandler s2dexHandlers = {
 };
 
 static constexpr std::array ucode_handlers = {
-    &f3dHandlers,
-    &f3dexHandlers,
-    &f3dex2Handlers,
-    &s2dexHandlers,
+    &f3dHandlers,    // ucode_f3db
+    &f3dHandlers,    // ucode_f3d
+    &f3dexHandlers,  // ucode_f3dex
+    &f3dexHandlers,  // ucode_f3dexb
+    &f3dex2Handlers, // ucode_f3dex2
+    &s2dexHandlers,  // ucode_s2dex
 };
 
 const char* GfxGetOpcodeName(int8_t opcode) {
