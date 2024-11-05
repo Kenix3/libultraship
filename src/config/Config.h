@@ -65,8 +65,8 @@ class Config {
     nlohmann::json GetFlattenedJson();
     bool IsNewInstance();
 
-    AudioBackend GetAudioBackend();
-    void SetAudioBackend(AudioBackend backend);
+    AudioBackend GetCurrentAudioBackend();
+    void SetCurrentAudioBackend(AudioBackend backend);
     WindowBackend GetWindowBackend();
     void SetWindowBackend(WindowBackend backend);
 
