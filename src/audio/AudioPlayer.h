@@ -24,29 +24,17 @@ class AudioPlayer {
 
     bool IsInitialized(void);
 
-    constexpr int32_t GetSampleRate() const {
-        return this->mAudioSettings.SampleRate;
-    }
+    int32_t GetSampleRate() const;
 
-    constexpr int32_t GetSampleLength() const {
-        return this->mAudioSettings.SampleLength;
-    }
+    int32_t GetSampleLength() const;
 
-    constexpr int32_t GetDesiredBuffered() const {
-        return this->mAudioSettings.DesiredBuffered;
-    }
+    int32_t GetDesiredBuffered() const;
 
-    void SetSampleRate(int32_t rate) {
-        this->mAudioSettings.SampleRate = rate;
-    }
+    void SetSampleRate(int32_t rate);
 
-    void SetSampleLength(int32_t length) {
-        this->mAudioSettings.SampleLength = length;
-    }
+    void SetSampleLength(int32_t length);
 
-    void SetDesiredBuffered(int32_t size) {
-        this->mAudioSettings.DesiredBuffered = size;
-    }
+    void SetDesiredBuffered(int32_t size);
 
   protected:
     virtual bool DoInit(void) = 0;
