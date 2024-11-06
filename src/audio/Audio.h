@@ -16,9 +16,9 @@ class Audio {
 
     void Init();
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
-    AudioBackend GetAudioBackend();
+    AudioBackend GetCurrentAudioBackend();
     std::shared_ptr<std::vector<AudioBackend>> GetAvailableAudioBackends();
-    void SetAudioBackend(AudioBackend backend);
+    void SetCurrentAudioBackend(AudioBackend backend);
 
   protected:
     void InitAudioPlayer();

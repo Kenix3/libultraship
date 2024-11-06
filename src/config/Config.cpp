@@ -209,7 +209,7 @@ bool Config::IsNewInstance() {
     return mIsNewInstance;
 }
 
-AudioBackend Config::GetAudioBackend() {
+AudioBackend Config::GetCurrentAudioBackend() {
     std::string backendName = GetString("Window.AudioBackend");
     if (backendName == "wasapi") {
         return AudioBackend::WASAPI;
@@ -217,7 +217,7 @@ AudioBackend Config::GetAudioBackend() {
 
     // Migrate pulse player in config to sdl
     if (backendName == "pulse") {
-        SetAudioBackend(AudioBackend::SDL);
+        SetCurrentAudioBackend(AudioBackend::SDL);
         return AudioBackend::SDL;
     }
 
@@ -234,7 +234,7 @@ AudioBackend Config::GetAudioBackend() {
     return AudioBackend::SDL;
 }
 
-void Config::SetAudioBackend(AudioBackend backend) {
+void Config::SetCurrentAudioBackend(AudioBackend backend) {
     switch (backend) {
         case AudioBackend::WASAPI:
             SetString("Window.AudioBackend", "wasapi");
