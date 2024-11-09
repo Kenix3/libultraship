@@ -6,9 +6,9 @@
 namespace Ship {
 
 struct AudioSettings {
-    int SampleRate = 44100;
-    int SampleLength = 1024;
-    int DesiredBuffered = 2480;
+    int32_t SampleRate = 44100;
+    int32_t SampleLength = 1024;
+    int32_t DesiredBuffered = 2480;
 };
 
 class AudioPlayer {
@@ -19,34 +19,22 @@ class AudioPlayer {
     ~AudioPlayer();
 
     bool Init(void);
-    virtual int Buffered(void) = 0;
+    virtual int32_t Buffered(void) = 0;
     virtual void Play(const uint8_t* buf, size_t len) = 0;
 
     bool IsInitialized(void);
 
-    constexpr int GetSampleRate() const {
-        return this->mAudioSettings.SampleRate;
-    }
+    int32_t GetSampleRate() const;
 
-    constexpr int GetSampleLength() const {
-        return this->mAudioSettings.SampleLength;
-    }
+    int32_t GetSampleLength() const;
 
-    constexpr int GetDesiredBuffered() const {
-        return this->mAudioSettings.DesiredBuffered;
-    }
+    int32_t GetDesiredBuffered() const;
 
-    void SetSampleRate(int rate) {
-        this->mAudioSettings.SampleRate = rate;
-    }
+    void SetSampleRate(int32_t rate);
 
-    void SetSampleLength(int length) {
-        this->mAudioSettings.SampleLength = length;
-    }
+    void SetSampleLength(int32_t length);
 
-    void SetDesiredBuffered(int size) {
-        this->mAudioSettings.DesiredBuffered = size;
-    }
+    void SetDesiredBuffered(int32_t size);
 
   protected:
     virtual bool DoInit(void) = 0;
