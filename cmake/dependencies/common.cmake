@@ -9,10 +9,10 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
 endif()
 
 #=================== ImGui ===================
-set(sdl_gamepad_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/sdl-gamepad-fix.patch)
+set(sdl_gamepad_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/sdl-gamepad-fix.patch)
 
 # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
-set(sdl_apply_patch_if_needed ${sdl_gamepad_patch} ${git_hide_output} || ${sdl_gamepad_patch} --reverse --check)
+set(sdl_apply_patch_if_needed git apply ${sdl_gamepad_patch_file} ${git_hide_output} || git apply --reverse --check ${sdl_gamepad_patch_file})
 FetchContent_Declare(
     ImGui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -47,7 +47,7 @@ if(NOT EXCLUDE_MPQ_SUPPORT)
     set(stormlib_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/stormlib-optimizations.patch)
 
     # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
-    set(stormlib_apply_patch_if_needed git apply --quiet ${stormlib_patch_file} ${git_hide_output} || git apply --reverse --check ${stormlib_patch_file})
+    set(stormlib_apply_patch_if_needed git apply ${stormlib_patch_file} ${git_hide_output} || git apply --reverse --check ${stormlib_patch_file})
 
     FetchContent_Declare(
         StormLib
