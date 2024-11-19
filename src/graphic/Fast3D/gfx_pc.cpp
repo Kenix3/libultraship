@@ -2739,12 +2739,6 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
 // current opcode should be incremented after the handler ends.
 typedef bool (*GfxOpcodeHandlerFunc)(F3DGfx** gfx);
 
-bool gfx_load_ucode_handler_f3dex2(F3DGfx** cmd) {
-    g_rsp.fog_mul = 0;
-    g_rsp.fog_offset = 0;
-    return false;
-}
-
 bool gfx_cull_dl_handler_f3dex2(F3DGfx** cmd) {
     // TODO:
     return false;
@@ -3990,6 +3984,20 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
     // Loaded ucode must be in range of the supported ucode_handlers
     assert(ucode < ucode_max);
     ucode_handler_index = ucode;
+
+    // Reset some RSP state values upon ucode load to deal with hardware quirks discovered by emulators
+    switch (ucode) {
+        case ucode_f3d:
+        case ucode_f3db:
+        case ucode_f3dex:
+        case ucode_f3dexb:
+        case ucode_f3dex2:
+            g_rsp.fog_mul = 0;
+            g_rsp.fog_offset = 0;
+            break;
+        default:
+            break;
+    }
 }
 
 static void gfx_step() {
