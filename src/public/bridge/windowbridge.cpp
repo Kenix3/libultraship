@@ -31,4 +31,41 @@ int32_t WindowGetPosY(void) {
 bool WindowIsFullscreen(void) {
     return Ship::Context::GetInstance()->GetWindow()->IsFullscreen();
 }
+
+/**
+ * Widescreen functions
+ *
+ */
+
+float ScreenGetAspectRatio() {
+    return gfx_current_dimensions.aspect_ratio;
+}
+
+// AdjustXFromLeftEdge 
+float LeftEdgeAlign(float v) {
+    return (SCREEN_WIDTH / 2 - SCREEN_HEIGHT / 2 * OTRGetAspectRatio() + (v));
+}
+
+int16_t LeftEdgeRectAlign(float v) {
+    return ((int) floorf(OTRGetDimensionFromLeftEdge(v)));
+}
+
+float RightEdgeAlign(float v) {
+    return (SCREEN_WIDTH / 2 + SCREEN_HEIGHT / 2 * OTRGetAspectRatio() - (SCREEN_WIDTH - v));
+}
+
+int16_t RightEdgeRectAlign(float v) {
+    return ((int) ceilf(OTRGetDimensionFromRightEdge(v)));
+}
+
+// Gets the width of the current render target area
+uint32_t WindowGetGameRenderWidth() {
+    return gfx_current_dimensions.width;
+}
+
+// Gets the height of the current render target area
+uint32_t WindowGetGameRenderHeight() {
+    return gfx_current_dimensions.height;
+}
+
 }
