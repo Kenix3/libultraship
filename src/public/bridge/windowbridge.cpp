@@ -33,8 +33,29 @@ bool WindowIsFullscreen(void) {
 }
 
 /**
- * Widescreen functions
+ * Widescreen alignment functions
  *
+ * These are used in gDPFillWideRectangle() and gSPWideTextureRectangle(),
+ * or any situation where a screen coordinate outside the normal N64 bounds of 320x240 are required.
+ *
+ * How to use:
+ * LeftEdgeAlign(0) --> Returns the left most edge of the game render target area
+ * LeftEdgeAlign(320) --> Returns the right most edge of the game render target area
+ * RightEdgeAlign(320) --> Returns the right most edge of the game render target area
+ * 
+ * Align a rectangle with the left of the screen:
+ * gDPFillWideRectangle(displayListHead++, LeftEdgeAlign(ulx), uly, RightEdgeAlign(lrx), lry);
+ *
+ * Align a texture rectangle with the left of the screen (Note the `<< 2` is required):
+ * gSPWideTextureRectangle(gDisplayListHead++, LeftEdgeAlign(ulx) << 2, yl, RightEdgeAlign(lrx) << 2, yh, G_TX_RENDERTILE, arg4 << 5, (arg5 << 5), 4 << 10, 1 << 10);
+ *
+ * UI Elements may be stickied to the left or right of the screen with a relatively simple check:
+ * // Calculate the center of the UI element and check if it's on the left or right half of the screen.
+ * if ( ( ulx - ( width / 2 ) ) < ( SCREEN_WIDTH / 2 ) ) {
+ *   gDPFillWideRectangle(displayListHead++, LeftEdgeAlign(ulx), uly, LeftEdgeAlign(lrx), lry); // Align left
+ * } else {
+ *   gDPFillWideRectangle(displayListHead++, RightEdgeAlign(ulx), uly, RightEdgeAlign(lrx), lry); // Align right
+ * }
  */
 
 float ScreenGetAspectRatio() {
