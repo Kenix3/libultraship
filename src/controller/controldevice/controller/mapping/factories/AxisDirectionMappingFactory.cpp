@@ -80,10 +80,10 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, Stick stick) {
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, LEFT, LUS_BTN_STICKLEFT),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, RIGHT, LUS_BTN_STICKRIGHT),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, UP, LUS_BTN_STICKUP),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, DOWN, LUS_BTN_STICKDOWN)
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, LEFT, LUS_DEFAULT_KB_MAPPING_STICKLEFT),
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, RIGHT, LUS_DEFAULT_KB_MAPPING_STICKRIGHT),
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, UP, LUS_DEFAULT_KB_MAPPING_STICKUP),
+        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stick, DOWN, LUS_DEFAULT_KB_MAPPING_STICKDOWN)
     };
 
     return mappings;
