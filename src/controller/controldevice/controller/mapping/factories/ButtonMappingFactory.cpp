@@ -75,54 +75,54 @@ ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CON
 
     switch (bitmask) {
         case BTN_A:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_A, KbScancode::LUS_KB_X));
+            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_A, LUS_BTN_A));
             break;
         case BTN_B:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_B, KbScancode::LUS_KB_C));
+            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_B, LUS_BTN_B));
             break;
         case BTN_L:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_L, KbScancode::LUS_KB_E));
+            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_L, LUS_BTN_L));
             break;
         case BTN_R:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_R, KbScancode::LUS_KB_R));
+            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_R, LUS_BTN_R));
             break;
         case BTN_Z:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_Z, KbScancode::LUS_KB_Z));
+            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_Z, LUS_BTN_Z));
             break;
         case BTN_START:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_START, KbScancode::LUS_KB_SPACE));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_START, LUS_BTN_START));
             break;
         case BTN_CUP:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CUP, KbScancode::LUS_KB_ARROWKEY_UP));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CUP, LUS_BTN_CUP));
             break;
         case BTN_CDOWN:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CDOWN, KbScancode::LUS_KB_ARROWKEY_DOWN));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CDOWN, LUS_BTN_CDOWN));
             break;
         case BTN_CLEFT:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CLEFT, KbScancode::LUS_KB_ARROWKEY_LEFT));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CLEFT, LUS_BTN_CLEFT));
             break;
         case BTN_CRIGHT:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CRIGHT, KbScancode::LUS_KB_ARROWKEY_RIGHT));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CRIGHT, LUS_BTN_CRIGHT));
             break;
         case BTN_DUP:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DUP, KbScancode::LUS_KB_T));
+            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DUP, LUS_BTN_DUP));
             break;
         case BTN_DDOWN:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DDOWN, KbScancode::LUS_KB_G));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DDOWN, LUS_BTN_DDOWN));
             break;
         case BTN_DLEFT:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DLEFT, KbScancode::LUS_KB_F));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DLEFT, LUS_BTN_DLEFT));
             break;
         case BTN_DRIGHT:
             mappings.push_back(
-                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DRIGHT, KbScancode::LUS_KB_H));
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DRIGHT, LUS_BTN_DRIGHT));
             break;
     }
 
