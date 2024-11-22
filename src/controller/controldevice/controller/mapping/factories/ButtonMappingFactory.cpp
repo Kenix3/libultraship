@@ -153,12 +153,12 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(ShipDeviceIndex shipDeviceI
 
     switch (bitmask) {
         case BTN_A:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_A, LUS_DEFAULT_CONT_MAPPING_A));
+            mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_A,
+                                                                          LUS_DEFAULT_CONT_MAPPING_A));
             break;
         case BTN_B:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_B, LUS_DEFAULT_CONT_MAPPING_B));
+            mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_B,
+                                                                          LUS_DEFAULT_CONT_MAPPING_B));
             break;
         case BTN_L:
             if (!isGameCube) {
