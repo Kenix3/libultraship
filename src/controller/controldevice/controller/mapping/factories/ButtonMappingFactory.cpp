@@ -75,46 +75,60 @@ ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CON
 
     switch (bitmask) {
         case BTN_A:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_A, LUS_DEFAULT_KB_MAPPING_A));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_A, LUS_DEFAULT_KB_MAPPING_A));
             break;
         case BTN_B:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_B, LUS_DEFAULT_KB_MAPPING_B));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_B, LUS_DEFAULT_KB_MAPPING_B));
             break;
         case BTN_L:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_L, LUS_DEFAULT_KB_MAPPING_L));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_L, LUS_DEFAULT_KB_MAPPING_L));
             break;
         case BTN_R:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_R, LUS_DEFAULT_KB_MAPPING_R));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_R, LUS_DEFAULT_KB_MAPPING_R));
             break;
         case BTN_Z:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_Z, LUS_DEFAULT_KB_MAPPING_Z));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_Z, LUS_DEFAULT_KB_MAPPING_Z));
             break;
         case BTN_START:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_START, LUS_DEFAULT_KB_MAPPING_START));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_START, LUS_DEFAULT_KB_MAPPING_START));
             break;
         case BTN_CUP:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CUP, LUS_DEFAULT_KB_MAPPING_CUP));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CUP, LUS_DEFAULT_KB_MAPPING_CUP));
             break;
         case BTN_CDOWN:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CDOWN, LUS_DEFAULT_KB_MAPPING_CDOWN));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CDOWN, LUS_DEFAULT_KB_MAPPING_CDOWN));
             break;
         case BTN_CLEFT:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CLEFT, LUS_DEFAULT_KB_MAPPING_CLEFT));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CLEFT, LUS_DEFAULT_KB_MAPPING_CLEFT));
             break;
         case BTN_CRIGHT:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CRIGHT, LUS_DEFAULT_KB_MAPPING_CRIGHT));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_CRIGHT, LUS_DEFAULT_KB_MAPPING_CRIGHT));
             break;
         case BTN_DUP:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DUP, LUS_DEFAULT_KB_MAPPING_DUP));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DUP, LUS_DEFAULT_KB_MAPPING_DUP));
             break;
         case BTN_DDOWN:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DDOWN, LUS_DEFAULT_KB_MAPPING_DDOWN));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DDOWN, LUS_DEFAULT_KB_MAPPING_DDOWN));
             break;
         case BTN_DLEFT:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DLEFT, LUS_DEFAULT_KB_MAPPING_DLEFT));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DLEFT, LUS_DEFAULT_KB_MAPPING_DLEFT));
             break;
         case BTN_DRIGHT:
-            mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DRIGHT, LUS_DEFAULT_KB_MAPPING_DRIGHT));
+            mappings.push_back(
+                std::make_shared<KeyboardKeyToButtonMapping>(portIndex, BTN_DRIGHT, LUS_DEFAULT_KB_MAPPING_DRIGHT));
             break;
     }
 
@@ -140,73 +154,73 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(ShipDeviceIndex shipDeviceI
     switch (bitmask) {
         case BTN_A:
             mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_A, SDL_CONTROLLER_BUTTON_A));
+                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_A, LUS_DEFAULT_CONT_MAPPING_A));
             break;
         case BTN_B:
             mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_B, SDL_CONTROLLER_BUTTON_B));
+                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_B, LUS_DEFAULT_CONT_MAPPING_B));
             break;
         case BTN_L:
             if (!isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_L,
-                                                                              SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+                                                                              LUS_DEFAULT_CONT_MAPPING_L));
             }
             break;
         case BTN_R:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_R,
-                                                                                 SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
+                                                                                 LUS_DEFAULT_CONT_MAPPING_R, 1));
             break;
         case BTN_Z:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_Z,
-                                                                                 SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
+                                                                                 LUS_DEFAULT_CONT_MAPPING_Z, 1));
             break;
         case BTN_START:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_START,
-                                                                          SDL_CONTROLLER_BUTTON_START));
+                                                                          LUS_DEFAULT_CONT_MAPPING_START));
             break;
         case BTN_CUP:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CUP,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTY, -1));
+                                                                                 LUS_DEFAULT_CONT_MAPPING_CUP, -1));
             break;
         case BTN_CDOWN:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTY, 1));
+                                                                                 LUS_DEFAULT_CONT_MAPPING_CDOWN, 1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_CDOWN,
-                                                                              SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
+                                                                              LUS_DEFAULT_CONT_MAPPING_CDOWN2));
             }
             break;
         case BTN_CLEFT:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, -1));
+                                                                                 LUS_DEFAULT_CONT_MAPPING_CLEFT, -1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_CLEFT,
-                                                                              SDL_CONTROLLER_BUTTON_Y));
+                                                                              LUS_DEFAULT_CONT_MAPPING_CLEFT2));
             }
             break;
         case BTN_CRIGHT:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, 1));
+                                                                                 LUS_DEFAULT_CONT_MAPPING_CRIGHT, 1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                              SDL_CONTROLLER_BUTTON_X));
+                                                                              LUS_DEFAULT_CONT_MAPPING_CRIGHT2));
             }
             break;
         case BTN_DUP:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DUP,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_UP));
+                                                                          LUS_DEFAULT_CONT_MAPPING_DUP));
             break;
         case BTN_DDOWN:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DDOWN,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_DOWN));
+                                                                          LUS_DEFAULT_CONT_MAPPING_DDOWN));
             break;
         case BTN_DLEFT:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DLEFT,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+                                                                          LUS_DEFAULT_CONT_MAPPING_DLEFT));
             break;
         case BTN_DRIGHT:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DRIGHT,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
+                                                                          LUS_DEFAULT_CONT_MAPPING_DRIGHT));
             break;
     }
 
