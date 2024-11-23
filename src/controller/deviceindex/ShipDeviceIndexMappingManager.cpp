@@ -409,6 +409,7 @@ void ShipDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectSinglePlayer(i
 }
 
 void ShipDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectMultiplayer(int32_t sdlJoystickInstanceId) {
+    auto portIndexOfPhysicalDeviceThatHasBeenDisconnected = GetPortIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
     auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected =
         GetShipDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
 
@@ -438,8 +439,7 @@ void ShipDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectMultiplayer(in
             auto controllerDisconnectedWindow = std::dynamic_pointer_cast<ControllerDisconnectedWindow>(
                 Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
             if (controllerDisconnectedWindow != nullptr) {
-                controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(
-                    GetPortIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId));
+                controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(portIndexOfPhysicalDeviceThatHasBeenDisconnected);
                 controllerDisconnectedWindow->Show();
             }
             continue;

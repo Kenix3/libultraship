@@ -139,15 +139,42 @@ void ControllerDisconnectedWindow::DrawElement() {
         return;
     }
 
-    ImGui::OpenPopup("Controller Disconnected");
-    if (ImGui::BeginPopupModal("Controller Disconnected", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        // todo: don't use UINT8_MAX-1 to mean we don't know what controller was disconnected
-        if (mPortIndexOfDisconnectedController == UINT8_MAX - 1) {
-            DrawUnknownOrMultipleControllersDisconnected();
-        } else {
-            DrawKnownControllerDisconnected();
-        }
-        ImGui::EndPopup();
+    static bool openpopuptemp = false;
+
+    // popup_id is a workaround for imgui popup issues
+    // https://github.com/ocornut/imgui/issues/331#issuecomment-1542969157 
+    // ImGuiID popup_id = ImHashStr("Controller Disconnected");
+    // ImGui::PushOverrideID(popup_id);
+    // ImGui::OpenPopup("Controller Disconnected");
+    // ImGui::PopID();
+    // ImGui::PushOverrideID(popup_id);
+    // if (ImGui::BeginPopupModal("Controller Disconnected")) {
+    //     ImGui::Text("Lorem ipsum");
+    //     ImGui::EndPopup();
+    // }
+    // ImGui::PopID();
+
+    // ImGui::OpenPopup("Controller Disconnected");
+    // if (ImGui::BeginPopupModal("Controller Disconnected")) {
+    //     ImGui::Text("Lorem ipsum");
+    //     ImGui::EndPopup();
+    // }
+
+    // // if (ImGui::BeginPopupModal("Controller Disconnected", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+    // if (ImGui::BeginPopupModal("Controller Disconnected")) {
+    //     // todo: don't use UINT8_MAX-1 to mean we don't know what controller was disconnected
+    //     if (mPortIndexOfDisconnectedController == UINT8_MAX - 1) {
+    //         DrawUnknownOrMultipleControllersDisconnected();
+    //     } else {
+    //         DrawKnownControllerDisconnected();
+    //     }
+    //     ImGui::EndPopup();
+    // }
+
+    if (mPortIndexOfDisconnectedController == UINT8_MAX - 1) {
+        DrawUnknownOrMultipleControllersDisconnected();
+    } else {
+        DrawKnownControllerDisconnected();
     }
 }
 
