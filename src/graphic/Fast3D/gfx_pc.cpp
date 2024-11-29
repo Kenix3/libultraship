@@ -1338,8 +1338,8 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const F3DVtx* ve
                     doty = (2.906921f * doty * doty + 1.36114f) * doty;
                     dotx = (dotx + 1.0f) / 4.0f;
                     doty = (doty + 1.0f) / 4.0f;*/
-                    dotx = acosf(-dotx) /* M_PI */ / 4.0f;
-                    doty = acosf(-doty) /* M_PI */ / 4.0f;
+                    dotx = acosf(-dotx) /* M_PI */ * 0.159155f;
+                    doty = acosf(-doty) /* M_PI */ * 0.159155f;
                 } else {
                     dotx = (dotx + 1.0f) / 4.0f;
                     doty = (doty + 1.0f) / 4.0f;
@@ -4044,6 +4044,14 @@ static void gfx_sp_reset() {
     g_rsp.modelview_matrix_stack_size = 1;
     g_rsp.current_num_lights = 2;
     g_rsp.lights_changed = true;
+    g_rsp.lookat[0].dir[0] = 0;
+    g_rsp.lookat[0].dir[1] = 127;
+    g_rsp.lookat[0].dir[2] = 0;
+    g_rsp.lookat[1].dir[0] = 127;
+    g_rsp.lookat[1].dir[1] = 0;
+    g_rsp.lookat[1].dir[2] = 0;
+    calculate_normal_dir(&g_rsp.lookat[0], g_rsp.current_lookat_coeffs[0]);
+    calculate_normal_dir(&g_rsp.lookat[1], g_rsp.current_lookat_coeffs[1]);
 }
 
 void gfx_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
