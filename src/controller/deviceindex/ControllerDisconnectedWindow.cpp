@@ -139,15 +139,10 @@ void ControllerDisconnectedWindow::DrawElement() {
         return;
     }
 
-    ImGui::OpenPopup("Controller Disconnected");
-    if (ImGui::BeginPopupModal("Controller Disconnected", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        // todo: don't use UINT8_MAX-1 to mean we don't know what controller was disconnected
-        if (mPortIndexOfDisconnectedController == UINT8_MAX - 1) {
-            DrawUnknownOrMultipleControllersDisconnected();
-        } else {
-            DrawKnownControllerDisconnected();
-        }
-        ImGui::EndPopup();
+    if (mPortIndexOfDisconnectedController == UINT8_MAX - 1) {
+        DrawUnknownOrMultipleControllersDisconnected();
+    } else {
+        DrawKnownControllerDisconnected();
     }
 }
 
