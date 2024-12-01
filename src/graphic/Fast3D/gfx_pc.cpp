@@ -2565,7 +2565,7 @@ static void gfx_s2dex_bg_copy(F3DuObjBg* bg) {
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
         rawTexMetadata.resource = tex;
-        rawTexMetadata.path = std::string((char*) data);
+        rawTexMetadata.path = std::string((char*)data);
         data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
     }
 
@@ -2605,7 +2605,7 @@ static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
         rawTexMetadata.resource = tex;
-        rawTexMetadata.path = std::string((char*) data);
+        rawTexMetadata.path = std::string((char*)data);
         data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
     }
 
@@ -3316,7 +3316,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
             rawTexMetdata.v_pixel_scale = tex->VPixelScale;
             rawTexMetdata.type = tex->Type;
             rawTexMetdata.resource = tex;
-            rawTexMetdata.path = std::string((char*) imgData);
+            rawTexMetdata.path = std::string((char*)imgData);
         }
     }
 
