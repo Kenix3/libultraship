@@ -1112,16 +1112,34 @@ typedef union {
     long int force_structure_alignment[4];
 } F3DHilite;
 
+#ifdef USE_GBI_TRACE
+/*
+ * Trace structure
+ */
+typedef struct {
+    const char* file;
+    int idx;
+    bool valid;
+} F3DTrace;
+#endif
+
 /*
  * Generic Gfx Packet
  */
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
+#ifdef USE_GBI_TRACE
+    F3DTrace trace;
+#endif
 } F3DGwords;
 
 #ifdef __cplusplus
+#ifdef USE_GBI_TRACE
+static_assert(sizeof(F3DGwords) == 2 * sizeof(void*) + sizeof(F3DTrace), "Display list size is bad");
+#else
 static_assert(sizeof(F3DGwords) == 2 * sizeof(void*), "Display list size is bad");
+#endif
 #endif
 
 /*
