@@ -1653,9 +1653,11 @@ typedef struct {
     bool valid;
 } Trace;
 
-#define MakeTrace() \
-    , { __FILE__, __LINE__, true }
-#else 
+#define MakeTrace()              \
+    , {                          \
+        __FILE__, __LINE__, true \
+    }
+#else
 #define MakeTrace()
 #endif
 /*
@@ -1751,7 +1753,7 @@ typedef union Gfx {
     })
 #endif
 #define gsDma1p(c, s, l, p) \
-    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s) MakeTrace() }
+    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s)MakeTrace() }
 
 #ifdef USE_GBI_TRACE
 #define gDma2p(pkt, c, adrs, len, idx, ofs)                                                                          \
@@ -1777,7 +1779,7 @@ typedef union Gfx {
 #define gsDma2p(c, adrs, len, idx, ofs)                                                                          \
     {                                                                                                            \
         (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)), \
-            (uintptr_t)(adrs) MakeTrace()                                                                       \
+            (uintptr_t)(adrs)MakeTrace()                                                                         \
     }
 
 #define gSPNoOp(pkt) gDma0p(pkt, G_SPNOOP, 0, 0)
@@ -1820,7 +1822,7 @@ typedef union Gfx {
     })
 #endif
 #define gsSPVertex(v, n, v0) \
-    { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v) MakeTrace() }
+    { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v)MakeTrace() }
 
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
 /*
