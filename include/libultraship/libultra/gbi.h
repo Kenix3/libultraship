@@ -1643,6 +1643,7 @@ typedef struct {
     unsigned long w3;
 } TexRect;
 
+#ifdef USE_GBI_TRACE
 /*
  * Trace structure
  */
@@ -1653,19 +1654,27 @@ typedef struct {
 } Trace;
 
 #define MakeTrace() \
-    { __FILE__, __LINE__, true }
-
+    , { __FILE__, __LINE__, true }
+#else 
+#define MakeTrace()
+#endif
 /*
  * Generic Gfx Packet
  */
 typedef struct {
     uintptr_t w0;
     uintptr_t w1;
+#ifdef USE_GBI_TRACE
     Trace trace;
+#endif
 } Gwords;
 
 #ifdef __cplusplus
+#ifdef USE_GBI_TRACE
 static_assert((sizeof(Gwords) == 2 * sizeof(void*) + sizeof(Trace)), "Display list size is bad");
+#else
+static_assert((sizeof(Gwords) == 2 * sizeof(void*)), "Display list size is bad");
+#endif
 #endif
 
 /*
@@ -1721,6 +1730,7 @@ typedef union Gfx {
 #define gsDma0p(c, s, l) \
     { _SHIFTL((c), 24, 8) | _SHIFTL((l), 0, 24), (uintptr_t)(s) }
 
+#ifdef USE_GBI_TRACE
 #define gDma1p(pkt, c, s, l, p)                                                           \
     _DW({                                                                                 \
         Gfx* _g = (Gfx*)(pkt);                                                            \
@@ -1731,10 +1741,19 @@ typedef union Gfx {
         _g->words.trace.idx = __LINE__;                                                   \
         _g->words.trace.valid = true;                                                     \
     })
-
+#else
+#define gDma1p(pkt, c, s, l, p)                                                           \
+    _DW({                                                                                 \
+        Gfx* _g = (Gfx*)(pkt);                                                            \
+                                                                                          \
+        _g->words.w0 = (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)); \
+        _g->words.w1 = (uintptr_t)(s);                                                    \
+    })
+#endif
 #define gsDma1p(c, s, l, p) \
-    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s), MakeTrace() }
+    { (_SHIFTL((c), 24, 8) | _SHIFTL((p), 16, 8) | _SHIFTL((l), 0, 16)), (uintptr_t)(s) MakeTrace() }
 
+#ifdef USE_GBI_TRACE
 #define gDma2p(pkt, c, adrs, len, idx, ofs)                                                                          \
     _DW({                                                                                                            \
         Gfx* _g = (Gfx*)(pkt);                                                                                       \
@@ -1745,10 +1764,20 @@ typedef union Gfx {
         _g->words.trace.idx = __LINE__;                                                                              \
         _g->words.trace.valid = true;                                                                                \
     })
+#else
+#define gDma2p(pkt, c, adrs, len, idx, ofs)                                                                          \
+    _DW({                                                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                                                       \
+        _g->words.w0 =                                                                                               \
+            (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)); \
+        _g->words.w1 = (uintptr_t)(adrs);                                                                            \
+    })
+#endif
+
 #define gsDma2p(c, adrs, len, idx, ofs)                                                                          \
     {                                                                                                            \
         (_SHIFTL((c), 24, 8) | _SHIFTL(((len)-1) / 8, 19, 5) | _SHIFTL((ofs) / 8, 8, 8) | _SHIFTL((idx), 0, 8)), \
-            (uintptr_t)(adrs), MakeTrace()                                                                       \
+            (uintptr_t)(adrs) MakeTrace()                                                                       \
     }
 
 #define gSPNoOp(pkt) gDma0p(pkt, G_SPNOOP, 0, 0)
@@ -1772,6 +1801,7 @@ typedef union Gfx {
  *        | |seg|         address             |
  *        +-+---+-----------------------------+
  */
+#ifdef USE_GBI_TRACE
 #define __gSPVertex(pkt, v, n, v0)                                                              \
     _DW({                                                                                       \
         Gfx* _g = (Gfx*)(pkt);                                                                  \
@@ -1781,8 +1811,16 @@ typedef union Gfx {
         _g->words.trace.idx = __LINE__;                                                         \
         _g->words.trace.valid = true;                                                           \
     })
+#else
+#define __gSPVertex(pkt, v, n, v0)                                                              \
+    _DW({                                                                                       \
+        Gfx* _g = (Gfx*)(pkt);                                                                  \
+        _g->words.w0 = _SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7); \
+        _g->words.w1 = (uintptr_t)(v);                                                          \
+    })
+#endif
 #define gsSPVertex(v, n, v0) \
-    { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v), MakeTrace() }
+    { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v) MakeTrace() }
 
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
 /*

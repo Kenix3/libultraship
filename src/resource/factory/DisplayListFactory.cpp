@@ -183,9 +183,11 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
             command.words.w1 = reader->ReadUInt32();
         }
 
+#ifdef USE_GBI_TRACE
         command.words.trace.file = file->InitData->Path.c_str();
         command.words.trace.idx = idx++;
         command.words.trace.valid = true;
+#endif
 
         displayList->Instructions.push_back(command);
 
