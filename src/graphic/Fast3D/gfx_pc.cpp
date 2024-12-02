@@ -4011,8 +4011,13 @@ static void gfx_step() {
 
 #ifdef USE_GBI_TRACE
     if (cmd->words.trace.valid && CVarGetInteger("gEnableGFXTrace", 0)) {
-        SPDLOG_INFO("Trace File: {}", cmd->words.trace.file);
-        SPDLOG_INFO("Trace Line: {}", cmd->words.trace.idx);
+#define TRACE "\n====================================\n" \
+              " - CMD: {:02X}\n" \
+              " - Path: {}:{}\n" \
+              " - W0: {:08X}\n" \
+              " - W1: {:08X}\n" \
+              "===================================="
+        SPDLOG_INFO(TRACE, (uint8_t) opcode, cmd->words.trace.file, cmd->words.trace.idx, cmd->words.w0, cmd->words.w1);
     }
 #endif
 
