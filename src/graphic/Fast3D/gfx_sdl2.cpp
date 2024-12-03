@@ -439,17 +439,15 @@ static void gfx_sdl_set_cursor_visibility(bool visible) {
 }
 
 static void gfx_sdl_get_mouse_pos(int32_t* x, int32_t* y) {
-    int mx, my;
-    SDL_GetMouseState(&mx, &my);
-    *x = mx;
-    *y = my;
+    SDL_GetMouseState(x, y);
 }
 
 static void gfx_sdl_get_mouse_delta(int32_t* x, int32_t* y) {
-    int mx, my;
-    SDL_GetRelativeMouseState(&mx, &my);
-    *x = mx;
-    *y = my;
+    SDL_GetRelativeMouseState(x, y);
+}
+
+static bool gfx_sdl_get_mouse_state(uint32_t btn){
+    return SDL_GetMouseState(NULL, NULL) & (1 << btn);
 }
 
 static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
@@ -641,6 +639,7 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_cursor_visibility,
                                        gfx_sdl_get_mouse_pos,
                                        gfx_sdl_get_mouse_delta,
+                                       gfx_sdl_get_mouse_state,
                                        gfx_sdl_get_dimensions,
                                        gfx_sdl_handle_events,
                                        gfx_sdl_start_frame,

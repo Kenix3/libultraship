@@ -88,6 +88,7 @@ static struct {
     bool use_timer;
     bool tearing_support;
     bool is_vsync_enabled;
+    bool mouse_pressed[3];
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
@@ -356,6 +357,24 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_KEYUP:
             onkeyup(w_param, l_param);
             break;
+        case WM_LBUTTONDOWN:
+            dxgi.mouse_pressed[0] = true;
+            break;
+        case WM_LBUTTONUP:
+            dxgi.mouse_pressed[0] = false;
+            break;
+        case WM_MBUTTONDOWN:
+            dxgi.mouse_pressed[1] = true;
+            break;
+        case WM_MBUTTONUP:
+            dxgi.mouse_pressed[1] = false;
+            break;
+        case WM_RBUTTONDOWN:
+            dxgi.mouse_pressed[2] = true;
+            break;
+        case WM_RBUTTONUP:
+            dxgi.mouse_pressed[2] = false;
+            break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
@@ -500,6 +519,10 @@ static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
     *x = p.x - dxgi.current_width / 2;
     *y = p.y - dxgi.current_height / 2;
     SetCursorPos(dxgi.current_width / 2, dxgi.current_height / 2);
+}
+
+static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
+    return dxgi.mouse_pressed[btn];
 }
 
 static void gfx_dxgi_set_fullscreen(bool enable) {
@@ -931,6 +954,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_cursor_visibility,
                                                        gfx_dxgi_get_mouse_pos,
                                                        gfx_dxgi_get_mouse_delta,
+                                                       gfx_dxgi_get_mouse_state,
                                                        gfx_dxgi_get_dimensions,
                                                        gfx_dxgi_handle_events,
                                                        gfx_dxgi_start_frame,

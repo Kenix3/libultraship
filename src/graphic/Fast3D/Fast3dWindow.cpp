@@ -197,6 +197,10 @@ Ship::Coords Fast3dWindow::GetMouseDelta() {
     return {x, y};
 }
 
+bool Fast3dWindow::GetMouseState(Ship::MouseBtn btn) {
+    return mWindowManagerApi->get_mouse_state(static_cast<uint32_t>(btn));
+}
+
 uint32_t Fast3dWindow::GetCurrentRefreshRate() {
     uint32_t refreshRate;
     mWindowManagerApi->get_active_window_refresh_rate(&refreshRate);
