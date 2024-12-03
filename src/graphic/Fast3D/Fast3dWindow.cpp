@@ -201,6 +201,10 @@ bool Fast3dWindow::GetMouseState(Ship::MouseBtn btn) {
     return mWindowManagerApi->get_mouse_state(static_cast<uint32_t>(btn));
 }
 
+void Fast3dWindow::SetMouseCapture(bool capture) {
+    mWindowManagerApi->set_mouse_capture(capture);
+}
+
 uint32_t Fast3dWindow::GetCurrentRefreshRate() {
     uint32_t refreshRate;
     mWindowManagerApi->get_active_window_refresh_rate(&refreshRate);

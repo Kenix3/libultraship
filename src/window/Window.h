@@ -40,6 +40,7 @@ class Window {
     virtual Coords GetMousePos() = 0;
     virtual Coords GetMouseDelta() = 0;
     virtual bool GetMouseState(MouseBtn btn) = 0;
+    virtual void SetMouseCapture(bool capture) = 0;
     virtual uint32_t GetCurrentRefreshRate() = 0;
     virtual bool SupportsWindowedFullscreen() = 0;
     virtual bool CanDisableVerticalSync() = 0;
