@@ -185,13 +185,13 @@ int32_t Fast3dWindow::GetPosY() {
     return posY;
 }
 
-Coords Fast3dWindow::GetMousePos() {
+Ship::Coords Fast3dWindow::GetMousePos() {
     int32_t x, y;
     mWindowManagerApi->get_mouse_pos(&x, &y);
     return {x, y};
 }
 
-Coords Fast3dWindow::GetMouseDelta() {
+Ship::Coords Fast3dWindow::GetMouseDelta() {
     int32_t x, y;
     mWindowManagerApi->get_mouse_delta(&x, &y);
     return {x, y};
