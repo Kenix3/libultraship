@@ -446,7 +446,7 @@ static void gfx_sdl_get_mouse_delta(int32_t* x, int32_t* y) {
     SDL_GetRelativeMouseState(x, y);
 }
 
-static bool gfx_sdl_get_mouse_state(uint32_t btn){
+static bool gfx_sdl_get_mouse_state(uint32_t btn) {
     return SDL_GetMouseState(NULL, NULL) & (1 << btn);
 }
 
