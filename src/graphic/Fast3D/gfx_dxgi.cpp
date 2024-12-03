@@ -89,6 +89,7 @@ static struct {
     bool tearing_support;
     bool is_vsync_enabled;
     bool mouse_pressed[3];
+    float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
@@ -375,6 +376,10 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_RBUTTONUP:
             dxgi.mouse_pressed[2] = false;
             break;
+        case WM_MOUSEWHEEL:
+            dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
+            dxgi.mouse_wheel[1] = 0;
+            break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
@@ -519,6 +524,13 @@ static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
     *x = p.x - dxgi.current_width / 2;
     *y = p.y - dxgi.current_height / 2;
     SetCursorPos(dxgi.current_width / 2, dxgi.current_height / 2);
+}
+
+static void gfx_dxgi_get_mouse_wheel(float* x, float* y) {
+    *x = dxgi.mouse_wheel[0];
+    *y = dxgi.mouse_wheel[1];
+    dxgi.mouse_wheel[0] = 0;
+    dxgi.mouse_wheel[1] = 0;
 }
 
 static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
@@ -962,6 +974,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_cursor_visibility,
                                                        gfx_dxgi_get_mouse_pos,
                                                        gfx_dxgi_get_mouse_delta,
+                                                       gfx_dxgi_get_mouse_wheel,
                                                        gfx_dxgi_get_mouse_state,
                                                        gfx_dxgi_set_mouse_capture,
                                                        gfx_dxgi_get_dimensions,

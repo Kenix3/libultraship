@@ -197,6 +197,12 @@ Ship::Coords Fast3dWindow::GetMouseDelta() {
     return { x, y };
 }
 
+Ship::CoordsF Fast3dWindow::GetMouseWheel() {
+    float x, y;
+    mWindowManagerApi->get_mouse_wheel(&x, &y);
+    return { x, y };
+}
+
 bool Fast3dWindow::GetMouseState(Ship::MouseBtn btn) {
     return mWindowManagerApi->get_mouse_state(static_cast<uint32_t>(btn));
 }

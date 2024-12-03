@@ -18,6 +18,11 @@ struct Coords {
     int32_t y;
 };
 
+struct CoordsF {
+    float x;
+    float y;
+};
+
 class Config;
 
 class Window {
@@ -39,6 +44,7 @@ class Window {
     virtual int32_t GetPosY() = 0;
     virtual Coords GetMousePos() = 0;
     virtual Coords GetMouseDelta() = 0;
+    virtual CoordsF GetMouseWheel() = 0;
     virtual bool GetMouseState(MouseBtn btn) = 0;
     virtual void SetMouseCapture(bool capture) = 0;
     virtual uint32_t GetCurrentRefreshRate() = 0;

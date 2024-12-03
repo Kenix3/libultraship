@@ -44,6 +44,8 @@ static SDL_GLContext ctx;
 static SDL_Renderer* renderer;
 static int sdl_to_lus_table[512];
 static bool vsync_enabled = true;
+static float mouse_wheel_x = 0.0f;
+static float mouse_wheel_y = 0.0f;
 // OTRTODO: These are redundant. Info can be queried from SDL.
 static int window_width = DESIRED_SCREEN_WIDTH;
 static int window_height = DESIRED_SCREEN_HEIGHT;
@@ -446,6 +448,13 @@ static void gfx_sdl_get_mouse_delta(int32_t* x, int32_t* y) {
     SDL_GetRelativeMouseState(x, y);
 }
 
+static void gfx_sdl_get_mouse_wheel(float* x, float* y) {
+    *x = mouse_wheel_x;
+    *y = mouse_wheel_y;
+    mouse_wheel_x = 0.0f;
+    mouse_wheel_y = 0.0f;
+}
+
 static bool gfx_sdl_get_mouse_state(uint32_t btn) {
     return SDL_GetMouseState(NULL, NULL) & (1 << btn);
 }
@@ -509,6 +518,10 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             break;
         case SDL_KEYUP:
             gfx_sdl_onkeyup(event.key.keysym.scancode);
+            break;
+        case SDL_MOUSEWHEEL:
+            mouse_wheel_x = event.wheel.x;
+            mouse_wheel_y = event.wheel.y;
             break;
 #endif
         case SDL_WINDOWEVENT:
@@ -643,6 +656,7 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_cursor_visibility,
                                        gfx_sdl_get_mouse_pos,
                                        gfx_sdl_get_mouse_delta,
+                                       gfx_sdl_get_mouse_wheel,
                                        gfx_sdl_get_mouse_state,
                                        gfx_sdl_set_mouse_capture,
                                        gfx_sdl_get_dimensions,
