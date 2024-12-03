@@ -782,7 +782,7 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
     }
 
     render_pass_descriptor->depthAttachment()->setTexture(fb.depth_texture);
-    render_pass_descriptor->depthAttachment()->setLoadAction(MTL::LoadActionClear);
+    render_pass_descriptor->depthAttachment()->setLoadAction(MTL::LoadActionLoad);
     render_pass_descriptor->depthAttachment()->setStoreAction(MTL::StoreActionStore);
     render_pass_descriptor->depthAttachment()->setClearDepth(1);
 
@@ -910,12 +910,12 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
         if (msaa_level > 1) {
             fb.render_pass_descriptor->depthAttachment()->setTexture(fb.msaa_depth_texture);
             fb.render_pass_descriptor->depthAttachment()->setResolveTexture(fb.depth_texture);
-            fb.render_pass_descriptor->depthAttachment()->setLoadAction(MTL::LoadActionDontCare);
+            fb.render_pass_descriptor->depthAttachment()->setLoadAction(MTL::LoadActionLoad);
             fb.render_pass_descriptor->depthAttachment()->setStoreAction(MTL::StoreActionMultisampleResolve);
             fb.render_pass_descriptor->depthAttachment()->setClearDepth(1);
         } else {
             fb.render_pass_descriptor->depthAttachment()->setTexture(fb.depth_texture);
-            fb.render_pass_descriptor->depthAttachment()->setLoadAction(MTL::LoadActionDontCare);
+            fb.render_pass_descriptor->depthAttachment()->setLoadAction(MTL::LoadActionLoad);
             fb.render_pass_descriptor->depthAttachment()->setStoreAction(MTL::StoreActionStore);
             fb.render_pass_descriptor->depthAttachment()->setClearDepth(1);
         }
@@ -958,7 +958,58 @@ void gfx_metal_start_draw_to_framebuffer(int fb_id, float noise_scale) {
     memcpy(mctx.frame_uniform_buffer->contents(), &mctx.frame_uniforms, sizeof(FrameUniforms));
 }
 
-void gfx_metal_clear_framebuffer(void) {
+void gfx_metal_clear_framebuffer(bool color, bool depth) {
+    if (!color && !depth) {
+        return;
+    }
+
+    auto& framebuffer = mctx.framebuffers[mctx.current_framebuffer];
+
+    // End the current render encoder
+    framebuffer.command_encoder->endEncoding();
+
+    // Track the original load action and set the next load actions to Load to leverage the blit results
+    MTL::RenderPassColorAttachmentDescriptor* srcColorAttachment =
+        framebuffer.render_pass_descriptor->colorAttachments()->object(0);
+    MTL::LoadAction origLoadAction = srcColorAttachment->loadAction();
+    if (color) {
+        srcColorAttachment->setLoadAction(MTL::LoadActionClear);
+    }
+
+    MTL::RenderPassDepthAttachmentDescriptor* srcDepthAttachment =
+        framebuffer.render_pass_descriptor->depthAttachment();
+    MTL::LoadAction origDepthLoadAction = MTL::LoadActionDontCare;
+    if (depth && framebuffer.has_depth_buffer) {
+        origDepthLoadAction = srcDepthAttachment->loadAction();
+        srcDepthAttachment->setLoadAction(MTL::LoadActionClear);
+    }
+
+    // Create a new render encoder back onto the framebuffer
+    framebuffer.command_encoder = framebuffer.command_buffer->renderCommandEncoder(framebuffer.render_pass_descriptor);
+
+    std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Clear", mctx.current_framebuffer);
+    framebuffer.command_encoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+    framebuffer.command_encoder->setDepthClipMode(MTL::DepthClipModeClamp);
+    framebuffer.command_encoder->setViewport(framebuffer.viewport);
+    framebuffer.command_encoder->setScissorRect(framebuffer.scissor_rect);
+
+    // Now that the command encoder is started, we set the original load actions back for the next frame's use
+    srcColorAttachment->setLoadAction(origLoadAction);
+    if (depth && framebuffer.has_depth_buffer) {
+        srcDepthAttachment->setLoadAction(origDepthLoadAction);
+    }
+
+    // Reset the framebuffer so the encoder is setup again when rendering triangles
+    framebuffer.has_bounded_vertex_buffer = false;
+    framebuffer.has_bounded_fragment_buffer = false;
+    framebuffer.last_shader_program = nullptr;
+    for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
+        framebuffer.last_bound_textures[i] = nullptr;
+        framebuffer.last_bound_samplers[i] = nullptr;
+    }
+    framebuffer.last_depth_test = -1;
+    framebuffer.last_depth_mask = -1;
+    framebuffer.last_zmode_decal = -1;
 }
 
 void gfx_metal_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
@@ -1130,11 +1181,19 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
                                   target_origin);
     blit_encoder->endEncoding();
 
-    // Track the original load action and set the next load action to Load to leverage the blit results
+    // Track the original load action and set the next load actions to Load to leverage the blit results
     MTL::RenderPassColorAttachmentDescriptor* srcColorAttachment =
         source_framebuffer.render_pass_descriptor->colorAttachments()->object(0);
     MTL::LoadAction origLoadAction = srcColorAttachment->loadAction();
     srcColorAttachment->setLoadAction(MTL::LoadActionLoad);
+
+    MTL::RenderPassDepthAttachmentDescriptor* srcDepthAttachment =
+        source_framebuffer.render_pass_descriptor->depthAttachment();
+    MTL::LoadAction origDepthLoadAction = MTL::LoadActionDontCare;
+    if (source_framebuffer.has_depth_buffer) {
+        origDepthLoadAction = srcDepthAttachment->loadAction();
+        srcDepthAttachment->setLoadAction(MTL::LoadActionLoad);
+    }
 
     // Create a new render encoder back onto the framebuffer
     source_framebuffer.command_encoder =
@@ -1146,8 +1205,11 @@ void gfx_metal_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int src
     source_framebuffer.command_encoder->setViewport(source_framebuffer.viewport);
     source_framebuffer.command_encoder->setScissorRect(source_framebuffer.scissor_rect);
 
-    // Now that the command encoder is started, we set the original load action back for the next frame's use
+    // Now that the command encoder is started, we set the original load actions back for the next frame's use
     srcColorAttachment->setLoadAction(origLoadAction);
+    if (source_framebuffer.has_depth_buffer) {
+        srcDepthAttachment->setLoadAction(origDepthLoadAction);
+    }
 
     // Reset the framebuffer so the encoder is setup again when rendering triangles
     source_framebuffer.has_bounded_vertex_buffer = false;

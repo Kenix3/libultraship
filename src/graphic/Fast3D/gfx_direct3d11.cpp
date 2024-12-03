@@ -946,9 +946,13 @@ void gfx_d3d11_start_draw_to_framebuffer(int fb_id, float noise_scale) {
     d3d.context->Unmap(d3d.per_frame_cb.Get(), 0);
 }
 
-void gfx_d3d11_clear_framebuffer(void) {
+void gfx_d3d11_clear_framebuffer(bool color, bool depth) {
     Framebuffer& fb = d3d.framebuffers[d3d.current_framebuffer];
-    if (fb.has_depth_buffer) {
+    if (color) {
+        const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        d3d.context->ClearRenderTargetView(fb.render_target_view.Get(), clearColor);
+    }
+    if (depth && fb.has_depth_buffer) {
         d3d.context->ClearDepthStencilView(fb.depth_stencil_view.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
     }
 }
