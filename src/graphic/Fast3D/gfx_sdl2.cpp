@@ -438,6 +438,20 @@ static void gfx_sdl_set_cursor_visibility(bool visible) {
     }
 }
 
+static void gfx_sdl_get_mouse_pos(int32_t* x, int32_t* y) {
+    int mx, my;
+    SDL_GetMouseState(&mx, &my);
+    *x = mx;
+    *y = my;
+}
+
+static void gfx_sdl_get_mouse_delta(int32_t* x, int32_t* y) {
+    int mx, my;
+    SDL_GetRelativeMouseState(&mx, &my);
+    *x = mx;
+    *y = my;
+}
+
 static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
                                            void (*on_all_keys_up)(void)) {
     on_key_down_callback = on_key_down;

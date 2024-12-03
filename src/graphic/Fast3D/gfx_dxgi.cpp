@@ -485,6 +485,23 @@ static void gfx_dxgi_set_cursor_visibility(bool visible) {
     }
 }
 
+static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
+    POINT p;
+    GetCursorPos(&p);
+    ScreenToClient(dxgi.h_wnd, &p);
+    *x = p.x;
+    *y = p.y;
+}
+
+static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
+    POINT p;
+    GetCursorPos(&p);
+    ScreenToClient(dxgi.h_wnd, &p);
+    *x = p.x - dxgi.current_width / 2;
+    *y = p.y - dxgi.current_height / 2;
+    SetCursorPos(dxgi.current_width / 2, dxgi.current_height / 2);
+}
+
 static void gfx_dxgi_set_fullscreen(bool enable) {
     toggle_borderless_window_full_screen(enable, true);
 }
