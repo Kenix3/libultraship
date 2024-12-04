@@ -4,6 +4,8 @@
 
 extern "C" {
 
+// imGUI main window getters
+
 uint32_t WindowGetWidth(void) {
     return Ship::Context::GetInstance()->GetWindow()->GetWidth();
 }
@@ -33,7 +35,7 @@ bool WindowIsFullscreen(void) {
 }
 
 /**
- * Widescreen alignment functions
+ * Widescreen alignment functions for aligning UI elements in the Fast3D render area
  *
  * These are used in gDPFillWideRectangle() and gSPWideTextureRectangle(),
  * or any situation where a screen coordinate outside the normal N64 bounds of 320x240 are required.
@@ -72,7 +74,7 @@ float ScreenGetAspectRatio() {
  * @param v The original X-coordinate to translate.
  * @return float The translated X-coordinate relative to the left edge.
  */
-float TranslateXRelativeToLeftEdge(float v) {
+float ScreenTranslateXRelativeToLeftEdge(float v) {
     return (gfx_native_dimensions.width / 2 - gfx_native_dimensions.height / 2 * OTRGetAspectRatio() + (v));
 }
 
@@ -85,7 +87,7 @@ float TranslateXRelativeToLeftEdge(float v) {
  * @param v The original X-coordinate to translate.
  * @return int16_t The translated X-coordinate relative to the left edge, rounded down to an integer.
  */
-int16_t TranslateRectXRelativeToLeftEdge(float v) {
+int16_t ScreenTranslateRectXRelativeToLeftEdge(float v) {
     return ((int) floorf(OTRGetDimensionFromLeftEdge(v)));
 }
 
@@ -98,7 +100,7 @@ int16_t TranslateRectXRelativeToLeftEdge(float v) {
  * @param v The original X-coordinate to translate.
  * @return float The translated X-coordinate relative to the right edge.
  */
-float TranslateXRelativeToRightEdge(float v) {
+float ScreenTranslateXRelativeToRightEdge(float v) {
     return (gfx_native_dimensions.width / 2 + gfx_native_dimensions.height / 2 * OTRGetAspectRatio() - (gfx_native_dimensions.width - v));
 }
 
@@ -111,17 +113,17 @@ float TranslateXRelativeToRightEdge(float v) {
  * @param v The original X-coordinate to translate.
  * @return int16_t The translated X-coordinate relative to the right edge, rounded up to an integer.
  */
-int16_t TranslateRectXRelativeToRightEdge(float v) {
+int16_t ScreenTranslateRectXRelativeToRightEdge(float v) {
     return ((int) ceilf(OTRGetDimensionFromRightEdge(v)));
 }
 
 // Gets the width of the current render target area
-uint32_t WindowGetGameRenderWidth() {
+uint32_t ScreenGetGameRenderWidth() {
     return gfx_current_dimensions.width;
 }
 
 // Gets the height of the current render target area
-uint32_t WindowGetGameRenderHeight() {
+uint32_t ScreenGetGameRenderHeight() {
     return gfx_current_dimensions.height;
 }
 
