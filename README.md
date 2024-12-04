@@ -1,4 +1,4 @@
-# libultraship
+# libultraship (TEST TO SEE iOS CI FAIL)
 libultraship (LUS) is a library meant to provide reimplementations of libultra (n64 sdk) functions that run on modern hardware.
 
 LUS uses an asset loading system where data is stored separately from the executable in an archive file ending in `.otr`, which is an [`.mpq`](http://www.zezula.net/en/mpq/main.html) compatible file. This separation the data from the executable follows modern design practices and that it is more mod friendly. All one needs to do is supply a patch `.otr` and the system will automatically replace the data.
