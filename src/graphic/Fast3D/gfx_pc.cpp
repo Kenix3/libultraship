@@ -2146,6 +2146,10 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
     uint32_t tile_height = ((lrt - ult) >> G_TEXTURE_IMAGE_FRAC) + 1;
     uint32_t full_image_width = g_rdp.texture_to_load.width + 1;
 
+    if (ucode_handler_index == ucode_f3dex) {
+        tile_height += 2;
+    }
+
     uint32_t offset_x_in_bytes = offset_x << word_size_shift;
     uint32_t tile_line_size_bytes = tile_width << word_size_shift;
     uint32_t full_image_line_size_bytes = full_image_width << word_size_shift;
