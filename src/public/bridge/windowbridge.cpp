@@ -39,9 +39,9 @@ bool WindowIsFullscreen(void) {
  * or any situation where a screen coordinate outside the normal N64 bounds of 320x240 are required.
  *
  * How to use:
- * LeftEdgeAlign(0) --> Returns the left most edge of the game render target area
- * LeftEdgeAlign(320) --> Returns the right most edge of the game render target area
- * RightEdgeAlign(320) --> Returns the right most edge of the game render target area
+ * TranslateXRelativeToLeftEdge(0) --> Returns the left most edge of the game render target area
+ * TranslateXRelativeToLeftEdge(320) --> Returns the right most edge of the game render target area
+ * TranslateXRelativeToRightEdge(320) --> Returns the right most edge of the game render target area
  * 
  * Align a rectangle with the left of the screen:
  * gDPFillWideRectangle(displayListHead++, TranslateXRelativeToLeftEdge(ulx), uly, TranslateXRelativeToRightEdge(lrx), lry);
@@ -58,23 +58,59 @@ bool WindowIsFullscreen(void) {
  * }
  */
 
+// @return float The aspect ratio of the current screen (width / height).
 float ScreenGetAspectRatio() {
     return gfx_current_dimensions.aspect_ratio;
 }
 
-// AdjustXFromLeftEdge 
+ /**
+ * @brief Translates a given X-coordinate relative to the left edge of the screen.
+ *
+ * Calculated using the native screen dimensions and the current aspect ratio.
+ * The calculation adjusts for the aspect ratio and horizontal screen scaling.
+ *
+ * @param v The original X-coordinate to translate.
+ * @return float The translated X-coordinate relative to the left edge.
+ */
 float TranslateXRelativeToLeftEdge(float v) {
-    return (SCREEN_WIDTH / 2 - SCREEN_HEIGHT / 2 * OTRGetAspectRatio() + (v));
+    return (gfx_native_dimensions.width / 2 - gfx_native_dimensions.height / 2 * OTRGetAspectRatio() + (v));
 }
 
+/**
+ * @brief Translates a given X-coordinate relative to the left edge of the screen, rounded down.
+ *
+ * Same result as `TranslateXRelativeToLeftEdge`, but rounded down to a whole number.
+ * This can be useful for precise alignment where integer pixel values are necessary.
+ *
+ * @param v The original X-coordinate to translate.
+ * @return int16_t The translated X-coordinate relative to the left edge, rounded down to an integer.
+ */
 int16_t TranslateRectXRelativeToLeftEdge(float v) {
     return ((int) floorf(OTRGetDimensionFromLeftEdge(v)));
 }
 
+/**
+ * @brief Translates a given X-coordinate relative to the right edge of the screen.
+ *
+ * Calculated from aspect ratio and screen scaling. It effectively shifts the coordinate
+ * in the opposite direction compared to the left edge.
+ *
+ * @param v The original X-coordinate to translate.
+ * @return float The translated X-coordinate relative to the right edge.
+ */
 float TranslateXRelativeToRightEdge(float v) {
-    return (SCREEN_WIDTH / 2 + SCREEN_HEIGHT / 2 * OTRGetAspectRatio() - (SCREEN_WIDTH - v));
+    return (gfx_native_dimensions.width / 2 + gfx_native_dimensions.height / 2 * OTRGetAspectRatio() - (gfx_native_dimensions.width - v));
 }
 
+/**
+ * @brief Translates a given X-coordinate relative to the right edge of the screen, rounded up.
+ *
+ * Same result as `TranslateXRelativeToRightEdge`, but rounded up to a whole number.
+ * This can be useful for precise alignment where integer pixel values are necessary.
+ *
+ * @param v The original X-coordinate to translate.
+ * @return int16_t The translated X-coordinate relative to the right edge, rounded up to an integer.
+ */
 int16_t TranslateRectXRelativeToRightEdge(float v) {
     return ((int) ceilf(OTRGetDimensionFromRightEdge(v)));
 }
