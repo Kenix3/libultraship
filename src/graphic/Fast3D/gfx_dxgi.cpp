@@ -88,7 +88,7 @@ static struct {
     bool use_timer;
     bool tearing_support;
     bool is_vsync_enabled;
-    bool mouse_pressed[3];
+    bool mouse_pressed[5];
     float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
 
@@ -375,6 +375,12 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_RBUTTONUP:
             dxgi.mouse_pressed[2] = false;
+            break;
+        case WM_XBUTTONDOWN:
+            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = true;
+            break;
+        case WM_XBUTTONUP:
+            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = false;
             break;
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
