@@ -551,6 +551,10 @@ static void gfx_dxgi_set_mouse_capture(bool capture) {
     }
 }
 
+static bool gfx_dxgi_is_mouse_captured() {
+    return (GetCapture() != NULL);
+}
+
 static void gfx_dxgi_set_fullscreen(bool enable) {
     toggle_borderless_window_full_screen(enable, true);
 }
@@ -983,6 +987,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_get_mouse_wheel,
                                                        gfx_dxgi_get_mouse_state,
                                                        gfx_dxgi_set_mouse_capture,
+                                                       gfx_dxgi_is_mouse_captured,
                                                        gfx_dxgi_get_dimensions,
                                                        gfx_dxgi_handle_events,
                                                        gfx_dxgi_start_frame,

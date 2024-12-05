@@ -463,6 +463,10 @@ static void gfx_sdl_set_mouse_capture(bool capture) {
     SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
 }
 
+static bool gfx_sdl_is_mouse_captured() {
+    return (SDL_GetRelativeMouseMode() == SDL_TRUE);
+}
+
 static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
                                            void (*on_all_keys_up)(void)) {
     on_key_down_callback = on_key_down;
@@ -659,6 +663,7 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_get_mouse_wheel,
                                        gfx_sdl_get_mouse_state,
                                        gfx_sdl_set_mouse_capture,
+                                       gfx_sdl_is_mouse_captured,
                                        gfx_sdl_get_dimensions,
                                        gfx_sdl_handle_events,
                                        gfx_sdl_start_frame,
