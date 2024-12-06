@@ -878,13 +878,13 @@ void Gui::LoadGuiTexture(const std::string& name, const LUS::Texture& res, const
                     texBuffer.push_back(ia4);
                     texBuffer.push_back(ia4);
                     texBuffer.push_back(ia4);
-                    texBuffer.push_back(0xFF);
+                    texBuffer.push_back(ia4);
 
                     ia4 = ((b & 0xF) * 0xFF) / 0b1111;
                     texBuffer.push_back(ia4);
                     texBuffer.push_back(ia4);
                     texBuffer.push_back(ia4);
-                    texBuffer.push_back(0xFF);
+                    texBuffer.push_back(ia4);
                 }
                 break;
             }
