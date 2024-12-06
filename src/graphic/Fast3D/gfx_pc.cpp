@@ -3440,7 +3440,8 @@ bool gfx_set_fb_handler_custom(F3DGfx** cmd0) {
 
 bool gfx_reset_fb_handler_custom(F3DGfx** cmd0) {
     gfx_flush();
-    fbActive = 0;
+    fbActive = false;
+    active_fb = framebuffers.end();
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
                                         (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
     // Force viewport and scissor to reapply against the main framebuffer, in case a previous smaller
@@ -4206,7 +4207,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     gfx_rapi->start_frame();
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
                                         (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
-    gfx_rapi->clear_framebuffer();
+    gfx_rapi->clear_framebuffer(false, true);
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
     rendering_state.scissor = {};
@@ -4239,7 +4240,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
     if (game_renders_to_framebuffer) {
         gfx_rapi->start_draw_to_framebuffer(0, 1);
-        gfx_rapi->clear_framebuffer();
+        gfx_rapi->clear_framebuffer(true, true);
 
         if (gfx_msaa_level > 1) {
             bool different_size = gfx_current_dimensions.width != gfx_current_game_window_viewport.width ||
@@ -4303,7 +4304,6 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
 
 void gfx_set_framebuffer(int fb, float noise_scale) {
     gfx_rapi->start_draw_to_framebuffer(fb, noise_scale);
-    gfx_rapi->clear_framebuffer();
 }
 
 void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr) {
@@ -4351,7 +4351,6 @@ void gfx_copy_framebuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* has
 
 void gfx_reset_framebuffer() {
     gfx_rapi->start_draw_to_framebuffer(0, (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
-    gfx_rapi->clear_framebuffer();
 }
 
 static void adjust_pixel_depth_coordinates(float& x, float& y) {
