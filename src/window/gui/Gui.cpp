@@ -866,7 +866,7 @@ void Gui::LoadGuiTexture(const std::string& name, const LUS::Texture& res, const
                     texBuffer.push_back(ia);
                     texBuffer.push_back(ia);
                     texBuffer.push_back(ia);
-                    texBuffer.push_back(0xFF);
+                    texBuffer.push_back(ia);
                 }
                 break;
             }
