@@ -1117,6 +1117,14 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
         child = child->NextSiblingElement();
     }
 
+#ifdef F3DEX_GBI_2
+    dl->UCode = ucode_f3dex2;
+#elif defined(F3DEX_GBI)
+    dl->UCode = ucode_f3dex;
+#elif defined(F3D_OLD)
+    dl->UCode = ucode_f3d;
+#endif
+
     return dl;
 }
 } // namespace LUS
