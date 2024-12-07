@@ -17,6 +17,14 @@ int32_t WindowGetPosX(void);
 int32_t WindowGetPosY(void);
 bool WindowIsFullscreen(void);
 
+float ScreenGetAspectRatio(void);
+float LeftEdgeAlign(float v);
+int16_t LeftEdgeRectAlign(float v);
+float RightEdgeAlign(float v);
+int16_t RightEdgeRectAlign(float v);
+uint32_t WindowGetGameRenderWidth();
+uint32_t WindowGetGameRenderHeight();
+
 #ifdef __cplusplus
 };
 #endif
