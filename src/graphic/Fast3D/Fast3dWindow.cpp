@@ -185,6 +185,32 @@ int32_t Fast3dWindow::GetPosY() {
     return posY;
 }
 
+Ship::Coords Fast3dWindow::GetMousePos() {
+    int32_t x, y;
+    mWindowManagerApi->get_mouse_pos(&x, &y);
+    return { x, y };
+}
+
+Ship::Coords Fast3dWindow::GetMouseDelta() {
+    int32_t x, y;
+    mWindowManagerApi->get_mouse_delta(&x, &y);
+    return { x, y };
+}
+
+Ship::CoordsF Fast3dWindow::GetMouseWheel() {
+    float x, y;
+    mWindowManagerApi->get_mouse_wheel(&x, &y);
+    return { x, y };
+}
+
+bool Fast3dWindow::GetMouseState(Ship::MouseBtn btn) {
+    return mWindowManagerApi->get_mouse_state(static_cast<uint32_t>(btn));
+}
+
+void Fast3dWindow::SetMouseCapture(bool capture) {
+    mWindowManagerApi->set_mouse_capture(capture);
+}
+
 uint32_t Fast3dWindow::GetCurrentRefreshRate() {
     uint32_t refreshRate;
     mWindowManagerApi->get_active_window_refresh_rate(&refreshRate);

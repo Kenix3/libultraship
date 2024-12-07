@@ -20,6 +20,11 @@ class Fast3dWindow : public Ship::Window {
     uint32_t GetHeight() override;
     int32_t GetPosX() override;
     int32_t GetPosY() override;
+    Ship::Coords GetMousePos() override;
+    Ship::Coords GetMouseDelta() override;
+    Ship::CoordsF GetMouseWheel() override;
+    bool GetMouseState(Ship::MouseBtn btn) override;
+    void SetMouseCapture(bool capture) override;
     uint32_t GetCurrentRefreshRate() override;
     bool SupportsWindowedFullscreen() override;
     bool CanDisableVerticalSync() override;
