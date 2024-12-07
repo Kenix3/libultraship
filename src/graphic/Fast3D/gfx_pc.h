@@ -115,6 +115,7 @@ struct RawTexMetadata {
     float h_byte_scale = 1, v_pixel_scale = 1;
     std::shared_ptr<LUS::Texture> resource;
     LUS::TextureType type;
+    std::string path;
 };
 
 #define MAX_BUFFERED 256
