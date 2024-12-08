@@ -67,21 +67,17 @@ bool ArchiveManager::HasFile(uint64_t hash) {
 }
 
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& filter) {
-    auto list = ListFiles();
-    auto result = std::make_shared<std::vector<std::string>>();
-
-    std::copy_if(list->begin(), list->end(), std::back_inserter(*result),
-                 [filter](const std::string& filePath) { return glob_match(filter.c_str(), filePath.c_str()); });
-
-    return result;
+    auto list = std::make_shared<std::vector<std::string>>();
+    for (const auto& [hash, path] : mHashes) {
+        if (filter != "" && glob_match(filter.c_str(), path.c_str()) || filter == "") {
+            list->push_back(path);
+        }
+    }
+    return list;
 }
 
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles() {
-    auto list = std::make_shared<std::vector<std::string>>();
-    for (const auto& [hash, path] : mHashes) {
-        list->push_back(path);
-    }
-    return list;
+    return ListFiles("");
 }
 
 std::vector<uint32_t> ArchiveManager::GetGameVersions() {
