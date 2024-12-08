@@ -69,15 +69,11 @@ bool ArchiveManager::HasFile(uint64_t hash) {
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& filter) {
     auto list = std::make_shared<std::vector<std::string>>();
     for (const auto& [hash, path] : mHashes) {
-        if (filter != "" && glob_match(filter.c_str(), path.c_str()) || filter == "") {
+        if (filter.empty() || glob_match(filter.c_str(), path.c_str())) {
             list->push_back(path);
         }
     }
     return list;
-}
-
-std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles() {
-    return ListFiles("");
 }
 
 std::vector<uint32_t> ArchiveManager::GetGameVersions() {
