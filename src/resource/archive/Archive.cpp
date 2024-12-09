@@ -21,6 +21,14 @@ Archive::~Archive() {
     SPDLOG_TRACE("destruct archive: {}", GetPath());
 }
 
+std::size_t Archive::operator()(const Archive& archive) const {
+    return std::hash<std::string>{}(archive.mPath);
+}
+
+bool Archive::operator==(const Archive& rhs) const {
+    return mPath == rhs.mPath;
+}
+
 void Archive::Load() {
     bool opened = Open();
 
