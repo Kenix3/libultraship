@@ -57,6 +57,21 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     return file;
 }
 
+std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceCacheData& cacheData,
+                                                       std::shared_ptr<ResourceInitData> initData) {
+    if (cacheData.Archive == nullptr) {
+        return LoadFileProcess(cacheData.Path, initData);
+    }
+    auto archive = cacheData.Archive;
+    auto file = archive->LoadFile(cacheData.Path, initData);
+    if (file != nullptr) {
+        SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
+    } else {
+        SPDLOG_TRACE("Could not load File {} in ResourceManager", cacheData.Path);
+    }
+    return file;
+}
+
 std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceCacheData& cacheData, bool loadExact, std::shared_ptr<ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(cacheData.Path.c_str())) {

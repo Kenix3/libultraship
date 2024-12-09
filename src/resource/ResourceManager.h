@@ -71,11 +71,16 @@ class ResourceManager {
     void SetAltAssetsEnabled(bool isEnabled);
 
   protected:
+    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceCacheData& cacheData,
+                                                                           bool loadExact = false);
+    std::shared_ptr<File> LoadFileProcess(const ResourceCacheData& cacheData,
+                                          std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath,
+                                                                           bool loadExact = false);
+
     std::shared_ptr<File> LoadFileProcess(const std::string& filePath,
                                           std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
-    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceCacheData& cacheData, bool loadExact = false);
-    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath, bool loadExact = false);
 
   private:
     std::unordered_map<ResourceCacheData, std::variant<ResourceLoadError, std::shared_ptr<IResource>>> mResourceCache;
