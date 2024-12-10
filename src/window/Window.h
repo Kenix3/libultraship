@@ -42,6 +42,7 @@ class Window {
     virtual uint32_t GetHeight() = 0;
     virtual int32_t GetPosX() = 0;
     virtual int32_t GetPosY() = 0;
+    virtual void SetMousePos(Coords pos) = 0;
     virtual Coords GetMousePos() = 0;
     virtual Coords GetMouseDelta() = 0;
     virtual CoordsF GetMouseWheel() = 0;

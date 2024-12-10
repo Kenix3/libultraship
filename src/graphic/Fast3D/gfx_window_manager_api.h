@@ -14,6 +14,7 @@ struct GfxWindowManagerAPI {
     void (*set_fullscreen)(bool enable);
     void (*get_active_window_refresh_rate)(uint32_t* refresh_rate);
     void (*set_cursor_visibility)(bool visible);
+    void (*set_mouse_pos)(int32_t x, int32_t y);
     void (*get_mouse_pos)(int32_t* x, int32_t* y);
     void (*get_mouse_delta)(int32_t* x, int32_t* y);
     void (*get_mouse_wheel)(float* x, float* y);

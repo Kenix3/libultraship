@@ -440,6 +440,10 @@ static void gfx_sdl_set_cursor_visibility(bool visible) {
     }
 }
 
+static void gfx_sdl_set_mouse_pos(int32_t x, int32_t y) {
+    SDL_WarpMouseInWindow(wnd, x, y);
+}
+
 static void gfx_sdl_get_mouse_pos(int32_t* x, int32_t* y) {
     SDL_GetMouseState(x, y);
 }
@@ -658,6 +662,7 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_fullscreen,
                                        gfx_sdl_get_active_window_refresh_rate,
                                        gfx_sdl_set_cursor_visibility,
+                                       gfx_sdl_set_mouse_pos,
                                        gfx_sdl_get_mouse_pos,
                                        gfx_sdl_get_mouse_delta,
                                        gfx_sdl_get_mouse_wheel,

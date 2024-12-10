@@ -515,6 +515,10 @@ static void gfx_dxgi_set_cursor_visibility(bool visible) {
     }
 }
 
+static void gfx_dxgi_set_mouse_pos(int32_t x, int32_t y) {
+    SetCursorPos(x, y);
+}
+
 static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
     POINT p;
     GetCursorPos(&p);
@@ -982,6 +986,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_fullscreen,
                                                        gfx_dxgi_get_active_window_refresh_rate,
                                                        gfx_dxgi_set_cursor_visibility,
+                                                       gfx_dxgi_set_mouse_pos,
                                                        gfx_dxgi_get_mouse_pos,
                                                        gfx_dxgi_get_mouse_delta,
                                                        gfx_dxgi_get_mouse_wheel,
