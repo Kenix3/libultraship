@@ -11,7 +11,7 @@
 namespace Ship {
 enum class WindowBackend { FAST3D_DXGI_DX11, FAST3D_SDL_OPENGL, FAST3D_SDL_METAL, WINDOW_BACKEND_COUNT };
 
-enum class MouseBtn { LEFT, MIDDLE, RIGHT, MOUSE_BTN_COUNT };
+enum class MouseBtn { LEFT, MIDDLE, RIGHT, BACKWARD, FORWARD, MOUSE_BTN_COUNT };
 
 struct Coords {
     int32_t x;
@@ -47,6 +47,7 @@ class Window {
     virtual CoordsF GetMouseWheel() = 0;
     virtual bool GetMouseState(MouseBtn btn) = 0;
     virtual void SetMouseCapture(bool capture) = 0;
+    virtual bool IsMouseCaptured() = 0;
     virtual uint32_t GetCurrentRefreshRate() = 0;
     virtual bool SupportsWindowedFullscreen() = 0;
     virtual bool CanDisableVerticalSync() = 0;

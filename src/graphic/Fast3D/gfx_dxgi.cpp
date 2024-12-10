@@ -88,7 +88,7 @@ static struct {
     bool use_timer;
     bool tearing_support;
     bool is_vsync_enabled;
-    bool mouse_pressed[3];
+    bool mouse_pressed[5];
     float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
 
@@ -376,6 +376,12 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_RBUTTONUP:
             dxgi.mouse_pressed[2] = false;
             break;
+        case WM_XBUTTONDOWN:
+            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = true;
+            break;
+        case WM_XBUTTONUP:
+            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = false;
+            break;
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             dxgi.mouse_wheel[1] = 0;
@@ -543,6 +549,10 @@ static void gfx_dxgi_set_mouse_capture(bool capture) {
     } else {
         ReleaseCapture();
     }
+}
+
+static bool gfx_dxgi_is_mouse_captured() {
+    return (GetCapture() != NULL);
 }
 
 static void gfx_dxgi_set_fullscreen(bool enable) {
@@ -977,6 +987,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_get_mouse_wheel,
                                                        gfx_dxgi_get_mouse_state,
                                                        gfx_dxgi_set_mouse_capture,
+                                                       gfx_dxgi_is_mouse_captured,
                                                        gfx_dxgi_get_dimensions,
                                                        gfx_dxgi_handle_events,
                                                        gfx_dxgi_start_frame,
