@@ -185,6 +185,10 @@ int32_t Fast3dWindow::GetPosY() {
     return posY;
 }
 
+void Fast3dWindow::SetMousePos(Ship::Coords pos) {
+    mWindowManagerApi->set_mouse_pos(pos.x, pos.y);
+}
+
 Ship::Coords Fast3dWindow::GetMousePos() {
     int32_t x, y;
     mWindowManagerApi->get_mouse_pos(&x, &y);

@@ -20,6 +20,7 @@ class Fast3dWindow : public Ship::Window {
     uint32_t GetHeight() override;
     int32_t GetPosX() override;
     int32_t GetPosY() override;
+    void SetMousePos(Ship::Coords pos) override;
     Ship::Coords GetMousePos() override;
     Ship::Coords GetMouseDelta() override;
     Ship::CoordsF GetMouseWheel() override;
