@@ -17,7 +17,25 @@ GameOverlay::~GameOverlay() {
     SPDLOG_TRACE("destruct game overlay");
 }
 
-void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::string& path, uintptr_t owner) {
+void GameOverlay::LoadFont(const std::string& name, float fontSize, const ResourceIdentifier& identifier) {
+    ImGuiIO& io = ImGui::GetIO();
+    auto initData = std::make_shared<ResourceInitData>();
+    initData->Format = RESOURCE_FORMAT_BINARY;
+    initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
+    initData->ResourceVersion = 0;
+    initData->Path = identifier.Path;
+    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
+        Context::GetInstance()->GetResourceManager()->LoadResource(identifier, false, initData));
+
+    if (font == nullptr) {
+        SPDLOG_ERROR("Failed to load font: {}", name);
+        return;
+    }
+
+    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
+}
+
+void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::string& path) {
     ImGuiIO& io = ImGui::GetIO();
     auto initData = std::make_shared<ResourceInitData>();
     initData->Format = RESOURCE_FORMAT_BINARY;
@@ -25,7 +43,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
     initData->ResourceVersion = 0;
     initData->Path = path;
     std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
-        Context::GetInstance()->GetResourceManager()->LoadResource(path, owner, false, initData));
+        Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
 
     if (font == nullptr) {
         SPDLOG_ERROR("Failed to load font: {}", name);
