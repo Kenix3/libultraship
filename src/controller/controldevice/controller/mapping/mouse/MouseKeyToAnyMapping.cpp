@@ -5,7 +5,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace Ship {
-KeyboardKeyToAnyMapping::MouseKeyToAnyMapping(MouseBtn button)  // TODO: should it have separate device index?
+MouseKeyToAnyMapping::MouseKeyToAnyMapping(MouseBtn button) // TODO: should it have separate device index?
     : ControllerInputMapping(ShipDeviceIndex::Keyboard), mButton(button), mKeyPressed(false) {
 }
 
