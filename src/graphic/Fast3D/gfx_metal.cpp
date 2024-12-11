@@ -245,6 +245,14 @@ void Metal_NewFrame(SDL_Renderer* renderer) {
     ImGui_ImplMetal_NewFrame(current_render_pass);
 }
 
+void Metal_SetupFloatingFrame() {
+    // We need the descriptor for the main framebuffer and to clear the existing depth attachment
+    // so that we can set ImGui up again for our floating windows. Helps avoid Metal API validation issues.
+    MTL::RenderPassDescriptor* current_render_pass = mctx.framebuffers[0].render_pass_descriptor;
+    current_render_pass->setDepthAttachment(nullptr);
+    ImGui_ImplMetal_NewFrame(current_render_pass);
+}
+
 void Metal_RenderDrawData(ImDrawData* draw_data) {
     auto framebuffer = mctx.framebuffers[0];
 

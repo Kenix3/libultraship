@@ -647,6 +647,13 @@ void Gui::DrawFloatingWindows() {
             // Set back the GL context for next frame
             SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
         } else {
+#ifdef __APPLE__
+            // Metal requires additional frame setup to get ImGui ready for drawing floating windows
+            if (backend == WindowBackend::FAST3D_SDL_METAL) {
+                Metal_SetupFloatingFrame();
+            }
+#endif
+
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
         }
