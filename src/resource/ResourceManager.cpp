@@ -88,7 +88,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // asset.
     if (!loadExact && mAltAssetsEnabled && !cacheData.Path.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + cacheData.Path;
-        auto altResource = LoadResourceProcess({ altPath, cacheData.Owner, cacheData.Parent }, loadExact, initData);
+        auto altResource = LoadResourceProcess({altPath, cacheData.Owner, cacheData.Parent }, loadExact, initData);
 
         if (altResource != nullptr) {
             return altResource;
