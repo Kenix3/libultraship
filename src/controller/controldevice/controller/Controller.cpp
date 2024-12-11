@@ -9,6 +9,7 @@
 #endif
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
+#include "window/Window.h"
 
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
@@ -133,6 +134,16 @@ bool Controller::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode
     }
     result = GetLeftStick()->ProcessKeyboardEvent(eventType, scancode) || result;
     result = GetRightStick()->ProcessKeyboardEvent(eventType, scancode) || result;
+    return result;
+}
+
+bool Controller::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+    bool result = false;
+    for (auto [bitmask, button] : GetAllButtons()) {
+        result = button->ProcessMouseEvent(isPressed, button) || result;
+    }
+    result = GetLeftStick()->ProcessMouseEvent(isPressed, button) || result;
+    result = GetRightStick()->ProcessMouseEvent(isPressed, button) || result;
     return result;
 }
 

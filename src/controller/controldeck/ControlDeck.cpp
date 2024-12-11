@@ -51,6 +51,19 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
     return result;
 }
 
+bool ControlDeck::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+    bool result = false;
+    for (auto port : mPorts) {
+        auto controller = port->GetConnectedController();
+
+        if (controller != nullptr) {
+            result = controller->ProcessMouseEvent(isPressed, button) || result;
+        }
+    }
+
+    return result;
+}
+
 bool ControlDeck::AllGameInputBlocked() {
     return !mGameInputBlockers.empty();
 }
@@ -64,6 +77,11 @@ bool ControlDeck::GamepadGameInputBlocked() {
 bool ControlDeck::KeyboardGameInputBlocked() {
     // block keyboard input when typing in imgui
     return AllGameInputBlocked() || ImGui::GetIO().WantCaptureKeyboard;
+}
+
+bool ControlDeck::MouseGameInputBlocked() {
+    // block mouse input when mouse capture (hidden & window-focused mouse) mode disabled
+    return AllGameInputBlocked() || !Context::GetInstance()->GetWindow()->IsMouseCaptured();
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {

@@ -5,25 +5,24 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace Ship {
-MouseKeyToAnyMapping::MouseKeyToAnyMapping(MouseBtn button) // TODO: should it have separate device index?
-    : ControllerInputMapping(ShipDeviceIndex::Keyboard), mButton(button), mKeyPressed(false) {
+MouseKeyToAnyMapping::MouseKeyToAnyMapping(MouseBtn button)
+    : ControllerInputMapping(ShipDeviceIndex::Mouse), mButton(button), mKeyPressed(false) {
 }
 
 MouseKeyToAnyMapping::~MouseKeyToAnyMapping() {
 }
 
 std::string MouseKeyToAnyMapping::GetPhysicalInputName() {
-    using MouseBtn;
     switch (mButton) {
-        case LEFT:
+        case MouseBtn::LEFT:
             return "Left";
-        case MIDDLE:
+        case MouseBtn::MIDDLE:
             return "Middle";
-        case RIGHT:
+        case MouseBtn::RIGHT:
             return "Right";
-        case BACKWARD:
+        case MouseBtn::BACKWARD:
             return "Backward";
-        case FORWARD:
+        case MouseBtn::FORWARD:
             return "Forward";
     }
 }
