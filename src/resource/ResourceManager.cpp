@@ -16,7 +16,12 @@ bool ResourceCacheData::operator==(const ResourceCacheData& rhs) const {
 }
 
 size_t ResourceCacheDataHash::operator()(const ResourceCacheData& rcd) const {
-    return std::hash<std::uintptr_t>{}(rcd.Owner) ^ std::hash<std::string>{}(rcd.Path) ^ std::hash<std::string>{}(rcd.Archive->GetPath());
+    size_t hash = std::hash<std::uintptr_t>{}(rcd.Owner) ^ std::hash<std::string>{}(rcd.Path);
+    if (rcd.Archive != nullptr) {
+        hash ^= std::hash<std::string>{}(rcd.Archive->GetPath());
+    }
+    return hash;
+
 }
 
 ResourceManager::ResourceManager() {
@@ -176,7 +181,7 @@ ResourceManager::LoadResourceAsync(const ResourceCacheData& cacheData, bool load
     }
 
     return mThreadPool->submit_task(
-        std::bind(&ResourceManager::LoadResourceProcess, this, cacheData, loadExact, initData), priority);
+        [this, cacheData, loadExact, initData]() -> std::shared_ptr<IResource> { return LoadResourceProcess(cacheData, loadExact, initData); }, priority);
 }
 
 std::shared_future<std::shared_ptr<IResource>>
