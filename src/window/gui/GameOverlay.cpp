@@ -17,7 +17,7 @@ GameOverlay::~GameOverlay() {
     SPDLOG_TRACE("destruct game overlay");
 }
 
-void GameOverlay::LoadFont(const std::string& name, float fontSize, const ResourceCacheData& cacheData) {
+void GameOverlay::LoadFont(const std::string& name, float fontSize, const ResourceIdentifier& cacheData) {
     ImGuiIO& io = ImGui::GetIO();
     auto initData = std::make_shared<ResourceInitData>();
     initData->Format = RESOURCE_FORMAT_BINARY;

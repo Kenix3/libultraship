@@ -18,17 +18,17 @@
 namespace Ship {
 struct File;
 
-struct ResourceCacheData {
+struct ResourceIdentifier {
     // Path can either be a Path or a Search Mask including globs depending on usage.
     const std::string Path = "";
     const uintptr_t Owner = 0;
-    const std::shared_ptr<Archive> Archive = nullptr;
+    const std::shared_ptr<Archive> LoadArchive = nullptr;
 
-    bool operator==(const ResourceCacheData& rhs) const;
+    bool operator==(const ResourceIdentifier& rhs) const;
 };
 
 struct ResourceCacheDataHash {
-    size_t operator()(const ResourceCacheData& rcd) const;
+    size_t operator()(const ResourceIdentifier& rcd) const;
 };
 
 class ResourceManager {
@@ -43,20 +43,20 @@ class ResourceManager {
     std::shared_ptr<ArchiveManager> GetArchiveManager();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
 
-    std::shared_ptr<IResource> GetCachedResource(const ResourceCacheData& cacheData, bool loadExact = false);
-    std::shared_ptr<IResource> LoadResource(const ResourceCacheData& cacheData, bool loadExact = false,
+    std::shared_ptr<IResource> GetCachedResource(const ResourceIdentifier& cacheData, bool loadExact = false);
+    std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& cacheData, bool loadExact = false,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<IResource> LoadResourceProcess(const ResourceCacheData& cacheData, bool loadExact = false,
+    std::shared_ptr<IResource> LoadResourceProcess(const ResourceIdentifier& cacheData, bool loadExact = false,
                                                    std::shared_ptr<ResourceInitData> initData = nullptr);
-    size_t UnloadResource(const ResourceCacheData& cacheData);
+    size_t UnloadResource(const ResourceIdentifier& cacheData);
     std::shared_future<std::shared_ptr<IResource>>
-    LoadResourceAsync(const ResourceCacheData& cacheData, bool loadExact = false,
+    LoadResourceAsync(const ResourceIdentifier& cacheData, bool loadExact = false,
                       BS::priority_t priority = BS::pr::normal, std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const ResourceCacheData& cacheData);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const ResourceIdentifier& cacheData);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-    LoadDirectoryAsync(const ResourceCacheData& cacheData, BS::priority_t priority = BS::pr::normal);
-    void DirtyDirectory(const ResourceCacheData& cacheData);
-    void UnloadDirectory(const ResourceCacheData& cacheData);
+    LoadDirectoryAsync(const ResourceIdentifier& cacheData, BS::priority_t priority = BS::pr::normal);
+    void DirtyDirectory(const ResourceIdentifier& cacheData);
+    void UnloadDirectory(const ResourceIdentifier& cacheData);
 
     std::shared_ptr<IResource> GetCachedResource(const std::string& filePath, bool loadExact = false);
     std::shared_ptr<IResource> LoadResource(const std::string& filePath, bool loadExact = false,
@@ -79,9 +79,9 @@ class ResourceManager {
     void SetAltAssetsEnabled(bool isEnabled);
 
   protected:
-    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceCacheData& cacheData,
+    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& cacheData,
                                                                            bool loadExact = false);
-    std::shared_ptr<File> LoadFileProcess(const ResourceCacheData& cacheData,
+    std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& cacheData,
                                           std::shared_ptr<ResourceInitData> initData = nullptr);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath,
                                                                            bool loadExact = false);
@@ -91,7 +91,7 @@ class ResourceManager {
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
 
   private:
-    std::unordered_map<ResourceCacheData, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,
+    std::unordered_map<ResourceIdentifier, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,
                        ResourceCacheDataHash>
         mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;

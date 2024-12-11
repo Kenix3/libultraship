@@ -28,7 +28,7 @@ class GameOverlay {
     ~GameOverlay();
 
     void Init();
-    void LoadFont(const std::string& name, float fontSize, const ResourceCacheData& cacheData);
+    void LoadFont(const std::string& name, float fontSize, const ResourceIdentifier& cacheData);
     void LoadFont(const std::string& name, float fontSize, const std::string& path);
     void SetCurrentFont(const std::string& name);
     void Draw();

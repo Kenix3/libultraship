@@ -11,14 +11,14 @@
 
 namespace Ship {
 
-bool ResourceCacheData::operator==(const ResourceCacheData& rhs) const {
-    return Owner == rhs.Owner && Path == rhs.Path && Archive == rhs.Archive;
+bool ResourceIdentifier::operator==(const ResourceIdentifier& rhs) const {
+    return Owner == rhs.Owner && Path == rhs.Path && LoadArchive == rhs.LoadArchive;
 }
 
-size_t ResourceCacheDataHash::operator()(const ResourceCacheData& rcd) const {
+size_t ResourceCacheDataHash::operator()(const ResourceIdentifier& rcd) const {
     size_t hash = std::hash<std::uintptr_t>{}(rcd.Owner) ^ std::hash<std::string>{}(rcd.Path);
-    if (rcd.Archive != nullptr) {
-        hash ^= std::hash<std::string>{}(rcd.Archive->GetPath());
+    if (rcd.LoadArchive != nullptr) {
+        hash ^= std::hash<std::string>{}(rcd.LoadArchive->GetPath());
     }
     return hash;
 }
@@ -61,12 +61,12 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     return file;
 }
 
-std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceCacheData& cacheData,
+std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceIdentifier& cacheData,
                                                        std::shared_ptr<ResourceInitData> initData) {
-    if (cacheData.Archive == nullptr) {
+    if (cacheData.LoadArchive == nullptr) {
         return LoadFileProcess(cacheData.Path, initData);
     }
-    auto archive = cacheData.Archive;
+    auto archive = cacheData.LoadArchive;
     auto file = archive->LoadFile(cacheData.Path, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
@@ -76,19 +76,19 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceCacheData& 
     return file;
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceCacheData& cacheData, bool loadExact,
+std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceIdentifier& cacheData, bool loadExact,
                                                                 std::shared_ptr<ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(cacheData.Path.c_str())) {
         const auto newFilePath = cacheData.Path.substr(7);
-        return LoadResourceProcess({ newFilePath, cacheData.Owner, cacheData.Archive }, false, initData);
+        return LoadResourceProcess({ newFilePath, cacheData.Owner, cacheData.LoadArchive }, false, initData);
     }
 
     // Attempt to load the alternate version of the asset, if we fail then we continue trying to load the standard
     // asset.
     if (!loadExact && mAltAssetsEnabled && !cacheData.Path.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + cacheData.Path;
-        auto altResource = LoadResourceProcess({ altPath, cacheData.Owner, cacheData.Archive }, loadExact, initData);
+        auto altResource = LoadResourceProcess({ altPath, cacheData.Owner, cacheData.LoadArchive }, loadExact, initData);
 
         if (altResource != nullptr) {
             return altResource;
@@ -165,12 +165,12 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const std::strin
 }
 
 std::shared_future<std::shared_ptr<IResource>>
-ResourceManager::LoadResourceAsync(const ResourceCacheData& cacheData, bool loadExact, BS::priority_t priority,
+ResourceManager::LoadResourceAsync(const ResourceIdentifier& cacheData, bool loadExact, BS::priority_t priority,
                                    std::shared_ptr<ResourceInitData> initData) {
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(cacheData.Path.c_str())) {
         auto newFilePath = cacheData.Path.substr(7);
-        return LoadResourceAsync({ newFilePath, cacheData.Owner, cacheData.Archive }, loadExact, priority);
+        return LoadResourceAsync({ newFilePath, cacheData.Owner, cacheData.LoadArchive }, loadExact, priority);
     }
 
     // Check the cache before queueing the job.
@@ -194,7 +194,7 @@ ResourceManager::LoadResourceAsync(const std::string& filePath, bool loadExact, 
     return LoadResourceAsync({ filePath, mDefaultCacheOwner, mDefaultCacheArchive }, loadExact, priority, initData);
 }
 
-std::shared_ptr<IResource> ResourceManager::LoadResource(const ResourceCacheData& cacheData, bool loadExact,
+std::shared_ptr<IResource> ResourceManager::LoadResource(const ResourceIdentifier& cacheData, bool loadExact,
                                                          std::shared_ptr<ResourceInitData> initData) {
     auto resource = LoadResourceAsync(cacheData, loadExact, BS::pr::highest, initData).get();
     if (resource == nullptr) {
@@ -209,10 +209,10 @@ std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& file
 }
 
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
-ResourceManager::CheckCache(const ResourceCacheData& cacheData, bool loadExact) {
+ResourceManager::CheckCache(const ResourceIdentifier& cacheData, bool loadExact) {
     if (!loadExact && mAltAssetsEnabled && !cacheData.Path.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + cacheData.Path;
-        auto altCacheResult = CheckCache({ altPath, cacheData.Owner, cacheData.Archive }, loadExact);
+        auto altCacheResult = CheckCache({ altPath, cacheData.Owner, cacheData.LoadArchive }, loadExact);
 
         // If the type held at this cache index is a resource, then we return it.
         // Else we attempt to load standard definition assets.
@@ -236,7 +236,7 @@ ResourceManager::CheckCache(const std::string& filePath, bool loadExact) {
     return CheckCache({ filePath, mDefaultCacheOwner, mDefaultCacheArchive }, loadExact);
 }
 
-std::shared_ptr<IResource> ResourceManager::GetCachedResource(const ResourceCacheData& cacheData, bool loadExact) {
+std::shared_ptr<IResource> ResourceManager::GetCachedResource(const ResourceIdentifier& cacheData, bool loadExact) {
     // Gets the cached resource based on filePath.
     return GetCachedResource(CheckCache(cacheData, loadExact));
 }
@@ -271,14 +271,14 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-ResourceManager::LoadDirectoryAsync(const ResourceCacheData& cacheData, BS::priority_t priority) {
+ResourceManager::LoadDirectoryAsync(const ResourceIdentifier& cacheData, BS::priority_t priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
     auto fileList = GetArchiveManager()->ListFiles(cacheData.Path);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync({ fileName, cacheData.Owner, cacheData.Archive }, false, priority);
+        auto future = LoadResourceAsync({ fileName, cacheData.Owner, cacheData.LoadArchive }, false, priority);
         loadedList->push_back(future);
     }
 
@@ -291,7 +291,7 @@ ResourceManager::LoadDirectoryAsync(const std::string& searchMask, BS::priority_
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
-ResourceManager::LoadDirectory(const ResourceCacheData& cacheData) {
+ResourceManager::LoadDirectory(const ResourceIdentifier& cacheData) {
     auto futureList = LoadDirectoryAsync(cacheData, true);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
 
@@ -308,11 +308,11 @@ std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadDi
     return LoadDirectory({ searchMask, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
-void ResourceManager::DirtyDirectory(const ResourceCacheData& cacheData) {
+void ResourceManager::DirtyDirectory(const ResourceIdentifier& cacheData) {
     auto list = GetArchiveManager()->ListFiles(cacheData.Path);
 
     for (const auto& key : *list.get()) {
-        auto resource = GetCachedResource({ key, cacheData.Owner, cacheData.Archive });
+        auto resource = GetCachedResource({ key, cacheData.Owner, cacheData.LoadArchive });
         // If it's a resource, we will set the dirty flag, else we will just unload it.
         if (resource != nullptr) {
             resource->Dirty();
@@ -326,11 +326,11 @@ void ResourceManager::DirtyDirectory(const std::string& searchMask) {
     DirtyDirectory({ searchMask, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
-void ResourceManager::UnloadDirectory(const ResourceCacheData& cacheData) {
+void ResourceManager::UnloadDirectory(const ResourceIdentifier& cacheData) {
     auto list = GetArchiveManager()->ListFiles(cacheData.Path);
 
     for (const auto& key : *list.get()) {
-        UnloadResource({ key, cacheData.Owner, cacheData.Archive });
+        UnloadResource({ key, cacheData.Owner, cacheData.LoadArchive });
     }
 }
 
@@ -346,7 +346,7 @@ std::shared_ptr<ResourceLoader> ResourceManager::GetResourceLoader() {
     return mResourceLoader;
 }
 
-size_t ResourceManager::UnloadResource(const ResourceCacheData& cacheData) {
+size_t ResourceManager::UnloadResource(const ResourceIdentifier& cacheData) {
     // Store a shared pointer here so that erase doesn't destruct the resource.
     // The resource will attempt to load other resources on the destructor, and this will fail because we already hold
     // the mutex.
