@@ -43,20 +43,20 @@ class ResourceManager {
     std::shared_ptr<ArchiveManager> GetArchiveManager();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
 
-    std::shared_ptr<IResource> GetCachedResource(const ResourceIdentifier& cacheData, bool loadExact = false);
-    std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& cacheData, bool loadExact = false,
+    std::shared_ptr<IResource> GetCachedResource(const ResourceIdentifier& identifier, bool loadExact = false);
+    std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& identifier, bool loadExact = false,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<IResource> LoadResourceProcess(const ResourceIdentifier& cacheData, bool loadExact = false,
+    std::shared_ptr<IResource> LoadResourceProcess(const ResourceIdentifier& identifier, bool loadExact = false,
                                                    std::shared_ptr<ResourceInitData> initData = nullptr);
-    size_t UnloadResource(const ResourceIdentifier& cacheData);
+    size_t UnloadResource(const ResourceIdentifier& identifier);
     std::shared_future<std::shared_ptr<IResource>>
-    LoadResourceAsync(const ResourceIdentifier& cacheData, bool loadExact = false,
+    LoadResourceAsync(const ResourceIdentifier& identifier, bool loadExact = false,
                       BS::priority_t priority = BS::pr::normal, std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const ResourceIdentifier& cacheData);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const ResourceIdentifier& identifier);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-    LoadDirectoryAsync(const ResourceIdentifier& cacheData, BS::priority_t priority = BS::pr::normal);
-    void DirtyDirectory(const ResourceIdentifier& cacheData);
-    void UnloadDirectory(const ResourceIdentifier& cacheData);
+    LoadDirectoryAsync(const ResourceIdentifier& identifier, BS::priority_t priority = BS::pr::normal);
+    void DirtyDirectory(const ResourceIdentifier& identifier);
+    void UnloadDirectory(const ResourceIdentifier& identifier);
 
     std::shared_ptr<IResource> GetCachedResource(const std::string& filePath, bool loadExact = false);
     std::shared_ptr<IResource> LoadResource(const std::string& filePath, bool loadExact = false,
