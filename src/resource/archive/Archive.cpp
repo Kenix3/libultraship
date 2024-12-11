@@ -241,6 +241,8 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared
             break;
     }
 
+    fileToLoad->InitData->Parent = shared_from_this();
+
     return fileToLoad;
 }
 

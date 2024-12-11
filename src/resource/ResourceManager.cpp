@@ -12,13 +12,13 @@
 namespace Ship {
 
 bool ResourceIdentifier::operator==(const ResourceIdentifier& rhs) const {
-    return Owner == rhs.Owner && Path == rhs.Path && LoadArchive == rhs.LoadArchive;
+    return Owner == rhs.Owner && Path == rhs.Path && Parent == rhs.Parent;
 }
 
 size_t ResourceCacheDataHash::operator()(const ResourceIdentifier& rcd) const {
     size_t hash = std::hash<std::uintptr_t>{}(rcd.Owner) ^ std::hash<std::string>{}(rcd.Path);
-    if (rcd.LoadArchive != nullptr) {
-        hash ^= std::hash<std::string>{}(rcd.LoadArchive->GetPath());
+    if (rcd.Parent != nullptr) {
+        hash ^= std::hash<std::string>{}(rcd.Parent->GetPath());
     }
     return hash;
 }
@@ -63,10 +63,10 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceIdentifier& cacheData,
                                                        std::shared_ptr<ResourceInitData> initData) {
-    if (cacheData.LoadArchive == nullptr) {
+    if (cacheData.Parent == nullptr) {
         return LoadFileProcess(cacheData.Path, initData);
     }
-    auto archive = cacheData.LoadArchive;
+    auto archive = cacheData.Parent;
     auto file = archive->LoadFile(cacheData.Path, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
@@ -81,14 +81,14 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(cacheData.Path.c_str())) {
         const auto newFilePath = cacheData.Path.substr(7);
-        return LoadResourceProcess({ newFilePath, cacheData.Owner, cacheData.LoadArchive }, false, initData);
+        return LoadResourceProcess({ newFilePath, cacheData.Owner, cacheData.Parent }, false, initData);
     }
 
     // Attempt to load the alternate version of the asset, if we fail then we continue trying to load the standard
     // asset.
     if (!loadExact && mAltAssetsEnabled && !cacheData.Path.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + cacheData.Path;
-        auto altResource = LoadResourceProcess({ altPath, cacheData.Owner, cacheData.LoadArchive }, loadExact, initData);
+        auto altResource = LoadResourceProcess({ altPath, cacheData.Owner, cacheData.Parent }, loadExact, initData);
 
         if (altResource != nullptr) {
             return altResource;
@@ -170,7 +170,7 @@ ResourceManager::LoadResourceAsync(const ResourceIdentifier& cacheData, bool loa
     // Check for and remove the OTR signature
     if (OtrSignatureCheck(cacheData.Path.c_str())) {
         auto newFilePath = cacheData.Path.substr(7);
-        return LoadResourceAsync({ newFilePath, cacheData.Owner, cacheData.LoadArchive }, loadExact, priority);
+        return LoadResourceAsync({ newFilePath, cacheData.Owner, cacheData.Parent }, loadExact, priority);
     }
 
     // Check the cache before queueing the job.
@@ -212,7 +212,7 @@ std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
 ResourceManager::CheckCache(const ResourceIdentifier& cacheData, bool loadExact) {
     if (!loadExact && mAltAssetsEnabled && !cacheData.Path.starts_with(IResource::gAltAssetPrefix)) {
         const auto altPath = IResource::gAltAssetPrefix + cacheData.Path;
-        auto altCacheResult = CheckCache({ altPath, cacheData.Owner, cacheData.LoadArchive }, loadExact);
+        auto altCacheResult = CheckCache({ altPath, cacheData.Owner, cacheData.Parent }, loadExact);
 
         // If the type held at this cache index is a resource, then we return it.
         // Else we attempt to load standard definition assets.
@@ -278,7 +278,7 @@ ResourceManager::LoadDirectoryAsync(const ResourceIdentifier& cacheData, BS::pri
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync({ fileName, cacheData.Owner, cacheData.LoadArchive }, false, priority);
+        auto future = LoadResourceAsync({ fileName, cacheData.Owner, cacheData.Parent }, false, priority);
         loadedList->push_back(future);
     }
 
@@ -312,7 +312,7 @@ void ResourceManager::DirtyDirectory(const ResourceIdentifier& cacheData) {
     auto list = GetArchiveManager()->ListFiles(cacheData.Path);
 
     for (const auto& key : *list.get()) {
-        auto resource = GetCachedResource({ key, cacheData.Owner, cacheData.LoadArchive });
+        auto resource = GetCachedResource({ key, cacheData.Owner, cacheData.Parent });
         // If it's a resource, we will set the dirty flag, else we will just unload it.
         if (resource != nullptr) {
             resource->Dirty();
@@ -330,7 +330,7 @@ void ResourceManager::UnloadDirectory(const ResourceIdentifier& cacheData) {
     auto list = GetArchiveManager()->ListFiles(cacheData.Path);
 
     for (const auto& key : *list.get()) {
-        UnloadResource({ key, cacheData.Owner, cacheData.LoadArchive });
+        UnloadResource({ key, cacheData.Owner, cacheData.Parent });
     }
 }
 

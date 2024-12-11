@@ -48,13 +48,13 @@ std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath,
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
-    const auto archive = mFileToArchive[hash];
+    auto archive = mFileToArchive[hash];
     if (archive == nullptr) {
         return nullptr;
     }
 
     auto file = archive->LoadFile(hash, initData);
-    file->Parent = archive;
+
     return file;
 }
 

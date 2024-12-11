@@ -22,7 +22,7 @@ struct ResourceIdentifier {
     // Path can either be a Path or a Search Mask including globs depending on usage.
     const std::string Path = "";
     const uintptr_t Owner = 0;
-    const std::shared_ptr<Archive> LoadArchive = nullptr;
+    const std::shared_ptr<Archive> Parent = nullptr;
 
     bool operator==(const ResourceIdentifier& rhs) const;
 };

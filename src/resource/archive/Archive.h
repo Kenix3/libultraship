@@ -13,7 +13,7 @@ namespace Ship {
 struct File;
 struct ResourceInitData;
 
-class Archive {
+class Archive : public std::enable_shared_from_this<Archive> {
     friend class ArchiveManager;
 
   public:
