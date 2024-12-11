@@ -53,9 +53,7 @@ std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<Re
         return nullptr;
     }
 
-    auto file = archive->LoadFile(hash, initData);
-
-    return file;
+    return archive->LoadFile(hash, initData);
 }
 
 bool ArchiveManager::HasFile(const std::string& filePath) {
