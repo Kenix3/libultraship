@@ -24,9 +24,12 @@ struct ResourceCacheData {
     const std::string Path = "";
     const uintptr_t Owner = 0;
     const std::shared_ptr<Archive> Archive = nullptr;
-
-    std::size_t operator()(const ResourceCacheData& rcd) const;
+    
     bool operator==(const ResourceCacheData& rhs) const;
+};
+
+struct ResourceCacheDataHash {
+    size_t operator()(const ResourceCacheData& rcd) const;
 };
 
 class ResourceManager {
@@ -83,7 +86,8 @@ class ResourceManager {
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
 
   private:
-    std::unordered_map<ResourceCacheData, std::variant<ResourceLoadError, std::shared_ptr<IResource>>> mResourceCache;
+    std::unordered_map<ResourceCacheData, std::variant<ResourceLoadError, std::shared_ptr<IResource>>, ResourceCacheDataHash>
+        mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
     std::shared_ptr<BS::thread_pool> mThreadPool;

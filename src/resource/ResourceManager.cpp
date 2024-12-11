@@ -15,7 +15,7 @@ bool ResourceCacheData::operator==(const ResourceCacheData& rhs) const {
     return Owner == rhs.Owner && Path == rhs.Path && Archive == rhs.Archive;
 }
 
-std::size_t ResourceCacheData::operator()(const ResourceCacheData& rcd) const {
+size_t ResourceCacheDataHash::operator()(const ResourceCacheData& rcd) const {
     return std::hash<std::uintptr_t>{}(rcd.Owner) ^ std::hash<std::string>{}(rcd.Path) ^ std::hash<std::string>{}(rcd.Archive->GetPath());
 }
 
