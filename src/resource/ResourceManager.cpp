@@ -33,7 +33,7 @@ size_t ResourceIdentifier::CalculateHash() {
     return hash;
 }
 
-size_t ResourceCacheDataHash::operator()(const ResourceIdentifier& rcd) const {
+size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
     return rcd.GetHash();
 }
 

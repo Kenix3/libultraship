@@ -34,7 +34,7 @@ struct ResourceIdentifier {
     size_t mHash;
 };
 
-struct ResourceCacheDataHash {
+struct ResourceIdentifierHash {
     size_t operator()(const ResourceIdentifier& rcd) const;
 };
 
@@ -99,7 +99,7 @@ class ResourceManager {
 
   private:
     std::unordered_map<ResourceIdentifier, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,
-                       ResourceCacheDataHash>
+                       ResourceIdentifierHash>
         mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
