@@ -23,7 +23,7 @@ class Context {
     static std::shared_ptr<Context> GetInstance();
     static std::shared_ptr<Context> CreateInstance(const std::string name, const std::string shortName,
                                                    const std::string configFilePath,
-                                                   const std::vector<std::string>& otrFiles = {},
+                                                   const std::vector<std::string>& archivePaths = {},
                                                    const std::unordered_set<uint32_t>& validHashes = {},
                                                    uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {});
     static std::shared_ptr<Context> CreateUninitializedInstance(const std::string name, const std::string shortName,
@@ -37,7 +37,7 @@ class Context {
     Context(std::string name, std::string shortName, std::string configFilePath);
     ~Context();
 
-    void Init(const std::vector<std::string>& otrFiles, const std::unordered_set<uint32_t>& validHashes,
+    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
               uint32_t reservedThreadCount, AudioSettings audioSettings);
 
     std::shared_ptr<spdlog::logger> GetLogger();
@@ -57,7 +57,7 @@ class Context {
     void InitLogging();
     void InitConfiguration();
     void InitConsoleVariables();
-    void InitResourceManager(const std::vector<std::string>& otrFiles = {},
+    void InitResourceManager(const std::vector<std::string>& archivePaths = {},
                              const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
     void InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks = {});
     void InitCrashHandler();
