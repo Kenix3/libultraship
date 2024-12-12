@@ -229,13 +229,13 @@ extern uint32_t gfx_msaa_level;
 void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
               bool start_in_fullscreen, uint32_t width = SCREEN_WIDTH, uint32_t height = SCREEN_HEIGHT,
               uint32_t posX = 100, uint32_t posY = 100);
-void gfx_destroy(void);
-struct GfxRenderingAPI* gfx_get_current_rendering_api(void);
-void gfx_start_frame(void);
+void gfx_destroy();
+struct GfxRenderingAPI* gfx_get_current_rendering_api();
+void gfx_start_frame();
 
 // Since this function is "exposted" to the games, it needs to take a normal Gfx
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
-void gfx_end_frame(void);
+void gfx_end_frame();
 void gfx_set_target_ucode(UcodeHandlers ucode);
 void gfx_set_target_fps(int);
 void gfx_set_maximum_frame_latency(int latency);

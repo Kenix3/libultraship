@@ -282,7 +282,7 @@ bool Fast3dWindow::KeyDown(int32_t scancode) {
     return isProcessed;
 }
 
-void Fast3dWindow::AllKeysUp(void) {
+void Fast3dWindow::AllKeysUp() {
     Ship::Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
                                                                          Ship::KbScancode::LUS_KB_UNKNOWN);
 }
