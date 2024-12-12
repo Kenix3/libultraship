@@ -205,10 +205,6 @@ nlohmann::json Config::GetFlattenedJson() {
     return mFlattenedJson;
 }
 
-bool Config::IsNewInstance() {
-    return mIsNewInstance;
-}
-
 AudioBackend Config::GetCurrentAudioBackend() {
     std::string backendName = GetString("Window.AudioBackend");
     if (backendName == "wasapi") {
