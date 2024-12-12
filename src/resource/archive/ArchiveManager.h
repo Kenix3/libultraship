@@ -26,7 +26,7 @@ class ArchiveManager {
     size_t RemoveArchive(std::shared_ptr<Archive> archive);
     size_t RemoveArchive(const std::string& path);
 
-    bool IsArchiveLoaded();
+    bool IsLoaded();
     std::shared_ptr<File> LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<File> LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData = nullptr);
     bool HasFile(const std::string& filePath);
