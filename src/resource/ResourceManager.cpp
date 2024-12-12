@@ -16,7 +16,8 @@ size_t ResourceIdentifier::GetHash() const {
 }
 
 ResourceIdentifier::ResourceIdentifier(const std::string& path, const uintptr_t owner,
-                                       const std::shared_ptr<Archive> parent) : Path(path), Owner(owner), Parent(parent) {
+                                       const std::shared_ptr<Archive> parent)
+    : Path(path), Owner(owner), Parent(parent) {
     mHash = CalculateHash();
 }
 

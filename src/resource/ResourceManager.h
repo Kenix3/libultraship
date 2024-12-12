@@ -29,7 +29,7 @@ struct ResourceIdentifier {
     const uintptr_t Owner = 0;
     const std::shared_ptr<Archive> Parent = nullptr;
 
-private:
+  private:
     size_t CalculateHash();
     size_t mHash;
 };
