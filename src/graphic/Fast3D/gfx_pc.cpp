@@ -192,7 +192,7 @@ static std::string GetPathWithoutFileName(char* filePath) {
     return filePath;
 }
 
-static void gfx_flush(void) {
+static void gfx_flush() {
     if (buf_vbo_len > 0) {
         gfx_rapi->draw_triangles(buf_vbo, buf_vbo_len, buf_vbo_num_tris);
         buf_vbo_len = 0;
@@ -4108,7 +4108,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     ucode_handler_index = UcodeHandlers::ucode_f3dex2;
 }
 
-void gfx_destroy(void) {
+void gfx_destroy() {
     // TODO: should also destroy rapi, and any other resources acquired in fast3d
     free(tex_upload_buffer);
     gfx_wapi->destroy();
@@ -4120,11 +4120,11 @@ void gfx_destroy(void) {
     g_rdp.loaded_texture[1].raw_tex_metadata.resource = nullptr;
 }
 
-struct GfxRenderingAPI* gfx_get_current_rendering_api(void) {
+struct GfxRenderingAPI* gfx_get_current_rendering_api() {
     return gfx_rapi;
 }
 
-void gfx_start_frame(void) {
+void gfx_start_frame() {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
                              &gfx_current_window_position_x, &gfx_current_window_position_y);
@@ -4267,7 +4267,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     gfx_wapi->swap_buffers_begin();
 }
 
-void gfx_end_frame(void) {
+void gfx_end_frame() {
     if (!dropped_frame) {
         gfx_rapi->finish_render();
         gfx_wapi->swap_buffers_end();

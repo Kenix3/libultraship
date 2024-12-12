@@ -95,10 +95,10 @@ static struct {
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
     bool (*on_key_up)(int scancode);
-    void (*on_all_keys_up)(void);
+    void (*on_all_keys_up)();
 } dxgi;
 
-static void load_dxgi_library(void) {
+static void load_dxgi_library() {
     dxgi.dxgi_module = LoadLibraryW(L"dxgi.dll");
     *(FARPROC*)&dxgi.CreateDXGIFactory1 = GetProcAddress(dxgi.dxgi_module, "CreateDXGIFactory1");
     *(FARPROC*)&dxgi.CreateDXGIFactory2 = GetProcAddress(dxgi.dxgi_module, "CreateDXGIFactory2");
@@ -568,7 +568,7 @@ static void gfx_dxgi_get_active_window_refresh_rate(uint32_t* refresh_rate) {
 }
 
 static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
-                                            void (*on_all_keys_up)(void)) {
+                                            void (*on_all_keys_up)()) {
     dxgi.on_key_down = on_key_down;
     dxgi.on_key_up = on_key_up;
     dxgi.on_all_keys_up = on_all_keys_up;
@@ -581,7 +581,7 @@ static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* 
     *posY = dxgi.posY;
 }
 
-static void gfx_dxgi_handle_events(void) {
+static void gfx_dxgi_handle_events() {
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
@@ -602,7 +602,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
            qpc % dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND / dxgi.qpc_freq;
 }
 
-static bool gfx_dxgi_start_frame(void) {
+static bool gfx_dxgi_start_frame() {
     DXGI_FRAME_STATISTICS stats;
     if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
         (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -749,7 +749,7 @@ static bool gfx_dxgi_start_frame(void) {
     return true;
 }
 
-static void gfx_dxgi_swap_buffers_begin(void) {
+static void gfx_dxgi_swap_buffers_begin() {
     LARGE_INTEGER t;
     dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
@@ -801,7 +801,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     dxgi.dropped_frame = false;
 }
 
-static void gfx_dxgi_swap_buffers_end(void) {
+static void gfx_dxgi_swap_buffers_end() {
     LARGE_INTEGER t0, t1, t2;
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
@@ -846,7 +846,7 @@ static void gfx_dxgi_swap_buffers_end(void) {
     // stats.SyncRefreshCount, (unsigned long long)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init));
 }
 
-static double gfx_dxgi_get_time(void) {
+static double gfx_dxgi_get_time() {
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);
     return (double)(t.QuadPart - dxgi.qpc_init) / dxgi.qpc_freq;
@@ -933,11 +933,11 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     dxgi.before_destroy_swap_chain_fn = std::move(before_destroy_fn);
 }
 
-bool gfx_dxgi_is_running(void) {
+bool gfx_dxgi_is_running() {
     return dxgi.is_running;
 }
 
-HWND gfx_dxgi_get_h_wnd(void) {
+HWND gfx_dxgi_get_h_wnd() {
     return dxgi.h_wnd;
 }
 
@@ -971,11 +971,11 @@ bool gfx_dxgi_can_disable_vsync() {
     return dxgi.tearing_support;
 }
 
-void gfx_dxgi_destroy(void) {
+void gfx_dxgi_destroy() {
     // TODO: destroy _any_ resources used by dxgi, including the window handle
 }
 
-bool gfx_dxgi_is_fullscreen(void) {
+bool gfx_dxgi_is_fullscreen() {
     return dxgi.is_full_screen;
 }
 

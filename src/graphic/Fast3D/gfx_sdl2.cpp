@@ -54,7 +54,7 @@ static bool is_running = true;
 static void (*on_fullscreen_changed_callback)(bool is_now_fullscreen);
 static bool (*on_key_down_callback)(int scancode);
 static bool (*on_key_up_callback)(int scancode);
-static void (*on_all_keys_up_callback)(void);
+static void (*on_all_keys_up_callback)();
 
 #ifdef _WIN32
 LONG_PTR SDL_WndProc;
@@ -420,7 +420,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 }
 
-static void gfx_sdl_close(void) {
+static void gfx_sdl_close() {
     is_running = false;
 }
 
@@ -472,7 +472,7 @@ static bool gfx_sdl_is_mouse_captured() {
 }
 
 static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
-                                           void (*on_all_keys_up)(void)) {
+                                           void (*on_all_keys_up)()) {
     on_key_down_callback = on_key_down;
     on_key_up_callback = on_key_up;
     on_all_keys_up_callback = on_all_keys_up;
@@ -552,7 +552,7 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
     }
 }
 
-static void gfx_sdl_handle_events(void) {
+static void gfx_sdl_handle_events() {
     SDL_Event event;
     SDL_PumpEvents();
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_CONTROLLERDEVICEADDED - 1) > 0) {
@@ -563,7 +563,7 @@ static void gfx_sdl_handle_events(void) {
     }
 }
 
-static bool gfx_sdl_start_frame(void) {
+static bool gfx_sdl_start_frame() {
     return true;
 }
 
@@ -572,7 +572,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
     return qpc / qpc_freq * _100NANOSECONDS_IN_SECOND + qpc % qpc_freq * _100NANOSECONDS_IN_SECOND / qpc_freq;
 }
 
-static inline void sync_framerate_with_timer(void) {
+static inline void sync_framerate_with_timer() {
     uint64_t t;
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
 
@@ -612,15 +612,15 @@ static inline void sync_framerate_with_timer(void) {
     previous_time = t;
 }
 
-static void gfx_sdl_swap_buffers_begin(void) {
+static void gfx_sdl_swap_buffers_begin() {
     sync_framerate_with_timer();
     SDL_GL_SwapWindow(wnd);
 }
 
-static void gfx_sdl_swap_buffers_end(void) {
+static void gfx_sdl_swap_buffers_end() {
 }
 
-static double gfx_sdl_get_time(void) {
+static double gfx_sdl_get_time() {
     return 0.0;
 }
 
@@ -640,18 +640,18 @@ bool gfx_sdl_can_disable_vsync() {
     return false;
 }
 
-bool gfx_sdl_is_running(void) {
+bool gfx_sdl_is_running() {
     return is_running;
 }
 
-void gfx_sdl_destroy(void) {
+void gfx_sdl_destroy() {
     // TODO: destroy _any_ resources used by SDL
 
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
 }
 
-bool gfx_sdl_is_fullscreen(void) {
+bool gfx_sdl_is_fullscreen() {
     return fullscreen_state;
 }
 

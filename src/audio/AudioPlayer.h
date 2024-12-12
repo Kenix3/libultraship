@@ -18,11 +18,11 @@ class AudioPlayer {
     }
     ~AudioPlayer();
 
-    bool Init(void);
-    virtual int32_t Buffered(void) = 0;
+    bool Init();
+    virtual int32_t Buffered() = 0;
     virtual void Play(const uint8_t* buf, size_t len) = 0;
 
-    bool IsInitialized(void);
+    bool IsInitialized();
 
     int32_t GetSampleRate() const;
 
@@ -37,7 +37,7 @@ class AudioPlayer {
     void SetDesiredBuffered(int32_t size);
 
   protected:
-    virtual bool DoInit(void) = 0;
+    virtual bool DoInit() = 0;
 
   private:
     bool mInitialized = false;

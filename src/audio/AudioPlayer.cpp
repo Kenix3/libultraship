@@ -6,12 +6,12 @@ AudioPlayer::~AudioPlayer() {
     SPDLOG_TRACE("destruct audio player");
 }
 
-bool AudioPlayer::Init(void) {
+bool AudioPlayer::Init() {
     mInitialized = DoInit();
     return IsInitialized();
 }
 
-bool AudioPlayer::IsInitialized(void) {
+bool AudioPlayer::IsInitialized() {
     return mInitialized;
 }
 

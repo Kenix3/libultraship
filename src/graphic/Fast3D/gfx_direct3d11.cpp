@@ -160,7 +160,7 @@ static struct {
 
 static LARGE_INTEGER last_time, accumulated_time, frequency;
 
-int gfx_d3d11_create_framebuffer(void);
+int gfx_d3d11_create_framebuffer();
 
 static void create_depth_stencil_objects(uint32_t width, uint32_t height, uint32_t msaa_count,
                                          ID3D11DepthStencilView** view, ID3D11ShaderResourceView** srv) {
@@ -207,7 +207,7 @@ static void create_depth_stencil_objects(uint32_t width, uint32_t height, uint32
     }
 }
 
-static void gfx_d3d11_init(void) {
+static void gfx_d3d11_init() {
     // Load d3d11.dll
     d3d.d3d11_module = LoadLibraryW(L"d3d11.dll");
     if (d3d.d3d11_module == nullptr) {
@@ -399,7 +399,7 @@ static const char* gfx_d3d11_get_name() {
     return "DirectX 11";
 }
 
-static struct GfxClipParameters gfx_d3d11_get_clip_parameters(void) {
+static struct GfxClipParameters gfx_d3d11_get_clip_parameters() {
     return { true, false };
 }
 
@@ -559,7 +559,7 @@ static void gfx_d3d11_shader_get_info(struct ShaderProgram* prg, uint8_t* num_in
     used_textures[1] = p->used_textures[1];
 }
 
-static uint32_t gfx_d3d11_new_texture(void) {
+static uint32_t gfx_d3d11_new_texture() {
     d3d.textures.resize(d3d.textures.size() + 1);
     return (uint32_t)(d3d.textures.size() - 1);
 }
@@ -810,11 +810,11 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
     d3d.context->Draw(buf_vbo_num_tris * 3, 0);
 }
 
-static void gfx_d3d11_on_resize(void) {
+static void gfx_d3d11_on_resize() {
     // create_render_target_views(true);
 }
 
-static void gfx_d3d11_start_frame(void) {
+static void gfx_d3d11_start_frame() {
     // Set per-frame constant buffer
     ID3D11Buffer* buffers[2] = { d3d.per_frame_cb.Get(), d3d.per_draw_cb.Get() };
     d3d.context->PSSetConstantBuffers(0, 2, buffers);
@@ -826,15 +826,15 @@ static void gfx_d3d11_start_frame(void) {
     }
 }
 
-static void gfx_d3d11_end_frame(void) {
+static void gfx_d3d11_end_frame() {
     d3d.context->Flush();
 }
 
-static void gfx_d3d11_finish_render(void) {
+static void gfx_d3d11_finish_render() {
     d3d.context->Flush();
 }
 
-int gfx_d3d11_create_framebuffer(void) {
+int gfx_d3d11_create_framebuffer() {
     uint32_t texture_id = gfx_d3d11_new_texture();
     TextureData& t = d3d.textures[texture_id];
 
@@ -1112,7 +1112,7 @@ void gfx_d3d11_set_texture_filter(FilteringMode mode) {
     gfx_texture_cache_clear();
 }
 
-FilteringMode gfx_d3d11_get_texture_filter(void) {
+FilteringMode gfx_d3d11_get_texture_filter() {
     return d3d.current_filter_mode;
 }
 
@@ -1233,7 +1233,7 @@ ImTextureID gfx_d3d11_get_texture_by_id(int id) {
     return d3d.textures[id].resource_view.Get();
 }
 
-void gfx_d3d11_enable_srgb_mode(void) {
+void gfx_d3d11_enable_srgb_mode() {
     d3d.srgb_mode = true;
 }
 
