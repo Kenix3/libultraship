@@ -201,10 +201,6 @@ nlohmann::json Config::GetNestedJson() {
     return mNestedJson;
 }
 
-nlohmann::json Config::GetFlattenedJson() {
-    return mFlattenedJson;
-}
-
 AudioBackend Config::GetCurrentAudioBackend() {
     std::string backendName = GetString("Window.AudioBackend");
     if (backendName == "wasapi") {

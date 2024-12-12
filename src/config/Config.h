@@ -62,7 +62,6 @@ class Config {
     void Reload();
     void Save();
     nlohmann::json GetNestedJson();
-    nlohmann::json GetFlattenedJson();
 
     AudioBackend GetCurrentAudioBackend();
     void SetCurrentAudioBackend(AudioBackend backend);
