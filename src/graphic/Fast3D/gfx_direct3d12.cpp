@@ -222,7 +222,7 @@ static D3D12_RESOURCE_ALLOCATION_INFO get_resource_allocation_info(const D3D12_R
 #endif
 }
 
-static bool gfx_direct3d12_z_is_from_0_to_1(void) {
+static bool gfx_direct3d12_z_is_from_0_to_1() {
     return true;
 }
 
@@ -291,7 +291,7 @@ static void gfx_direct3d12_shader_get_info(struct ShaderProgram* prg, uint8_t* n
     used_textures[1] = p->used_textures[1];
 }
 
-static uint32_t gfx_direct3d12_new_texture(void) {
+static uint32_t gfx_direct3d12_new_texture() {
     d3d.textures.resize(d3d.textures.size() + 1);
     return (uint32_t)(d3d.textures.size() - 1);
 }
@@ -615,7 +615,7 @@ static void gfx_direct3d12_draw_triangles(float buf_vbo[], size_t buf_vbo_len, s
     d3d.command_list->DrawInstanced(3 * buf_vbo_num_tris, 1, 0, 0);
 }
 
-static void gfx_direct3d12_start_frame(void) {
+static void gfx_direct3d12_start_frame() {
     ++d3d.frame_counter;
     d3d.srv_pos = 0;
     texture_uploads = 0;
@@ -649,7 +649,7 @@ static void gfx_direct3d12_start_frame(void) {
     d3d.vbuf_pos = 0;
 }
 
-static void create_render_target_views(void) {
+static void create_render_target_views() {
     D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = get_cpu_descriptor_handle(d3d.rtv_heap);
     for (UINT i = 0; i < 2; i++) {
         ThrowIfFailed(d3d.swap_chain->GetBuffer(i, IID_ID3D12Resource, (void**)&d3d.render_targets[i]));
@@ -658,7 +658,7 @@ static void create_render_target_views(void) {
     }
 }
 
-static void create_depth_buffer(void) {
+static void create_depth_buffer() {
     DXGI_SWAP_CHAIN_DESC1 desc1;
     ThrowIfFailed(d3d.swap_chain->GetDesc1(&desc1));
     UINT width = desc1.Width;
@@ -702,7 +702,7 @@ static void create_depth_buffer(void) {
                                        get_cpu_descriptor_handle(d3d.dsv_heap));
 }
 
-static void gfx_direct3d12_on_resize(void) {
+static void gfx_direct3d12_on_resize() {
     if (d3d.render_targets[0].Get() != nullptr) {
         d3d.render_targets[0].Reset();
         d3d.render_targets[1].Reset();
@@ -714,7 +714,7 @@ static void gfx_direct3d12_on_resize(void) {
     }
 }
 
-static void gfx_direct3d12_init(void) {
+static void gfx_direct3d12_init() {
     // Load d3d12.dll
     d3d.d3d12_module = LoadLibraryW(L"d3d12.dll");
     if (d3d.d3d12_module == nullptr) {
@@ -897,7 +897,7 @@ static void gfx_direct3d12_init(void) {
     }
 }
 
-static void gfx_direct3d12_end_frame(void) {
+static void gfx_direct3d12_end_frame() {
     if (max_texture_uploads < texture_uploads && texture_uploads != 38 && texture_uploads != 34 &&
         texture_uploads != 29) {
         max_texture_uploads = texture_uploads;
@@ -932,7 +932,7 @@ static void gfx_direct3d12_end_frame(void) {
     }
 }
 
-static void gfx_direct3d12_finish_render(void) {
+static void gfx_direct3d12_finish_render() {
     LARGE_INTEGER t0, t1, t2;
     QueryPerformanceCounter(&t0);
 

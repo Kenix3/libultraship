@@ -103,7 +103,7 @@ static const char* gfx_opengl_get_name() {
     return "OpenGL";
 }
 
-static struct GfxClipParameters gfx_opengl_get_clip_parameters(void) {
+static struct GfxClipParameters gfx_opengl_get_clip_parameters() {
     return { false, framebuffers[current_framebuffer].invert_y };
 }
 
@@ -787,7 +787,7 @@ static void gfx_opengl_shader_get_info(struct ShaderProgram* prg, uint8_t* num_i
     used_textures[1] = prg->used_textures[1];
 }
 
-static GLuint gfx_opengl_new_texture(void) {
+static GLuint gfx_opengl_new_texture() {
     GLuint ret;
     glGenTextures(1, &ret);
     return ret;
@@ -913,7 +913,7 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
     glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_tris);
 }
 
-static void gfx_opengl_init(void) {
+static void gfx_opengl_init() {
 #ifndef __linux__
     glewInit();
 #endif
@@ -949,18 +949,18 @@ static void gfx_opengl_init(void) {
     glGetIntegerv(GL_MAX_SAMPLES, &max_msaa_level);
 }
 
-static void gfx_opengl_on_resize(void) {
+static void gfx_opengl_on_resize() {
 }
 
-static void gfx_opengl_start_frame(void) {
+static void gfx_opengl_start_frame() {
     frame_count++;
 }
 
-static void gfx_opengl_end_frame(void) {
+static void gfx_opengl_end_frame() {
     glFlush();
 }
 
-static void gfx_opengl_finish_render(void) {
+static void gfx_opengl_finish_render() {
 }
 
 static int gfx_opengl_create_framebuffer() {
@@ -1241,11 +1241,11 @@ void gfx_opengl_set_texture_filter(FilteringMode mode) {
     gfx_texture_cache_clear();
 }
 
-FilteringMode gfx_opengl_get_texture_filter(void) {
+FilteringMode gfx_opengl_get_texture_filter() {
     return current_filter_mode;
 }
 
-void gfx_opengl_enable_srgb_mode(void) {
+void gfx_opengl_enable_srgb_mode() {
     srgb_mode = true;
 }
 

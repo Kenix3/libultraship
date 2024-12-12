@@ -170,7 +170,7 @@ void Context::InitConfiguration() {
         return;
     }
 
-    mConfig = std::make_shared<Config>(GetPathRelativeToAppDirectory(GetConfigFilePath()));
+    mConfig = std::make_shared<Config>(GetPathRelativeToAppDirectory(mConfigFilePath));
 }
 
 void Context::InitConsoleVariables() {
@@ -302,10 +302,6 @@ std::shared_ptr<Audio> Context::GetAudio() {
 
 std::shared_ptr<Fast::GfxDebugger> Context::GetGfxDebugger() {
     return mGfxDebugger;
-}
-
-std::string Context::GetConfigFilePath() {
-    return mConfigFilePath;
 }
 
 std::string Context::GetName() {

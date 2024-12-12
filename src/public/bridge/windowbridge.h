@@ -9,13 +9,13 @@
 extern "C" {
 #endif
 
-bool WindowIsRunning(void);
-uint32_t WindowGetWidth(void);
-uint32_t WindowGetHeight(void);
-float WindowGetAspectRatio(void);
-int32_t WindowGetPosX(void);
-int32_t WindowGetPosY(void);
-bool WindowIsFullscreen(void);
+bool WindowIsRunning();
+uint32_t WindowGetWidth();
+uint32_t WindowGetHeight();
+float WindowGetAspectRatio();
+int32_t WindowGetPosX();
+int32_t WindowGetPosY();
+bool WindowIsFullscreen();
 
 #ifdef __cplusplus
 };

@@ -44,18 +44,18 @@ void osContGetReadData(OSContPad* pad) {
 
 // Returns the OS time matching the N64 46.875MHz cycle rate
 // LUSTODO: This should be adjusted to return the time since "boot"
-uint64_t osGetTime(void) {
+uint64_t osGetTime() {
     return std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
 
 // Returns the CPU clock count matching the N64 46.875Mhz cycle rate
-uint32_t osGetCount(void) {
+uint32_t osGetCount() {
     return std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
 
-OSPiHandle* osCartRomInit(void) {
+OSPiHandle* osCartRomInit() {
     return NULL;
 }
 

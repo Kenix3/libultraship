@@ -75,17 +75,17 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePa
     return file;
 }
 
-std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceIdentifier& cacheData,
+std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceIdentifier& identifier,
                                                        std::shared_ptr<ResourceInitData> initData) {
-    if (cacheData.Parent == nullptr) {
-        return LoadFileProcess(cacheData.Path, initData);
+    if (identifier.Parent == nullptr) {
+        return LoadFileProcess(identifier.Path, initData);
     }
-    auto archive = cacheData.Parent;
-    auto file = archive->LoadFile(cacheData.Path, initData);
+    auto archive = identifier.Parent;
+    auto file = archive->LoadFile(identifier.Path, initData);
     if (file != nullptr) {
         SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
     } else {
-        SPDLOG_TRACE("Could not load File {} in ResourceManager", cacheData.Path);
+        SPDLOG_TRACE("Could not load File {} in ResourceManager", identifier.Path);
     }
     return file;
 }
@@ -223,10 +223,10 @@ std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& file
 }
 
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
-ResourceManager::CheckCache(const ResourceIdentifier& cacheData, bool loadExact) {
-    if (!loadExact && mAltAssetsEnabled && !cacheData.Path.starts_with(IResource::gAltAssetPrefix)) {
-        const auto altPath = IResource::gAltAssetPrefix + cacheData.Path;
-        auto altCacheResult = CheckCache({ altPath, cacheData.Owner, cacheData.Parent }, loadExact);
+ResourceManager::CheckCache(const ResourceIdentifier& identifier, bool loadExact) {
+    if (!loadExact && mAltAssetsEnabled && !identifier.Path.starts_with(IResource::gAltAssetPrefix)) {
+        const auto altPath = IResource::gAltAssetPrefix + identifier.Path;
+        auto altCacheResult = CheckCache({ altPath, identifier.Owner, identifier.Parent }, loadExact);
 
         // If the type held at this cache index is a resource, then we return it.
         // Else we attempt to load standard definition assets.
@@ -237,7 +237,7 @@ ResourceManager::CheckCache(const ResourceIdentifier& cacheData, bool loadExact)
 
     const std::lock_guard<std::mutex> lock(mMutex);
 
-    auto cacheFind = mResourceCache.find(cacheData);
+    auto cacheFind = mResourceCache.find(identifier);
     if (cacheFind == mResourceCache.end()) {
         return ResourceLoadError::NotCached;
     }
