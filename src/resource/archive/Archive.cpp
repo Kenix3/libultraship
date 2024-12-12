@@ -21,6 +21,10 @@ Archive::~Archive() {
     SPDLOG_TRACE("destruct archive: {}", GetPath());
 }
 
+bool Archive::operator==(const Archive& rhs) const {
+    return mPath == rhs.mPath;
+}
+
 void Archive::Load() {
     bool opened = Open();
 
@@ -232,6 +236,8 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared
             fileToLoad->Reader = CreateXMLReader(fileToLoad);
             break;
     }
+
+    fileToLoad->InitData->Parent = shared_from_this();
 
     return fileToLoad;
 }

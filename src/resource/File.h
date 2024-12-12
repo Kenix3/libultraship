@@ -16,6 +16,7 @@ class Archive;
 #define RESOURCE_FORMAT_XML 1
 
 struct ResourceInitData {
+    std::shared_ptr<Archive> Parent;
     std::string Path;
     Endianness ByteOrder;
     uint32_t Type;
@@ -26,7 +27,6 @@ struct ResourceInitData {
 };
 
 struct File {
-    std::shared_ptr<Archive> Parent;
     std::shared_ptr<ResourceInitData> InitData;
     std::shared_ptr<std::vector<char>> Buffer;
     std::variant<std::shared_ptr<tinyxml2::XMLDocument>, std::shared_ptr<BinaryReader>> Reader;

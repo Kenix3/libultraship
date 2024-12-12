@@ -221,7 +221,7 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     initData->ResourceVersion = 0;
     initData->Path = path;
     auto guiTexture = std::static_pointer_cast<GuiTexture>(
-        Context::GetInstance()->GetResourceManager()->LoadResource(path, 0, false, initData));
+        Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
 
     GfxRenderingAPI* api = gfx_get_current_rendering_api();
 

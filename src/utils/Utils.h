@@ -8,6 +8,7 @@ namespace Ship {
 
 namespace Math {
 float clamp(float d, float min, float max);
+size_t HashCombine(size_t lhs, size_t rhs);
 template <typename Numeric> bool IsNumber(const std::string& s) {
     Numeric n;
     return ((std::istringstream(s) >> n >> std::ws).eof());
