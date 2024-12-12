@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <thread>
 #include "utils/StringHelper.h"
-#include "utils/glob.h"
+#include "utils/Utils.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
@@ -26,9 +26,9 @@ bool ResourceIdentifier::operator==(const ResourceIdentifier& rhs) const {
 }
 
 size_t ResourceIdentifier::CalculateHash() {
-    size_t hash = std::hash<std::uintptr_t>{}(Owner) ^ std::hash<std::string>{}(Path);
+    size_t hash = Math::HashCombine(std::hash<std::string>{}(Path), std::hash<std::uintptr_t>{}(Owner));
     if (Parent != nullptr) {
-        hash ^= std::hash<std::string>{}(Parent->GetPath());
+        hash = Math::HashCombine(hash, std::hash<std::string>{}(Parent->GetPath()));
     }
     return hash;
 }
