@@ -197,7 +197,7 @@ void ResourceUnloadDirectory(const char* name) {
     Ship::Context::GetInstance()->GetResourceManager()->UnloadDirectory(name);
 }
 
-uint32_t ResourceDoesOtrFileExist() {
-    return Ship::Context::GetInstance()->GetResourceManager()->DidLoadSuccessfully();
+uint32_t IsResourceManagerLoaded() {
+    return Ship::Context::GetInstance()->GetResourceManager()->IsLoaded();
 }
 }

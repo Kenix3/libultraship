@@ -46,7 +46,7 @@ void ResourceUnloadDirectory(const char* name);
 void ResourceClearCache();
 void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount);
 uint32_t ResourceHasGameVersion(uint32_t hash);
-uint32_t ResourceDoesOtrFileExist();
+uint32_t IsResourceManagerLoaded();
 
 #ifdef __cplusplus
 };

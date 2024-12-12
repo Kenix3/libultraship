@@ -48,6 +48,8 @@ class ResourceManager {
               int32_t reservedThreadCount = 1);
     ~ResourceManager();
 
+    bool IsLoaded();
+
     std::shared_ptr<ArchiveManager> GetArchiveManager();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
 
@@ -81,7 +83,6 @@ class ResourceManager {
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectory(const std::string& searchMask);
 
-    bool DidLoadSuccessfully();
     bool OtrSignatureCheck(const char* fileName);
     bool IsAltAssetsEnabled();
     void SetAltAssetsEnabled(bool isEnabled);
