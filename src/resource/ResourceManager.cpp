@@ -35,7 +35,7 @@ ResourceManager::~ResourceManager() {
 }
 
 bool ResourceManager::DidLoadSuccessfully() {
-    return mArchiveManager != nullptr && mArchiveManager->IsArchiveLoaded();
+    return mArchiveManager != nullptr && mArchiveManager->IsLoaded();
 }
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath,

@@ -34,7 +34,7 @@ ArchiveManager::~ArchiveManager() {
     SetArchives({});
 }
 
-bool ArchiveManager::IsArchiveLoaded() {
+bool ArchiveManager::IsLoaded() {
     return !mArchives.empty();
 }
 
