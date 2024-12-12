@@ -20,7 +20,6 @@ class Archive : public std::enable_shared_from_this<Archive> {
     Archive(const std::string& path);
     ~Archive();
 
-    std::size_t operator()(const Archive& archive) const;
     bool operator==(const Archive& rhs) const;
 
     void Load();

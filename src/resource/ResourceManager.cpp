@@ -11,16 +11,29 @@
 
 namespace Ship {
 
+size_t ResourceIdentifier::GetHash() const {
+    return mHash;
+}
+
+ResourceIdentifier::ResourceIdentifier(const std::string& path, const uintptr_t owner,
+                                       const std::shared_ptr<Archive> parent) : Path(path), Owner(owner), Parent(parent) {
+    mHash = CalculateHash();
+}
+
 bool ResourceIdentifier::operator==(const ResourceIdentifier& rhs) const {
     return Owner == rhs.Owner && Path == rhs.Path && Parent == rhs.Parent;
 }
 
-size_t ResourceCacheDataHash::operator()(const ResourceIdentifier& rcd) const {
-    size_t hash = std::hash<std::uintptr_t>{}(rcd.Owner) ^ std::hash<std::string>{}(rcd.Path);
-    if (rcd.Parent != nullptr) {
-        hash ^= std::hash<std::string>{}(rcd.Parent->GetPath());
+size_t ResourceIdentifier::CalculateHash() {
+    size_t hash = std::hash<std::uintptr_t>{}(Owner) ^ std::hash<std::string>{}(Path);
+    if (Parent != nullptr) {
+        hash ^= std::hash<std::string>{}(Parent->GetPath());
     }
     return hash;
+}
+
+size_t ResourceCacheDataHash::operator()(const ResourceIdentifier& rcd) const {
+    return rcd.GetHash();
 }
 
 ResourceManager::ResourceManager() {
