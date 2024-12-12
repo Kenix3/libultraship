@@ -78,7 +78,7 @@ class Config {
      * @return false if the insert failed, i.e. if the list already has a ConfigVersionUpdater with
      * a matching version.
      */
-    bool RegisterConfigVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater);
+    bool RegisterVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater);
 
     /**
      * @brief Runs the Update function on each ConfigVersionUpdater instance if the version matches\
