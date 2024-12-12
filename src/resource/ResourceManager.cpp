@@ -50,7 +50,7 @@ void ResourceManager::Init(const std::vector<std::string>& archivePaths,
     size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
     mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
 
-    if (!DidLoadSuccessfully()) {
+    if (!IsLoaded()) {
         // Nothing ever unpauses the thread pool since nothing will ever try to load the archive again.
         mThreadPool->pause();
     }
@@ -60,7 +60,7 @@ ResourceManager::~ResourceManager() {
     SPDLOG_INFO("destruct ResourceManager");
 }
 
-bool ResourceManager::DidLoadSuccessfully() {
+bool ResourceManager::IsLoaded() {
     return mArchiveManager != nullptr && mArchiveManager->IsArchiveLoaded();
 }
 

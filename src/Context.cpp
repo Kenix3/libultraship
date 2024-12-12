@@ -201,7 +201,7 @@ void Context::InitResourceManager(const std::vector<std::string>& archivePaths,
         GetResourceManager()->Init(archivePaths, validHashes, reservedThreadCount);
     }
 
-    if (!GetResourceManager()->DidLoadSuccessfully()) {
+    if (!GetResourceManager()->IsLoaded()) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
