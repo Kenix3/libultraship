@@ -201,10 +201,6 @@ nlohmann::json Config::GetNestedJson() {
     return mNestedJson;
 }
 
-nlohmann::json Config::GetFlattenedJson() {
-    return mFlattenedJson;
-}
-
 bool Config::IsNewInstance() {
     return mIsNewInstance;
 }
