@@ -54,7 +54,7 @@ class ControllerStick {
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
-    Stick LeftOrRightStick();
+    Stick WhichStick();
 
   private:
     double GetClosestNotch(double angle, double approximationThreshold);

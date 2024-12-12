@@ -415,7 +415,7 @@ ControllerStick::GetAllAxisDirectionMappings() {
     return mAxisDirectionMappings;
 }
 
-Stick ControllerStick::LeftOrRightStick() {
+Stick ControllerStick::WhichStick() {
     return mStick;
 }
 } // namespace Ship
