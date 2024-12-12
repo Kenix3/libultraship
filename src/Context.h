@@ -51,7 +51,6 @@ class Context {
     std::shared_ptr<Audio> GetAudio();
     std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
 
-    std::string GetConfigFilePath();
     std::string GetName();
     std::string GetShortName();
 
