@@ -19,10 +19,10 @@ namespace Ship {
 struct File;
 
 struct ResourceIdentifier {
+    friend class ResourceIdentifierHash;
+
     ResourceIdentifier(const std::string& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
     bool operator==(const ResourceIdentifier& rhs) const;
-
-    size_t GetHash() const;
 
     // Path can either be a Path or a Search Mask including globs depending on usage.
     const std::string Path = "";
@@ -30,6 +30,7 @@ struct ResourceIdentifier {
     const std::shared_ptr<Archive> Parent = nullptr;
 
   private:
+    size_t GetHash() const;
     size_t CalculateHash();
     size_t mHash;
 };
