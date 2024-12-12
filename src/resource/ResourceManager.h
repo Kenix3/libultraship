@@ -87,9 +87,9 @@ class ResourceManager {
     void SetAltAssetsEnabled(bool isEnabled);
 
   protected:
-    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& cacheData,
+    std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
                                                                            bool loadExact = false);
-    std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& cacheData,
+    std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier,
                                           std::shared_ptr<ResourceInitData> initData = nullptr);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath,
                                                                            bool loadExact = false);
