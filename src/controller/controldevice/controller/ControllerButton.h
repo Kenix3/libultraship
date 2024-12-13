@@ -6,6 +6,7 @@
 #include <string>
 #include "libultraship/libultra/controller.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "window/Window.h"
 
 namespace Ship {
 
@@ -37,6 +38,7 @@ class ControllerButton {
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
+    bool ProcessMouseEvent(bool isPressed, MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 
@@ -48,5 +50,6 @@ class ControllerButton {
 
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
+    MouseBtn mMouseButtonForNewMapping;
 };
 } // namespace Ship
