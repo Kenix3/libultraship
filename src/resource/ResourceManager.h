@@ -85,11 +85,11 @@ class ResourceManager {
     LoadDirectoryAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
     LoadDirectoryAsyncWithExclude(const std::vector<std::string>& includeMasks,
-                                  const std::vector<std::string>& excludeMasks, uintptr_t owner = 0,
+                                  const std::vector<std::string>& excludeMasks,
                                   BS::priority_t priority = BS::pr::normal);
     void DirtyDirectory(const std::string& searchMask);
     void UnloadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
-                                    const std::vector<std::string>& excludeMasks, uintptr_t owner);
+                                    const std::vector<std::string>& excludeMasks);
     void UnloadDirectory(const std::string& searchMask);
 
     bool OtrSignatureCheck(const char* fileName);

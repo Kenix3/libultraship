@@ -286,7 +286,7 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
 ResourceManager::LoadDirectoryAsyncWithExclude(const std::vector<std::string>& includeMasks,
-                                               const std::vector<std::string>& excludeMasks, uintptr_t owner,
+                                               const std::vector<std::string>& excludeMasks,
                                                BS::priority_t priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
     auto fileList = GetArchiveManager()->ListFilesWithExclude(includeMasks, excludeMasks);
@@ -294,7 +294,7 @@ ResourceManager::LoadDirectoryAsyncWithExclude(const std::vector<std::string>& i
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync(fileName, owner, false, priority);
+        auto future = LoadResourceAsync(fileName, priority);
         loadedList->push_back(future);
     }
 
@@ -319,7 +319,7 @@ ResourceManager::LoadDirectoryAsync(const ResourceIdentifier& identifier, BS::pr
 std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
 ResourceManager::LoadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
                                           const std::vector<std::string>& excludeMasks, uintptr_t owner) {
-    auto futureList = LoadDirectoryAsyncWithExclude(includeMasks, excludeMasks, owner, true);
+    auto futureList = LoadDirectoryAsyncWithExclude(includeMasks, excludeMasks);
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
 
     for (size_t i = 0; i < futureList->size(); i++) {
@@ -369,11 +369,11 @@ void ResourceManager::DirtyDirectory(const ResourceIdentifier& identifier) {
 }
 
 void ResourceManager::UnloadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
-                                                 const std::vector<std::string>& excludeMasks, uintptr_t owner) {
+                                                 const std::vector<std::string>& excludeMasks) {
     auto list = GetArchiveManager()->ListFilesWithExclude(includeMasks, excludeMasks);
 
     for (const auto& key : *list.get()) {
-        UnloadResource(key, owner);
+        UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
     }
 }
 
