@@ -6,7 +6,6 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "install_config.h"
 #include "graphic/Fast3D/debug/GfxDebugger.h"
-#include "graphic/Fast3D/Fast3dWindow.h"
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -42,15 +41,14 @@ Context::~Context() {
     spdlog::shutdown();
 }
 
-std::shared_ptr<Context> Context::CreateInstance(const std::string name, const std::string shortName,
-                                                 const std::string configFilePath,
-                                                 const std::vector<std::string>& archivePaths,
-                                                 const std::unordered_set<uint32_t>& validHashes,
-                                                 uint32_t reservedThreadCount, AudioSettings audioSettings) {
+std::shared_ptr<Context>
+Context::CreateInstance(const std::string name, const std::string shortName, const std::string configFilePath,
+                        const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
+                        uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window) {
     if (mContext.expired()) {
         auto shared = std::make_shared<Context>(name, shortName, configFilePath);
         mContext = shared;
-        shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings);
+        shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window);
         return shared;
     }
 
@@ -77,7 +75,7 @@ Context::Context(std::string name, std::string shortName, std::string configFile
 }
 
 void Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-                   uint32_t reservedThreadCount, AudioSettings audioSettings) {
+                   uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window) {
     InitLogging();
     InitConfiguration();
     InitConsoleVariables();
@@ -85,7 +83,7 @@ void Context::Init(const std::vector<std::string>& archivePaths, const std::unor
     InitControlDeck();
     InitCrashHandler();
     InitConsole();
-    InitWindow();
+    InitWindow(window);
     InitAudio(audioSettings);
     InitGfxDebugger();
 }
@@ -255,12 +253,17 @@ void Context::InitConsole() {
     GetConsole()->Init();
 }
 
-void Context::InitWindow(std::vector<std::shared_ptr<GuiWindow>> guiWindows) {
+void Context::InitWindow(std::shared_ptr<Window> window) {
     if (GetWindow() != nullptr) {
         return;
     }
 
-    mWindow = std::make_shared<Fast::Fast3dWindow>(guiWindows);
+    if (window == nullptr) {
+        // todo: better error - quit?
+        SPDLOG_ERROR("CONTEXT NEEDS WINDOW BADLY");
+    }
+
+    mWindow = window;
     GetWindow()->Init();
 }
 

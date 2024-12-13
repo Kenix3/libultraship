@@ -25,7 +25,8 @@ class Context {
                                                    const std::string configFilePath,
                                                    const std::vector<std::string>& archivePaths = {},
                                                    const std::unordered_set<uint32_t>& validHashes = {},
-                                                   uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {});
+                                                   uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {},
+                                                   std::shared_ptr<Window> window = nullptr);
     static std::shared_ptr<Context> CreateUninitializedInstance(const std::string name, const std::string shortName,
                                                                 const std::string configFilePath);
     static std::string GetAppBundlePath();
@@ -38,7 +39,7 @@ class Context {
     ~Context();
 
     void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-              uint32_t reservedThreadCount, AudioSettings audioSettings);
+              uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window = nullptr);
 
     std::shared_ptr<spdlog::logger> GetLogger();
     std::shared_ptr<Config> GetConfig();
@@ -64,7 +65,7 @@ class Context {
     void InitAudio(AudioSettings settings);
     void InitGfxDebugger();
     void InitConsole();
-    void InitWindow(std::vector<std::shared_ptr<GuiWindow>> guiWindows = {});
+    void InitWindow(std::shared_ptr<Window> window = nullptr);
 
   protected:
     Context() = default;
