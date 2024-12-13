@@ -96,7 +96,9 @@ static struct {
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
     bool (*on_key_up)(int scancode);
-    void (*on_all_keys_up)();
+    void (*on_all_keys_up)(void);
+    bool (*on_mouse_button_down)(int btn);
+    bool (*on_mouse_button_up)(int btn);
 } dxgi;
 
 static void load_dxgi_library() {
@@ -260,6 +262,18 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
     }
 }
 
+static void on_mouse_button_down(int btn) {
+    // TODO: maybe check boundaries
+    if (dxgi.on_mouse_button_down != nullptr) {
+        dxgi.on_mouse_button_down(btn);
+    }
+}
+static void on_mouse_button_up(int btn) {
+    if (dxgi.on_mouse_button_up != nullptr) {
+        dxgi.on_mouse_button_up(btn);
+    }
+}
+
 double HzToPeriod(double Frequency) {
     if (Frequency == 0)
         Frequency = 60; // Default to 60, to prevent devision by zero
@@ -374,29 +388,41 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             onkeyup(w_param, l_param);
             break;
         case WM_LBUTTONDOWN:
+            on_mouse_button_down(0);
             dxgi.mouse_pressed[0] = true;
             break;
         case WM_LBUTTONUP:
+            on_mouse_button_up(0);
             dxgi.mouse_pressed[0] = false;
             break;
         case WM_MBUTTONDOWN:
+            on_mouse_button_down(1);
             dxgi.mouse_pressed[1] = true;
             break;
         case WM_MBUTTONUP:
+            on_mouse_button_up(1);
             dxgi.mouse_pressed[1] = false;
             break;
         case WM_RBUTTONDOWN:
+            on_mouse_button_down(2);
             dxgi.mouse_pressed[2] = true;
             break;
         case WM_RBUTTONUP:
+            on_mouse_button_up(2);
             dxgi.mouse_pressed[2] = false;
             break;
-        case WM_XBUTTONDOWN:
-            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = true;
+        case WM_XBUTTONDOWN: {
+            int btn = 2 + GET_XBUTTON_WPARAM(w_param);
+            on_mouse_button_down(btn);
+            dxgi.mouse_pressed[btn] = true;
             break;
-        case WM_XBUTTONUP:
-            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = false;
+	}
+        case WM_XBUTTONUP: {
+            int btn = 2 + GET_XBUTTON_WPARAM(w_param);
+            on_mouse_button_up(btn);
+            dxgi.mouse_pressed[btn] = false;
             break;
+	}
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             dxgi.mouse_wheel[1] = 0;
@@ -593,6 +619,11 @@ static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), b
     dxgi.on_key_down = on_key_down;
     dxgi.on_key_up = on_key_up;
     dxgi.on_all_keys_up = on_all_keys_up;
+}
+
+static void gfx_dxgi_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
+    dxgi.on_mouse_button_down = on_btn_down;
+    dxgi.on_mouse_button_up = on_btn_up;
 }
 
 static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
@@ -1003,6 +1034,7 @@ bool gfx_dxgi_is_fullscreen() {
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
+                                                       gfx_dxgi_set_mouse_callbacks,
                                                        gfx_dxgi_set_fullscreen_changed_callback,
                                                        gfx_dxgi_set_fullscreen,
                                                        gfx_dxgi_get_active_window_refresh_rate,

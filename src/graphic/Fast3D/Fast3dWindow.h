@@ -51,6 +51,8 @@ class Fast3dWindow : public Ship::Window {
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp();
+    static bool MouseButtonDown(int button);
+    static bool MouseButtonUp(int button);
     static void OnFullscreenChanged(bool isNowFullscreen);
 
   private:
