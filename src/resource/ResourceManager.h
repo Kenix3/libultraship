@@ -62,6 +62,9 @@ class ResourceManager {
     std::shared_future<std::shared_ptr<IResource>>
     LoadResourceAsync(const ResourceIdentifier& identifier, bool loadExact = false,
                       BS::priority_t priority = BS::pr::normal, std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
+    LoadDirectoryWithExclude(const std::vector<std::string>& includeMasks, const std::vector<std::string>& excludeMasks,
+                             uintptr_t owner);
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const ResourceIdentifier& identifier);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
     LoadDirectoryAsync(const ResourceIdentifier& identifier, BS::priority_t priority = BS::pr::normal);
@@ -80,7 +83,13 @@ class ResourceManager {
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
     LoadDirectoryAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
+    std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
+    LoadDirectoryAsyncWithExclude(const std::vector<std::string>& includeMasks,
+                                  const std::vector<std::string>& excludeMasks, uintptr_t owner = 0,
+                                  BS::priority_t priority = BS::pr::normal);
     void DirtyDirectory(const std::string& searchMask);
+    void UnloadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
+                                    const std::vector<std::string>& excludeMasks, uintptr_t owner);
     void UnloadDirectory(const std::string& searchMask);
 
     bool OtrSignatureCheck(const char* fileName);

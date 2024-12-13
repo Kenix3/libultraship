@@ -64,6 +64,39 @@ bool ArchiveManager::HasFile(uint64_t hash) {
     return mFileToArchive.count(hash) > 0;
 }
 
+std::shared_ptr<std::vector<std::string>>
+ArchiveManager::ListFilesWithExclude(const std::vector<std::string>& include, const std::vector<std::string>& exclude) {
+    auto list = std::make_shared<std::vector<std::string>>();
+    for (const auto& [hash, path] : mHashes) {
+        if (include.empty() && exclude.empty()) {
+            list->push_back(path);
+            continue;
+        }
+        bool includeMatch = include.empty();
+        if (!include.empty()) {
+            for (std::string filter : include) {
+                if (glob_match(filter.c_str(), path.c_str())) {
+                    includeMatch = true;
+                    break;
+                }
+            }
+        }
+        bool excludeMatch = false;
+        if (!include.empty()) {
+            for (std::string filter : exclude) {
+                if (glob_match(filter.c_str(), path.c_str())) {
+                    excludeMatch = true;
+                    break;
+                }
+            }
+        }
+        if (includeMatch && !excludeMatch) {
+            list->push_back(path);
+        }
+    }
+    return list;
+}
+
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& filter) {
     auto list = std::make_shared<std::vector<std::string>>();
     for (const auto& [hash, path] : mHashes) {

@@ -285,6 +285,23 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
+ResourceManager::LoadDirectoryAsyncWithExclude(const std::vector<std::string>& includeMasks,
+                                               const std::vector<std::string>& excludeMasks, uintptr_t owner,
+                                               BS::priority_t priority) {
+    auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
+    auto fileList = GetArchiveManager()->ListFilesWithExclude(includeMasks, excludeMasks);
+    loadedList->reserve(fileList->size());
+
+    for (size_t i = 0; i < fileList->size(); i++) {
+        auto fileName = std::string(fileList->operator[](i));
+        auto future = LoadResourceAsync(fileName, owner, false, priority);
+        loadedList->push_back(future);
+    }
+
+    return loadedList;
+}
+
+std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
 ResourceManager::LoadDirectoryAsync(const ResourceIdentifier& identifier, BS::priority_t priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
     auto fileList = GetArchiveManager()->ListFiles(identifier.Path);
@@ -294,6 +311,21 @@ ResourceManager::LoadDirectoryAsync(const ResourceIdentifier& identifier, BS::pr
         auto fileName = std::string(fileList->operator[](i));
         auto future = LoadResourceAsync({ fileName, identifier.Owner, identifier.Parent }, false, priority);
         loadedList->push_back(future);
+    }
+
+    return loadedList;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
+ResourceManager::LoadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
+                                          const std::vector<std::string>& excludeMasks, uintptr_t owner) {
+    auto futureList = LoadDirectoryAsyncWithExclude(includeMasks, excludeMasks, owner, true);
+    auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
+
+    for (size_t i = 0; i < futureList->size(); i++) {
+        const auto future = futureList->at(i);
+        const auto resource = future.get();
+        loadedList->push_back(resource);
     }
 
     return loadedList;
@@ -333,6 +365,15 @@ void ResourceManager::DirtyDirectory(const ResourceIdentifier& identifier) {
         } else {
             UnloadResource(identifier);
         }
+    }
+}
+
+void ResourceManager::UnloadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
+                                                 const std::vector<std::string>& excludeMasks, uintptr_t owner) {
+    auto list = GetArchiveManager()->ListFilesWithExclude(includeMasks, excludeMasks);
+
+    for (const auto& key : *list.get()) {
+        UnloadResource(key, owner);
     }
 }
 
