@@ -286,8 +286,7 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 
 std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
 ResourceManager::LoadDirectoryAsyncWithExclude(const std::vector<std::string>& includeMasks,
-                                               const std::vector<std::string>& excludeMasks,
-                                               BS::priority_t priority) {
+                                               const std::vector<std::string>& excludeMasks, BS::priority_t priority) {
     auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
     auto fileList = GetArchiveManager()->ListFilesWithExclude(includeMasks, excludeMasks);
     loadedList->reserve(fileList->size());
