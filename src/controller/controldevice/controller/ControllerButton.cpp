@@ -3,7 +3,9 @@
 #include "controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/keyboard/MouseKeyToButtonMapping.h"
 
+#include "window/Window.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
 #include <sstream>
@@ -12,7 +14,7 @@
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN) {
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(MouseBtn::MOUSE_BTN_UNKNOWN) {
 }
 
 ControllerButton::~ControllerButton() {
@@ -180,6 +182,11 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
     }
 
+    // FIXME: click cancel button with mouse might trigger binding (yeah)
+    if (mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
+        mapping = std::make_shared<MouseKeyToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
+    }
+
     if (mapping == nullptr) {
         mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
     }
@@ -189,6 +196,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     }
 
     mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
+    mMouseButtonForNewMapping = MouseBtn::MOUSE_BTN_UNKNOWN;
     mUseKeydownEventToCreateNewMapping = false;
 
     if (id != "") {
@@ -222,6 +230,25 @@ bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode sc
                 std::dynamic_pointer_cast<KeyboardKeyToButtonMapping>(mapping);
             if (ktobMapping != nullptr) {
                 result = result || ktobMapping->ProcessKeyboardEvent(eventType, scancode);
+            }
+        }
+    }
+    return result;
+}
+
+bool ControllerButton::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+    if (mUseKeydownEventToCreateNewMapping && isPressed) {
+        mMouseButtonForNewMapping = button;
+        return true;
+    }
+
+    bool result = false;
+    for (auto [id, mapping] : GetAllButtonMappings()) {
+        if (mapping->GetMappingType() == MAPPING_TYPE_MOUSE) {
+            std::shared_ptr<MouseKeyToButtonMapping> mtobMapping =
+                std::dynamic_pointer_cast<MouseKeyToButtonMapping>(mapping);
+            if (mtobMapping != nullptr) {
+                result = result || mtobMapping->ProcessMouseEvent(isPressed, button);
             }
         }
     }
