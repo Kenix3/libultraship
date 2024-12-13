@@ -82,6 +82,7 @@ void Fast3dWindow::Init() {
              height, posX, posY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
+    mWindowManagerApi->set_mouse_callbacks(MouseButtonDown, MouseButtonUp);
 
     SetTextureFilter((FilteringMode)CVarGetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
@@ -285,6 +286,21 @@ bool Fast3dWindow::KeyDown(int32_t scancode) {
 void Fast3dWindow::AllKeysUp() {
     Ship::Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
                                                                          Ship::KbScancode::LUS_KB_UNKNOWN);
+}
+
+bool Fast3dWindow::MouseButtonUp(int button) {
+    return Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseEvent(
+        false,
+        static_cast<Ship::MouseBtn>(button)
+    );
+}
+
+bool Fast3dWindow::MouseButtonDown(int button) {
+    bool isProcessed = Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseEvent(
+        true,
+        static_cast<Ship::MouseBtn>(button)
+    );
+    return isProcessed;
 }
 
 void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
