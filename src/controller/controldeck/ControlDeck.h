@@ -10,7 +10,6 @@ namespace Ship {
 
 class ControlDeck {
   public:
-    ControlDeck();
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
     ~ControlDeck();
 
