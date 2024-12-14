@@ -33,7 +33,6 @@
 
 #include "log/luslog.h"
 #include "window/gui/Gui.h"
-#include "resource/GameVersions.h"
 #include "resource/ResourceManager.h"
 #include "utils/Utils.h"
 #include "Context.h"
