@@ -15,7 +15,6 @@ class ControlDeck {
 
     void Init(uint8_t* controllerBits);
     virtual void WriteToPad(void* pads) = 0;
-    OSContPad* GetPads();
     uint8_t* GetControllerBits();
     std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
     void BlockGameInput(int32_t blockId);
@@ -32,7 +31,6 @@ class ControlDeck {
   protected:
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
     uint8_t* mControllerBits = nullptr;
-    OSContPad* mPads;
     bool mSinglePlayerMappingMode;
 
     bool AllGameInputBlocked();
@@ -47,9 +45,12 @@ class ControlDeck : public Ship::ControlDeck {
     ControlDeck();
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
 
+    OSContPad* GetPads();
     void WriteToPad(void* pad) override;
 
   private:
     void WriteToOSContPad(OSContPad* pad);
+
+    OSContPad* mPads;
 };
 } // namespace LUS

@@ -13,7 +13,7 @@
 namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : mPads(nullptr), mSinglePlayerMappingMode(false) {
+    : mSinglePlayerMappingMode(false) {
     mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
 }
 
@@ -67,10 +67,6 @@ bool ControlDeck::KeyboardGameInputBlocked() {
     return AllGameInputBlocked() || ImGui::GetIO().WantCaptureKeyboard;
 }
 
-OSContPad* ControlDeck::GetPads() {
-    return mPads;
-}
-
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
     return mPorts[port]->GetConnectedController();
 }
@@ -98,13 +94,17 @@ bool ControlDeck::IsSinglePlayerMappingMode() {
 
 namespace LUS {
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : Ship::ControlDeck(additionalBitmasks){
+    : Ship::ControlDeck(additionalBitmasks), mPads(nullptr) {
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
         mPorts.push_back(std::make_shared<Ship::ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
     }
 }
 
 ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
+}
+
+OSContPad* ControlDeck::GetPads() {
+    return mPads;
 }
 
 void ControlDeck::WriteToPad(void* pad) {
