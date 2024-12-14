@@ -15,7 +15,7 @@ class ControlDeck {
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);
-    void WriteToPad(OSContPad* pad);
+    virtual void WriteToPad(void* pads) = 0;
     OSContPad* GetPads();
     uint8_t* GetControllerBits();
     std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
@@ -30,7 +30,7 @@ class ControlDeck {
 
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 
-  private:
+  protected:
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
     uint8_t* mControllerBits = nullptr;
     OSContPad* mPads;
@@ -41,3 +41,16 @@ class ControlDeck {
     std::shared_ptr<ShipDeviceIndexMappingManager> mDeviceIndexMappingManager;
 };
 } // namespace Ship
+
+namespace LUS {
+class ControlDeck : public Ship::ControlDeck {
+  public:
+    ControlDeck();
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+
+    void WriteToPad(void* pad) override;
+
+  private:
+    void WriteToOSContPad(OSContPad* pad);
+};
+} // namespace LUS

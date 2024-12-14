@@ -44,7 +44,7 @@ class Context {
     std::shared_ptr<Config> GetConfig();
     std::shared_ptr<ConsoleVariable> GetConsoleVariables();
     std::shared_ptr<ResourceManager> GetResourceManager();
-    std::shared_ptr<ControlDeck> GetControlDeck();
+    std::shared_ptr<LUS::ControlDeck> GetControlDeck();
     std::shared_ptr<CrashHandler> GetCrashHandler();
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
@@ -76,7 +76,7 @@ class Context {
     std::shared_ptr<Config> mConfig;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;
     std::shared_ptr<ResourceManager> mResourceManager;
-    std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<LUS::ControlDeck> mControlDeck;
     std::shared_ptr<CrashHandler> mCrashHandler;
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;

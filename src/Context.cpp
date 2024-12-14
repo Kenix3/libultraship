@@ -218,7 +218,7 @@ void Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmask
         return;
     }
 
-    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks);
+    mControlDeck = std::make_shared<LUS::ControlDeck>(additionalBitmasks);
 }
 
 void Context::InitCrashHandler() {
@@ -280,7 +280,7 @@ std::shared_ptr<ResourceManager> Context::GetResourceManager() {
     return mResourceManager;
 }
 
-std::shared_ptr<ControlDeck> Context::GetControlDeck() {
+std::shared_ptr<LUS::ControlDeck> Context::GetControlDeck() {
     return mControlDeck;
 }
 
