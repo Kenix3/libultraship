@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "resource/Resource.h"
 
-namespace LUS {
+namespace Fast {
 
 /*
     We have to keep the Pads since its probably an
@@ -62,4 +62,4 @@ class Light : public Ship::Resource<LightEntry> {
     LightEntry mLight;
     std::vector<LightData> mLightData;
 };
-} // namespace LUS
+} // namespace Fast

@@ -3,26 +3,22 @@
 namespace Ship {
 
 enum class ResourceType {
-    // Not set
     None = 0x00000000,
 
+    Blob = 0x4F424C42, // OBLB
     Json = 0x4A534F4E, // JSON
 };
 } // namespace Ship
 
-namespace LUS {
+namespace Fast {
 
 enum class ResourceType {
-    // Not set
     None = 0x00000000,
 
-    // Common
-    Archive = 0x4F415243,     // OARC (UNUSED)
     DisplayList = 0x4F444C54, // ODLT
-    Vertex = 0x4F565458,      // OVTX
-    Matrix = 0x4F4D5458,      // OMTX
-    Blob = 0x4F424C42,        // OBLB
-    Texture = 0x4F544558,     // OTEX
     Light = 0x46669697,       // LGTS
+    Matrix = 0x4F4D5458,      // OMTX
+    Texture = 0x4F544558,     // OTEX
+    Vertex = 0x4F565458,      // OVTX
 };
-} // namespace LUS
+} // namespace Fast

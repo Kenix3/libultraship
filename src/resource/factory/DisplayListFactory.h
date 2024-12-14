@@ -4,7 +4,7 @@
 #include "resource/ResourceFactoryBinary.h"
 #include "resource/ResourceFactoryXML.h"
 
-namespace LUS {
+namespace Fast {
 class ResourceFactoryDisplayList {
   protected:
     uint32_t GetCombineLERPValue(const char* valStr);
@@ -19,4 +19,4 @@ class ResourceFactoryXMLDisplayListV0 : public ResourceFactoryDisplayList, publi
   public:
     std::shared_ptr<Ship::IResource> ReadResource(std::shared_ptr<Ship::File> file) override;
 };
-} // namespace LUS
+} // namespace Fast

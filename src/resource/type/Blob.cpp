@@ -1,6 +1,6 @@
 #include "Blob.h"
 
-namespace LUS {
+namespace Ship {
 Blob::Blob() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
 }
 
@@ -11,4 +11,4 @@ void* Blob::GetPointer() {
 size_t Blob::GetPointerSize() {
     return Data.size() * sizeof(uint8_t);
 }
-} // namespace LUS
+} // namespace Ship
