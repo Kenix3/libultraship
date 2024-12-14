@@ -42,7 +42,6 @@
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 #include "window/gui/Gui.h"
-#include "window/Window.h"
 #include "gfx_pc.h"
 #include <public/bridge/consolevariablebridge.h>
 
