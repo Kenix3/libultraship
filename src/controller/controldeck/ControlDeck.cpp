@@ -15,7 +15,7 @@ namespace Ship {
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
     : mPads(nullptr), mSinglePlayerMappingMode(false) {
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
+        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<LUS::Controller>(i, additionalBitmasks)));
     }
 
     mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();

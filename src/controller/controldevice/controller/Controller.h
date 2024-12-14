@@ -43,7 +43,7 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerGyro> GetGyro();
     std::shared_ptr<ControllerRumble> GetRumble();
     std::shared_ptr<ControllerLED> GetLED();
-    void ReadToPad(OSContPad* pad);
+    virtual void ReadToPad(void* pad) = 0;
     bool HasConfig();
     uint8_t GetPortIndex();
     std::vector<std::shared_ptr<ControllerMapping>> GetAllMappings();
@@ -53,7 +53,7 @@ class Controller : public ControlDevice {
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceIndex lusIndex);
 
-  private:
+  protected:
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
 
@@ -66,3 +66,16 @@ class Controller : public ControlDevice {
     std::deque<OSContPad> mPadBuffer;
 };
 } // namespace Ship
+
+namespace LUS {
+class Controller : public Ship::Controller {
+  public:
+    Controller(uint8_t portIndex);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+
+    void ReadToPad(void* pad) override;
+
+  private:
+    void ReadToOSContPad(OSContPad* pad);
+};
+} // namespace LUS
