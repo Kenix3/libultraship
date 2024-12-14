@@ -62,8 +62,6 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerGyro> mGyro;
     std::shared_ptr<ControllerRumble> mRumble;
     std::shared_ptr<ControllerLED> mLED;
-
-    std::deque<OSContPad> mPadBuffer;
 };
 } // namespace Ship
 
@@ -77,5 +75,7 @@ class Controller : public Ship::Controller {
 
   private:
     void ReadToOSContPad(OSContPad* pad);
+
+    std::deque<OSContPad> mPadBuffer;
 };
 } // namespace LUS
