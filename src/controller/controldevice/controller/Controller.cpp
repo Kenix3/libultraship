@@ -345,4 +345,4 @@ void Controller::ReadToOSContPad(OSContPad* pad) {
         mPadBuffer.pop_back();
     }
 }
-}
+} // namespace LUS

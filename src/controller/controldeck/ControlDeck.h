@@ -27,7 +27,7 @@ class ControlDeck {
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 
   protected:
-    bool AllGameInputBlocked();  
+    bool AllGameInputBlocked();
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
 
   private:

@@ -12,8 +12,7 @@
 
 namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : mSinglePlayerMappingMode(false) {
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : mSinglePlayerMappingMode(false) {
     mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
 }
 
@@ -128,4 +127,4 @@ void ControlDeck::WriteToOSContPad(OSContPad* pad) {
         }
     }
 }
-} // namepsace LUS
+} // namespace LUS
