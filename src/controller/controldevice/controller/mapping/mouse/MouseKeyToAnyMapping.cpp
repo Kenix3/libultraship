@@ -13,18 +13,7 @@ MouseKeyToAnyMapping::~MouseKeyToAnyMapping() {
 }
 
 std::string MouseKeyToAnyMapping::GetPhysicalInputName() {
-    switch (mButton) {
-        case MouseBtn::LEFT:
-            return "Left";
-        case MouseBtn::MIDDLE:
-            return "Middle";
-        case MouseBtn::RIGHT:
-            return "Right";
-        case MouseBtn::BACKWARD:
-            return "Backward";
-        case MouseBtn::FORWARD:
-            return "Forward";
-    }
+    return mouseBtnNames[static_cast<int>(mButton)];
 }
 
 bool MouseKeyToAnyMapping::ProcessMouseEvent(bool isPressed, MouseBtn button) {
