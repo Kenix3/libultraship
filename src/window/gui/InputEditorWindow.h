@@ -71,7 +71,7 @@ class InputEditorWindow : public GuiWindow {
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
     void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks);
-    void DrawAnalogStickDeviceIcons(uint8_t portIndex, Stick stick);
+    void DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex stickIndex);
     void DrawRumbleDeviceIcons(uint8_t portIndex);
     void DrawGyroDeviceIcons(uint8_t portIndex);
     void DrawLEDDeviceIcons(uint8_t portIndex);

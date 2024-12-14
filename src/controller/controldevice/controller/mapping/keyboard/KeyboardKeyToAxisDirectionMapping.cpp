@@ -6,10 +6,10 @@
 #include "Context.h"
 
 namespace Ship {
-KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
+KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
                                                                      Direction direction, KbScancode scancode)
     : ControllerInputMapping(ShipDeviceIndex::Keyboard), KeyboardKeyToAnyMapping(scancode),
-      ControllerAxisDirectionMapping(ShipDeviceIndex::Keyboard, portIndex, stick, direction) {
+      ControllerAxisDirectionMapping(ShipDeviceIndex::Keyboard, portIndex, stickIndex, direction) {
 }
 
 float KeyboardKeyToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
@@ -21,14 +21,14 @@ float KeyboardKeyToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 }
 
 std::string KeyboardKeyToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-KB%d", mPortIndex, mStick, mDirection, mKeyboardScancode);
+    return StringHelper::Sprintf("P%d-S%d-D%d-KB%d", mPortIndex, mStickIndex, mDirection, mKeyboardScancode);
 }
 
 void KeyboardKeyToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToAxisDirectionMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
+    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), mKeyboardScancode);
     CVarSave();
