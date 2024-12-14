@@ -280,7 +280,7 @@ std::shared_ptr<ResourceManager> Context::GetResourceManager() {
     return mResourceManager;
 }
 
-std::shared_ptr<LUS::ControlDeck> Context::GetControlDeck() {
+std::shared_ptr<ControlDeck> Context::GetControlDeck() {
     return mControlDeck;
 }
 
