@@ -7,7 +7,7 @@
 namespace Ship {
 MouseKeyToButtonMapping::MouseKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                        MouseBtn button)
-    : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseKeyToAnyMapping(scancode), // TODO: device index?
+    : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseKeyToAnyMapping(button),
       ControllerButtonMapping(ShipDeviceIndex::Mouse, portIndex, bitmask) {
 }
 
@@ -36,7 +36,7 @@ void MouseKeyToButtonMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "MouseKeyToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    CVarSetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), mButton);
+    CVarSetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), static_cast<int>(mButton));
     CVarSave();
 }
 

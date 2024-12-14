@@ -5,6 +5,7 @@
 #include <config/Config.h>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
+#include "window/MouseMeta.h"
 
 namespace Ship {
 

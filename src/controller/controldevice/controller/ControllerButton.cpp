@@ -3,9 +3,8 @@
 #include "controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
-#include "controller/controldevice/controller/mapping/keyboard/MouseKeyToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseKeyToButtonMapping.h"
 
-#include "window/Window.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
 #include <sstream>

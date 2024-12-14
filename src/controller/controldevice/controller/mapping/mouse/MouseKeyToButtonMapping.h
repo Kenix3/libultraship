@@ -1,5 +1,8 @@
+#pragma once
+
 #include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "MouseKeyToAnyMapping.h"
+#include "window/MouseMeta.h"
 
 namespace Ship {
 class MouseKeyToButtonMapping final : public MouseKeyToAnyMapping, public ControllerButtonMapping {

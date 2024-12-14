@@ -6,7 +6,7 @@
 #include <string>
 #include "libultraship/libultra/controller.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "window/Window.h"
+#include "window/MouseMeta.h"
 
 namespace Ship {
 
@@ -38,7 +38,7 @@ class ControllerButton {
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
-    bool ProcessMouseEvent(bool isPressed, MouseBtn button);
+    bool ProcessMouseEvent(bool isPressed, Ship::MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 
