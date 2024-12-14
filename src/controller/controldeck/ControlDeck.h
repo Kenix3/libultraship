@@ -23,17 +23,16 @@ class ControlDeck {
     bool KeyboardGameInputBlocked();
     void SetSinglePlayerMappingMode(bool singlePlayer);
     bool IsSinglePlayerMappingMode();
-
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
-
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 
   protected:
+    bool AllGameInputBlocked();  
     std::vector<std::shared_ptr<ControlPort>> mPorts = {};
+
+  private:
     uint8_t* mControllerBits = nullptr;
     bool mSinglePlayerMappingMode;
-
-    bool AllGameInputBlocked();
     std::unordered_map<int32_t, bool> mGameInputBlockers;
     std::shared_ptr<ShipDeviceIndexMappingManager> mDeviceIndexMappingManager;
 };
