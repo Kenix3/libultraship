@@ -54,10 +54,12 @@ class Controller : public ControlDevice {
     void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceIndex lusIndex);
 
   protected:
+    std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> mButtons;
+
+  private:
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
 
-    std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> mButtons;
     std::shared_ptr<ControllerStick> mLeftStick, mRightStick;
     std::shared_ptr<ControllerGyro> mGyro;
     std::shared_ptr<ControllerRumble> mRumble;
