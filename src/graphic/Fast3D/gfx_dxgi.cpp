@@ -550,14 +550,29 @@ static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
 
 static void gfx_dxgi_set_mouse_capture(bool capture) {
     if (capture) {
+        RECT rect;
+        rect.left = dxgi.posX + 1;
+        rect.top = dxgi.posY + 1;
+        rect.right = dxgi.posX + dxgi.current_width - 1;
+        rect.bottom = dxgi.posY + dxgi.current_height - 1;
+        ClipCursor(&rect);
+        ShowCursor(FALSE);
         SetCapture(dxgi.h_wnd);
     } else {
+        ClipCursor(nullptr);
+        ShowCursor(TRUE);
         ReleaseCapture();
     }
 }
 
 static bool gfx_dxgi_is_mouse_captured() {
-    return (GetCapture() != NULL);
+    CURSORINFO ci;
+    ci.cbSize = sizeof(ci);
+    if (!GetCursorInfo(&ci)) {
+        fprintf(stderr, "Error: failed to fetch cursor info\n");
+        return false;
+    }
+    return (ci.flags > 0); // if cursor not showing
 }
 
 static void gfx_dxgi_set_fullscreen(bool enable) {
