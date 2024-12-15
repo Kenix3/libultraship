@@ -91,6 +91,7 @@ static struct {
     bool mouse_pressed[5];
     float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
+    bool is_mouse_captured;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
@@ -306,6 +307,15 @@ static void gfx_dxgi_close() {
     dxgi.is_running = false;
 }
 
+static void apply_mouse_capture_clip() {
+    RECT rect;
+    rect.left = dxgi.posX + 1;
+    rect.top = dxgi.posY + 1;
+    rect.right = dxgi.posX + dxgi.current_width - 1;
+    rect.bottom = dxgi.posY + dxgi.current_height - 1;
+    ClipCursor(&rect);
+}
+
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
     Ship::WindowEvent event_impl;
@@ -403,6 +413,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                dxgi.h_Monitor);
             GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
+            break;
+        case WM_SETFOCUS:
+            if (dxgi.is_mouse_captured) {
+                apply_mouse_capture_clip();
+            }
             break;
         default:
             return DefWindowProcW(h_wnd, message, w_param, l_param);
@@ -550,12 +565,7 @@ static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
 
 static void gfx_dxgi_set_mouse_capture(bool capture) {
     if (capture) {
-        RECT rect;
-        rect.left = dxgi.posX + 1;
-        rect.top = dxgi.posY + 1;
-        rect.right = dxgi.posX + dxgi.current_width - 1;
-        rect.bottom = dxgi.posY + dxgi.current_height - 1;
-        ClipCursor(&rect);
+        apply_mouse_capture_clip();
         ShowCursor(FALSE);
         SetCapture(dxgi.h_wnd);
     } else {
@@ -563,16 +573,11 @@ static void gfx_dxgi_set_mouse_capture(bool capture) {
         ShowCursor(TRUE);
         ReleaseCapture();
     }
+    dxgi.is_mouse_captured = capture;
 }
 
 static bool gfx_dxgi_is_mouse_captured() {
-    CURSORINFO ci;
-    ci.cbSize = sizeof(ci);
-    if (!GetCursorInfo(&ci)) {
-        fprintf(stderr, "Error: failed to fetch cursor info\n");
-        return false;
-    }
-    return (ci.flags != 1); // if cursor not showing
+    return dxgi.is_mouse_captured;
 }
 
 static void gfx_dxgi_set_fullscreen(bool enable) {
