@@ -572,7 +572,7 @@ static bool gfx_dxgi_is_mouse_captured() {
         fprintf(stderr, "Error: failed to fetch cursor info\n");
         return false;
     }
-    return (ci.flags > 0); // if cursor not showing
+    return (ci.flags != 1); // if cursor not showing
 }
 
 static void gfx_dxgi_set_fullscreen(bool enable) {
