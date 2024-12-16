@@ -31,7 +31,7 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
 
 ArchiveManager::~ArchiveManager() {
     SPDLOG_TRACE("destruct archive manager");
-    SetArchives({});
+    SetArchives(nullptr);
 }
 
 bool ArchiveManager::IsLoaded() {
@@ -82,8 +82,12 @@ void ArchiveManager::AddGameVersion(uint32_t newGameVersion) {
     mGameVersions.push_back(newGameVersion);
 }
 
-std::vector<std::shared_ptr<Archive>> ArchiveManager::GetArchives() {
-    return mArchives;
+std::shared_ptr<std::vector<std::shared_ptr<Archive>>> ArchiveManager::GetArchives() {
+    auto archives = std::make_shared<std::vector<std::shared_ptr<Archive>>>();
+    for (const auto& archive : mArchives) {
+        archives->push_back(archive);
+    }
+    return archives;
 }
 
 void ArchiveManager::ResetVirtualFileSystem() {
@@ -118,8 +122,15 @@ size_t ArchiveManager::RemoveArchive(std::shared_ptr<Archive> archive) {
     return RemoveArchive(archive->GetPath());
 }
 
-void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& archives) {
-    mArchives = archives;
+void ArchiveManager::SetArchives(std::shared_ptr<std::vector<std::shared_ptr<Archive>>> archives) {
+    mArchives.clear();
+
+    if (archives) {
+        for (const auto& archive : *archives) {
+            mArchives.push_back(archive);
+        }
+    }
+
     ResetVirtualFileSystem();
 }
 
