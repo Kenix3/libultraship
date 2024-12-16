@@ -1,7 +1,7 @@
 #include "resource/factory/LightFactory.h"
 #include "resource/type/Light.h"
 
-std::shared_ptr<Ship::IResource> LUS::ResourceFactoryBinaryLightV0::ReadResource(std::shared_ptr<Ship::File> file) {
+std::shared_ptr<Ship::IResource> Fast::ResourceFactoryBinaryLightV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }

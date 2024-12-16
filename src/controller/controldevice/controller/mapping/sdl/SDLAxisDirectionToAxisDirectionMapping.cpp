@@ -9,12 +9,12 @@
 
 namespace Ship {
 SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex,
-                                                                               uint8_t portIndex, Stick stick,
+                                                                               uint8_t portIndex, StickIndex stickIndex,
                                                                                Direction direction,
                                                                                int32_t sdlControllerAxis,
                                                                                int32_t axisDirection)
     : ControllerInputMapping(shipDeviceIndex),
-      ControllerAxisDirectionMapping(shipDeviceIndex, portIndex, stick, direction),
+      ControllerAxisDirectionMapping(shipDeviceIndex, portIndex, stickIndex, direction),
       SDLAxisDirectionToAnyMapping(shipDeviceIndex, sdlControllerAxis, axisDirection) {
 }
 
@@ -39,7 +39,7 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
 }
 
 std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mStick, mDirection,
+    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mStickIndex, mDirection,
                                  ControllerInputMapping::mShipDeviceIndex, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
@@ -48,7 +48,7 @@ void SDLAxisDirectionToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "SDLAxisDirectionToAxisDirectionMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
+    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
                    ControllerInputMapping::mShipDeviceIndex);

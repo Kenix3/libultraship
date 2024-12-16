@@ -2,7 +2,7 @@
 #include "resource/type/Matrix.h"
 #include "spdlog/spdlog.h"
 
-namespace LUS {
+namespace Fast {
 std::shared_ptr<Ship::IResource> ResourceFactoryBinaryMatrixV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
@@ -23,4 +23,4 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryMatrixV0::ReadResource(std
 
     return matrix;
 }
-} // namespace LUS
+} // namespace Fast

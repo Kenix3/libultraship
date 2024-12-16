@@ -1225,7 +1225,7 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
     }
 }
 
-void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, Stick stick) {
+void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex stickIndex) {
     std::set<ShipDeviceIndex> allLusDeviceIndices;
     allLusDeviceIndices.insert(ShipDeviceIndex::Keyboard);
     for (auto [lusIndex, mapping] : Context::GetInstance()
@@ -1238,7 +1238,7 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, Stick stic
     std::vector<std::pair<ShipDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
     for (auto lusIndex : allLusDeviceIndices) {
         auto controllerStick =
-            stick == Stick::LEFT_STICK
+            stickIndex == StickIndex::LEFT_STICK
                 ? Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLeftStick()
                 : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRightStick();
         if (controllerStick->HasMappingsForShipDeviceIndex(lusIndex)) {

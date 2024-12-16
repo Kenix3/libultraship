@@ -394,12 +394,12 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
                 len +=
                     sprintf(buf + len,
                             "float4 maskVal%d = hookTexture2D(uTexMask%d, uTex%dSmplr, vTexCoordAdj%d, maskSize%d);\n",
-                            i, i, i, i);
+                            i, i, i, i, i);
                 if (cc_features.used_blend[i]) {
                     len += sprintf(
                         buf + len,
                         "float4 blendVal%d = hookTexture2D(uTexBlend%d, uTex%dSmplr, vTexCoordAdj%d, texSize%d);\n", i,
-                        i, i, i);
+                        i, i, i, i);
                 } else {
                     len += sprintf(buf + len, "float4 blendVal%d = float4(0, 0, 0, 0);\n", i);
                 }

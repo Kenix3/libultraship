@@ -1,7 +1,7 @@
 #include "resource/type/DisplayList.h"
 #include <memory>
 
-namespace LUS {
+namespace Fast {
 DisplayList::DisplayList() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
 }
 
@@ -18,4 +18,4 @@ Gfx* DisplayList::GetPointer() {
 size_t DisplayList::GetPointerSize() {
     return Instructions.size() * sizeof(Gfx);
 }
-} // namespace LUS
+} // namespace Fast

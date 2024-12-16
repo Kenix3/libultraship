@@ -5,8 +5,8 @@
 
 namespace Ship {
 ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
-                                                               Stick stick, Direction direction)
-    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mStick(stick), mDirection(direction) {
+                                                               StickIndex stickIndex, Direction direction)
+    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mStickIndex(stickIndex), mDirection(direction) {
 }
 
 ControllerAxisDirectionMapping::~ControllerAxisDirectionMapping() {
