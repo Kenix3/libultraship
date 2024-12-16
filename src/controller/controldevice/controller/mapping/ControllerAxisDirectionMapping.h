@@ -8,12 +8,12 @@
 #define MAX_AXIS_RANGE 85.0f
 
 namespace Ship {
-enum Stick { LEFT_STICK, RIGHT_STICK };
+enum StickIndex { LEFT_STICK, RIGHT_STICK };
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
 class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
   public:
-    ControllerAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, Stick stick,
+    ControllerAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, StickIndex stickIndex,
                                    Direction direction);
     ~ControllerAxisDirectionMapping();
     virtual float GetNormalizedAxisDirectionValue() = 0;
@@ -28,7 +28,7 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
 
   protected:
     uint8_t mPortIndex;
-    Stick mStick;
+    StickIndex mStickIndex;
     Direction mDirection;
 };
 } // namespace Ship

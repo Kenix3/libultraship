@@ -236,7 +236,7 @@ void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> n
 
     for (auto stick : { GetLeftStick(), GetRightStick() }) {
         auto newControllerStick =
-            stick->LeftOrRightStick() == LEFT_STICK ? newController->GetLeftStick() : newController->GetRightStick();
+            stick->GetStickIndex() == LEFT_STICK ? newController->GetLeftStick() : newController->GetRightStick();
         for (auto [direction, mappings] : stick->GetAllAxisDirectionMappings()) {
             std::vector<std::string> axisDirectionMappingIdsToRemove;
             for (auto [id, mapping] : mappings) {
