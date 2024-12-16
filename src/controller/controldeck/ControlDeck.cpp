@@ -12,16 +12,8 @@
 
 namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : mPads(nullptr), mSinglePlayerMappingMode(false) {
-    for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
-    }
-
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : mSinglePlayerMappingMode(false) {
     mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
-}
-
-ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
 }
 
 ControlDeck::~ControlDeck() {
@@ -74,28 +66,6 @@ bool ControlDeck::KeyboardGameInputBlocked() {
     return AllGameInputBlocked() || ImGui::GetIO().WantCaptureKeyboard;
 }
 
-void ControlDeck::WriteToPad(OSContPad* pad) {
-    SDL_PumpEvents();
-
-    if (AllGameInputBlocked()) {
-        return;
-    }
-
-    mPads = pad;
-
-    for (size_t i = 0; i < mPorts.size(); i++) {
-        const std::shared_ptr<Controller> controller = mPorts[i]->GetConnectedController();
-
-        if (controller != nullptr) {
-            controller->ReadToPad(&pad[i]);
-        }
-    }
-}
-
-OSContPad* ControlDeck::GetPads() {
-    return mPads;
-}
-
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
     return mPorts[port]->GetConnectedController();
 }
@@ -120,3 +90,41 @@ bool ControlDeck::IsSinglePlayerMappingMode() {
     return mSinglePlayerMappingMode;
 }
 } // namespace Ship
+
+namespace LUS {
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : Ship::ControlDeck(additionalBitmasks), mPads(nullptr) {
+    for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
+        mPorts.push_back(std::make_shared<Ship::ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
+    }
+}
+
+ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
+}
+
+OSContPad* ControlDeck::GetPads() {
+    return mPads;
+}
+
+void ControlDeck::WriteToPad(void* pad) {
+    WriteToOSContPad((OSContPad*)pad);
+}
+
+void ControlDeck::WriteToOSContPad(OSContPad* pad) {
+    SDL_PumpEvents();
+
+    if (AllGameInputBlocked()) {
+        return;
+    }
+
+    mPads = pad;
+
+    for (size_t i = 0; i < mPorts.size(); i++) {
+        const std::shared_ptr<Ship::Controller> controller = mPorts[i]->GetConnectedController();
+
+        if (controller != nullptr) {
+            controller->ReadToPad(&pad[i]);
+        }
+    }
+}
+} // namespace LUS
