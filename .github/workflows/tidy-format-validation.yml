@@ -13,14 +13,14 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y $(cat .github/workflows/apt-deps.txt) clang-tidy clang-format-12
+          sudo apt-get install -y $(cat .github/workflows/apt-deps.txt) clang-tidy clang-format-14
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ runner.os }}-ccache
       - name: Run clang-format
         run: |
-          find src include -name "*.cpp" -o -name "*.h" | sed 's| |\\ |g' | xargs clang-format-12 -i
+          find src include -name "*.cpp" -o -name "*.h" | sed 's| |\\ |g' | xargs clang-format-14 -i
           git diff --exit-code
       - name: Install latest SDL
         run: |
