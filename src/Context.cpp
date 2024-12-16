@@ -48,8 +48,12 @@ Context::CreateInstance(const std::string name, const std::string shortName, con
     if (mContext.expired()) {
         auto shared = std::make_shared<Context>(name, shortName, configFilePath);
         mContext = shared;
-        shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window);
-        return shared;
+        if (shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window)) {
+            return shared;
+        } else {
+            SPDLOG_ERROR("Failed to initialize");
+            return nullptr;
+        };
     }
 
     SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
