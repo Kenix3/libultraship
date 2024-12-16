@@ -154,7 +154,10 @@ bool Context::InitLogging() {
         spdlog::register_logger(GetLogger());
         spdlog::set_default_logger(GetLogger());
         return true;
-    } catch (const spdlog::spdlog_ex& ex) { std::cout << "Log initialization failed: " << ex.what() << std::endl; return false; }
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log initialization failed: " << ex.what() << std::endl;
+        return false;
+    }
 }
 
 bool Context::InitConfiguration() {
@@ -232,7 +235,7 @@ bool Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmask
         SPDLOG_ERROR("Failed to initialize control deck");
         return false;
     }
-    
+
     return true;
 }
 
@@ -257,7 +260,7 @@ bool Context::InitAudio(AudioSettings settings) {
     }
 
     mAudio = std::make_shared<Audio>(settings);
-    
+
     if (GetAudio() == nullptr) {
         SPDLOG_ERROR("Failed to initialize audio");
         return false;
