@@ -889,15 +889,15 @@ static void import_texture_raw(int tile, bool importReplacement) {
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
-    LUS::TextureType type = metadata->type;
-    std::shared_ptr<LUS::Texture> resource = metadata->resource;
+    Fast::TextureType type = metadata->type;
+    std::shared_ptr<Fast::Texture> resource = metadata->resource;
 
     // if texture type is CI4 or CI8 we need to apply tlut to it
     switch (type) {
-        case LUS::TextureType::Palette4bpp:
+        case Fast::TextureType::Palette4bpp:
             import_texture_ci4(tile, importReplacement);
             return;
-        case LUS::TextureType::Palette8bpp:
+        case Fast::TextureType::Palette8bpp:
             import_texture_ci8(tile, importReplacement);
             return;
         default:
@@ -2555,7 +2555,7 @@ static void gfx_s2dex_bg_copy(F3DuObjBg* bg) {
     RawTexMetadata rawTexMetadata = {};
 
     if ((bool)gfx_check_image_signature((char*)data)) {
-        std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
+        std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
             Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
@@ -2594,7 +2594,7 @@ static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
     RawTexMetadata rawTexMetadata = {};
 
     if ((bool)gfx_check_image_signature((char*)data)) {
-        std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
+        std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
             Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
@@ -2918,7 +2918,7 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     if (ucode_handler_index == ucode_f3dex2) {
         gfx_sp_movemem_f3dex2(index, offset, ResourceGetDataByCrc(hash));
     } else {
-        auto light = (LUS::LightEntry*)ResourceGetDataByCrc(hash);
+        auto light = (Fast::LightEntry*)ResourceGetDataByCrc(hash);
         uintptr_t data = (uintptr_t)&light->Ambient;
         gfx_sp_movemem_f3d(index, offset, (void*)(data + (hasOffset == 1 ? 0x8 : 0)));
     }
@@ -3297,7 +3297,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
 
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
-            std::shared_ptr<LUS::Texture> tex = std::static_pointer_cast<LUS::Texture>(
+            std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
             if (tex == nullptr) {
@@ -3335,7 +3335,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
         return false;
     }
 
-    std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
+    std::shared_ptr<Fast::Texture> texture = std::static_pointer_cast<Fast::Texture>(
         Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
     if (texture != nullptr) {
         texFlags = texture->Flags;
@@ -3398,7 +3398,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
-    std::shared_ptr<LUS::Texture> texture = std::static_pointer_cast<LUS::Texture>(
+    std::shared_ptr<Fast::Texture> texture = std::static_pointer_cast<Fast::Texture>(
         Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
     if (texture != nullptr) {
         texFlags = texture->Flags;
@@ -4414,10 +4414,10 @@ void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* repl
     }
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
-        LUS::Texture* tex = std::static_pointer_cast<LUS::Texture>(
-                                Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-                                    reinterpret_cast<char*>(replacement)))
-                                .get();
+        Fast::Texture* tex = std::static_pointer_cast<Fast::Texture>(
+                                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                     reinterpret_cast<char*>(replacement)))
+                                 .get();
 
         replacement = tex->ImageData;
     }

@@ -2,7 +2,7 @@
 
 #include "resource/Resource.h"
 
-namespace LUS {
+namespace Ship {
 class Blob : public Ship::Resource<void> {
   public:
     using Resource::Resource;
@@ -14,4 +14,4 @@ class Blob : public Ship::Resource<void> {
 
     std::vector<uint8_t> Data;
 };
-}; // namespace LUS
+}; // namespace Ship
