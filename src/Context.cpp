@@ -44,11 +44,11 @@ Context::~Context() {
 std::shared_ptr<Context>
 Context::CreateInstance(const std::string name, const std::string shortName, const std::string configFilePath,
                         const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-                        uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window) {
+                        uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window, std::shared_ptr<ControlDeck> controlDeck) {
     if (mContext.expired()) {
         auto shared = std::make_shared<Context>(name, shortName, configFilePath);
         mContext = shared;
-        if (shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window)) {
+        if (shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window, controlDeck)) {
             return shared;
         } else {
             SPDLOG_ERROR("Failed to initialize");
@@ -79,9 +79,9 @@ Context::Context(std::string name, std::string shortName, std::string configFile
 }
 
 bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-                   uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window) {
+                   uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window, std::shared_ptr<ControlDeck> controlDeck) {
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
-           InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck() &&
+           InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger();
 }
 
@@ -228,12 +228,12 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
     return true;
 }
 
-bool Context::InitControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
+bool Context::InitControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
     if (GetControlDeck() != nullptr) {
         return true;
     }
 
-    mControlDeck = std::make_shared<ControlDeck>(additionalBitmasks);
+    mControlDeck = controlDeck;
 
     if (GetControlDeck() == nullptr) {
         SPDLOG_ERROR("Failed to initialize control deck");
