@@ -64,10 +64,41 @@ bool ArchiveManager::HasFile(uint64_t hash) {
     return mFileToArchive.count(hash) > 0;
 }
 
-std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& filter) {
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
+    std::list<std::string> includes = {};
+    if (searchMask.size() > 0) {
+        includes.push_back(searchMask);
+    }
+    return ListFiles({ searchMask }, {});
+}
+
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::list<std::string>& includes,
+                                                                    const std::list<std::string>& excludes) {
     auto list = std::make_shared<std::vector<std::string>>();
     for (const auto& [hash, path] : mHashes) {
-        if (filter.empty() || glob_match(filter.c_str(), path.c_str())) {
+        if (includes.empty() && excludes.empty()) {
+            list->push_back(path);
+            continue;
+        }
+        bool includeMatch = includes.empty();
+        if (!includes.empty()) {
+            for (std::string filter : includes) {
+                if (glob_match(filter.c_str(), path.c_str())) {
+                    includeMatch = true;
+                    break;
+                }
+            }
+        }
+        bool excludeMatch = false;
+        if (!excludes.empty()) {
+            for (std::string filter : excludes) {
+                if (glob_match(filter.c_str(), path.c_str())) {
+                    excludeMatch = true;
+                    break;
+                }
+            }
+        }
+        if (includeMatch && !excludeMatch) {
             list->push_back(path);
         }
     }
