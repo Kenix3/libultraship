@@ -291,6 +291,14 @@ void Gui::UnblockGamepadNavigation() {
     }
 }
 
+ImGuiID Gui::GetMainGameWindowID() {
+    ImGuiWindow *window = ImGui::FindWindowByName("Main Game");
+    if (window == NULL) {
+        return 0;
+    }
+    return window->ID;
+}
+
 void Gui::ImGuiBackendNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL

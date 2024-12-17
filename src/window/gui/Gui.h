@@ -77,6 +77,7 @@ class Gui {
     void SetupRendererFrame();
     void SaveConsoleVariablesNextFrame();
     bool SupportsViewports();
+    ImGuiID GetMainGameWindowID();
 
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
