@@ -153,7 +153,7 @@ void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* ve
 }
 
 void ResourceLoadDirectoryAsync(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->LoadDirectoryAsync(name);
+    Ship::Context::GetInstance()->GetResourceManager()->LoadResourcesAsync(name);
 }
 
 uint32_t ResourceHasGameVersion(uint32_t hash) {
@@ -162,11 +162,11 @@ uint32_t ResourceHasGameVersion(uint32_t hash) {
 }
 
 void ResourceLoadDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->LoadDirectory(name);
+    Ship::Context::GetInstance()->GetResourceManager()->LoadResources(name);
 }
 
 void ResourceDirtyDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->DirtyDirectory(name);
+    Ship::Context::GetInstance()->GetResourceManager()->DirtyResources(name);
 }
 
 void ResourceDirtyByName(const char* name) {
@@ -194,7 +194,7 @@ void ResourceUnloadByCrc(uint64_t crc) {
 }
 
 void ResourceUnloadDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->UnloadDirectory(name);
+    Ship::Context::GetInstance()->GetResourceManager()->UnloadResources(name);
 }
 
 uint32_t IsResourceManagerLoaded() {

@@ -31,9 +31,10 @@ class ArchiveManager {
     std::shared_ptr<File> LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData = nullptr);
     bool HasFile(const std::string& filePath);
     bool HasFile(uint64_t hash);
-    std::shared_ptr<std::vector<std::string>> ListFilesWithExclude(const std::vector<std::string>& include = {},
-                                                                   const std::vector<std::string>& exclude = {});
-    std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& filter = "");
+    std::shared_ptr<std::vector<std::string>> ListFiles();
+    std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask);
+    std::shared_ptr<std::vector<std::string>> ListFiles(const std::list<std::string>& includes,
+                                                        const std::list<std::string>& excludes);
     std::vector<uint32_t> GetGameVersions();
     const std::string* HashToString(uint64_t hash) const;
     bool IsGameVersionValid(uint32_t gameVersion);

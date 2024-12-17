@@ -65,16 +65,27 @@ bool ArchiveManager::HasFile(uint64_t hash) {
 }
 
 std::shared_ptr<std::vector<std::string>>
-ArchiveManager::ListFilesWithExclude(const std::vector<std::string>& include, const std::vector<std::string>& exclude) {
+ArchiveManager::ListFiles() {
+    return ListFiles({ "*" }, {});
+}
+
+std::shared_ptr<std::vector<std::string>>
+ArchiveManager::ListFiles(const std::string& searchMask) {
+    return ListFiles({ searchMask }, {});
+}
+
+std::shared_ptr<std::vector<std::string>>
+ArchiveManager::ListFiles(const std::list<std::string>& includes,
+                          const std::list<std::string>& excludes) {
     auto list = std::make_shared<std::vector<std::string>>();
     for (const auto& [hash, path] : mHashes) {
-        if (include.empty() && exclude.empty()) {
+        if (includes.empty() && excludes.empty()) {
             list->push_back(path);
             continue;
         }
-        bool includeMatch = include.empty();
-        if (!include.empty()) {
-            for (std::string filter : include) {
+        bool includeMatch = includes.empty();
+        if (!includes.empty()) {
+            for (std::string filter : includes) {
                 if (glob_match(filter.c_str(), path.c_str())) {
                     includeMatch = true;
                     break;
@@ -82,8 +93,8 @@ ArchiveManager::ListFilesWithExclude(const std::vector<std::string>& include, co
             }
         }
         bool excludeMatch = false;
-        if (!include.empty()) {
-            for (std::string filter : exclude) {
+        if (!excludes.empty()) {
+            for (std::string filter : excludes) {
                 if (glob_match(filter.c_str(), path.c_str())) {
                     excludeMatch = true;
                     break;
@@ -91,16 +102,6 @@ ArchiveManager::ListFilesWithExclude(const std::vector<std::string>& include, co
             }
         }
         if (includeMatch && !excludeMatch) {
-            list->push_back(path);
-        }
-    }
-    return list;
-}
-
-std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& filter) {
-    auto list = std::make_shared<std::vector<std::string>>();
-    for (const auto& [hash, path] : mHashes) {
-        if (filter.empty() || glob_match(filter.c_str(), path.c_str())) {
             list->push_back(path);
         }
     }

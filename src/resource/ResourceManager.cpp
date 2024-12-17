@@ -11,6 +11,10 @@
 
 namespace Ship {
 
+ResourceFilter::ResourceFilter(const std::list<std::string> includeMasks, const std::list<std::string> excludeMasks,
+                               const uintptr_t owner, const std::shared_ptr<Archive> parent)
+    : IncludeMasks(includeMasks), ExcludeMasks(excludeMasks), Owner(owner), Parent(parent) {}
+
 size_t ResourceIdentifier::GetHash() const {
     return mHash;
 }
@@ -284,112 +288,77 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
     return nullptr;
 }
 
-std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-ResourceManager::LoadDirectoryAsyncWithExclude(const std::vector<std::string>& includeMasks,
-                                               const std::vector<std::string>& excludeMasks, BS::priority_t priority) {
-    auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
-    auto fileList = GetArchiveManager()->ListFilesWithExclude(includeMasks, excludeMasks);
-    loadedList->reserve(fileList->size());
-
-    for (size_t i = 0; i < fileList->size(); i++) {
-        auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync(fileName, priority);
-        loadedList->push_back(future);
-    }
-
-    return loadedList;
-}
-
-std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-ResourceManager::LoadDirectoryAsync(const ResourceIdentifier& identifier, BS::priority_t priority) {
-    auto loadedList = std::make_shared<std::vector<std::shared_future<std::shared_ptr<IResource>>>>();
-    auto fileList = GetArchiveManager()->ListFiles(identifier.Path);
-    loadedList->reserve(fileList->size());
-
-    for (size_t i = 0; i < fileList->size(); i++) {
-        auto fileName = std::string(fileList->operator[](i));
-        auto future = LoadResourceAsync({ fileName, identifier.Owner, identifier.Parent }, false, priority);
-        loadedList->push_back(future);
-    }
-
-    return loadedList;
-}
-
 std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
-ResourceManager::LoadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
-                                          const std::vector<std::string>& excludeMasks, uintptr_t owner) {
-    auto futureList = LoadDirectoryAsyncWithExclude(includeMasks, excludeMasks);
+ResourceManager::LoadResourcesProcess(const ResourceFilter& filter) {
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
+    auto fileList = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
+    loadedList->reserve(fileList->size());
 
-    for (size_t i = 0; i < futureList->size(); i++) {
-        const auto future = futureList->at(i);
-        const auto resource = future.get();
+    for (size_t i = 0; i < fileList->size(); i++) {
+        auto fileName = std::string(fileList->operator[](i));
+        auto resource = LoadResource({fileName, filter.Owner, filter.Parent});
         loadedList->push_back(resource);
     }
 
     return loadedList;
 }
 
-std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-ResourceManager::LoadDirectoryAsync(const std::string& searchMask, BS::priority_t priority) {
-    return LoadDirectoryAsync({ searchMask, mDefaultCacheOwner, mDefaultCacheArchive }, priority);
+std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
+ResourceManager::LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
+    return mThreadPool->submit_task(
+        [this, filter]() -> std::shared_ptr<std::vector<std::shared_ptr<IResource>>> {
+            return LoadResourcesProcess(filter);
+        },
+        priority);
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
-ResourceManager::LoadDirectory(const ResourceIdentifier& identifier) {
-    auto futureList = LoadDirectoryAsync(identifier, true);
-    auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
-
-    for (size_t i = 0; i < futureList->size(); i++) {
-        const auto future = futureList->at(i);
-        const auto resource = future.get();
-        loadedList->push_back(resource);
-    }
-
-    return loadedList;
+std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
+ResourceManager::LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority) {
+    return LoadResourcesAsync({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive}, priority);
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadDirectory(const std::string& searchMask) {
-    return LoadDirectory({ searchMask, mDefaultCacheOwner, mDefaultCacheArchive });
+std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const std::string& searchMask) {
+    return LoadResources({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive});
 }
 
-void ResourceManager::DirtyDirectory(const ResourceIdentifier& identifier) {
-    auto list = GetArchiveManager()->ListFiles(identifier.Path);
-
-    for (const auto& key : *list.get()) {
-        auto resource = GetCachedResource({ key, identifier.Owner, identifier.Parent });
-        // If it's a resource, we will set the dirty flag, else we will just unload it.
-        if (resource != nullptr) {
-            resource->Dirty();
-        } else {
-            UnloadResource(identifier);
-        }
-    }
+std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const ResourceFilter& filter) {
+    return LoadResourcesAsync(filter, BS::pr::highest).get();
 }
 
-void ResourceManager::UnloadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
-                                                 const std::vector<std::string>& excludeMasks) {
-    auto list = GetArchiveManager()->ListFilesWithExclude(includeMasks, excludeMasks);
+void ResourceManager::DirtyResources(const ResourceFilter& filter) {
+    mThreadPool->submit_task(
+        [this, filter]() -> void {
+            auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
 
-    for (const auto& key : *list.get()) {
-        UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
-    }
+            for (const auto& key : *list.get()) {
+                auto resource = GetCachedResource({ key, filter.Owner, filter.Parent });
+                // If it's a resource, we will set the dirty flag, else we will just unload it.
+                if (resource != nullptr) {
+                    resource->Dirty();
+                } else {
+                    UnloadResource({ key, filter.Owner, filter.Parent });
+                }
+            }
+        });
 }
 
-void ResourceManager::DirtyDirectory(const std::string& searchMask) {
-    DirtyDirectory({ searchMask, mDefaultCacheOwner, mDefaultCacheArchive });
+void ResourceManager::UnloadResources(const ResourceFilter& filter) {
+    mThreadPool->submit_task(
+        [this, filter]() -> void {
+            auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
+
+            for (const auto& key : *list.get()) {
+                UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
+            }
+        });
 }
 
-void ResourceManager::UnloadDirectory(const ResourceIdentifier& identifier) {
-    auto list = GetArchiveManager()->ListFiles(identifier.Path);
-
-    for (const auto& key : *list.get()) {
-        UnloadResource({ key, identifier.Owner, identifier.Parent });
-    }
+void ResourceManager::DirtyResources(const std::string& searchMask) {
+    DirtyResources({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive});
 }
 
-void ResourceManager::UnloadDirectory(const std::string& searchMask) {
-    UnloadDirectory({ searchMask, mDefaultCacheOwner, mDefaultCacheArchive });
+void ResourceManager::UnloadResources(const std::string& searchMask) {
+    UnloadResources({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive});
 }
 
 std::shared_ptr<ArchiveManager> ResourceManager::GetArchiveManager() {

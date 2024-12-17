@@ -18,13 +18,23 @@
 namespace Ship {
 struct File;
 
+struct ResourceFilter {
+    ResourceFilter(const std::list<std::string> includeMasks, const std::list<std::string> excludeMasks,
+        const uintptr_t owner, const std::shared_ptr<Archive> parent);
+
+    const std::list<std::string> IncludeMasks;
+    const std::list<std::string> ExcludeMasks;
+    const uintptr_t Owner = 0;
+    const std::shared_ptr<Archive> Parent = nullptr;
+};
+
 struct ResourceIdentifier {
-    friend class ResourceIdentifierHash;
+    friend struct ResourceIdentifierHash;
 
     ResourceIdentifier(const std::string& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
     bool operator==(const ResourceIdentifier& rhs) const;
 
-    // Path can either be a Path or a Search Mask including globs depending on usage.
+    // Must be an exact path. Passing a path with a wildcard will return a fail state
     const std::string Path = "";
     const uintptr_t Owner = 0;
     const std::shared_ptr<Archive> Parent = nullptr;
@@ -53,50 +63,45 @@ class ResourceManager {
     std::shared_ptr<ArchiveManager> GetArchiveManager();
     std::shared_ptr<ResourceLoader> GetResourceLoader();
 
-    std::shared_ptr<IResource> GetCachedResource(const ResourceIdentifier& identifier, bool loadExact = false);
-    std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& identifier, bool loadExact = false,
-                                            std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<IResource> LoadResourceProcess(const ResourceIdentifier& identifier, bool loadExact = false,
-                                                   std::shared_ptr<ResourceInitData> initData = nullptr);
-    size_t UnloadResource(const ResourceIdentifier& identifier);
-    std::shared_future<std::shared_ptr<IResource>>
-    LoadResourceAsync(const ResourceIdentifier& identifier, bool loadExact = false,
-                      BS::priority_t priority = BS::pr::normal, std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
-    LoadDirectoryWithExclude(const std::vector<std::string>& includeMasks, const std::vector<std::string>& excludeMasks,
-                             uintptr_t owner);
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const ResourceIdentifier& identifier);
-    std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-    LoadDirectoryAsync(const ResourceIdentifier& identifier, BS::priority_t priority = BS::pr::normal);
-    void DirtyDirectory(const ResourceIdentifier& identifier);
-    void UnloadDirectory(const ResourceIdentifier& identifier);
-
     std::shared_ptr<IResource> GetCachedResource(const std::string& filePath, bool loadExact = false);
+    std::shared_ptr<IResource> GetCachedResource(const ResourceIdentifier& identifier, bool loadExact = false);
     std::shared_ptr<IResource> LoadResource(const std::string& filePath, bool loadExact = false,
+                                            std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& identifier, bool loadExact = false,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<IResource> LoadResourceProcess(const std::string& filePath, bool loadExact = false,
                                                    std::shared_ptr<ResourceInitData> initData = nullptr);
-    size_t UnloadResource(const std::string& filePath);
+    std::shared_ptr<IResource> LoadResourceProcess(const ResourceIdentifier& identifier, bool loadExact = false,
+                                                   std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_future<std::shared_ptr<IResource>>
     LoadResourceAsync(const std::string& filePath, bool loadExact = false, BS::priority_t priority = BS::pr::normal,
                       std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadDirectory(const std::string& searchMask);
-    std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-    LoadDirectoryAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
-    std::shared_ptr<std::vector<std::shared_future<std::shared_ptr<IResource>>>>
-    LoadDirectoryAsyncWithExclude(const std::vector<std::string>& includeMasks,
-                                  const std::vector<std::string>& excludeMasks,
-                                  BS::priority_t priority = BS::pr::normal);
-    void DirtyDirectory(const std::string& searchMask);
-    void UnloadDirectoryWithExclude(const std::vector<std::string>& includeMasks,
-                                    const std::vector<std::string>& excludeMasks);
-    void UnloadDirectory(const std::string& searchMask);
+    std::shared_future<std::shared_ptr<IResource>>
+    LoadResourceAsync(const ResourceIdentifier& identifier, bool loadExact = false,
+                      BS::priority_t priority = BS::pr::normal, std::shared_ptr<ResourceInitData> initData = nullptr);
+    size_t UnloadResource(const ResourceIdentifier& identifier);
+    size_t UnloadResource(const std::string& filePath);
+
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const std::string& searchMask);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
+    LoadResources(const ResourceFilter& filter);
+    std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
+    LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
+    std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
+    LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority = BS::pr::normal);
+
+    void DirtyResources(const std::string& searchMask);
+    void DirtyResources(const ResourceFilter& filter);
+    void UnloadResources(const std::string& searchMask);
+    void UnloadResources(const ResourceFilter& filter);
 
     bool OtrSignatureCheck(const char* fileName);
     bool IsAltAssetsEnabled();
     void SetAltAssetsEnabled(bool isEnabled);
 
   protected:
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
+    LoadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
                                                                            bool loadExact = false);
     std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier,
