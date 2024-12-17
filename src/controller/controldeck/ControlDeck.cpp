@@ -35,6 +35,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     // if we don't have a config for controller 1, set default keyboard bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Keyboard);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Mouse);
     }
 
     Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
