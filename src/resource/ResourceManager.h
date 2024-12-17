@@ -21,7 +21,7 @@ namespace Ship {
 struct File;
 
 struct ResourceFilter {
-    ResourceFilter(const std::list<std::string> includeMasks, const std::list<std::string> excludeMasks,
+    ResourceFilter(const std::list<std::string>& includeMasks, const std::list<std::string>& excludeMasks,
                    const uintptr_t owner, const std::shared_ptr<Archive> parent);
 
     const std::list<std::string> IncludeMasks;

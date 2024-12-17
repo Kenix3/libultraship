@@ -11,7 +11,7 @@
 
 namespace Ship {
 
-ResourceFilter::ResourceFilter(const std::list<std::string> includeMasks, const std::list<std::string> excludeMasks,
+ResourceFilter::ResourceFilter(const std::list<std::string>& includeMasks, const std::list<std::string>& excludeMasks,
                                const uintptr_t owner, const std::shared_ptr<Archive> parent)
     : IncludeMasks(includeMasks), ExcludeMasks(excludeMasks), Owner(owner), Parent(parent) {
 }

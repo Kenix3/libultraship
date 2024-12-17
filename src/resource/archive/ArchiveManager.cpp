@@ -65,7 +65,7 @@ bool ArchiveManager::HasFile(uint64_t hash) {
 }
 
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles() {
-    return ListFiles({ "*" }, {});
+    return ListFiles({}, {});
 }
 
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
