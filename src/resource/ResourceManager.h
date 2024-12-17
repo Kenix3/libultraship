@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
+#include <list>
+#include <vector>
 #include <mutex>
 #include <queue>
 #include <variant>
