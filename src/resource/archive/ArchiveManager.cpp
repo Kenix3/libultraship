@@ -64,11 +64,11 @@ bool ArchiveManager::HasFile(uint64_t hash) {
     return mFileToArchive.count(hash) > 0;
 }
 
-std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles() {
-    return ListFiles({}, {});
-}
-
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
+    std::list<std::string> includes = {};
+    if (searchMask.size() > 0) {
+        includes.push_back(searchMask);
+    }
     return ListFiles({ searchMask }, {});
 }
 
