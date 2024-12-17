@@ -13,7 +13,8 @@ namespace Ship {
 
 ResourceFilter::ResourceFilter(const std::list<std::string> includeMasks, const std::list<std::string> excludeMasks,
                                const uintptr_t owner, const std::shared_ptr<Archive> parent)
-    : IncludeMasks(includeMasks), ExcludeMasks(excludeMasks), Owner(owner), Parent(parent) {}
+    : IncludeMasks(includeMasks), ExcludeMasks(excludeMasks), Owner(owner), Parent(parent) {
+}
 
 size_t ResourceIdentifier::GetHash() const {
     return mHash;
@@ -296,7 +297,7 @@ ResourceManager::LoadResourcesProcess(const ResourceFilter& filter) {
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto resource = LoadResource({fileName, filter.Owner, filter.Parent});
+        auto resource = LoadResource({ fileName, filter.Owner, filter.Parent });
         loadedList->push_back(resource);
     }
 
@@ -314,11 +315,11 @@ ResourceManager::LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t
 
 std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
 ResourceManager::LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority) {
-    return LoadResourcesAsync({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive}, priority);
+    return LoadResourcesAsync({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive }, priority);
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const std::string& searchMask) {
-    return LoadResources({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive});
+    return LoadResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const ResourceFilter& filter) {
@@ -326,39 +327,37 @@ std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadRe
 }
 
 void ResourceManager::DirtyResources(const ResourceFilter& filter) {
-    mThreadPool->submit_task(
-        [this, filter]() -> void {
-            auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
+    mThreadPool->submit_task([this, filter]() -> void {
+        auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
 
-            for (const auto& key : *list.get()) {
-                auto resource = GetCachedResource({ key, filter.Owner, filter.Parent });
-                // If it's a resource, we will set the dirty flag, else we will just unload it.
-                if (resource != nullptr) {
-                    resource->Dirty();
-                } else {
-                    UnloadResource({ key, filter.Owner, filter.Parent });
-                }
+        for (const auto& key : *list.get()) {
+            auto resource = GetCachedResource({ key, filter.Owner, filter.Parent });
+            // If it's a resource, we will set the dirty flag, else we will just unload it.
+            if (resource != nullptr) {
+                resource->Dirty();
+            } else {
+                UnloadResource({ key, filter.Owner, filter.Parent });
             }
-        });
+        }
+    });
 }
 
 void ResourceManager::UnloadResources(const ResourceFilter& filter) {
-    mThreadPool->submit_task(
-        [this, filter]() -> void {
-            auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
+    mThreadPool->submit_task([this, filter]() -> void {
+        auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
 
-            for (const auto& key : *list.get()) {
-                UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
-            }
-        });
+        for (const auto& key : *list.get()) {
+            UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
+        }
+    });
 }
 
 void ResourceManager::DirtyResources(const std::string& searchMask) {
-    DirtyResources({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive});
+    DirtyResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
 void ResourceManager::UnloadResources(const std::string& searchMask) {
-    UnloadResources({ {searchMask}, {}, mDefaultCacheOwner, mDefaultCacheArchive});
+    UnloadResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
 std::shared_ptr<ArchiveManager> ResourceManager::GetArchiveManager() {

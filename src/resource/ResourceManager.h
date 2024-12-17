@@ -20,7 +20,7 @@ struct File;
 
 struct ResourceFilter {
     ResourceFilter(const std::list<std::string> includeMasks, const std::list<std::string> excludeMasks,
-        const uintptr_t owner, const std::shared_ptr<Archive> parent);
+                   const uintptr_t owner, const std::shared_ptr<Archive> parent);
 
     const std::list<std::string> IncludeMasks;
     const std::list<std::string> ExcludeMasks;
@@ -83,8 +83,7 @@ class ResourceManager {
     size_t UnloadResource(const std::string& filePath);
 
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const std::string& searchMask);
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
-    LoadResources(const ResourceFilter& filter);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const ResourceFilter& filter);
     std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
     LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
     std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
@@ -100,8 +99,7 @@ class ResourceManager {
     void SetAltAssetsEnabled(bool isEnabled);
 
   protected:
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
-    LoadResourcesProcess(const ResourceFilter& filter);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
                                                                            bool loadExact = false);
     std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier,

@@ -64,19 +64,16 @@ bool ArchiveManager::HasFile(uint64_t hash) {
     return mFileToArchive.count(hash) > 0;
 }
 
-std::shared_ptr<std::vector<std::string>>
-ArchiveManager::ListFiles() {
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles() {
     return ListFiles({ "*" }, {});
 }
 
-std::shared_ptr<std::vector<std::string>>
-ArchiveManager::ListFiles(const std::string& searchMask) {
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
     return ListFiles({ searchMask }, {});
 }
 
-std::shared_ptr<std::vector<std::string>>
-ArchiveManager::ListFiles(const std::list<std::string>& includes,
-                          const std::list<std::string>& excludes) {
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::list<std::string>& includes,
+                                                                    const std::list<std::string>& excludes) {
     auto list = std::make_shared<std::vector<std::string>>();
     for (const auto& [hash, path] : mHashes) {
         if (includes.empty() && excludes.empty()) {
