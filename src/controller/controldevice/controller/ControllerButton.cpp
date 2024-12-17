@@ -10,6 +10,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include <imgui.h>
+
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
@@ -181,8 +183,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
     }
 
-    // FIXME: click cancel button with mouse might trigger binding (yeah)
-    if (mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
+    // TODO: I dont think direct ImGui calls should be here
+    if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
         mapping = std::make_shared<MouseKeyToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
     }
 
