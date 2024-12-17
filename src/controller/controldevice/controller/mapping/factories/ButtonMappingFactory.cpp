@@ -4,9 +4,11 @@
 #include "libultraship/libultra/controller.h"
 #include "Context.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseKeyToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
+#include "window/MouseMeta.h"
 
 namespace Ship {
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromConfig(uint8_t portIndex,
@@ -64,6 +66,13 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
             CVarGetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
 
         return std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, static_cast<KbScancode>(scancode));
+    }
+    
+    if (mappingClass == "MouseKeyToButtonMapping") {
+        int mouseButton =
+            CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+
+        return std::make_shared<MouseKeyToButtonMapping>(portIndex, bitmask, static_cast<MouseBtn>(mouseButton));
     }
 
     return nullptr;
