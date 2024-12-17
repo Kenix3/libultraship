@@ -10,6 +10,8 @@
 #include <imgui.h>
 #include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
 
+#include "spdlog/spdlog.h"
+
 namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : mSinglePlayerMappingMode(false) {
@@ -80,8 +82,14 @@ bool ControlDeck::KeyboardGameInputBlocked() {
 }
 
 bool ControlDeck::MouseGameInputBlocked() {
-    // block mouse input when mouse capture (hidden & window-focused mouse) mode disabled
-    return AllGameInputBlocked() || !Context::GetInstance()->GetWindow()->IsMouseCaptured();
+    // block mouse input when user interacting with gui
+    // TODO: check perfomance
+    static ImGuiID gameWindowID = ImGui::FindWindowByName("Main Game")->ID;
+    ImGuiWindow *window = ImGui::GetCurrentContext()->HoveredWindow;
+    if (window == NULL) {
+        return true;
+    }
+    return AllGameInputBlocked() || (window->ID != gameWindowID);
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
