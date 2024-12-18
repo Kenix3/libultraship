@@ -26,8 +26,7 @@
 namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex)
     : mPortIndex(portIndex), mStickIndex(stickIndex), mUseKeydownEventToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN),
-      mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
+      mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
     mSensitivity = 1.0f;
     mDeadzonePercentage = DEFAULT_STICK_DEADZONE_PERCENTAGE;
@@ -276,9 +275,10 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                       mKeyboardScancodeForNewMapping);
-    } else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() && mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
+    } else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
+               mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
         mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
-                                                                   mMouseButtonForNewMapping);
+                                                                      mMouseButtonForNewMapping);
     } else {
         mapping =
             AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStickIndex, direction);
