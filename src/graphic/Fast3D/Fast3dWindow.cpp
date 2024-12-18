@@ -270,7 +270,8 @@ bool Fast3dWindow::KeyUp(int32_t scancode) {
         Ship::Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
-    if (scancode == Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2)) {
+    if (scancode ==
+        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2)) {
         bool captureState = Ship::Context::GetInstance()->GetWindow()->IsMouseCaptured();
         if (captureState || !Ship::Context::GetInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible()) {
             Ship::Context::GetInstance()->GetWindow()->SetMouseCapture(!captureState);
@@ -312,7 +313,7 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
     if (isNowFullscreen) {
         auto menuBar = wnd->GetGui()->GetMenuBar();
         wnd->SetMouseCapture(!(menuBar && menuBar->IsVisible() || wnd->ShouldForceCursorVisibility() ||
-                                 CVarGetInteger("gWindows.Menu", 0)));
+                               CVarGetInteger("gWindows.Menu", 0)));
     } else {
         wnd->SetMouseCapture(false);
     }
