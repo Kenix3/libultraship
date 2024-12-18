@@ -10,6 +10,7 @@ struct GfxWindowManagerAPI {
     void (*close)();
     void (*set_keyboard_callbacks)(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
                                    void (*on_all_keys_up)());
+    void (*set_mouse_callbacks)(bool (*on_mouse_button_down)(int btn), bool (*on_mouse_button_up)(int btn));
     void (*set_fullscreen_changed_callback)(void (*on_fullscreen_changed)(bool is_now_fullscreen));
     void (*set_fullscreen)(bool enable);
     void (*get_active_window_refresh_rate)(uint32_t* refresh_rate);

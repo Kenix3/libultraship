@@ -21,9 +21,12 @@ class ControlDeck {
     void UnblockGameInput(int32_t blockId);
     bool GamepadGameInputBlocked();
     bool KeyboardGameInputBlocked();
+    bool MouseGameInputBlocked();
     void SetSinglePlayerMappingMode(bool singlePlayer);
     bool IsSinglePlayerMappingMode();
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
+    bool ProcessMouseEvent(bool isPressed, MouseBtn button);
+
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 
   protected:

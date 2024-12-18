@@ -91,11 +91,14 @@ static struct {
     bool mouse_pressed[5];
     float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
+    bool is_mouse_captured;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
     bool (*on_key_up)(int scancode);
-    void (*on_all_keys_up)();
+    void (*on_all_keys_up)(void);
+    bool (*on_mouse_button_down)(int btn);
+    bool (*on_mouse_button_up)(int btn);
 } dxgi;
 
 static void load_dxgi_library() {
@@ -259,6 +262,20 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
     }
 }
 
+static void on_mouse_button_down(int btn) {
+    // TODO: maybe check boundaries
+    dxgi.mouse_pressed[btn] = true;
+    if (dxgi.on_mouse_button_down != nullptr) {
+        dxgi.on_mouse_button_down(btn);
+    }
+}
+static void on_mouse_button_up(int btn) {
+    dxgi.mouse_pressed[btn] = false;
+    if (dxgi.on_mouse_button_up != nullptr) {
+        dxgi.on_mouse_button_up(btn);
+    }
+}
+
 double HzToPeriod(double Frequency) {
     if (Frequency == 0)
         Frequency = 60; // Default to 60, to prevent devision by zero
@@ -304,6 +321,15 @@ void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Freque
 static void gfx_dxgi_close() {
     ShowWindow(dxgi.h_wnd, SW_NORMAL); // Restore window before closing, so normal window pos and size is saved
     dxgi.is_running = false;
+}
+
+static void apply_mouse_capture_clip() {
+    RECT rect;
+    rect.left = dxgi.posX + 1;
+    rect.top = dxgi.posY + 1;
+    rect.right = dxgi.posX + dxgi.current_width - 1;
+    rect.bottom = dxgi.posY + dxgi.current_height - 1;
+    ClipCursor(&rect);
 }
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
@@ -364,29 +390,33 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             onkeyup(w_param, l_param);
             break;
         case WM_LBUTTONDOWN:
-            dxgi.mouse_pressed[0] = true;
+            on_mouse_button_down(0);
             break;
         case WM_LBUTTONUP:
-            dxgi.mouse_pressed[0] = false;
+            on_mouse_button_up(0);
             break;
         case WM_MBUTTONDOWN:
-            dxgi.mouse_pressed[1] = true;
+            on_mouse_button_down(1);
             break;
         case WM_MBUTTONUP:
-            dxgi.mouse_pressed[1] = false;
+            on_mouse_button_up(1);
             break;
         case WM_RBUTTONDOWN:
-            dxgi.mouse_pressed[2] = true;
+            on_mouse_button_down(2);
             break;
         case WM_RBUTTONUP:
-            dxgi.mouse_pressed[2] = false;
+            on_mouse_button_up(2);
             break;
-        case WM_XBUTTONDOWN:
-            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = true;
+        case WM_XBUTTONDOWN: {
+            int btn = 2 + GET_XBUTTON_WPARAM(w_param);
+            on_mouse_button_down(btn);
             break;
-        case WM_XBUTTONUP:
-            dxgi.mouse_pressed[2 + GET_XBUTTON_WPARAM(w_param)] = false;
+        }
+        case WM_XBUTTONUP: {
+            int btn = 2 + GET_XBUTTON_WPARAM(w_param);
+            on_mouse_button_up(btn);
             break;
+        }
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             dxgi.mouse_wheel[1] = 0;
@@ -403,6 +433,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                dxgi.h_Monitor);
             GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
+            break;
+        case WM_SETFOCUS:
+            if (dxgi.is_mouse_captured) {
+                apply_mouse_capture_clip();
+            }
             break;
         default:
             return DefWindowProcW(h_wnd, message, w_param, l_param);
@@ -550,14 +585,19 @@ static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
 
 static void gfx_dxgi_set_mouse_capture(bool capture) {
     if (capture) {
+        apply_mouse_capture_clip();
+        gfx_dxgi_set_cursor_visibility(false);
         SetCapture(dxgi.h_wnd);
     } else {
+        ClipCursor(nullptr);
+        gfx_dxgi_set_cursor_visibility(true);
         ReleaseCapture();
     }
+    dxgi.is_mouse_captured = capture;
 }
 
 static bool gfx_dxgi_is_mouse_captured() {
-    return (GetCapture() != NULL);
+    return dxgi.is_mouse_captured;
 }
 
 static void gfx_dxgi_set_fullscreen(bool enable) {
@@ -573,6 +613,11 @@ static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), b
     dxgi.on_key_down = on_key_down;
     dxgi.on_key_up = on_key_up;
     dxgi.on_all_keys_up = on_all_keys_up;
+}
+
+static void gfx_dxgi_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
+    dxgi.on_mouse_button_down = on_btn_down;
+    dxgi.on_mouse_button_up = on_btn_up;
 }
 
 static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
@@ -983,6 +1028,7 @@ bool gfx_dxgi_is_fullscreen() {
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
+                                                       gfx_dxgi_set_mouse_callbacks,
                                                        gfx_dxgi_set_fullscreen_changed_callback,
                                                        gfx_dxgi_set_fullscreen,
                                                        gfx_dxgi_get_active_window_refresh_rate,

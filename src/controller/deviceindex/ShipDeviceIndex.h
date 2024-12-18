@@ -3,6 +3,7 @@
 namespace Ship {
 
 #define SHIPDK_DEVICE_INDEX_VALUES \
+    X(Mouse, -2)                   \
     X(Keyboard, -1)                \
     X(Blue, 0)                     \
     X(Red, 1)                      \

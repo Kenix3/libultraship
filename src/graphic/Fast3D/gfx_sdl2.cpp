@@ -55,6 +55,8 @@ static void (*on_fullscreen_changed_callback)(bool is_now_fullscreen);
 static bool (*on_key_down_callback)(int scancode);
 static bool (*on_key_up_callback)(int scancode);
 static void (*on_all_keys_up_callback)();
+static bool (*on_mouse_button_down_callback)(int btn);
+static bool (*on_mouse_button_up_callback)(int btn);
 
 #ifdef _WIN32
 LONG_PTR SDL_WndProc;
@@ -485,6 +487,11 @@ static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bo
     on_all_keys_up_callback = on_all_keys_up;
 }
 
+static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
+    on_mouse_button_down_callback = on_btn_down;
+    on_mouse_button_up_callback = on_btn_up;
+}
+
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
     SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
@@ -521,6 +528,19 @@ static void gfx_sdl_onkeyup(int scancode) {
     }
 }
 
+static void gfx_sdl_on_mouse_button_down(int btn) {
+    // TODO: maybe check for boundaries? >= 0 & < 5
+    if (on_mouse_button_down_callback != NULL) {
+        on_mouse_button_down_callback(btn);
+    }
+}
+
+static void gfx_sdl_on_mouse_button_up(int btn) {
+    if (on_mouse_button_up_callback != NULL) {
+        on_mouse_button_up_callback(btn);
+    }
+}
+
 static void gfx_sdl_handle_single_event(SDL_Event& event) {
     Ship::WindowEvent event_impl;
     event_impl.Sdl = { &event };
@@ -533,6 +553,12 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             break;
         case SDL_KEYUP:
             gfx_sdl_onkeyup(event.key.keysym.scancode);
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            gfx_sdl_on_mouse_button_down(event.button.button - 1);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            gfx_sdl_on_mouse_button_up(event.button.button - 1);
             break;
         case SDL_MOUSEWHEEL:
             mouse_wheel_x = event.wheel.x;
@@ -670,6 +696,7 @@ bool gfx_sdl_is_fullscreen() {
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_close,
                                        gfx_sdl_set_keyboard_callbacks,
+                                       gfx_sdl_set_mouse_callbacks,
                                        gfx_sdl_set_fullscreen_changed_callback,
                                        gfx_sdl_set_fullscreen,
                                        gfx_sdl_get_active_window_refresh_rate,

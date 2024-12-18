@@ -1,5 +1,6 @@
 #include "AxisDirectionMappingFactory.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
 
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
@@ -8,6 +9,8 @@
 #include "utils/StringHelper.h"
 #include "Context.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
+
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 std::shared_ptr<ControllerAxisDirectionMapping>
@@ -73,6 +76,21 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
         return std::make_shared<KeyboardKeyToAxisDirectionMapping>(
             portIndex, stickIndex, static_cast<Direction>(direction), static_cast<KbScancode>(scancode));
+    }
+
+    if (mappingClass == "MouseButtonToAxisDirectionMapping") {
+        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+
+        if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return nullptr;
+        }
+
+        return std::make_shared<MouseButtonToAxisDirectionMapping>(
+            portIndex, stickIndex, static_cast<Direction>(direction), static_cast<MouseBtn>(mouseButton));
     }
 
     return nullptr;
