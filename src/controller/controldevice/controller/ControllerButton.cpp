@@ -15,7 +15,7 @@
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_UNKNOWN) {
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
 }
 
 ControllerButton::~ControllerButton() {
