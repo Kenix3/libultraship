@@ -416,13 +416,13 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             on_mouse_button_down(btn);
             dxgi.mouse_pressed[btn] = true;
             break;
-	}
+        }
         case WM_XBUTTONUP: {
             int btn = 2 + GET_XBUTTON_WPARAM(w_param);
             on_mouse_button_up(btn);
             dxgi.mouse_pressed[btn] = false;
             break;
-	}
+        }
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             dxgi.mouse_wheel[1] = 0;

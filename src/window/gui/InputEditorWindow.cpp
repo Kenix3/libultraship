@@ -1436,9 +1436,9 @@ void InputEditorWindow::DrawDeviceVisibilityButtons() {
     ImGui::PushStyleColor(ImGuiCol_Button, mouseButtonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, mouseButtonHoveredColor);
     bool mouseVisible = mDeviceIndexVisiblity[ShipDeviceIndex::Mouse];
-    if (ImGui::Button(StringHelper::Sprintf("%s %s mouse", mouseVisible ? ICON_FA_EYE : ICON_FA_EYE_SLASH,
-                                            ICON_FA_KEYBOARD_O)
-                          .c_str())) {
+    if (ImGui::Button(
+            StringHelper::Sprintf("%s %s mouse", mouseVisible ? ICON_FA_EYE : ICON_FA_EYE_SLASH, ICON_FA_KEYBOARD_O)
+                .c_str())) {
         mDeviceIndexVisiblity[ShipDeviceIndex::Mouse] = !mouseVisible;
     }
     ImGui::PopStyleColor();

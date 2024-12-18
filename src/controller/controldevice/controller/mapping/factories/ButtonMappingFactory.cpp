@@ -67,10 +67,9 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 
         return std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, static_cast<KbScancode>(scancode));
     }
-    
+
     if (mappingClass == "MouseKeyToButtonMapping") {
-        int mouseButton =
-            CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+        int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
 
         return std::make_shared<MouseKeyToButtonMapping>(portIndex, bitmask, static_cast<MouseBtn>(mouseButton));
     }
