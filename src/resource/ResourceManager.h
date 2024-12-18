@@ -95,6 +95,8 @@ class ResourceManager {
     void DirtyResources(const ResourceFilter& filter);
     void UnloadResources(const std::string& searchMask);
     void UnloadResources(const ResourceFilter& filter);
+    void UnloadResourcesAsync(const std::string& searchMask);
+    void UnloadResourcesAsync(const ResourceFilter& filter);
 
     bool OtrSignatureCheck(const char* fileName);
     bool IsAltAssetsEnabled();
@@ -102,6 +104,7 @@ class ResourceManager {
 
   protected:
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
+    void UnloadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
                                                                            bool loadExact = false);
     std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier,
