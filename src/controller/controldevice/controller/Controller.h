@@ -17,7 +17,6 @@
 #include "ControllerLED.h"
 #include "controller/controldevice/ControlDevice.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "window/MouseMeta.h"
 
 namespace Ship {
 

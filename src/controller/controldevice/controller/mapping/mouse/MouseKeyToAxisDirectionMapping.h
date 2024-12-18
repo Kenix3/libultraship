@@ -2,7 +2,7 @@
 
 #include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "MouseKeyToAnyMapping.h"
-#include "window/MouseMeta.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 class MouseKeyToAxisDirectionMapping final : public MouseKeyToAnyMapping, public ControllerAxisDirectionMapping {

@@ -3,7 +3,7 @@
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "public/bridge/gfxbridge.h"
-#include "window/MouseMeta.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Fast {
 class Fast3dWindow : public Ship::Window {
