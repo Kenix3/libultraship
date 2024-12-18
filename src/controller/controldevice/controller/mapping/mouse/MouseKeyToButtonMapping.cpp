@@ -5,8 +5,7 @@
 #include "Context.h"
 
 namespace Ship {
-MouseKeyToButtonMapping::MouseKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                                       MouseBtn button)
+MouseKeyToButtonMapping::MouseKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button)
     : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseKeyToAnyMapping(button),
       ControllerButtonMapping(ShipDeviceIndex::Mouse, portIndex, bitmask) {
 }

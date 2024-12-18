@@ -79,20 +79,22 @@ bool ControlDeck::GamepadGameInputBlocked() {
 
 bool ControlDeck::KeyboardGameInputBlocked() {
     // block keyboard input when typing in imgui
-    ImGuiWindow *activeIDWindow = ImGui::GetCurrentContext()->ActiveIdWindow;
+    ImGuiWindow* activeIDWindow = ImGui::GetCurrentContext()->ActiveIdWindow;
     return AllGameInputBlocked() ||
-        (activeIDWindow != NULL && activeIDWindow->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID()) ||
-        ImGui::GetTopMostPopupModal() != NULL; //ImGui::GetIO().WantCaptureKeyboard, but ActiveId check altered
+           (activeIDWindow != NULL &&
+            activeIDWindow->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID()) ||
+           ImGui::GetTopMostPopupModal() != NULL; // ImGui::GetIO().WantCaptureKeyboard, but ActiveId check altered
 }
 
 bool ControlDeck::MouseGameInputBlocked() {
     // block mouse input when user interacting with gui
     // TODO: check perfomance
-    ImGuiWindow *window = ImGui::GetCurrentContext()->HoveredWindow;
+    ImGuiWindow* window = ImGui::GetCurrentContext()->HoveredWindow;
     if (window == NULL) {
         return true;
     }
-    return AllGameInputBlocked() || (window->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID());
+    return AllGameInputBlocked() ||
+           (window->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID());
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {

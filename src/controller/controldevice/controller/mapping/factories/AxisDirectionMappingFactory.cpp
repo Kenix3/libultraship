@@ -80,8 +80,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
     if (mappingClass == "MouseKeyToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int mouseButton =
-            CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+        int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
@@ -90,8 +89,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<MouseKeyToAxisDirectionMapping>(portIndex, stickIndex, static_cast<Direction>(direction),
-                                                                   static_cast<MouseBtn>(mouseButton));
+        return std::make_shared<MouseKeyToAxisDirectionMapping>(
+            portIndex, stickIndex, static_cast<Direction>(direction), static_cast<MouseBtn>(mouseButton));
     }
 
     return nullptr;

@@ -26,7 +26,8 @@
 namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex)
     : mPortIndex(portIndex), mStickIndex(stickIndex), mUseKeydownEventToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(MouseBtn::MOUSE_BTN_UNKNOWN) {
+      mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN),
+      mMouseButtonForNewMapping(MouseBtn::MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
     mSensitivity = 1.0f;
     mDeadzonePercentage = DEFAULT_STICK_DEADZONE_PERCENTAGE;
@@ -277,9 +278,11 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
                                                                       mKeyboardScancodeForNewMapping);
     } else if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
         // TODO: I dont think direct ImGui calls should be here (again)
-        mapping = std::make_shared<MouseKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction, mMouseButtonForNewMapping);
+        mapping = std::make_shared<MouseKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
+                                                                   mMouseButtonForNewMapping);
     } else {
-        mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStickIndex, direction);
+        mapping =
+            AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStickIndex, direction);
     }
 
     if (mapping == nullptr) {

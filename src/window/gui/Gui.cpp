@@ -292,7 +292,7 @@ void Gui::UnblockGamepadNavigation() {
 }
 
 ImGuiID Gui::GetMainGameWindowID() {
-    ImGuiWindow *window = ImGui::FindWindowByName("Main Game");
+    ImGuiWindow* window = ImGui::FindWindowByName("Main Game");
     if (window == NULL) {
         return 0;
     }
