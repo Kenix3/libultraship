@@ -27,7 +27,7 @@ namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex)
     : mPortIndex(portIndex), mStickIndex(stickIndex), mUseKeydownEventToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN),
-      mMouseButtonForNewMapping(MouseBtn::MOUSE_BTN_UNKNOWN) {
+      mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
     mSensitivity = 1.0f;
     mDeadzonePercentage = DEFAULT_STICK_DEADZONE_PERCENTAGE;
@@ -276,7 +276,7 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                       mKeyboardScancodeForNewMapping);
-    } else if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
+    } else if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
         // TODO: I dont think direct ImGui calls should be here (again)
         mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                    mMouseButtonForNewMapping);
@@ -290,7 +290,7 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     }
 
     mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
-    mMouseButtonForNewMapping = MouseBtn::MOUSE_BTN_UNKNOWN;
+    mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
     mUseKeydownEventToCreateNewMapping = false;
 
     if (id != "") {
@@ -356,7 +356,7 @@ bool ControllerStick::ProcessMouseEvent(bool isPressed, MouseBtn button) {
             mMouseButtonForNewMapping = button;
             return true;
         } else {
-            mMouseButtonForNewMapping = MouseBtn::MOUSE_BTN_UNKNOWN;
+            mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
         }
     }
 
