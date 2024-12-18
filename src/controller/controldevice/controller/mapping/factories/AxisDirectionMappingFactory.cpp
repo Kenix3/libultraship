@@ -1,5 +1,6 @@
 #include "AxisDirectionMappingFactory.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseKeyToAxisDirectionMapping.h"
 
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"

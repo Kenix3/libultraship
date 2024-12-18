@@ -6,7 +6,7 @@
 #include "Context.h"
 
 namespace Ship {
-KeyMouseToAxisDirectionMapping::MouseKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
+MouseKeyToAxisDirectionMapping::MouseKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
                                                                      Direction direction, MouseBtn button)
     : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseKeyToAnyMapping(button),
       ControllerAxisDirectionMapping(ShipDeviceIndex::Mouse, portIndex, stick, direction) {
