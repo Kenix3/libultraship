@@ -991,6 +991,10 @@ bool Gui::GetMenuOrMenubarVisible() {
     return (GetMenuBar() && GetMenuBar()->IsVisible()) || (GetMenu() && GetMenu()->IsVisible());
 }
 
+bool Gui::IsMouseOverAnyGuiItem() {
+    return ImGui::IsAnyItemHovered();
+}
+
 std::shared_ptr<GuiWindow> Gui::GetMenu() {
     return mMenu;
 }
