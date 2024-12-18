@@ -592,11 +592,11 @@ static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
 static void gfx_dxgi_set_mouse_capture(bool capture) {
     if (capture) {
         apply_mouse_capture_clip();
-        ShowCursor(FALSE);
+        gfx_dxgi_set_cursor_visibility(false);
         SetCapture(dxgi.h_wnd);
     } else {
         ClipCursor(nullptr);
-        ShowCursor(TRUE);
+        gfx_dxgi_set_cursor_visibility(true);
         ReleaseCapture();
     }
     dxgi.is_mouse_captured = capture;
