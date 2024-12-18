@@ -319,9 +319,13 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
 }
 
 bool ControllerStick::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
-    if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
-        mKeyboardScancodeForNewMapping = scancode;
-        return true;
+    if (mUseKeydownEventToCreateNewMapping) {
+        if (eventType == LUS_KB_EVENT_KEY_DOWN) {
+            mKeyboardScancodeForNewMapping = scancode;
+            return true;
+        } else {
+            mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
+        }
     }
 
     bool result = false;
