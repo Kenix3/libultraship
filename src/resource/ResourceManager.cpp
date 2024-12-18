@@ -342,22 +342,32 @@ void ResourceManager::DirtyResources(const ResourceFilter& filter) {
     });
 }
 
-void ResourceManager::UnloadResources(const ResourceFilter& filter) {
-    mThreadPool->submit_task([this, filter]() -> void {
-        auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
-
-        for (const auto& key : *list.get()) {
-            UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
-        }
-    });
-}
-
 void ResourceManager::DirtyResources(const std::string& searchMask) {
     DirtyResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
+void ResourceManager::UnloadResourcesAsync(const std::string& searchMask, BS::priority_t priority) {
+    UnloadResourcesAsync({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive }, priority);
+}
+
+void ResourceManager::UnloadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
+    mThreadPool->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
+}
+
 void ResourceManager::UnloadResources(const std::string& searchMask) {
     UnloadResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
+}
+
+void ResourceManager::UnloadResources(const ResourceFilter& filter) {
+    UnloadResourcesProcess(filter);
+}
+
+void ResourceManager::UnloadResourcesProcess(const ResourceFilter& filter) {
+    auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
+
+    for (const auto& key : *list.get()) {
+        UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
+    }
 }
 
 std::shared_ptr<ArchiveManager> ResourceManager::GetArchiveManager() {
