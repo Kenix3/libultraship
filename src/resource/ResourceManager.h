@@ -95,8 +95,8 @@ class ResourceManager {
     void DirtyResources(const ResourceFilter& filter);
     void UnloadResources(const std::string& searchMask);
     void UnloadResources(const ResourceFilter& filter);
-    void UnloadResourcesAsync(const std::string& searchMask);
-    void UnloadResourcesAsync(const ResourceFilter& filter);
+    void UnloadResourcesAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
+    void UnloadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority = BS::pr::normal);
 
     bool OtrSignatureCheck(const char* fileName);
     bool IsAltAssetsEnabled();

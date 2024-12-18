@@ -346,12 +346,12 @@ void ResourceManager::DirtyResources(const std::string& searchMask) {
     DirtyResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
-void ResourceManager::UnloadResourcesAsync(const std::string& searchMask) {
-    UnloadResourcesAsync({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
+void ResourceManager::UnloadResourcesAsync(const std::string& searchMask, BS::priority_t priority) {
+    UnloadResourcesAsync({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive }, priority);
 }
 
-void ResourceManager::UnloadResourcesAsync(const ResourceFilter& filter) {
-    mThreadPool->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); });
+void ResourceManager::UnloadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
+    mThreadPool->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
 }
 
 void ResourceManager::UnloadResources(const std::string& searchMask) {
