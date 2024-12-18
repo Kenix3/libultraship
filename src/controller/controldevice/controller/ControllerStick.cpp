@@ -25,7 +25,7 @@
 
 namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex)
-    : mPortIndex(portIndex), mStickIndex(stickIndex), mUseKeydownEventToCreateNewMapping(false),
+    : mPortIndex(portIndex), mStickIndex(stickIndex), mUseInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
     mSensitivity = 1.0f;
@@ -271,7 +271,7 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
-    mUseKeydownEventToCreateNewMapping = true;
+    mUseInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                       mKeyboardScancodeForNewMapping);
@@ -290,7 +290,7 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
 
     mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
     mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
-    mUseKeydownEventToCreateNewMapping = false;
+    mUseInputToCreateNewMapping = false;
 
     if (id != "") {
         ClearAxisDirectionMapping(direction, id);
@@ -325,7 +325,7 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
 }
 
 bool ControllerStick::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
-    if (mUseKeydownEventToCreateNewMapping) {
+    if (mUseInputToCreateNewMapping) {
         if (eventType == LUS_KB_EVENT_KEY_DOWN) {
             mKeyboardScancodeForNewMapping = scancode;
             return true;
@@ -350,7 +350,7 @@ bool ControllerStick::ProcessKeyboardEvent(KbEventType eventType, KbScancode sca
 }
 
 bool ControllerStick::ProcessMouseEvent(bool isPressed, MouseBtn button) {
-    if (mUseKeydownEventToCreateNewMapping) {
+    if (mUseInputToCreateNewMapping) {
         if (isPressed) {
             mMouseButtonForNewMapping = button;
             return true;

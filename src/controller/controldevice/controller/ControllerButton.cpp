@@ -14,7 +14,7 @@
 
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
-    : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
+    : mPortIndex(portIndex), mBitmask(bitmask), mUseInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
 }
 
@@ -178,7 +178,7 @@ bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
-    mUseKeydownEventToCreateNewMapping = true;
+    mUseInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
     } else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
@@ -194,7 +194,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 
     mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
     mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
-    mUseKeydownEventToCreateNewMapping = false;
+    mUseInputToCreateNewMapping = false;
 
     if (id != "") {
         ClearButtonMapping(id);
@@ -211,7 +211,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 }
 
 bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
-    if (mUseKeydownEventToCreateNewMapping) {
+    if (mUseInputToCreateNewMapping) {
         if (eventType == LUS_KB_EVENT_KEY_DOWN) {
             mKeyboardScancodeForNewMapping = scancode;
             return true;
@@ -234,7 +234,7 @@ bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode sc
 }
 
 bool ControllerButton::ProcessMouseEvent(bool isPressed, MouseBtn button) {
-    if (mUseKeydownEventToCreateNewMapping) {
+    if (mUseInputToCreateNewMapping) {
         if (isPressed) {
             mMouseButtonForNewMapping = button;
             return true;
