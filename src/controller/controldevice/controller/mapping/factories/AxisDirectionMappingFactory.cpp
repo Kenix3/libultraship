@@ -1,6 +1,6 @@
 #include "AxisDirectionMappingFactory.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
-#include "controller/controldevice/controller/mapping/mouse/MouseKeyToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
 
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
@@ -78,7 +78,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             portIndex, stickIndex, static_cast<Direction>(direction), static_cast<KbScancode>(scancode));
     }
 
-    if (mappingClass == "MouseKeyToAxisDirectionMapping") {
+    if (mappingClass == "MouseButtonToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
 
@@ -89,7 +89,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<MouseKeyToAxisDirectionMapping>(
+        return std::make_shared<MouseButtonToAxisDirectionMapping>(
             portIndex, stickIndex, static_cast<Direction>(direction), static_cast<MouseBtn>(mouseButton));
     }
 
