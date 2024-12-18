@@ -5,6 +5,7 @@
 #include <memory>
 #include <unordered_map>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "window/MouseMeta.h"
 
 namespace Ship {
 
@@ -52,6 +53,7 @@ class ControllerStick {
     bool NotchSnapAngleIsDefault();
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
+    bool ProcessMouseEvent(bool isPressed, Ship::MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     StickIndex GetStickIndex();
@@ -77,5 +79,6 @@ class ControllerStick {
 
     bool mUseKeydownEventToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
+    MouseBtn mMouseButtonForNewMapping;
 };
 } // namespace Ship
