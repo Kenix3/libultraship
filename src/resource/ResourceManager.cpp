@@ -351,9 +351,7 @@ void ResourceManager::UnloadResourcesAsync(const std::string& searchMask) {
 }
 
 void ResourceManager::UnloadResourcesAsync(const ResourceFilter& filter) {
-    mThreadPool->submit_task([this, filter]() -> void {
-        UnloadResourcesProcess(filter);
-    });
+    mThreadPool->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); });
 }
 
 void ResourceManager::UnloadResources(const std::string& searchMask) {
