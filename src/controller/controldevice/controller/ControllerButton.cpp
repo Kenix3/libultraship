@@ -181,14 +181,10 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     mUseKeydownEventToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
-    }
-
-    // TODO: I dont think direct ImGui calls should be here
-    if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
+    } else if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
+        // TODO: I dont think direct ImGui calls should be here
         mapping = std::make_shared<MouseKeyToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
-    }
-
-    if (mapping == nullptr) {
+    } else {
         mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
     }
 
@@ -215,7 +211,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 }
 
 bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
-    if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
+    if (mUseKeydownEventToCreateNewMapping) {
         if (eventType == LUS_KB_EVENT_KEY_DOWN) {
             mKeyboardScancodeForNewMapping = scancode;
             return true;
@@ -238,9 +234,13 @@ bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode sc
 }
 
 bool ControllerButton::ProcessMouseEvent(bool isPressed, MouseBtn button) {
-    if (mUseKeydownEventToCreateNewMapping && isPressed) {
-        mMouseButtonForNewMapping = button;
-        return true;
+    if (mUseKeydownEventToCreateNewMapping) {
+        if (isPressed) {
+            mMouseButtonForNewMapping = button;
+            return true;
+        } else {
+            mMouseButtonForNewMapping = MouseBtn::MOUSE_BTN_UNKNOWN;
+        }
     }
 
     bool result = false;
