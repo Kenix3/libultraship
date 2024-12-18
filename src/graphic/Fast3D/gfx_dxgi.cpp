@@ -264,11 +264,13 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
 
 static void on_mouse_button_down(int btn) {
     // TODO: maybe check boundaries
+    dxgi.mouse_pressed[btn] = true;
     if (dxgi.on_mouse_button_down != nullptr) {
         dxgi.on_mouse_button_down(btn);
     }
 }
 static void on_mouse_button_up(int btn) {
+    dxgi.mouse_pressed[btn] = false;
     if (dxgi.on_mouse_button_up != nullptr) {
         dxgi.on_mouse_button_up(btn);
     }
@@ -389,38 +391,30 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_LBUTTONDOWN:
             on_mouse_button_down(0);
-            dxgi.mouse_pressed[0] = true;
             break;
         case WM_LBUTTONUP:
             on_mouse_button_up(0);
-            dxgi.mouse_pressed[0] = false;
             break;
         case WM_MBUTTONDOWN:
             on_mouse_button_down(1);
-            dxgi.mouse_pressed[1] = true;
             break;
         case WM_MBUTTONUP:
             on_mouse_button_up(1);
-            dxgi.mouse_pressed[1] = false;
             break;
         case WM_RBUTTONDOWN:
             on_mouse_button_down(2);
-            dxgi.mouse_pressed[2] = true;
             break;
         case WM_RBUTTONUP:
             on_mouse_button_up(2);
-            dxgi.mouse_pressed[2] = false;
             break;
         case WM_XBUTTONDOWN: {
             int btn = 2 + GET_XBUTTON_WPARAM(w_param);
             on_mouse_button_down(btn);
-            dxgi.mouse_pressed[btn] = true;
             break;
         }
         case WM_XBUTTONUP: {
             int btn = 2 + GET_XBUTTON_WPARAM(w_param);
             on_mouse_button_up(btn);
-            dxgi.mouse_pressed[btn] = false;
             break;
         }
         case WM_MOUSEWHEEL:
