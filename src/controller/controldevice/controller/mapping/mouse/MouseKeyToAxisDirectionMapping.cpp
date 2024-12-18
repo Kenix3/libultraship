@@ -6,10 +6,10 @@
 #include "Context.h"
 
 namespace Ship {
-MouseKeyToAxisDirectionMapping::MouseKeyToAxisDirectionMapping(uint8_t portIndex, Stick stick,
+MouseKeyToAxisDirectionMapping::MouseKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
                                                                      Direction direction, MouseBtn button)
     : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseKeyToAnyMapping(button),
-      ControllerAxisDirectionMapping(ShipDeviceIndex::Mouse, portIndex, stick, direction) {
+      ControllerAxisDirectionMapping(ShipDeviceIndex::Mouse, portIndex, stickIndex, direction) {
 }
 
 float MouseKeyToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
@@ -21,14 +21,14 @@ float MouseKeyToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 }
 
 std::string MouseKeyToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-MOUSE%d", mPortIndex, mStick, mDirection, mButton);
+    return StringHelper::Sprintf("P%d-S%d-D%d-MOUSE%d", mPortIndex, mStickIndex, mDirection, mButton);
 }
 
 void MouseKeyToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
     CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "MouseKeyToAxisDirectionMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStick);
+    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), static_cast<int>(mButton));
     CVarSave();

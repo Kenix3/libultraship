@@ -90,7 +90,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<MouseKeyToAxisDirectionMapping>(portIndex, stick, static_cast<Direction>(direction),
+        return std::make_shared<MouseKeyToAxisDirectionMapping>(portIndex, stickIndex, static_cast<Direction>(direction),
                                                                    static_cast<MouseBtn>(mouseButton));
     }
 
