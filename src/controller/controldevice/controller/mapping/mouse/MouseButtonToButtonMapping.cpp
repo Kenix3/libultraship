@@ -1,16 +1,16 @@
-#include "MouseKeyToButtonMapping.h"
+#include "MouseButtonToButtonMapping.h"
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 
 namespace Ship {
-MouseKeyToButtonMapping::MouseKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button)
-    : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseKeyToAnyMapping(button),
+MouseButtonToButtonMapping::MouseButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button)
+    : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseButtonToAnyMapping(button),
       ControllerButtonMapping(ShipDeviceIndex::Mouse, portIndex, bitmask) {
 }
 
-void MouseKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
+void MouseButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     if (Context::GetInstance()->GetControlDeck()->MouseGameInputBlocked()) {
         return;
     }
@@ -22,24 +22,24 @@ void MouseKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     padButtons |= mBitmask;
 }
 
-uint8_t MouseKeyToButtonMapping::GetMappingType() {
+uint8_t MouseButtonToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_MOUSE;
 }
 
-std::string MouseKeyToButtonMapping::GetButtonMappingId() {
+std::string MouseButtonToButtonMapping::GetButtonMappingId() {
     return StringHelper::Sprintf("P%d-B%d-MOUSE%d", mPortIndex, mBitmask, mButton);
 }
 
-void MouseKeyToButtonMapping::SaveToConfig() {
+void MouseButtonToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
-                  "MouseKeyToButtonMapping");
+                  "MouseButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), static_cast<int>(mButton));
     CVarSave();
 }
 
-void MouseKeyToButtonMapping::EraseFromConfig() {
+void MouseButtonToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());

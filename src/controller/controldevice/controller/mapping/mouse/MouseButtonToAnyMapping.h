@@ -4,10 +4,10 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
-class MouseKeyToAnyMapping : virtual public ControllerInputMapping {
+class MouseButtonToAnyMapping : virtual public ControllerInputMapping {
   public:
-    MouseKeyToAnyMapping(MouseBtn button);
-    ~MouseKeyToAnyMapping();
+    MouseButtonToAnyMapping(MouseBtn button);
+    ~MouseButtonToAnyMapping();
     std::string GetPhysicalInputName() override;
     bool ProcessMouseEvent(bool isPressed, MouseBtn button);
     std::string GetPhysicalDeviceName() override;

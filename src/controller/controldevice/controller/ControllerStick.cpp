@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
-#include "controller/controldevice/controller/mapping/mouse/MouseKeyToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
 
 #include "controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
 
@@ -278,7 +278,7 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
                                                                       mKeyboardScancodeForNewMapping);
     } else if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
         // TODO: I dont think direct ImGui calls should be here (again)
-        mapping = std::make_shared<MouseKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
+        mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                    mMouseButtonForNewMapping);
     } else {
         mapping =
@@ -364,8 +364,8 @@ bool ControllerStick::ProcessMouseEvent(bool isPressed, MouseBtn button) {
     for (auto [direction, mappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : mappings) {
             if (mapping->GetMappingType() == MAPPING_TYPE_MOUSE) {
-                std::shared_ptr<MouseKeyToAxisDirectionMapping> mtoadMapping =
-                    std::dynamic_pointer_cast<MouseKeyToAxisDirectionMapping>(mapping);
+                std::shared_ptr<MouseButtonToAxisDirectionMapping> mtoadMapping =
+                    std::dynamic_pointer_cast<MouseButtonToAxisDirectionMapping>(mapping);
                 if (mtoadMapping != nullptr) {
                     result = result || mtoadMapping->ProcessMouseEvent(isPressed, button);
                 }

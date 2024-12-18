@@ -1,13 +1,13 @@
 #pragma once
 
 #include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
-#include "MouseKeyToAnyMapping.h"
+#include "MouseButtonToAnyMapping.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
-class MouseKeyToAxisDirectionMapping final : public MouseKeyToAnyMapping, public ControllerAxisDirectionMapping {
+class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, public ControllerAxisDirectionMapping {
   public:
-    MouseKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button);
+    MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
     uint8_t GetMappingType() override;

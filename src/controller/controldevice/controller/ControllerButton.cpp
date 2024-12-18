@@ -3,7 +3,7 @@
 #include "controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
-#include "controller/controldevice/controller/mapping/mouse/MouseKeyToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
@@ -183,7 +183,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
     } else if (!ImGui::IsAnyItemHovered() && mMouseButtonForNewMapping != MouseBtn::MOUSE_BTN_UNKNOWN) {
         // TODO: I dont think direct ImGui calls should be here
-        mapping = std::make_shared<MouseKeyToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
+        mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
     } else {
         mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
     }
@@ -246,8 +246,8 @@ bool ControllerButton::ProcessMouseEvent(bool isPressed, MouseBtn button) {
     bool result = false;
     for (auto [id, mapping] : GetAllButtonMappings()) {
         if (mapping->GetMappingType() == MAPPING_TYPE_MOUSE) {
-            std::shared_ptr<MouseKeyToButtonMapping> mtobMapping =
-                std::dynamic_pointer_cast<MouseKeyToButtonMapping>(mapping);
+            std::shared_ptr<MouseButtonToButtonMapping> mtobMapping =
+                std::dynamic_pointer_cast<MouseButtonToButtonMapping>(mapping);
             if (mtobMapping != nullptr) {
                 result = result || mtobMapping->ProcessMouseEvent(isPressed, button);
             }
