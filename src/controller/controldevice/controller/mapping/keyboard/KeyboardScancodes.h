@@ -1,6 +1,8 @@
 #pragma once
 
 #ifdef __cplusplus
+#include <string>
+
 namespace Ship {
 #endif
 
@@ -118,6 +120,10 @@ typedef enum KbScancode {
     LUS_KB_MAX
 } KbScancode;
 
+typedef enum MouseBtn { LEFT, MIDDLE, RIGHT, BACKWARD, FORWARD, MOUSE_BTN_COUNT, MOUSE_BTN_UNKNOWN } MouseBtn;
+
 #ifdef __cplusplus
+static std::string mouseBtnNames[7] = { "MouseLeft",    "MouseMiddle",     "MouseRight",       "MouseBackward",
+                                        "MouseForward", "MOUSE_BTN_COUNT", "MOUSE_BTN_UNKNOWN" };
 } // namespace Ship
 #endif

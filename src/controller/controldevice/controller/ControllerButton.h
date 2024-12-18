@@ -6,7 +6,6 @@
 #include <string>
 #include "libultraship/libultra/controller.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "window/MouseMeta.h"
 
 namespace Ship {
 

@@ -10,7 +10,7 @@
 #include "Context.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 
-#include "window/MouseMeta.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 std::shared_ptr<ControllerAxisDirectionMapping>

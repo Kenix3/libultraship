@@ -5,7 +5,6 @@
 #include <memory>
 #include <unordered_map>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "window/MouseMeta.h"
 
 namespace Ship {
 
