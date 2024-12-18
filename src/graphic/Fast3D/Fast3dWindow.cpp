@@ -311,10 +311,10 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
 
     if (isNowFullscreen) {
         auto menuBar = wnd->GetGui()->GetMenuBar();
-        wnd->SetCursorVisibility(menuBar && menuBar->IsVisible() || wnd->ShouldForceCursorVisibility() ||
-                                 CVarGetInteger("gWindows.Menu", 0));
+        wnd->SetMouseCapture(!(menuBar && menuBar->IsVisible() || wnd->ShouldForceCursorVisibility() ||
+                                 CVarGetInteger("gWindows.Menu", 0)));
     } else {
-        wnd->SetCursorVisibility(true);
+        wnd->SetMouseCapture(false);
     }
 }
 } // namespace Fast
