@@ -141,9 +141,8 @@ bool Controller::ProcessMouseEvent(bool isPressed, MouseBtn mouseButton) {
     for (auto [bitmask, button] : GetAllButtons()) {
         result = button->ProcessMouseEvent(isPressed, mouseButton) || result;
     }
-    // FIXME: implement
-    // result = GetLeftStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
-    // result = GetRightStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
+    result = GetLeftStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
+    result = GetRightStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
     return result;
 }
 
