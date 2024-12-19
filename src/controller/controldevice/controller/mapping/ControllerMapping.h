@@ -5,9 +5,10 @@
 
 namespace Ship {
 
+#define MAPPING_TYPE_UNKNOWN -1
 #define MAPPING_TYPE_GAMEPAD 0
 #define MAPPING_TYPE_KEYBOARD 1
-#define MAPPING_TYPE_UNKNOWN 2
+#define MAPPING_TYPE_MOUSE 2
 
 class ControllerMapping {
   public:

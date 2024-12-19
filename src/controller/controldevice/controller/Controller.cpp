@@ -136,6 +136,16 @@ bool Controller::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode
     return result;
 }
 
+bool Controller::ProcessMouseEvent(bool isPressed, MouseBtn mouseButton) {
+    bool result = false;
+    for (auto [bitmask, button] : GetAllButtons()) {
+        result = button->ProcessMouseEvent(isPressed, mouseButton) || result;
+    }
+    result = GetLeftStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
+    result = GetRightStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
+    return result;
+}
+
 bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
     for (auto [bitmask, button] : GetAllButtons()) {
         if (button->HasMappingsForShipDeviceIndex(lusIndex)) {

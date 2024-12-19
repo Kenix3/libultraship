@@ -3,6 +3,7 @@
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "public/bridge/gfxbridge.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Fast {
 class Fast3dWindow : public Ship::Window {
@@ -50,6 +51,8 @@ class Fast3dWindow : public Ship::Window {
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp();
+    static bool MouseButtonDown(int button);
+    static bool MouseButtonUp(int button);
     static void OnFullscreenChanged(bool isNowFullscreen);
 
   private:

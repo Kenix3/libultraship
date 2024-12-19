@@ -33,6 +33,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     // if we don't have a config for controller 1, set default keyboard bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Keyboard);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Mouse);
     }
 
     Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
@@ -51,6 +52,19 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
     return result;
 }
 
+bool ControlDeck::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+    bool result = false;
+    for (auto port : mPorts) {
+        auto controller = port->GetConnectedController();
+
+        if (controller != nullptr) {
+            result = controller->ProcessMouseEvent(isPressed, button) || result;
+        }
+    }
+
+    return result;
+}
+
 bool ControlDeck::AllGameInputBlocked() {
     return !mGameInputBlockers.empty();
 }
@@ -63,7 +77,21 @@ bool ControlDeck::GamepadGameInputBlocked() {
 
 bool ControlDeck::KeyboardGameInputBlocked() {
     // block keyboard input when typing in imgui
-    return AllGameInputBlocked() || ImGui::GetIO().WantCaptureKeyboard;
+    ImGuiWindow* activeIDWindow = ImGui::GetCurrentContext()->ActiveIdWindow;
+    return AllGameInputBlocked() ||
+           (activeIDWindow != NULL &&
+            activeIDWindow->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID()) ||
+           ImGui::GetTopMostPopupModal() != NULL; // ImGui::GetIO().WantCaptureKeyboard, but ActiveId check altered
+}
+
+bool ControlDeck::MouseGameInputBlocked() {
+    // block mouse input when user interacting with gui
+    ImGuiWindow* window = ImGui::GetCurrentContext()->HoveredWindow;
+    if (window == NULL) {
+        return true;
+    }
+    return AllGameInputBlocked() ||
+           (window->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID());
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {

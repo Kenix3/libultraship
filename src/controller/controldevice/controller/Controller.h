@@ -49,6 +49,7 @@ class Controller : public ControlDevice {
     std::vector<std::shared_ptr<ControllerMapping>> GetAllMappings();
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
+    bool ProcessMouseEvent(bool isPressed, MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceIndex lusIndex);
