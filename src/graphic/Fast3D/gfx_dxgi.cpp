@@ -570,6 +570,9 @@ static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
         *x = p.x - dxgi.current_width / 2;
         *y = p.y - dxgi.current_height / 2;
         SetCursorPos(dxgi.current_width / 2, dxgi.current_height / 2);
+    } else {
+        *x = 0;
+        *y = 0;
     }
 }
 
