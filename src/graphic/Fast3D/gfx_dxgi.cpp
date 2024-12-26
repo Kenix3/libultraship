@@ -301,11 +301,6 @@ void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Freque
     }
 }
 
-static void gfx_dxgi_close() {
-    ShowWindow(dxgi.h_wnd, SW_NORMAL); // Restore window before closing, so normal window pos and size is saved
-    dxgi.is_running = false;
-}
-
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
     Ship::WindowEvent event_impl;
@@ -334,7 +329,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         case WM_CLOSE:
-            gfx_dxgi_close();
+            dxgi.is_running = false;
             break;
         case WM_DPICHANGED: {
             RECT* const prcNewWindow = (RECT*)l_param;
@@ -349,7 +344,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_ENDSESSION:
             // This hopefully gives the game a chance to shut down, before windows kills it.
             if (w_param == TRUE) {
-                gfx_dxgi_close();
+                dxgi.is_running = false;
             }
             break;
         case WM_ACTIVATEAPP:
@@ -484,6 +479,10 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     }
 
     DragAcceptFiles(dxgi.h_wnd, TRUE);
+}
+
+static void gfx_dxgi_close() {
+    dxgi.is_running = false;
 }
 
 static void gfx_dxgi_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
