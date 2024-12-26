@@ -285,7 +285,6 @@ static int target_fps = 60;
 #define FRAME_INTERVAL_US_DENOMINATOR (target_fps)
 
 static void gfx_sdl_close(void) {
-    SDL_RestoreWindow(wnd); // Restore window before closing, so normal window pos and size is saved
     is_running = false;
 }
 

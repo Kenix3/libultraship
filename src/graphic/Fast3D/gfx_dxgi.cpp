@@ -302,7 +302,6 @@ void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Freque
 }
 
 static void gfx_dxgi_close() {
-    ShowWindow(dxgi.h_wnd, SW_NORMAL); // Restore window before closing, so normal window pos and size is saved
     dxgi.is_running = false;
 }
 
