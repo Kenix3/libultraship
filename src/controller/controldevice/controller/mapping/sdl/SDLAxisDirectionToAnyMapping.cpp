@@ -33,7 +33,7 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
                 return "L2";
             }
             if (UsesSwitchLayout()) {
-                return "LR";
+                return "ZL";
             }
             if (UsesXboxLayout()) {
                 return "LT";
