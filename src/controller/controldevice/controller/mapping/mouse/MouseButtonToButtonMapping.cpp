@@ -22,7 +22,7 @@ void MouseButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     padButtons |= mBitmask;
 }
 
-uint8_t MouseButtonToButtonMapping::GetMappingType() {
+int8_t MouseButtonToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_MOUSE;
 }
 

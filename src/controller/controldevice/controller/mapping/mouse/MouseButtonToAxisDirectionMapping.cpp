@@ -43,7 +43,7 @@ void MouseButtonToAxisDirectionMapping::EraseFromConfig() {
     CVarSave();
 }
 
-uint8_t MouseButtonToAxisDirectionMapping::GetMappingType() {
+int8_t MouseButtonToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_MOUSE;
 }
 } // namespace Ship

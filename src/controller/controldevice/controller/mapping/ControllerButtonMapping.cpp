@@ -18,7 +18,7 @@ CONTROLLERBUTTONS_T ControllerButtonMapping::GetBitmask() {
     return mBitmask;
 }
 
-uint8_t ControllerButtonMapping::GetMappingType() {
+int8_t ControllerButtonMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
 

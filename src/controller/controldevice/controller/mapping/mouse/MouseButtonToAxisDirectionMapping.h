@@ -10,7 +10,7 @@ class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, 
     MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
-    uint8_t GetMappingType() override;
+    int8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };

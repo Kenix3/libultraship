@@ -8,7 +8,7 @@ class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapp
                                     Direction direction, int32_t sdlControllerButton);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
-    uint8_t GetMappingType() override;
+    int8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };

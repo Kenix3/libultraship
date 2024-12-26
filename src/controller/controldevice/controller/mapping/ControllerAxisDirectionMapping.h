@@ -17,7 +17,7 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
                                    Direction direction);
     ~ControllerAxisDirectionMapping();
     virtual float GetNormalizedAxisDirectionValue() = 0;
-    virtual uint8_t GetMappingType();
+    virtual int8_t GetMappingType();
 
     virtual std::string GetAxisDirectionMappingId() = 0;
     virtual void SaveToConfig() = 0;

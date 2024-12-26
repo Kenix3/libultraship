@@ -43,7 +43,7 @@ void KeyboardKeyToAxisDirectionMapping::EraseFromConfig() {
     CVarSave();
 }
 
-uint8_t KeyboardKeyToAxisDirectionMapping::GetMappingType() {
+int8_t KeyboardKeyToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_KEYBOARD;
 }
 } // namespace Ship

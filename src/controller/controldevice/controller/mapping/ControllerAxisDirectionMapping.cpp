@@ -12,7 +12,7 @@ ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(ShipDeviceIndex s
 ControllerAxisDirectionMapping::~ControllerAxisDirectionMapping() {
 }
 
-uint8_t ControllerAxisDirectionMapping::GetMappingType() {
+int8_t ControllerAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
 
