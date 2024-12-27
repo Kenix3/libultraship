@@ -100,6 +100,7 @@ class Gui {
     std::shared_ptr<GuiWindow> GetMenu();
     bool GetMenuOrMenubarVisible();
     bool IsMouseOverAnyGuiItem();
+    bool IsMouseOverActivePopup();
 
     bool GamepadNavigationEnabled();
     void BlockGamepadNavigation();
