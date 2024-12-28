@@ -21,10 +21,12 @@
 #endif
 #include "graphic/Fast3D/debug/GfxDebugger.h"
 #include "libultraship/libultra/types.h"
-//#include "libultraship/libultra/gs2dex.h"
+// #include "libultraship/libultra/gs2dex.h"
 #include <string>
 
 #include "gfx_pc.h"
+#include "gfx.h"
+#include "gfx_table.cpp"
 #include "gfx_cc.h"
 #include "lus_gbi.h"
 #include "gfx_window_manager_api.h"
@@ -49,11 +51,11 @@ using namespace std;
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
-#define SCALE_5_8(VAL_) (((VAL_)*0xFF) / 0x1F)
+#define SCALE_5_8(VAL_) (table_scale_5[VAL_])
 #define SCALE_8_5(VAL_) ((((VAL_) + 4) * 0x1F) / 0xFF)
-#define SCALE_4_8(VAL_) ((VAL_)*0x11)
+#define SCALE_4_8(VAL_) (table_scale_4[VAL_])
 #define SCALE_8_4(VAL_) ((VAL_) / 0x11)
-#define SCALE_3_8(VAL_) ((VAL_)*0x24)
+#define SCALE_3_8(VAL_) (table_scale_3[VAL_])
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
 // Based off the current set native dimensions or active framebuffer
@@ -549,13 +551,8 @@ void gfx_texture_cache_delete(const uint8_t* orig_addr) {
     }
 }
 
-static void import_texture_rgba16(int tile, bool importReplacement) {
+static void import_texture_rgba16(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -575,11 +572,11 @@ static void import_texture_rgba16(int tile, bool importReplacement) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t clrIdx = (y * (full_image_line_size_bytes / 2)) + (x);
 
-            uint16_t col16 = (addr[2 * clrIdx] << 8) | addr[2 * clrIdx + 1];
-            uint8_t a = col16 & 1;
-            uint8_t r = col16 >> 11;
-            uint8_t g = (col16 >> 6) & 0x1f;
-            uint8_t b = (col16 >> 1) & 0x1f;
+            RGBA col = col16_to_rgba[((uint16_t*)addr)[clrIdx]];
+            uint8_t a = col.a;
+            uint8_t r = col.r;
+            uint8_t g = col.g;
+            uint8_t b = col.b;
             tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
             tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
             tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
@@ -592,13 +589,8 @@ static void import_texture_rgba16(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_rgba32(int tile, bool importReplacement) {
+static void import_texture_rgba32(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -610,13 +602,8 @@ static void import_texture_rgba32(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(addr, width, height);
 }
 
-static void import_texture_ia4(int tile, bool importReplacement) {
+static void import_texture_ia4(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -626,14 +613,14 @@ static void import_texture_ia4(int tile, bool importReplacement) {
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
         uint8_t byte = addr[i / 2];
         uint8_t part = (byte >> (4 - (i % 2) * 4)) & 0xf;
-        uint8_t intensity = part >> 1;
+        uint8_t intensity = SCALE_3_8(part >> 1);
         uint8_t alpha = part & 1;
         uint8_t r = intensity;
         uint8_t g = intensity;
         uint8_t b = intensity;
-        tex_upload_buffer[4 * i + 0] = SCALE_3_8(r);
-        tex_upload_buffer[4 * i + 1] = SCALE_3_8(g);
-        tex_upload_buffer[4 * i + 2] = SCALE_3_8(b);
+        tex_upload_buffer[4 * i + 0] = r;
+        tex_upload_buffer[4 * i + 1] = g;
+        tex_upload_buffer[4 * i + 2] = b;
         tex_upload_buffer[4 * i + 3] = alpha ? 255 : 0;
     }
 
@@ -643,13 +630,8 @@ static void import_texture_ia4(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_ia8(int tile, bool importReplacement) {
+static void import_texture_ia8(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -674,13 +656,8 @@ static void import_texture_ia8(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_ia16(int tile, bool importReplacement) {
+static void import_texture_ia16(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -717,13 +694,8 @@ static void import_texture_ia16(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_i4(int tile, bool importReplacement) {
+static void import_texture_i4(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -745,15 +717,15 @@ static void import_texture_i4(int tile, bool importReplacement) {
 
             uint8_t byte = addr[clrIdx / 2];
             uint8_t part = (byte >> (4 - (clrIdx % 2) * 4)) & 0xf;
-            uint8_t intensity = part;
+            uint8_t intensity = SCALE_4_8(part);
             uint8_t r = intensity;
             uint8_t g = intensity;
             uint8_t b = intensity;
             uint8_t a = intensity;
-            tex_upload_buffer[4 * i + 0] = SCALE_4_8(r);
-            tex_upload_buffer[4 * i + 1] = SCALE_4_8(g);
-            tex_upload_buffer[4 * i + 2] = SCALE_4_8(b);
-            tex_upload_buffer[4 * i + 3] = SCALE_4_8(a);
+            tex_upload_buffer[4 * i + 0] = r;
+            tex_upload_buffer[4 * i + 1] = g;
+            tex_upload_buffer[4 * i + 2] = b;
+            tex_upload_buffer[4 * i + 3] = a;
 
             i++;
         }
@@ -762,13 +734,8 @@ static void import_texture_i4(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_i8(int tile, bool importReplacement) {
+static void import_texture_i8(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -792,41 +759,32 @@ static void import_texture_i8(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_ci4(int tile, bool importReplacement) {
+static void import_texture_ci4(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].line_size_bytes;
     uint32_t pal_idx = g_rdp.texture_tile[tile].palette; // 0-15
 
-    uint8_t* palette = nullptr;
+    RGBA* palette = nullptr;
     // const uint8_t* palette = g_rdp.palettes[pal_idx / 8] + (pal_idx % 8) * 16 * 2; // 16 pixel entries, 16 bits each
 
     if (pal_idx > 7)
-        palette = (uint8_t*)g_rdp.palettes[pal_idx / 8]; // 16 pixel entries, 16 bits each
+        palette = &g_rdp.pallettes_ci[128]; // 16 pixel entries, 16 bits each
     else
-        palette = (uint8_t*)(g_rdp.palettes[pal_idx / 8] + (pal_idx % 8) * 16 * 2);
+        palette = (g_rdp.pallettes_ci + pal_idx * 16);
 
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
     for (uint32_t i = 0; i < size_bytes * 2; i++) {
         uint8_t byte = addr[i / 2];
         uint8_t idx = (byte >> (4 - (i % 2) * 4)) & 0xf;
-        uint16_t col16 = (palette[idx * 2] << 8) | palette[idx * 2 + 1]; // Big endian load
-        uint8_t a = col16 & 1;
-        uint8_t r = col16 >> 11;
-        uint8_t g = (col16 >> 6) & 0x1f;
-        uint8_t b = (col16 >> 1) & 0x1f;
-        tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
-        tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
-        tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
-        tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
+        RGBA col = palette[idx];
+        tex_upload_buffer[4 * i + 0] = col.r;
+        tex_upload_buffer[4 * i + 1] = col.g;
+        tex_upload_buffer[4 * i + 2] = col.b;
+        tex_upload_buffer[4 * i + 3] = col.a;
     }
 
     uint32_t result_line_size = g_rdp.texture_tile[tile].line_size_bytes;
@@ -840,13 +798,8 @@ static void import_texture_ci4(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_ci8(int tile, bool importReplacement) {
+static void import_texture_ci8(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -855,16 +808,11 @@ static void import_texture_ci8(int tile, bool importReplacement) {
     for (uint32_t i = 0, j = 0; i < size_bytes; j += full_image_line_size_bytes - line_size_bytes) {
         for (uint32_t k = 0; k < line_size_bytes; i++, k++, j++) {
             uint8_t idx = addr[j];
-            uint16_t col16 = (g_rdp.palettes[idx / 128][(idx % 128) * 2] << 8) |
-                             g_rdp.palettes[idx / 128][(idx % 128) * 2 + 1]; // Big endian load
-            uint8_t a = col16 & 1;
-            uint8_t r = col16 >> 11;
-            uint8_t g = (col16 >> 6) & 0x1f;
-            uint8_t b = (col16 >> 1) & 0x1f;
-            tex_upload_buffer[4 * i + 0] = SCALE_5_8(r);
-            tex_upload_buffer[4 * i + 1] = SCALE_5_8(g);
-            tex_upload_buffer[4 * i + 2] = SCALE_5_8(b);
-            tex_upload_buffer[4 * i + 3] = a ? 255 : 0;
+            RGBA col = g_rdp.pallettes_ci[idx];
+            tex_upload_buffer[4 * i + 0] = col.r;
+            tex_upload_buffer[4 * i + 1] = col.g;
+            tex_upload_buffer[4 * i + 2] = col.b;
+            tex_upload_buffer[4 * i + 3] = col.a;
         }
     }
 
@@ -879,13 +827,8 @@ static void import_texture_ci8(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
-static void import_texture_raw(int tile, bool importReplacement) {
+static void import_texture_raw(int tile, const uint8_t* addr) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* addr =
-        importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
-            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
@@ -895,10 +838,10 @@ static void import_texture_raw(int tile, bool importReplacement) {
     // if texture type is CI4 or CI8 we need to apply tlut to it
     switch (type) {
         case Fast::TextureType::Palette4bpp:
-            import_texture_ci4(tile, importReplacement);
+            import_texture_ci4(tile, addr);
             return;
         case Fast::TextureType::Palette8bpp:
-            import_texture_ci8(tile, importReplacement);
+            import_texture_ci8(tile, addr);
             return;
         default:
             break;
@@ -984,42 +927,42 @@ static void import_texture(int i, int tile, bool importReplacement) {
 
     // if load as raw is set then we load_raw();
     if ((texFlags & TEX_FLAG_LOAD_AS_RAW) != 0) {
-        import_texture_raw(tile, importReplacement);
+        import_texture_raw(tile, orig_addr);
         return;
     }
 
     if (fmt == G_IM_FMT_RGBA) {
         if (siz == G_IM_SIZ_16b) {
-            import_texture_rgba16(tile, importReplacement);
+            import_texture_rgba16(tile, orig_addr);
         } else if (siz == G_IM_SIZ_32b) {
-            import_texture_rgba32(tile, importReplacement);
+            import_texture_rgba32(tile, orig_addr);
         } else {
             // abort(); // OTRTODO: Sometimes, seemingly randomly, we end up here. Could be a bad dlist, could be
             // something F3D does not have supported. Further investigation is needed.
         }
     } else if (fmt == G_IM_FMT_IA) {
         if (siz == G_IM_SIZ_4b) {
-            import_texture_ia4(tile, importReplacement);
+            import_texture_ia4(tile, orig_addr);
         } else if (siz == G_IM_SIZ_8b) {
-            import_texture_ia8(tile, importReplacement);
+            import_texture_ia8(tile, orig_addr);
         } else if (siz == G_IM_SIZ_16b) {
-            import_texture_ia16(tile, importReplacement);
+            import_texture_ia16(tile, orig_addr);
         } else {
             abort();
         }
     } else if (fmt == G_IM_FMT_CI) {
         if (siz == G_IM_SIZ_4b) {
-            import_texture_ci4(tile, importReplacement);
+            import_texture_ci4(tile, orig_addr);
         } else if (siz == G_IM_SIZ_8b) {
-            import_texture_ci8(tile, importReplacement);
+            import_texture_ci8(tile, orig_addr);
         } else {
             abort();
         }
     } else if (fmt == G_IM_FMT_I) {
         if (siz == G_IM_SIZ_4b) {
-            import_texture_i4(tile, importReplacement);
+            import_texture_i4(tile, orig_addr);
         } else if (siz == G_IM_SIZ_8b) {
-            import_texture_i8(tile, importReplacement);
+            import_texture_i8(tile, orig_addr);
         } else {
             abort();
         }
@@ -2057,9 +2000,38 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
         g_rdp.palettes[0] = g_rdp.texture_to_load.addr;
         if (high_index == 255) {
             g_rdp.palettes[1] = g_rdp.texture_to_load.addr + 2 * 128;
+            for (uint16_t i = 0; i < 256; i++) {
+                RGBA col = col16_to_rgba[((uint16_t*)g_rdp.palettes[i / 128])[i % 128]];
+                uint16_t col16 = (g_rdp.palettes[i / 128][(i % 128) * 2] << 8) |
+                                 g_rdp.palettes[i / 128][(i % 128) * 2 + 1]; // Big endian load
+                uint8_t a = col.a;
+                uint8_t r = SCALE_5_8(col.r);
+                uint8_t g = SCALE_5_8(col.g);
+                uint8_t b = SCALE_5_8(col.b);
+                g_rdp.pallettes_ci[i] = { r, g, b, a ? 255 : 0 };
+            }
+        } else {
+            for (uint16_t i = 0; i < 128; i++) {
+                RGBA col = col16_to_rgba[((uint16_t*)g_rdp.palettes[0])[i]];
+                uint16_t col16 = (g_rdp.palettes[0][i * 2] << 8) | g_rdp.palettes[0][i * 2 + 1]; // Big endian load
+                uint8_t a = col.a;
+                uint8_t r = SCALE_5_8(col.r);
+                uint8_t g = SCALE_5_8(col.g);
+                uint8_t b = SCALE_5_8(col.b);
+                g_rdp.pallettes_ci[i] = { r, g, b, a ? 255 : 0 };
+            }
         }
     } else {
         g_rdp.palettes[1] = g_rdp.texture_to_load.addr;
+        for (uint16_t i = 0; i < 128; i++) {
+            RGBA col = col16_to_rgba[((uint16_t*)g_rdp.palettes[1])[i]];
+            uint16_t col16 = (g_rdp.palettes[1][i * 2] << 8) | g_rdp.palettes[1][i * 2 + 1]; // Big endian load
+            uint8_t a = col.a;
+            uint8_t r = SCALE_5_8(col.r);
+            uint8_t g = SCALE_5_8(col.g);
+            uint8_t b = SCALE_5_8(col.b);
+            g_rdp.pallettes_ci[i + 128] = { r, g, b, a ? 255 : 0 };
+        }
     }
 }
 
@@ -2564,7 +2536,7 @@ static void gfx_s2dex_bg_copy(F3DuObjBg* bg) {
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
         rawTexMetadata.resource = tex;
-        data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+        data = (uintptr_t)reinterpret_cast<char*>(tex->ImageData);
     }
 
     s16 dsdx = 4 << 10;
@@ -2603,7 +2575,7 @@ static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
         rawTexMetadata.resource = tex;
-        data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+        data = (uintptr_t)reinterpret_cast<char*>(tex->ImageData);
     }
 
     // TODO: Implement bg scaling correctly
@@ -3305,7 +3277,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
                 return false;
             }
 
-            i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+            i = (uintptr_t)reinterpret_cast<char*>(tex->ImageData);
             texFlags = tex->Flags;
             rawTexMetdata.width = tex->Width;
             rawTexMetdata.height = tex->Height;
