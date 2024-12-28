@@ -263,7 +263,9 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
 }
 
 static void on_mouse_button_down(int btn) {
-    // TODO: maybe check boundaries
+    if (!(btn >= 0 && btn < 5)) {
+        return;
+    }
     dxgi.mouse_pressed[btn] = true;
     if (dxgi.on_mouse_button_down != nullptr) {
         dxgi.on_mouse_button_down(btn);

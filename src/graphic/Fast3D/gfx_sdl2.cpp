@@ -528,7 +528,9 @@ static void gfx_sdl_onkeyup(int scancode) {
 }
 
 static void gfx_sdl_on_mouse_button_down(int btn) {
-    // TODO: maybe check for boundaries? >= 0 & < 5
+    if (!(btn >= 0 && btn < 5)) {
+        return;
+    }
     if (on_mouse_button_down_callback != NULL) {
         on_mouse_button_down_callback(btn);
     }
