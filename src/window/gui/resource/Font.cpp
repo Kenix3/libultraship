@@ -6,7 +6,7 @@ Font::Font() : Resource(std::shared_ptr<ResourceInitData>()) {
 
 Font::~Font() {
     if (Data != nullptr) {
-        delete Data;
+        delete[] Data;
     }
 }
 
