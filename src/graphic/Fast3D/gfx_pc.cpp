@@ -25,7 +25,6 @@
 #include <string>
 
 #include "gfx_pc.h"
-#include "gfx.h"
 #include "gfx_table.cpp"
 #include "gfx_cc.h"
 #include "lus_gbi.h"
