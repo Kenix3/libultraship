@@ -2007,7 +2007,7 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
                 uint8_t r = SCALE_5_8(col.r);
                 uint8_t g = SCALE_5_8(col.g);
                 uint8_t b = SCALE_5_8(col.b);
-                g_rdp.pallettes_ci[i] = { r, g, b, a ? 255 : 0 };
+                g_rdp.pallettes_ci[i] = { r, g, b, a ? (uint8_t)255 : (uint8_t)0 };
             }
         } else {
             for (uint16_t i = 0; i < 128; i++) {
@@ -2017,7 +2017,7 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
                 uint8_t r = SCALE_5_8(col.r);
                 uint8_t g = SCALE_5_8(col.g);
                 uint8_t b = SCALE_5_8(col.b);
-                g_rdp.pallettes_ci[i] = { r, g, b, a ? 255 : 0 };
+                g_rdp.pallettes_ci[i] = { r, g, b, a ? (uint8_t)255 : (uint8_t)0 };
             }
         }
     } else {
@@ -2029,7 +2029,7 @@ static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
             uint8_t r = SCALE_5_8(col.r);
             uint8_t g = SCALE_5_8(col.g);
             uint8_t b = SCALE_5_8(col.b);
-            g_rdp.pallettes_ci[i + 128] = { r, g, b, a ? 255 : 0 };
+            g_rdp.pallettes_ci[i + 128] = { r, g, b, a ? (uint8_t)255 : (uint8_t)0 };
         }
     }
 }
