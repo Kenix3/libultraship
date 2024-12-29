@@ -235,7 +235,6 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_DisplayMode mode;
         if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
             SDL_SetWindowDisplayMode(wnd, &mode);
-            SDL_ShowCursor(false);
         } else {
             SPDLOG_ERROR(SDL_GetError());
         }
@@ -261,7 +260,6 @@ static void set_fullscreen(bool on, bool call_callback) {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
         SPDLOG_ERROR(SDL_GetError());
     }
-    SDL_SetCursor(SDL_DISABLE);
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
         on_fullscreen_changed_callback(on);
