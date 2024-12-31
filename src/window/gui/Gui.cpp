@@ -540,22 +540,16 @@ void Gui::DrawMenu() {
 
 void Gui::StartFrame() {
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoMouseInputs;
-
-    if(Context::GetInstance()->GetWindow()->IsMouseCaptured()) {
-        for (auto windowIter : ImGui::GetCurrentContext()->WindowsById.Data) {
-            if (windowIter.key != GetMainGameWindowID() &&
-                std::string(((ImGuiWindow*)windowIter.val_p)->Name) != std::string("GameOverlay")) {
+    for (auto windowIter : ImGui::GetCurrentContext()->WindowsById.Data) {
+        if (windowIter.key != GetMainGameWindowID() && windowIter.key != GetGameOverlay()->GetID()) {
+            if (Context::GetInstance()->GetWindow()->IsMouseCaptured()) {
                 ((ImGuiWindow*)windowIter.val_p)->Flags |= flags;
-            }
-        }
-    } else {
-        for (auto windowIter : ImGui::GetCurrentContext()->WindowsById.Data) {
-            if (windowIter.key != GetMainGameWindowID() &&
-                std::string(((ImGuiWindow*)windowIter.val_p)->Name) != std::string("GameOverlay")) {
+            } else {
                 ((ImGuiWindow*)windowIter.val_p)->Flags &= ~(flags);
             }
         }
     }
+
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();

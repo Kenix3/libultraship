@@ -39,6 +39,7 @@ class GameOverlay {
     void TextDraw(float x, float y, bool shadow, ImVec4 color, const char* text, ...);
     void TextDrawNotification(float duration, bool shadow, const char* fmt, ...);
     void ClearNotifications();
+    ImGuiID GetID();
 
   protected:
     float GetScreenWidth();
