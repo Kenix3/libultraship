@@ -542,7 +542,7 @@ void Gui::HandleMouseCapture() {
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoMouseInputs;
     for (auto windowIter : ImGui::GetCurrentContext()->WindowsById.Data) {
         if (windowIter.key != GetMainGameWindowID() && windowIter.key != GetGameOverlay()->GetID()) {
-            ImGuiWindow* window = windowIter.val_p;
+            ImGuiWindow* window = (ImGuiWindow*) windowIter.val_p;
             if (Context::GetInstance()->GetWindow()->IsMouseCaptured()) {
                 window->Flags |= flags;
             } else {
