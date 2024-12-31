@@ -4184,8 +4184,6 @@ void gfx_start_frame() {
 GfxExecStack g_exec_stack = {};
 
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->SetupRendererFrame();
-
     gfx_sp_reset();
 
     get_pixel_depth_pending.clear();
@@ -4193,7 +4191,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
     if (!gfx_wapi->start_frame()) {
         dropped_frame = true;
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
+        // Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
         return;
     }
     dropped_frame = false;
@@ -4261,13 +4259,15 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
         assert(0 && "active framebuffer was never reset back to original");
     }
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
-    gfx_rapi->end_frame();
-    gfx_wapi->swap_buffers_begin();
+    // Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
+    // gfx_rapi->end_frame();
+    // gfx_wapi->swap_buffers_begin();
 }
 
 void gfx_end_frame() {
     if (!dropped_frame) {
+        gfx_rapi->end_frame();
+        gfx_wapi->swap_buffers_begin();
         gfx_rapi->finish_render();
         gfx_wapi->swap_buffers_end();
     }
