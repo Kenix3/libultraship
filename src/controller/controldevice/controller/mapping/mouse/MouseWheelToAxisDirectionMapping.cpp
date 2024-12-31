@@ -1,5 +1,6 @@
 #include "MouseWheelToAxisDirectionMapping.h"
 #include <spdlog/spdlog.h>
+#include <cmath>
 #include "utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
@@ -19,7 +20,8 @@ float MouseWheelToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
     }
 
     // TODO: scale input to match with MAX_AXIS_RANGE
-    return WheelHandler::GetInstance()->GetDirectionValue(mWheelDirection);
+    // note: this is temporary solution to test numbers on different backends
+    return fmin(WheelHandler::GetInstance()->GetDirectionValue(mWheelDirection) * MAX_AXIS_RANGE, MAX_AXIS_RANGE);
 }
 
 std::string MouseWheelToAxisDirectionMapping::GetAxisDirectionMappingId() {
