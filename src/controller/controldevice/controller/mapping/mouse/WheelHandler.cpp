@@ -3,7 +3,8 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-WheelHandler::WheelHandler() : mDirections(LUS_WHEEL_NONE, LUS_WHEEL_NONE) {
+WheelHandler::WheelHandler() {
+    mDirections = {LUS_WHEEL_NONE, LUS_WHEEL_NONE};
 }
 
 WheelHandler::~WheelHandler() {}
