@@ -25,7 +25,7 @@ class ControlDeck {
     void SetSinglePlayerMappingMode(bool singlePlayer);
     bool IsSinglePlayerMappingMode();
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
-    bool ProcessMouseEvent(bool isPressed, MouseBtn button);
+    bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
 
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
 

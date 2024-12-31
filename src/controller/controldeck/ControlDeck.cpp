@@ -52,13 +52,13 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
     return result;
 }
 
-bool ControlDeck::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+bool ControlDeck::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
     bool result = false;
     for (auto port : mPorts) {
         auto controller = port->GetConnectedController();
 
         if (controller != nullptr) {
-            result = controller->ProcessMouseEvent(isPressed, button) || result;
+            result = controller->ProcessMouseButtonEvent(isPressed, button) || result;
         }
     }
 

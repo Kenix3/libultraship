@@ -37,7 +37,7 @@ class ControllerButton {
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
-    bool ProcessMouseEvent(bool isPressed, Ship::MouseBtn button);
+    bool ProcessMouseButtonEvent(bool isPressed, Ship::MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 

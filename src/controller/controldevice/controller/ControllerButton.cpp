@@ -234,7 +234,7 @@ bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode sc
     return result;
 }
 
-bool ControllerButton::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
     if (mUseInputToCreateNewMapping) {
         if (isPressed) {
             mMouseButtonForNewMapping = button;
@@ -250,7 +250,7 @@ bool ControllerButton::ProcessMouseEvent(bool isPressed, MouseBtn button) {
             std::shared_ptr<MouseButtonToButtonMapping> mtobMapping =
                 std::dynamic_pointer_cast<MouseButtonToButtonMapping>(mapping);
             if (mtobMapping != nullptr) {
-                result = result || mtobMapping->ProcessMouseEvent(isPressed, button);
+                result = result || mtobMapping->ProcessMouseButtonEvent(isPressed, button);
             }
         }
     }

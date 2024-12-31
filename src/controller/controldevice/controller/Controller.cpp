@@ -136,13 +136,13 @@ bool Controller::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode
     return result;
 }
 
-bool Controller::ProcessMouseEvent(bool isPressed, MouseBtn mouseButton) {
+bool Controller::ProcessMouseButtonEvent(bool isPressed, MouseBtn mouseButton) {
     bool result = false;
     for (auto [bitmask, button] : GetAllButtons()) {
-        result = button->ProcessMouseEvent(isPressed, mouseButton) || result;
+        result = button->ProcessMouseButtonEvent(isPressed, mouseButton) || result;
     }
-    result = GetLeftStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
-    result = GetRightStick()->ProcessMouseEvent(isPressed, mouseButton) || result;
+    result = GetLeftStick()->ProcessMouseButtonEvent(isPressed, mouseButton) || result;
+    result = GetRightStick()->ProcessMouseButtonEvent(isPressed, mouseButton) || result;
     return result;
 }
 

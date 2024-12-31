@@ -9,7 +9,7 @@ class MouseButtonToAnyMapping : virtual public ControllerInputMapping {
     MouseButtonToAnyMapping(MouseBtn button);
     ~MouseButtonToAnyMapping();
     std::string GetPhysicalInputName() override;
-    bool ProcessMouseEvent(bool isPressed, MouseBtn button);
+    bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
     std::string GetPhysicalDeviceName() override;
     bool PhysicalDeviceIsConnected() override;
 

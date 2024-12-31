@@ -16,7 +16,7 @@ std::string MouseButtonToAnyMapping::GetPhysicalInputName() {
     return mouseBtnNames[static_cast<int>(mButton)];
 }
 
-bool MouseButtonToAnyMapping::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+bool MouseButtonToAnyMapping::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
     if (mButton != button) {
         return false;
     }

@@ -350,7 +350,7 @@ bool ControllerStick::ProcessKeyboardEvent(KbEventType eventType, KbScancode sca
     return result;
 }
 
-bool ControllerStick::ProcessMouseEvent(bool isPressed, MouseBtn button) {
+bool ControllerStick::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
     if (mUseInputToCreateNewMapping) {
         if (isPressed) {
             mMouseButtonForNewMapping = button;
@@ -367,7 +367,7 @@ bool ControllerStick::ProcessMouseEvent(bool isPressed, MouseBtn button) {
                 std::shared_ptr<MouseButtonToAxisDirectionMapping> mtoadMapping =
                     std::dynamic_pointer_cast<MouseButtonToAxisDirectionMapping>(mapping);
                 if (mtoadMapping != nullptr) {
-                    result = result || mtoadMapping->ProcessMouseEvent(isPressed, button);
+                    result = result || mtoadMapping->ProcessMouseButtonEvent(isPressed, button);
                 }
             }
         }
