@@ -7,8 +7,8 @@
 
 namespace Ship {
 struct WheelDirections {
-  WheelDirection x;
-  WheelDirection y;
+    WheelDirection x;
+    WheelDirection y;
 };
 
 class WheelHandler {

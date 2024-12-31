@@ -9,7 +9,7 @@
 
 namespace Ship {
 MouseWheelToAxisDirectionMapping::MouseWheelToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
-                                                                     Direction direction, WheelDirection wheelDirection)
+                                                                   Direction direction, WheelDirection wheelDirection)
     : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseWheelToAnyMapping(wheelDirection),
       ControllerAxisDirectionMapping(ShipDeviceIndex::Mouse, portIndex, stickIndex, direction) {
 }
@@ -34,7 +34,8 @@ void MouseWheelToAxisDirectionMapping::SaveToConfig() {
                   "MouseWheelToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), static_cast<int>(mWheelDirection));
+    CVarSetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(),
+                   static_cast<int>(mWheelDirection));
     CVarSave();
 }
 

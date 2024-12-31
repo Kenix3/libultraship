@@ -184,7 +184,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     }
 
     else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
-               Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
+             Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
         if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
             mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
         } else {

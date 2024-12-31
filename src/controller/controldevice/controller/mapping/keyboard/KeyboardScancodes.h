@@ -142,7 +142,7 @@ typedef enum WheelDirection {
 #ifdef __cplusplus
 static std::string mouseBtnNames[7] = { "MouseLeft",    "MouseMiddle",     "MouseRight",       "MouseBackward",
                                         "MouseForward", "MOUSE_BTN_COUNT", "MOUSE_BTN_UNKNOWN" };
-static std::string wheelDirectionNames[6] = { "LUS_WHEEL_NONE", "WheelLeft", "WheelRight", "WheelUp",
-                                        "WheelDown", "LUS_WHEEL_UNKNOWN" };
+static std::string wheelDirectionNames[6] = { "LUS_WHEEL_NONE", "WheelLeft", "WheelRight",
+                                              "WheelUp",        "WheelDown", "LUS_WHEEL_UNKNOWN" };
 } // namespace Ship
 #endif

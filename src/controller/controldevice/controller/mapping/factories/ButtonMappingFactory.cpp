@@ -77,9 +77,11 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     }
 
     if (mappingClass == "MouseWheelToButtonMapping") {
-        int wheelDirection = CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
+        int wheelDirection =
+            CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask, static_cast<WheelDirection>(wheelDirection));
+        return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask,
+                                                           static_cast<WheelDirection>(wheelDirection));
     }
 
     return nullptr;
@@ -305,7 +307,8 @@ ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROL
     return mapping;
 }
 
-std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
+std::shared_ptr<ControllerButtonMapping>
+ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
     WheelDirections wheelDirections = WheelHandler::GetInstance()->GetDirections();
     WheelDirection wheelDirection;
     if (wheelDirections.x != LUS_WHEEL_NONE) {

@@ -279,10 +279,10 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
                Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
         if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
             mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
-                                                                      mMouseButtonForNewMapping);
+                                                                          mMouseButtonForNewMapping);
         } else {
-            mapping =
-                AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(mPortIndex, mStickIndex, direction);
+            mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(
+                mPortIndex, mStickIndex, direction);
         }
     }
     if (mapping == nullptr) {

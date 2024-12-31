@@ -6,7 +6,8 @@
 #include "Context.h"
 
 namespace Ship {
-MouseWheelToButtonMapping::MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, WheelDirection wheelDirection)
+MouseWheelToButtonMapping::MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                     WheelDirection wheelDirection)
     : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseWheelToAnyMapping(wheelDirection),
       ControllerButtonMapping(ShipDeviceIndex::Mouse, portIndex, bitmask) {
 }
@@ -35,7 +36,8 @@ void MouseWheelToButtonMapping::SaveToConfig() {
     CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "MouseWheelToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    CVarSetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), static_cast<int>(mWheelDirection));
+    CVarSetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(),
+                   static_cast<int>(mWheelDirection));
     CVarSave();
 }
 

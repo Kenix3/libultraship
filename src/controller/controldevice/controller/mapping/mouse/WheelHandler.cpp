@@ -4,10 +4,11 @@
 
 namespace Ship {
 WheelHandler::WheelHandler() {
-    mDirections = {LUS_WHEEL_NONE, LUS_WHEEL_NONE};
+    mDirections = { LUS_WHEEL_NONE, LUS_WHEEL_NONE };
 }
 
-WheelHandler::~WheelHandler() {}
+WheelHandler::~WheelHandler() {
+}
 
 std::shared_ptr<WheelHandler> WheelHandler::mInstance;
 

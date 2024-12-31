@@ -97,7 +97,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
     if (mappingClass == "MouseWheelToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int wheelDirection = CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
+        int wheelDirection =
+            CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
@@ -218,7 +219,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
     return mapping;
 }
 
-std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(uint8_t portIndex, StickIndex stickIndex, Direction direction) {
+std::shared_ptr<ControllerAxisDirectionMapping>
+AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(uint8_t portIndex, StickIndex stickIndex,
+                                                                           Direction direction) {
     WheelDirections wheelDirections = WheelHandler::GetInstance()->GetDirections();
     WheelDirection wheelDirection;
     if (wheelDirections.x != LUS_WHEEL_NONE) {

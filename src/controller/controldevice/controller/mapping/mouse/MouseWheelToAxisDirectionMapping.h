@@ -7,7 +7,8 @@
 namespace Ship {
 class MouseWheelToAxisDirectionMapping final : public MouseWheelToAnyMapping, public ControllerAxisDirectionMapping {
   public:
-    MouseWheelToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, WheelDirection wheelDirection);
+    MouseWheelToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
+                                     WheelDirection wheelDirection);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
     int8_t GetMappingType() override;

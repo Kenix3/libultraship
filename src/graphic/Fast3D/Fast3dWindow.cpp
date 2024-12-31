@@ -296,12 +296,12 @@ void Fast3dWindow::AllKeysUp() {
 
 bool Fast3dWindow::MouseButtonUp(int button) {
     return Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseButtonEvent(false,
-                                                                             static_cast<Ship::MouseBtn>(button));
+                                                                                   static_cast<Ship::MouseBtn>(button));
 }
 
 bool Fast3dWindow::MouseButtonDown(int button) {
-    bool isProcessed =
-        Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseButtonEvent(true, static_cast<Ship::MouseBtn>(button));
+    bool isProcessed = Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseButtonEvent(
+        true, static_cast<Ship::MouseBtn>(button));
     return isProcessed;
 }
 
