@@ -47,7 +47,7 @@ class ControllerButton {
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
     std::string GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask);
 
-    bool mUseInputToCreateNewMapping;
+    bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
     MouseBtn mMouseButtonForNewMapping;
 };

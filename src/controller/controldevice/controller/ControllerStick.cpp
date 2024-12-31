@@ -25,7 +25,7 @@
 
 namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex)
-    : mPortIndex(portIndex), mStickIndex(stickIndex), mUseInputToCreateNewMapping(false),
+    : mPortIndex(portIndex), mStickIndex(stickIndex), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
     mSensitivity = 1.0f;
@@ -271,16 +271,21 @@ void ControllerStick::Process(int8_t& x, int8_t& y) {
 bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direction, std::string id) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
-    mUseInputToCreateNewMapping = true;
+    mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                       mKeyboardScancodeForNewMapping);
     } else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
-               Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup() &&
-               mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
-        mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
+               Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
+        if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
+            mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                       mMouseButtonForNewMapping);
-    } else {
+        } else {
+            mapping =
+                AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(mPortIndex, mStickIndex, direction);
+        }
+    }
+    if (mapping == nullptr) {
         mapping =
             AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStickIndex, direction);
     }
@@ -291,7 +296,7 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
 
     mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
     mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
-    mUseInputToCreateNewMapping = false;
+    mUseEventInputToCreateNewMapping = false;
 
     if (id != "") {
         ClearAxisDirectionMapping(direction, id);
@@ -326,7 +331,7 @@ void ControllerStick::UpdatePad(int8_t& x, int8_t& y) {
 }
 
 bool ControllerStick::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
-    if (mUseInputToCreateNewMapping) {
+    if (mUseEventInputToCreateNewMapping) {
         if (eventType == LUS_KB_EVENT_KEY_DOWN) {
             mKeyboardScancodeForNewMapping = scancode;
             return true;
@@ -351,7 +356,7 @@ bool ControllerStick::ProcessKeyboardEvent(KbEventType eventType, KbScancode sca
 }
 
 bool ControllerStick::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
-    if (mUseInputToCreateNewMapping) {
+    if (mUseEventInputToCreateNewMapping) {
         if (isPressed) {
             mMouseButtonForNewMapping = button;
             return true;

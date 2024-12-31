@@ -9,6 +9,7 @@
 #endif
 #include <imgui.h>
 #include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
+#include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 
@@ -140,6 +141,7 @@ void ControlDeck::WriteToPad(void* pad) {
 
 void ControlDeck::WriteToOSContPad(OSContPad* pad) {
     SDL_PumpEvents();
+    Ship::WheelHandler::GetInstance()->Update();
 
     if (AllGameInputBlocked()) {
         return;

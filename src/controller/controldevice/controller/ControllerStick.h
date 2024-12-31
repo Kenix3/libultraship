@@ -76,7 +76,7 @@ class ControllerStick {
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
         mAxisDirectionMappings;
 
-    bool mUseInputToCreateNewMapping;
+    bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
     MouseBtn mMouseButtonForNewMapping;
 };

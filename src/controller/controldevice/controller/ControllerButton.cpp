@@ -14,7 +14,7 @@
 
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
-    : mPortIndex(portIndex), mBitmask(bitmask), mUseInputToCreateNewMapping(false),
+    : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
 }
 
@@ -178,14 +178,21 @@ bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
-    mUseInputToCreateNewMapping = true;
+    mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
-    } else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
-               Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup() &&
-               mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
-        mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
-    } else {
+    }
+
+    else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
+               Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
+        if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
+            mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
+        } else {
+            mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask);
+        }
+    }
+
+    if (mapping == nullptr) {
         mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
     }
 
@@ -195,7 +202,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 
     mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
     mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
-    mUseInputToCreateNewMapping = false;
+    mUseEventInputToCreateNewMapping = false;
 
     if (id != "") {
         ClearButtonMapping(id);
@@ -212,7 +219,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 }
 
 bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
-    if (mUseInputToCreateNewMapping) {
+    if (mUseEventInputToCreateNewMapping) {
         if (eventType == LUS_KB_EVENT_KEY_DOWN) {
             mKeyboardScancodeForNewMapping = scancode;
             return true;
@@ -235,7 +242,7 @@ bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode sc
 }
 
 bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
-    if (mUseInputToCreateNewMapping) {
+    if (mUseEventInputToCreateNewMapping) {
         if (isPressed) {
             mMouseButtonForNewMapping = button;
             return true;
