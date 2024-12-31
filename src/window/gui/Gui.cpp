@@ -538,18 +538,22 @@ void Gui::DrawMenu() {
     ImGui::End();
 }
 
-void Gui::StartFrame() {
+void Gui::HandleMouseCapture() {
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoMouseInputs;
     for (auto windowIter : ImGui::GetCurrentContext()->WindowsById.Data) {
         if (windowIter.key != GetMainGameWindowID() && windowIter.key != GetGameOverlay()->GetID()) {
+            ImGuiWindow* window = windowIter.val_p;
             if (Context::GetInstance()->GetWindow()->IsMouseCaptured()) {
-                ((ImGuiWindow*)windowIter.val_p)->Flags |= flags;
+                window->Flags |= flags;
             } else {
-                ((ImGuiWindow*)windowIter.val_p)->Flags &= ~(flags);
+                window->Flags &= ~(flags);
             }
         }
     }
+}
 
+void Gui::StartFrame() {
+    HandleMouseCapture();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();

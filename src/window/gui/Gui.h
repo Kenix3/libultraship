@@ -123,6 +123,7 @@ class Gui {
     void ApplyResolutionChanges();
     int16_t GetIntegerScaleFactor();
     void CheckSaveCvars();
+    void HandleMouseCapture();
 
   private:
     GuiWindowInitData mImpl;
