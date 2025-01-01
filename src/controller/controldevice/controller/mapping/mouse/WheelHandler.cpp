@@ -1,6 +1,5 @@
 #include "WheelHandler.h"
 #include "Context.h"
-#include "spdlog/spdlog.h"
 
 namespace Ship {
 WheelHandler::WheelHandler() {
@@ -33,7 +32,6 @@ void WheelHandler::Update() {
     } else if (mCoords.y > 0) {
         mDirections.y = LUS_WHEEL_UP;
     }
-    SPDLOG_INFO("WHEEEL: {} {}", mCoords.x, mCoords.y);
 }
 
 CoordsF WheelHandler::GetCoords() {
