@@ -19,9 +19,11 @@ float MouseWheelToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
         return 0.0f;
     }
 
-    // TODO: scale input to match with MAX_AXIS_RANGE
-    // note: this is temporary solution to test numbers on different backends
-    return fmin(WheelHandler::GetInstance()->GetDirectionValue(mWheelDirection) * MAX_AXIS_RANGE, MAX_AXIS_RANGE);
+    if (WheelHandler::GetInstance()->GetBufferedDirectionValue(mWheelDirection) > 0) {
+        return MAX_AXIS_RANGE;
+    } else {
+        return 0.0f;
+    }
 }
 
 std::string MouseWheelToAxisDirectionMapping::GetAxisDirectionMappingId() {

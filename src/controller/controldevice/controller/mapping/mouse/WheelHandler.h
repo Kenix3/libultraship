@@ -21,11 +21,16 @@ class WheelHandler {
     CoordsF GetCoords();
     WheelDirections GetDirections();
     float GetDirectionValue(WheelDirection direction);
+    float GetBufferedDirectionValue(WheelDirection direction);
 
   private:
+    float CalcDirectionValue(CoordsF& coords, WheelDirection direction);
+    void UpdateAxisBuffer(float *buf, float input);
+
     static std::shared_ptr<WheelHandler> mInstance;
 
     WheelDirections mDirections;
     CoordsF mCoords;
+    CoordsF mBufferedCoords;
 };
 } // namespace Ship

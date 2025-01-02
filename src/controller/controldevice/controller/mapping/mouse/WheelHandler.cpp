@@ -1,5 +1,6 @@
 #include "WheelHandler.h"
 #include "Context.h"
+#include <cmath>
 
 namespace Ship {
 WheelHandler::WheelHandler() {
@@ -18,8 +19,33 @@ std::shared_ptr<WheelHandler> WheelHandler::GetInstance() {
     return mInstance;
 }
 
+void WheelHandler::UpdateAxisBuffer(float *buf, float input) {
+    static const float LIMIT = 2.0f;
+    static const float REDUCE_STEP = 1.0f;
+
+    // reduce buffered value
+    if (*buf != 0.0f) {
+        if (fabs(*buf) <= REDUCE_STEP) {
+            *buf = 0.0f;
+        } else {
+            *buf -= copysignf(REDUCE_STEP, *buf);
+        }
+    }
+
+    // add current input to buffer
+    *buf += input;
+
+    // limit buffer
+    if (fabs(*buf) >= LIMIT) {
+        *buf = copysignf(LIMIT, *buf);
+    }
+}
+
 void WheelHandler::Update() {
     mCoords = Context::GetInstance()->GetWindow()->GetMouseWheel();
+
+    UpdateAxisBuffer(&mBufferedCoords.x, mCoords.x);
+    UpdateAxisBuffer(&mBufferedCoords.y, mCoords.y);
 
     mDirections.x = mDirections.y = LUS_WHEEL_NONE;
     if (mCoords.x < 0) {
@@ -42,28 +68,36 @@ WheelDirections WheelHandler::GetDirections() {
     return mDirections;
 }
 
-float WheelHandler::GetDirectionValue(WheelDirection direction) {
+float WheelHandler::CalcDirectionValue(CoordsF& coords, WheelDirection direction) {
     switch (direction) {
         case LUS_WHEEL_LEFT:
-            if (mCoords.x < 0) {
-                return -mCoords.x;
+            if (coords.x < 0) {
+                return -coords.x;
             }
             break;
         case LUS_WHEEL_RIGHT:
-            if (mCoords.x > 0) {
-                return mCoords.x;
+            if (coords.x > 0) {
+                return coords.x;
             }
             break;
         case LUS_WHEEL_DOWN:
-            if (mCoords.y < 0) {
-                return -mCoords.y;
+            if (coords.y < 0) {
+                return -coords.y;
             }
             break;
         case LUS_WHEEL_UP:
-            if (mCoords.y > 0) {
-                return mCoords.y;
+            if (coords.y > 0) {
+                return coords.y;
             }
     }
     return 0.0f;
+}
+
+float WheelHandler::GetDirectionValue(WheelDirection direction) {
+    return CalcDirectionValue(mCoords, direction);
+}
+
+float WheelHandler::GetBufferedDirectionValue(WheelDirection direction) {
+    return CalcDirectionValue(mBufferedCoords, direction);
 }
 } // namespace Ship
