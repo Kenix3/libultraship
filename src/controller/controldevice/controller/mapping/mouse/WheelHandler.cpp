@@ -23,21 +23,20 @@ void WheelHandler::UpdateAxisBuffer(float* buf, float input) {
     static const float LIMIT = 2.0f;
     static const float REDUCE_STEP = 1.0f;
 
-    // reduce buffered value
-    if (*buf != 0.0f) {
+    if (input != 0.0f) {
+        // add current input to buffer
+        *buf += input;
+        // limit buffer
+        if (fabs(*buf) > LIMIT) {
+            *buf = copysignf(LIMIT, *buf);
+        }
+    } else if (*buf != 0.0f) {
+        // reduce buffered value
         if (fabs(*buf) <= REDUCE_STEP) {
             *buf = 0.0f;
         } else {
             *buf -= copysignf(REDUCE_STEP, *buf);
         }
-    }
-
-    // add current input to buffer
-    *buf += input;
-
-    // limit buffer
-    if (fabs(*buf) >= LIMIT) {
-        *buf = copysignf(LIMIT, *buf);
     }
 }
 
