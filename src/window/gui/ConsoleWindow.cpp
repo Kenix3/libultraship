@@ -387,12 +387,12 @@ void ConsoleWindow::DrawElement() {
     ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(.3f, .3f, .3f, 1.0f));
     if (ImGui::BeginTable("History", 1)) {
 
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
             if (mSelectedId < (int32_t)mLog.size() - 1) {
                 ++mSelectedId;
             }
         }
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow))) {
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
             if (mSelectedId > 0) {
                 --mSelectedId;
             }
@@ -415,7 +415,7 @@ void ConsoleWindow::DrawElement() {
                 std::find(mSelectedEntries.begin(), mSelectedEntries.end(), i) != mSelectedEntries.end();
             ImGui::PushStyleColor(ImGuiCol_Text, mPriorityColours[line.Priority]);
             if (ImGui::Selectable(id.c_str(), isSelected)) {
-                if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftCtrl)) && !isSelected) {
+                if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && !isSelected) {
                     mSelectedEntries.push_back(i);
 
                 } else {
