@@ -19,7 +19,7 @@ std::shared_ptr<WheelHandler> WheelHandler::GetInstance() {
     return mInstance;
 }
 
-void WheelHandler::UpdateAxisBuffer(float *buf, float input) {
+void WheelHandler::UpdateAxisBuffer(float* buf, float input) {
     static const float LIMIT = 2.0f;
     static const float REDUCE_STEP = 1.0f;
 

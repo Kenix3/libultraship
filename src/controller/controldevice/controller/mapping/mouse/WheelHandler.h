@@ -25,7 +25,7 @@ class WheelHandler {
 
   private:
     float CalcDirectionValue(CoordsF& coords, WheelDirection direction);
-    void UpdateAxisBuffer(float *buf, float input);
+    void UpdateAxisBuffer(float* buf, float input);
 
     static std::shared_ptr<WheelHandler> mInstance;
 
