@@ -251,4 +251,17 @@ void GameOverlay::Draw() {
 
     ImGui::End();
 }
+
+ImGuiID GameOverlay::GetID() {
+    static ImGuiID windowID = 0;
+    if (windowID != 0) {
+        return windowID;
+    }
+    ImGuiWindow* window = ImGui::FindWindowByName("GameOverlay");
+    if (window == NULL) {
+        return 0;
+    }
+    windowID = window->ID;
+    return windowID;
+}
 } // namespace Ship

@@ -52,7 +52,7 @@ void SDLButtonToAxisDirectionMapping::EraseFromConfig() {
     CVarSave();
 }
 
-uint8_t SDLButtonToAxisDirectionMapping::GetMappingType() {
+int8_t SDLButtonToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 } // namespace Ship

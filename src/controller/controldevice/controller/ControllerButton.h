@@ -37,6 +37,7 @@ class ControllerButton {
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons);
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
+    bool ProcessMouseButtonEvent(bool isPressed, Ship::MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
 
@@ -46,7 +47,8 @@ class ControllerButton {
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
     std::string GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask);
 
-    bool mUseKeydownEventToCreateNewMapping;
+    bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
+    MouseBtn mMouseButtonForNewMapping;
 };
 } // namespace Ship

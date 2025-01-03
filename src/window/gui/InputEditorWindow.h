@@ -81,5 +81,6 @@ class InputEditorWindow : public GuiWindow {
 
     std::map<ShipDeviceIndex, bool> mDeviceIndexVisiblity;
     void DrawDeviceVisibilityButtons();
+    void OffsetMappingPopup();
 };
 } // namespace Ship

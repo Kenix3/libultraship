@@ -25,6 +25,7 @@ void InputEditorWindow::InitElement() {
 
     mDeviceIndexVisiblity.clear();
     mDeviceIndexVisiblity[ShipDeviceIndex::Keyboard] = true;
+    mDeviceIndexVisiblity[ShipDeviceIndex::Mouse] = true;
     mDeviceIndexVisiblity[ShipDeviceIndex::Blue] = true;
     for (auto index = 1; index < ShipDeviceIndex::Max; index++) {
         mDeviceIndexVisiblity[static_cast<ShipDeviceIndex>(index)] = false;
@@ -151,6 +152,9 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_KEYBOARD_BEIGE ImVec4(0.651f, 0.482f, 0.357f, 0.5f)
 #define BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED ImVec4(0.651f, 0.482f, 0.357f, 1.0f)
 
+#define BUTTON_COLOR_MOUSE_BEIGE ImVec4(0.5f, 0.5f, 0.5f, 0.5f)
+#define BUTTON_COLOR_MOUSE_BEIGE_HOVERED ImVec4(0.5f, 0.5f, 0.5f, 1.0f)
+
 #define BUTTON_COLOR_GAMEPAD_BLUE ImVec4(0.0f, 0.255f, 0.976f, 0.5f)
 #define BUTTON_COLOR_GAMEPAD_BLUE_HOVERED ImVec4(0.0f, 0.255f, 0.976f, 1.0f)
 
@@ -172,6 +176,10 @@ void InputEditorWindow::GetButtonColorsForShipDeviceIndex(ShipDeviceIndex lusInd
         case ShipDeviceIndex::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
             buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
+            break;
+        case ShipDeviceIndex::Mouse:
+            buttonColor = BUTTON_COLOR_MOUSE_BEIGE;
+            buttonHoveredColor = BUTTON_COLOR_MOUSE_BEIGE_HOVERED;
             break;
         case ShipDeviceIndex::Blue:
             buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
@@ -209,6 +217,7 @@ void InputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERB
     if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(),
                       ImVec2(SCALE_IMGUI_SIZE(20.0f), 0.0f))) {
         ImGui::OpenPopup(popupId.c_str());
+        OffsetMappingPopup();
     };
     ImGui::PopStyleVar();
 
@@ -250,6 +259,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
             icon = ICON_FA_GAMEPAD;
             break;
         case MAPPING_TYPE_KEYBOARD:
+        case MAPPING_TYPE_MOUSE:
             icon = ICON_FA_KEYBOARD_O;
             break;
         case MAPPING_TYPE_UNKNOWN:
@@ -269,6 +279,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
                 .c_str(),
             ImVec2(ImGui::CalcTextSize(physicalInputDisplayName.c_str()).x + SCALE_IMGUI_SIZE(12.0f), 0.0f))) {
         ImGui::OpenPopup(popupId.c_str());
+        OffsetMappingPopup();
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
         ImGui::SetTooltip("%s", mapping->GetPhysicalDeviceName().c_str());
@@ -316,6 +327,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
         if (ImGui::Button(StringHelper::Sprintf("%s###editAxisThresholdButton%s", ICON_FA_COG, id.c_str()).c_str(),
                           ImVec2(ImGui::CalcTextSize(ICON_FA_COG).x + SCALE_IMGUI_SIZE(10.0f), 0.0f))) {
             ImGui::OpenPopup(popupId.c_str());
+            OffsetMappingPopup();
         }
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
             ImGui::SetTooltip("Edit axis threshold");
@@ -451,6 +463,7 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
                 .c_str(),
             ImVec2(SCALE_IMGUI_SIZE(20.0f), 0.0f))) {
         ImGui::OpenPopup(popupId.c_str());
+        OffsetMappingPopup();
     };
     ImGui::PopStyleVar();
 
@@ -516,6 +529,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
             icon = ICON_FA_GAMEPAD;
             break;
         case MAPPING_TYPE_KEYBOARD:
+        case MAPPING_TYPE_MOUSE:
             icon = ICON_FA_KEYBOARD_O;
             break;
         case MAPPING_TYPE_UNKNOWN:
@@ -536,6 +550,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
                 .c_str(),
             ImVec2(ImGui::CalcTextSize(physicalInputDisplayName.c_str()).x + SCALE_IMGUI_SIZE(12.0f), 0.0f))) {
         ImGui::OpenPopup(popupId.c_str());
+        OffsetMappingPopup();
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
         ImGui::SetTooltip("%s", mapping->GetPhysicalDeviceName().c_str());
@@ -812,6 +827,7 @@ void InputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
     if (ImGui::Button(StringHelper::Sprintf("%s###addRumbleMapping%d", ICON_FA_PLUS, port).c_str(),
                       ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f)))) {
         ImGui::OpenPopup(popupId.c_str());
+        OffsetMappingPopup();
     }
     ImGui::PopStyleVar();
 
@@ -992,6 +1008,7 @@ void InputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
     if (ImGui::Button(StringHelper::Sprintf("%s###addLEDMapping%d", ICON_FA_PLUS, port).c_str(),
                       ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f)))) {
         ImGui::OpenPopup(popupId.c_str());
+        OffsetMappingPopup();
     }
     ImGui::PopStyleVar();
 
@@ -1071,6 +1088,7 @@ void InputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
     if (ImGui::Button(StringHelper::Sprintf("%s###addGyroMapping%d", ICON_FA_PLUS, port).c_str(),
                       ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f)))) {
         ImGui::OpenPopup(popupId.c_str());
+        OffsetMappingPopup();
     }
     ImGui::PopStyleVar();
 
@@ -1180,6 +1198,7 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
 void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks) {
     std::set<ShipDeviceIndex> allLusDeviceIndices;
     allLusDeviceIndices.insert(ShipDeviceIndex::Keyboard);
+    allLusDeviceIndices.insert(ShipDeviceIndex::Mouse);
     for (auto [lusIndex, mapping] : Context::GetInstance()
                                         ->GetControlDeck()
                                         ->GetDeviceIndexMappingManager()
@@ -1215,7 +1234,7 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::SameLine();
-        if (lusIndex == ShipDeviceIndex::Keyboard) {
+        if (lusIndex == ShipDeviceIndex::Keyboard || lusIndex == ShipDeviceIndex::Mouse) {
             ImGui::SmallButton(ICON_FA_KEYBOARD_O);
         } else {
             ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
@@ -1228,6 +1247,7 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
 void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex stickIndex) {
     std::set<ShipDeviceIndex> allLusDeviceIndices;
     allLusDeviceIndices.insert(ShipDeviceIndex::Keyboard);
+    allLusDeviceIndices.insert(ShipDeviceIndex::Mouse);
     for (auto [lusIndex, mapping] : Context::GetInstance()
                                         ->GetControlDeck()
                                         ->GetDeviceIndexMappingManager()
@@ -1266,7 +1286,7 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::SameLine();
-        if (lusIndex == ShipDeviceIndex::Keyboard) {
+        if (lusIndex == ShipDeviceIndex::Keyboard || lusIndex == ShipDeviceIndex::Mouse) {
             ImGui::SmallButton(ICON_FA_KEYBOARD_O);
         } else {
             ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
@@ -1414,6 +1434,20 @@ void InputEditorWindow::DrawDeviceVisibilityButtons() {
                                             ICON_FA_KEYBOARD_O)
                           .c_str())) {
         mDeviceIndexVisiblity[ShipDeviceIndex::Keyboard] = !keyboardVisible;
+    }
+    ImGui::PopStyleColor();
+    ImGui::PopStyleColor();
+
+    auto mouseButtonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto mouseButtonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+    GetButtonColorsForShipDeviceIndex(ShipDeviceIndex::Mouse, mouseButtonColor, mouseButtonHoveredColor);
+    ImGui::PushStyleColor(ImGuiCol_Button, mouseButtonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, mouseButtonHoveredColor);
+    bool mouseVisible = mDeviceIndexVisiblity[ShipDeviceIndex::Mouse];
+    if (ImGui::Button(
+            StringHelper::Sprintf("%s %s mouse", mouseVisible ? ICON_FA_EYE : ICON_FA_EYE_SLASH, ICON_FA_KEYBOARD_O)
+                .c_str())) {
+        mDeviceIndexVisiblity[ShipDeviceIndex::Mouse] = !mouseVisible;
     }
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
@@ -1593,6 +1627,29 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
             }
             ImGui::EndPopup();
         }
+        ImGui::PushStyleColor(ImGuiCol_Button, BUTTON_COLOR_MOUSE_BEIGE);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, BUTTON_COLOR_MOUSE_BEIGE_HOVERED);
+        if (ImGui::Button(StringHelper::Sprintf("%s Mouse", ICON_FA_KEYBOARD_O).c_str())) {
+            ImGui::OpenPopup("Set Defaults for Mouse");
+        }
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+        if (ImGui::BeginPopupModal("Set Defaults for Mouse", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("This will clear all existing mappings for\nMouse on port %d.\n\nContinue?", portIndex + 1);
+            if (ImGui::Button("Cancel")) {
+                shouldClose = true;
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::Button("Set defaults")) {
+                Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappingsForDevice(
+                    ShipDeviceIndex::Mouse);
+                Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
+                    ShipDeviceIndex::Mouse);
+                shouldClose = true;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
         for (auto [lusIndex, info] : indexMappings) {
             auto [name, sdlIndex] = info;
 
@@ -1642,5 +1699,12 @@ void InputEditorWindow::DrawElement() {
         DrawPortTab(i);
     }
     ImGui::EndTabBar();
+}
+
+void InputEditorWindow::OffsetMappingPopup() {
+    const float HORIZONTAL_OFFSET = 10.0f;
+    ImVec2 pos = ImGui::GetMousePos();
+    pos.x += HORIZONTAL_OFFSET;
+    ImGui::SetNextWindowPos(pos);
 }
 } // namespace Ship

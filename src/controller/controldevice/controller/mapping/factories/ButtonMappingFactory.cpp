@@ -4,9 +4,13 @@
 #include "libultraship/libultra/controller.h"
 #include "Context.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseWheelToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromConfig(uint8_t portIndex,
@@ -64,6 +68,20 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
             CVarGetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
 
         return std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, static_cast<KbScancode>(scancode));
+    }
+
+    if (mappingClass == "MouseButtonToButtonMapping") {
+        int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+
+        return std::make_shared<MouseButtonToButtonMapping>(portIndex, bitmask, static_cast<MouseBtn>(mouseButton));
+    }
+
+    if (mappingClass == "MouseWheelToButtonMapping") {
+        int wheelDirection =
+            CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
+
+        return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask,
+                                                           static_cast<WheelDirection>(wheelDirection));
     }
 
     return nullptr;
@@ -287,5 +305,20 @@ ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROL
     }
 
     return mapping;
+}
+
+std::shared_ptr<ControllerButtonMapping>
+ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
+    WheelDirections wheelDirections = WheelHandler::GetInstance()->GetDirections();
+    WheelDirection wheelDirection;
+    if (wheelDirections.x != LUS_WHEEL_NONE) {
+        wheelDirection = wheelDirections.x;
+    } else if (wheelDirections.y != LUS_WHEEL_NONE) {
+        wheelDirection = wheelDirections.y;
+    } else {
+        return nullptr;
+    }
+
+    return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask, wheelDirection);
 }
 } // namespace Ship

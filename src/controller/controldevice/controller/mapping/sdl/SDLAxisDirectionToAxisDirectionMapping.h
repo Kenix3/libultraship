@@ -9,7 +9,7 @@ class SDLAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirect
                                            Direction direction, int32_t sdlControllerAxis, int32_t axisDirection);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;
-    uint8_t GetMappingType() override;
+    int8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
 };

@@ -82,6 +82,7 @@ void Fast3dWindow::Init() {
              height, posX, posY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
+    mWindowManagerApi->set_mouse_callbacks(MouseButtonDown, MouseButtonUp);
 
     SetTextureFilter((FilteringMode)CVarGetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
@@ -269,6 +270,12 @@ bool Fast3dWindow::KeyUp(int32_t scancode) {
         Ship::Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
+    if (scancode ==
+        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2)) {
+        bool captureState = Ship::Context::GetInstance()->GetWindow()->IsMouseCaptured();
+        Ship::Context::GetInstance()->GetWindow()->SetMouseCapture(!captureState);
+    }
+
     Ship::Context::GetInstance()->GetWindow()->SetLastScancode(-1);
     return Ship::Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(
         Ship::KbEventType::LUS_KB_EVENT_KEY_UP, static_cast<Ship::KbScancode>(scancode));
@@ -287,15 +294,26 @@ void Fast3dWindow::AllKeysUp() {
                                                                          Ship::KbScancode::LUS_KB_UNKNOWN);
 }
 
+bool Fast3dWindow::MouseButtonUp(int button) {
+    return Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseButtonEvent(false,
+                                                                                   static_cast<Ship::MouseBtn>(button));
+}
+
+bool Fast3dWindow::MouseButtonDown(int button) {
+    bool isProcessed = Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseButtonEvent(
+        true, static_cast<Ship::MouseBtn>(button));
+    return isProcessed;
+}
+
 void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
 
     if (isNowFullscreen) {
         auto menuBar = wnd->GetGui()->GetMenuBar();
-        wnd->SetCursorVisibility(menuBar && menuBar->IsVisible() || wnd->ShouldForceCursorVisibility() ||
-                                 CVarGetInteger("gWindows.Menu", 0));
+        wnd->SetMouseCapture(!(menuBar && menuBar->IsVisible() || wnd->ShouldForceCursorVisibility() ||
+                               CVarGetInteger("gWindows.Menu", 0)));
     } else {
-        wnd->SetCursorVisibility(true);
+        wnd->SetMouseCapture(false);
     }
 }
 } // namespace Fast

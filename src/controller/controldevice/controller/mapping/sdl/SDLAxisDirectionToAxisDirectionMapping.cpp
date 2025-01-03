@@ -68,7 +68,7 @@ void SDLAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
     CVarSave();
 }
 
-uint8_t SDLAxisDirectionToAxisDirectionMapping::GetMappingType() {
+int8_t SDLAxisDirectionToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 } // namespace Ship

@@ -1,5 +1,7 @@
 #include "AxisDirectionMappingFactory.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseWheelToAxisDirectionMapping.h"
 
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
@@ -8,6 +10,9 @@
 #include "utils/StringHelper.h"
 #include "Context.h"
 #include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
+
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 std::shared_ptr<ControllerAxisDirectionMapping>
@@ -73,6 +78,37 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
         return std::make_shared<KeyboardKeyToAxisDirectionMapping>(
             portIndex, stickIndex, static_cast<Direction>(direction), static_cast<KbScancode>(scancode));
+    }
+
+    if (mappingClass == "MouseButtonToAxisDirectionMapping") {
+        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+
+        if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return nullptr;
+        }
+
+        return std::make_shared<MouseButtonToAxisDirectionMapping>(
+            portIndex, stickIndex, static_cast<Direction>(direction), static_cast<MouseBtn>(mouseButton));
+    }
+
+    if (mappingClass == "MouseWheelToAxisDirectionMapping") {
+        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int wheelDirection =
+            CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
+
+        if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
+            // something about this mapping is invalid
+            CVarClear(mappingCvarKey.c_str());
+            CVarSave();
+            return nullptr;
+        }
+
+        return std::make_shared<MouseWheelToAxisDirectionMapping>(
+            portIndex, stickIndex, static_cast<Direction>(direction), static_cast<WheelDirection>(wheelDirection));
     }
 
     return nullptr;
@@ -181,5 +217,21 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
     }
 
     return mapping;
+}
+
+std::shared_ptr<ControllerAxisDirectionMapping>
+AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(uint8_t portIndex, StickIndex stickIndex,
+                                                                           Direction direction) {
+    WheelDirections wheelDirections = WheelHandler::GetInstance()->GetDirections();
+    WheelDirection wheelDirection;
+    if (wheelDirections.x != LUS_WHEEL_NONE) {
+        wheelDirection = wheelDirections.x;
+    } else if (wheelDirections.y != LUS_WHEEL_NONE) {
+        wheelDirection = wheelDirections.y;
+    } else {
+        return nullptr;
+    }
+
+    return std::make_shared<MouseWheelToAxisDirectionMapping>(portIndex, stickIndex, direction, wheelDirection);
 }
 } // namespace Ship

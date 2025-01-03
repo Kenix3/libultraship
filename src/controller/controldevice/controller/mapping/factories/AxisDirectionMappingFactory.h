@@ -19,5 +19,8 @@ class AxisDirectionMappingFactory {
 
     static std::shared_ptr<ControllerAxisDirectionMapping>
     CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex, Direction direction);
+
+    static std::shared_ptr<ControllerAxisDirectionMapping>
+    CreateAxisDirectionMappingFromMouseWheelInput(uint8_t portIndex, StickIndex stickIndex, Direction direction);
 };
 } // namespace Ship

@@ -52,6 +52,7 @@ class ControllerStick {
     bool NotchSnapAngleIsDefault();
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
+    bool ProcessMouseButtonEvent(bool isPressed, Ship::MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
     StickIndex GetStickIndex();
@@ -75,7 +76,8 @@ class ControllerStick {
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
         mAxisDirectionMappings;
 
-    bool mUseKeydownEventToCreateNewMapping;
+    bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
+    MouseBtn mMouseButtonForNewMapping;
 };
 } // namespace Ship
