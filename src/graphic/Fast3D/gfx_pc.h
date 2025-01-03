@@ -151,6 +151,7 @@ struct RSP {
 
 struct RDP {
     const uint8_t* palettes[2];
+    RGBA pallettes_ci[256];
     struct {
         const uint8_t* addr;
         uint8_t siz;
