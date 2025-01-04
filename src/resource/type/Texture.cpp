@@ -14,7 +14,7 @@ size_t Texture::GetPointerSize() {
 
 Texture::~Texture() {
     if (ImageData != nullptr) {
-        delete ImageData;
+        delete[] ImageData;
     }
 }
 } // namespace Fast
