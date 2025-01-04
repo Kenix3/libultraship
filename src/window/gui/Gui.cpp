@@ -654,7 +654,7 @@ void Gui::DrawGame() {
     }
     if (gfxFramebuffer) {
         ImGui::SetCursorPos(pos);
-        ImGui::Image(reinterpret_cast<ImTextureID>(gfxFramebuffer), size);
+        ImGui::Image((ImTextureID)gfxFramebuffer, size);
     }
 
     ImGui::End();
@@ -734,7 +734,7 @@ ImTextureID Gui::GetTextureById(int32_t id) {
     }
 #endif
 
-    return reinterpret_cast<ImTextureID>(id);
+    return (ImTextureID)id;
 }
 
 bool Gui::HasTextureByName(const std::string& name) {
@@ -743,7 +743,7 @@ bool Gui::HasTextureByName(const std::string& name) {
 
 ImTextureID Gui::GetTextureByName(const std::string& name) {
     if (!Gui::HasTextureByName(name)) {
-        return nullptr;
+        return (ImTextureID)nullptr;
     }
     return GetTextureById(mGuiTextures[name].RendererTextureId);
 }

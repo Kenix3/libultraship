@@ -16,7 +16,7 @@ endif()
 FetchContent_Declare(
     ImGui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.90.6-docking
+    GIT_TAG v1.91.6-docking
     PATCH_COMMAND ${sdl_apply_patch_if_needed}
 )
 FetchContent_MakeAvailable(ImGui)
