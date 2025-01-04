@@ -13,6 +13,7 @@
 
 namespace Ship {
 ShipDeviceIndexMappingManager::ShipDeviceIndexMappingManager() : mIsInitialized(false) {
+    SDL_SetHintWithPriority(SDL_HINT_JOYSTICK_WGI, "0", SDL_HINT_DEFAULT);
     UpdateControllerNamesFromConfig();
 }
 
