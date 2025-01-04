@@ -571,9 +571,12 @@ static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
         POINT p;
         GetCursorPos(&p);
         ScreenToClient(dxgi.h_wnd, &p);
-        *x = p.x - dxgi.current_width / 2;
-        *y = p.y - dxgi.current_height / 2;
-        SetCursorPos(dxgi.current_width / 2, dxgi.current_height / 2);
+        int32_t centerX, centerY;
+        centerX = dxgi.current_width / 2;
+        centerY = dxgi.current_height / 2;
+        *x = p.x - centerX;
+        *y = p.y - centerY;
+        SetCursorPos(dxgi.posX + centerX, dxgi.posY + centerY);
     } else {
         *x = 0;
         *y = 0;
