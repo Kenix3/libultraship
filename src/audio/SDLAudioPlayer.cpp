@@ -16,7 +16,7 @@ bool SDLAudioPlayer::DoInit() {
     SDL_AudioSpec want, have;
     SDL_zero(want);
     want.freq = this->GetSampleRate();
-    want.format = AUDIO_S16SYS;
+    want.format = SDL_AUDIO_S16;
     want.channels = 2;
     want.samples = this->GetSampleLength();
     want.callback = NULL;

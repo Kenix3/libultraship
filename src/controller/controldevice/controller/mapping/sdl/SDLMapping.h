@@ -20,7 +20,7 @@ class SDLMapping : public ControllerMapping {
     bool ControllerLoaded(bool closeIfDisconnected = false);
 
   protected:
-    SDL_GameControllerType GetSDLControllerType();
+    SDL_GamepadType GetSDLControllerType();
     uint16_t GetSDLControllerVendorId();
     uint16_t GetSDLControllerProductId();
     bool UsesPlaystationLayout();
@@ -30,7 +30,7 @@ class SDLMapping : public ControllerMapping {
     std::string GetSDLDeviceName();
     int32_t GetSDLDeviceIndex();
 
-    SDL_GameController* mController;
+    SDL_Gamepad* mController;
 
   private:
     bool OpenController();

@@ -22,8 +22,8 @@ void SDLGyroMapping::Recalibrate() {
     }
 
     float gyroData[3];
-    SDL_GameControllerSetSensorEnabled(mController, SDL_SENSOR_GYRO, SDL_TRUE);
-    SDL_GameControllerGetSensorData(mController, SDL_SENSOR_GYRO, gyroData, 3);
+    SDL_SetGamepadSensorEnabled(mController, SDL_SENSOR_GYRO, true);
+    SDL_GetGamepadSensorData(mController, SDL_SENSOR_GYRO, gyroData, 3);
 
     mNeutralPitch = gyroData[0];
     mNeutralYaw = gyroData[1];
@@ -38,8 +38,8 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
     }
 
     float gyroData[3];
-    SDL_GameControllerSetSensorEnabled(mController, SDL_SENSOR_GYRO, SDL_TRUE);
-    SDL_GameControllerGetSensorData(mController, SDL_SENSOR_GYRO, gyroData, 3);
+    SDL_SetGamepadSensorEnabled(mController, SDL_SENSOR_GYRO, true);
+    SDL_GetGamepadSensorData(mController, SDL_SENSOR_GYRO, gyroData, 3);
 
     x = (gyroData[0] - mNeutralPitch) * mSensitivity;
     y = (gyroData[1] - mNeutralYaw) * mSensitivity;

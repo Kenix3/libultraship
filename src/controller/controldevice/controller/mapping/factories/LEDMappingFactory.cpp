@@ -43,7 +43,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
 }
 
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllersWithLEDs;
+    std::unordered_map<ShipDeviceIndex, SDL_Gamepad*> sdlControllersWithLEDs;
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
@@ -56,22 +56,22 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
 
         auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
 
-        if (!SDL_IsGameController(sdlIndex)) {
+        if (!SDL_IsGamepad(sdlIndex)) {
             // this SDL device isn't a game controller
             continue;
         }
 
-        auto controller = SDL_GameControllerOpen(sdlIndex);
+        auto controller = SDL_OpenGamepad(sdlIndex);
         if (SDL_GameControllerHasLED(controller)) {
-            sdlControllersWithLEDs[lusIndex] = SDL_GameControllerOpen(sdlIndex);
+            sdlControllersWithLEDs[lusIndex] = SDL_OpenGamepad(sdlIndex);
         } else {
-            SDL_GameControllerClose(controller);
+            SDL_CloseGamepad(controller);
         }
     }
 
     for (auto [lusIndex, controller] : sdlControllersWithLEDs) {
-        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+        for (int32_t button = SDL_GAMEPAD_BUTTON_SOUTH; button < SDL_GAMEPAD_BUTTON_COUNT; button++) {
+            if (SDL_GetGamepadButton(controller, static_cast<SDL_GamepadButton>(button))) {
                 mapping = std::make_shared<SDLLEDMapping>(lusIndex, portIndex, 0, Color_RGB8({ 0, 0, 0 }));
                 break;
             }
@@ -81,9 +81,9 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
             break;
         }
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-            const auto axis = static_cast<SDL_GameControllerAxis>(i);
-            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+        for (int32_t i = SDL_GAMEPAD_AXIS_LEFTX; i < SDL_GAMEPAD_AXIS_COUNT; i++) {
+            const auto axis = static_cast<SDL_GamepadAxis>(i);
+            const auto axisValue = SDL_GetGamepadAxis(controller, axis) / 32767.0f;
             int32_t axisDirection = 0;
             if (axisValue < -0.7f) {
                 axisDirection = NEGATIVE;
@@ -101,7 +101,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
     }
 
     for (auto [i, controller] : sdlControllersWithLEDs) {
-        SDL_GameControllerClose(controller);
+        SDL_CloseGamepad(controller);
     }
 
     return mapping;

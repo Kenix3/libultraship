@@ -224,7 +224,7 @@ static void set_fullscreen(bool on, bool call_callback) {
     if (fullscreen_state == on) {
         return;
     }
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    int display_in_use = SDL_GetDisplayForWindow(wnd);
     if (display_in_use < 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
         SPDLOG_WARN(SDL_GetError());
@@ -234,7 +234,7 @@ static void set_fullscreen(bool on, bool call_callback) {
         // OTRTODO: Get mode from config.
         SDL_DisplayMode mode;
         if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-            SDL_SetWindowDisplayMode(wnd, &mode);
+            SDL_SetWindowFullscreenMode(wnd, &mode);
         } else {
             SPDLOG_ERROR(SDL_GetError());
         }
@@ -267,7 +267,7 @@ static void set_fullscreen(bool on, bool call_callback) {
 }
 
 static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    int display_in_use = SDL_GetDisplayForWindow(wnd);
 
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(display_in_use, &mode);
@@ -321,7 +321,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+    SDL_EventState(SDL_EVENT_DROP_FILE, SDL_ENABLE);
 
 #if defined(__APPLE__)
     bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
@@ -359,7 +359,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #ifdef __IOS__
     Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
 #else
-    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #endif
 
     if (use_opengl) {
@@ -380,7 +380,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
     Ship::GuiWindowInitData window_impl;
 
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    int display_in_use = SDL_GetDisplayForWindow(wnd);
     if (display_in_use < 0) { // Fallback to default if out of bounds
         posX = 100;
         posY = 100;
@@ -410,7 +410,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
             return;
         }
 
-        SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
+        SDL_GetCurrentRenderOutputSize(renderer, &window_width, &window_height);
         window_impl.Metal = { wnd, renderer };
     }
 
@@ -470,11 +470,11 @@ static bool gfx_sdl_get_mouse_state(uint32_t btn) {
 }
 
 static void gfx_sdl_set_mouse_capture(bool capture) {
-    SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
+    SDL_SetRelativeMouseMode(static_cast<bool>(capture));
 }
 
 static bool gfx_sdl_is_mouse_captured() {
-    return (SDL_GetRelativeMouseMode() == SDL_TRUE);
+    return (SDL_GetRelativeMouseMode() == true);
 }
 
 static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
@@ -547,29 +547,29 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
-        case SDL_KEYDOWN:
+        case SDL_EVENT_KEY_DOWN:
             gfx_sdl_onkeydown(event.key.keysym.scancode);
             break;
-        case SDL_KEYUP:
+        case SDL_EVENT_KEY_UP:
             gfx_sdl_onkeyup(event.key.keysym.scancode);
             break;
-        case SDL_MOUSEBUTTONDOWN:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
             gfx_sdl_on_mouse_button_down(event.button.button - 1);
             break;
-        case SDL_MOUSEBUTTONUP:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
             gfx_sdl_on_mouse_button_up(event.button.button - 1);
             break;
-        case SDL_MOUSEWHEEL:
+        case SDL_EVENT_MOUSE_WHEEL:
             mouse_wheel_x = event.wheel.x;
             mouse_wheel_y = event.wheel.y;
             break;
 #endif
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
                     SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
                     break;
-                case SDL_WINDOWEVENT_CLOSE:
+                case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
                     if (event.window.windowID == SDL_GetWindowID(wnd)) {
                         // We listen specifically for main window close because closing main window
                         // on macOS does not trigger SDL_Quit.
@@ -578,12 +578,12 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
                     break;
             }
             break;
-        case SDL_DROPFILE:
+        case SDL_EVENT_DROP_FILE:
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, event.drop.file);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
             Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             break;
-        case SDL_QUIT:
+        case SDL_EVENT_QUIT:
             gfx_sdl_close();
             break;
     }
@@ -592,10 +592,10 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
 static void gfx_sdl_handle_events() {
     SDL_Event event;
     SDL_PumpEvents();
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_CONTROLLERDEVICEADDED - 1) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_GAMEPAD_ADDED - 1) > 0) {
         gfx_sdl_handle_single_event(event);
     }
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMOVED + 1, SDL_EVENT_LAST) > 0) {
         gfx_sdl_handle_single_event(event);
     }
 }

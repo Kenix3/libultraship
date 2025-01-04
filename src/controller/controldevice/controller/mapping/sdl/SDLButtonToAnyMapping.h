@@ -13,7 +13,7 @@ class SDLButtonToAnyMapping : virtual public ControllerInputMapping, public SDLM
     bool PhysicalDeviceIsConnected() override;
 
   protected:
-    SDL_GameControllerButton mControllerButton;
+    SDL_GamepadButton mControllerButton;
 
   private:
     std::string GetPlaystationButtonName();

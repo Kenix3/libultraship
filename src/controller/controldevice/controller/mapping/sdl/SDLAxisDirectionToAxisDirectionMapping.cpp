@@ -27,7 +27,7 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
         return 0.0f;
     }
 
-    const auto axisValue = SDL_GameControllerGetAxis(mController, mControllerAxis);
+    const auto axisValue = SDL_GetGamepadAxis(mController, mControllerAxis);
 
     if ((mAxisDirection == POSITIVE && axisValue < 0) || (mAxisDirection == NEGATIVE && axisValue > 0)) {
         return 0.0f;

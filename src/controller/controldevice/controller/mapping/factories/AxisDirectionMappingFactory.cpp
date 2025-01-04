@@ -158,7 +158,7 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDeviceInd
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex,
                                                                     Direction direction) {
-    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllers;
+    std::unordered_map<ShipDeviceIndex, SDL_Gamepad*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
@@ -171,17 +171,17 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
 
         auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
 
-        if (!SDL_IsGameController(sdlIndex)) {
+        if (!SDL_IsGamepad(sdlIndex)) {
             // this SDL device isn't a game controller
             continue;
         }
 
-        sdlControllers[lusIndex] = SDL_GameControllerOpen(sdlIndex);
+        sdlControllers[lusIndex] = SDL_OpenGamepad(sdlIndex);
     }
 
     for (auto [lusIndex, controller] : sdlControllers) {
-        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+        for (int32_t button = SDL_GAMEPAD_BUTTON_SOUTH; button < SDL_GAMEPAD_BUTTON_COUNT; button++) {
+            if (SDL_GetGamepadButton(controller, static_cast<SDL_GamepadButton>(button))) {
                 mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(lusIndex, portIndex, stickIndex, direction,
                                                                             button);
                 break;
@@ -192,9 +192,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
             break;
         }
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-            const auto axis = static_cast<SDL_GameControllerAxis>(i);
-            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+        for (int32_t i = SDL_GAMEPAD_AXIS_LEFTX; i < SDL_GAMEPAD_AXIS_COUNT; i++) {
+            const auto axis = static_cast<SDL_GamepadAxis>(i);
+            const auto axisValue = SDL_GetGamepadAxis(controller, axis) / 32767.0f;
             int32_t axisDirection = 0;
             if (axisValue < -0.7f) {
                 axisDirection = NEGATIVE;
@@ -213,7 +213,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
     }
 
     for (auto [i, controller] : sdlControllers) {
-        SDL_GameControllerClose(controller);
+        SDL_CloseGamepad(controller);
     }
 
     return mapping;

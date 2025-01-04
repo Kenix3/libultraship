@@ -26,7 +26,7 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
         color = mSavedColor;
     }
 
-    SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), color.r, color.g, color.b);
+    SDL_SetJoystickLED(SDL_GetGamepadJoystick(mController), color.r, color.g, color.b);
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {

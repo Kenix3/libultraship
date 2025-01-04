@@ -25,7 +25,7 @@ bool SDLMapping::OpenController() {
         return false;
     }
 
-    const auto newCont = SDL_GameControllerOpen(deviceIndexMapping->GetSDLDeviceIndex());
+    const auto newCont = SDL_OpenGamepad(deviceIndexMapping->GetSDLDeviceIndex());
 
     // We failed to load the controller
     if (newCont == nullptr) {
@@ -37,8 +37,8 @@ bool SDLMapping::OpenController() {
 }
 
 bool SDLMapping::CloseController() {
-    if (mController != nullptr && SDL_WasInit(SDL_INIT_GAMECONTROLLER)) {
-        SDL_GameControllerClose(mController);
+    if (mController != nullptr && SDL_WasInit(SDL_INIT_GAMEPAD)) {
+        SDL_CloseGamepad(mController);
     }
     mController = nullptr;
 
@@ -46,10 +46,10 @@ bool SDLMapping::CloseController() {
 }
 
 bool SDLMapping::ControllerLoaded(bool closeIfDisconnected) {
-    SDL_GameControllerUpdate();
+    SDL_UpdateGamepads();
 
     // If the controller is disconnected
-    if (mController != nullptr && !SDL_GameControllerGetAttached(mController)) {
+    if (mController != nullptr && !SDL_GamepadConnected(mController)) {
         if (!closeIfDisconnected) {
             return false;
         }
@@ -68,12 +68,12 @@ bool SDLMapping::ControllerLoaded(bool closeIfDisconnected) {
     return true;
 }
 
-SDL_GameControllerType SDLMapping::GetSDLControllerType() {
+SDL_GamepadType SDLMapping::GetSDLControllerType() {
     if (!ControllerLoaded()) {
-        return SDL_CONTROLLER_TYPE_UNKNOWN;
+        return SDL_GAMEPAD_TYPE_STANDARD;
     }
 
-    return SDL_GameControllerGetType(mController);
+    return SDL_GetGamepadType(mController);
 }
 
 uint16_t SDLMapping::GetSDLControllerVendorId() {
@@ -81,7 +81,7 @@ uint16_t SDLMapping::GetSDLControllerVendorId() {
         return 0;
     }
 
-    return SDL_GameControllerGetVendor(mController);
+    return SDL_GetGamepadVendor(mController);
 }
 
 uint16_t SDLMapping::GetSDLControllerProductId() {
@@ -89,22 +89,22 @@ uint16_t SDLMapping::GetSDLControllerProductId() {
         return 0;
     }
 
-    return SDL_GameControllerGetProduct(mController);
+    return SDL_GetGamepadProduct(mController);
 }
 
 bool SDLMapping::UsesPlaystationLayout() {
     auto type = GetSDLControllerType();
-    return type == SDL_CONTROLLER_TYPE_PS3 || type == SDL_CONTROLLER_TYPE_PS4 || type == SDL_CONTROLLER_TYPE_PS5;
+    return type == SDL_GAMEPAD_TYPE_PS3 || type == SDL_GAMEPAD_TYPE_PS4 || type == SDL_GAMEPAD_TYPE_PS5;
 }
 
 bool SDLMapping::UsesSwitchLayout() {
     auto type = GetSDLControllerType();
-    return type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR;
+    return type == SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO || type == SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR;
 }
 
 bool SDLMapping::UsesXboxLayout() {
     auto type = GetSDLControllerType();
-    return type == SDL_CONTROLLER_TYPE_XBOX360 || type == SDL_CONTROLLER_TYPE_XBOXONE;
+    return type == SDL_GAMEPAD_TYPE_XBOX360 || type == SDL_GAMEPAD_TYPE_XBOXONE;
 }
 
 bool SDLMapping::UsesGameCubeLayout() {
@@ -147,7 +147,7 @@ int32_t SDLMapping::GetJoystickInstanceId() {
         return -1;
     }
 
-    return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(mController));
+    return SDL_GetJoystickID(SDL_GetGamepadJoystick(mController));
 }
 
 int32_t SDLMapping::GetCurrentSDLDeviceIndex() {
@@ -156,12 +156,12 @@ int32_t SDLMapping::GetCurrentSDLDeviceIndex() {
     }
 
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
-        SDL_Joystick* joystick = SDL_JoystickOpen(i);
-        if (SDL_JoystickInstanceID(joystick) == SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(mController))) {
-            SDL_JoystickClose(joystick);
+        SDL_Joystick* joystick = SDL_OpenJoystick(i);
+        if (SDL_GetJoystickID(joystick) == SDL_GetJoystickID(SDL_GetGamepadJoystick(mController))) {
+            SDL_CloseJoystick(joystick);
             return i;
         }
-        SDL_JoystickClose(joystick);
+        SDL_CloseJoystick(joystick);
     }
 
     // didn't find one
