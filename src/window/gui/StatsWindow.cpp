@@ -23,7 +23,7 @@ void StatsWindow::DrawElement() {
     ImGui::Text("Platform: Windows");
 #elif defined(__IOS__)
     ImGui::Text("Platform: iOS");
-#elif defined(__APPLE__)
+#elif defined(SDL_PLATFORM_APPLE)
     ImGui::Text("Platform: macOS");
 #elif defined(__linux__)
     ImGui::Text("Platform: Linux");

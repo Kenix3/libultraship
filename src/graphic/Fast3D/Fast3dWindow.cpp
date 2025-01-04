@@ -24,7 +24,7 @@ Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWind
 #ifdef _WIN32
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_DXGI_DX11);
 #endif
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
     if (Metal_IsSupported()) {
         AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_METAL);
     }
@@ -119,7 +119,7 @@ void Fast3dWindow::InitWindowManager() {
             mWindowManagerApi = &gfx_sdl;
             break;
 #endif
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
         case Ship::WindowBackend::FAST3D_SDL_METAL:
             mRenderingApi = &gfx_metal_api;
             mWindowManagerApi = &gfx_sdl;

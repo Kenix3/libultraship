@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#if defined(ENABLE_OPENGL) || defined(SDL_PLATFORM_APPLE)
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
@@ -16,7 +16,7 @@
 #include "SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
 #include "SDL_opengl.h"
-#elif __APPLE__
+#elif SDL_PLATFORM_APPLE
 #include <SDL.h>
 #include "gfx_metal.h"
 #else
@@ -323,7 +323,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
     SDL_EventState(SDL_EVENT_DROP_FILE, SDL_ENABLE);
 
-#if defined(__APPLE__)
+#if defined(SDL_PLATFORM_APPLE)
     bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
 #else
     bool use_opengl = true;
@@ -337,7 +337,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
     }
 
-#if defined(__APPLE__)
+#if defined(SDL_PLATFORM_APPLE)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);

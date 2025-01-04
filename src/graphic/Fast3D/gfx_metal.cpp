@@ -5,7 +5,7 @@
 //  Created by David Chavez on 16.08.22.
 //
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
 
 #include "gfx_metal.h"
 

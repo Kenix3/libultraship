@@ -6,7 +6,7 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "Context.h"
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
 #include "utils/AppleFolderManager.h"
 #endif
 

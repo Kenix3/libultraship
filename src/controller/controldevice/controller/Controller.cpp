@@ -2,7 +2,7 @@
 #include <memory>
 #include <algorithm>
 #include "public/bridge/consolevariablebridge.h"
-#if __APPLE__
+#if SDL_PLATFORM_APPLE
 #include <SDL_events.h>
 #else
 #include <SDL2/SDL_events.h>

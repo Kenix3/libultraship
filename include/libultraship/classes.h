@@ -35,7 +35,7 @@
 #include "audio/WasapiAudioPlayer.h"
 #endif
 #include "audio/SDLAudioPlayer.h"
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
 #include "utils/AppleFolderManager.h"
 #endif
 #endif
