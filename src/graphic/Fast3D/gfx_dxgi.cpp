@@ -92,6 +92,7 @@ static struct {
     float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
     bool is_mouse_captured;
+    bool in_focus;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
@@ -438,9 +439,13 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             break;
         case WM_SETFOCUS:
+            dxgi.in_focus = true;
             if (dxgi.is_mouse_captured) {
                 apply_mouse_capture_clip();
             }
+            break;
+        case WM_KILLFOCUS:
+            dxgi.in_focus = false;
             break;
         default:
             return DefWindowProcW(h_wnd, message, w_param, l_param);
@@ -567,13 +572,16 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 }
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
-    if (dxgi.is_mouse_captured) {
+    if (dxgi.is_mouse_captured && dxgi.in_focus) {
         POINT p;
         GetCursorPos(&p);
         ScreenToClient(dxgi.h_wnd, &p);
-        *x = p.x - dxgi.current_width / 2;
-        *y = p.y - dxgi.current_height / 2;
-        SetCursorPos(dxgi.current_width / 2, dxgi.current_height / 2);
+        int32_t centerX, centerY;
+        centerX = dxgi.current_width / 2;
+        centerY = dxgi.current_height / 2;
+        *x = p.x - centerX;
+        *y = p.y - centerY;
+        SetCursorPos(dxgi.posX + centerX, dxgi.posY + centerY);
     } else {
         *x = 0;
         *y = 0;
