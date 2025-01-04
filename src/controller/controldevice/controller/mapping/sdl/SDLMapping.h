@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <memory>
 #include <string>
 #include "controller/controldevice/controller/mapping/ControllerMapping.h"

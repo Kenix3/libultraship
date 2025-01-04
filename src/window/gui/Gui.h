@@ -12,7 +12,7 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include "window/gui/ConsoleWindow.h"
 #include "window/gui/InputEditorWindow.h"
 #include "controller/deviceindex/ControllerDisconnectedWindow.h"

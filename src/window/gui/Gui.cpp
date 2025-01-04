@@ -21,15 +21,15 @@
 #include "window/gui/GfxDebuggerWindow.h"
 
 #ifdef SDL_PLATFORM_APPLE
-#include <SDL_hints.h>
-#include <SDL_video.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_video.h>
 
 #include "graphic/Fast3D/gfx_metal.h"
 #include <imgui_impl_metal.h>
 #include <imgui_impl_sdl3.h>
 #else
-#include <SDL2/SDL_hints.h>
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_video.h>
 #endif
 
 #if defined(__ANDROID__) || defined(__IOS__)

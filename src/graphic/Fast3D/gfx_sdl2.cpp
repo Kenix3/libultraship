@@ -13,16 +13,16 @@
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
-#include "SDL.h"
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
+#include <SDL3/SDL_opengl.h>
 #elif SDL_PLATFORM_APPLE
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "gfx_metal.h"
 #else
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include <SDL2/SDL_opengles2.h>
+#include <SDL3/SDL_opengles2.h>
 #endif
 
 #include "window/gui/Gui.h"
@@ -33,7 +33,7 @@
 #ifdef _WIN32
 #include <WTypesbase.h>
 #include <Windows.h>
-#include <SDL_syswm.h>
+#include <SDL3/SDL_syswm.h>
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
