@@ -11,7 +11,7 @@
 #define GFX_METAL_H
 
 #include "gfx_rendering_api.h"
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 
 extern struct GfxRenderingAPI gfx_metal_api;
 

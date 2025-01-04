@@ -10,7 +10,7 @@
 #include <dlfcn.h>  // for dladdr
 #include <execinfo.h>
 #include <unistd.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #endif
 
 #if _WIN32

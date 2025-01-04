@@ -9,10 +9,10 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
 endif()
 
 #=================== ImGui ===================
-set(sdl_gamepad_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/sdl-gamepad-fix.patch)
+# set(sdl_gamepad_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/sdl-gamepad-fix.patch)
 
 # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
-set(sdl_apply_patch_if_needed git apply ${sdl_gamepad_patch_file} ${git_hide_output} || git apply --reverse --check ${sdl_gamepad_patch_file})
+# set(sdl_apply_patch_if_needed git apply ${sdl_gamepad_patch_file} ${git_hide_output} || git apply --reverse --check ${sdl_gamepad_patch_file})
 FetchContent_Declare(
     ImGui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -37,7 +37,7 @@ target_sources(ImGui
 target_sources(ImGui
     PRIVATE
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
 )
 
 target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
