@@ -14,7 +14,9 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
         return;
     }
 
-    if (!SDL_GameControllerHasLED(mController)) {
+    // todo: SDL_GameControllerHasLED() - replaced with SDL_PROP_GAMEPAD_CAP_RGB_LED_BOOLEAN
+    // if (!SDL_GameControllerHasLED(mController)) {
+    if (true) {
         return;
     }
 
@@ -26,7 +28,7 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
         color = mSavedColor;
     }
 
-    SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), color.r, color.g, color.b);
+    SDL_SetJoystickLED(SDL_GetGamepadJoystick(mController), color.r, color.g, color.b);
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {

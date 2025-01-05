@@ -1,6 +1,6 @@
 #include "ControllerReorderingWindow.h"
 #include "utils/StringHelper.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <algorithm>
 #include "Context.h"
 
@@ -20,16 +20,23 @@ void ControllerReorderingWindow::UpdateElement() {
 int32_t ControllerReorderingWindow::GetSDLIndexFromSDLInput() {
     int32_t sdlDeviceIndex = -1;
 
-    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            sdlControllers[i] = SDL_GameControllerOpen(i);
+    std::unordered_map<int32_t, SDL_Gamepad*> sdlControllers;
+
+    int i, numJoysticks;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                sdlControllers[i] = SDL_OpenGamepad(instanceId);
+            }
         }
+        SDL_free(joysticks);
     }
 
     for (auto [controllerIndex, controller] : sdlControllers) {
-        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+        for (int32_t button = SDL_GAMEPAD_BUTTON_SOUTH; button < SDL_GAMEPAD_BUTTON_COUNT; button++) {
+            if (SDL_GetGamepadButton(controller, static_cast<SDL_GamepadButton>(button))) {
                 sdlDeviceIndex = controllerIndex;
                 break;
             }
@@ -39,9 +46,9 @@ int32_t ControllerReorderingWindow::GetSDLIndexFromSDLInput() {
             break;
         }
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-            const auto axis = static_cast<SDL_GameControllerAxis>(i);
-            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+        for (int32_t i = SDL_GAMEPAD_AXIS_LEFTX; i < SDL_GAMEPAD_AXIS_COUNT; i++) {
+            const auto axis = static_cast<SDL_GamepadAxis>(i);
+            const auto axisValue = SDL_GetGamepadAxis(controller, axis) / 32767.0f;
             if (axisValue < -0.7f || axisValue > 0.7f) {
                 sdlDeviceIndex = controllerIndex;
                 break;
@@ -50,7 +57,7 @@ int32_t ControllerReorderingWindow::GetSDLIndexFromSDLInput() {
     }
 
     for (auto [i, controller] : sdlControllers) {
-        SDL_GameControllerClose(controller);
+        SDL_CloseGamepad(controller);
     }
 
     return sdlDeviceIndex;
@@ -65,11 +72,19 @@ void ControllerReorderingWindow::DrawElement() {
 
     // if we don't have more than one controller, just close the window
     std::vector<int32_t> connectedSdlControllerIndices;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            connectedSdlControllerIndices.push_back(i);
+
+    int i, numJoysticks;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                connectedSdlControllerIndices.push_back(i);
+            }
         }
+        SDL_free(joysticks);
     }
+
     if (connectedSdlControllerIndices.size() <= 1) {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeMappingsMultiplayer(
             connectedSdlControllerIndices);

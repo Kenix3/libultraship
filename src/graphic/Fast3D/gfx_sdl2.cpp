@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#if defined(ENABLE_OPENGL) || defined(SDL_PLATFORM_APPLE)
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
@@ -13,16 +13,16 @@
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
-#include "SDL.h"
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
-#elif __APPLE__
-#include <SDL.h>
+#include <SDL3/SDL_opengl.h>
+#elif SDL_PLATFORM_APPLE
+#include <SDL3/SDL.h>
 #include "gfx_metal.h"
 #else
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include <SDL2/SDL_opengles2.h>
+#include <SDL3/SDL_opengles2.h>
 #endif
 
 #include "window/gui/Gui.h"
@@ -33,7 +33,7 @@
 #ifdef _WIN32
 #include <WTypesbase.h>
 #include <Windows.h>
-#include <SDL_syswm.h>
+#include <SDL3/SDL_syswm.h>
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
@@ -224,7 +224,7 @@ static void set_fullscreen(bool on, bool call_callback) {
     if (fullscreen_state == on) {
         return;
     }
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    int display_in_use = SDL_GetDisplayForWindow(wnd);
     if (display_in_use < 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
         SPDLOG_WARN(SDL_GetError());
@@ -232,9 +232,9 @@ static void set_fullscreen(bool on, bool call_callback) {
 
     if (on) {
         // OTRTODO: Get mode from config.
-        SDL_DisplayMode mode;
-        if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-            SDL_SetWindowDisplayMode(wnd, &mode);
+        auto mode = SDL_GetDesktopDisplayMode(display_in_use);
+        if (mode != nullptr) {
+            SDL_SetWindowFullscreenMode(wnd, mode);
         } else {
             SPDLOG_ERROR(SDL_GetError());
         }
@@ -251,10 +251,19 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_SetWindowPosition(wnd, posX, posY);
         SDL_SetWindowSize(wnd, window_width, window_height);
     }
-    if (SDL_SetWindowFullscreen(wnd,
-                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
-                                                                                      : SDL_WINDOW_FULLSCREEN)
-                                   : 0) >= 0) {
+
+    /* todo:
+    
+    SDL_WINDOW_FULLSCREEN_DESKTOP has been removed, and you can call SDL_GetWindowFullscreenMode() 
+    to see whether an exclusive fullscreen mode will be used or the borderless fullscreen desktop mode
+    will be used when the window is fullscreen.
+
+    */
+
+    if (SDL_SetWindowFullscreen(wnd, on)) {
+                                // on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                //                                                       : SDL_WINDOW_FULLSCREEN)
+                                //    : 0) >= 0) {
         fullscreen_state = on;
     } else {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
@@ -267,11 +276,10 @@ static void set_fullscreen(bool on, bool call_callback) {
 }
 
 static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    int display_in_use = SDL_GetDisplayForWindow(wnd);
 
-    SDL_DisplayMode mode;
-    SDL_GetCurrentDisplayMode(display_in_use, &mode);
-    *refresh_rate = mode.refresh_rate;
+    auto mode = SDL_GetCurrentDisplayMode(display_in_use);
+    *refresh_rate = mode->refresh_rate;
 }
 
 static uint64_t previous_time;
@@ -314,16 +322,11 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     window_width = width;
     window_height = height;
 
-#if SDL_VERSION_ATLEAST(2, 24, 0)
-    /* fix DPI scaling issues on Windows */
-    SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
-#endif
-
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+    SDL_SetEventEnabled(SDL_EVENT_DROP_FILE, true);
 
-#if defined(__APPLE__)
+#if defined(SDL_PLATFORM_APPLE)
     bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
 #else
     bool use_opengl = true;
@@ -337,7 +340,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
     }
 
-#if defined(__APPLE__)
+#if defined(SDL_PLATFORM_APPLE)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -359,7 +362,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #ifdef __IOS__
     Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
 #else
-    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    Uint32 flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #endif
 
     if (use_opengl) {
@@ -368,7 +371,15 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         flags = flags | SDL_WINDOW_METAL;
     }
 
-    wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, title);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, posX);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, posY);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, window_width);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, window_height);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, flags);
+    wnd = SDL_CreateWindowWithProperties(props);
+    SDL_DestroyProperties(props);
 #ifdef _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
@@ -380,14 +391,14 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
     Ship::GuiWindowInitData window_impl;
 
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    int display_in_use = SDL_GetDisplayForWindow(wnd);
     if (display_in_use < 0) { // Fallback to default if out of bounds
         posX = 100;
         posY = 100;
     }
 
     if (use_opengl) {
-        SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+        SDL_GetWindowSizeInPixels(wnd, &window_width, &window_height);
 
         if (start_in_fullscreen) {
             set_fullscreen(true, false);
@@ -400,17 +411,26 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
         window_impl.Opengl = { wnd, ctx };
     } else {
-        uint32_t flags = SDL_RENDERER_ACCELERATED;
-        if (vsync_enabled) {
-            flags |= SDL_RENDERER_PRESENTVSYNC;
-        }
-        renderer = SDL_CreateRenderer(wnd, -1, flags);
+        // uint32_t flags = SDL_RENDERER_ACCELERATED;
+        // if (vsync_enabled) {
+        //     flags |= SDL_RENDERER_PRESENTVSYNC;
+        // }
+        /* todo:
+
+        SDL_RENDERER_ACCELERATED - all renderers except SDL_SOFTWARE_RENDERER are accelerated
+        SDL_RENDERER_PRESENTVSYNC - replaced with SDL_PROP_RENDERER_CREATE_PRESENT_VSYNC_NUMBER 
+                                    during renderer creation and SDL_PROP_RENDERER_VSYNC_NUMBER
+                                    after renderer creation
+        
+        */
+
+        renderer = SDL_CreateRenderer(wnd, nullptr);
         if (renderer == NULL) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
         }
 
-        SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
+        SDL_GetCurrentRenderOutputSize(renderer, &window_width, &window_height);
         window_impl.Metal = { wnd, renderer };
     }
 
@@ -440,9 +460,9 @@ static void gfx_sdl_set_fullscreen(bool enable) {
 
 static void gfx_sdl_set_cursor_visibility(bool visible) {
     if (visible) {
-        SDL_ShowCursor(SDL_ENABLE);
+        SDL_ShowCursor();
     } else {
-        SDL_ShowCursor(SDL_DISABLE);
+        SDL_HideCursor();
     }
 }
 
@@ -451,11 +471,31 @@ static void gfx_sdl_set_mouse_pos(int32_t x, int32_t y) {
 }
 
 static void gfx_sdl_get_mouse_pos(int32_t* x, int32_t* y) {
-    SDL_GetMouseState(x, y);
+    /* todo:
+    
+    SDL_GetMouseState(), SDL_GetGlobalMouseState(), SDL_GetRelativeMouseState(),
+    SDL_WarpMouseInWindow(), and SDL_WarpMouseGlobal() all use floating point mouse
+    positions, to provide sub-pixel precision on platforms that support it.
+
+    */
+    static float fx, fy;
+    SDL_GetMouseState(&fx, &fy);
+    *x = static_cast<int>(fx);
+    *y = static_cast<int>(fy);
 }
 
 static void gfx_sdl_get_mouse_delta(int32_t* x, int32_t* y) {
-    SDL_GetRelativeMouseState(x, y);
+    /* todo:
+    
+    SDL_GetMouseState(), SDL_GetGlobalMouseState(), SDL_GetRelativeMouseState(),
+    SDL_WarpMouseInWindow(), and SDL_WarpMouseGlobal() all use floating point mouse
+    positions, to provide sub-pixel precision on platforms that support it.
+
+    */
+   static float fx, fy;
+   SDL_GetRelativeMouseState(&fx, &fy);
+   *x = static_cast<int>(fx);
+   *y = static_cast<int>(fy);
 }
 
 static void gfx_sdl_get_mouse_wheel(float* x, float* y) {
@@ -470,11 +510,11 @@ static bool gfx_sdl_get_mouse_state(uint32_t btn) {
 }
 
 static void gfx_sdl_set_mouse_capture(bool capture) {
-    SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
+    SDL_SetWindowRelativeMouseMode(wnd, static_cast<bool>(capture));
 }
 
 static bool gfx_sdl_is_mouse_captured() {
-    return (SDL_GetRelativeMouseMode() == SDL_TRUE);
+    return (SDL_GetWindowRelativeMouseMode(wnd) == true);
 }
 
 static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
@@ -490,7 +530,7 @@ static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_
 }
 
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
-    SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    SDL_GetWindowSizeInPixels(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
     SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
@@ -547,43 +587,39 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
-        case SDL_KEYDOWN:
-            gfx_sdl_onkeydown(event.key.keysym.scancode);
+        case SDL_EVENT_KEY_DOWN:
+            gfx_sdl_onkeydown(event.key.scancode);
             break;
-        case SDL_KEYUP:
-            gfx_sdl_onkeyup(event.key.keysym.scancode);
+        case SDL_EVENT_KEY_UP:
+            gfx_sdl_onkeyup(event.key.scancode);
             break;
-        case SDL_MOUSEBUTTONDOWN:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
             gfx_sdl_on_mouse_button_down(event.button.button - 1);
             break;
-        case SDL_MOUSEBUTTONUP:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
             gfx_sdl_on_mouse_button_up(event.button.button - 1);
             break;
-        case SDL_MOUSEWHEEL:
+        case SDL_EVENT_MOUSE_WHEEL:
             mouse_wheel_x = event.wheel.x;
             mouse_wheel_y = event.wheel.y;
             break;
 #endif
-        case SDL_WINDOWEVENT:
-            switch (event.window.event) {
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
-                    break;
-                case SDL_WINDOWEVENT_CLOSE:
-                    if (event.window.windowID == SDL_GetWindowID(wnd)) {
-                        // We listen specifically for main window close because closing main window
-                        // on macOS does not trigger SDL_Quit.
-                        gfx_sdl_close();
-                    }
-                    break;
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+            SDL_GetWindowSizeInPixels(wnd, &window_width, &window_height);
+            break;
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            if (event.window.windowID == SDL_GetWindowID(wnd)) {
+                // We listen specifically for main window close because closing main window
+                // on macOS does not trigger SDL_Quit.
+                gfx_sdl_close();
             }
             break;
-        case SDL_DROPFILE:
-            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, event.drop.file);
+        case SDL_EVENT_DROP_FILE:
+            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, event.drop.data);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
             Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             break;
-        case SDL_QUIT:
+        case SDL_EVENT_QUIT:
             gfx_sdl_close();
             break;
     }
@@ -592,10 +628,10 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
 static void gfx_sdl_handle_events() {
     SDL_Event event;
     SDL_PumpEvents();
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_CONTROLLERDEVICEADDED - 1) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_GAMEPAD_ADDED - 1) > 0) {
         gfx_sdl_handle_single_event(event);
     }
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMOVED + 1, SDL_EVENT_LAST) > 0) {
         gfx_sdl_handle_single_event(event);
     }
 }

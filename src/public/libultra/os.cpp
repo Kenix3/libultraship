@@ -1,5 +1,5 @@
 #include "libultraship/libultraship.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <ratio>
 
 // Establish a chrono duration for the N64 46.875MHz clock rate
@@ -14,13 +14,13 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
     *controllerBits = 0;
     status->status |= 1;
 
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
+    if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
         SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
         exit(EXIT_FAILURE);
     }
 
     std::string controllerDb = Ship::Context::LocateFileAcrossAppDirs("gamecontrollerdb.txt");
-    int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb.c_str());
+    int mappingsAdded = SDL_AddGamepadMappingsFromFile(controllerDb.c_str());
     if (mappingsAdded >= 0) {
         SPDLOG_INFO("Added SDL game controllers from \"{}\" ({})", controllerDb, mappingsAdded);
     } else {

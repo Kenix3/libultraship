@@ -13,7 +13,15 @@ Uint32 __lusViCallback(Uint32 interval, void* param) {
 }
 
 void osCreateViManager(OSPri pri) {
-    SDL_AddTimer(16, &__lusViCallback, NULL);
+    /* todo:
+    
+    The callback passed to SDL_AddTimer() has changed parameters to:
+
+    Uint32 SDLCALL TimerCallback(void *userdata, SDL_TimerID timerID, Uint32 interval);
+    
+    */
+
+    // SDL_AddTimer(16, &__lusViCallback, NULL);
 }
 
 void osViSetEvent(OSMesgQueue* queue, OSMesg mesg, uint32_t c) {

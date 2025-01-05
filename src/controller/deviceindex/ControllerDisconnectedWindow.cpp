@@ -1,6 +1,6 @@
 #include "ControllerDisconnectedWindow.h"
 #include "utils/StringHelper.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <algorithm>
 #include "Context.h"
 
@@ -16,16 +16,16 @@ void ControllerDisconnectedWindow::InitElement() {
 void ControllerDisconnectedWindow::UpdateElement() {
     SDL_PumpEvents();
     SDL_Event event;
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEADDED) > 0) {
-        // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for
-        // the SDL_CONTROLLERDEVICEADDED event
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_ADDED, SDL_EVENT_GAMEPAD_ADDED) > 0) {
+        // from https://wiki.libsdl.org/SDL2/SDL_GamepadDeviceEvent: which - the joystick device index for
+        // the SDL_EVENT_GAMEPAD_ADDED event
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceConnect(
             event.cdevice.which);
     }
 
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED, SDL_CONTROLLERDEVICEREMOVED) > 0) {
-        // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the [...] instance id for the
-        // SDL_CONTROLLERDEVICEREMOVED [...] event
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMOVED, SDL_EVENT_GAMEPAD_REMOVED) > 0) {
+        // from https://wiki.libsdl.org/SDL2/SDL_GamepadDeviceEvent: which - the [...] instance id for the
+        // SDL_EVENT_GAMEPAD_REMOVED [...] event
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->HandlePhysicalDeviceDisconnect(
             event.cdevice.which);
     }
@@ -34,16 +34,23 @@ void ControllerDisconnectedWindow::UpdateElement() {
 int32_t ControllerDisconnectedWindow::GetSDLIndexFromSDLInput() {
     int32_t sdlDeviceIndex = -1;
 
-    std::unordered_map<int32_t, SDL_GameController*> sdlControllers;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            sdlControllers[i] = SDL_GameControllerOpen(i);
+    std::unordered_map<int32_t, SDL_Gamepad*> sdlControllers;
+
+    int i, numJoysticks;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                sdlControllers[i] = SDL_OpenGamepad(instanceId);
+            }
         }
+        SDL_free(joysticks);
     }
 
     for (auto [controllerIndex, controller] : sdlControllers) {
-        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+        for (int32_t button = SDL_GAMEPAD_BUTTON_SOUTH; button < SDL_GAMEPAD_BUTTON_COUNT; button++) {
+            if (SDL_GetGamepadButton(controller, static_cast<SDL_GamepadButton>(button))) {
                 sdlDeviceIndex = controllerIndex;
                 break;
             }
@@ -53,9 +60,9 @@ int32_t ControllerDisconnectedWindow::GetSDLIndexFromSDLInput() {
             break;
         }
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-            const auto axis = static_cast<SDL_GameControllerAxis>(i);
-            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+        for (int32_t i = SDL_GAMEPAD_AXIS_LEFTX; i < SDL_GAMEPAD_AXIS_COUNT; i++) {
+            const auto axis = static_cast<SDL_GamepadAxis>(i);
+            const auto axisValue = SDL_GetGamepadAxis(controller, axis) / 32767.0f;
             if (axisValue < -0.7f || axisValue > 0.7f) {
                 sdlDeviceIndex = controllerIndex;
                 break;
@@ -64,7 +71,7 @@ int32_t ControllerDisconnectedWindow::GetSDLIndexFromSDLInput() {
     }
 
     for (auto [i, controller] : sdlControllers) {
-        SDL_GameControllerClose(controller);
+        SDL_CloseGamepad(controller);
     }
 
     return sdlDeviceIndex;
@@ -94,11 +101,17 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
         Hide();
     }
 
+    int i, numJoysticks;
     uint8_t connectedSdlControllerCount = 0;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            connectedSdlControllerCount++;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                connectedSdlControllerCount++;
+            }
         }
+        SDL_free(joysticks);
     }
 
     if (connectedSdlControllerCount != 0 &&
@@ -115,11 +128,17 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
 void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected() {
     ImGui::Text("Controller(s) disconnected.");
 
+    int i, numJoysticks;
     uint8_t connectedSdlControllerCount = 0;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            connectedSdlControllerCount++;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                connectedSdlControllerCount++;
+            }
         }
+        SDL_free(joysticks);
     }
 
     if (connectedSdlControllerCount != 0 &&

@@ -11,7 +11,7 @@
 #include <tchar.h>
 #endif
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
 #include "utils/AppleFolderManager.h"
 #include <unistd.h>
 #include <pwd.h>
@@ -375,7 +375,7 @@ std::string Context::GetShortName() {
 
 std::string Context::GetAppBundlePath() {
 #if defined(__ANDROID__)
-    const char* externaldir = SDL_AndroidGetExternalStoragePath();
+    const char* externaldir = SDL_GetAndroidExternalStoragePath();
     if (externaldir != NULL) {
         return externaldir;
     }
@@ -389,7 +389,7 @@ std::string Context::GetAppBundlePath() {
 #ifdef NON_PORTABLE
     return CMAKE_INSTALL_PREFIX;
 #else
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
     FolderManager folderManager;
     return folderManager.getMainBundlePath();
 #endif
@@ -416,7 +416,7 @@ std::string Context::GetAppBundlePath() {
 
 std::string Context::GetAppDirectoryPath(std::string appName) {
 #if defined(__ANDROID__)
-    const char* externaldir = SDL_AndroidGetExternalStoragePath();
+    const char* externaldir = SDL_GetAndroidExternalStoragePath();
     if (externaldir != NULL) {
         return externaldir;
     }
@@ -427,7 +427,7 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     return std::string(home) + "/Documents";
 #endif
 
-#if defined(__APPLE__)
+#if defined(SDL_PLATFORM_APPLE)
     if (char* fpath = std::getenv("SHIP_HOME")) {
         if (fpath[0] == '~') {
             const char* home = getenv("HOME") ? getenv("HOME") : getpwuid(getuid())->pw_dir;

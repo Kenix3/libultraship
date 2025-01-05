@@ -1,5 +1,5 @@
 #include "ShipDeviceIndexMappingManager.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include <vector>
@@ -44,15 +44,19 @@ void ShipDeviceIndexMappingManager::InitializeMappingsMultiplayer(std::vector<in
 }
 
 void ShipDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex) {
-    if (!SDL_IsGameController(sdlIndex)) {
+    if (!SDL_IsGamepad(sdlIndex)) {
         return;
     }
 
-    char guidString[33]; // SDL_GUID_LENGTH + 1 for null terminator
-    SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(sdlIndex), guidString, sizeof(guidString));
-    std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) != nullptr
-                                        ? SDL_GameControllerNameForIndex(sdlIndex)
-                                        : "Game Controller";
+    // todo: move a bunch of stuff in here over to use instance ids
+    // char guidString[33]; // SDL_GUID_LENGTH + 1 for null terminator
+    // SDL_GetJoystickGUIDForID()
+    // SDL_GUIDToString(SDL_JoystickGetDeviceGUID(sdlIndex), guidString, sizeof(guidString));
+    // std::string sdlControllerName = SDL_GameControllerNameForIndex(sdlIndex) != nullptr
+    //                                     ? SDL_GameControllerNameForIndex(sdlIndex)
+    //                                     : "Game Controller";
+    char guidString[33] = "guidString";
+    std::string sdlControllerName = "controllerName";
 
     // find all lus indices with this guid
     std::vector<ShipDeviceIndex> matchingGuidLusIndices;
@@ -176,10 +180,17 @@ void ShipDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
     }
 
     std::vector<int32_t> connectedSdlControllerIndices;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGameController(i)) {
-            connectedSdlControllerIndices.push_back(i);
+
+    int i, numJoysticks;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                connectedSdlControllerIndices.push_back(i);
+            }
         }
+        SDL_free(joysticks);
     }
 
     mShipDeviceIndexToPhysicalDeviceIndexMappings.clear();
@@ -291,7 +302,7 @@ void ShipDeviceIndexMappingManager::HandlePhysicalDeviceConnect(int32_t sdlDevic
         return;
     }
 
-    if (!SDL_IsGameController(sdlDeviceIndex)) {
+    if (!SDL_IsGamepad(sdlDeviceIndex)) {
         return;
     }
 

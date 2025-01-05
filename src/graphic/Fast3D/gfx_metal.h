@@ -5,13 +5,13 @@
 //  Created by David Chavez on 16.08.22.
 //
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
 
 #ifndef GFX_METAL_H
 #define GFX_METAL_H
 
 #include "gfx_rendering_api.h"
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 
 extern struct GfxRenderingAPI gfx_metal_api;
 

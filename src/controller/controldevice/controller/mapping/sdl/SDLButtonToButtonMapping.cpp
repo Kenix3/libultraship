@@ -21,7 +21,7 @@ void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
         return;
     }
 
-    if (SDL_GameControllerGetButton(mController, mControllerButton)) {
+    if (SDL_GetGamepadButton(mController, mControllerButton)) {
         padButtons |= mBitmask;
     }
 }

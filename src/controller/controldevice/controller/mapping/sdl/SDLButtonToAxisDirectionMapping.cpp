@@ -18,7 +18,7 @@ SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(ShipDeviceIndex
 
 float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
     if (ControllerLoaded() && !Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked() &&
-        SDL_GameControllerGetButton(mController, mControllerButton)) {
+        SDL_GetGamepadButton(mController, mControllerButton)) {
         return MAX_AXIS_RANGE;
     }
 

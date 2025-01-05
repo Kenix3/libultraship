@@ -172,73 +172,73 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(ShipDeviceIndex shipDeviceI
     switch (bitmask) {
         case BTN_A:
             mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_A, SDL_CONTROLLER_BUTTON_A));
+                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_A, SDL_GAMEPAD_BUTTON_SOUTH));
             break;
         case BTN_B:
             mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_B, SDL_CONTROLLER_BUTTON_B));
+                std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_B, SDL_GAMEPAD_BUTTON_EAST));
             break;
         case BTN_L:
             if (!isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_L,
-                                                                              SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+                                                                              SDL_GAMEPAD_BUTTON_LEFT_SHOULDER));
             }
             break;
         case BTN_R:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_R,
-                                                                                 SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
+                                                                                 SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, 1));
             break;
         case BTN_Z:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_Z,
-                                                                                 SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
+                                                                                 SDL_GAMEPAD_AXIS_LEFT_TRIGGER, 1));
             break;
         case BTN_START:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_START,
-                                                                          SDL_CONTROLLER_BUTTON_START));
+                                                                          SDL_GAMEPAD_BUTTON_START));
             break;
         case BTN_CUP:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CUP,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTY, -1));
+                                                                                 SDL_GAMEPAD_AXIS_RIGHTY, -1));
             break;
         case BTN_CDOWN:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CDOWN,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTY, 1));
+                                                                                 SDL_GAMEPAD_AXIS_RIGHTY, 1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_CDOWN,
-                                                                              SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
+                                                                              SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER));
             }
             break;
         case BTN_CLEFT:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CLEFT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, -1));
+                                                                                 SDL_GAMEPAD_AXIS_RIGHTX, -1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_CLEFT,
-                                                                              SDL_CONTROLLER_BUTTON_Y));
+                                                                              SDL_GAMEPAD_BUTTON_NORTH));
             }
             break;
         case BTN_CRIGHT:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(shipDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, 1));
+                                                                                 SDL_GAMEPAD_AXIS_RIGHTX, 1));
             if (isGameCube) {
                 mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_CRIGHT,
-                                                                              SDL_CONTROLLER_BUTTON_X));
+                                                                              SDL_GAMEPAD_BUTTON_WEST));
             }
             break;
         case BTN_DUP:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DUP,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_UP));
+                                                                          SDL_GAMEPAD_BUTTON_DPAD_UP));
             break;
         case BTN_DDOWN:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DDOWN,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_DOWN));
+                                                                          SDL_GAMEPAD_BUTTON_DPAD_DOWN));
             break;
         case BTN_DLEFT:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DLEFT,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+                                                                          SDL_GAMEPAD_BUTTON_DPAD_LEFT));
             break;
         case BTN_DRIGHT:
             mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(shipDeviceIndex, portIndex, BTN_DRIGHT,
-                                                                          SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
+                                                                          SDL_GAMEPAD_BUTTON_DPAD_RIGHT));
             break;
     }
 
@@ -247,7 +247,7 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(ShipDeviceIndex shipDeviceI
 
 std::shared_ptr<ControllerButtonMapping>
 ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllers;
+    std::unordered_map<ShipDeviceIndex, SDL_Gamepad*> sdlControllers;
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
@@ -260,17 +260,17 @@ ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROL
 
         auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
 
-        if (!SDL_IsGameController(sdlIndex)) {
+        if (!SDL_IsGamepad(sdlIndex)) {
             // this SDL device isn't a game controller
             continue;
         }
 
-        sdlControllers[lusIndex] = SDL_GameControllerOpen(sdlIndex);
+        sdlControllers[lusIndex] = SDL_OpenGamepad(sdlIndex);
     }
 
     for (auto [lusIndex, controller] : sdlControllers) {
-        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+        for (int32_t button = SDL_GAMEPAD_BUTTON_SOUTH; button < SDL_GAMEPAD_BUTTON_COUNT; button++) {
+            if (SDL_GetGamepadButton(controller, static_cast<SDL_GamepadButton>(button))) {
                 mapping = std::make_shared<SDLButtonToButtonMapping>(lusIndex, portIndex, bitmask, button);
                 break;
             }
@@ -280,9 +280,9 @@ ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROL
             break;
         }
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-            const auto axis = static_cast<SDL_GameControllerAxis>(i);
-            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+        for (int32_t i = SDL_GAMEPAD_AXIS_LEFTX; i < SDL_GAMEPAD_AXIS_COUNT; i++) {
+            const auto axis = static_cast<SDL_GamepadAxis>(i);
+            const auto axisValue = SDL_GetGamepadAxis(controller, axis) / 32767.0f;
             int32_t axisDirection = 0;
             if (axisValue < -0.7f) {
                 axisDirection = NEGATIVE;
@@ -301,7 +301,7 @@ ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROL
     }
 
     for (auto [i, controller] : sdlControllers) {
-        SDL_GameControllerClose(controller);
+        SDL_CloseGamepad(controller);
     }
 
     return mapping;

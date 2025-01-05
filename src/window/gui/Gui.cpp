@@ -20,16 +20,16 @@
 
 #include "window/gui/GfxDebuggerWindow.h"
 
-#ifdef __APPLE__
-#include <SDL_hints.h>
-#include <SDL_video.h>
+#ifdef SDL_PLATFORM_APPLE
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_video.h>
 
 #include "graphic/Fast3D/gfx_metal.h"
 #include <imgui_impl_metal.h>
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 #else
-#include <SDL2/SDL_hints.h>
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_video.h>
 #endif
 
 #if defined(__ANDROID__) || defined(__IOS__)
@@ -38,7 +38,7 @@
 
 #ifdef ENABLE_OPENGL
 #include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 
 #endif
 
@@ -164,9 +164,9 @@ void Gui::ImGuiWMInit() {
         case WindowBackend::FAST3D_SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
-            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
+            ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
-#if __APPLE__
+#if SDL_PLATFORM_APPLE
         case WindowBackend::FAST3D_SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -187,7 +187,7 @@ void Gui::ImGuiBackendInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
             ImGui_ImplOpenGL3_Init("#version 410 core");
 #elif USE_OPENGLES
             ImGui_ImplOpenGL3_Init("#version 300 es");
@@ -197,7 +197,7 @@ void Gui::ImGuiBackendInit() {
             break;
 #endif
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
         case WindowBackend::FAST3D_SDL_METAL:
             Metal_Init(mImpl.Metal.Renderer);
             break;
@@ -261,7 +261,7 @@ void Gui::HandleWindowEvents(WindowEvent event) {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
-            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+            ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 #if defined(__ANDROID__) || defined(__IOS__)
             Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
@@ -318,7 +318,7 @@ void Gui::ImGuiBackendNewFrame() {
             break;
 #endif
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
         case WindowBackend::FAST3D_SDL_METAL:
             Metal_NewFrame(mImpl.Metal.Renderer);
             break;
@@ -332,7 +332,7 @@ void Gui::ImGuiWMNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
-            ImGui_ImplSDL2_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
             break;
 #ifdef ENABLE_DX11
         case WindowBackend::FAST3D_DXGI_DX11:
@@ -504,7 +504,7 @@ void Gui::DrawMenu() {
         }
     }
 
-#if __APPLE__
+#if SDL_PLATFORM_APPLE
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
         std::reinterpret_pointer_cast<ConsoleWindow>(
@@ -654,7 +654,7 @@ void Gui::DrawGame() {
     }
     if (gfxFramebuffer) {
         ImGui::SetCursorPos(pos);
-        ImGui::Image(reinterpret_cast<ImTextureID>(gfxFramebuffer), size);
+        ImGui::Image((ImTextureID)gfxFramebuffer, size);
     }
 
     ImGui::End();
@@ -675,7 +675,7 @@ void Gui::DrawFloatingWindows() {
             // Set back the GL context for next frame
             SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
         } else {
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
             // Metal requires additional frame setup to get ImGui ready for drawing floating windows
             if (backend == WindowBackend::FAST3D_SDL_METAL) {
                 Metal_SetupFloatingFrame();
@@ -712,7 +712,7 @@ void Gui::Draw() {
 
 void Gui::SetupRendererFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
         case WindowBackend::FAST3D_SDL_METAL:
             Metal_SetupFrame(mImpl.Metal.Renderer);
             break;
@@ -728,13 +728,13 @@ ImTextureID Gui::GetTextureById(int32_t id) {
         return gfx_d3d11_get_texture_by_id(id);
     }
 #endif
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
     if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_SDL_METAL) {
         return gfx_metal_get_texture_by_id(id);
     }
 #endif
 
-    return reinterpret_cast<ImTextureID>(id);
+    return (ImTextureID)id;
 }
 
 bool Gui::HasTextureByName(const std::string& name) {
@@ -743,7 +743,7 @@ bool Gui::HasTextureByName(const std::string& name) {
 
 ImTextureID Gui::GetTextureByName(const std::string& name) {
     if (!Gui::HasTextureByName(name)) {
-        return nullptr;
+        return (ImTextureID)nullptr;
     }
     return GetTextureById(mGuiTextures[name].RendererTextureId);
 }
@@ -764,7 +764,7 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             break;
 #endif
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
         case WindowBackend::FAST3D_SDL_METAL:
             Metal_RenderDrawData(data);
             break;

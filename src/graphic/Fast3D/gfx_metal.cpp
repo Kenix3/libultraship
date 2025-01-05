@@ -5,7 +5,7 @@
 //  Created by David Chavez on 16.08.22.
 //
 
-#ifdef __APPLE__
+#ifdef SDL_PLATFORM_APPLE
 
 #include "gfx_metal.h"
 
@@ -27,7 +27,7 @@
 #define CA_PRIVATE_IMPLEMENTATION
 #define MTL_PRIVATE_IMPLEMENTATION
 #include <Metal/Metal.hpp>
-#include <SDL_render.h>
+#include <SDL3/SDL_render.h>
 #include <imgui_impl_metal.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
@@ -214,7 +214,7 @@ bool Metal_Init(SDL_Renderer* renderer) {
     mctx.renderer = renderer;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
-    mctx.layer = (CA::MetalLayer*)SDL_RenderGetMetalLayer(renderer);
+    mctx.layer = (CA::MetalLayer*)SDL_GetRenderMetalLayer(renderer);
     mctx.layer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
 
     mctx.device = mctx.layer->device();
@@ -236,7 +236,7 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height);
 
 void Metal_SetupFrame(SDL_Renderer* renderer) {
     int width, height;
-    SDL_GetRendererOutputSize(renderer, &width, &height);
+    SDL_GetCurrentRenderOutputSize(renderer, &width, &height);
     gfx_metal_setup_screen_framebuffer(width, height);
 }
 
@@ -812,7 +812,7 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
     // see `gfx_metal_setup_screen_framebuffer`.
     if (fb_id == 0) {
         int width, height;
-        SDL_GetRendererOutputSize(mctx.renderer, &width, &height);
+        SDL_GetCurrentRenderOutputSize(mctx.renderer, &width, &height);
         mctx.layer->setDrawableSize({ CGFloat(width), CGFloat(height) });
 
         return;

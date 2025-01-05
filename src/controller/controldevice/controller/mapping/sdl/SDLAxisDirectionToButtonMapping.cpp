@@ -22,7 +22,7 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
         return;
     }
 
-    const auto axisValue = SDL_GameControllerGetAxis(mController, mControllerAxis);
+    const auto axisValue = SDL_GetGamepadAxis(mController, mControllerAxis);
     int32_t axisThresholdPercentage = 25;
     auto indexMapping = Context::GetInstance()
                             ->GetControlDeck()

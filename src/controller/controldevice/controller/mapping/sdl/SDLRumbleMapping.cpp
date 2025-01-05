@@ -18,7 +18,7 @@ void SDLRumbleMapping::StartRumble() {
         return;
     }
 
-    SDL_GameControllerRumble(mController, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
+    SDL_RumbleGamepad(mController, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
 }
 
 void SDLRumbleMapping::StopRumble() {
@@ -26,7 +26,7 @@ void SDLRumbleMapping::StopRumble() {
         return;
     }
 
-    SDL_GameControllerRumble(mController, 0, 0, 0);
+    SDL_RumbleGamepad(mController, 0, 0, 0);
 }
 
 void SDLRumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
