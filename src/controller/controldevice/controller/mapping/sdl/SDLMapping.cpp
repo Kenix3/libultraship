@@ -155,13 +155,20 @@ int32_t SDLMapping::GetCurrentSDLDeviceIndex() {
         return -1;
     }
 
-    for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
-        SDL_Joystick* joystick = SDL_OpenJoystick(i);
-        if (SDL_GetJoystickID(joystick) == SDL_GetJoystickID(SDL_GetGamepadJoystick(mController))) {
+    int i, numJoysticks;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            SDL_Joystick* joystick = SDL_OpenJoystick(instanceId);
+            if (SDL_GetJoystickID(joystick) == SDL_GetJoystickID(SDL_GetGamepadJoystick(mController))) {
+                SDL_CloseJoystick(joystick);
+                SDL_free(joysticks);
+                return i;
+            }
             SDL_CloseJoystick(joystick);
-            return i;
         }
-        SDL_CloseJoystick(joystick);
+        SDL_free(joysticks);
     }
 
     // didn't find one

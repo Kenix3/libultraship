@@ -35,10 +35,17 @@ int32_t ControllerDisconnectedWindow::GetSDLIndexFromSDLInput() {
     int32_t sdlDeviceIndex = -1;
 
     std::unordered_map<int32_t, SDL_Gamepad*> sdlControllers;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGamepad(i)) {
-            sdlControllers[i] = SDL_OpenGamepad(i);
+
+    int i, numJoysticks;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                sdlControllers[i] = SDL_OpenGamepad(instanceId);
+            }
         }
+        SDL_free(joysticks);
     }
 
     for (auto [controllerIndex, controller] : sdlControllers) {
@@ -94,11 +101,17 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
         Hide();
     }
 
+    int i, numJoysticks;
     uint8_t connectedSdlControllerCount = 0;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGamepad(i)) {
-            connectedSdlControllerCount++;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                connectedSdlControllerCount++;
+            }
         }
+        SDL_free(joysticks);
     }
 
     if (connectedSdlControllerCount != 0 &&
@@ -115,11 +128,17 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
 void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected() {
     ImGui::Text("Controller(s) disconnected.");
 
+    int i, numJoysticks;
     uint8_t connectedSdlControllerCount = 0;
-    for (auto i = 0; i < SDL_NumJoysticks(); i++) {
-        if (SDL_IsGamepad(i)) {
-            connectedSdlControllerCount++;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+    if (joysticks) {
+        for (i = 0; i < numJoysticks; ++i) {
+            SDL_JoystickID instanceId = joysticks[i];
+            if (SDL_IsGamepad(instanceId)) {
+                connectedSdlControllerCount++;
+            }
         }
+        SDL_free(joysticks);
     }
 
     if (connectedSdlControllerCount != 0 &&

@@ -62,7 +62,9 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
         }
 
         auto controller = SDL_OpenGamepad(sdlIndex);
-        if (SDL_GameControllerHasLED(controller)) {
+        // todo: SDL_GameControllerHasLED() - replaced with SDL_PROP_GAMEPAD_CAP_RGB_LED_BOOLEAN
+        // if (SDL_GameControllerHasLED(controller)) {
+        if (false) {
             sdlControllersWithLEDs[lusIndex] = SDL_OpenGamepad(sdlIndex);
         } else {
             SDL_CloseGamepad(controller);

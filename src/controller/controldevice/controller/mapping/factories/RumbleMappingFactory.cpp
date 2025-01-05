@@ -82,7 +82,9 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
         }
 
         auto controller = SDL_OpenGamepad(sdlIndex);
-        bool hasRumble = SDL_GameControllerHasRumble(controller);
+        // todo: SDL_GameControllerHasRumble() - replaced with SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN
+        // bool hasRumble = SDL_GameControllerHasRumble(controller);
+        bool hasRumble = false;
 
         if (hasRumble) {
             sdlControllersWithRumble[lusIndex] = SDL_OpenGamepad(sdlIndex);

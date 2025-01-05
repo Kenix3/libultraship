@@ -14,7 +14,7 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
     *controllerBits = 0;
     status->status |= 1;
 
-    if (SDL_Init(SDL_INIT_GAMEPAD) != 0) {
+    if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
         SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
         exit(EXIT_FAILURE);
     }
