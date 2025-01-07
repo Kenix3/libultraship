@@ -176,6 +176,7 @@ target_link_libraries(libultraship
     PUBLIC ImGui
 )
 
+find_package(PNG REQUIRED)
 target_link_libraries(libultraship PUBLIC ${PNG_LIBRARY})
 
 target_link_libraries(libultraship PRIVATE stb)
