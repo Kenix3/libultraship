@@ -62,8 +62,7 @@ void Fast3dWindow::Init() {
     uint32_t width, height;
     int32_t posX, posY;
 
-    isFullscreen =
-        Ship::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", 0) || gameMode;
+    isFullscreen = Ship::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", 0) || gameMode;
     posX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", 100);
     posY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", 100);
 
@@ -163,7 +162,7 @@ uint32_t Fast3dWindow::GetWidth() {
     uint32_t width, height;
     int32_t posX, posY;
     mWindowManagerApi->get_dimensions(&width, &height, &posX, &posY);
-    return width; 
+    return width;
 }
 
 uint32_t Fast3dWindow::GetHeight() {
@@ -182,7 +181,8 @@ void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
     SetCurrentDimensions(width, height, GetPosX(), GetPosY());
 }
 
-void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                        int32_t posY) {
     auto conf = Ship::Context::GetInstance()->GetConfig();
     if (!isFullscreen) {
         conf->SetInt("Window.Width", (int32_t)width);

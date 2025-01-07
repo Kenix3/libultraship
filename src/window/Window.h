@@ -49,7 +49,8 @@ class Window {
     virtual void SetCurrentDimensions(uint32_t width, uint32_t height) = 0;
     virtual void SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) = 0;
     virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) = 0;
-    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) = 0;
+    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                      int32_t posY) = 0;
     virtual WindowRect GetPrimaryMonitorRect() = 0;
     virtual int32_t GetPosX() = 0;
     virtual int32_t GetPosY() = 0;
