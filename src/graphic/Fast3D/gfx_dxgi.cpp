@@ -149,21 +149,24 @@ void UpdateMonitorList() {
             } else {
                 isPrimary = FALSE;
             }
-
+            
             dxgi.monitor_list.push_back({ hmon, mi.rcMonitor, isPrimary });
             dxgi.monitor_rects.push_back(
-                { mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right, mi.rcMonitor.bottom });
+                { mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right, mi.rcMonitor.bottom}
+            );
             if (isPrimary) {
                 dxgi.primary_monitor_index = dxgi.monitor_rects.size() - 1;
             }
 
             return TRUE;
         },
-        (LPARAM) nullptr);
+        (LPARAM)nullptr
+    );
 }
 
 // Uses coordinates to get a Monitor handle from a list
-bool GetMonitorAtCoords(int x, int y, UINT cx, UINT cy, std::tuple<HMONITOR, RECT, BOOL>& MonitorInfo) {
+bool GetMonitorAtCoords(int x, int y, UINT cx, UINT cy,
+                        std::tuple<HMONITOR, RECT, BOOL>& MonitorInfo) {
     RECT wr = { x, y, (x + cx), (y + cy) };
     std::tuple<HMONITOR, RECT, BOOL> primary;
     for (std::tuple<HMONITOR, RECT, BOOL> i : dxgi.monitor_list) {
@@ -365,7 +368,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_SIZE:
             dxgi.current_width = LOWORD(l_param);
             dxgi.current_height = HIWORD(l_param);
-            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height, newMonitor);
+            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                               newMonitor);
             if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
                 dxgi.h_Monitor = newMonitor;
                 GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
@@ -374,7 +378,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOVE:
             dxgi.posX = GET_X_LPARAM(l_param);
             dxgi.posY = GET_Y_LPARAM(l_param);
-            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height, newMonitor);
+            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                               newMonitor);
             if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
                 dxgi.h_Monitor = newMonitor;
                 GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
@@ -453,7 +458,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DISPLAYCHANGE:
             UpdateMonitorList();
-            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height, dxgi.h_Monitor);
+            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                               dxgi.h_Monitor);
             GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             break;
         case WM_SETFOCUS:
@@ -523,7 +529,8 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     UpdateMonitorList();
     dxgi.posX = posX;
     dxgi.posY = posY;
-    if (!GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height, dxgi.h_Monitor)) {
+    if (!GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+                            dxgi.h_Monitor)) {
         dxgi.posX = 100;
         dxgi.posY = 100;
     }

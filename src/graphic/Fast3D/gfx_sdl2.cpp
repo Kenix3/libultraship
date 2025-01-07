@@ -223,6 +223,7 @@ const SDL_Scancode scancode_rmapping_nonextended[][2] = { { SDL_SCANCODE_KP_7, S
                                                           { SDL_SCANCODE_KP_PERIOD, SDL_SCANCODE_DELETE },
                                                           { SDL_SCANCODE_KP_MULTIPLY, SDL_SCANCODE_PRINTSCREEN } };
 
+
 static void apply_window_dimensions() {
     if (fullscreen_state) {
         SDL_DisplayMode mode;
@@ -242,7 +243,7 @@ static void apply_window_dimensions() {
             if (SDL_SetWindowDisplayMode(wnd, &mode) != 0) {
                 SPDLOG_ERROR("Failed to set SDL Window display Mode: ({})", SDL_GetError());
             }
-
+            
         } else {
             SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
         }
@@ -258,7 +259,7 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
 
     auto conf = Ship::Context::GetInstance()->GetConfig();
-    if (!on) {
+    if (!on)  {
         window_width = conf->GetInt("Window.Width", 640);
         window_height = conf->GetInt("Window.Height", 480);
         window_posx = conf->GetInt("Window.PositionX", 100);
@@ -532,7 +533,7 @@ static Ship::WindowRect gfx_sdl_get_primary_monitor_rect() {
     }
 
     if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-        return { 0, 0, mode.w, mode.h };
+        return {0, 0, mode.w, mode.h};
     } else {
         SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
     }
