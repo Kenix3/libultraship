@@ -24,11 +24,6 @@ struct GfxWindowManagerAPI {
     void (*set_mouse_capture)(bool capture);
     bool (*is_mouse_captured)();
     void (*get_dimensions)(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
-    void (*handle_events)();
-    bool (*start_frame)();
-    void (*swap_buffers_begin)();
-    void (*swap_buffers_end)();
-    double (*get_time)(); // For debug
     void (*set_dimensions)(uint32_t width, uint32_t height, int32_t posX, int32_t posY);
     Ship::WindowRect (*get_primary_monitor_rect)(void);
     void (*handle_events)(void);
