@@ -57,6 +57,8 @@ class Archive : public std::enable_shared_from_this<Archive> {
                                                                         std::shared_ptr<BinaryReader> headerReader);
     static std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
                                                                      std::shared_ptr<tinyxml2::XMLDocument> document);
+    static std::shared_ptr<ResourceInitData> ReadResourceInitDataPng(const std::string& filePath,
+                                                                     std::shared_ptr<BinaryReader> headerReader);
     std::shared_ptr<BinaryReader> CreateBinaryReader(std::shared_ptr<File> fileToLoad);
     std::shared_ptr<tinyxml2::XMLDocument> CreateXMLReader(std::shared_ptr<File> fileToLoad);
 

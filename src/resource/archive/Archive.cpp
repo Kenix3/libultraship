@@ -5,10 +5,12 @@
 #include "Context.h"
 #include "resource/File.h"
 #include "resource/ResourceLoader.h"
+#include "resource/ResourceType.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/glob.h"
 #include "utils/StrHash64.h"
 #include <nlohmann/json.hpp>
+#include <png.h>
 
 namespace Ship {
 Archive::Archive(const std::string& path)
@@ -142,8 +144,12 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::strin
 
 std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
                                                                       std::shared_ptr<File> fileToLoad) {
-    // Determine if file is binary or XML...
-    if (fileToLoad->Buffer->at(0) == '<') {
+    if (png_sig_cmp((const uint8_t*)fileToLoad->Buffer->data(), 0, 8) == 0) {
+        auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
+        auto binaryReader = std::make_shared<BinaryReader>(stream);
+
+        return ReadResourceInitDataPng(filePath, binaryReader);
+    } else if (fileToLoad->Buffer->at(0) == '<') { // Determine if file is binary or XML...
         // File is XML
         // Read the xml document
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
@@ -229,6 +235,7 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared
 
     switch (fileToLoad->InitData->Format) {
         case RESOURCE_FORMAT_BINARY:
+        case RESOURCE_FORMAT_PNG:
             fileToLoad->Reader = CreateBinaryReader(fileToLoad);
             break;
         case RESOURCE_FORMAT_XML:
@@ -264,7 +271,7 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataBinary(const std:
     resourceInitData->Path = filePath;
 
     if (headerReader == nullptr) {
-        SPDLOG_ERROR("Error reading OTR header from XML: No header buffer document for file {}", filePath);
+        SPDLOG_ERROR("Error reading OTR header from PNG: No header buffer document for file {}", filePath);
         return resourceInitData;
     }
 
@@ -317,6 +324,26 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataXml(const std::st
         Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(root->Name());
     resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
+    return resourceInitData;
+}
+
+std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataPng(const std::string& filePath,
+                                                                   std::shared_ptr<BinaryReader> headerReader) {
+    auto resourceInitData = CreateDefaultResourceInitData();
+    resourceInitData->Path = filePath;
+
+    if (headerReader == nullptr) {
+        SPDLOG_ERROR("Error reading OTR header from XML: No header buffer document for file {}", filePath);
+        return resourceInitData;
+    }
+
+    resourceInitData->IsCustom = true;
+    resourceInitData->Format = RESOURCE_FORMAT_PNG;
+    resourceInitData->Type =
+        Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType("Texture");
+    resourceInitData->ResourceVersion = 0;
+
+    headerReader->Seek(0, SeekOffsetType::Start);
     return resourceInitData;
 }
 

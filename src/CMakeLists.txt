@@ -176,6 +176,8 @@ target_link_libraries(libultraship
     PUBLIC ImGui
 )
 
+target_link_libraries(libultraship PUBLIC ${PNG_LIBRARY})
+
 target_link_libraries(libultraship PRIVATE stb)
 
 if (GFX_DEBUG_DISASSEMBLER)

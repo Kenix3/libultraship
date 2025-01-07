@@ -2,6 +2,9 @@ include(FetchContent)
 
 find_package(OpenGL QUIET)
 
+find_package(PNG REQUIRED)
+include_directories(${PNG_INCLUDE_DIR})
+
 # When using the Visual Studio generator, it is necessary to suppress stderr output entirely so it does not interrupt the patch command.
 # Redirecting to nul is used here instead of the `--quiet` flag, as that flag was only recently introduced in git 2.25.0 (Jan 2022)
 if (CMAKE_GENERATOR MATCHES "Visual Studio")

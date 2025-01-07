@@ -10,7 +10,7 @@ if (USE_AUTO_VCPKG)
 	endif()
 
 	vcpkg_bootstrap()
-	vcpkg_install_packages(zlib bzip2 sdl2 glew libzip nlohmann-json tinyxml2 spdlog)    
+	vcpkg_install_packages(zlib bzip2 sdl2 glew libzip libpng nlohmann-json tinyxml2 spdlog)    
 endif()
 
 #=================== ImGui ===================
