@@ -59,7 +59,6 @@ static bool (*on_key_up_callback)(int scancode);
 static void (*on_all_keys_up_callback)();
 static bool (*on_mouse_button_down_callback)(int btn);
 static bool (*on_mouse_button_up_callback)(int btn);
-static void (*on_all_keys_up_callback)(void);
 static void gfx_sdl_set_dimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY);
 
 #ifdef _WIN32
