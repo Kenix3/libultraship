@@ -49,6 +49,8 @@ static float mouse_wheel_y = 0.0f;
 // OTRTODO: These are redundant. Info can be queried from SDL.
 static int window_width = DESIRED_SCREEN_WIDTH;
 static int window_height = DESIRED_SCREEN_HEIGHT;
+static int window_posx = 100;
+static int window_posy = 100;
 static bool fullscreen_state;
 static bool is_running = true;
 static void (*on_fullscreen_changed_callback)(bool is_now_fullscreen);
@@ -57,6 +59,8 @@ static bool (*on_key_up_callback)(int scancode);
 static void (*on_all_keys_up_callback)();
 static bool (*on_mouse_button_down_callback)(int btn);
 static bool (*on_mouse_button_up_callback)(int btn);
+static void (*on_all_keys_up_callback)(void);
+static void gfx_sdl_set_dimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY);
 
 #ifdef _WIN32
 LONG_PTR SDL_WndProc;
@@ -220,45 +224,64 @@ const SDL_Scancode scancode_rmapping_nonextended[][2] = { { SDL_SCANCODE_KP_7, S
                                                           { SDL_SCANCODE_KP_PERIOD, SDL_SCANCODE_DELETE },
                                                           { SDL_SCANCODE_KP_MULTIPLY, SDL_SCANCODE_PRINTSCREEN } };
 
+
+static void apply_window_dimensions() {
+    if (fullscreen_state) {
+        SDL_DisplayMode mode;
+
+        int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+        if (display_in_use < 0) {
+            SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area? ({})", SDL_GetError());
+        }
+
+        if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
+            mode.w = window_width;
+            mode.h = window_height;
+            mode.driverdata = nullptr;
+            mode.format = 0;
+            mode.refresh_rate = 0;
+
+            if (SDL_SetWindowDisplayMode(wnd, &mode) != 0) {
+                SPDLOG_ERROR("Failed to set SDL Window display Mode: ({})", SDL_GetError());
+            }
+            
+        } else {
+            SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
+        }
+    } else {
+        SDL_SetWindowPosition(wnd, window_posx, window_posy);
+        SDL_SetWindowSize(wnd, window_width, window_height);
+    }
+}
+
 static void set_fullscreen(bool on, bool call_callback) {
     if (fullscreen_state == on) {
         return;
     }
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
-    if (display_in_use < 0) {
-        SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
-        SPDLOG_WARN(SDL_GetError());
-    }
 
-    if (on) {
-        // OTRTODO: Get mode from config.
-        SDL_DisplayMode mode;
-        if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-            SDL_SetWindowDisplayMode(wnd, &mode);
-        } else {
-            SPDLOG_ERROR(SDL_GetError());
-        }
-    } else {
-        auto conf = Ship::Context::GetInstance()->GetConfig();
+    auto conf = Ship::Context::GetInstance()->GetConfig();
+    if (!on)  {
         window_width = conf->GetInt("Window.Width", 640);
         window_height = conf->GetInt("Window.Height", 480);
-        int32_t posX = conf->GetInt("Window.PositionX", 100);
-        int32_t posY = conf->GetInt("Window.PositionY", 100);
-        if (display_in_use < 0) { // Fallback to default if out of bounds
-            posX = 100;
-            posY = 100;
-        }
-        SDL_SetWindowPosition(wnd, posX, posY);
-        SDL_SetWindowSize(wnd, window_width, window_height);
+        window_posx = conf->GetInt("Window.PositionX", 100);
+        window_posy = conf->GetInt("Window.PositionY", 100);
+    } else {
+        window_width = conf->GetInt("Window.Fullscreen.Width", 1920);
+        window_height = conf->GetInt("Window.Fullscreen.Height", 1080);
+        window_posx = 0;
+        window_posy = 0;
     }
+
+    SDL_SetCursor(SDL_DISABLE);
+    bool original_state = fullscreen_state;
+    fullscreen_state = on;
+    apply_window_dimensions();
     if (SDL_SetWindowFullscreen(wnd,
                                 on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
                                                                                       : SDL_WINDOW_FULLSCREEN)
-                                   : 0) >= 0) {
-        fullscreen_state = on;
-    } else {
-        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
-        SPDLOG_ERROR(SDL_GetError());
+                                   : 0) != 0) {
+        fullscreen_state = original_state;
+        SPDLOG_ERROR("Failed to switch from or to fullscreen mode {}.", SDL_GetError());
     }
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
@@ -311,9 +334,6 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
 
 static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
                          uint32_t height, int32_t posX, int32_t posY) {
-    window_width = width;
-    window_height = height;
-
 #if SDL_VERSION_ATLEAST(2, 24, 0)
     /* fix DPI scaling issues on Windows */
     SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
@@ -385,6 +405,8 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         posX = 100;
         posY = 100;
     }
+
+    gfx_sdl_set_dimensions(width, height, posX, posY);
 
     if (use_opengl) {
         SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
@@ -492,6 +514,31 @@ static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
     SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
+}
+
+static void gfx_sdl_set_dimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    window_width = width;
+    window_height = height;
+    window_posx = posX;
+    window_posy = posY;
+
+    apply_window_dimensions();
+}
+
+static Ship::WindowRect gfx_sdl_get_primary_monitor_rect() {
+    SDL_DisplayMode mode;
+
+    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    if (display_in_use < 0) {
+        SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area? ({})", SDL_GetError());
+    }
+
+    if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
+        return {0, 0, mode.w, mode.h};
+    } else {
+        SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
+    }
+    return { 0, 0, 0, 0 };
 }
 
 static int translate_scancode(int scancode) {
@@ -708,6 +755,8 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_set_mouse_capture,
                                        gfx_sdl_is_mouse_captured,
                                        gfx_sdl_get_dimensions,
+                                       gfx_sdl_set_dimensions,
+                                       gfx_sdl_get_primary_monitor_rect,
                                        gfx_sdl_handle_events,
                                        gfx_sdl_start_frame,
                                        gfx_sdl_swap_buffers_begin,

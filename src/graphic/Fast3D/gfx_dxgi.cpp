@@ -77,6 +77,8 @@ static struct {
     bool dropped_frame;
     std::tuple<HMONITOR, RECT, BOOL> h_Monitor; // 0: Handle, 1: Display Monitor Rect, 2: Is_Primary
     std::vector<std::tuple<HMONITOR, RECT, BOOL>> monitor_list;
+    std::vector<Ship::WindowRect> monitor_rects;
+    size_t primary_monitor_index;
     bool zero_latency;
     double detected_hz;
     double display_period; // (1000 / dxgi.detected_hz) in ms
@@ -128,37 +130,46 @@ static void apply_maximum_frame_latency(bool first) {
     dxgi.applied_maximum_frame_latency = dxgi.maximum_frame_latency;
 }
 
-std::vector<std::tuple<HMONITOR, RECT, BOOL>> GetMonitorList() {
-    std::vector<std::tuple<HMONITOR, RECT, BOOL>> monitors;
+void UpdateMonitorList() {
+    dxgi.monitor_list.clear();
+    dxgi.monitor_rects.clear();
     EnumDisplayMonitors(
         nullptr, nullptr,
         [](HMONITOR hmon, HDC hdc, LPRECT rc, LPARAM lp) {
             UNREFERENCED_PARAMETER(hdc);
             UNREFERENCED_PARAMETER(rc);
+            UNREFERENCED_PARAMETER(lp);
 
             bool isPrimary;
             MONITORINFOEX mi = {};
             mi.cbSize = sizeof(MONITORINFOEX);
             GetMonitorInfo(hmon, &mi);
-            auto monitors = (std::vector<std::tuple<HMONITOR, RECT, BOOL>>*)lp;
             if (mi.dwFlags == MONITORINFOF_PRIMARY) {
                 isPrimary = TRUE;
             } else {
                 isPrimary = FALSE;
             }
-            monitors->push_back({ hmon, mi.rcMonitor, isPrimary });
+            
+            dxgi.monitor_list.push_back({ hmon, mi.rcMonitor, isPrimary });
+            dxgi.monitor_rects.push_back(
+                { mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right, mi.rcMonitor.bottom}
+            );
+            if (isPrimary) {
+                dxgi.primary_monitor_index = dxgi.monitor_rects.size() - 1;
+            }
+
             return TRUE;
         },
-        (LPARAM)&monitors);
-    return monitors;
+        (LPARAM)nullptr
+    );
 }
 
 // Uses coordinates to get a Monitor handle from a list
-bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorList, int x, int y, UINT cx, UINT cy,
+bool GetMonitorAtCoords(int x, int y, UINT cx, UINT cy,
                         std::tuple<HMONITOR, RECT, BOOL>& MonitorInfo) {
     RECT wr = { x, y, (x + cx), (y + cy) };
     std::tuple<HMONITOR, RECT, BOOL> primary;
-    for (std::tuple<HMONITOR, RECT, BOOL> i : MonitorList) {
+    for (std::tuple<HMONITOR, RECT, BOOL> i : dxgi.monitor_list) {
         if (PtInRect(&get<1>(i), POINT((x + (cx / 2)), (y + (cy / 2))))) {
             MonitorInfo = i;
             return true;
@@ -171,7 +182,7 @@ bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorLis
     LONG area;
     LONG lastArea = 0;
     std::tuple<HMONITOR, RECT, BOOL> biggest;
-    for (std::tuple<HMONITOR, RECT, BOOL> i : MonitorList) {
+    for (std::tuple<HMONITOR, RECT, BOOL> i : dxgi.monitor_list) {
         if (IntersectRect(&intersection, &get<1>(i), &wr)) {
             area = (intersection.right - intersection.left) * (intersection.bottom - intersection.top);
             if (area > lastArea) {
@@ -188,6 +199,34 @@ bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorLis
     return false;
 }
 
+static void apply_window_dimensions() {
+    RECT wr = { dxgi.posX, dxgi.posY, dxgi.posX + static_cast<int32_t>(dxgi.current_width),
+                dxgi.posY + static_cast<int32_t>(dxgi.current_height) };
+    if (!dxgi.is_full_screen) {
+        // Set in window mode with the last saved position and size
+        SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
+
+        if (dxgi.last_maximized_state) {
+            SetWindowPos(dxgi.h_wnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
+            ShowWindow(dxgi.h_wnd, SW_MAXIMIZE);
+        } else {
+            AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+            SetWindowPos(dxgi.h_wnd, NULL, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+            ShowWindow(dxgi.h_wnd, SW_RESTORE);
+        }
+    } else {
+        // Save if window is maximized or not
+        WINDOWPLACEMENT window_placement;
+        window_placement.length = sizeof(WINDOWPLACEMENT);
+        GetWindowPlacement(dxgi.h_wnd, &window_placement);
+        dxgi.last_maximized_state = window_placement.showCmd == SW_SHOWMAXIMIZED;
+
+        // Set borderless full screen to that monitor
+        SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
+        SetWindowPos(dxgi.h_wnd, HWND_TOP, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+    }
+}
+
 static void toggle_borderless_window_full_screen(bool enable, bool call_callback) {
     // Windows 7 + flip mode + waitable object can't go to exclusive fullscreen,
     // so do borderless instead. If DWM is enabled, this means we get one monitor
@@ -198,52 +237,37 @@ static void toggle_borderless_window_full_screen(bool enable, bool call_callback
         return;
     }
 
-    if (!enable) {
-        // Set in window mode with the last saved position and size
-        SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
+    auto conf = Ship::Context::GetInstance()->GetConfig();
 
-        if (dxgi.last_maximized_state) {
-            SetWindowPos(dxgi.h_wnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
-            ShowWindow(dxgi.h_wnd, SW_MAXIMIZE);
-        } else {
+    if (!enable) {
+        if (!dxgi.last_maximized_state) {
             std::tuple<HMONITOR, RECT, BOOL> Monitor;
-            auto conf = Ship::Context::GetInstance()->GetConfig();
             dxgi.current_width = conf->GetInt("Window.Width", 640);
             dxgi.current_height = conf->GetInt("Window.Height", 480);
             dxgi.posX = conf->GetInt("Window.PositionX", 100);
             dxgi.posY = conf->GetInt("Window.PositionY", 100);
-            if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+            if (!GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                     Monitor)) { // Fallback to default when out of bounds.
                 dxgi.posX = 100;
                 dxgi.posY = 100;
             }
-            RECT wr = { dxgi.posX, dxgi.posY, dxgi.posX + static_cast<int32_t>(dxgi.current_width),
-                        dxgi.posY + static_cast<int32_t>(dxgi.current_height) };
-            AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
-            SetWindowPos(dxgi.h_wnd, NULL, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
-            ShowWindow(dxgi.h_wnd, SW_RESTORE);
         }
-
-        dxgi.is_full_screen = false;
     } else {
+        dxgi.current_width = conf->GetInt("Window.Fullscreen.Width", 1920);
+        dxgi.current_height = conf->GetInt("Window.Fullscreen.Height", 1080);
+        dxgi.posX = 0;
+        dxgi.posY = 0;
+
         // Save if window is maximized or not
         WINDOWPLACEMENT window_placement;
         window_placement.length = sizeof(WINDOWPLACEMENT);
         GetWindowPlacement(dxgi.h_wnd, &window_placement);
         dxgi.last_maximized_state = window_placement.showCmd == SW_SHOWMAXIMIZED;
-
-        // We already know on what monitor we are (gets it on init or move)
-        // Get info from that monitor
-        RECT r = get<1>(dxgi.h_Monitor);
-
-        // Set borderless full screen to that monitor
-        SetWindowLongPtr(dxgi.h_wnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
-        // OTRTODO: This should be setting the resolution from config.
-        dxgi.current_width = r.right - r.left;
-        dxgi.current_height = r.bottom - r.top;
-        SetWindowPos(dxgi.h_wnd, HWND_TOP, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_FRAMECHANGED);
-        dxgi.is_full_screen = true;
     }
+
+    dxgi.is_full_screen = enable;
+
+    apply_window_dimensions();
 
     if (dxgi.on_fullscreen_changed != nullptr && call_callback) {
         dxgi.on_fullscreen_changed(enable);
@@ -344,7 +368,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_SIZE:
             dxgi.current_width = LOWORD(l_param);
             dxgi.current_height = HIWORD(l_param);
-            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                newMonitor);
             if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
                 dxgi.h_Monitor = newMonitor;
@@ -354,7 +378,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOVE:
             dxgi.posX = GET_X_LPARAM(l_param);
             dxgi.posY = GET_Y_LPARAM(l_param);
-            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                newMonitor);
             if (get<0>(newMonitor) != get<0>(dxgi.h_Monitor)) {
                 dxgi.h_Monitor = newMonitor;
@@ -433,8 +457,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
 
             break;
         case WM_DISPLAYCHANGE:
-            dxgi.monitor_list = GetMonitorList();
-            GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+            UpdateMonitorList();
+            GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                dxgi.h_Monitor);
             GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
             break;
@@ -502,10 +526,10 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
     dxgi.current_width = wr.right - wr.left;
     dxgi.current_height = wr.bottom - wr.top;
-    dxgi.monitor_list = GetMonitorList();
+    UpdateMonitorList();
     dxgi.posX = posX;
     dxgi.posY = posY;
-    if (!GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
+    if (!GetMonitorAtCoords(dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                             dxgi.h_Monitor)) {
         dxgi.posX = 100;
         dxgi.posY = 100;
@@ -641,6 +665,19 @@ static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* 
     *height = dxgi.current_height;
     *posX = dxgi.posX;
     *posY = dxgi.posY;
+}
+
+static void gfx_dxgi_set_dimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    dxgi.current_width = width;
+    dxgi.current_height = height;
+    dxgi.posX = posX;
+    dxgi.posY = posY;
+
+    apply_window_dimensions();
+}
+
+static Ship::WindowRect gfx_dxgi_get_primary_monitor_rect() {
+    return dxgi.monitor_rects[dxgi.primary_monitor_index];
 }
 
 static void gfx_dxgi_handle_events() {
@@ -1057,6 +1094,8 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_set_mouse_capture,
                                                        gfx_dxgi_is_mouse_captured,
                                                        gfx_dxgi_get_dimensions,
+                                                       gfx_dxgi_set_dimensions,
+                                                       gfx_dxgi_get_primary_monitor_rect,
                                                        gfx_dxgi_handle_events,
                                                        gfx_dxgi_start_frame,
                                                        gfx_dxgi_swap_buffers_begin,

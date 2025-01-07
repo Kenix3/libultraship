@@ -1,6 +1,7 @@
 #ifndef GFX_WINDOW_MANAGER_API_H
 #define GFX_WINDOW_MANAGER_API_H
 
+#include "window/Window.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -28,6 +29,13 @@ struct GfxWindowManagerAPI {
     void (*swap_buffers_begin)();
     void (*swap_buffers_end)();
     double (*get_time)(); // For debug
+    void (*set_dimensions)(uint32_t width, uint32_t height, int32_t posX, int32_t posY);
+    Ship::WindowRect (*get_primary_monitor_rect)(void);
+    void (*handle_events)(void);
+    bool (*start_frame)(void);
+    void (*swap_buffers_begin)(void);
+    void (*swap_buffers_end)(void);
+    double (*get_time)(void); // For debug
     void (*set_target_fps)(int fps);
     void (*set_maximum_frame_latency)(int latency);
     const char* (*get_key_name)(int scancode);

@@ -62,13 +62,14 @@ void Fast3dWindow::Init() {
     uint32_t width, height;
     int32_t posX, posY;
 
-    isFullscreen = Ship::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || gameMode;
+    isFullscreen =
+        Ship::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", 0) || gameMode;
     posX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", 100);
     posY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", 100);
 
     if (isFullscreen) {
-        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
-        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
+        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", 1920);
+        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", 1080);
     } else {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
@@ -162,7 +163,7 @@ uint32_t Fast3dWindow::GetWidth() {
     uint32_t width, height;
     int32_t posX, posY;
     mWindowManagerApi->get_dimensions(&width, &height, &posX, &posY);
-    return width;
+    return width; 
 }
 
 uint32_t Fast3dWindow::GetHeight() {
@@ -170,6 +171,39 @@ uint32_t Fast3dWindow::GetHeight() {
     int32_t posX, posY;
     mWindowManagerApi->get_dimensions(&width, &height, &posX, &posY);
     return height;
+}
+
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    mWindowManagerApi->set_dimensions(width, height, posX, posY);
+    SaveWindowToConfig();
+}
+
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
+    SetCurrentDimensions(width, height, GetPosX(), GetPosY());
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    auto conf = Ship::Context::GetInstance()->GetConfig();
+    if (!isFullscreen) {
+        conf->SetInt("Window.Width", (int32_t)width);
+        conf->SetInt("Window.Height", (int32_t)height);
+        conf->SetInt("Window.PositionX", posX);
+        conf->SetInt("Window.PositionY", posY);
+    } else {
+        conf->SetInt("Window.Fullscreen.Width", (int32_t)width);
+        conf->SetInt("Window.Fullscreen.Height", (int32_t)height);
+    }
+    mWindowManagerApi->set_fullscreen(isFullscreen);
+    mWindowManagerApi->set_dimensions(width, height, posX, posY);
+    SaveWindowToConfig();
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) {
+    SetCurrentDimensions(isFullscreen, width, height, GetPosX(), GetPosY());
+}
+
+Ship::WindowRect Fast3dWindow::GetPrimaryMonitorRect() {
+    return mWindowManagerApi->get_primary_monitor_rect();
 }
 
 int32_t Fast3dWindow::GetPosX() {
@@ -248,8 +282,8 @@ void Fast3dWindow::SetMsaaLevel(uint32_t value) {
 }
 
 void Fast3dWindow::SetFullscreen(bool isFullscreen) {
-    SaveWindowToConfig();
     mWindowManagerApi->set_fullscreen(isFullscreen);
+    SaveWindowToConfig();
 }
 
 bool Fast3dWindow::IsFullscreen() {
