@@ -2,7 +2,6 @@
 #include "resource/type/Texture.h"
 #include "spdlog/spdlog.h"
 
-#include <png.h>
 #include <stb_image.h>
 
 namespace Fast {

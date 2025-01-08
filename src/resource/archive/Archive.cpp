@@ -10,7 +10,6 @@
 #include "utils/glob.h"
 #include "utils/StrHash64.h"
 #include <nlohmann/json.hpp>
-#include <png.h>
 
 namespace Ship {
 Archive::Archive(const std::string& path)
