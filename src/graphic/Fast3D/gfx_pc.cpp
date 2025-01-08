@@ -21,7 +21,7 @@
 #endif
 #include "graphic/Fast3D/debug/GfxDebugger.h"
 #include "libultraship/libultra/types.h"
-//#include "libultraship/libultra/gs2dex.h"
+// #include "libultraship/libultra/gs2dex.h"
 #include <string>
 
 #include "gfx_pc.h"
@@ -49,11 +49,11 @@ using namespace std;
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
-#define SCALE_5_8(VAL_) (((VAL_)*0xFF) / 0x1F)
+#define SCALE_5_8(VAL_) (((VAL_) * 0xFF) / 0x1F)
 #define SCALE_8_5(VAL_) ((((VAL_) + 4) * 0x1F) / 0xFF)
-#define SCALE_4_8(VAL_) ((VAL_)*0x11)
+#define SCALE_4_8(VAL_) ((VAL_) * 0x11)
 #define SCALE_8_4(VAL_) ((VAL_) / 0x11)
-#define SCALE_3_8(VAL_) ((VAL_)*0x24)
+#define SCALE_3_8(VAL_) ((VAL_) * 0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
 // Based off the current set native dimensions or active framebuffer
@@ -2564,7 +2564,7 @@ static void gfx_s2dex_bg_copy(F3DuObjBg* bg) {
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
         rawTexMetadata.resource = tex;
-        data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+        data = (uintptr_t)reinterpret_cast<char*>(tex->ImageData);
     }
 
     s16 dsdx = 4 << 10;
@@ -2603,7 +2603,7 @@ static void gfx_s2dex_bg_1cyc(F3DuObjBg* bg) {
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
         rawTexMetadata.resource = tex;
-        data = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+        data = (uintptr_t)reinterpret_cast<char*>(tex->ImageData);
     }
 
     // TODO: Implement bg scaling correctly
@@ -3305,7 +3305,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
                 return false;
             }
 
-            i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+            i = (uintptr_t)reinterpret_cast<char*>(tex->ImageData);
             texFlags = tex->Flags;
             rawTexMetdata.width = tex->Width;
             rawTexMetdata.height = tex->Height;
