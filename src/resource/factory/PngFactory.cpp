@@ -17,7 +17,7 @@ void user_warning_fn(png_structp png_ptr, png_const_charp warning_msg) {
 }
 }
 
-std::shared_ptr<Ship::IResource> ResourceFactoryPngTexture::ReadResource(std::shared_ptr<Ship::File> file) {
+std::shared_ptr<Ship::IResource> ResourceFactoryImageTexture::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }

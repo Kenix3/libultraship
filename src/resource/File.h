@@ -14,7 +14,7 @@ class Archive;
 
 #define RESOURCE_FORMAT_BINARY 0
 #define RESOURCE_FORMAT_XML 1
-#define RESOURCE_FORMAT_PNG 2
+#define RESOURCE_FORMAT_IMG 2
 
 struct ResourceInitData {
     std::shared_ptr<Archive> Parent;

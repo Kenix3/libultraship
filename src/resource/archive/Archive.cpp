@@ -272,7 +272,7 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataBinary(const std:
     resourceInitData->Path = filePath;
 
     if (headerReader == nullptr) {
-        SPDLOG_ERROR("Error reading OTR header from PNG: No header buffer document for file {}", filePath);
+        SPDLOG_ERROR("Error reading OTR header from Binary: No header buffer document for file {}", filePath);
         return resourceInitData;
     }
 

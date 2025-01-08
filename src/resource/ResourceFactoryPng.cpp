@@ -4,7 +4,7 @@
 
 namespace Ship {
 bool ResourceFactoryPng::FileHasValidFormatAndReader(std::shared_ptr<File> file) {
-    if (file->InitData->Format != RESOURCE_FORMAT_PNG) {
+    if (file->InitData->Format != RESOURCE_FORMAT_IMG) {
         SPDLOG_ERROR("resource file format does not match factory format.");
         return false;
     }
