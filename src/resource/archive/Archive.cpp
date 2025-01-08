@@ -236,7 +236,7 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared
 
     switch (fileToLoad->InitData->Format) {
         case RESOURCE_FORMAT_BINARY:
-        case RESOURCE_FORMAT_PNG:
+        case RESOURCE_FORMAT_IMG:
             fileToLoad->Reader = CreateBinaryReader(fileToLoad);
             break;
         case RESOURCE_FORMAT_XML:
@@ -339,7 +339,7 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataPng(const std::st
     }
 
     resourceInitData->IsCustom = true;
-    resourceInitData->Format = RESOURCE_FORMAT_PNG;
+    resourceInitData->Format = RESOURCE_FORMAT_IMG;
     resourceInitData->Type =
         Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType("Texture");
     resourceInitData->ResourceVersion = 0;

@@ -1,10 +1,10 @@
-#include "ResourceFactoryPng.h"
+#include "ResourceFactoryImg.h"
 #include <variant>
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-bool ResourceFactoryPng::FileHasValidFormatAndReader(std::shared_ptr<File> file) {
-    if (file->InitData->Format != RESOURCE_FORMAT_PNG) {
+bool ResourceFactoryImg::FileHasValidFormatAndReader(std::shared_ptr<File> file) {
+    if (file->InitData->Format != RESOURCE_FORMAT_IMG) {
         SPDLOG_ERROR("resource file format does not match factory format.");
         return false;
     }
