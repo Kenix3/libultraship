@@ -879,6 +879,19 @@ static void import_texture_ci8(int tile, bool importReplacement) {
     gfx_rapi->upload_texture(tex_upload_buffer, width, height);
 }
 
+static void import_texture_img(int tile, bool importReplacement) {
+    const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const uint8_t* addr =
+        importReplacement && (metadata->resource != nullptr)
+            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
+                  ->second.replacementData
+            : g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].addr;
+
+    uint16_t width = metadata->width;
+    uint16_t height = metadata->height;
+    gfx_rapi->upload_texture(addr, width, height);
+}
+
 static void import_texture_raw(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &g_rdp.loaded_texture[g_rdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
@@ -979,6 +992,11 @@ static void import_texture(int i, int tile, bool importReplacement) {
     }
 
     if (gfx_texture_cache_lookup(i, key)) {
+        return;
+    }
+
+    if ((texFlags & TEX_FLAG_LOAD_AS_IMG) != 0) {
+        import_texture_img(tile, importReplacement);
         return;
     }
 

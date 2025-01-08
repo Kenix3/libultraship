@@ -144,7 +144,8 @@ std::shared_ptr<ResourceInitData> Archive::ReadResourceInitData(const std::strin
 
 std::shared_ptr<ResourceInitData> Archive::ReadResourceInitDataLegacy(const std::string& filePath,
                                                                       std::shared_ptr<File> fileToLoad) {
-    if (png_sig_cmp((const uint8_t*)fileToLoad->Buffer->data(), 0, 8) == 0) {
+    if (stbi_info_from_memory((const uint8_t*)fileToLoad->Buffer->data(), fileToLoad->Buffer->size(), nullptr, nullptr,
+                              nullptr) != 0) {
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
         auto binaryReader = std::make_shared<BinaryReader>(stream);
 
