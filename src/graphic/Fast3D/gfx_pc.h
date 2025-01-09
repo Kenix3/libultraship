@@ -235,6 +235,7 @@ void gfx_start_frame();
 
 // Since this function is "exposted" to the games, it needs to take a normal Gfx
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
+void gfx_handle_window_events();
 bool gfx_is_frame_ready();
 void gfx_end_frame();
 void gfx_set_target_ucode(UcodeHandlers ucode);

@@ -4123,12 +4123,15 @@ struct GfxRenderingAPI* gfx_get_current_rendering_api() {
     return gfx_rapi;
 }
 
+void gfx_handle_window_events() {
+    gfx_wapi->handle_events();
+}
+
 bool gfx_is_frame_ready() {
     return gfx_wapi->is_frame_ready();
 }
 
 void gfx_start_frame() {
-    gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
                              &gfx_current_window_position_x, &gfx_current_window_position_y);
     if (gfx_current_dimensions.height == 0) {

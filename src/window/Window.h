@@ -37,6 +37,7 @@ class Window {
     virtual void StartFrame() = 0;
     virtual void EndFrame() = 0;
     virtual bool IsFrameReady() = 0;
+    virtual void HandleEvents() = 0;
     virtual void SetCursorVisibility(bool visible) = 0;
     virtual uint32_t GetWidth() = 0;
     virtual uint32_t GetHeight() = 0;

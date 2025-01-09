@@ -159,6 +159,10 @@ bool Fast3dWindow::IsFrameReady() {
     return mWindowManagerApi->is_frame_ready();
 }
 
+void Fast3dWindow::HandleEvents() {
+    mWindowManagerApi->handle_events();
+}
+
 void Fast3dWindow::SetCursorVisibility(bool visible) {
     mWindowManagerApi->set_cursor_visibility(visible);
 }
