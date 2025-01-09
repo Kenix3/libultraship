@@ -77,6 +77,7 @@ class Gui {
     void SetupRendererFrame();
     void SaveConsoleVariablesNextFrame();
     bool SupportsViewports();
+    ImGuiID GetMainGameWindowID();
 
     void AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow);
     std::shared_ptr<GuiWindow> GetGuiWindow(const std::string& name);
@@ -86,7 +87,7 @@ class Gui {
 
     void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
     bool HasTextureByName(const std::string& name);
-    void LoadGuiTexture(const std::string& name, const LUS::Texture& tex, const ImVec4& tint);
+    void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint);
     void UnloadTexture(const std::string& name);
     ImTextureID GetTextureByName(const std::string& name);
     ImVec2 GetTextureSize(const std::string& name);
@@ -98,6 +99,8 @@ class Gui {
     void SetMenu(std::shared_ptr<GuiWindow> menu);
     std::shared_ptr<GuiWindow> GetMenu();
     bool GetMenuOrMenubarVisible();
+    bool IsMouseOverAnyGuiItem();
+    bool IsMouseOverActivePopup();
 
     bool GamepadNavigationEnabled();
     void BlockGamepadNavigation();
@@ -120,6 +123,7 @@ class Gui {
     void ApplyResolutionChanges();
     int16_t GetIntegerScaleFactor();
     void CheckSaveCvars();
+    void HandleMouseCapture();
 
   private:
     GuiWindowInitData mImpl;

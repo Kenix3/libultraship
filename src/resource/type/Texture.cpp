@@ -1,6 +1,6 @@
 #include "resource/type/Texture.h"
 
-namespace LUS {
+namespace Fast {
 Texture::Texture() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
 }
 
@@ -17,4 +17,4 @@ Texture::~Texture() {
         delete ImageData;
     }
 }
-} // namespace LUS
+} // namespace Fast

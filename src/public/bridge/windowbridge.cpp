@@ -4,31 +4,31 @@
 
 extern "C" {
 
-uint32_t WindowGetWidth(void) {
+uint32_t WindowGetWidth() {
     return Ship::Context::GetInstance()->GetWindow()->GetWidth();
 }
 
-uint32_t WindowGetHeight(void) {
+uint32_t WindowGetHeight() {
     return Ship::Context::GetInstance()->GetWindow()->GetHeight();
 }
 
-float WindowGetAspectRatio(void) {
+float WindowGetAspectRatio() {
     return Ship::Context::GetInstance()->GetWindow()->GetCurrentAspectRatio();
 }
 
-bool WindowIsRunning(void) {
+bool WindowIsRunning() {
     return Ship::Context::GetInstance()->GetWindow()->IsRunning();
 }
 
-int32_t WindowGetPosX(void) {
+int32_t WindowGetPosX() {
     return Ship::Context::GetInstance()->GetWindow()->GetPosX();
 }
 
-int32_t WindowGetPosY(void) {
+int32_t WindowGetPosY() {
     return Ship::Context::GetInstance()->GetWindow()->GetPosY();
 }
 
-bool WindowIsFullscreen(void) {
+bool WindowIsFullscreen() {
     return Ship::Context::GetInstance()->GetWindow()->IsFullscreen();
 }
 }

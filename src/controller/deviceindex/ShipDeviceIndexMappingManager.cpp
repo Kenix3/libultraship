@@ -13,6 +13,9 @@
 
 namespace Ship {
 ShipDeviceIndexMappingManager::ShipDeviceIndexMappingManager() : mIsInitialized(false) {
+#if _WIN32
+    SDL_SetHintWithPriority(SDL_HINT_JOYSTICK_WGI, "0", SDL_HINT_DEFAULT);
+#endif
     UpdateControllerNamesFromConfig();
 }
 
@@ -409,6 +412,8 @@ void ShipDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectSinglePlayer(i
 }
 
 void ShipDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectMultiplayer(int32_t sdlJoystickInstanceId) {
+    auto portIndexOfPhysicalDeviceThatHasBeenDisconnected =
+        GetPortIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
     auto lusIndexOfPhysicalDeviceThatHasBeenDisconnected =
         GetShipDeviceIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId);
 
@@ -439,7 +444,7 @@ void ShipDeviceIndexMappingManager::HandlePhysicalDeviceDisconnectMultiplayer(in
                 Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Disconnected"));
             if (controllerDisconnectedWindow != nullptr) {
                 controllerDisconnectedWindow->SetPortIndexOfDisconnectedController(
-                    GetPortIndexOfDisconnectedPhysicalDevice(sdlJoystickInstanceId));
+                    portIndexOfPhysicalDeviceThatHasBeenDisconnected);
                 controllerDisconnectedWindow->Show();
             }
             continue;

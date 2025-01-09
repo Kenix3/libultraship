@@ -8,7 +8,7 @@ SDLAudioPlayer::~SDLAudioPlayer() {
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
-bool SDLAudioPlayer::DoInit(void) {
+bool SDLAudioPlayer::DoInit() {
     if (SDL_Init(SDL_INIT_AUDIO) != 0) {
         SPDLOG_ERROR("SDL init error: %s\n", SDL_GetError());
         return false;
@@ -29,7 +29,7 @@ bool SDLAudioPlayer::DoInit(void) {
     return true;
 }
 
-int SDLAudioPlayer::Buffered(void) {
+int SDLAudioPlayer::Buffered() {
     // 4 is sizeof(int16_t) * num_channels (2 for stereo)
     return SDL_GetQueuedAudioSize(mDevice) / 4;
 }

@@ -1,6 +1,6 @@
 #include "Light.h"
 
-namespace LUS {
+namespace Fast {
 LightEntry* Light::GetPointer() {
     return &mLight;
 }
@@ -8,4 +8,4 @@ LightEntry* Light::GetPointer() {
 size_t Light::GetPointerSize() {
     return sizeof(mLight);
 }
-} // namespace LUS
+} // namespace Fast

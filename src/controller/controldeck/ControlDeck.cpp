@@ -9,19 +9,12 @@
 #endif
 #include <imgui.h>
 #include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
+#include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : mPads(nullptr), mSinglePlayerMappingMode(false) {
-    for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPorts.push_back(std::make_shared<ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
-    }
-
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : mSinglePlayerMappingMode(false) {
     mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
-}
-
-ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
 }
 
 ControlDeck::~ControlDeck() {
@@ -41,6 +34,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     // if we don't have a config for controller 1, set default keyboard bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Keyboard);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Mouse);
     }
 
     Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
@@ -59,6 +53,19 @@ bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancod
     return result;
 }
 
+bool ControlDeck::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
+    bool result = false;
+    for (auto port : mPorts) {
+        auto controller = port->GetConnectedController();
+
+        if (controller != nullptr) {
+            result = controller->ProcessMouseButtonEvent(isPressed, button) || result;
+        }
+    }
+
+    return result;
+}
+
 bool ControlDeck::AllGameInputBlocked() {
     return !mGameInputBlockers.empty();
 }
@@ -71,29 +78,21 @@ bool ControlDeck::GamepadGameInputBlocked() {
 
 bool ControlDeck::KeyboardGameInputBlocked() {
     // block keyboard input when typing in imgui
-    return AllGameInputBlocked() || ImGui::GetIO().WantCaptureKeyboard;
+    ImGuiWindow* activeIDWindow = ImGui::GetCurrentContext()->ActiveIdWindow;
+    return AllGameInputBlocked() ||
+           (activeIDWindow != NULL &&
+            activeIDWindow->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID()) ||
+           ImGui::GetTopMostPopupModal() != NULL; // ImGui::GetIO().WantCaptureKeyboard, but ActiveId check altered
 }
 
-void ControlDeck::WriteToPad(OSContPad* pad) {
-    SDL_PumpEvents();
-
-    if (AllGameInputBlocked()) {
-        return;
+bool ControlDeck::MouseGameInputBlocked() {
+    // block mouse input when user interacting with gui
+    ImGuiWindow* window = ImGui::GetCurrentContext()->HoveredWindow;
+    if (window == NULL) {
+        return true;
     }
-
-    mPads = pad;
-
-    for (size_t i = 0; i < mPorts.size(); i++) {
-        const std::shared_ptr<Controller> controller = mPorts[i]->GetConnectedController();
-
-        if (controller != nullptr) {
-            controller->ReadToPad(&pad[i]);
-        }
-    }
-}
-
-OSContPad* ControlDeck::GetPads() {
-    return mPads;
+    return AllGameInputBlocked() ||
+           (window->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID());
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
@@ -120,3 +119,42 @@ bool ControlDeck::IsSinglePlayerMappingMode() {
     return mSinglePlayerMappingMode;
 }
 } // namespace Ship
+
+namespace LUS {
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : Ship::ControlDeck(additionalBitmasks), mPads(nullptr) {
+    for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
+        mPorts.push_back(std::make_shared<Ship::ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
+    }
+}
+
+ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
+}
+
+OSContPad* ControlDeck::GetPads() {
+    return mPads;
+}
+
+void ControlDeck::WriteToPad(void* pad) {
+    WriteToOSContPad((OSContPad*)pad);
+}
+
+void ControlDeck::WriteToOSContPad(OSContPad* pad) {
+    SDL_PumpEvents();
+    Ship::WheelHandler::GetInstance()->Update();
+
+    if (AllGameInputBlocked()) {
+        return;
+    }
+
+    mPads = pad;
+
+    for (size_t i = 0; i < mPorts.size(); i++) {
+        const std::shared_ptr<Ship::Controller> controller = mPorts[i]->GetConnectedController();
+
+        if (controller != nullptr) {
+            controller->ReadToPad(&pad[i]);
+        }
+    }
+}
+} // namespace LUS

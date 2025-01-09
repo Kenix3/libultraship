@@ -13,12 +13,14 @@ namespace Ship {
 struct File;
 struct ResourceInitData;
 
-class Archive {
+class Archive : public std::enable_shared_from_this<Archive> {
     friend class ArchiveManager;
 
   public:
     Archive(const std::string& path);
     ~Archive();
+
+    bool operator==(const Archive& rhs) const;
 
     void Load();
     void Unload();

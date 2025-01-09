@@ -3,16 +3,19 @@
 #include "controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
 
+#include "Context.h"
+
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
-    : mPortIndex(portIndex), mBitmask(bitmask), mUseKeydownEventToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN) {
+    : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
 }
 
 ControllerButton::~ControllerButton() {
@@ -175,9 +178,18 @@ bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
-    mUseKeydownEventToCreateNewMapping = true;
+    mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
+    }
+
+    else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
+             Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
+        if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
+            mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
+        } else {
+            mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask);
+        }
     }
 
     if (mapping == nullptr) {
@@ -189,7 +201,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     }
 
     mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
-    mUseKeydownEventToCreateNewMapping = false;
+    mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
+    mUseEventInputToCreateNewMapping = false;
 
     if (id != "") {
         ClearButtonMapping(id);
@@ -206,9 +219,13 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 }
 
 bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
-    if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
-        mKeyboardScancodeForNewMapping = scancode;
-        return true;
+    if (mUseEventInputToCreateNewMapping) {
+        if (eventType == LUS_KB_EVENT_KEY_DOWN) {
+            mKeyboardScancodeForNewMapping = scancode;
+            return true;
+        } else {
+            mKeyboardScancodeForNewMapping = LUS_KB_UNKNOWN;
+        }
     }
 
     bool result = false;
@@ -218,6 +235,29 @@ bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode sc
                 std::dynamic_pointer_cast<KeyboardKeyToButtonMapping>(mapping);
             if (ktobMapping != nullptr) {
                 result = result || ktobMapping->ProcessKeyboardEvent(eventType, scancode);
+            }
+        }
+    }
+    return result;
+}
+
+bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
+    if (mUseEventInputToCreateNewMapping) {
+        if (isPressed) {
+            mMouseButtonForNewMapping = button;
+            return true;
+        } else {
+            mMouseButtonForNewMapping = LUS_MOUSE_BTN_UNKNOWN;
+        }
+    }
+
+    bool result = false;
+    for (auto [id, mapping] : GetAllButtonMappings()) {
+        if (mapping->GetMappingType() == MAPPING_TYPE_MOUSE) {
+            std::shared_ptr<MouseButtonToButtonMapping> mtobMapping =
+                std::dynamic_pointer_cast<MouseButtonToButtonMapping>(mapping);
+            if (mtobMapping != nullptr) {
+                result = result || mtobMapping->ProcessMouseButtonEvent(isPressed, button);
             }
         }
     }

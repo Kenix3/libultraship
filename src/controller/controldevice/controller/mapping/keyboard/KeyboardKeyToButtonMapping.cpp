@@ -23,7 +23,7 @@ void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     padButtons |= mBitmask;
 }
 
-uint8_t KeyboardKeyToButtonMapping::GetMappingType() {
+int8_t KeyboardKeyToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_KEYBOARD;
 }
 

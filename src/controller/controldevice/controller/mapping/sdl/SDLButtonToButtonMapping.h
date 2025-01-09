@@ -7,7 +7,7 @@ class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public Cont
     SDLButtonToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                              int32_t sdlControllerButton);
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
-    uint8_t GetMappingType() override;
+    int8_t GetMappingType() override;
     std::string GetButtonMappingId() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;

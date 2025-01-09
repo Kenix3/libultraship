@@ -42,7 +42,6 @@
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 #include "window/gui/Gui.h"
-#include "window/Window.h"
 #include "gfx_pc.h"
 #include <public/bridge/consolevariablebridge.h>
 
@@ -103,7 +102,7 @@ static const char* gfx_opengl_get_name() {
     return "OpenGL";
 }
 
-static struct GfxClipParameters gfx_opengl_get_clip_parameters(void) {
+static struct GfxClipParameters gfx_opengl_get_clip_parameters() {
     return { false, framebuffers[current_framebuffer].invert_y };
 }
 
@@ -787,7 +786,7 @@ static void gfx_opengl_shader_get_info(struct ShaderProgram* prg, uint8_t* num_i
     used_textures[1] = prg->used_textures[1];
 }
 
-static GLuint gfx_opengl_new_texture(void) {
+static GLuint gfx_opengl_new_texture() {
     GLuint ret;
     glGenTextures(1, &ret);
     return ret;
@@ -913,7 +912,7 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
     glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_tris);
 }
 
-static void gfx_opengl_init(void) {
+static void gfx_opengl_init() {
 #ifndef __linux__
     glewInit();
 #endif
@@ -949,18 +948,18 @@ static void gfx_opengl_init(void) {
     glGetIntegerv(GL_MAX_SAMPLES, &max_msaa_level);
 }
 
-static void gfx_opengl_on_resize(void) {
+static void gfx_opengl_on_resize() {
 }
 
-static void gfx_opengl_start_frame(void) {
+static void gfx_opengl_start_frame() {
     frame_count++;
 }
 
-static void gfx_opengl_end_frame(void) {
+static void gfx_opengl_end_frame() {
     glFlush();
 }
 
-static void gfx_opengl_finish_render(void) {
+static void gfx_opengl_finish_render() {
 }
 
 static int gfx_opengl_create_framebuffer() {
@@ -1056,10 +1055,11 @@ void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale) {
     current_framebuffer = fb_id;
 }
 
-void gfx_opengl_clear_framebuffer() {
+void gfx_opengl_clear_framebuffer(bool color, bool depth) {
     glDisable(GL_SCISSOR_TEST);
     glDepthMask(GL_TRUE);
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
     glDepthMask(current_depth_mask ? GL_TRUE : GL_FALSE);
     glEnable(GL_SCISSOR_TEST);
 }
@@ -1240,11 +1240,11 @@ void gfx_opengl_set_texture_filter(FilteringMode mode) {
     gfx_texture_cache_clear();
 }
 
-FilteringMode gfx_opengl_get_texture_filter(void) {
+FilteringMode gfx_opengl_get_texture_filter() {
     return current_filter_mode;
 }
 
-void gfx_opengl_enable_srgb_mode(void) {
+void gfx_opengl_enable_srgb_mode() {
     srgb_mode = true;
 }
 

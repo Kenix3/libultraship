@@ -18,5 +18,8 @@ class ButtonMappingFactory {
 
     static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromSDLInput(uint8_t portIndex,
                                                                                     CONTROLLERBUTTONS_T bitmask);
+
+    static std::shared_ptr<ControllerButtonMapping> CreateButtonMappingFromMouseWheelInput(uint8_t portIndex,
+                                                                                           CONTROLLERBUTTONS_T bitmask);
 };
 } // namespace Ship

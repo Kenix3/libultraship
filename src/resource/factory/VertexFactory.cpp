@@ -3,7 +3,7 @@
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
 
-namespace LUS {
+namespace Fast {
 std::shared_ptr<Ship::IResource> ResourceFactoryBinaryVertexV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
@@ -67,4 +67,4 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLVertexV0::ReadResource(std::s
 
     return vertex;
 }
-} // namespace LUS
+} // namespace Fast

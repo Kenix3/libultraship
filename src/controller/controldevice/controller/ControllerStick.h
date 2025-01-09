@@ -14,7 +14,7 @@ namespace Ship {
 
 class ControllerStick {
   public:
-    ControllerStick(uint8_t portIndex, Stick stick);
+    ControllerStick(uint8_t portIndex, StickIndex stickIndex);
     ~ControllerStick();
 
     void ReloadAllMappingsFromConfig();
@@ -52,9 +52,10 @@ class ControllerStick {
     bool NotchSnapAngleIsDefault();
 
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
+    bool ProcessMouseButtonEvent(bool isPressed, Ship::MouseBtn button);
 
     bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
-    Stick LeftOrRightStick();
+    StickIndex GetStickIndex();
 
   private:
     double GetClosestNotch(double angle, double approximationThreshold);
@@ -62,7 +63,7 @@ class ControllerStick {
     float GetAxisDirectionValue(Direction direction);
 
     uint8_t mPortIndex;
-    Stick mStick;
+    StickIndex mStickIndex;
 
     uint8_t mSensitivityPercentage;
     float mSensitivity;
@@ -75,7 +76,8 @@ class ControllerStick {
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
         mAxisDirectionMappings;
 
-    bool mUseKeydownEventToCreateNewMapping;
+    bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
+    MouseBtn mMouseButtonForNewMapping;
 };
 } // namespace Ship

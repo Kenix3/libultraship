@@ -31,10 +31,10 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
 
 ArchiveManager::~ArchiveManager() {
     SPDLOG_TRACE("destruct archive manager");
-    SetArchives({});
+    SetArchives(nullptr);
 }
 
-bool ArchiveManager::IsArchiveLoaded() {
+bool ArchiveManager::IsLoaded() {
     return !mArchives.empty();
 }
 
@@ -48,14 +48,12 @@ std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath,
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData) {
-    const auto archive = mFileToArchive[hash];
+    auto archive = mFileToArchive[hash];
     if (archive == nullptr) {
         return nullptr;
     }
 
-    auto file = archive->LoadFile(hash, initData);
-    file->Parent = archive;
-    return file;
+    return archive->LoadFile(hash, initData);
 }
 
 bool ArchiveManager::HasFile(const std::string& filePath) {
@@ -66,20 +64,43 @@ bool ArchiveManager::HasFile(uint64_t hash) {
     return mFileToArchive.count(hash) > 0;
 }
 
-std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& filter) {
-    auto list = ListFiles();
-    auto result = std::make_shared<std::vector<std::string>>();
-
-    std::copy_if(list->begin(), list->end(), std::back_inserter(*result),
-                 [filter](const std::string& filePath) { return glob_match(filter.c_str(), filePath.c_str()); });
-
-    return result;
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
+    std::list<std::string> includes = {};
+    if (searchMask.size() > 0) {
+        includes.push_back(searchMask);
+    }
+    return ListFiles({ searchMask }, {});
 }
 
-std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles() {
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::list<std::string>& includes,
+                                                                    const std::list<std::string>& excludes) {
     auto list = std::make_shared<std::vector<std::string>>();
     for (const auto& [hash, path] : mHashes) {
-        list->push_back(path);
+        if (includes.empty() && excludes.empty()) {
+            list->push_back(path);
+            continue;
+        }
+        bool includeMatch = includes.empty();
+        if (!includes.empty()) {
+            for (std::string filter : includes) {
+                if (glob_match(filter.c_str(), path.c_str())) {
+                    includeMatch = true;
+                    break;
+                }
+            }
+        }
+        bool excludeMatch = false;
+        if (!excludes.empty()) {
+            for (std::string filter : excludes) {
+                if (glob_match(filter.c_str(), path.c_str())) {
+                    excludeMatch = true;
+                    break;
+                }
+            }
+        }
+        if (includeMatch && !excludeMatch) {
+            list->push_back(path);
+        }
     }
     return list;
 }
@@ -92,8 +113,12 @@ void ArchiveManager::AddGameVersion(uint32_t newGameVersion) {
     mGameVersions.push_back(newGameVersion);
 }
 
-std::vector<std::shared_ptr<Archive>> ArchiveManager::GetArchives() {
-    return mArchives;
+std::shared_ptr<std::vector<std::shared_ptr<Archive>>> ArchiveManager::GetArchives() {
+    auto archives = std::make_shared<std::vector<std::shared_ptr<Archive>>>();
+    for (const auto& archive : mArchives) {
+        archives->push_back(archive);
+    }
+    return archives;
 }
 
 void ArchiveManager::ResetVirtualFileSystem() {
@@ -128,8 +153,15 @@ size_t ArchiveManager::RemoveArchive(std::shared_ptr<Archive> archive) {
     return RemoveArchive(archive->GetPath());
 }
 
-void ArchiveManager::SetArchives(const std::vector<std::shared_ptr<Archive>>& archives) {
-    mArchives = archives;
+void ArchiveManager::SetArchives(std::shared_ptr<std::vector<std::shared_ptr<Archive>>> archives) {
+    mArchives.clear();
+
+    if (archives) {
+        for (const auto& archive : *archives) {
+            mArchives.push_back(archive);
+        }
+    }
+
     ResetVirtualFileSystem();
 }
 

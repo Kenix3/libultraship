@@ -88,15 +88,21 @@ static struct {
     bool use_timer;
     bool tearing_support;
     bool is_vsync_enabled;
+    bool mouse_pressed[5];
+    float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
+    bool is_mouse_captured;
+    bool in_focus;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
     bool (*on_key_up)(int scancode);
     void (*on_all_keys_up)(void);
+    bool (*on_mouse_button_down)(int btn);
+    bool (*on_mouse_button_up)(int btn);
 } dxgi;
 
-static void load_dxgi_library(void) {
+static void load_dxgi_library() {
     dxgi.dxgi_module = LoadLibraryW(L"dxgi.dll");
     *(FARPROC*)&dxgi.CreateDXGIFactory1 = GetProcAddress(dxgi.dxgi_module, "CreateDXGIFactory1");
     *(FARPROC*)&dxgi.CreateDXGIFactory2 = GetProcAddress(dxgi.dxgi_module, "CreateDXGIFactory2");
@@ -257,6 +263,22 @@ static void onkeyup(WPARAM w_param, LPARAM l_param) {
     }
 }
 
+static void on_mouse_button_down(int btn) {
+    if (!(btn >= 0 && btn < 5)) {
+        return;
+    }
+    dxgi.mouse_pressed[btn] = true;
+    if (dxgi.on_mouse_button_down != nullptr) {
+        dxgi.on_mouse_button_down(btn);
+    }
+}
+static void on_mouse_button_up(int btn) {
+    dxgi.mouse_pressed[btn] = false;
+    if (dxgi.on_mouse_button_up != nullptr) {
+        dxgi.on_mouse_button_up(btn);
+    }
+}
+
 double HzToPeriod(double Frequency) {
     if (Frequency == 0)
         Frequency = 60; // Default to 60, to prevent devision by zero
@@ -299,6 +321,19 @@ void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Freque
     }
 }
 
+static void gfx_dxgi_close() {
+    dxgi.is_running = false;
+}
+
+static void apply_mouse_capture_clip() {
+    RECT rect;
+    rect.left = dxgi.posX + 1;
+    rect.top = dxgi.posY + 1;
+    rect.right = dxgi.posX + dxgi.current_width - 1;
+    rect.bottom = dxgi.posY + dxgi.current_height - 1;
+    ClipCursor(&rect);
+}
+
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
     Ship::WindowEvent event_impl;
@@ -327,7 +362,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         case WM_CLOSE:
-            dxgi.is_running = false;
+            gfx_dxgi_close();
             break;
         case WM_DPICHANGED: {
             RECT* const prcNewWindow = (RECT*)l_param;
@@ -342,7 +377,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_ENDSESSION:
             // This hopefully gives the game a chance to shut down, before windows kills it.
             if (w_param == TRUE) {
-                dxgi.is_running = false;
+                gfx_dxgi_close();
             }
             break;
         case WM_ACTIVATEAPP:
@@ -356,6 +391,40 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_KEYUP:
             onkeyup(w_param, l_param);
             break;
+        case WM_LBUTTONDOWN:
+            on_mouse_button_down(0);
+            break;
+        case WM_LBUTTONUP:
+            on_mouse_button_up(0);
+            break;
+        case WM_MBUTTONDOWN:
+            on_mouse_button_down(1);
+            break;
+        case WM_MBUTTONUP:
+            on_mouse_button_up(1);
+            break;
+        case WM_RBUTTONDOWN:
+            on_mouse_button_down(2);
+            break;
+        case WM_RBUTTONUP:
+            on_mouse_button_up(2);
+            break;
+        case WM_XBUTTONDOWN: {
+            int btn = 2 + GET_XBUTTON_WPARAM(w_param);
+            on_mouse_button_down(btn);
+            break;
+        }
+        case WM_XBUTTONUP: {
+            int btn = 2 + GET_XBUTTON_WPARAM(w_param);
+            on_mouse_button_up(btn);
+            break;
+        }
+        case WM_MOUSEHWHEEL:
+            dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
+            break;
+        case WM_MOUSEWHEEL:
+            dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
+            break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
@@ -368,6 +437,15 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             GetMonitorAtCoords(dxgi.monitor_list, dxgi.posX, dxgi.posY, dxgi.current_width, dxgi.current_height,
                                dxgi.h_Monitor);
             GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
+            break;
+        case WM_SETFOCUS:
+            dxgi.in_focus = true;
+            if (dxgi.is_mouse_captured) {
+                apply_mouse_capture_clip();
+            }
+            break;
+        case WM_KILLFOCUS:
+            dxgi.in_focus = false;
             break;
         default:
             return DefWindowProcW(h_wnd, message, w_param, l_param);
@@ -451,10 +529,6 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     DragAcceptFiles(dxgi.h_wnd, TRUE);
 }
 
-static void gfx_dxgi_close() {
-    dxgi.is_running = false;
-}
-
 static void gfx_dxgi_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
     dxgi.on_fullscreen_changed = on_fullscreen_changed;
 }
@@ -485,6 +559,63 @@ static void gfx_dxgi_set_cursor_visibility(bool visible) {
     }
 }
 
+static void gfx_dxgi_set_mouse_pos(int32_t x, int32_t y) {
+    SetCursorPos(x, y);
+}
+
+static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
+    POINT p;
+    GetCursorPos(&p);
+    ScreenToClient(dxgi.h_wnd, &p);
+    *x = p.x;
+    *y = p.y;
+}
+
+static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
+    if (dxgi.is_mouse_captured && dxgi.in_focus) {
+        POINT p;
+        GetCursorPos(&p);
+        ScreenToClient(dxgi.h_wnd, &p);
+        int32_t centerX, centerY;
+        centerX = dxgi.current_width / 2;
+        centerY = dxgi.current_height / 2;
+        *x = p.x - centerX;
+        *y = p.y - centerY;
+        SetCursorPos(dxgi.posX + centerX, dxgi.posY + centerY);
+    } else {
+        *x = 0;
+        *y = 0;
+    }
+}
+
+static void gfx_dxgi_get_mouse_wheel(float* x, float* y) {
+    *x = dxgi.mouse_wheel[0];
+    *y = dxgi.mouse_wheel[1];
+    dxgi.mouse_wheel[0] = 0;
+    dxgi.mouse_wheel[1] = 0;
+}
+
+static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
+    return dxgi.mouse_pressed[btn];
+}
+
+static void gfx_dxgi_set_mouse_capture(bool capture) {
+    if (capture) {
+        apply_mouse_capture_clip();
+        gfx_dxgi_set_cursor_visibility(false);
+        SetCapture(dxgi.h_wnd);
+    } else {
+        ClipCursor(nullptr);
+        gfx_dxgi_set_cursor_visibility(true);
+        ReleaseCapture();
+    }
+    dxgi.is_mouse_captured = capture;
+}
+
+static bool gfx_dxgi_is_mouse_captured() {
+    return dxgi.is_mouse_captured;
+}
+
 static void gfx_dxgi_set_fullscreen(bool enable) {
     toggle_borderless_window_full_screen(enable, true);
 }
@@ -494,10 +625,15 @@ static void gfx_dxgi_get_active_window_refresh_rate(uint32_t* refresh_rate) {
 }
 
 static void gfx_dxgi_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
-                                            void (*on_all_keys_up)(void)) {
+                                            void (*on_all_keys_up)()) {
     dxgi.on_key_down = on_key_down;
     dxgi.on_key_up = on_key_up;
     dxgi.on_all_keys_up = on_all_keys_up;
+}
+
+static void gfx_dxgi_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
+    dxgi.on_mouse_button_down = on_btn_down;
+    dxgi.on_mouse_button_up = on_btn_up;
 }
 
 static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
@@ -507,7 +643,7 @@ static void gfx_dxgi_get_dimensions(uint32_t* width, uint32_t* height, int32_t* 
     *posY = dxgi.posY;
 }
 
-static void gfx_dxgi_handle_events(void) {
+static void gfx_dxgi_handle_events() {
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
@@ -528,7 +664,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
            qpc % dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND / dxgi.qpc_freq;
 }
 
-static bool gfx_dxgi_start_frame(void) {
+static bool gfx_dxgi_start_frame() {
     DXGI_FRAME_STATISTICS stats;
     if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
         (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -675,7 +811,7 @@ static bool gfx_dxgi_start_frame(void) {
     return true;
 }
 
-static void gfx_dxgi_swap_buffers_begin(void) {
+static void gfx_dxgi_swap_buffers_begin() {
     LARGE_INTEGER t;
     dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
@@ -727,7 +863,7 @@ static void gfx_dxgi_swap_buffers_begin(void) {
     dxgi.dropped_frame = false;
 }
 
-static void gfx_dxgi_swap_buffers_end(void) {
+static void gfx_dxgi_swap_buffers_end() {
     LARGE_INTEGER t0, t1, t2;
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
@@ -772,7 +908,7 @@ static void gfx_dxgi_swap_buffers_end(void) {
     // stats.SyncRefreshCount, (unsigned long long)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init));
 }
 
-static double gfx_dxgi_get_time(void) {
+static double gfx_dxgi_get_time() {
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);
     return (double)(t.QuadPart - dxgi.qpc_init) / dxgi.qpc_freq;
@@ -859,11 +995,11 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     dxgi.before_destroy_swap_chain_fn = std::move(before_destroy_fn);
 }
 
-bool gfx_dxgi_is_running(void) {
+bool gfx_dxgi_is_running() {
     return dxgi.is_running;
 }
 
-HWND gfx_dxgi_get_h_wnd(void) {
+HWND gfx_dxgi_get_h_wnd() {
     return dxgi.h_wnd;
 }
 
@@ -897,21 +1033,29 @@ bool gfx_dxgi_can_disable_vsync() {
     return dxgi.tearing_support;
 }
 
-void gfx_dxgi_destroy(void) {
+void gfx_dxgi_destroy() {
     // TODO: destroy _any_ resources used by dxgi, including the window handle
 }
 
-bool gfx_dxgi_is_fullscreen(void) {
+bool gfx_dxgi_is_fullscreen() {
     return dxgi.is_full_screen;
 }
 
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
+                                                       gfx_dxgi_set_mouse_callbacks,
                                                        gfx_dxgi_set_fullscreen_changed_callback,
                                                        gfx_dxgi_set_fullscreen,
                                                        gfx_dxgi_get_active_window_refresh_rate,
                                                        gfx_dxgi_set_cursor_visibility,
+                                                       gfx_dxgi_set_mouse_pos,
+                                                       gfx_dxgi_get_mouse_pos,
+                                                       gfx_dxgi_get_mouse_delta,
+                                                       gfx_dxgi_get_mouse_wheel,
+                                                       gfx_dxgi_get_mouse_state,
+                                                       gfx_dxgi_set_mouse_capture,
+                                                       gfx_dxgi_is_mouse_captured,
                                                        gfx_dxgi_get_dimensions,
                                                        gfx_dxgi_handle_events,
                                                        gfx_dxgi_start_frame,

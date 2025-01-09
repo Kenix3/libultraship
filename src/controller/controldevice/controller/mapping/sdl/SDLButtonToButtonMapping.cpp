@@ -26,7 +26,7 @@ void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     }
 }
 
-uint8_t SDLButtonToButtonMapping::GetMappingType() {
+int8_t SDLButtonToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 

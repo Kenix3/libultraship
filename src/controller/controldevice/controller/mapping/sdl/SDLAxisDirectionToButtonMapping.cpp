@@ -45,7 +45,7 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
     }
 }
 
-uint8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
+int8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 
