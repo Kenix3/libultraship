@@ -152,6 +152,7 @@ void Fast3dWindow::StartFrame() {
 }
 
 void Fast3dWindow::EndFrame() {
+    gfx_end_frame();
 }
 
 bool Fast3dWindow::IsFrameReady() {
