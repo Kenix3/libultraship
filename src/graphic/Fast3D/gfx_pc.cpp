@@ -113,8 +113,6 @@ static int game_framebuffer_msaa_resolved;
 
 uint32_t gfx_msaa_level = 1;
 
-static bool dropped_frame;
-
 static const std::unordered_map<Mtx*, MtxF>* current_mtx_replacements;
 
 static float buf_vbo[MAX_BUFFERED * (32 * 3)]; // 3 vertices in a triangle and 32 floats per vtx
@@ -4196,13 +4194,6 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     get_pixel_depth_pending.clear();
     get_pixel_depth_cached.clear();
 
-    // if (!gfx_wapi->start_frame()) {
-    //     dropped_frame = true;
-    //     // Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
-    //     return;
-    // }
-    dropped_frame = false;
-
     current_mtx_replacements = &mtx_replacements;
 
     gfx_rapi->update_framebuffer_parameters(0, gfx_current_window_dimensions.width,
@@ -4266,18 +4257,13 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
         assert(0 && "active framebuffer was never reset back to original");
     }
-    // Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
-    // gfx_rapi->end_frame();
-    // gfx_wapi->swap_buffers_begin();
 }
 
 void gfx_end_frame() {
-    if (!dropped_frame) {
-        gfx_rapi->end_frame();
-        gfx_wapi->swap_buffers_begin();
-        gfx_rapi->finish_render();
-        gfx_wapi->swap_buffers_end();
-    }
+    gfx_rapi->end_frame();
+    gfx_wapi->swap_buffers_begin();
+    gfx_rapi->finish_render();
+    gfx_wapi->swap_buffers_end();
 }
 
 void gfx_set_target_ucode(UcodeHandlers ucode) {
