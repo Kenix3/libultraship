@@ -154,6 +154,10 @@ void Fast3dWindow::StartFrame() {
 void Fast3dWindow::EndFrame() {
 }
 
+bool Fast3dWindow::IsFrameReady() {
+    return mWindowManagerApi->is_frame_ready();
+}
+
 void Fast3dWindow::SetCursorVisibility(bool visible) {
     mWindowManagerApi->set_cursor_visibility(visible);
 }

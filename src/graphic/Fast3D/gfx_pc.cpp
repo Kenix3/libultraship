@@ -4123,6 +4123,10 @@ struct GfxRenderingAPI* gfx_get_current_rendering_api() {
     return gfx_rapi;
 }
 
+bool gfx_is_frame_ready() {
+    return gfx_wapi->is_frame_ready();
+}
+
 void gfx_start_frame() {
     gfx_wapi->handle_events();
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
@@ -4189,11 +4193,11 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     get_pixel_depth_pending.clear();
     get_pixel_depth_cached.clear();
 
-    if (!gfx_wapi->start_frame()) {
-        dropped_frame = true;
-        // Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
-        return;
-    }
+    // if (!gfx_wapi->start_frame()) {
+    //     dropped_frame = true;
+    //     // Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
+    //     return;
+    // }
     dropped_frame = false;
 
     current_mtx_replacements = &mtx_replacements;
