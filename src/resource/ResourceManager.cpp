@@ -69,26 +69,24 @@ bool ResourceManager::IsLoaded() {
     return mArchiveManager != nullptr && mArchiveManager->IsLoaded();
 }
 
-std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath,
-                                                       std::shared_ptr<ResourceInitData> initData) {
-    auto file = mArchiveManager->LoadFile(filePath, initData);
+std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {
+    auto file = mArchiveManager->LoadFile(filePath);
     if (file != nullptr) {
-        SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
+        SPDLOG_TRACE("Loaded File {} on ResourceManager", filePath);
     } else {
         SPDLOG_TRACE("Could not load File {} in ResourceManager", filePath);
     }
     return file;
 }
 
-std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceIdentifier& identifier,
-                                                       std::shared_ptr<ResourceInitData> initData) {
+std::shared_ptr<File> ResourceManager::LoadFileProcess(const ResourceIdentifier& identifier) {
     if (identifier.Parent == nullptr) {
-        return LoadFileProcess(identifier.Path, initData);
+        return LoadFileProcess(identifier.Path);
     }
     auto archive = identifier.Parent;
-    auto file = archive->LoadFile(identifier.Path, initData);
+    auto file = archive->LoadFile(identifier.Path);
     if (file != nullptr) {
-        SPDLOG_TRACE("Loaded File {} on ResourceManager", file->InitData->Path);
+        SPDLOG_TRACE("Loaded File {} on ResourceManager", identifier.Path);
     } else {
         SPDLOG_TRACE("Could not load File {} in ResourceManager", identifier.Path);
     }
@@ -140,13 +138,13 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     }
 
     // Get the file from the OTR
-    auto file = LoadFileProcess(identifier.Path, initData);
+    auto file = LoadFileProcess(identifier.Path);
     if (file == nullptr) {
         SPDLOG_TRACE("Failed to load resource file at path {}", identifier.Path);
     }
 
     // Transform the raw data into a resource
-    auto resource = GetResourceLoader()->LoadResource(file);
+    auto resource = GetResourceLoader()->LoadResource(identifier.Path, file, initData);
 
     // Another thread could have loaded the resource while we were processing, so we want to check before setting to
     // the cache.
