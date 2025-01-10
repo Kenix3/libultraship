@@ -710,27 +710,12 @@ void Gui::CheckSaveCvars() {
     }
 }
 
-void Gui::Draw() {
-    // Initialize the frame.
-    StartFrame();
-    // Draw the gui menus
-    DrawMenu();
-    // Draw the game framebuffer into ImGui
-    DrawGame();
-    // End the frame
-    EndFrame();
-    // Draw the ImGui floating windows.
-    DrawFloatingWindows();
-    // Check if the CVars need to be saved, and do it if so.
-    CheckSaveCvars();
-}
-
 void Gui::StartDraw() {
     // Initialize the frame.
     StartFrame();
     // Draw the gui menus
     DrawMenu();
-
+    // Calculate the available space the game can render to
     CalculateGameViewport();
 }
 

@@ -5,6 +5,8 @@
 #include "public/bridge/gfxbridge.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
+union Gfx;
+
 namespace Fast {
 class Fast3dWindow : public Ship::Window {
   public:
@@ -48,6 +50,7 @@ class Fast3dWindow : public Ship::Window {
     void SetTextureFilter(FilteringMode filteringMode);
     void SetRendererUCode(UcodeHandlers ucode);
     void EnableSRGBMode();
+    bool DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements);
 
   protected:
     static bool KeyDown(int32_t scancode);
