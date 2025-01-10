@@ -96,8 +96,8 @@ jobs:
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release
         cmake --build build-cmake --config Release --parallel 10
       env:
-        CC: gcc-10
-        CXX: g++-10
+        CC: gcc-12
+        CXX: g++-12
     - name: Upload build
       uses: actions/upload-artifact@v4
       with:
