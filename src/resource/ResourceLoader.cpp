@@ -78,13 +78,7 @@ std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, std
 
 std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitDataLegacy(const std::string& filePath,
                                                                              std::shared_ptr<File> fileToLoad) {
-    if (stbi_info_from_memory((const uint8_t*)fileToLoad->Buffer->data(), fileToLoad->Buffer->size(), nullptr, nullptr,
-                              nullptr) != 0) {
-        auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
-        auto binaryReader = std::make_shared<BinaryReader>(stream);
-
-        return ReadResourceInitDataPng(filePath, binaryReader);
-    } else if (fileToLoad->Buffer->at(0) == '<') { // Determine if file is binary or XML...
+    if (fileToLoad->Buffer->at(0) == '<') { // Determine if file is binary or XML...
         // File is XML
         // Read the xml document
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
@@ -211,7 +205,6 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, st
 
     switch (initData->Format) {
         case RESOURCE_FORMAT_BINARY:
-        case RESOURCE_FORMAT_IMG:
             fileToLoad->Reader = CreateBinaryReader(fileToLoad, initData);
             break;
         case RESOURCE_FORMAT_XML:
@@ -293,26 +286,6 @@ ResourceLoader::ReadResourceInitDataXml(const std::string& filePath, std::shared
         Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(root->Name());
     resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
-    return resourceInitData;
-}
-
-std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitDataPng(const std::string& filePath,
-                                                                          std::shared_ptr<BinaryReader> headerReader) {
-    auto resourceInitData = CreateDefaultResourceInitData();
-    resourceInitData->Path = filePath;
-
-    if (headerReader == nullptr) {
-        SPDLOG_ERROR("Error reading OTR header from XML: No header buffer document for file {}", filePath);
-        return resourceInitData;
-    }
-
-    resourceInitData->IsCustom = true;
-    resourceInitData->Format = RESOURCE_FORMAT_IMG;
-    resourceInitData->Type =
-        Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType("Texture");
-    resourceInitData->ResourceVersion = 0;
-
-    headerReader->Seek(0, SeekOffsetType::Start);
     return resourceInitData;
 }
 } // namespace Ship
