@@ -7,7 +7,7 @@ namespace Ship {
 #define RESOURCE_TYPE_GUI_TEXTURE 0x47544558 // GTEX
 
 struct GuiTextureMetadata {
-    unsigned long long RendererTextureId;
+    uint32_t RendererTextureId;
     int32_t Width;
     int32_t Height;
 };

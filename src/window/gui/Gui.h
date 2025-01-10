@@ -1,9 +1,6 @@
 #pragma once
 
 #ifdef __cplusplus
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -119,7 +116,7 @@ class Gui {
     void ImGuiBackendInit();
     void ImGuiRenderDrawData(ImDrawData* data);
 
-    ImTextureID GetTextureById(unsigned long long id);
+    ImTextureID GetTextureById(int32_t id);
     void ApplyResolutionChanges();
     int16_t GetIntegerScaleFactor();
     void CheckSaveCvars();

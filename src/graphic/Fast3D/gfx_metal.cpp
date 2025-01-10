@@ -1295,8 +1295,8 @@ FilteringMode gfx_metal_get_texture_filter() {
     return mctx.current_filter_mode;
 }
 
-ImTextureID gfx_metal_get_texture_by_id(unsigned long long fb_id) {
-    return (unsigned long long)mctx.textures[fb_id].texture;
+ImTextureID gfx_metal_get_texture_by_id(int fb_id) {
+    return (void*)mctx.textures[fb_id].texture;
 }
 
 void gfx_metal_enable_srgb_mode() {

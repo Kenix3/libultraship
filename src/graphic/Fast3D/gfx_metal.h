@@ -15,7 +15,7 @@
 
 extern struct GfxRenderingAPI gfx_metal_api;
 
-ImTextureID gfx_metal_get_texture_by_id(unsigned long long id);
+ImTextureID gfx_metal_get_texture_by_id(int id);
 
 bool Metal_IsSupported();
 

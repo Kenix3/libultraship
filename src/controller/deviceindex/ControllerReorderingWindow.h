@@ -2,9 +2,6 @@
 
 #include "stdint.h"
 #include "window/gui/GuiWindow.h"
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui.h>
 #include <unordered_map>
 #include <string>
