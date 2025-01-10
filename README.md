@@ -54,5 +54,3 @@ LUS makes use of the following third party libraries and resources:
 - [glew](https://github.com/nigels-com/glew) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
 - [libzip](https://github.com/nih-at/) (BSD-3-Clause) read `.zip` compatible archives
 - [glob_match](https://github.com/torvalds/linux/blob/d1bd5fa07667fcc3e38996ec42aef98761f23039/lib/glob.c) (Dual MIT/GPL) Glob pattern matching.
-
-this is just a readme change, see how the linux build is failing?
