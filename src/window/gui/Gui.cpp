@@ -654,7 +654,7 @@ void Gui::DrawGame() {
     }
     if (gfxFramebuffer) {
         ImGui::SetCursorPos(pos);
-        ImGui::Image((ImTextureID)gfxFramebuffer, size);
+        ImGui::Image(gfxFramebuffer, size);
     }
 
     ImGui::End();
@@ -722,7 +722,7 @@ void Gui::SetupRendererFrame() {
     }
 }
 
-ImTextureID Gui::GetTextureById(int32_t id) {
+ImTextureID Gui::GetTextureById(unsigned long long id) {
 #ifdef ENABLE_DX11
     if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_DXGI_DX11) {
         return gfx_d3d11_get_texture_by_id(id);
@@ -734,7 +734,7 @@ ImTextureID Gui::GetTextureById(int32_t id) {
     }
 #endif
 
-    return (ImTextureID)id;
+    return id;
 }
 
 bool Gui::HasTextureByName(const std::string& name) {
@@ -743,7 +743,7 @@ bool Gui::HasTextureByName(const std::string& name) {
 
 ImTextureID Gui::GetTextureByName(const std::string& name) {
     if (!Gui::HasTextureByName(name)) {
-        return (ImTextureID)nullptr;
+        return 0;
     }
     return GetTextureById(mGuiTextures[name].RendererTextureId);
 }

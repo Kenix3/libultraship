@@ -119,7 +119,7 @@ class Gui {
     void ImGuiBackendInit();
     void ImGuiRenderDrawData(ImDrawData* data);
 
-    ImTextureID GetTextureById(int32_t id);
+    ImTextureID GetTextureById(unsigned long long id);
     void ApplyResolutionChanges();
     int16_t GetIntegerScaleFactor();
     void CheckSaveCvars();

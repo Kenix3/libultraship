@@ -1229,7 +1229,7 @@ gfx_d3d11_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& co
 
 } // namespace
 
-ImTextureID gfx_d3d11_get_texture_by_id(int id) {
+ImTextureID gfx_d3d11_get_texture_by_id(unsigned long long id) {
     return d3d.textures[id].resource_view.Get();
 }
 
