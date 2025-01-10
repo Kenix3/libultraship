@@ -22,6 +22,13 @@ struct CoordsF {
     float y;
 };
 
+struct WindowRect {
+    int32_t Left;
+    int32_t Top;
+    int32_t Right;
+    int32_t Bottom;
+};
+
 class Config;
 
 class Window {
@@ -39,6 +46,12 @@ class Window {
     virtual void SetCursorVisibility(bool visible) = 0;
     virtual uint32_t GetWidth() = 0;
     virtual uint32_t GetHeight() = 0;
+    virtual void SetCurrentDimensions(uint32_t width, uint32_t height) = 0;
+    virtual void SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) = 0;
+    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) = 0;
+    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                      int32_t posY) = 0;
+    virtual WindowRect GetPrimaryMonitorRect() = 0;
     virtual int32_t GetPosX() = 0;
     virtual int32_t GetPosY() = 0;
     virtual void SetMousePos(Coords pos) = 0;

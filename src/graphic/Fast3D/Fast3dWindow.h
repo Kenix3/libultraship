@@ -19,6 +19,11 @@ class Fast3dWindow : public Ship::Window {
     void SetCursorVisibility(bool visible) override;
     uint32_t GetWidth() override;
     uint32_t GetHeight() override;
+    void SetCurrentDimensions(uint32_t width, uint32_t height) override;
+    void SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
+    void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) override;
+    void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
+    Ship::WindowRect GetPrimaryMonitorRect() override;
     int32_t GetPosX() override;
     int32_t GetPosY() override;
     void SetMousePos(Ship::Coords pos) override;
