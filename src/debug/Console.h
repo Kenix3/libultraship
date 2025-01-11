@@ -6,9 +6,6 @@
 #include <vector>
 #include <functional>
 #include <map>
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui.h>
 
 namespace Ship {
