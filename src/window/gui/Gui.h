@@ -72,9 +72,9 @@ class Gui {
     ~Gui();
 
     void Init(GuiWindowInitData windowImpl);
-    void Draw();
+    void StartDraw();
+    void EndDraw();
     void HandleWindowEvents(WindowEvent event);
-    void SetupRendererFrame();
     void SaveConsoleVariablesNextFrame();
     bool SupportsViewports();
     ImGuiID GetMainGameWindowID();
@@ -112,6 +112,7 @@ class Gui {
     void DrawFloatingWindows();
     void DrawMenu();
     void DrawGame();
+    void CalculateGameViewport();
 
     void ImGuiBackendNewFrame();
     void ImGuiWMNewFrame();

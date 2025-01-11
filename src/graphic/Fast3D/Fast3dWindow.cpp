@@ -152,6 +152,38 @@ void Fast3dWindow::StartFrame() {
 }
 
 void Fast3dWindow::EndFrame() {
+    gfx_end_frame();
+}
+
+bool Fast3dWindow::IsFrameReady() {
+    return mWindowManagerApi->is_frame_ready();
+}
+
+bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements) {
+    std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
+
+    // Skip dropped frames
+    if (!wnd->IsFrameReady()) {
+        return false;
+    }
+
+    auto gui = wnd->GetGui();
+    // Setup of the backend frames and draw initial Window and GUI menus
+    gui->StartDraw();
+    // Setup game framebuffers to match available window space
+    gfx_start_frame();
+    // Execute the games gfx commands
+    gfx_run(commands, mtxReplacements);
+    // Renders the game frame buffer to the final window and finishes the GUI
+    gui->EndDraw();
+    // Finalize swap buffers
+    gfx_end_frame();
+
+    return true;
+}
+
+void Fast3dWindow::HandleEvents() {
+    mWindowManagerApi->handle_events();
 }
 
 void Fast3dWindow::SetCursorVisibility(bool visible) {

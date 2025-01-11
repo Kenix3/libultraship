@@ -566,7 +566,7 @@ void Gui::EndFrame() {
     ImGui::EndFrame();
 }
 
-void Gui::DrawGame() {
+void Gui::CalculateGameViewport() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
@@ -617,10 +617,25 @@ void Gui::DrawGame() {
         }
     }
 
+    ImGui::End();
+}
+
+void Gui::DrawGame() {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground;
+
+    ImGui::Begin("Main Game", nullptr, flags);
+    ImGui::PopStyleVar(3);
+    ImGui::PopStyleColor();
+
     GetGameOverlay()->Draw();
 
-    mainPos = ImGui::GetWindowPos();
-    size = ImGui::GetContentRegionAvail();
+    ImVec2 mainPos = ImGui::GetWindowPos();
+    ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
     if (CVarGetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
@@ -695,11 +710,16 @@ void Gui::CheckSaveCvars() {
     }
 }
 
-void Gui::Draw() {
+void Gui::StartDraw() {
     // Initialize the frame.
     StartFrame();
     // Draw the gui menus
     DrawMenu();
+    // Calculate the available space the game can render to
+    CalculateGameViewport();
+}
+
+void Gui::EndDraw() {
     // Draw the game framebuffer into ImGui
     DrawGame();
     // End the frame
@@ -708,18 +728,6 @@ void Gui::Draw() {
     DrawFloatingWindows();
     // Check if the CVars need to be saved, and do it if so.
     CheckSaveCvars();
-}
-
-void Gui::SetupRendererFrame() {
-    switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
-#ifdef __APPLE__
-        case WindowBackend::FAST3D_SDL_METAL:
-            Metal_SetupFrame(mImpl.Metal.Renderer);
-            break;
-#endif
-        default:
-            break;
-    }
 }
 
 ImTextureID Gui::GetTextureById(int32_t id) {
