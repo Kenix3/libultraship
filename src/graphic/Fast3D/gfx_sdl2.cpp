@@ -600,7 +600,7 @@ static void gfx_sdl_handle_events() {
     }
 }
 
-static bool gfx_sdl_start_frame() {
+static bool gfx_sdl_is_frame_ready() {
     return true;
 }
 
@@ -709,7 +709,7 @@ struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
                                        gfx_sdl_is_mouse_captured,
                                        gfx_sdl_get_dimensions,
                                        gfx_sdl_handle_events,
-                                       gfx_sdl_start_frame,
+                                       gfx_sdl_is_frame_ready,
                                        gfx_sdl_swap_buffers_begin,
                                        gfx_sdl_swap_buffers_end,
                                        gfx_sdl_get_time,

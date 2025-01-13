@@ -664,7 +664,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
            qpc % dxgi.qpc_freq * _100NANOSECONDS_IN_SECOND / dxgi.qpc_freq;
 }
 
-static bool gfx_dxgi_start_frame() {
+static bool gfx_dxgi_is_frame_ready() {
     DXGI_FRAME_STATISTICS stats;
     if (dxgi.swap_chain->GetFrameStatistics(&stats) == S_OK &&
         (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -1058,7 +1058,7 @@ extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_is_mouse_captured,
                                                        gfx_dxgi_get_dimensions,
                                                        gfx_dxgi_handle_events,
-                                                       gfx_dxgi_start_frame,
+                                                       gfx_dxgi_is_frame_ready,
                                                        gfx_dxgi_swap_buffers_begin,
                                                        gfx_dxgi_swap_buffers_end,
                                                        gfx_dxgi_get_time,
