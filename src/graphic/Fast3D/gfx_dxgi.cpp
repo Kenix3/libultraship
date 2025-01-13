@@ -1,4 +1,4 @@
-#if defined(ENABLE_DX11) || defined(ENABLE_DX12) || true
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
 #include <stdint.h>
 #include <math.h>
@@ -94,7 +94,6 @@ static struct {
     bool is_mouse_captured;
     bool in_focus;
     RAWINPUTDEVICE raw_input_device[1];
-    POINT mouse_pos;
     POINT mouse_delta;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
@@ -428,19 +427,17 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
-        case WM_INPUT:
-			uint32_t size = sizeof(RAWINPUT);
-			static RAWINPUT raw[sizeof(RAWINPUT)];
-			GetRawInputData((HRAWINPUT)lparam, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
+        case WM_INPUT: {
+            uint32_t size = sizeof(RAWINPUT);
+            static RAWINPUT raw[sizeof(RAWINPUT)];
+            GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
 
-			if (raw->header.dwType == RIM_TYPEMOUSE) {
-				dxgi.mouse_delta.x += raw->data.mouse.lLastX - dxgi.mouse_pos.x;
-				dxgi.mouse_delta.y += raw->data.mouse.lLastY - dxgi.mouse_pos.y;
-				dxgi.mouse_pos.x = raw->data.mouse.lLastX;
-				dxgi.mouse_pos.y = raw->data.mouse.lLastY;
-			}
-
+            if (raw->header.dwType == RIM_TYPEMOUSE) {
+                dxgi.mouse_delta.x = raw->data.mouse.lLastX;
+                dxgi.mouse_delta.y = raw->data.mouse.lLastY;
+            }
             break;
+        }
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
@@ -545,17 +542,18 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     DragAcceptFiles(dxgi.h_wnd, TRUE);
 
     // Mouse init
-	#ifndef HID_USAGE_PAGE_GENERIC
-	#define HID_USAGE_PAGE_GENERIC ((unsigned short) 0x01)
-	#endif
-	#ifndef HID_USAGE_GENERIC_MOUSE
-	#define HID_USAGE_GENERIC_MOUSE ((unsigned short) 0x02)
-	#endif
+    #ifndef HID_USAGE_PAGE_GENERIC
+    #define HID_USAGE_PAGE_GENERIC ((unsigned short) 0x01)
+    #endif
+    #ifndef HID_USAGE_GENERIC_MOUSE
+    #define HID_USAGE_GENERIC_MOUSE ((unsigned short) 0x02)
+    #endif
 
-	dxgi.raw_input_device[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
-	dxgi.raw_input_device[0].usUsage = HID_USAGE_GENERIC_MOUSE;
-	dxgi.raw_input_device[0].dwFlags = RIDEV_INPUTSINK;
-	dxgi.raw_input_device[0].hwndTarget = dxgi.h_wnd;
+    dxgi.raw_input_device[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+    dxgi.raw_input_device[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+    dxgi.raw_input_device[0].dwFlags = RIDEV_INPUTSINK;
+    dxgi.raw_input_device[0].hwndTarget = dxgi.h_wnd;
+    RegisterRawInputDevices(dxgi.raw_input_device, 1, sizeof(dxgi.raw_input_device[0]));
 }
 
 static void gfx_dxgi_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
@@ -593,7 +591,8 @@ static void gfx_dxgi_set_mouse_pos(int32_t x, int32_t y) {
 }
 
 static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
-    POINT p = dxgi.mouse_pos;
+    POINT p;
+    GetCursorPos(&p);
     ScreenToClient(dxgi.h_wnd, &p);
     *x = p.x;
     *y = p.y;
@@ -601,8 +600,8 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
     if (dxgi.is_mouse_captured && dxgi.in_focus) {
-        *x = dxgi.mouse_delta.x;
-        *y = dxgi.mouse_delta.y;
+        *x = dxgi.mouse_delta.x * 80;
+        *y = dxgi.mouse_delta.y * 80;
     } else {
         *x = 0;
         *y = 0;
