@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <unordered_map>
 #include <SDL2/SDL.h>
 
 namespace Ship {
@@ -10,9 +10,13 @@ class ConnectedPhysicalDeviceManager {
     ConnectedPhysicalDeviceManager();
     ~ConnectedPhysicalDeviceManager();
 
-    std::vector<SDL_GameController*> GetConnectedSDLGamepadsForPort(uint8_t portIndex);
+    std::unordered_map<int32_t, SDL_GameController*> GetConnectedSDLGamepadsForPort(uint8_t portIndex);
+
+    void HandlePhysicalDeviceConnect(int32_t sdlDeviceIndex);
+    void HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId);
+    void RefreshConnectedSDLGamepads();
 
   private:
-    std::vector<SDL_GameController*> mConnectedSDLGamepads;
+    std::unordered_map<int32_t, SDL_GameController*> mConnectedSDLGamepads;
 };
 } // namespace Ship

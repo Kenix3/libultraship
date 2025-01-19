@@ -5,6 +5,7 @@
 #include <config/Config.h>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
+#include "controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 
 namespace Ship {
 
@@ -28,6 +29,7 @@ class ControlDeck {
     bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
 
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
+    std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
 
   protected:
     bool AllGameInputBlocked();
@@ -38,6 +40,7 @@ class ControlDeck {
     bool mSinglePlayerMappingMode;
     std::unordered_map<int32_t, bool> mGameInputBlockers;
     std::shared_ptr<ShipDeviceIndexMappingManager> mDeviceIndexMappingManager;
+    std::shared_ptr<ConnectedPhysicalDeviceManager> mConnectedPhysicalDeviceManager;
 };
 } // namespace Ship
 
