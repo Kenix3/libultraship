@@ -125,9 +125,11 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
 }
 
 void ControllerStick::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
-    for (auto mapping :
-         AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(physicalDeviceType, mPortIndex, mStickIndex)) {
-        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+    if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
+        for (auto mapping :
+            AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStickIndex)) {
+            AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+        }
     }
 
     if (physicalDeviceType == PhysicalDeviceType::Keyboard) {

@@ -9,7 +9,6 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
 #include "Context.h"
-#include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
@@ -24,14 +23,12 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t shipDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerAxis =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDeviceIndex < 0 ||
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
             sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -45,12 +42,10 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
     if (mappingClass == "SDLButtonToAxisDirectionMapping") {
         int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t shipDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) || shipDeviceIndex < 0 ||
+        if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
             sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
@@ -128,7 +123,7 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(PhysicalDeviceType shipDeviceIndex, uint8_t portIndex,
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex,
                                                                    StickIndex stickIndex) {
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
         std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stickIndex, LEFT,

@@ -40,8 +40,6 @@ void SDLButtonToAxisDirectionMapping::SaveToConfig() {
                   "SDLButtonToAxisDirectionMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mPhysicalDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }
@@ -51,7 +49,6 @@ void SDLButtonToAxisDirectionMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
     CVarSave();
 }

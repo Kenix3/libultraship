@@ -39,8 +39,6 @@ std::string SDLLEDMapping::GetLEDMappingId() {
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
     CVarSetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerLEDMapping::mPhysicalDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
     CVarSetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
     CVarSave();
@@ -50,7 +48,6 @@ void SDLLEDMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
 
     CVarClear(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str());
 

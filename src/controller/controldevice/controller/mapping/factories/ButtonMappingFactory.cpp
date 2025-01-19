@@ -8,7 +8,6 @@
 #include "controller/controldevice/controller/mapping/mouse/MouseWheelToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
-#include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
@@ -28,12 +27,10 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     }
 
     if (mappingClass == "SDLButtonToButtonMapping") {
-        int32_t shipDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerButton =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
-        if (shipDeviceIndex < 0 || sdlControllerButton == -1) {
+        if (sdlControllerButton == -1) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
@@ -44,14 +41,12 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     }
 
     if (mappingClass == "SDLAxisDirectionToButtonMapping") {
-        int32_t shipDeviceIndex =
-            CVarGetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerAxis =
             CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
             CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
-        if (shipDeviceIndex < 0 || sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
+        if (sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
             // something about this mapping is invalid
             CVarClear(mappingCvarKey.c_str());
             CVarSave();
