@@ -23,8 +23,6 @@ class ControlDeck {
     bool GamepadGameInputBlocked();
     bool KeyboardGameInputBlocked();
     bool MouseGameInputBlocked();
-    void SetSinglePlayerMappingMode(bool singlePlayer);
-    bool IsSinglePlayerMappingMode();
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
     bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
 
@@ -37,7 +35,6 @@ class ControlDeck {
 
   private:
     uint8_t* mControllerBits = nullptr;
-    bool mSinglePlayerMappingMode;
     std::unordered_map<int32_t, bool> mGameInputBlockers;
     std::shared_ptr<ConnectedPhysicalDeviceManager> mConnectedPhysicalDeviceManager;
     std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;

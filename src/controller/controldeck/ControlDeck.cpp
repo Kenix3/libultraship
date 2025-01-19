@@ -9,7 +9,7 @@
 
 namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : mSinglePlayerMappingMode(false) {
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
 }
@@ -109,14 +109,6 @@ std::shared_ptr<ConnectedPhysicalDeviceManager> ControlDeck::GetConnectedPhysica
 
 std::shared_ptr<GlobalSDLDeviceSettings> ControlDeck::GetGlobalSDLDeviceSettings() {
     return mGlobalSDLDeviceSettings;
-}
-
-void ControlDeck::SetSinglePlayerMappingMode(bool singlePlayer) {
-    mSinglePlayerMappingMode = singlePlayer;
-}
-
-bool ControlDeck::IsSinglePlayerMappingMode() {
-    return mSinglePlayerMappingMode;
 }
 } // namespace Ship
 
