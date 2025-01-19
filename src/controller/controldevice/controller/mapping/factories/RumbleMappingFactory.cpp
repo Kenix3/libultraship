@@ -52,7 +52,7 @@ RumbleMappingFactory::CreateDefaultSDLRumbleMappings(PhysicalDeviceType physical
     //         ->GetDeviceIndexMappingManager()
     //         ->GetDeviceIndexMappingFromShipDeviceIndex(physicalDeviceType));
     // if (sdlIndexMapping == nullptr) {
-        return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
+    return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
     // }
 
     // std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(

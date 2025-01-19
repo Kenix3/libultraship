@@ -20,9 +20,15 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
 
     int32_t axisThresholdPercentage = 25;
     if (AxisIsStick()) {
-        axisThresholdPercentage = Ship::Context::GetInstance()->GetControlDeck()->GetGlobalSDLDeviceSettings()->GetStickAxisThresholdPercentage();
+        axisThresholdPercentage = Ship::Context::GetInstance()
+                                      ->GetControlDeck()
+                                      ->GetGlobalSDLDeviceSettings()
+                                      ->GetStickAxisThresholdPercentage();
     } else if (AxisIsTrigger()) {
-        axisThresholdPercentage = Ship::Context::GetInstance()->GetControlDeck()->GetGlobalSDLDeviceSettings()->GetTriggerAxisThresholdPercentage();
+        axisThresholdPercentage = Ship::Context::GetInstance()
+                                      ->GetControlDeck()
+                                      ->GetGlobalSDLDeviceSettings()
+                                      ->GetTriggerAxisThresholdPercentage();
     }
 
     for (const auto& [instanceId, gamepad] :

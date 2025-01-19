@@ -8,8 +8,12 @@ namespace Ship {
 GlobalSDLDeviceSettings::GlobalSDLDeviceSettings() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GlobalSDLDeviceSettings";
     const int32_t defaultAxisThresholdPercentage = 25;
-    mStickAxisThresholdPercentage = CVarGetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(), defaultAxisThresholdPercentage);
-    mTriggerAxisThresholdPercentage = CVarGetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(), defaultAxisThresholdPercentage);
+    mStickAxisThresholdPercentage =
+        CVarGetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+                       defaultAxisThresholdPercentage);
+    mTriggerAxisThresholdPercentage =
+        CVarGetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+                       defaultAxisThresholdPercentage);
 }
 
 GlobalSDLDeviceSettings::~GlobalSDLDeviceSettings() {

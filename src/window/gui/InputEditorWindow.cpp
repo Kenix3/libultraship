@@ -334,8 +334,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
                 ImGui::SetNextItemWidth(SCALE_IMGUI_SIZE(160.0f));
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Stick Axis Threshold%s", id.c_str()).c_str(),
                                      &stickAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
-                                        globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold);
-                                        globalSettings->SaveToConfig();
+                    globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::SameLine(0.0f, 0.0f);
                 if (stickAxisThreshold == 100) {
@@ -372,8 +372,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
                 ImGui::SetNextItemWidth(SCALE_IMGUI_SIZE(160.0f));
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Trigger Axis Threshold%s", id.c_str()).c_str(),
                                      &triggerAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
-                                        globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
-                                        globalSettings->SaveToConfig();
+                    globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::SameLine(0.0f, 0.0f);
                 if (triggerAxisThreshold == 100) {
@@ -1186,7 +1186,8 @@ void InputEditorWindow::DrawDeviceNameButtons() {
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
 
-    for (const auto& name : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadNames()) {
+    for (const auto& name :
+         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadNames()) {
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
         GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType::SDLGamepad, buttonColor, buttonHoveredColor);
@@ -1348,7 +1349,8 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
         ImGui::PopStyleColor();
         ImGui::PopStyleColor();
         if (ImGui::BeginPopupModal("Set Defaults for Gamepad (SDL)", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("This will clear all existing mappings for\nGamepad (SDL) on port %d.\n\nContinue?", portIndex + 1);
+            ImGui::Text("This will clear all existing mappings for\nGamepad (SDL) on port %d.\n\nContinue?",
+                        portIndex + 1);
             if (ImGui::Button("Cancel")) {
                 shouldClose = true;
                 ImGui::CloseCurrentPopup();
