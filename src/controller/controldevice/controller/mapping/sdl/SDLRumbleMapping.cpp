@@ -47,7 +47,7 @@ void SDLRumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercentage) {
 }
 
 std::string SDLRumbleMapping::GetRumbleMappingId() {
-    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerRumbleMapping::mPhysicalDeviceType);
+    return StringHelper::Sprintf("P%d", mPortIndex);
 }
 
 void SDLRumbleMapping::SaveToConfig() {

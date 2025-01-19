@@ -55,7 +55,7 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
 }
 
 std::string SDLGyroMapping::GetGyroMappingId() {
-    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mPhysicalDeviceType);
+    return StringHelper::Sprintf("P%d", mPortIndex);
 }
 
 void SDLGyroMapping::SaveToConfig() {

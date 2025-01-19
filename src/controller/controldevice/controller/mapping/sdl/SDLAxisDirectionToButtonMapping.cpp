@@ -50,8 +50,8 @@ int8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
 }
 
 std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mBitmask,
-                                 ControllerInputMapping::mPhysicalDeviceType, mControllerAxis,
+    return StringHelper::Sprintf("P%d-B%d-SDLA%d-AD%s", mPortIndex, mBitmask,
+                                 mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 

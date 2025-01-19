@@ -30,8 +30,8 @@ float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 }
 
 std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLB%d", mPortIndex, mStickIndex, mDirection,
-                                 ControllerInputMapping::mPhysicalDeviceType, mControllerButton);
+    return StringHelper::Sprintf("P%d-S%d-D%d-SDLB%d", mPortIndex, mStickIndex, mDirection,
+                                 mControllerButton);
 }
 
 void SDLButtonToAxisDirectionMapping::SaveToConfig() {

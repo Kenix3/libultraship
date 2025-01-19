@@ -45,8 +45,8 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
 }
 
 std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() {
-    return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mStickIndex, mDirection,
-                                 ControllerInputMapping::mPhysicalDeviceType, mControllerAxis,
+    return StringHelper::Sprintf("P%d-S%d-D%d-SDLA%d-AD%s", mPortIndex, mStickIndex, mDirection,
+                                 mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 

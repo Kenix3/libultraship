@@ -33,7 +33,7 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {
-    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, ControllerLEDMapping::mPhysicalDeviceType);
+    return StringHelper::Sprintf("P%d", mPortIndex);
 }
 
 void SDLLEDMapping::SaveToConfig() {
