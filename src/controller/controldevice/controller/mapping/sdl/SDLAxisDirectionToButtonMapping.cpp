@@ -18,21 +18,12 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
         return;
     }
 
-    // todo: threshold percentages
     int32_t axisThresholdPercentage = 25;
-    // auto indexMapping = Context::GetInstance()
-    //                         ->GetControlDeck()
-    //                         ->GetDeviceIndexMappingManager()
-    //                         ->GetDeviceIndexMappingFromShipDeviceIndex(ControllerInputMapping::mPhysicalDeviceType);
-    // auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
-
-    // if (sdlIndexMapping != nullptr) {
-    //     if (AxisIsStick()) {
-    //         axisThresholdPercentage = sdlIndexMapping->GetStickAxisThresholdPercentage();
-    //     } else if (AxisIsTrigger()) {
-    //         axisThresholdPercentage = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
-    //     }
-    // }
+    if (AxisIsStick()) {
+        axisThresholdPercentage = Ship::Context::GetInstance()->GetControlDeck()->GetGlobalSDLDeviceSettings()->GetStickAxisThresholdPercentage();
+    } else if (AxisIsTrigger()) {
+        axisThresholdPercentage = Ship::Context::GetInstance()->GetControlDeck()->GetGlobalSDLDeviceSettings()->GetTriggerAxisThresholdPercentage();
+    }
 
     for (const auto& [instanceId, gamepad] :
          Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(

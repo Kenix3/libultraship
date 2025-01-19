@@ -6,6 +6,7 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
 #include "controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
+#include "controller/physicaldevice/GlobalSDLDeviceSettings.h"
 
 namespace Ship {
 
@@ -30,6 +31,7 @@ class ControlDeck {
 
     std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
     std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
+    std::shared_ptr<GlobalSDLDeviceSettings> GetGlobalSDLDeviceSettings();
 
   protected:
     bool AllGameInputBlocked();
@@ -41,6 +43,7 @@ class ControlDeck {
     std::unordered_map<int32_t, bool> mGameInputBlockers;
     std::shared_ptr<ShipDeviceIndexMappingManager> mDeviceIndexMappingManager;
     std::shared_ptr<ConnectedPhysicalDeviceManager> mConnectedPhysicalDeviceManager;
+    std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;
 };
 } // namespace Ship
 
