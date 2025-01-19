@@ -45,7 +45,7 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
         y = 0;
         return;
     }
-    
+
     for (const auto& [instanceId, gamepad] :
          Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
              mPortIndex)) {
@@ -64,8 +64,8 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
     }
 
     // if we didn't find a gyro device zero everything out
-        x = 0;
-        y = 0;
+    x = 0;
+    y = 0;
 }
 
 std::string SDLGyroMapping::GetGyroMappingId() {
