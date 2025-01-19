@@ -1204,7 +1204,7 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
                 for (auto [id, mapping] : button->GetAllButtonMappings()) {
                     if (mapping->GetPhysicalDeviceType() == lusIndex) {
                         lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<PhysicalDeviceType, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                            std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                         break;
                     }
                 }
@@ -1254,7 +1254,7 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex
                     if (mapping->GetPhysicalDeviceType() == lusIndex) {
                         foundMapping = true;
                         lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<PhysicalDeviceType, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                            std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                         break;
                     }
                 }
@@ -1305,7 +1305,7 @@ void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
                                           ->GetAllRumbleMappings()) {
                 if (mapping->GetPhysicalDeviceType() == lusIndex) {
                     lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<PhysicalDeviceType, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                     break;
                 }
             }
@@ -1338,7 +1338,7 @@ void InputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     ImGui::SameLine();
-    ImGui::SmallButton(mapping->PhysicalDeviceIsConnected() ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+    ImGui::SmallButton(true ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
 }
@@ -1366,7 +1366,7 @@ void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
                                           ->GetAllLEDMappings()) {
                 if (mapping->GetPhysicalDeviceType() == lusIndex) {
                     lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<PhysicalDeviceType, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
+                        std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                     break;
                 }
             }
@@ -1482,12 +1482,12 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d###port%d", portIndex + 1, portIndex).c_str())) {
         DrawClearAllButton(portIndex);
         DrawSetDefaultsButton(portIndex);
-        if (!Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
-            ImGui::SameLine();
-            if (ImGui::Button("Reorder controllers")) {
-                Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
-            }
-        }
+        // if (!Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
+        //     ImGui::SameLine();
+        //     if (ImGui::Button("Reorder controllers")) {
+        //         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
+        //     }
+        // }
         DrawDeviceVisibilityButtons();
 
         UpdateBitmaskToMappingIds(portIndex);

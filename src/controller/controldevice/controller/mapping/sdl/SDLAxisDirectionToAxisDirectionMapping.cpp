@@ -18,23 +18,26 @@ SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(u
 }
 
 float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (!ControllerLoaded()) {
-        return 0.0f;
-    }
-
     if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return 0.0f;
     }
 
-    const auto axisValue = SDL_GameControllerGetAxis(mController, mControllerAxis);
+    // todo: i don't like making a vector here, not sure what a better solution is
+    std::vector<float> normalizedValues = {};
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
 
-    if ((mAxisDirection == POSITIVE && axisValue < 0) || (mAxisDirection == NEGATIVE && axisValue > 0)) {
-        return 0.0f;
+        if ((mAxisDirection == POSITIVE && axisValue < 0) || (mAxisDirection == NEGATIVE && axisValue > 0)) {
+            normalizedValues.push_back(0.0f);
+            continue;
+        }
+
+        // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
+        // and use the absolute value of it
+        normalizedValues.push_back(fabs(axisValue * MAX_AXIS_RANGE / MAX_SDL_RANGE));
     }
 
-    // scale {-32768 ... +32767} to {-MAX_AXIS_RANGE ... +MAX_AXIS_RANGE}
-    // and return the absolute value of it
-    return fabs(axisValue * MAX_AXIS_RANGE / MAX_SDL_RANGE);
+    return *std::max_element(normalizedValues.begin(), normalizedValues.end());
 }
 
 std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() {

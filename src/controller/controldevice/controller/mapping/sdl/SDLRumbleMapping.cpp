@@ -7,26 +7,33 @@ namespace Ship {
 SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                                    uint8_t highFrequencyIntensityPercentage)
     : ControllerRumbleMapping(PhysicalDeviceType::SDLGamepad, portIndex, lowFrequencyIntensityPercentage,
-                              highFrequencyIntensityPercentage),
-      SDLMapping() {
+                              highFrequencyIntensityPercentage) {
     SetLowFrequencyIntensity(lowFrequencyIntensityPercentage);
     SetHighFrequencyIntensity(highFrequencyIntensityPercentage);
 }
 
 void SDLRumbleMapping::StartRumble() {
-    if (!ControllerLoaded()) {
-        return;
-    }
+    // for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        // todo: rumble
+    // }
 
-    SDL_GameControllerRumble(mController, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
+    // if (!ControllerLoaded()) {
+    //     return;
+    // }
+
+    // SDL_GameControllerRumble(mController, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
 }
 
 void SDLRumbleMapping::StopRumble() {
-    if (!ControllerLoaded()) {
-        return;
-    }
+    // for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        // todo: rumble
+    // }
 
-    SDL_GameControllerRumble(mController, 0, 0, 0);
+    // if (!ControllerLoaded()) {
+    //     return;
+    // }
+
+    // SDL_GameControllerRumble(mController, 0, 0, 0);
 }
 
 void SDLRumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
@@ -67,10 +74,6 @@ void SDLRumbleMapping::EraseFromConfig() {
 }
 
 std::string SDLRumbleMapping::GetPhysicalDeviceName() {
-    return GetSDLDeviceName();
-}
-
-bool SDLRumbleMapping::PhysicalDeviceIsConnected() {
-    return ControllerLoaded();
+    return "SDL Gamepad";
 }
 } // namespace Ship

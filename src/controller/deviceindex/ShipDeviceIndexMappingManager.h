@@ -12,8 +12,7 @@ class ShipDeviceIndexMappingManager {
     ShipDeviceIndexMappingManager();
     ~ShipDeviceIndexMappingManager();
 
-    void InitializeMappingsMultiplayer(std::vector<int32_t> sdlIndices);
-    void InitializeSDLMappingsForPort(uint8_t n64port, int32_t sdlIndex);
+    void InitializeSDLMappingsForPort(uint8_t n64port);
     void UpdateControllerNamesFromConfig();
     std::string GetSDLControllerNameFromShipDeviceIndex(PhysicalDeviceType index);
     void HandlePhysicalDeviceConnect(int32_t sdlDeviceIndex);

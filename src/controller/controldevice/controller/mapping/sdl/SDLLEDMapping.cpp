@@ -5,27 +5,31 @@
 
 namespace Ship {
 SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor)
-    : ControllerLEDMapping(PhysicalDeviceType::SDLGamepad, portIndex, colorSource, savedColor), SDLMapping() {
+    : ControllerLEDMapping(PhysicalDeviceType::SDLGamepad, portIndex, colorSource, savedColor) {
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
-    if (!ControllerLoaded()) {
-        return;
-    }
+    // for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        // todo: LED
+    // }
 
-    if (!SDL_GameControllerHasLED(mController)) {
-        return;
-    }
+    // if (!ControllerLoaded()) {
+    //     return;
+    // }
 
-    if (mColorSource == LED_COLOR_SOURCE_OFF) {
-        color = { 0, 0, 0 };
-    }
+    // if (!SDL_GameControllerHasLED(mController)) {
+    //     return;
+    // }
 
-    if (mColorSource == LED_COLOR_SOURCE_SET) {
-        color = mSavedColor;
-    }
+    // if (mColorSource == LED_COLOR_SOURCE_OFF) {
+    //     color = { 0, 0, 0 };
+    // }
 
-    SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), color.r, color.g, color.b);
+    // if (mColorSource == LED_COLOR_SOURCE_SET) {
+    //     color = mSavedColor;
+    // }
+
+    // SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), color.r, color.g, color.b);
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {
@@ -54,10 +58,6 @@ void SDLLEDMapping::EraseFromConfig() {
 }
 
 std::string SDLLEDMapping::GetPhysicalDeviceName() {
-    return GetSDLDeviceName();
-}
-
-bool SDLLEDMapping::PhysicalDeviceIsConnected() {
-    return ControllerLoaded();
+    return "SDL Gamepad";
 }
 } // namespace Ship

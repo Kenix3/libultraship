@@ -83,10 +83,10 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
     }
 
 
-    if (GetGuiWindow("Controller Reordering") == nullptr) {
-        AddGuiWindow(std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN,
-                                                                  "Controller Reordering"));
-    }
+    // if (GetGuiWindow("Controller Reordering") == nullptr) {
+    //     AddGuiWindow(std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN,
+    //                                                               "Controller Reordering"));
+    // }
 
     if (GetGuiWindow("Console") == nullptr) {
         AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console", ImVec2(520, 600),

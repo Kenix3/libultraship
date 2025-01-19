@@ -16,7 +16,6 @@ class ControllerMapping {
     ~ControllerMapping();
     virtual std::string GetPhysicalDeviceName();
     PhysicalDeviceType GetPhysicalDeviceType();
-    virtual bool PhysicalDeviceIsConnected() = 0;
 
   protected:
     PhysicalDeviceType mPhysicalDeviceType;

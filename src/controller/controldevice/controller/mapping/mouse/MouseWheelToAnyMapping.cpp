@@ -19,8 +19,4 @@ std::string MouseWheelToAnyMapping::GetPhysicalInputName() {
 std::string MouseWheelToAnyMapping::GetPhysicalDeviceName() {
     return "Mouse";
 }
-
-bool MouseWheelToAnyMapping::PhysicalDeviceIsConnected() {
-    return true;
-}
 } // namespace Ship

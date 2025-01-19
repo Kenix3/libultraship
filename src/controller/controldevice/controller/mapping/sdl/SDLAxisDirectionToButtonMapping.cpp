@@ -14,34 +14,34 @@ SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portInd
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
-    if (!ControllerLoaded()) {
-        return;
-    }
-
     if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return;
     }
 
-    const auto axisValue = SDL_GameControllerGetAxis(mController, mControllerAxis);
+    // todo: threshold percentages
     int32_t axisThresholdPercentage = 25;
-    auto indexMapping = Context::GetInstance()
-                            ->GetControlDeck()
-                            ->GetDeviceIndexMappingManager()
-                            ->GetDeviceIndexMappingFromShipDeviceIndex(ControllerInputMapping::mPhysicalDeviceType);
-    auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+    // auto indexMapping = Context::GetInstance()
+    //                         ->GetControlDeck()
+    //                         ->GetDeviceIndexMappingManager()
+    //                         ->GetDeviceIndexMappingFromShipDeviceIndex(ControllerInputMapping::mPhysicalDeviceType);
+    // auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
-    if (sdlIndexMapping != nullptr) {
-        if (AxisIsStick()) {
-            axisThresholdPercentage = sdlIndexMapping->GetStickAxisThresholdPercentage();
-        } else if (AxisIsTrigger()) {
-            axisThresholdPercentage = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
+    // if (sdlIndexMapping != nullptr) {
+    //     if (AxisIsStick()) {
+    //         axisThresholdPercentage = sdlIndexMapping->GetStickAxisThresholdPercentage();
+    //     } else if (AxisIsTrigger()) {
+    //         axisThresholdPercentage = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
+    //     }
+    // }
+
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
+
+        auto axisMinValue = SDL_JOYSTICK_AXIS_MAX * (axisThresholdPercentage / 100.0f);
+        if ((mAxisDirection == POSITIVE && axisValue > axisMinValue) ||
+            (mAxisDirection == NEGATIVE && axisValue < -axisMinValue)) {
+            padButtons |= mBitmask;
         }
-    }
-
-    auto axisMinValue = SDL_JOYSTICK_AXIS_MAX * (axisThresholdPercentage / 100.0f);
-    if ((mAxisDirection == POSITIVE && axisValue > axisMinValue) ||
-        (mAxisDirection == NEGATIVE && axisValue < -axisMinValue)) {
-        padButtons |= mBitmask;
     }
 }
 

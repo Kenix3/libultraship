@@ -16,9 +16,14 @@ SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(uint8_t portInd
 }
 
 float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (ControllerLoaded() && !Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked() &&
-        SDL_GameControllerGetButton(mController, mControllerButton)) {
-        return MAX_AXIS_RANGE;
+    if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
+        return 0.0f;
+    }
+    
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        if (SDL_GameControllerGetButton(gamepad, mControllerButton)) {
+            return MAX_AXIS_RANGE;
+        }
     }
 
     return 0.0f;

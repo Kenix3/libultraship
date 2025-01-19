@@ -28,8 +28,4 @@ bool MouseButtonToAnyMapping::ProcessMouseButtonEvent(bool isPressed, MouseBtn b
 std::string MouseButtonToAnyMapping::GetPhysicalDeviceName() {
     return "Mouse";
 }
-
-bool MouseButtonToAnyMapping::PhysicalDeviceIsConnected() {
-    return true;
-}
 } // namespace Ship

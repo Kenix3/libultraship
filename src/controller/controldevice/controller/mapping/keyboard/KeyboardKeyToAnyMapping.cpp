@@ -42,9 +42,4 @@ bool KeyboardKeyToAnyMapping::ProcessKeyboardEvent(KbEventType eventType, KbScan
 std::string KeyboardKeyToAnyMapping::GetPhysicalDeviceName() {
     return "Keyboard";
 }
-
-bool KeyboardKeyToAnyMapping::PhysicalDeviceIsConnected() {
-    // todo: handle non-keyboard devices?
-    return true;
-}
 } // namespace Ship

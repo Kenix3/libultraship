@@ -80,7 +80,7 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetShipDeviceIndexFromSDLDeviceIndex(
             index) == PhysicalDeviceType::Max) {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeSDLMappingsForPort(
-            mPortIndexOfDisconnectedController, index);
+            mPortIndexOfDisconnectedController);
         mPortIndexOfDisconnectedController = UINT8_MAX;
         ImGui::CloseCurrentPopup();
         Hide();
@@ -107,7 +107,7 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
                           : "Use connected controller for port 1###reorderControllersButton")) {
         mPortIndexOfDisconnectedController = UINT8_MAX;
         ImGui::CloseCurrentPopup();
-        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
+        // Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
         Hide();
     }
 }
@@ -128,7 +128,7 @@ void ControllerDisconnectedWindow::DrawUnknownOrMultipleControllersDisconnected(
                           : "Use connected controller for port 1###reorderControllersButton")) {
         mPortIndexOfDisconnectedController = UINT8_MAX;
         ImGui::CloseCurrentPopup();
-        Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
+        // Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
         Hide();
     }
 }

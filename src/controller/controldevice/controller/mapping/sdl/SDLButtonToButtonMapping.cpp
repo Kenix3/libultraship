@@ -13,16 +13,15 @@ SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLER
 }
 
 void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
-    if (!ControllerLoaded()) {
-        return;
-    }
-
     if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return;
     }
-
-    if (SDL_GameControllerGetButton(mController, mControllerButton)) {
-        padButtons |= mBitmask;
+    
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        if (SDL_GameControllerGetButton(gamepad, mControllerButton)) {
+            padButtons |= mBitmask;
+            return;
+        }
     }
 }
 

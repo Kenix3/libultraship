@@ -36,7 +36,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
 
-    Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
+    // Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
