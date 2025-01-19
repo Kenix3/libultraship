@@ -2,6 +2,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
+#include "Context.h"
 
 namespace Ship {
 SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
@@ -13,29 +14,19 @@ SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntens
 }
 
 void SDLRumbleMapping::StartRumble() {
-    // for (const auto& [instanceId, gamepad] :
-    // Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex))
-    // { todo: rumble
-    // }
-
-    // if (!ControllerLoaded()) {
-    //     return;
-    // }
-
-    // SDL_GameControllerRumble(mController, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
+    for (const auto& [instanceId, gamepad] :
+    Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex))
+    { 
+        SDL_GameControllerRumble(gamepad, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
+    }    
 }
 
 void SDLRumbleMapping::StopRumble() {
-    // for (const auto& [instanceId, gamepad] :
-    // Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex))
-    // { todo: rumble
-    // }
-
-    // if (!ControllerLoaded()) {
-    //     return;
-    // }
-
-    // SDL_GameControllerRumble(mController, 0, 0, 0);
+    for (const auto& [instanceId, gamepad] :
+    Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex))
+    { 
+    SDL_GameControllerRumble(gamepad, 0, 0, 0);
+    }
 }
 
 void SDLRumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
