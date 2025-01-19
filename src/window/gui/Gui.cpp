@@ -72,20 +72,10 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
         AddGuiWindow(std::make_shared<InputEditorWindow>(CVAR_CONTROLLER_CONFIGURATION_WINDOW_OPEN, "Input Editor"));
     }
 
-    // if (GetGuiWindow("Controller Disconnected") == nullptr) {
-    //     AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>(CVAR_CONTROLLER_DISCONNECTED_WINDOW_OPEN,
-    //                                                                 "Controller Disconnected"));
-    // }
-
     if (GetGuiWindow("SDLAddRemoveDeviceEventHandler") == nullptr) {
         AddGuiWindow(std::make_shared<SDLAddRemoveDeviceEventHandler>("gOpenWindows.SDLAddRemoveDeviceEventHandler",
                                                                       "SDLAddRemoveDeviceEventHandler"));
     }
-
-    // if (GetGuiWindow("Controller Reordering") == nullptr) {
-    //     AddGuiWindow(std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN,
-    //                                                               "Controller Reordering"));
-    // }
 
     if (GetGuiWindow("Console") == nullptr) {
         AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console", ImVec2(520, 600),
