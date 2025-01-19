@@ -8,8 +8,8 @@
 namespace Ship {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                    int32_t sdlControllerButton)
-    : ControllerInputMapping(ShipDeviceType::SDLGamepad), SDLButtonToAnyMapping(sdlControllerButton),
-      ControllerButtonMapping(ShipDeviceType::SDLGamepad, portIndex, bitmask) {
+    : ControllerInputMapping(PhysicalDeviceType::SDLGamepad), SDLButtonToAnyMapping(sdlControllerButton),
+      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask) {
 }
 
 void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
@@ -31,7 +31,7 @@ int8_t SDLButtonToButtonMapping::GetMappingType() {
 }
 
 std::string SDLButtonToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask, ControllerInputMapping::mShipDeviceType,
+    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask, ControllerInputMapping::mPhysicalDeviceType,
                                  mControllerButton);
 }
 
@@ -41,7 +41,7 @@ void SDLButtonToButtonMapping::SaveToConfig() {
                   "SDLButtonToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDeviceType);
+                   ControllerInputMapping::mPhysicalDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }

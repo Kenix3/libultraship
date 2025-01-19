@@ -5,7 +5,7 @@
 
 namespace Ship {
 SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(int32_t sdlControllerAxis, int32_t axisDirection)
-    : ControllerInputMapping(ShipDeviceType::SDLGamepad), SDLMapping() {
+    : ControllerInputMapping(PhysicalDeviceType::SDLGamepad), SDLMapping() {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }

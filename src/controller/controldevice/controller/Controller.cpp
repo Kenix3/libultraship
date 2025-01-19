@@ -86,28 +86,28 @@ void Controller::ClearAllMappings() {
     GetLED()->ClearAllMappings();
 }
 
-void Controller::ClearAllMappingsForDeviceType(ShipDeviceType shipDeviceType) {
+void Controller::ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDeviceType) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->ClearAllButtonMappingsForDeviceType(shipDeviceType);
+        button->ClearAllButtonMappingsForDeviceType(physicalDeviceType);
     }
-    GetLeftStick()->ClearAllMappingsForDeviceType(shipDeviceType);
-    GetRightStick()->ClearAllMappingsForDeviceType(shipDeviceType);
+    GetLeftStick()->ClearAllMappingsForDeviceType(physicalDeviceType);
+    GetRightStick()->ClearAllMappingsForDeviceType(physicalDeviceType);
 
     auto gyroMapping = GetGyro()->GetGyroMapping();
-    if (gyroMapping != nullptr && gyroMapping->GetShipDeviceType() == shipDeviceType) {
+    if (gyroMapping != nullptr && gyroMapping->GetPhysicalDeviceType() == physicalDeviceType) {
         GetGyro()->ClearGyroMapping();
     }
 
-    GetRumble()->ClearAllMappingsForDeviceType(shipDeviceType);
-    GetLED()->ClearAllMappingsForDeviceType(shipDeviceType);
+    GetRumble()->ClearAllMappingsForDeviceType(physicalDeviceType);
+    GetLED()->ClearAllMappingsForDeviceType(physicalDeviceType);
 }
 
-void Controller::AddDefaultMappings(ShipDeviceType shipDeviceType) {
+void Controller::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->AddDefaultMappings(shipDeviceType);
+        button->AddDefaultMappings(physicalDeviceType);
     }
-    GetLeftStick()->AddDefaultMappings(shipDeviceType);
-    GetRumble()->AddDefaultMappings(shipDeviceType);
+    GetLeftStick()->AddDefaultMappings(physicalDeviceType);
+    GetRumble()->AddDefaultMappings(physicalDeviceType);
 
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
@@ -146,25 +146,25 @@ bool Controller::ProcessMouseButtonEvent(bool isPressed, MouseBtn mouseButton) {
     return result;
 }
 
-bool Controller::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
+bool Controller::HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        if (button->HasMappingsForShipDeviceType(shipDeviceType)) {
+        if (button->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
             return true;
         }
     }
-    if (GetLeftStick()->HasMappingsForShipDeviceType(shipDeviceType)) {
+    if (GetLeftStick()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetRightStick()->HasMappingsForShipDeviceType(shipDeviceType)) {
+    if (GetRightStick()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetGyro()->HasMappingForShipDeviceType(shipDeviceType)) {
+    if (GetGyro()->HasMappingForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetRumble()->HasMappingsForShipDeviceType(shipDeviceType)) {
+    if (GetRumble()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetLED()->HasMappingsForShipDeviceType(shipDeviceType)) {
+    if (GetLED()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
 
@@ -175,7 +175,7 @@ std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTO
     return mButtons[bitmask];
 }
 
-void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceType lusIndex) {
+void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, PhysicalDeviceType lusIndex) {
     // todo: remove this entirely
     return;
 }

@@ -13,7 +13,7 @@ namespace Ship {
 
 class ControllerButtonMapping : virtual public ControllerInputMapping {
   public:
-    ControllerButtonMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+    ControllerButtonMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
     ~ControllerButtonMapping();
 
     virtual std::string GetButtonMappingId() = 0;

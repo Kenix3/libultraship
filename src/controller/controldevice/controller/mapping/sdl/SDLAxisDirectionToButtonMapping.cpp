@@ -8,8 +8,8 @@
 namespace Ship {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                                  int32_t sdlControllerAxis, int32_t axisDirection)
-    : ControllerInputMapping(ShipDeviceType::SDLGamepad),
-      ControllerButtonMapping(ShipDeviceType::SDLGamepad, portIndex, bitmask),
+    : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
+      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask),
       SDLAxisDirectionToAnyMapping(sdlControllerAxis, axisDirection) {
 }
 
@@ -27,7 +27,7 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
     auto indexMapping = Context::GetInstance()
                             ->GetControlDeck()
                             ->GetDeviceIndexMappingManager()
-                            ->GetDeviceIndexMappingFromShipDeviceIndex(ControllerInputMapping::mShipDeviceType);
+                            ->GetDeviceIndexMappingFromShipDeviceIndex(ControllerInputMapping::mPhysicalDeviceType);
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
     if (sdlIndexMapping != nullptr) {
@@ -51,7 +51,7 @@ int8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
 
 std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
     return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mBitmask,
-                                 ControllerInputMapping::mShipDeviceType, mControllerAxis,
+                                 ControllerInputMapping::mPhysicalDeviceType, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 
@@ -61,7 +61,7 @@ void SDLAxisDirectionToButtonMapping::SaveToConfig() {
                   "SDLAxisDirectionToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDeviceType);
+                   ControllerInputMapping::mPhysicalDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
     CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
     CVarSave();

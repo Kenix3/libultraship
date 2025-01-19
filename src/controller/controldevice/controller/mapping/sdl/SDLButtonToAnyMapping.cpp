@@ -5,7 +5,7 @@
 
 namespace Ship {
 SDLButtonToAnyMapping::SDLButtonToAnyMapping(int32_t sdlControllerButton)
-    : ControllerInputMapping(ShipDeviceType::SDLGamepad), SDLMapping() {
+    : ControllerInputMapping(PhysicalDeviceType::SDLGamepad), SDLMapping() {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 

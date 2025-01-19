@@ -2,22 +2,22 @@
 
 #include <cstdint>
 #include <string>
-#include "ShipDeviceType.h"
+#include "controller/physicaldevice/PhysicalDeviceType.h"
 
 namespace Ship {
 
 class ShipDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    ShipDeviceIndexToPhysicalDeviceIndexMapping(ShipDeviceType shipDeviceType);
+    ShipDeviceIndexToPhysicalDeviceIndexMapping(PhysicalDeviceType physicalDeviceType);
     virtual ~ShipDeviceIndexToPhysicalDeviceIndexMapping();
     std::string GetMappingId();
 
     virtual void SaveToConfig() = 0;
     virtual void EraseFromConfig() = 0;
 
-    ShipDeviceType GetShipDeviceType();
+    PhysicalDeviceType GetPhysicalDeviceType();
 
   protected:
-    ShipDeviceType mShipDeviceType;
+    PhysicalDeviceType mPhysicalDeviceType;
 };
 } // namespace Ship

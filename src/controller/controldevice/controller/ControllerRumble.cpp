@@ -67,10 +67,10 @@ void ControllerRumble::ClearAllMappings() {
     SaveRumbleMappingIdsToConfig();
 }
 
-void ControllerRumble::ClearAllMappingsForDeviceType(ShipDeviceType shipDeviceType) {
+void ControllerRumble::ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDeviceType) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mRumbleMappings) {
-        if (mapping->GetShipDeviceType() == shipDeviceType) {
+        if (mapping->GetPhysicalDeviceType() == physicalDeviceType) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -85,8 +85,8 @@ void ControllerRumble::ClearAllMappingsForDeviceType(ShipDeviceType shipDeviceTy
     SaveRumbleMappingIdsToConfig();
 }
 
-void ControllerRumble::AddDefaultMappings(ShipDeviceType shipDeviceType) {
-    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(shipDeviceType, mPortIndex)) {
+void ControllerRumble::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
+    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(physicalDeviceType, mPortIndex)) {
         AddRumbleMapping(mapping);
     }
 
@@ -146,9 +146,9 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
     return true;
 }
 
-bool ControllerRumble::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
-    return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(), [shipDeviceType](const auto& mapping) {
-        return mapping.second->GetShipDeviceType() == shipDeviceType;
+bool ControllerRumble::HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType) {
+    return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(), [physicalDeviceType](const auto& mapping) {
+        return mapping.second->GetPhysicalDeviceType() == physicalDeviceType;
     });
 }
 } // namespace Ship

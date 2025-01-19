@@ -12,8 +12,8 @@ SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(u
                                                                                Direction direction,
                                                                                int32_t sdlControllerAxis,
                                                                                int32_t axisDirection)
-    : ControllerInputMapping(ShipDeviceType::SDLGamepad),
-      ControllerAxisDirectionMapping(ShipDeviceType::SDLGamepad, portIndex, stickIndex, direction),
+    : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
+      ControllerAxisDirectionMapping(PhysicalDeviceType::SDLGamepad, portIndex, stickIndex, direction),
       SDLAxisDirectionToAnyMapping(sdlControllerAxis, axisDirection) {
 }
 
@@ -39,7 +39,7 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
 
 std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() {
     return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mStickIndex, mDirection,
-                                 ControllerInputMapping::mShipDeviceType, mControllerAxis,
+                                 ControllerInputMapping::mPhysicalDeviceType, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 
@@ -50,7 +50,7 @@ void SDLAxisDirectionToAxisDirectionMapping::SaveToConfig() {
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDeviceType);
+                   ControllerInputMapping::mPhysicalDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
     CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
     CVarSave();

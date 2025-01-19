@@ -44,7 +44,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
 }
 
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<ShipDeviceType, SDL_GameController*> sdlControllersWithGyro;
+    std::unordered_map<PhysicalDeviceType, SDL_GameController*> sdlControllersWithGyro;
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {

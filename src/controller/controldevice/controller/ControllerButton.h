@@ -24,13 +24,13 @@ class ControllerButton {
     void ClearButtonMappingId(std::string id);
     void ClearButtonMapping(std::string id);
     void ClearButtonMapping(std::shared_ptr<ControllerButtonMapping> mapping);
-    void AddDefaultMappings(ShipDeviceType shipDeviceType);
+    void AddDefaultMappings(PhysicalDeviceType physicalDeviceType);
 
     void LoadButtonMappingFromConfig(std::string id);
     void SaveButtonMappingIdsToConfig();
     void ReloadAllMappingsFromConfig();
     void ClearAllButtonMappings();
-    void ClearAllButtonMappingsForDeviceType(ShipDeviceType shipDeviceType);
+    void ClearAllButtonMappingsForDeviceType(PhysicalDeviceType physicalDeviceType);
 
     bool AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id);
 
@@ -39,7 +39,7 @@ class ControllerButton {
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
     bool ProcessMouseButtonEvent(bool isPressed, Ship::MouseBtn button);
 
-    bool HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType);
+    bool HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType);
 
   private:
     uint8_t mPortIndex;

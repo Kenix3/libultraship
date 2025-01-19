@@ -6,7 +6,7 @@
 
 namespace Ship {
 MouseWheelToAnyMapping::MouseWheelToAnyMapping(WheelDirection wheelDirection)
-    : ControllerInputMapping(ShipDeviceType::Mouse), mWheelDirection(wheelDirection) {
+    : ControllerInputMapping(PhysicalDeviceType::Mouse), mWheelDirection(wheelDirection) {
 }
 
 MouseWheelToAnyMapping::~MouseWheelToAnyMapping() {

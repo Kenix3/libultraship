@@ -78,7 +78,7 @@ void ControllerDisconnectedWindow::DrawKnownControllerDisconnected() {
     auto index = GetSDLIndexFromSDLInput();
     if (index != -1 &&
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetShipDeviceIndexFromSDLDeviceIndex(
-            index) == ShipDeviceType::Max) {
+            index) == PhysicalDeviceType::Max) {
         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->InitializeSDLMappingsForPort(
             mPortIndexOfDisconnectedController, index);
         mPortIndexOfDisconnectedController = UINT8_MAX;

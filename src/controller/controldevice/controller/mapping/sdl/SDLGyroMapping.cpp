@@ -9,8 +9,8 @@
 namespace Ship {
 SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,
                                float neutralRoll)
-    : ControllerInputMapping(ShipDeviceType::SDLGamepad),
-      ControllerGyroMapping(ShipDeviceType::SDLGamepad, portIndex, sensitivity), SDLMapping(),
+    : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
+      ControllerGyroMapping(PhysicalDeviceType::SDLGamepad, portIndex, sensitivity), SDLMapping(),
       mNeutralPitch(neutralPitch), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
@@ -47,7 +47,7 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
 }
 
 std::string SDLGyroMapping::GetGyroMappingId() {
-    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mShipDeviceType);
+    return StringHelper::Sprintf("P%d-LUSI%d", mPortIndex, ControllerInputMapping::mPhysicalDeviceType);
 }
 
 void SDLGyroMapping::SaveToConfig() {
@@ -55,7 +55,7 @@ void SDLGyroMapping::SaveToConfig() {
 
     CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDeviceType);
+                   ControllerInputMapping::mPhysicalDeviceType);
     CVarSetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
     CVarSetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);

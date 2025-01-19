@@ -6,7 +6,7 @@
 #include "utils/StringHelper.h"
 
 namespace Ship {
-SDLMapping::SDLMapping() : ControllerMapping(ShipDeviceType::SDLGamepad), mController(nullptr) {
+SDLMapping::SDLMapping() : ControllerMapping(PhysicalDeviceType::SDLGamepad), mController(nullptr) {
 }
 
 SDLMapping::~SDLMapping() {
@@ -17,7 +17,7 @@ bool SDLMapping::OpenController() {
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDeviceIndex(mShipDeviceType));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(mPhysicalDeviceType));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
@@ -119,7 +119,7 @@ int32_t SDLMapping::GetSDLDeviceIndex() {
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDeviceIndex(mShipDeviceType));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(mPhysicalDeviceType));
 
     if (deviceIndexMapping == nullptr) {
         // we don't have an sdl device for this LUS device index
@@ -133,7 +133,7 @@ std::string SDLMapping::GetSDLControllerName() {
     return Context::GetInstance()
         ->GetControlDeck()
         ->GetDeviceIndexMappingManager()
-        ->GetSDLControllerNameFromShipDeviceIndex(mShipDeviceType);
+        ->GetSDLControllerNameFromShipDeviceIndex(mPhysicalDeviceType);
 }
 
 std::string SDLMapping::GetSDLDeviceName() {

@@ -128,7 +128,7 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDeviceType shipDeviceIndex, uint8_t portIndex,
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(PhysicalDeviceType shipDeviceIndex, uint8_t portIndex,
                                                                    StickIndex stickIndex) {
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
         Context::GetInstance()
@@ -156,7 +156,7 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDeviceTyp
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex,
                                                                     Direction direction) {
-    std::unordered_map<ShipDeviceType, SDL_GameController*> sdlControllers;
+    std::unordered_map<PhysicalDeviceType, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {

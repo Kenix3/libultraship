@@ -146,10 +146,10 @@ void ControllerButton::ClearAllButtonMappings() {
     SaveButtonMappingIdsToConfig();
 }
 
-void ControllerButton::ClearAllButtonMappingsForDeviceType(ShipDeviceType shipDeviceType) {
+void ControllerButton::ClearAllButtonMappingsForDeviceType(PhysicalDeviceType physicalDeviceType) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mButtonMappings) {
-        if (mapping->GetShipDeviceType() == shipDeviceType) {
+        if (mapping->GetPhysicalDeviceType() == physicalDeviceType) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -170,9 +170,9 @@ void ControllerButton::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     }
 }
 
-bool ControllerButton::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
-    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(), [shipDeviceType](const auto& mapping) {
-        return mapping.second->GetShipDeviceType() == shipDeviceType;
+bool ControllerButton::HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType) {
+    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(), [physicalDeviceType](const auto& mapping) {
+        return mapping.second->GetPhysicalDeviceType() == physicalDeviceType;
     });
 }
 
@@ -265,12 +265,12 @@ bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) 
     return result;
 }
 
-void ControllerButton::AddDefaultMappings(ShipDeviceType shipDeviceType) {
+void ControllerButton::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask)) {
         AddButtonMapping(mapping);
     }
 
-    if (shipDeviceType == ShipDeviceType::Keyboard) {
+    if (physicalDeviceType == PhysicalDeviceType::Keyboard) {
         for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
             AddButtonMapping(mapping);
         }

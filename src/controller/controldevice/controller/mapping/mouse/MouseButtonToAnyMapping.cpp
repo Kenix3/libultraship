@@ -6,7 +6,7 @@
 
 namespace Ship {
 MouseButtonToAnyMapping::MouseButtonToAnyMapping(MouseBtn button)
-    : ControllerInputMapping(ShipDeviceType::Mouse), mButton(button), mKeyPressed(false) {
+    : ControllerInputMapping(PhysicalDeviceType::Mouse), mButton(button), mKeyPressed(false) {
 }
 
 MouseButtonToAnyMapping::~MouseButtonToAnyMapping() {

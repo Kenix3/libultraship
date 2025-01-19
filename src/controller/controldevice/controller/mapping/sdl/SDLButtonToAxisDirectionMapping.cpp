@@ -10,8 +10,8 @@
 namespace Ship {
 SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
                                                                  Direction direction, int32_t sdlControllerButton)
-    : ControllerInputMapping(ShipDeviceType::SDLGamepad),
-      ControllerAxisDirectionMapping(ShipDeviceType::SDLGamepad, portIndex, stickIndex, direction),
+    : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
+      ControllerAxisDirectionMapping(PhysicalDeviceType::SDLGamepad, portIndex, stickIndex, direction),
       SDLButtonToAnyMapping(sdlControllerButton) {
 }
 
@@ -26,7 +26,7 @@ float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 
 std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
     return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLB%d", mPortIndex, mStickIndex, mDirection,
-                                 ControllerInputMapping::mShipDeviceType, mControllerButton);
+                                 ControllerInputMapping::mPhysicalDeviceType, mControllerButton);
 }
 
 void SDLButtonToAxisDirectionMapping::SaveToConfig() {
@@ -36,7 +36,7 @@ void SDLButtonToAxisDirectionMapping::SaveToConfig() {
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDeviceType);
+                   ControllerInputMapping::mPhysicalDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }

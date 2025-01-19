@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 #include "controller/controldevice/controller/Controller.h"
-#include "ShipDeviceType.h"
+#include "controller/physicaldevice/PhysicalDeviceType.h"
 
 namespace Ship {
 

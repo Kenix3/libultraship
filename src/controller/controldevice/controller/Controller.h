@@ -33,8 +33,8 @@ class Controller : public ControlDevice {
     void Disconnect();
 
     void ClearAllMappings();
-    void ClearAllMappingsForDeviceType(ShipDeviceType shipDeviceType);
-    void AddDefaultMappings(ShipDeviceType shipDeviceType);
+    void ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDeviceType);
+    void AddDefaultMappings(PhysicalDeviceType physicalDeviceType);
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> GetAllButtons();
     std::shared_ptr<ControllerButton> GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask);
     std::shared_ptr<ControllerButton> GetButton(CONTROLLERBUTTONS_T bitmask);
@@ -51,8 +51,8 @@ class Controller : public ControlDevice {
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
     bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
 
-    bool HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType);
-    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, ShipDeviceType lusIndex);
+    bool HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType);
+    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, PhysicalDeviceType lusIndex);
 
   protected:
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> mButtons;

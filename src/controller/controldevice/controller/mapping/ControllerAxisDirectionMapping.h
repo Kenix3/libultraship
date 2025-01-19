@@ -13,7 +13,7 @@ enum Direction { LEFT, RIGHT, UP, DOWN };
 
 class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
   public:
-    ControllerAxisDirectionMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, StickIndex stickIndex,
+    ControllerAxisDirectionMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, StickIndex stickIndex,
                                    Direction direction);
     ~ControllerAxisDirectionMapping();
     virtual float GetNormalizedAxisDirectionValue() = 0;

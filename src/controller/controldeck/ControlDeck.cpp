@@ -30,9 +30,9 @@ void ControlDeck::Init(uint8_t* controllerBits) {
 
     // if we don't have a config for controller 1, set default bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
-        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceType::Keyboard);
-        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceType::Mouse);
-        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceType::SDLGamepad);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Keyboard);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Mouse);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
 
     Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();

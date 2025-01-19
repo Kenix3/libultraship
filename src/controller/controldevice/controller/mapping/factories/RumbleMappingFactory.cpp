@@ -45,12 +45,12 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 }
 
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
-RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDeviceType shipDeviceType, uint8_t portIndex) {
+RumbleMappingFactory::CreateDefaultSDLRumbleMappings(PhysicalDeviceType physicalDeviceType, uint8_t portIndex) {
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDeviceIndex(shipDeviceType));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(physicalDeviceType));
     if (sdlIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
     }
@@ -62,7 +62,7 @@ RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDeviceType shipDeviceTy
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<ShipDeviceType, SDL_GameController*> sdlControllersWithRumble;
+    std::unordered_map<PhysicalDeviceType, SDL_GameController*> sdlControllersWithRumble;
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
