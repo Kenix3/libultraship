@@ -169,7 +169,7 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
 void InputEditorWindow::GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType lusIndex, ImVec4& buttonColor,
-                                                         ImVec4& buttonHoveredColor) {
+                                                             ImVec4& buttonHoveredColor) {
     switch (lusIndex) {
         case PhysicalDeviceType::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
@@ -1203,8 +1203,7 @@ void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTRO
             if (button->HasMappingsForPhysicalDeviceType(lusIndex)) {
                 for (auto [id, mapping] : button->GetAllButtonMappings()) {
                     if (mapping->GetPhysicalDeviceType() == lusIndex) {
-                        lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<PhysicalDeviceType, bool>(lusIndex, true));
+                        lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                         break;
                     }
                 }
@@ -1253,8 +1252,7 @@ void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex
                 for (auto [id, mapping] : mappings) {
                     if (mapping->GetPhysicalDeviceType() == lusIndex) {
                         foundMapping = true;
-                        lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<PhysicalDeviceType, bool>(lusIndex, true));
+                        lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                         break;
                     }
                 }
@@ -1304,8 +1302,7 @@ void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
                                           ->GetRumble()
                                           ->GetAllRumbleMappings()) {
                 if (mapping->GetPhysicalDeviceType() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<PhysicalDeviceType, bool>(lusIndex, true));
+                    lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                     break;
                 }
             }
@@ -1365,8 +1362,7 @@ void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
                                           ->GetLED()
                                           ->GetAllLEDMappings()) {
                 if (mapping->GetPhysicalDeviceType() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<PhysicalDeviceType, bool>(lusIndex, true));
+                    lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
                     break;
                 }
             }

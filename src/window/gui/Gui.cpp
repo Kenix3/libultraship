@@ -79,9 +79,8 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
 
     if (GetGuiWindow("SDLAddRemoveDeviceEventHandler") == nullptr) {
         AddGuiWindow(std::make_shared<SDLAddRemoveDeviceEventHandler>("gOpenWindows.SDLAddRemoveDeviceEventHandler",
-                                                                    "SDLAddRemoveDeviceEventHandler"));
+                                                                      "SDLAddRemoveDeviceEventHandler"));
     }
-
 
     // if (GetGuiWindow("Controller Reordering") == nullptr) {
     //     AddGuiWindow(std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN,

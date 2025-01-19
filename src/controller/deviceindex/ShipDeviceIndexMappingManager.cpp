@@ -92,7 +92,8 @@ void ShipDeviceIndexMappingManager::InitializeSDLMappingsForPort(uint8_t n64port
 
     // // if we didn't find a mapping for this guid, make defaults
     // auto lusIndex = GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings();
-    // auto deviceIndexMapping = std::make_shared<ShipDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex, guidString,
+    // auto deviceIndexMapping = std::make_shared<ShipDeviceIndexToSDLDeviceIndexMapping>(lusIndex, sdlIndex,
+    // guidString,
     //                                                                                    sdlControllerName, 25, 25);
     // mShipDeviceIndexToSDLControllerNames[lusIndex] = sdlControllerName;
     // deviceIndexMapping->SaveToConfig();
@@ -159,7 +160,7 @@ void ShipDeviceIndexMappingManager::InitializeMappingsSinglePlayer() {
 
     // mShipDeviceIndexToPhysicalDeviceIndexMappings.clear();
     // for (auto sdlIndex : connectedSdlControllerIndices) {
-        InitializeSDLMappingsForPort(0);
+    InitializeSDLMappingsForPort(0);
     // }
     // mIsInitialized = true;
 }
@@ -575,7 +576,8 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
     return shipDeviceIndex;
 }
 
-PhysicalDeviceType ShipDeviceIndexMappingManager::GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
+PhysicalDeviceType
+ShipDeviceIndexMappingManager::GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
     return PhysicalDeviceType::SDLGamepad;
 }
 

@@ -28,10 +28,10 @@ std::string SDLAxisDirectionToAnyMapping::GetPhysicalInputName() {
             return StringHelper::Sprintf("Right Stick %s",
                                          mAxisDirection == NEGATIVE ? ICON_FA_ARROW_UP : ICON_FA_ARROW_DOWN);
         case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-                return "LT";
+            return "LT";
             break;
         case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-                return "RT";
+            return "RT";
             break;
         default:
             break;

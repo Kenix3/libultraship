@@ -1,7 +1,8 @@
 #include "ControllerInputMapping.h"
 
 namespace Ship {
-ControllerInputMapping::ControllerInputMapping(PhysicalDeviceType physicalDeviceType) : ControllerMapping(physicalDeviceType) {
+ControllerInputMapping::ControllerInputMapping(PhysicalDeviceType physicalDeviceType)
+    : ControllerMapping(physicalDeviceType) {
 }
 
 ControllerInputMapping::~ControllerInputMapping() {

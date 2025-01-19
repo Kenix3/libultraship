@@ -9,8 +9,9 @@ SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
-    // for (const auto& [instanceId, gamepad] : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        // todo: LED
+    // for (const auto& [instanceId, gamepad] :
+    // Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex))
+    // { todo: LED
     // }
 
     // if (!ControllerLoaded()) {

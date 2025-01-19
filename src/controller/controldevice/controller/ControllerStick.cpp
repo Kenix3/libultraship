@@ -127,7 +127,7 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
 void ControllerStick::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
         for (auto mapping :
-            AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStickIndex)) {
+             AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStickIndex)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
         }
     }
@@ -452,7 +452,8 @@ bool ControllerStick::HasMappingsForPhysicalDeviceType(PhysicalDeviceType physic
                        [physicalDeviceType](const auto& directionMappings) {
                            return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
                                               [physicalDeviceType](const auto& mappingPair) {
-                                                  return mappingPair.second->GetPhysicalDeviceType() == physicalDeviceType;
+                                                  return mappingPair.second->GetPhysicalDeviceType() ==
+                                                         physicalDeviceType;
                                               });
                        });
 }

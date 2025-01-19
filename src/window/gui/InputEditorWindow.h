@@ -64,7 +64,7 @@ class InputEditorWindow : public GuiWindow {
     void UpdateStickDirectionToMappingIds(uint8_t port);
 
     void GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType, ImVec4& buttonColor,
-                                          ImVec4& buttonHoveredColor);
+                                              ImVec4& buttonHoveredColor);
     void DrawPortTab(uint8_t portIndex);
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;

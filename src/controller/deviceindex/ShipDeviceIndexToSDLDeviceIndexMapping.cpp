@@ -4,8 +4,8 @@
 
 namespace Ship {
 ShipDeviceIndexToSDLDeviceIndexMapping::ShipDeviceIndexToSDLDeviceIndexMapping(
-    PhysicalDeviceType physicalDeviceType, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
-    int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage)
+    PhysicalDeviceType physicalDeviceType, int32_t sdlDeviceIndex, std::string sdlJoystickGuid,
+    std::string sdlControllerName, int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage)
     : ShipDeviceIndexToPhysicalDeviceIndexMapping(physicalDeviceType), mSDLDeviceIndex(sdlDeviceIndex),
       mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName),
       mStickAxisThresholdPercentage(stickAxisThresholdPercentage),

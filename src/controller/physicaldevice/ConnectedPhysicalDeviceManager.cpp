@@ -7,7 +7,8 @@ ConnectedPhysicalDeviceManager::ConnectedPhysicalDeviceManager() {
 ConnectedPhysicalDeviceManager::~ConnectedPhysicalDeviceManager() {
 }
 
-std::unordered_map<int32_t, SDL_GameController*> ConnectedPhysicalDeviceManager::GetConnectedSDLGamepadsForPort(uint8_t portIndex) {
+std::unordered_map<int32_t, SDL_GameController*>
+ConnectedPhysicalDeviceManager::GetConnectedSDLGamepadsForPort(uint8_t portIndex) {
     // todo: filter somehow
     return mConnectedSDLGamepads;
 }
@@ -30,7 +31,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
 
         auto gamepad = SDL_GameControllerOpen(i);
         auto instanceId = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamepad));
-        
+
         mConnectedSDLGamepads[instanceId] = gamepad;
     }
 }
