@@ -63,8 +63,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-            mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                         DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+                mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                             DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 break;
             }
         }
