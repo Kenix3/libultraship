@@ -37,6 +37,10 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
         normalizedValues.push_back(fabs(axisValue * MAX_AXIS_RANGE / MAX_SDL_RANGE));
     }
 
+    if (normalizedValues.size() == 0) {
+        return 0.0f;
+    }
+
     return *std::max_element(normalizedValues.begin(), normalizedValues.end());
 }
 
