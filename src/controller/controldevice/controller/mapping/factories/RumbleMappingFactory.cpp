@@ -4,7 +4,6 @@
 #include "utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
 #include "Context.h"
-#include "controller/deviceindex/ShipDeviceIndexToSDLDeviceIndexMapping.h"
 
 namespace Ship {
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromConfig(uint8_t portIndex,
@@ -46,86 +45,89 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
 RumbleMappingFactory::CreateDefaultSDLRumbleMappings(PhysicalDeviceType physicalDeviceType, uint8_t portIndex) {
-    auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
-        Context::GetInstance()
-            ->GetControlDeck()
-            ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDeviceIndex(physicalDeviceType));
-    if (sdlIndexMapping == nullptr) {
+    // todo: rumble
+    // auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
+    //     Context::GetInstance()
+    //         ->GetControlDeck()
+    //         ->GetDeviceIndexMappingManager()
+    //         ->GetDeviceIndexMappingFromShipDeviceIndex(physicalDeviceType));
+    // if (sdlIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
-    }
+    // }
 
-    std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
-        portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
+    // std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
+    //     portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
-    return mappings;
+    // return mappings;
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
     std::unordered_map<PhysicalDeviceType, SDL_GameController*> sdlControllersWithRumble;
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
-    for (auto [lusIndex, indexMapping] :
-         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
-        if (sdlIndexMapping == nullptr) {
-            // this LUS index isn't mapped to an SDL index
-            continue;
-        }
+    // todo: rumble
+    // for (auto [lusIndex, indexMapping] :
+    //      Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
+    //     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
-        auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
+    //     if (sdlIndexMapping == nullptr) {
+    //         // this LUS index isn't mapped to an SDL index
+    //         continue;
+    //     }
 
-        if (!SDL_IsGameController(sdlIndex)) {
-            // this SDL device isn't a game controller
-            continue;
-        }
+    //     auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
 
-        auto controller = SDL_GameControllerOpen(sdlIndex);
-        bool hasRumble = SDL_GameControllerHasRumble(controller);
+    //     if (!SDL_IsGameController(sdlIndex)) {
+    //         // this SDL device isn't a game controller
+    //         continue;
+    //     }
 
-        if (hasRumble) {
-            sdlControllersWithRumble[lusIndex] = SDL_GameControllerOpen(sdlIndex);
-        } else {
-            SDL_GameControllerClose(controller);
-        }
-    }
+    //     auto controller = SDL_GameControllerOpen(sdlIndex);
+    //     bool hasRumble = SDL_GameControllerHasRumble(controller);
 
-    for (auto [lusIndex, controller] : sdlControllersWithRumble) {
-        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                             DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
-                break;
-            }
-        }
+    //     if (hasRumble) {
+    //         sdlControllersWithRumble[lusIndex] = SDL_GameControllerOpen(sdlIndex);
+    //     } else {
+    //         SDL_GameControllerClose(controller);
+    //     }
+    // }
 
-        if (mapping != nullptr) {
-            break;
-        }
+    // for (auto [lusIndex, controller] : sdlControllersWithRumble) {
+    //     for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+    //         if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+    //             mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+    //                                                          DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+    //             break;
+    //         }
+    //     }
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-            const auto axis = static_cast<SDL_GameControllerAxis>(i);
-            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
-            int32_t axisDirection = 0;
-            if (axisValue < -0.7f) {
-                axisDirection = NEGATIVE;
-            } else if (axisValue > 0.7f) {
-                axisDirection = POSITIVE;
-            }
+    //     if (mapping != nullptr) {
+    //         break;
+    //     }
 
-            if (axisDirection == 0) {
-                continue;
-            }
+    //     for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+    //         const auto axis = static_cast<SDL_GameControllerAxis>(i);
+    //         const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+    //         int32_t axisDirection = 0;
+    //         if (axisValue < -0.7f) {
+    //             axisDirection = NEGATIVE;
+    //         } else if (axisValue > 0.7f) {
+    //             axisDirection = POSITIVE;
+    //         }
 
-            mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                         DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
-            break;
-        }
-    }
+    //         if (axisDirection == 0) {
+    //             continue;
+    //         }
 
-    for (auto [i, controller] : sdlControllersWithRumble) {
-        SDL_GameControllerClose(controller);
-    }
+    //         mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+    //                                                      DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+    //         break;
+    //     }
+    // }
+
+    // for (auto [i, controller] : sdlControllersWithRumble) {
+    //     SDL_GameControllerClose(controller);
+    // }
 
     return mapping;
 }

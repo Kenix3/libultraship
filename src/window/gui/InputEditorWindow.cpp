@@ -1289,17 +1289,6 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
     }
 
     if (ImGui::BeginPopup(popupId.c_str())) {
-        std::map<PhysicalDeviceType, std::pair<std::string, int32_t>> indexMappings;
-        for (auto [lusIndex, mapping] :
-             Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-            auto sdlIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(mapping);
-            if (sdlIndexMapping == nullptr) {
-                continue;
-            }
-
-            indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex() };
-        }
-
         bool shouldClose = false;
         ImGui::PushStyleColor(ImGuiCol_Button, BUTTON_COLOR_KEYBOARD_BEIGE);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED);
@@ -1347,41 +1336,34 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
             }
             ImGui::EndPopup();
         }
-        for (auto [lusIndex, info] : indexMappings) {
-            auto [name, sdlIndex] = info;
 
-            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForPhysicalDeviceType(lusIndex, buttonColor, buttonHoveredColor);
-            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-            if (ImGui::Button(StringHelper::Sprintf("%s %s (%s)", ICON_FA_GAMEPAD, name.c_str(),
-                                                    StringHelper::Sprintf("SDL %d", sdlIndex).c_str())
-                                  .c_str())) {
-                ImGui::OpenPopup(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str());
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForPhysicalDeviceType(Ship::PhysicalDeviceType::SDLGamepad, buttonColor, buttonHoveredColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        if (ImGui::Button(StringHelper::Sprintf("%s %s", ICON_FA_GAMEPAD, "Gamepad (SDL)").c_str())) {
+            ImGui::OpenPopup("Set Defaults for Gamepad (SDL)");
+        }
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+        if (ImGui::BeginPopupModal("Set Defaults for Gamepad (SDL)", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("This will clear all existing mappings for\nGamepad (SDL) on port %d.\n\nContinue?", portIndex + 1);
+            if (ImGui::Button("Cancel")) {
+                shouldClose = true;
+                ImGui::CloseCurrentPopup();
             }
-            ImGui::PopStyleColor();
-            ImGui::PopStyleColor();
-            if (ImGui::BeginPopupModal(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str(), NULL,
-                                       ImGuiWindowFlags_AlwaysAutoResize)) {
-                ImGui::Text("This will clear all existing mappings for\n%s (SDL %d) on port %d.\n\nContinue?",
-                            name.c_str(), sdlIndex, portIndex + 1);
-                if (ImGui::Button("Cancel")) {
-                    shouldClose = true;
-                    ImGui::CloseCurrentPopup();
-                }
-                if (ImGui::Button("Set defaults")) {
-                    Context::GetInstance()
-                        ->GetControlDeck()
-                        ->GetControllerByPort(portIndex)
-                        ->ClearAllMappingsForDeviceType(lusIndex);
-                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
-                        lusIndex);
-                    shouldClose = true;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
+            if (ImGui::Button("Set defaults")) {
+                Ship::Context::GetInstance()
+                    ->GetControlDeck()
+                    ->GetControllerByPort(portIndex)
+                    ->ClearAllMappingsForDeviceType(Ship::PhysicalDeviceType::SDLGamepad);
+                Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
+                    Ship::PhysicalDeviceType::SDLGamepad);
+                shouldClose = true;
+                ImGui::CloseCurrentPopup();
             }
+            ImGui::EndPopup();
         }
 
         if (ImGui::Button("Cancel") || shouldClose) {

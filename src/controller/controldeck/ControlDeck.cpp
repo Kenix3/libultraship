@@ -5,13 +5,11 @@
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>
-#include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : mSinglePlayerMappingMode(false) {
-    mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
 }
@@ -36,8 +34,6 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Mouse);
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
-
-    // Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
@@ -105,10 +101,6 @@ void ControlDeck::BlockGameInput(int32_t blockId) {
 
 void ControlDeck::UnblockGameInput(int32_t blockId) {
     mGameInputBlockers.erase(blockId);
-}
-
-std::shared_ptr<ShipDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
-    return mDeviceIndexMappingManager;
 }
 
 std::shared_ptr<ConnectedPhysicalDeviceManager> ControlDeck::GetConnectedPhysicalDeviceManager() {
