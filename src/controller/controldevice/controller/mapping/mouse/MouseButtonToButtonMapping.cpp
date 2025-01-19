@@ -6,8 +6,8 @@
 
 namespace Ship {
 MouseButtonToButtonMapping::MouseButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button)
-    : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseButtonToAnyMapping(button),
-      ControllerButtonMapping(ShipDeviceIndex::Mouse, portIndex, bitmask) {
+    : ControllerInputMapping(ShipDeviceType::Mouse), MouseButtonToAnyMapping(button),
+      ControllerButtonMapping(ShipDeviceType::Mouse, portIndex, bitmask) {
 }
 
 void MouseButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

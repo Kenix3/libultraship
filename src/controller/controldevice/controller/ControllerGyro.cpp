@@ -84,11 +84,11 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     SaveGyroMappingIdToConfig();
 }
 
-bool ControllerGyro::HasMappingForShipDeviceIndex(ShipDeviceIndex lusIndex) {
+bool ControllerGyro::HasMappingForShipDeviceType(ShipDeviceType shipDeviceType) {
     if (mGyroMapping == nullptr) {
         return false;
     }
 
-    return mGyroMapping->GetShipDeviceIndex() == lusIndex;
+    return mGyroMapping->GetShipDeviceType() == shipDeviceType;
 }
 } // namespace Ship

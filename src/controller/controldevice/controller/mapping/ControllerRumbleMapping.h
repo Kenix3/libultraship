@@ -11,7 +11,7 @@ namespace Ship {
 
 class ControllerRumbleMapping : public ControllerMapping {
   public:
-    ControllerRumbleMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+    ControllerRumbleMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                             uint8_t highFrequencyIntensityPercentage);
     ~ControllerRumbleMapping();
     virtual void StartRumble() = 0;

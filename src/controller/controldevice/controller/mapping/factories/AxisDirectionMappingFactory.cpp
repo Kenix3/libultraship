@@ -40,7 +40,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         }
 
         return std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
-            static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, stickIndex, static_cast<Direction>(direction),
+            ShipDeviceType::SDLGamepad, portIndex, stickIndex, static_cast<Direction>(direction),
             sdlControllerAxis, axisDirection);
     }
 
@@ -60,7 +60,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         }
 
         return std::make_shared<SDLButtonToAxisDirectionMapping>(
-            static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, stickIndex, static_cast<Direction>(direction),
+            ShipDeviceType::SDLGamepad, portIndex, stickIndex, static_cast<Direction>(direction),
             sdlControllerButton);
     }
 
@@ -130,7 +130,7 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
+AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDeviceType shipDeviceIndex, uint8_t portIndex,
                                                                    StickIndex stickIndex) {
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
         Context::GetInstance()
@@ -158,7 +158,7 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(ShipDeviceInd
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex,
                                                                     Direction direction) {
-    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllers;
+    std::unordered_map<ShipDeviceType, SDL_GameController*> sdlControllers;
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {

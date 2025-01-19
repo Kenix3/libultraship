@@ -22,7 +22,7 @@ class ControllerGyro {
 
     void UpdatePad(float& x, float& y);
 
-    bool HasMappingForShipDeviceIndex(ShipDeviceIndex lusIndex);
+    bool HasMappingForShipDeviceType(ShipDeviceType shipDeviceType);
 
   private:
     uint8_t mPortIndex;

@@ -4,9 +4,9 @@
 #include <sstream>
 
 namespace Ship {
-ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
+ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(ShipDeviceType shipDeviceType, uint8_t portIndex,
                                                                StickIndex stickIndex, Direction direction)
-    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mStickIndex(stickIndex), mDirection(direction) {
+    : ControllerInputMapping(shipDeviceType), mPortIndex(portIndex), mStickIndex(stickIndex), mDirection(direction) {
 }
 
 ControllerAxisDirectionMapping::~ControllerAxisDirectionMapping() {

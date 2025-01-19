@@ -8,12 +8,12 @@
 #define MAX_SDL_RANGE (float)INT16_MAX
 
 namespace Ship {
-SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
+SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(ShipDeviceType shipDeviceType, uint8_t portIndex,
                                                                  StickIndex stickIndex, Direction direction,
                                                                  int32_t sdlControllerButton)
-    : ControllerInputMapping(shipDeviceIndex),
-      ControllerAxisDirectionMapping(shipDeviceIndex, portIndex, stickIndex, direction),
-      SDLButtonToAnyMapping(shipDeviceIndex, sdlControllerButton) {
+    : ControllerInputMapping(shipDeviceType),
+      ControllerAxisDirectionMapping(shipDeviceType, portIndex, stickIndex, direction),
+      SDLButtonToAnyMapping(shipDeviceType, sdlControllerButton) {
 }
 
 float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
@@ -27,7 +27,7 @@ float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
 
 std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
     return StringHelper::Sprintf("P%d-S%d-D%d-LUSI%d-SDLB%d", mPortIndex, mStickIndex, mDirection,
-                                 ControllerInputMapping::mShipDeviceIndex, mControllerButton);
+                                 ControllerInputMapping::mShipDeviceType, mControllerButton);
 }
 
 void SDLButtonToAxisDirectionMapping::SaveToConfig() {
@@ -37,7 +37,7 @@ void SDLButtonToAxisDirectionMapping::SaveToConfig() {
     CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
     CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDeviceIndex);
+                   ControllerInputMapping::mShipDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
     CVarSave();
 }

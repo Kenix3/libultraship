@@ -49,11 +49,11 @@ void ControllerStick::ClearAllMappings() {
     SetNotchSnapAngle(0);
 }
 
-void ControllerStick::ClearAllMappingsForDevice(ShipDeviceIndex lusIndex) {
+void ControllerStick::ClearAllMappingsForDeviceType(ShipDeviceType shipDeviceType) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
-            if (mapping->GetShipDeviceIndex() == lusIndex) {
+            if (mapping->GetShipDeviceType() == shipDeviceType) {
                 mapping->EraseFromConfig();
                 mappingIdsToRemove.push_back(id);
             }
@@ -124,13 +124,13 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
 
-void ControllerStick::AddDefaultMappings(ShipDeviceIndex lusIndex) {
+void ControllerStick::AddDefaultMappings(ShipDeviceType shipDeviceType) {
     for (auto mapping :
-         AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStickIndex)) {
+         AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(shipDeviceType, mPortIndex, mStickIndex)) {
         AddAxisDirectionMapping(mapping->GetDirection(), mapping);
     }
 
-    if (lusIndex == ShipDeviceIndex::Keyboard) {
+    if (shipDeviceType == ShipDeviceType::Keyboard) {
         for (auto mapping :
              AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStickIndex)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
@@ -445,12 +445,12 @@ bool ControllerStick::NotchSnapAngleIsDefault() {
     return mNotchSnapAngle == DEFAULT_NOTCH_SNAP_ANGLE;
 }
 
-bool ControllerStick::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
+bool ControllerStick::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
     return std::any_of(mAxisDirectionMappings.begin(), mAxisDirectionMappings.end(),
-                       [lusIndex](const auto& directionMappings) {
+                       [shipDeviceType](const auto& directionMappings) {
                            return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
-                                              [lusIndex](const auto& mappingPair) {
-                                                  return mappingPair.second->GetShipDeviceIndex() == lusIndex;
+                                              [shipDeviceType](const auto& mappingPair) {
+                                                  return mappingPair.second->GetShipDeviceType() == shipDeviceType;
                                               });
                        });
 }

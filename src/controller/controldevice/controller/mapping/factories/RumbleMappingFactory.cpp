@@ -37,7 +37,7 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
             return nullptr;
         }
 
-        return std::make_shared<SDLRumbleMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex,
+        return std::make_shared<SDLRumbleMapping>(static_cast<ShipDeviceType>(shipDeviceIndex), portIndex,
                                                   lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
     }
 
@@ -45,25 +45,25 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
 }
 
 std::vector<std::shared_ptr<ControllerRumbleMapping>>
-RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex) {
+RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDeviceType shipDeviceType, uint8_t portIndex) {
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(
         Context::GetInstance()
             ->GetControlDeck()
             ->GetDeviceIndexMappingManager()
-            ->GetDeviceIndexMappingFromShipDeviceIndex(shipDeviceIndex));
+            ->GetDeviceIndexMappingFromShipDeviceIndex(shipDeviceType));
     if (sdlIndexMapping == nullptr) {
         return std::vector<std::shared_ptr<ControllerRumbleMapping>>();
     }
 
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
-        shipDeviceIndex, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+        shipDeviceType, portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
         DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
     return mappings;
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllersWithRumble;
+    std::unordered_map<ShipDeviceType, SDL_GameController*> sdlControllersWithRumble;
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {

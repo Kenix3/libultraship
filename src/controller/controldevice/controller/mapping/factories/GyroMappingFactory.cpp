@@ -37,7 +37,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         float neutralYaw = CVarGetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
         float neutralRoll = CVarGetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
 
-        return std::make_shared<SDLGyroMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, sensitivity,
+        return std::make_shared<SDLGyroMapping>(static_cast<ShipDeviceType>(shipDeviceIndex), portIndex, sensitivity,
                                                 neutralPitch, neutralYaw, neutralRoll);
     }
 
@@ -45,7 +45,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
 }
 
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllersWithGyro;
+    std::unordered_map<ShipDeviceType, SDL_GameController*> sdlControllersWithGyro;
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {

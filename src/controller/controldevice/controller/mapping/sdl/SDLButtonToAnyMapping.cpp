@@ -4,8 +4,8 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace Ship {
-SDLButtonToAnyMapping::SDLButtonToAnyMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlControllerButton)
-    : ControllerInputMapping(shipDeviceIndex), SDLMapping(shipDeviceIndex) {
+SDLButtonToAnyMapping::SDLButtonToAnyMapping(ShipDeviceType shipDeviceType, int32_t sdlControllerButton)
+    : ControllerInputMapping(shipDeviceType), SDLMapping(shipDeviceType) {
     mControllerButton = static_cast<SDL_GameControllerButton>(sdlControllerButton);
 }
 

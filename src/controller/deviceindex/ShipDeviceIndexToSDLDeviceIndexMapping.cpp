@@ -4,9 +4,9 @@
 
 namespace Ship {
 ShipDeviceIndexToSDLDeviceIndexMapping::ShipDeviceIndexToSDLDeviceIndexMapping(
-    ShipDeviceIndex shipDeviceIndex, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
+    ShipDeviceType shipDeviceType, int32_t sdlDeviceIndex, std::string sdlJoystickGuid, std::string sdlControllerName,
     int32_t stickAxisThresholdPercentage, int32_t triggerAxisThresholdPercentage)
-    : ShipDeviceIndexToPhysicalDeviceIndexMapping(shipDeviceIndex), mSDLDeviceIndex(sdlDeviceIndex),
+    : ShipDeviceIndexToPhysicalDeviceIndexMapping(shipDeviceType), mSDLDeviceIndex(sdlDeviceIndex),
       mSDLJoystickGUID(sdlJoystickGuid), mSDLControllerName(sdlControllerName),
       mStickAxisThresholdPercentage(stickAxisThresholdPercentage),
       mTriggerAxisThresholdPercentage(triggerAxisThresholdPercentage) {
@@ -51,7 +51,7 @@ void ShipDeviceIndexToSDLDeviceIndexMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".DeviceMappings." + GetMappingId();
     CVarSetString(StringHelper::Sprintf("%s.DeviceMappingClass", mappingCvarKey.c_str()).c_str(),
                   "ShipDeviceIndexToSDLDeviceIndexMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), mShipDeviceIndex);
+    CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(), mShipDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLDeviceIndex", mappingCvarKey.c_str()).c_str(), mSDLDeviceIndex);
     CVarSetString(StringHelper::Sprintf("%s.SDLJoystickGUID", mappingCvarKey.c_str()).c_str(),
                   mSDLJoystickGUID.c_str());

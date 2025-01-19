@@ -8,7 +8,7 @@ namespace Ship {
 
 class ShipDeviceIndexToSDLDeviceIndexMapping : public ShipDeviceIndexToPhysicalDeviceIndexMapping {
   public:
-    ShipDeviceIndexToSDLDeviceIndexMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlDeviceIndex,
+    ShipDeviceIndexToSDLDeviceIndexMapping(ShipDeviceType shipDeviceType, int32_t sdlDeviceIndex,
                                            std::string sdlJoystickGuid, std::string sdlControllerName,
                                            int32_t stickAxisThresholdPercentage,
                                            int32_t triggerAxisThresholdPercentage);

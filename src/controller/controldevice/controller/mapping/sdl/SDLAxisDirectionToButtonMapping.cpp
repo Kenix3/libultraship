@@ -6,11 +6,11 @@
 #include "Context.h"
 
 namespace Ship {
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(ShipDeviceType shipDeviceType, uint8_t portIndex,
                                                                  CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerAxis,
                                                                  int32_t axisDirection)
-    : ControllerInputMapping(shipDeviceIndex), ControllerButtonMapping(shipDeviceIndex, portIndex, bitmask),
-      SDLAxisDirectionToAnyMapping(shipDeviceIndex, sdlControllerAxis, axisDirection) {
+    : ControllerInputMapping(shipDeviceType), ControllerButtonMapping(shipDeviceType, portIndex, bitmask),
+      SDLAxisDirectionToAnyMapping(shipDeviceType, sdlControllerAxis, axisDirection) {
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
@@ -27,7 +27,7 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
     auto indexMapping = Context::GetInstance()
                             ->GetControlDeck()
                             ->GetDeviceIndexMappingManager()
-                            ->GetDeviceIndexMappingFromShipDeviceIndex(ControllerInputMapping::mShipDeviceIndex);
+                            ->GetDeviceIndexMappingFromShipDeviceIndex(ControllerInputMapping::mShipDeviceType);
     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
 
     if (sdlIndexMapping != nullptr) {
@@ -51,7 +51,7 @@ int8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
 
 std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
     return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLA%d-AD%s", mPortIndex, mBitmask,
-                                 ControllerInputMapping::mShipDeviceIndex, mControllerAxis,
+                                 ControllerInputMapping::mShipDeviceType, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");
 }
 
@@ -61,7 +61,7 @@ void SDLAxisDirectionToButtonMapping::SaveToConfig() {
                   "SDLAxisDirectionToButtonMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerInputMapping::mShipDeviceIndex);
+                   ControllerInputMapping::mShipDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
     CVarSetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
     CVarSave();

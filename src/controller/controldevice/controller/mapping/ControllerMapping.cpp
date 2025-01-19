@@ -1,7 +1,7 @@
 #include "ControllerMapping.h"
 
 namespace Ship {
-ControllerMapping::ControllerMapping(ShipDeviceIndex shipDeviceIndex) : mShipDeviceIndex(shipDeviceIndex) {
+ControllerMapping::ControllerMapping(ShipDeviceType shipDeviceType) : mShipDeviceType(shipDeviceType) {
 }
 
 ControllerMapping::~ControllerMapping() {
@@ -11,7 +11,7 @@ std::string ControllerMapping::GetPhysicalDeviceName() {
     return "Unknown";
 }
 
-ShipDeviceIndex ControllerMapping::GetShipDeviceIndex() {
-    return mShipDeviceIndex;
+ShipDeviceType ControllerMapping::GetShipDeviceType() {
+    return mShipDeviceType;
 }
 } // namespace Ship

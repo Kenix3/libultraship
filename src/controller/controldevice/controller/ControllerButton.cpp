@@ -146,10 +146,10 @@ void ControllerButton::ClearAllButtonMappings() {
     SaveButtonMappingIdsToConfig();
 }
 
-void ControllerButton::ClearAllButtonMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
+void ControllerButton::ClearAllButtonMappingsForDeviceType(ShipDeviceType shipDeviceType) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mButtonMappings) {
-        if (mapping->GetShipDeviceIndex() == shipDeviceIndex) {
+        if (mapping->GetShipDeviceType() == shipDeviceType) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -170,9 +170,9 @@ void ControllerButton::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     }
 }
 
-bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
+bool ControllerButton::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
     return std::any_of(mButtonMappings.begin(), mButtonMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
+                       [shipDeviceType](const auto& mapping) { return mapping.second->GetShipDeviceType() == shipDeviceType; });
 }
 
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
@@ -264,12 +264,12 @@ bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) 
     return result;
 }
 
-void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
-    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
+void ControllerButton::AddDefaultMappings(ShipDeviceType shipDeviceType) {
+    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask)) {
         AddButtonMapping(mapping);
     }
 
-    if (shipDeviceIndex == ShipDeviceIndex::Keyboard) {
+    if (shipDeviceType == ShipDeviceType::Keyboard) {
         for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
             AddButtonMapping(mapping);
         }

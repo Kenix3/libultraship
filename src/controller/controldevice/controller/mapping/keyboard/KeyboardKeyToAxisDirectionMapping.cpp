@@ -8,8 +8,8 @@
 namespace Ship {
 KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
                                                                      Direction direction, KbScancode scancode)
-    : ControllerInputMapping(ShipDeviceIndex::Keyboard), KeyboardKeyToAnyMapping(scancode),
-      ControllerAxisDirectionMapping(ShipDeviceIndex::Keyboard, portIndex, stickIndex, direction) {
+    : ControllerInputMapping(ShipDeviceType::Keyboard), KeyboardKeyToAnyMapping(scancode),
+      ControllerAxisDirectionMapping(ShipDeviceType::Keyboard, portIndex, stickIndex, direction) {
 }
 
 float KeyboardKeyToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {

@@ -2,23 +2,23 @@
 
 namespace Ship {
 ShipDeviceIndexToPhysicalDeviceIndexMapping::ShipDeviceIndexToPhysicalDeviceIndexMapping(
-    ShipDeviceIndex shipDeviceIndex)
-    : mShipDeviceIndex(shipDeviceIndex) {
+    ShipDeviceType shipDeviceType)
+    : mShipDeviceType(shipDeviceType) {
 }
 
 ShipDeviceIndexToPhysicalDeviceIndexMapping::~ShipDeviceIndexToPhysicalDeviceIndexMapping() {
 }
 
-ShipDeviceIndex ShipDeviceIndexToPhysicalDeviceIndexMapping::GetShipDeviceIndex() {
-    return mShipDeviceIndex;
+ShipDeviceType ShipDeviceIndexToPhysicalDeviceIndexMapping::GetShipDeviceType() {
+    return mShipDeviceType;
 }
 
 std::string ShipDeviceIndexToPhysicalDeviceIndexMapping::GetMappingId() {
 #define X(name, value) \
     case name:         \
         return #name;
-    switch (mShipDeviceIndex) {
-        SHIPDK_DEVICE_INDEX_VALUES
+    switch (mShipDeviceType) {
+        SHIP_DEVICE_TYPE_VALUES
         default:
             return "Max";
     }

@@ -19,8 +19,8 @@ class ControllerRumble {
     void ClearRumbleMapping(std::string id);
     void SaveRumbleMappingIdsToConfig();
     void ClearAllMappings();
-    void ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex);
-    void AddDefaultMappings(ShipDeviceIndex shipDeviceIndex);
+    void ClearAllMappingsForDeviceType(ShipDeviceType shipDeviceType);
+    void AddDefaultMappings(ShipDeviceType shipDeviceType);
     void LoadRumbleMappingFromConfig(std::string id);
     void ReloadAllMappingsFromConfig();
 
@@ -29,7 +29,7 @@ class ControllerRumble {
     void StartRumble();
     void StopRumble();
 
-    bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
+    bool HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType);
 
   private:
     uint8_t mPortIndex;

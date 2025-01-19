@@ -4,7 +4,7 @@
 namespace Ship {
 class SDLLEDMapping final : public ControllerLEDMapping, public SDLMapping {
   public:
-    SDLLEDMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
+    SDLLEDMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
 
     void SetLEDColor(Color_RGB8 color) override;
 

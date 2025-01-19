@@ -8,8 +8,8 @@
 namespace Ship {
 MouseButtonToAxisDirectionMapping::MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
                                                                      Direction direction, MouseBtn button)
-    : ControllerInputMapping(ShipDeviceIndex::Mouse), MouseButtonToAnyMapping(button),
-      ControllerAxisDirectionMapping(ShipDeviceIndex::Mouse, portIndex, stickIndex, direction) {
+    : ControllerInputMapping(ShipDeviceType::Mouse), MouseButtonToAnyMapping(button),
+      ControllerAxisDirectionMapping(ShipDeviceType::Mouse, portIndex, stickIndex, direction) {
 }
 
 float MouseButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {

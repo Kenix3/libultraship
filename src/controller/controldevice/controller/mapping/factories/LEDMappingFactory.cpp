@@ -35,7 +35,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
             return nullptr;
         }
 
-        return std::make_shared<SDLLEDMapping>(static_cast<ShipDeviceIndex>(shipDeviceIndex), portIndex, colorSource,
+        return std::make_shared<SDLLEDMapping>(static_cast<ShipDeviceType>(shipDeviceIndex), portIndex, colorSource,
                                                savedColor);
     }
 
@@ -43,7 +43,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
 }
 
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<ShipDeviceIndex, SDL_GameController*> sdlControllersWithLEDs;
+    std::unordered_map<ShipDeviceType, SDL_GameController*> sdlControllersWithLEDs;
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
     for (auto [lusIndex, indexMapping] :
          Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {

@@ -4,9 +4,9 @@
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace Ship {
-SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlControllerAxis,
+SDLAxisDirectionToAnyMapping::SDLAxisDirectionToAnyMapping(ShipDeviceType shipDeviceType, int32_t sdlControllerAxis,
                                                            int32_t axisDirection)
-    : ControllerInputMapping(shipDeviceIndex), SDLMapping(shipDeviceIndex) {
+    : ControllerInputMapping(shipDeviceType), SDLMapping(shipDeviceType) {
     mControllerAxis = static_cast<SDL_GameControllerAxis>(sdlControllerAxis);
     mAxisDirection = static_cast<AxisDirection>(axisDirection);
 }

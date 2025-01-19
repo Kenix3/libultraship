@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "controller/deviceindex/ShipDeviceIndex.h"
+#include "controller/deviceindex/ShipDeviceType.h"
 
 namespace Ship {
 
@@ -12,13 +12,13 @@ namespace Ship {
 
 class ControllerMapping {
   public:
-    ControllerMapping(ShipDeviceIndex shipDeviceIndex);
+    ControllerMapping(ShipDeviceType shipDeviceType);
     ~ControllerMapping();
     virtual std::string GetPhysicalDeviceName();
-    ShipDeviceIndex GetShipDeviceIndex();
+    ShipDeviceType GetShipDeviceType();
     virtual bool PhysicalDeviceIsConnected() = 0;
 
   protected:
-    ShipDeviceIndex mShipDeviceIndex;
+    ShipDeviceType mShipDeviceType;
 };
 } // namespace Ship

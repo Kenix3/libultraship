@@ -4,9 +4,9 @@
 #include "utils/StringHelper.h"
 
 namespace Ship {
-SDLLEDMapping::SDLLEDMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t colorSource,
+SDLLEDMapping::SDLLEDMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, uint8_t colorSource,
                              Color_RGB8 savedColor)
-    : ControllerLEDMapping(shipDeviceIndex, portIndex, colorSource, savedColor), SDLMapping(shipDeviceIndex) {
+    : ControllerLEDMapping(shipDeviceType, portIndex, colorSource, savedColor), SDLMapping(shipDeviceType) {
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
@@ -30,14 +30,14 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {
-    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, ControllerLEDMapping::mShipDeviceIndex);
+    return StringHelper::Sprintf("P%d-SDLI%d", mPortIndex, ControllerLEDMapping::mShipDeviceType);
 }
 
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
     CVarSetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
     CVarSetInteger(StringHelper::Sprintf("%s.ShipDeviceIndex", mappingCvarKey.c_str()).c_str(),
-                   ControllerLEDMapping::mShipDeviceIndex);
+                   ControllerLEDMapping::mShipDeviceType);
     CVarSetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
     CVarSetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
     CVarSave();

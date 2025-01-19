@@ -1,8 +1,8 @@
 #include "ControllerGyroMapping.h"
 
 namespace Ship {
-ControllerGyroMapping::ControllerGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity)
-    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mSensitivity(sensitivity) {
+ControllerGyroMapping::ControllerGyroMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, float sensitivity)
+    : ControllerInputMapping(shipDeviceType), mPortIndex(portIndex), mSensitivity(sensitivity) {
     mSensitivityPercent = mSensitivity * 100;
 }
 

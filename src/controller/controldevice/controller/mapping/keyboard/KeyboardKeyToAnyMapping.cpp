@@ -6,7 +6,7 @@
 
 namespace Ship {
 KeyboardKeyToAnyMapping::KeyboardKeyToAnyMapping(KbScancode scancode)
-    : ControllerInputMapping(ShipDeviceIndex::Keyboard), mKeyboardScancode(scancode), mKeyPressed(false) {
+    : ControllerInputMapping(ShipDeviceType::Keyboard), mKeyboardScancode(scancode), mKeyPressed(false) {
 }
 
 KeyboardKeyToAnyMapping::~KeyboardKeyToAnyMapping() {
