@@ -4,7 +4,7 @@
 namespace Ship {
 class SDLRumbleMapping final : public ControllerRumbleMapping, public SDLMapping {
   public:
-    SDLRumbleMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+    SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                      uint8_t highFrequencyIntensityPercentage);
 
     void StartRumble() override;

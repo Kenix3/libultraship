@@ -8,12 +8,12 @@
 #define MAX_SDL_RANGE (float)INT16_MAX
 
 namespace Ship {
-SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(ShipDeviceType shipDeviceType, uint8_t portIndex,
+SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(uint8_t portIndex,
                                                                  StickIndex stickIndex, Direction direction,
                                                                  int32_t sdlControllerButton)
-    : ControllerInputMapping(shipDeviceType),
-      ControllerAxisDirectionMapping(shipDeviceType, portIndex, stickIndex, direction),
-      SDLButtonToAnyMapping(shipDeviceType, sdlControllerButton) {
+    : ControllerInputMapping(ShipDeviceType::SDLGamepad),
+      ControllerAxisDirectionMapping(ShipDeviceType::SDLGamepad, portIndex, stickIndex, direction),
+      SDLButtonToAnyMapping(sdlControllerButton) {
 }
 
 float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {

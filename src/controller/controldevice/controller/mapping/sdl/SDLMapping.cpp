@@ -6,7 +6,7 @@
 #include "utils/StringHelper.h"
 
 namespace Ship {
-SDLMapping::SDLMapping(ShipDeviceType shipDeviceType) : ControllerMapping(shipDeviceType), mController(nullptr) {
+SDLMapping::SDLMapping() : ControllerMapping(ShipDeviceType::SDLGamepad), mController(nullptr) {
 }
 
 SDLMapping::~SDLMapping() {

@@ -5,7 +5,7 @@ namespace Ship {
 class SDLAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirectionMapping,
                                                      public SDLAxisDirectionToAnyMapping {
   public:
-    SDLAxisDirectionToAxisDirectionMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, StickIndex stickIndex,
+    SDLAxisDirectionToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
                                            Direction direction, int32_t sdlControllerAxis, int32_t axisDirection);
     float GetNormalizedAxisDirectionValue() override;
     std::string GetAxisDirectionMappingId() override;

@@ -6,11 +6,11 @@
 #include "Context.h"
 
 namespace Ship {
-SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(ShipDeviceType shipDeviceType, uint8_t portIndex,
+SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex,
                                                                  CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerAxis,
                                                                  int32_t axisDirection)
-    : ControllerInputMapping(shipDeviceType), ControllerButtonMapping(shipDeviceType, portIndex, bitmask),
-      SDLAxisDirectionToAnyMapping(shipDeviceType, sdlControllerAxis, axisDirection) {
+    : ControllerInputMapping(ShipDeviceType::SDLGamepad), ControllerButtonMapping(ShipDeviceType::SDLGamepad, portIndex, bitmask),
+      SDLAxisDirectionToAnyMapping(sdlControllerAxis, axisDirection) {
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

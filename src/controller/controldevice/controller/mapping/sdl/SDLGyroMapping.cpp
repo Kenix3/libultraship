@@ -7,10 +7,10 @@
 #include "utils/StringHelper.h"
 
 namespace Ship {
-SDLGyroMapping::SDLGyroMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, float sensitivity,
+SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity,
                                float neutralPitch, float neutralYaw, float neutralRoll)
-    : ControllerInputMapping(shipDeviceType), ControllerGyroMapping(shipDeviceType, portIndex, sensitivity),
-      SDLMapping(shipDeviceType), mNeutralPitch(neutralPitch), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+    : ControllerInputMapping(ShipDeviceType::SDLGamepad), ControllerGyroMapping(ShipDeviceType::SDLGamepad, portIndex, sensitivity),
+      SDLMapping(), mNeutralPitch(neutralPitch), mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
 }
 
 void SDLGyroMapping::Recalibrate() {

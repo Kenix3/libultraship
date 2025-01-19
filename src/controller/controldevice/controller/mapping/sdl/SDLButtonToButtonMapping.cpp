@@ -6,10 +6,10 @@
 #include "Context.h"
 
 namespace Ship {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(ShipDeviceType shipDeviceType, uint8_t portIndex,
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex,
                                                    CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton)
-    : ControllerInputMapping(shipDeviceType), SDLButtonToAnyMapping(shipDeviceType, sdlControllerButton),
-      ControllerButtonMapping(shipDeviceType, portIndex, bitmask) {
+    : ControllerInputMapping(ShipDeviceType::SDLGamepad), SDLButtonToAnyMapping(sdlControllerButton),
+      ControllerButtonMapping(ShipDeviceType::SDLGamepad, portIndex, bitmask) {
 }
 
 void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

@@ -4,7 +4,7 @@
 namespace Ship {
 class SDLGyroMapping final : public ControllerGyroMapping, public SDLMapping {
   public:
-    SDLGyroMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, float sensitivity, float neutralPitch,
+    SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch,
                    float neutralYaw, float neutralRoll);
     void UpdatePad(float& x, float& y) override;
     void SaveToConfig() override;

@@ -6,7 +6,7 @@
 namespace Ship {
 class SDLButtonToAnyMapping : virtual public ControllerInputMapping, public SDLMapping {
   public:
-    SDLButtonToAnyMapping(ShipDeviceType shipDeviceType, int32_t sdlControllerButton);
+    SDLButtonToAnyMapping(int32_t sdlControllerButton);
     ~SDLButtonToAnyMapping();
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;

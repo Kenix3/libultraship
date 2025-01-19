@@ -4,9 +4,9 @@
 #include "utils/StringHelper.h"
 
 namespace Ship {
-SDLLEDMapping::SDLLEDMapping(ShipDeviceType shipDeviceType, uint8_t portIndex, uint8_t colorSource,
+SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource,
                              Color_RGB8 savedColor)
-    : ControllerLEDMapping(shipDeviceType, portIndex, colorSource, savedColor), SDLMapping(shipDeviceType) {
+    : ControllerLEDMapping(ShipDeviceType::SDLGamepad, portIndex, colorSource, savedColor), SDLMapping() {
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {

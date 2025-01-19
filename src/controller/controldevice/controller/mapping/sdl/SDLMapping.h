@@ -12,7 +12,7 @@ enum AxisDirection { NEGATIVE = -1, POSITIVE = 1 };
 
 class SDLMapping : public ControllerMapping {
   public:
-    SDLMapping(ShipDeviceType shipDeviceType);
+    SDLMapping();
     ~SDLMapping();
     int32_t GetJoystickInstanceId();
     int32_t GetCurrentSDLDeviceIndex();

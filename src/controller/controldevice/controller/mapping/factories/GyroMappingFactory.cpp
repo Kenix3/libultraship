@@ -37,7 +37,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
         float neutralYaw = CVarGetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
         float neutralRoll = CVarGetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
 
-        return std::make_shared<SDLGyroMapping>(static_cast<ShipDeviceType>(shipDeviceIndex), portIndex, sensitivity,
+        return std::make_shared<SDLGyroMapping>(portIndex, sensitivity,
                                                 neutralPitch, neutralYaw, neutralRoll);
     }
 
@@ -74,7 +74,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
     for (auto [lusIndex, controller] : sdlControllersWithGyro) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLGyroMapping>(lusIndex, portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
+                mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
                 mapping->Recalibrate();
                 break;
             }
@@ -98,7 +98,7 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
                 continue;
             }
 
-            mapping = std::make_shared<SDLGyroMapping>(lusIndex, portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
+            mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
             mapping->Recalibrate();
             break;
         }

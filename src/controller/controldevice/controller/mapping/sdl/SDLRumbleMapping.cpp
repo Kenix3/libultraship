@@ -4,11 +4,11 @@
 #include "utils/StringHelper.h"
 
 namespace Ship {
-SDLRumbleMapping::SDLRumbleMapping(ShipDeviceType shipDeviceType, uint8_t portIndex,
+SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex,
                                    uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage)
-    : ControllerRumbleMapping(shipDeviceType, portIndex, lowFrequencyIntensityPercentage,
+    : ControllerRumbleMapping(ShipDeviceType::SDLGamepad, portIndex, lowFrequencyIntensityPercentage,
                               highFrequencyIntensityPercentage),
-      SDLMapping(shipDeviceType) {
+      SDLMapping() {
     SetLowFrequencyIntensity(lowFrequencyIntensityPercentage);
     SetHighFrequencyIntensity(highFrequencyIntensityPercentage);
 }

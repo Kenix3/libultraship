@@ -35,7 +35,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
             return nullptr;
         }
 
-        return std::make_shared<SDLLEDMapping>(static_cast<ShipDeviceType>(shipDeviceIndex), portIndex, colorSource,
+        return std::make_shared<SDLLEDMapping>(portIndex, colorSource,
                                                savedColor);
     }
 
@@ -72,7 +72,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
     for (auto [lusIndex, controller] : sdlControllersWithLEDs) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLLEDMapping>(lusIndex, portIndex, 0, Color_RGB8({ 0, 0, 0 }));
+                mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }));
                 break;
             }
         }
@@ -95,7 +95,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
                 continue;
             }
 
-            mapping = std::make_shared<SDLLEDMapping>(lusIndex, portIndex, 0, Color_RGB8({ 0, 0, 0 }));
+            mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }));
             break;
         }
     }
