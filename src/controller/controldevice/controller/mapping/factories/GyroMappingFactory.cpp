@@ -43,70 +43,46 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
 }
 
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromSDLInput(uint8_t portIndex) {
-    std::unordered_map<PhysicalDeviceType, SDL_GameController*> sdlControllersWithGyro;
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
 
-    // todo: gyro
-    // for (auto [lusIndex, indexMapping] :
-    //      Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-    //     auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
+    for (auto [lusIndex, controller] :
+         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
+             portIndex)) {
+        if (!SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
+            continue;
+        }
 
-    //     if (sdlIndexMapping == nullptr) {
-    //         // this LUS index isn't mapped to an SDL index
-    //         continue;
-    //     }
+        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+            if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
+                mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
+                mapping->Recalibrate();
+                break;
+            }
+        }
 
-    //     auto sdlIndex = sdlIndexMapping->GetSDLDeviceIndex();
+        if (mapping != nullptr) {
+            break;
+        }
 
-    //     if (!SDL_IsGameController(sdlIndex)) {
-    //         // this SDL device isn't a game controller
-    //         continue;
-    //     }
+        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+            const auto axis = static_cast<SDL_GameControllerAxis>(i);
+            const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
+            int32_t axisDirection = 0;
+            if (axisValue < -0.7f) {
+                axisDirection = NEGATIVE;
+            } else if (axisValue > 0.7f) {
+                axisDirection = POSITIVE;
+            }
 
-    //     auto controller = SDL_GameControllerOpen(sdlIndex);
-    //     if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
-    //         sdlControllersWithGyro[lusIndex] = SDL_GameControllerOpen(sdlIndex);
-    //     } else {
-    //         SDL_GameControllerClose(controller);
-    //     }
-    // }
+            if (axisDirection == 0) {
+                continue;
+            }
 
-    // for (auto [lusIndex, controller] : sdlControllersWithGyro) {
-    //     for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-    //         if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-    //             mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
-    //             mapping->Recalibrate();
-    //             break;
-    //         }
-    //     }
-
-    //     if (mapping != nullptr) {
-    //         break;
-    //     }
-
-    //     for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-    //         const auto axis = static_cast<SDL_GameControllerAxis>(i);
-    //         const auto axisValue = SDL_GameControllerGetAxis(controller, axis) / 32767.0f;
-    //         int32_t axisDirection = 0;
-    //         if (axisValue < -0.7f) {
-    //             axisDirection = NEGATIVE;
-    //         } else if (axisValue > 0.7f) {
-    //             axisDirection = POSITIVE;
-    //         }
-
-    //         if (axisDirection == 0) {
-    //             continue;
-    //         }
-
-    //         mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
-    //         mapping->Recalibrate();
-    //         break;
-    //     }
-    // }
-
-    // for (auto [i, controller] : sdlControllersWithGyro) {
-    //     SDL_GameControllerClose(controller);
-    // }
+            mapping = std::make_shared<SDLGyroMapping>(portIndex, 1.0f, 0.0f, 0.0f, 0.0f);
+            mapping->Recalibrate();
+            break;
+        }
+    }
 
     return mapping;
 }
