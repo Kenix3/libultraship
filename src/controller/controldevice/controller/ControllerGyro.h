@@ -11,7 +11,6 @@ class ControllerGyro {
     ControllerGyro(uint8_t portIndex);
     ~ControllerGyro();
 
-    // void AddOrReplaceGyroMapping(std::shared_ptr<ControllerGyroMapping> mapping);
     void ReloadGyroMappingFromConfig();
     void ClearGyroMapping();
     void SaveGyroMappingIdToConfig();

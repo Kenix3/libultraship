@@ -52,7 +52,6 @@ class Controller : public ControlDevice {
     bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
 
     bool HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType);
-    void MoveMappingsToDifferentController(std::shared_ptr<Controller> newController, PhysicalDeviceType lusIndex);
 
   protected:
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> mButtons;

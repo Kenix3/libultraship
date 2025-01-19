@@ -175,12 +175,6 @@ std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTO
     return mButtons[bitmask];
 }
 
-void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController,
-                                                   PhysicalDeviceType lusIndex) {
-    // todo: remove this entirely
-    return;
-}
-
 std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {
     std::vector<std::shared_ptr<ControllerMapping>> allMappings;
     for (auto [bitmask, button] : GetAllButtons()) {
