@@ -2,6 +2,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
+#include "Context.h"
 
 namespace Ship {
 SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor)
@@ -9,28 +10,23 @@ SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
-    // for (const auto& [instanceId, gamepad] :
-    // Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex))
-    // { todo: LED
-    // }
+    if (mColorSource == LED_COLOR_SOURCE_OFF) {
+        color = { 0, 0, 0 };
+    }
 
-    // if (!ControllerLoaded()) {
-    //     return;
-    // }
+    if (mColorSource == LED_COLOR_SOURCE_SET) {
+        color = mSavedColor;
+    }
+    
+    for (const auto& [instanceId, gamepad] :
+    Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex))
+    { 
+        if (!SDL_GameControllerHasLED(gamepad)) {
+            continue;
+        }
 
-    // if (!SDL_GameControllerHasLED(mController)) {
-    //     return;
-    // }
-
-    // if (mColorSource == LED_COLOR_SOURCE_OFF) {
-    //     color = { 0, 0, 0 };
-    // }
-
-    // if (mColorSource == LED_COLOR_SOURCE_SET) {
-    //     color = mSavedColor;
-    // }
-
-    // SDL_JoystickSetLED(SDL_GameControllerGetJoystick(mController), color.r, color.g, color.b);
+        SDL_JoystickSetLED(SDL_GameControllerGetJoystick(gamepad), color.r, color.g, color.b);
+    }
 }
 
 std::string SDLLEDMapping::GetLEDMappingId() {
