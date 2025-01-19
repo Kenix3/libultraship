@@ -22,12 +22,6 @@ void InputEditorWindow::InitElement() {
 
     mButtonsBitmasks = { BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT };
     mDpadBitmasks = { BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT };
-
-    mDeviceTypeVisibility.clear();
-    mDeviceTypeVisibility[PhysicalDeviceType::Keyboard] = true;
-    mDeviceTypeVisibility[PhysicalDeviceType::Mouse] = true;
-    mDeviceTypeVisibility[PhysicalDeviceType::SDLGamepad] = true;
-    mDeviceTypeVisibility[PhysicalDeviceType::Max] = false;
 }
 
 #define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
@@ -234,9 +228,6 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     if (mapping == nullptr) {
         return;
     }
-    if (!mDeviceTypeVisibility[mapping->GetPhysicalDeviceType()]) {
-        return;
-    }
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
     std::string icon = "";
@@ -295,13 +286,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     ImGui::SameLine(0, 0);
 
     auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<SDLAxisDirectionToButtonMapping>(mapping);
-    auto indexMapping = Context::GetInstance()
-                            ->GetControlDeck()
-                            ->GetDeviceIndexMappingManager()
-                            ->GetDeviceIndexMappingFromShipDeviceIndex(mapping->GetPhysicalDeviceType());
-    auto sdlIndexMapping = std::dynamic_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
-
-    if (sdlIndexMapping != nullptr && sdlAxisDirectionToButtonMapping != nullptr) {
+    if (sdlAxisDirectionToButtonMapping != nullptr) {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
@@ -327,17 +312,19 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
             ImGui::Text("Axis Threshold\n\nThe extent to which the joystick\nmust be moved or the trigger\npressed to "
                         "initiate the assigned\nbutton action.\n\n");
 
+            auto globalSettings = Context::GetInstance()->GetControlDeck()->GetGlobalSDLDeviceSettings();
+
             if (sdlAxisDirectionToButtonMapping->AxisIsStick()) {
                 ImGui::Text("Stick axis threshold:");
 
-                int32_t stickAxisThreshold = sdlIndexMapping->GetStickAxisThresholdPercentage();
+                int32_t stickAxisThreshold = globalSettings->GetStickAxisThresholdPercentage();
                 if (stickAxisThreshold == 0) {
                     ImGui::BeginDisabled();
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("-##Stick Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold - 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold - 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (stickAxisThreshold == 0) {
@@ -347,8 +334,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
                 ImGui::SetNextItemWidth(SCALE_IMGUI_SIZE(160.0f));
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Stick Axis Threshold%s", id.c_str()).c_str(),
                                      &stickAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
-                    sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold);
-                    sdlIndexMapping->SaveToConfig();
+                                        globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold);
+                                        globalSettings->SaveToConfig();
                 }
                 ImGui::SameLine(0.0f, 0.0f);
                 if (stickAxisThreshold == 100) {
@@ -356,8 +343,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("+##Stick Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold + 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold + 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (stickAxisThreshold == 100) {
@@ -368,14 +355,14 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
             if (sdlAxisDirectionToButtonMapping->AxisIsTrigger()) {
                 ImGui::Text("Trigger axis threshold:");
 
-                int32_t triggerAxisThreshold = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
+                int32_t triggerAxisThreshold = globalSettings->GetTriggerAxisThresholdPercentage();
                 if (triggerAxisThreshold == 0) {
                     ImGui::BeginDisabled();
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("-##Trigger Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold - 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold - 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (triggerAxisThreshold == 0) {
@@ -385,8 +372,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
                 ImGui::SetNextItemWidth(SCALE_IMGUI_SIZE(160.0f));
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Trigger Axis Threshold%s", id.c_str()).c_str(),
                                      &triggerAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
-                    sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
-                    sdlIndexMapping->SaveToConfig();
+                                        globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
+                                        globalSettings->SaveToConfig();
                 }
                 ImGui::SameLine(0.0f, 0.0f);
                 if (triggerAxisThreshold == 100) {
@@ -394,8 +381,8 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("+##Trigger Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold + 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold + 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (triggerAxisThreshold == 100) {
@@ -502,9 +489,6 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
     }
 
     if (mapping == nullptr) {
-        return;
-    }
-    if (!mDeviceTypeVisibility[mapping->GetPhysicalDeviceType()]) {
         return;
     }
 
@@ -1181,242 +1165,15 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
     }
 }
 
-void InputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks) {
-    std::set<PhysicalDeviceType> allLusDeviceIndices;
-    allLusDeviceIndices.insert(PhysicalDeviceType::Keyboard);
-    allLusDeviceIndices.insert(PhysicalDeviceType::Mouse);
-    for (auto [lusIndex, mapping] : Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
-    }
-
-    std::vector<std::pair<PhysicalDeviceType, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        for (auto [bitmask, button] :
-             Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllButtons()) {
-            if (!bitmasks.contains(bitmask)) {
-                continue;
-            }
-
-            if (button->HasMappingsForPhysicalDeviceType(lusIndex)) {
-                for (auto [id, mapping] : button->GetAllButtonMappings()) {
-                    if (mapping->GetPhysicalDeviceType() == lusIndex) {
-                        lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-    }
-
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
-        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForPhysicalDeviceType(lusIndex, buttonColor, buttonHoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::SameLine();
-        if (lusIndex == PhysicalDeviceType::Keyboard || lusIndex == PhysicalDeviceType::Mouse) {
-            ImGui::SmallButton(ICON_FA_KEYBOARD_O);
-        } else {
-            ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-        }
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-    }
-}
-
-void InputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex stickIndex) {
-    std::set<PhysicalDeviceType> allLusDeviceIndices;
-    allLusDeviceIndices.insert(PhysicalDeviceType::Keyboard);
-    allLusDeviceIndices.insert(PhysicalDeviceType::Mouse);
-    for (auto [lusIndex, mapping] : Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
-    }
-
-    std::vector<std::pair<PhysicalDeviceType, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        auto controllerStick =
-            stickIndex == StickIndex::LEFT_STICK
-                ? Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLeftStick()
-                : Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRightStick();
-        if (controllerStick->HasMappingsForPhysicalDeviceType(lusIndex)) {
-            for (auto [direction, mappings] : controllerStick->GetAllAxisDirectionMappings()) {
-                bool foundMapping = false;
-                for (auto [id, mapping] : mappings) {
-                    if (mapping->GetPhysicalDeviceType() == lusIndex) {
-                        foundMapping = true;
-                        lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
-                        break;
-                    }
-                }
-                if (foundMapping) {
-                    break;
-                }
-            }
-        }
-    }
-
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
-        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForPhysicalDeviceType(lusIndex, buttonColor, buttonHoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::SameLine();
-        if (lusIndex == PhysicalDeviceType::Keyboard || lusIndex == PhysicalDeviceType::Mouse) {
-            ImGui::SmallButton(ICON_FA_KEYBOARD_O);
-        } else {
-            ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-        }
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-    }
-}
-
-void InputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
-    std::set<PhysicalDeviceType> allLusDeviceIndices;
-    for (auto [lusIndex, mapping] : Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
-    }
-
-    std::vector<std::pair<PhysicalDeviceType, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        if (Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(portIndex)
-                ->GetRumble()
-                ->HasMappingsForPhysicalDeviceType(lusIndex)) {
-            for (auto [id, mapping] : Context::GetInstance()
-                                          ->GetControlDeck()
-                                          ->GetControllerByPort(portIndex)
-                                          ->GetRumble()
-                                          ->GetAllRumbleMappings()) {
-                if (mapping->GetPhysicalDeviceType() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
-                    break;
-                }
-            }
-        }
-    }
-
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
-        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForPhysicalDeviceType(lusIndex, buttonColor, buttonHoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::SameLine();
-        ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-    }
-}
-
-void InputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
-    auto mapping =
-        Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetGyro()->GetGyroMapping();
-    if (mapping == nullptr) {
-        return;
-    }
-
-    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-    GetButtonColorsForPhysicalDeviceType(mapping->GetPhysicalDeviceType(), buttonColor, buttonHoveredColor);
-    ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-    ImGui::SameLine();
-    ImGui::SmallButton(true ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-    ImGui::PopStyleColor();
-    ImGui::PopStyleColor();
-}
-
-void InputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
-    std::set<PhysicalDeviceType> allLusDeviceIndices;
-    for (auto [lusIndex, mapping] : Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
-    }
-
-    std::vector<std::pair<PhysicalDeviceType, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        if (Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(portIndex)
-                ->GetRumble()
-                ->HasMappingsForPhysicalDeviceType(lusIndex)) {
-            for (auto [id, mapping] : Context::GetInstance()
-                                          ->GetControlDeck()
-                                          ->GetControllerByPort(portIndex)
-                                          ->GetLED()
-                                          ->GetAllLEDMappings()) {
-                if (mapping->GetPhysicalDeviceType() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(std::pair<PhysicalDeviceType, bool>(lusIndex, true));
-                    break;
-                }
-            }
-        }
-    }
-
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
-        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForPhysicalDeviceType(lusIndex, buttonColor, buttonHoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::SameLine();
-        ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-    }
-}
-
-void InputEditorWindow::DrawDeviceVisibilityButtons() {
-    std::map<PhysicalDeviceType, std::pair<std::string, int32_t>> indexMappings;
-    for (auto [lusIndex, mapping] : Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        auto sdlIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(mapping);
-        if (sdlIndexMapping == nullptr) {
-            continue;
-        }
-
-        indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), -1 };
-    }
-
-    for (auto [lusIndex, mapping] :
-         Context::GetInstance()->GetControlDeck()->GetDeviceIndexMappingManager()->GetAllDeviceIndexMappings()) {
-        auto sdlIndexMapping = std::static_pointer_cast<ShipDeviceIndexToSDLDeviceIndexMapping>(mapping);
-        if (sdlIndexMapping == nullptr) {
-            continue;
-        }
-
-        indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex() };
-    }
+void InputEditorWindow::DrawDeviceNameButtons() {
+    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 
     auto keyboardButtonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
     auto keyboardButtonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType::Keyboard, keyboardButtonColor, keyboardButtonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, keyboardButtonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, keyboardButtonHoveredColor);
-    bool keyboardVisible = mDeviceTypeVisibility[PhysicalDeviceType::Keyboard];
-    if (ImGui::Button(StringHelper::Sprintf("%s %s Keyboard", keyboardVisible ? ICON_FA_EYE : ICON_FA_EYE_SLASH,
-                                            ICON_FA_KEYBOARD_O)
-                          .c_str())) {
-        mDeviceTypeVisibility[PhysicalDeviceType::Keyboard] = !keyboardVisible;
-    }
+    ImGui::Button(StringHelper::Sprintf("%s Keyboard", ICON_FA_KEYBOARD_O).c_str());
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
 
@@ -1425,33 +1182,18 @@ void InputEditorWindow::DrawDeviceVisibilityButtons() {
     GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType::Mouse, mouseButtonColor, mouseButtonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, mouseButtonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, mouseButtonHoveredColor);
-    bool mouseVisible = mDeviceTypeVisibility[PhysicalDeviceType::Mouse];
-    if (ImGui::Button(
-            StringHelper::Sprintf("%s %s mouse", mouseVisible ? ICON_FA_EYE : ICON_FA_EYE_SLASH, ICON_FA_KEYBOARD_O)
-                .c_str())) {
-        mDeviceTypeVisibility[PhysicalDeviceType::Mouse] = !mouseVisible;
-    }
+    ImGui::Button(StringHelper::Sprintf("%s Mouse", ICON_FA_KEYBOARD_O).c_str());
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
 
-    for (auto [lusIndex, info] : indexMappings) {
-        auto [name, sdlIndex] = info;
-        bool connected = sdlIndex != -1;
-
+    for (const auto& name : Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadNames()) {
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForPhysicalDeviceType(lusIndex, buttonColor, buttonHoveredColor);
+        GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType::SDLGamepad, buttonColor, buttonHoveredColor);
 
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        bool visible = mDeviceTypeVisibility[lusIndex];
-        if (ImGui::Button(
-                StringHelper::Sprintf("%s %s %s (%s)", visible ? ICON_FA_EYE : ICON_FA_EYE_SLASH,
-                                      connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(),
-                                      connected ? StringHelper::Sprintf("SDL %d", sdlIndex).c_str() : "Disconnected")
-                    .c_str())) {
-            mDeviceTypeVisibility[lusIndex] = !visible;
-        }
+        ImGui::Button(StringHelper::Sprintf("%s %s (SDL)", ICON_FA_GAMEPAD, name.c_str()).c_str());
         ImGui::PopStyleColor();
         ImGui::PopStyleColor();
     }
@@ -1478,13 +1220,7 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Port %d###port%d", portIndex + 1, portIndex).c_str())) {
         DrawClearAllButton(portIndex);
         DrawSetDefaultsButton(portIndex);
-        // if (!Context::GetInstance()->GetControlDeck()->IsSinglePlayerMappingMode()) {
-        //     ImGui::SameLine();
-        //     if (ImGui::Button("Reorder controllers")) {
-        //         Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
-        //     }
-        // }
-        DrawDeviceVisibilityButtons();
+        DrawDeviceNameButtons();
 
         UpdateBitmaskToMappingIds(portIndex);
         UpdateStickDirectionToMappingIds(portIndex);
@@ -1494,7 +1230,6 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 
         if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
             DrawButtonLine("A", portIndex, BTN_A, CHIP_COLOR_N64_BLUE);
             DrawButtonLine("B", portIndex, BTN_B, CHIP_COLOR_N64_GREEN);
             DrawButtonLine("Start", portIndex, BTN_START, CHIP_COLOR_N64_RED);
@@ -1509,53 +1244,33 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
                            CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT,
                            CHIP_COLOR_N64_YELLOW);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
         }
 
         if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_DUP);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_DDOWN);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_DLEFT);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_DRIGHT);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
         }
 
         if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawAnalogStickDeviceIcons(portIndex, LEFT_STICK);
             DrawStickSection(portIndex, LEFT, 0);
-        } else {
-            DrawAnalogStickDeviceIcons(portIndex, LEFT_STICK);
         }
 
         if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
-            DrawAnalogStickDeviceIcons(portIndex, RIGHT_STICK);
             DrawStickSection(portIndex, RIGHT, 1, CHIP_COLOR_N64_YELLOW);
-        } else {
-            DrawAnalogStickDeviceIcons(portIndex, RIGHT_STICK);
         }
 
         if (ImGui::CollapsingHeader("Rumble")) {
-            DrawRumbleDeviceIcons(portIndex);
             DrawRumbleSection(portIndex);
-        } else {
-            DrawRumbleDeviceIcons(portIndex);
         }
 
         if (ImGui::CollapsingHeader("Gyro")) {
-            DrawGyroDeviceIcons(portIndex);
             DrawGyroSection(portIndex);
-        } else {
-            DrawGyroDeviceIcons(portIndex);
         }
 
         if (ImGui::CollapsingHeader("LEDs")) {
-            DrawLEDDeviceIcons(portIndex);
             DrawLEDSection(portIndex);
-        } else {
-            DrawLEDDeviceIcons(portIndex);
         }
 
         ImGui::PopStyleColor();

@@ -68,17 +68,11 @@ class InputEditorWindow : public GuiWindow {
     void DrawPortTab(uint8_t portIndex);
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
-    void DrawButtonDeviceIcons(uint8_t portIndex, std::set<CONTROLLERBUTTONS_T> bitmasks);
-    void DrawAnalogStickDeviceIcons(uint8_t portIndex, StickIndex stickIndex);
-    void DrawRumbleDeviceIcons(uint8_t portIndex);
-    void DrawGyroDeviceIcons(uint8_t portIndex);
-    void DrawLEDDeviceIcons(uint8_t portIndex);
     bool mInputEditorPopupOpen;
     void DrawSetDefaultsButton(uint8_t portIndex);
     void DrawClearAllButton(uint8_t portIndex);
 
-    std::map<PhysicalDeviceType, bool> mDeviceTypeVisibility;
-    void DrawDeviceVisibilityButtons();
+    void DrawDeviceNameButtons();
     void OffsetMappingPopup();
 };
 } // namespace Ship
