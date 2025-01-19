@@ -23,13 +23,11 @@ void InputEditorWindow::InitElement() {
     mButtonsBitmasks = { BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT };
     mDpadBitmasks = { BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT };
 
-    mDeviceIndexVisiblity.clear();
-    mDeviceIndexVisiblity[ShipDeviceIndex::Keyboard] = true;
-    mDeviceIndexVisiblity[ShipDeviceIndex::Mouse] = true;
-    mDeviceIndexVisiblity[ShipDeviceIndex::Blue] = true;
-    for (auto index = 1; index < ShipDeviceIndex::Max; index++) {
-        mDeviceIndexVisiblity[static_cast<ShipDeviceIndex>(index)] = false;
-    }
+    mDeviceIndexVisibility.clear();
+    mDeviceIndexVisibility[ShipDeviceIndex::Keyboard] = true;
+    mDeviceIndexVisibility[ShipDeviceIndex::Mouse] = true;
+    mDeviceIndexVisibility[ShipDeviceIndex::SDLGamepad] = true;
+    mDeviceIndexVisibility[ShipDeviceIndex::Max] = false;
 }
 
 #define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
@@ -181,21 +179,9 @@ void InputEditorWindow::GetButtonColorsForShipDeviceIndex(ShipDeviceIndex lusInd
             buttonColor = BUTTON_COLOR_MOUSE_BEIGE;
             buttonHoveredColor = BUTTON_COLOR_MOUSE_BEIGE_HOVERED;
             break;
-        case ShipDeviceIndex::Blue:
+        case ShipDeviceIndex::SDLGamepad:
             buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
             buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
-            break;
-        case ShipDeviceIndex::Red:
-            buttonColor = BUTTON_COLOR_GAMEPAD_RED;
-            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
-            break;
-        case ShipDeviceIndex::Orange:
-            buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
-            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
-            break;
-        case ShipDeviceIndex::Green:
-            buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
-            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
             break;
         default:
             buttonColor = BUTTON_COLOR_GAMEPAD_PURPLE;
@@ -248,7 +234,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     if (mapping == nullptr) {
         return;
     }
-    if (!mDeviceIndexVisiblity[mapping->GetShipDeviceIndex()]) {
+    if (!mDeviceIndexVisibility[mapping->GetShipDeviceIndex()]) {
         return;
     }
 
@@ -518,7 +504,7 @@ void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, ui
     if (mapping == nullptr) {
         return;
     }
-    if (!mDeviceIndexVisiblity[mapping->GetShipDeviceIndex()]) {
+    if (!mDeviceIndexVisibility[mapping->GetShipDeviceIndex()]) {
         return;
     }
 
@@ -1429,11 +1415,11 @@ void InputEditorWindow::DrawDeviceVisibilityButtons() {
     GetButtonColorsForShipDeviceIndex(ShipDeviceIndex::Keyboard, keyboardButtonColor, keyboardButtonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, keyboardButtonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, keyboardButtonHoveredColor);
-    bool keyboardVisible = mDeviceIndexVisiblity[ShipDeviceIndex::Keyboard];
+    bool keyboardVisible = mDeviceIndexVisibility[ShipDeviceIndex::Keyboard];
     if (ImGui::Button(StringHelper::Sprintf("%s %s Keyboard", keyboardVisible ? ICON_FA_EYE : ICON_FA_EYE_SLASH,
                                             ICON_FA_KEYBOARD_O)
                           .c_str())) {
-        mDeviceIndexVisiblity[ShipDeviceIndex::Keyboard] = !keyboardVisible;
+        mDeviceIndexVisibility[ShipDeviceIndex::Keyboard] = !keyboardVisible;
     }
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
@@ -1443,11 +1429,11 @@ void InputEditorWindow::DrawDeviceVisibilityButtons() {
     GetButtonColorsForShipDeviceIndex(ShipDeviceIndex::Mouse, mouseButtonColor, mouseButtonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, mouseButtonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, mouseButtonHoveredColor);
-    bool mouseVisible = mDeviceIndexVisiblity[ShipDeviceIndex::Mouse];
+    bool mouseVisible = mDeviceIndexVisibility[ShipDeviceIndex::Mouse];
     if (ImGui::Button(
             StringHelper::Sprintf("%s %s mouse", mouseVisible ? ICON_FA_EYE : ICON_FA_EYE_SLASH, ICON_FA_KEYBOARD_O)
                 .c_str())) {
-        mDeviceIndexVisiblity[ShipDeviceIndex::Mouse] = !mouseVisible;
+        mDeviceIndexVisibility[ShipDeviceIndex::Mouse] = !mouseVisible;
     }
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
@@ -1462,13 +1448,13 @@ void InputEditorWindow::DrawDeviceVisibilityButtons() {
 
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        bool visible = mDeviceIndexVisiblity[lusIndex];
+        bool visible = mDeviceIndexVisibility[lusIndex];
         if (ImGui::Button(
                 StringHelper::Sprintf("%s %s %s (%s)", visible ? ICON_FA_EYE : ICON_FA_EYE_SLASH,
                                       connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(),
                                       connected ? StringHelper::Sprintf("SDL %d", sdlIndex).c_str() : "Disconnected")
                     .c_str())) {
-            mDeviceIndexVisiblity[lusIndex] = !visible;
+            mDeviceIndexVisibility[lusIndex] = !visible;
         }
         ImGui::PopStyleColor();
         ImGui::PopStyleColor();

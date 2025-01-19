@@ -601,22 +601,7 @@ ShipDeviceIndexMappingManager::GetShipDeviceIndexOfDisconnectedPhysicalDevice(in
 }
 
 ShipDeviceIndex ShipDeviceIndexMappingManager::GetLowestShipDeviceIndexWithNoAssociatedButtonOrAxisDirectionMappings() {
-    for (uint8_t lusIndex = ShipDeviceIndex::Blue; lusIndex < ShipDeviceIndex::Max; lusIndex++) {
-        if (Context::GetInstance()->GetControlDeck()->GetControllerByPort(0)->HasMappingsForShipDeviceIndex(
-                static_cast<ShipDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(1)->HasMappingsForShipDeviceIndex(
-                static_cast<ShipDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(2)->HasMappingsForShipDeviceIndex(
-                static_cast<ShipDeviceIndex>(lusIndex)) ||
-            Context::GetInstance()->GetControlDeck()->GetControllerByPort(3)->HasMappingsForShipDeviceIndex(
-                static_cast<ShipDeviceIndex>(lusIndex))) {
-            continue;
-        }
-        return static_cast<ShipDeviceIndex>(lusIndex);
-    }
-
-    // todo: invalid?
-    return ShipDeviceIndex::Max;
+    return ShipDeviceIndex::SDLGamepad;
 }
 
 void ShipDeviceIndexMappingManager::SaveMappingIdsToConfig() {

@@ -76,7 +76,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawSetDefaultsButton(uint8_t portIndex);
     void DrawClearAllButton(uint8_t portIndex);
 
-    std::map<ShipDeviceIndex, bool> mDeviceIndexVisiblity;
+    std::map<ShipDeviceIndex, bool> mDeviceIndexVisibility;
     void DrawDeviceVisibilityButtons();
     void OffsetMappingPopup();
 };
