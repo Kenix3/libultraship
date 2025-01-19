@@ -147,7 +147,8 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
 }
 
 bool ControllerRumble::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
-    return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(),
-                       [shipDeviceType](const auto& mapping) { return mapping.second->GetShipDeviceType() == shipDeviceType; });
+    return std::any_of(mRumbleMappings.begin(), mRumbleMappings.end(), [shipDeviceType](const auto& mapping) {
+        return mapping.second->GetShipDeviceType() == shipDeviceType;
+    });
 }
 } // namespace Ship

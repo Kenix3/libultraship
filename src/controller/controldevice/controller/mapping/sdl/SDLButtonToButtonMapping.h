@@ -4,8 +4,7 @@
 namespace Ship {
 class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public ControllerButtonMapping {
   public:
-    SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                             int32_t sdlControllerButton);
+    SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton);
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
     int8_t GetMappingType() override;
     std::string GetButtonMappingId() override;

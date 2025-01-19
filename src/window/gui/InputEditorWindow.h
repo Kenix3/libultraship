@@ -63,7 +63,8 @@ class InputEditorWindow : public GuiWindow {
     void UpdateBitmaskToMappingIds(uint8_t port);
     void UpdateStickDirectionToMappingIds(uint8_t port);
 
-    void GetButtonColorsForShipDeviceType(ShipDeviceType shipDeviceType, ImVec4& buttonColor, ImVec4& buttonHoveredColor);
+    void GetButtonColorsForShipDeviceType(ShipDeviceType shipDeviceType, ImVec4& buttonColor,
+                                          ImVec4& buttonHoveredColor);
     void DrawPortTab(uint8_t portIndex);
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;

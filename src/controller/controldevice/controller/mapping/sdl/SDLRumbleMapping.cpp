@@ -4,8 +4,8 @@
 #include "utils/StringHelper.h"
 
 namespace Ship {
-SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex,
-                                   uint8_t lowFrequencyIntensityPercentage, uint8_t highFrequencyIntensityPercentage)
+SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
+                                   uint8_t highFrequencyIntensityPercentage)
     : ControllerRumbleMapping(ShipDeviceType::SDLGamepad, portIndex, lowFrequencyIntensityPercentage,
                               highFrequencyIntensityPercentage),
       SDLMapping() {

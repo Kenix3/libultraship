@@ -6,8 +6,8 @@
 #include "Context.h"
 
 namespace Ship {
-SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex,
-                                                   CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton)
+SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                   int32_t sdlControllerButton)
     : ControllerInputMapping(ShipDeviceType::SDLGamepad), SDLButtonToAnyMapping(sdlControllerButton),
       ControllerButtonMapping(ShipDeviceType::SDLGamepad, portIndex, bitmask) {
 }
@@ -31,8 +31,8 @@ int8_t SDLButtonToButtonMapping::GetMappingType() {
 }
 
 std::string SDLButtonToButtonMapping::GetButtonMappingId() {
-    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask,
-                                 ControllerInputMapping::mShipDeviceType, mControllerButton);
+    return StringHelper::Sprintf("P%d-B%d-LUSI%d-SDLB%d", mPortIndex, mBitmask, ControllerInputMapping::mShipDeviceType,
+                                 mControllerButton);
 }
 
 void SDLButtonToButtonMapping::SaveToConfig() {

@@ -18,6 +18,6 @@ class ShipDeviceIndexToPhysicalDeviceIndexMapping {
     ShipDeviceType GetShipDeviceType();
 
   protected:
-  ShipDeviceType mShipDeviceType;
+    ShipDeviceType mShipDeviceType;
 };
 } // namespace Ship

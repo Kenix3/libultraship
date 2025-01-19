@@ -1,8 +1,7 @@
 #include "ShipDeviceIndexToPhysicalDeviceIndexMapping.h"
 
 namespace Ship {
-ShipDeviceIndexToPhysicalDeviceIndexMapping::ShipDeviceIndexToPhysicalDeviceIndexMapping(
-    ShipDeviceType shipDeviceType)
+ShipDeviceIndexToPhysicalDeviceIndexMapping::ShipDeviceIndexToPhysicalDeviceIndexMapping(ShipDeviceType shipDeviceType)
     : mShipDeviceType(shipDeviceType) {
 }
 

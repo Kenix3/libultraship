@@ -169,7 +169,7 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
 void InputEditorWindow::GetButtonColorsForShipDeviceType(ShipDeviceType lusIndex, ImVec4& buttonColor,
-                                                          ImVec4& buttonHoveredColor) {
+                                                         ImVec4& buttonHoveredColor) {
     switch (lusIndex) {
         case ShipDeviceType::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
@@ -1660,8 +1660,10 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
                     ImGui::CloseCurrentPopup();
                 }
                 if (ImGui::Button("Set defaults")) {
-                    Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappingsForDeviceType(
-                        lusIndex);
+                    Context::GetInstance()
+                        ->GetControlDeck()
+                        ->GetControllerByPort(portIndex)
+                        ->ClearAllMappingsForDeviceType(lusIndex);
                     Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
                         lusIndex);
                     shouldClose = true;

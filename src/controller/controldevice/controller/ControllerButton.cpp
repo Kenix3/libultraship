@@ -171,8 +171,9 @@ void ControllerButton::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
 }
 
 bool ControllerButton::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
-    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(),
-                       [shipDeviceType](const auto& mapping) { return mapping.second->GetShipDeviceType() == shipDeviceType; });
+    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(), [shipDeviceType](const auto& mapping) {
+        return mapping.second->GetShipDeviceType() == shipDeviceType;
+    });
 }
 
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {

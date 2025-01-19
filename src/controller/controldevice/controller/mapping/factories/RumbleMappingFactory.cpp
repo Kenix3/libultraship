@@ -37,8 +37,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
             return nullptr;
         }
 
-        return std::make_shared<SDLRumbleMapping>(portIndex,
-                                                  lowFrequencyIntensityPercentage, highFrequencyIntensityPercentage);
+        return std::make_shared<SDLRumbleMapping>(portIndex, lowFrequencyIntensityPercentage,
+                                                  highFrequencyIntensityPercentage);
     }
 
     return nullptr;
@@ -56,8 +56,7 @@ RumbleMappingFactory::CreateDefaultSDLRumbleMappings(ShipDeviceType shipDeviceTy
     }
 
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
-        portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-        DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
+        portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE) };
 
     return mappings;
 }
@@ -94,9 +93,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
     for (auto [lusIndex, controller] : sdlControllersWithRumble) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(controller, static_cast<SDL_GameControllerButton>(button))) {
-                mapping =
-                    std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
-                                                       DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
+                mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
+                                                             DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE);
                 break;
             }
         }

@@ -131,7 +131,8 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
 }
 
 bool ControllerLED::HasMappingsForShipDeviceType(ShipDeviceType shipDeviceType) {
-    return std::any_of(mLEDMappings.begin(), mLEDMappings.end(),
-                       [shipDeviceType](const auto& mapping) { return mapping.second->GetShipDeviceType() == shipDeviceType; });
+    return std::any_of(mLEDMappings.begin(), mLEDMappings.end(), [shipDeviceType](const auto& mapping) {
+        return mapping.second->GetShipDeviceType() == shipDeviceType;
+    });
 }
 } // namespace Ship
