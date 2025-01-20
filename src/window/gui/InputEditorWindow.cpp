@@ -1186,7 +1186,7 @@ void InputEditorWindow::DrawDeviceNameButtons() {
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
 
-    for (const auto& name :
+    for (const auto& [instanceId, name] :
          Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadNames()) {
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
