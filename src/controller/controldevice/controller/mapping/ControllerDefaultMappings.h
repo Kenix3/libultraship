@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 #include <SDL2/SDL.h>
 
 #ifndef CONTROLLERBUTTONS_T
@@ -18,13 +19,17 @@ class ControllerDefaultMappings {
     ControllerDefaultMappings(
         std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>> defaultKeyboardKeyToButtonMappings,
         std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
-            defaultSDLButtonToButtonMappings);
+            defaultSDLButtonToButtonMappings,
+        std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
+            defaultSDLAxisDirectionToButtonMappings);
     ControllerDefaultMappings();
     ~ControllerDefaultMappings();
 
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>> GetDefaultKeyboardKeyToButtonMappings();
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
     GetDefaultSDLButtonToButtonMappings();
+    std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
+    GetDefaultSDLAxisDirectionToButtonMappings();
 
   private:
     void SetDefaultKeyboardKeyToButtonMappings(
@@ -36,5 +41,11 @@ class ControllerDefaultMappings {
             defaultSDLButtonToButtonMappings);
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
         mDefaultSDLButtonToButtonMappings;
+
+    void SetDefaultSDLAxisDirectionToButtonMappings(
+        std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
+            defaultSDLAxisDirectionToButtonMappings);
+    std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
+        mDefaultSDLAxisDirectionToButtonMappings;
 };
 } // namespace Ship

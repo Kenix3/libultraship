@@ -5,15 +5,19 @@ namespace Ship {
 ControllerDefaultMappings::ControllerDefaultMappings(
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>> defaultKeyboardKeyToButtonMappings,
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
-        defaultSDLButtonToButtonMappings) {
+        defaultSDLButtonToButtonMappings,
+    std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
+        defaultSDLAxisDirectionToButtonMappings) {
     SetDefaultKeyboardKeyToButtonMappings(defaultKeyboardKeyToButtonMappings);
     SetDefaultSDLButtonToButtonMappings(defaultSDLButtonToButtonMappings);
+    SetDefaultSDLAxisDirectionToButtonMappings(defaultSDLAxisDirectionToButtonMappings);
 }
 
 ControllerDefaultMappings::ControllerDefaultMappings()
     : ControllerDefaultMappings(
           std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>>(),
-          std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>()) {
+          std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>(),
+          std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>()) {
 }
 
 ControllerDefaultMappings::~ControllerDefaultMappings() {
@@ -68,5 +72,26 @@ void ControllerDefaultMappings::SetDefaultSDLButtonToButtonMappings(
     mDefaultSDLButtonToButtonMappings[BTN_DDOWN] = { SDL_CONTROLLER_BUTTON_DPAD_DOWN };
     mDefaultSDLButtonToButtonMappings[BTN_DLEFT] = { SDL_CONTROLLER_BUTTON_DPAD_LEFT };
     mDefaultSDLButtonToButtonMappings[BTN_DRIGHT] = { SDL_CONTROLLER_BUTTON_DPAD_RIGHT };
+}
+
+std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
+ControllerDefaultMappings::GetDefaultSDLAxisDirectionToButtonMappings() {
+    return mDefaultSDLAxisDirectionToButtonMappings;
+}
+
+void ControllerDefaultMappings::SetDefaultSDLAxisDirectionToButtonMappings(
+    std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
+        defaultSDLAxisDirectionToButtonMappings) {
+    if (!defaultSDLAxisDirectionToButtonMappings.empty()) {
+        mDefaultSDLAxisDirectionToButtonMappings = defaultSDLAxisDirectionToButtonMappings;
+        return;
+    }
+
+    mDefaultSDLAxisDirectionToButtonMappings[BTN_R] = { { SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1 } };
+    mDefaultSDLAxisDirectionToButtonMappings[BTN_Z] = { { SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1 } };
+    mDefaultSDLAxisDirectionToButtonMappings[BTN_CUP] = { { SDL_CONTROLLER_AXIS_RIGHTY, -1 } };
+    mDefaultSDLAxisDirectionToButtonMappings[BTN_CDOWN] = { { SDL_CONTROLLER_AXIS_RIGHTY, 1 } };
+    mDefaultSDLAxisDirectionToButtonMappings[BTN_CLEFT] = { { SDL_CONTROLLER_AXIS_RIGHTX, -1 } };
+    mDefaultSDLAxisDirectionToButtonMappings[BTN_CRIGHT] = { { SDL_CONTROLLER_AXIS_RIGHTX, 1 } };
 }
 } // namespace Ship

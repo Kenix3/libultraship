@@ -101,39 +101,22 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLL
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto defaultButtonsForBitmask = Context::GetInstance()
-                                  ->GetControlDeck()
-                                  ->GetControllerDefaultMappings()
-                                  ->GetDefaultSDLButtonToButtonMappings()[bitmask];
+                                        ->GetControlDeck()
+                                        ->GetControllerDefaultMappings()
+                                        ->GetDefaultSDLButtonToButtonMappings()[bitmask];
 
     for (const auto& sdlGamepadButton : defaultButtonsForBitmask) {
         mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, sdlGamepadButton));
     }
 
-    switch (bitmask) {
-        case BTN_R:
-            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_R,
-                                                                                 SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
-            break;
-        case BTN_Z:
-            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_Z,
-                                                                                 SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
-            break;
-        case BTN_CUP:
-            mappings.push_back(
-                std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_CUP, SDL_CONTROLLER_AXIS_RIGHTY, -1));
-            break;
-        case BTN_CDOWN:
-            mappings.push_back(
-                std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_CDOWN, SDL_CONTROLLER_AXIS_RIGHTY, 1));
-            break;
-        case BTN_CLEFT:
-            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_CLEFT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, -1));
-            break;
-        case BTN_CRIGHT:
-            mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_CRIGHT,
-                                                                                 SDL_CONTROLLER_AXIS_RIGHTX, 1));
-            break;
+    auto defaultAxisDirectionsForBitmask = Context::GetInstance()
+                                               ->GetControlDeck()
+                                               ->GetControllerDefaultMappings()
+                                               ->GetDefaultSDLAxisDirectionToButtonMappings()[bitmask];
+
+    for (const auto& [sdlGamepadAxis, axisDirection] : defaultAxisDirectionsForBitmask) {
+        mappings.push_back(
+            std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, sdlGamepadAxis, axisDirection));
     }
 
     return mappings;
