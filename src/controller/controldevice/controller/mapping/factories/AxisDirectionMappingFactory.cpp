@@ -109,15 +109,17 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
-    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, LEFT,
-                                                            LUS_DEFAULT_KB_MAPPING_STICKLEFT),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, RIGHT,
-                                                            LUS_DEFAULT_KB_MAPPING_STICKRIGHT),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, UP, LUS_DEFAULT_KB_MAPPING_STICKUP),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, DOWN,
-                                                            LUS_DEFAULT_KB_MAPPING_STICKDOWN)
-    };
+    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
+
+    auto defaultsForStick = Context::GetInstance()
+                                ->GetControlDeck()
+                                ->GetControllerDefaultMappings()
+                                ->GetDefaultKeyboardKeyToAxisDirectionMappings()[stickIndex];
+
+    for (const auto& [direction, scancode] : defaultsForStick) {
+        mappings.push_back(
+            std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, direction, scancode));
+    }
 
     return mappings;
 }

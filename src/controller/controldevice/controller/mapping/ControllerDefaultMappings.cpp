@@ -4,11 +4,14 @@
 namespace Ship {
 ControllerDefaultMappings::ControllerDefaultMappings(
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>> defaultKeyboardKeyToButtonMappings,
+    std::unordered_map<StickIndex, std::vector<std::pair<Direction, KbScancode>>>
+        defaultKeyboardKeyToAxisDirectionMappings,
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
         defaultSDLButtonToButtonMappings,
     std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
         defaultSDLAxisDirectionToButtonMappings) {
     SetDefaultKeyboardKeyToButtonMappings(defaultKeyboardKeyToButtonMappings);
+    SetDefaultKeyboardKeyToAxisDirectionMappings(defaultKeyboardKeyToAxisDirectionMappings);
     SetDefaultSDLButtonToButtonMappings(defaultSDLButtonToButtonMappings);
     SetDefaultSDLAxisDirectionToButtonMappings(defaultSDLAxisDirectionToButtonMappings);
 }
@@ -16,6 +19,7 @@ ControllerDefaultMappings::ControllerDefaultMappings(
 ControllerDefaultMappings::ControllerDefaultMappings()
     : ControllerDefaultMappings(
           std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>>(),
+          std::unordered_map<StickIndex, std::vector<std::pair<Direction, KbScancode>>>(),
           std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>(),
           std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>()) {
 }
@@ -49,6 +53,25 @@ void ControllerDefaultMappings::SetDefaultKeyboardKeyToButtonMappings(
     mDefaultKeyboardKeyToButtonMappings[BTN_DDOWN] = { KbScancode::LUS_KB_G };
     mDefaultKeyboardKeyToButtonMappings[BTN_DLEFT] = { KbScancode::LUS_KB_F };
     mDefaultKeyboardKeyToButtonMappings[BTN_DRIGHT] = { KbScancode::LUS_KB_H };
+}
+
+std::unordered_map<StickIndex, std::vector<std::pair<Direction, KbScancode>>>
+ControllerDefaultMappings::GetDefaultKeyboardKeyToAxisDirectionMappings() {
+    return mDefaultKeyboardKeyToAxisDirectionMappings;
+}
+
+void ControllerDefaultMappings::SetDefaultKeyboardKeyToAxisDirectionMappings(
+    std::unordered_map<StickIndex, std::vector<std::pair<Direction, KbScancode>>>
+        defaultKeyboardKeyToAxisDirectionMappings) {
+    if (!defaultKeyboardKeyToAxisDirectionMappings.empty()) {
+        mDefaultKeyboardKeyToAxisDirectionMappings = defaultKeyboardKeyToAxisDirectionMappings;
+        return;
+    }
+
+    mDefaultKeyboardKeyToAxisDirectionMappings[LEFT_STICK] = { { LEFT, KbScancode::LUS_KB_A },
+                                                               { RIGHT, KbScancode::LUS_KB_D },
+                                                               { UP, KbScancode::LUS_KB_W },
+                                                               { DOWN, KbScancode::LUS_KB_S } };
 }
 
 std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
