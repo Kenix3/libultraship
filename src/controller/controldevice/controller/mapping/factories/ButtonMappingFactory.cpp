@@ -87,7 +87,7 @@ ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CON
     auto defaultsForBitmask = Context::GetInstance()
                                   ->GetControlDeck()
                                   ->GetControllerDefaultMappings()
-                                  ->GetDefaultKeyboardButtonMappings()[bitmask];
+                                  ->GetDefaultKeyboardKeyToButtonMappings()[bitmask];
 
     for (const auto& scancode : defaultsForBitmask) {
         mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, scancode));
