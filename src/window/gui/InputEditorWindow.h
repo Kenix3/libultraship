@@ -72,7 +72,7 @@ class InputEditorWindow : public GuiWindow {
     void DrawSetDefaultsButton(uint8_t portIndex);
     void DrawClearAllButton(uint8_t portIndex);
 
-    void DrawDeviceNameButtons();
+    void DrawDeviceToggles(uint8_t portIndex);
     void OffsetMappingPopup();
 };
 } // namespace Ship
