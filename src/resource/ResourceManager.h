@@ -52,6 +52,7 @@ struct ResourceIdentifierHash {
 };
 
 class ResourceManager {
+    friend class ResourceLoader;
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 
   public:
@@ -107,13 +108,11 @@ class ResourceManager {
     void UnloadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
                                                                            bool loadExact = false);
-    std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier,
-                                          std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath,
                                                                            bool loadExact = false);
 
-    std::shared_ptr<File> LoadFileProcess(const std::string& filePath,
-                                          std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
 
   private:

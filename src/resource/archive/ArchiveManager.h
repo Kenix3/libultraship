@@ -28,8 +28,8 @@ class ArchiveManager {
     size_t RemoveArchive(const std::string& path);
 
     bool IsLoaded();
-    std::shared_ptr<File> LoadFile(const std::string& filePath, std::shared_ptr<ResourceInitData> initData = nullptr);
-    std::shared_ptr<File> LoadFile(uint64_t hash, std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<File> LoadFile(const std::string& filePath);
+    std::shared_ptr<File> LoadFile(uint64_t hash);
     bool HasFile(const std::string& filePath);
     bool HasFile(uint64_t hash);
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask = "");

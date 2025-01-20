@@ -3,12 +3,14 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<IResource> ResourceFactoryBinaryGuiTextureV0::ReadResource(std::shared_ptr<File> file) {
-    if (!FileHasValidFormatAndReader(file)) {
+std::shared_ptr<IResource>
+ResourceFactoryBinaryGuiTextureV0::ReadResource(std::shared_ptr<File> file,
+                                                std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
 
-    auto guiTexture = std::make_shared<GuiTexture>(file->InitData);
+    auto guiTexture = std::make_shared<GuiTexture>(initData);
     auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
     guiTexture->DataSize = file->Buffer->size();
