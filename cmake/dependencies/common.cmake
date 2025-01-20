@@ -50,12 +50,14 @@ if(NOT EXCLUDE_MPQ_SUPPORT)
 
     # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
     set(stormlib_apply_patch_if_needed git apply ${stormlib_patch_file} ${git_hide_output} || git apply --reverse --check ${stormlib_patch_file})
+    # Resets code and reapply patch, if old (potentially incompatible) patch applied
+    set(stormlib_apply_patch_if_needed_with_reset ${stormlib_apply_patch_if_needed} || git diff --check && (git reset --hard || ${stormlib_apply_patch_if_needed}))
 
     FetchContent_Declare(
         StormLib
         GIT_REPOSITORY https://github.com/ladislav-zezula/StormLib.git
         GIT_TAG v9.25
-        PATCH_COMMAND ${stormlib_apply_patch_if_needed}
+        PATCH_COMMAND ${stormlib_apply_patch_if_needed_with_reset}
     )
     FetchContent_MakeAvailable(StormLib)
     list(APPEND ADDITIONAL_LIB_INCLUDES ${stormlib_SOURCE_DIR}/src)
