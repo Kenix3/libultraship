@@ -100,17 +100,16 @@ std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
+    auto defaultButtonsForBitmask = Context::GetInstance()
+                                  ->GetControlDeck()
+                                  ->GetControllerDefaultMappings()
+                                  ->GetDefaultSDLButtonToButtonMappings()[bitmask];
+
+    for (const auto& sdlGamepadButton : defaultButtonsForBitmask) {
+        mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, sdlGamepadButton));
+    }
+
     switch (bitmask) {
-        case BTN_A:
-            mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_A, SDL_CONTROLLER_BUTTON_A));
-            break;
-        case BTN_B:
-            mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_B, SDL_CONTROLLER_BUTTON_B));
-            break;
-        case BTN_L:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_L, SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
-            break;
         case BTN_R:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_R,
                                                                                  SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1));
@@ -118,10 +117,6 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLL
         case BTN_Z:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_Z,
                                                                                  SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1));
-            break;
-        case BTN_START:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_START, SDL_CONTROLLER_BUTTON_START));
             break;
         case BTN_CUP:
             mappings.push_back(
@@ -138,22 +133,6 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLL
         case BTN_CRIGHT:
             mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, BTN_CRIGHT,
                                                                                  SDL_CONTROLLER_AXIS_RIGHTX, 1));
-            break;
-        case BTN_DUP:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_DUP, SDL_CONTROLLER_BUTTON_DPAD_UP));
-            break;
-        case BTN_DDOWN:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_DDOWN, SDL_CONTROLLER_BUTTON_DPAD_DOWN));
-            break;
-        case BTN_DLEFT:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_DLEFT, SDL_CONTROLLER_BUTTON_DPAD_LEFT));
-            break;
-        case BTN_DRIGHT:
-            mappings.push_back(
-                std::make_shared<SDLButtonToButtonMapping>(portIndex, BTN_DRIGHT, SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
             break;
     }
 

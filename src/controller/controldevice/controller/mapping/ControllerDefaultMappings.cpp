@@ -3,12 +3,17 @@
 
 namespace Ship {
 ControllerDefaultMappings::ControllerDefaultMappings(
-    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>> defaultKeyboardKeyToButtonMappings) {
+    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>> defaultKeyboardKeyToButtonMappings,
+    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
+        defaultSDLButtonToButtonMappings) {
     SetDefaultKeyboardKeyToButtonMappings(defaultKeyboardKeyToButtonMappings);
+    SetDefaultSDLButtonToButtonMappings(defaultSDLButtonToButtonMappings);
 }
 
 ControllerDefaultMappings::ControllerDefaultMappings()
-    : ControllerDefaultMappings(std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>>()) {
+    : ControllerDefaultMappings(
+          std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>>(),
+          std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>()) {
 }
 
 ControllerDefaultMappings::~ControllerDefaultMappings() {
@@ -40,5 +45,28 @@ void ControllerDefaultMappings::SetDefaultKeyboardKeyToButtonMappings(
     mDefaultKeyboardKeyToButtonMappings[BTN_DDOWN] = { KbScancode::LUS_KB_G };
     mDefaultKeyboardKeyToButtonMappings[BTN_DLEFT] = { KbScancode::LUS_KB_F };
     mDefaultKeyboardKeyToButtonMappings[BTN_DRIGHT] = { KbScancode::LUS_KB_H };
+}
+
+std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
+ControllerDefaultMappings::GetDefaultSDLButtonToButtonMappings() {
+    return mDefaultSDLButtonToButtonMappings;
+}
+
+void ControllerDefaultMappings::SetDefaultSDLButtonToButtonMappings(
+    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
+        defaultSDLButtonToButtonMappings) {
+    if (!defaultSDLButtonToButtonMappings.empty()) {
+        mDefaultSDLButtonToButtonMappings = defaultSDLButtonToButtonMappings;
+        return;
+    }
+
+    mDefaultSDLButtonToButtonMappings[BTN_A] = { SDL_CONTROLLER_BUTTON_A };
+    mDefaultSDLButtonToButtonMappings[BTN_B] = { SDL_CONTROLLER_BUTTON_B };
+    mDefaultSDLButtonToButtonMappings[BTN_L] = { SDL_CONTROLLER_BUTTON_LEFTSHOULDER };
+    mDefaultSDLButtonToButtonMappings[BTN_START] = { SDL_CONTROLLER_BUTTON_START };
+    mDefaultSDLButtonToButtonMappings[BTN_DUP] = { SDL_CONTROLLER_BUTTON_DPAD_UP };
+    mDefaultSDLButtonToButtonMappings[BTN_DDOWN] = { SDL_CONTROLLER_BUTTON_DPAD_DOWN };
+    mDefaultSDLButtonToButtonMappings[BTN_DLEFT] = { SDL_CONTROLLER_BUTTON_DPAD_LEFT };
+    mDefaultSDLButtonToButtonMappings[BTN_DRIGHT] = { SDL_CONTROLLER_BUTTON_DPAD_RIGHT };
 }
 } // namespace Ship
