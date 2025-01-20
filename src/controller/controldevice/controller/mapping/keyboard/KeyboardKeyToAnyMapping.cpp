@@ -6,7 +6,7 @@
 
 namespace Ship {
 KeyboardKeyToAnyMapping::KeyboardKeyToAnyMapping(KbScancode scancode)
-    : ControllerInputMapping(ShipDeviceIndex::Keyboard), mKeyboardScancode(scancode), mKeyPressed(false) {
+    : ControllerInputMapping(PhysicalDeviceType::Keyboard), mKeyboardScancode(scancode), mKeyPressed(false) {
 }
 
 KeyboardKeyToAnyMapping::~KeyboardKeyToAnyMapping() {
@@ -41,10 +41,5 @@ bool KeyboardKeyToAnyMapping::ProcessKeyboardEvent(KbEventType eventType, KbScan
 
 std::string KeyboardKeyToAnyMapping::GetPhysicalDeviceName() {
     return "Keyboard";
-}
-
-bool KeyboardKeyToAnyMapping::PhysicalDeviceIsConnected() {
-    // todo: handle non-keyboard devices?
-    return true;
 }
 } // namespace Ship

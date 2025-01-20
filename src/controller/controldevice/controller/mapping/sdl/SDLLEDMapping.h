@@ -2,9 +2,9 @@
 #include "SDLMapping.h"
 
 namespace Ship {
-class SDLLEDMapping final : public ControllerLEDMapping, public SDLMapping {
+class SDLLEDMapping final : public ControllerLEDMapping {
   public:
-    SDLLEDMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
+    SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
 
     void SetLEDColor(Color_RGB8 color) override;
 
@@ -13,6 +13,5 @@ class SDLLEDMapping final : public ControllerLEDMapping, public SDLMapping {
     void EraseFromConfig() override;
 
     std::string GetPhysicalDeviceName() override;
-    bool PhysicalDeviceIsConnected() override;
 };
 } // namespace Ship

@@ -10,7 +10,6 @@ class MouseWheelToAnyMapping : virtual public ControllerInputMapping {
     ~MouseWheelToAnyMapping();
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;
-    bool PhysicalDeviceIsConnected() override;
 
   protected:
     WheelDirection mWheelDirection;

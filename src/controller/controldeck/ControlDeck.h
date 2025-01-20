@@ -4,7 +4,8 @@
 #include <vector>
 #include <config/Config.h>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
+#include "controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
+#include "controller/physicaldevice/GlobalSDLDeviceSettings.h"
 
 namespace Ship {
 
@@ -22,12 +23,11 @@ class ControlDeck {
     bool GamepadGameInputBlocked();
     bool KeyboardGameInputBlocked();
     bool MouseGameInputBlocked();
-    void SetSinglePlayerMappingMode(bool singlePlayer);
-    bool IsSinglePlayerMappingMode();
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
     bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
 
-    std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
+    std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
+    std::shared_ptr<GlobalSDLDeviceSettings> GetGlobalSDLDeviceSettings();
 
   protected:
     bool AllGameInputBlocked();
@@ -35,9 +35,9 @@ class ControlDeck {
 
   private:
     uint8_t* mControllerBits = nullptr;
-    bool mSinglePlayerMappingMode;
     std::unordered_map<int32_t, bool> mGameInputBlockers;
-    std::shared_ptr<ShipDeviceIndexMappingManager> mDeviceIndexMappingManager;
+    std::shared_ptr<ConnectedPhysicalDeviceManager> mConnectedPhysicalDeviceManager;
+    std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;
 };
 } // namespace Ship
 

@@ -5,13 +5,13 @@
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>
-#include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : mSinglePlayerMappingMode(false) {
-    mDeviceIndexMappingManager = std::make_shared<ShipDeviceIndexMappingManager>();
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
+    mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
+    mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
 }
 
 ControlDeck::~ControlDeck() {
@@ -28,13 +28,12 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         }
     }
 
-    // if we don't have a config for controller 1, set default keyboard bindings
+    // if we don't have a config for controller 1, set default bindings
     if (!mPorts[0]->GetConnectedController()->HasConfig()) {
-        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Keyboard);
-        mPorts[0]->GetConnectedController()->AddDefaultMappings(ShipDeviceIndex::Mouse);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Keyboard);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Mouse);
+        mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
-
-    Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Reordering")->Show();
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
@@ -104,16 +103,12 @@ void ControlDeck::UnblockGameInput(int32_t blockId) {
     mGameInputBlockers.erase(blockId);
 }
 
-std::shared_ptr<ShipDeviceIndexMappingManager> ControlDeck::GetDeviceIndexMappingManager() {
-    return mDeviceIndexMappingManager;
+std::shared_ptr<ConnectedPhysicalDeviceManager> ControlDeck::GetConnectedPhysicalDeviceManager() {
+    return mConnectedPhysicalDeviceManager;
 }
 
-void ControlDeck::SetSinglePlayerMappingMode(bool singlePlayer) {
-    mSinglePlayerMappingMode = singlePlayer;
-}
-
-bool ControlDeck::IsSinglePlayerMappingMode() {
-    return mSinglePlayerMappingMode;
+std::shared_ptr<GlobalSDLDeviceSettings> ControlDeck::GetGlobalSDLDeviceSettings() {
+    return mGlobalSDLDeviceSettings;
 }
 } // namespace Ship
 
