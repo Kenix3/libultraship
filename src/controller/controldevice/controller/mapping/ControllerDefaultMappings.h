@@ -23,6 +23,8 @@ class ControllerDefaultMappings {
             defaultKeyboardKeyToAxisDirectionMappings,
         std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
             defaultSDLButtonToButtonMappings,
+        std::unordered_map<StickIndex, std::vector<std::pair<Direction, SDL_GameControllerButton>>>
+            defaultSDLButtonToAxisDirectionMappings,
         std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
             defaultSDLAxisDirectionToButtonMappings);
     ControllerDefaultMappings();
@@ -31,8 +33,12 @@ class ControllerDefaultMappings {
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<KbScancode>> GetDefaultKeyboardKeyToButtonMappings();
     std::unordered_map<StickIndex, std::vector<std::pair<Direction, KbScancode>>>
     GetDefaultKeyboardKeyToAxisDirectionMappings();
+
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
     GetDefaultSDLButtonToButtonMappings();
+    std::unordered_map<StickIndex, std::vector<std::pair<Direction, SDL_GameControllerButton>>>
+    GetDefaultSDLButtonToAxisDirectionMappings();
+
     std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
     GetDefaultSDLAxisDirectionToButtonMappings();
 
@@ -52,6 +58,12 @@ class ControllerDefaultMappings {
             defaultSDLButtonToButtonMappings);
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
         mDefaultSDLButtonToButtonMappings;
+
+    void SetDefaultSDLButtonToAxisDirectionMappings(
+        std::unordered_map<StickIndex, std::vector<std::pair<Direction, SDL_GameControllerButton>>>
+            defaultSDLButtonToAxisDirectionMappings);
+    std::unordered_map<StickIndex, std::vector<std::pair<Direction, SDL_GameControllerButton>>>
+        mDefaultSDLButtonToAxisDirectionMappings;
 
     void SetDefaultSDLAxisDirectionToButtonMappings(
         std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
