@@ -67,8 +67,8 @@ void Fast3dWindow::Init() {
     posY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", 100);
 
     if (isFullscreen) {
-        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", 1920);
-        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", 1080);
+        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
+        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
     } else {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
