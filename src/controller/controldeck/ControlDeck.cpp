@@ -9,9 +9,13 @@
 
 namespace Ship {
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) {
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+                         std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
+    if (controllerDefaultMappings == nullptr) {
+        mControllerDefaultMappings = std::make_shared<ControllerDefaultMappings>();
+    }
 }
 
 ControlDeck::~ControlDeck() {
@@ -110,14 +114,23 @@ std::shared_ptr<ConnectedPhysicalDeviceManager> ControlDeck::GetConnectedPhysica
 std::shared_ptr<GlobalSDLDeviceSettings> ControlDeck::GetGlobalSDLDeviceSettings() {
     return mGlobalSDLDeviceSettings;
 }
+
+std::shared_ptr<ControllerDefaultMappings> ControlDeck::GetControllerDefaultMappings() {
+    return mControllerDefaultMappings;
+}
 } // namespace Ship
 
 namespace LUS {
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : Ship::ControlDeck(additionalBitmasks), mPads(nullptr) {
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+                         std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings)
+    : Ship::ControlDeck(additionalBitmasks, controllerDefaultMappings), mPads(nullptr) {
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
         mPorts.push_back(std::make_shared<Ship::ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
     }
+}
+
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : ControlDeck(additionalBitmasks, nullptr) {
 }
 
 ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
