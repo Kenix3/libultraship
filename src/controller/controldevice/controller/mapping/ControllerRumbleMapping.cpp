@@ -1,10 +1,10 @@
 #include "ControllerRumbleMapping.h"
 
 namespace Ship {
-ControllerRumbleMapping::ControllerRumbleMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
+ControllerRumbleMapping::ControllerRumbleMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,
                                                  uint8_t lowFrequencyIntensityPercentage,
                                                  uint8_t highFrequencyIntensityPercentage)
-    : ControllerMapping(shipDeviceIndex), mPortIndex(portIndex),
+    : ControllerMapping(physicalDeviceType), mPortIndex(portIndex),
       mLowFrequencyIntensityPercentage(lowFrequencyIntensityPercentage),
       mHighFrequencyIntensityPercentage(highFrequencyIntensityPercentage) {
 }

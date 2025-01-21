@@ -86,28 +86,28 @@ void Controller::ClearAllMappings() {
     GetLED()->ClearAllMappings();
 }
 
-void Controller::ClearAllMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
+void Controller::ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDeviceType) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->ClearAllButtonMappingsForDevice(shipDeviceIndex);
+        button->ClearAllButtonMappingsForDeviceType(physicalDeviceType);
     }
-    GetLeftStick()->ClearAllMappingsForDevice(shipDeviceIndex);
-    GetRightStick()->ClearAllMappingsForDevice(shipDeviceIndex);
+    GetLeftStick()->ClearAllMappingsForDeviceType(physicalDeviceType);
+    GetRightStick()->ClearAllMappingsForDeviceType(physicalDeviceType);
 
     auto gyroMapping = GetGyro()->GetGyroMapping();
-    if (gyroMapping != nullptr && gyroMapping->GetShipDeviceIndex() == shipDeviceIndex) {
+    if (gyroMapping != nullptr && gyroMapping->GetPhysicalDeviceType() == physicalDeviceType) {
         GetGyro()->ClearGyroMapping();
     }
 
-    GetRumble()->ClearAllMappingsForDevice(shipDeviceIndex);
-    GetLED()->ClearAllMappingsForDevice(shipDeviceIndex);
+    GetRumble()->ClearAllMappingsForDeviceType(physicalDeviceType);
+    GetLED()->ClearAllMappingsForDeviceType(physicalDeviceType);
 }
 
-void Controller::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
+void Controller::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        button->AddDefaultMappings(shipDeviceIndex);
+        button->AddDefaultMappings(physicalDeviceType);
     }
-    GetLeftStick()->AddDefaultMappings(shipDeviceIndex);
-    GetRumble()->AddDefaultMappings(shipDeviceIndex);
+    GetLeftStick()->AddDefaultMappings(physicalDeviceType);
+    GetRumble()->AddDefaultMappings(physicalDeviceType);
 
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
@@ -146,25 +146,25 @@ bool Controller::ProcessMouseButtonEvent(bool isPressed, MouseBtn mouseButton) {
     return result;
 }
 
-bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
+bool Controller::HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType) {
     for (auto [bitmask, button] : GetAllButtons()) {
-        if (button->HasMappingsForShipDeviceIndex(lusIndex)) {
+        if (button->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
             return true;
         }
     }
-    if (GetLeftStick()->HasMappingsForShipDeviceIndex(lusIndex)) {
+    if (GetLeftStick()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetRightStick()->HasMappingsForShipDeviceIndex(lusIndex)) {
+    if (GetRightStick()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetGyro()->HasMappingForShipDeviceIndex(lusIndex)) {
+    if (GetGyro()->HasMappingForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetRumble()->HasMappingsForShipDeviceIndex(lusIndex)) {
+    if (GetRumble()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
-    if (GetLED()->HasMappingsForShipDeviceIndex(lusIndex)) {
+    if (GetLED()->HasMappingsForPhysicalDeviceType(physicalDeviceType)) {
         return true;
     }
 
@@ -173,96 +173,6 @@ bool Controller::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
 
 std::shared_ptr<ControllerButton> Controller::GetButtonByBitmask(CONTROLLERBUTTONS_T bitmask) {
     return mButtons[bitmask];
-}
-
-void Controller::MoveMappingsToDifferentController(std::shared_ptr<Controller> newController,
-                                                   ShipDeviceIndex lusIndex) {
-    for (auto [bitmask, button] : GetAllButtons()) {
-        std::vector<std::string> buttonMappingIdsToRemove;
-        for (auto [id, mapping] : button->GetAllButtonMappings()) {
-            if (mapping->GetShipDeviceIndex() == lusIndex) {
-                buttonMappingIdsToRemove.push_back(id);
-
-                mapping->SetPortIndex(newController->GetPortIndex());
-                mapping->SaveToConfig();
-
-                newController->GetButtonByBitmask(bitmask)->AddButtonMapping(mapping);
-            }
-        }
-        newController->GetButtonByBitmask(bitmask)->SaveButtonMappingIdsToConfig();
-        for (auto id : buttonMappingIdsToRemove) {
-            button->ClearButtonMappingId(id);
-        }
-    }
-
-    for (auto stick : { GetLeftStick(), GetRightStick() }) {
-        auto newControllerStick =
-            stick->GetStickIndex() == LEFT_STICK ? newController->GetLeftStick() : newController->GetRightStick();
-        for (auto [direction, mappings] : stick->GetAllAxisDirectionMappings()) {
-            std::vector<std::string> axisDirectionMappingIdsToRemove;
-            for (auto [id, mapping] : mappings) {
-                if (mapping->GetShipDeviceIndex() == lusIndex) {
-                    axisDirectionMappingIdsToRemove.push_back(id);
-
-                    mapping->SetPortIndex(newController->GetPortIndex());
-                    mapping->SaveToConfig();
-
-                    newControllerStick->AddAxisDirectionMapping(direction, mapping);
-                }
-            }
-            newControllerStick->SaveAxisDirectionMappingIdsToConfig();
-            for (auto id : axisDirectionMappingIdsToRemove) {
-                stick->ClearAxisDirectionMappingId(direction, id);
-            }
-        }
-    }
-
-    if (GetGyro()->GetGyroMapping() != nullptr && GetGyro()->GetGyroMapping()->GetShipDeviceIndex() == lusIndex) {
-        GetGyro()->GetGyroMapping()->SetPortIndex(newController->GetPortIndex());
-        GetGyro()->GetGyroMapping()->SaveToConfig();
-
-        auto oldGyroMappingFromNewController = newController->GetGyro()->GetGyroMapping();
-        if (oldGyroMappingFromNewController != nullptr) {
-            oldGyroMappingFromNewController->SetPortIndex(GetPortIndex());
-            oldGyroMappingFromNewController->SaveToConfig();
-        }
-        newController->GetGyro()->SetGyroMapping(GetGyro()->GetGyroMapping());
-        newController->GetGyro()->SaveGyroMappingIdToConfig();
-        GetGyro()->SetGyroMapping(oldGyroMappingFromNewController);
-        GetGyro()->SaveGyroMappingIdToConfig();
-    }
-
-    std::vector<std::string> rumbleMappingIdsToRemove;
-    for (auto [id, mapping] : GetRumble()->GetAllRumbleMappings()) {
-        if (mapping->GetShipDeviceIndex() == lusIndex) {
-            rumbleMappingIdsToRemove.push_back(id);
-
-            mapping->SetPortIndex(newController->GetPortIndex());
-            mapping->SaveToConfig();
-
-            newController->GetRumble()->AddRumbleMapping(mapping);
-        }
-    }
-    newController->GetRumble()->SaveRumbleMappingIdsToConfig();
-    for (auto id : rumbleMappingIdsToRemove) {
-        GetRumble()->ClearRumbleMappingId(id);
-    }
-
-    std::vector<std::string> ledMappingIdsToRemove;
-    for (auto [id, mapping] : GetLED()->GetAllLEDMappings()) {
-        if (mapping->GetShipDeviceIndex() == lusIndex) {
-            ledMappingIdsToRemove.push_back(id);
-
-            mapping->SetPortIndex(newController->GetPortIndex());
-            mapping->SaveToConfig();
-
-            newController->GetLED()->AddLEDMapping(mapping);
-        }
-    }
-    newController->GetLED()->SaveLEDMappingIdsToConfig();
-    for (auto id : ledMappingIdsToRemove) {
-        GetLED()->ClearLEDMappingId(id);
-    }
 }
 
 std::vector<std::shared_ptr<ControllerMapping>> Controller::GetAllMappings() {

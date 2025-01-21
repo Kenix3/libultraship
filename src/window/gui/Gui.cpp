@@ -72,14 +72,9 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
         AddGuiWindow(std::make_shared<InputEditorWindow>(CVAR_CONTROLLER_CONFIGURATION_WINDOW_OPEN, "Input Editor"));
     }
 
-    if (GetGuiWindow("Controller Disconnected") == nullptr) {
-        AddGuiWindow(std::make_shared<ControllerDisconnectedWindow>(CVAR_CONTROLLER_DISCONNECTED_WINDOW_OPEN,
-                                                                    "Controller Disconnected"));
-    }
-
-    if (GetGuiWindow("Controller Reordering") == nullptr) {
-        AddGuiWindow(std::make_shared<ControllerReorderingWindow>(CVAR_CONTROLLER_REORDERING_WINDOW_OPEN,
-                                                                  "Controller Reordering"));
+    if (GetGuiWindow("SDLAddRemoveDeviceEventHandler") == nullptr) {
+        AddGuiWindow(std::make_shared<SDLAddRemoveDeviceEventHandler>("gOpenWindows.SDLAddRemoveDeviceEventHandler",
+                                                                      "SDLAddRemoveDeviceEventHandler"));
     }
 
     if (GetGuiWindow("Console") == nullptr) {
@@ -504,21 +499,13 @@ void Gui::DrawMenu() {
         }
     }
 
-#if __APPLE__
-    if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
-        ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
-            ->Dispatch("reset");
-    }
-#else
+    // Mac interprets this as cmd+r when io.ConfigMacOSXBehavior is on (on by default)
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
         std::reinterpret_pointer_cast<ConsoleWindow>(
             Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
-#endif
 
     if (GetMenuBar()) {
         GetMenuBar()->Update();

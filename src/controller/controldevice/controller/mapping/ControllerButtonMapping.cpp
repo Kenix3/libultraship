@@ -6,9 +6,9 @@
 #include "public/bridge/consolevariablebridge.h"
 
 namespace Ship {
-ControllerButtonMapping::ControllerButtonMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex,
+ControllerButtonMapping::ControllerButtonMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,
                                                  CONTROLLERBUTTONS_T bitmask)
-    : ControllerInputMapping(shipDeviceIndex), mPortIndex(portIndex), mBitmask(bitmask) {
+    : ControllerInputMapping(physicalDeviceType), mPortIndex(portIndex), mBitmask(bitmask) {
 }
 
 ControllerButtonMapping::~ControllerButtonMapping() {

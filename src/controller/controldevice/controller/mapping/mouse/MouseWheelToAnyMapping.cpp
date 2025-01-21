@@ -6,7 +6,7 @@
 
 namespace Ship {
 MouseWheelToAnyMapping::MouseWheelToAnyMapping(WheelDirection wheelDirection)
-    : ControllerInputMapping(ShipDeviceIndex::Mouse), mWheelDirection(wheelDirection) {
+    : ControllerInputMapping(PhysicalDeviceType::Mouse), mWheelDirection(wheelDirection) {
 }
 
 MouseWheelToAnyMapping::~MouseWheelToAnyMapping() {
@@ -18,9 +18,5 @@ std::string MouseWheelToAnyMapping::GetPhysicalInputName() {
 
 std::string MouseWheelToAnyMapping::GetPhysicalDeviceName() {
     return "Mouse";
-}
-
-bool MouseWheelToAnyMapping::PhysicalDeviceIsConnected() {
-    return true;
 }
 } // namespace Ship

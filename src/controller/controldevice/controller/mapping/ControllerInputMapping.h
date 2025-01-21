@@ -7,7 +7,7 @@ namespace Ship {
 
 class ControllerInputMapping : public ControllerMapping {
   public:
-    ControllerInputMapping(ShipDeviceIndex shipDeviceIndex);
+    ControllerInputMapping(PhysicalDeviceType physicalDeviceType);
     ~ControllerInputMapping();
     virtual std::string GetPhysicalInputName();
 };

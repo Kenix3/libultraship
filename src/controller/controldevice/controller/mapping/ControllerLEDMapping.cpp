@@ -1,9 +1,9 @@
 #include "ControllerLEDMapping.h"
 
 namespace Ship {
-ControllerLEDMapping::ControllerLEDMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, uint8_t colorSource,
-                                           Color_RGB8 savedColor)
-    : ControllerMapping(shipDeviceIndex), mPortIndex(portIndex), mColorSource(colorSource), mSavedColor(savedColor) {
+ControllerLEDMapping::ControllerLEDMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,
+                                           uint8_t colorSource, Color_RGB8 savedColor)
+    : ControllerMapping(physicalDeviceType), mPortIndex(portIndex), mColorSource(colorSource), mSavedColor(savedColor) {
 }
 
 ControllerLEDMapping::~ControllerLEDMapping() {
