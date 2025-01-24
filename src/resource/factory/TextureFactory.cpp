@@ -9,21 +9,10 @@ namespace Fast {
 
 std::shared_ptr<Ship::IResource> loadPngTexture(std::shared_ptr<Ship::File> filePng) {
     auto texture = std::make_shared<Texture>(filePng->InitData);
-    auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(filePng->Reader);
-
-    auto callback = stbi_io_callbacks{ [](void* user, char* data, int size) {
-                                          auto reader = static_cast<Ship::BinaryReader*>(user);
-                                          reader->Read(data, size);
-                                          return size;
-                                      },
-                                       [](void* user, int size) {
-                                           auto reader = static_cast<Ship::BinaryReader*>(user);
-                                           reader->Seek(size, Ship::SeekOffsetType::Current);
-                                       },
-                                       [](void* user) { return 0; } };
 
     int height, width = 0;
-    texture->ImageData = stbi_load_from_callbacks(&callback, reader.get(), &width, &height, nullptr, 4);
+    texture->ImageData = stbi_load_from_memory((const stbi_uc*)filePng->Buffer.get()->data(),
+                                               filePng->Buffer.get()->size(), &width, &height, nullptr, 4);
     texture->Width = width;
     texture->Height = height;
     texture->Type = TextureType::RGBA32bpp;
