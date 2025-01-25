@@ -428,13 +428,15 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
         case WM_INPUT: {
-            uint32_t size = sizeof(RAWINPUT);
-            static RAWINPUT raw[sizeof(RAWINPUT)];
-            GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
+            if (dxgi.in_focus) {
+                uint32_t size = sizeof(RAWINPUT);
+                static RAWINPUT raw[sizeof(RAWINPUT)];
+                GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
 
-            if (raw->header.dwType == RIM_TYPEMOUSE) {
-                dxgi.mouse_delta.x = raw->data.mouse.lLastX;
-                dxgi.mouse_delta.y = raw->data.mouse.lLastY;
+                if (raw->header.dwType == RIM_TYPEMOUSE) {
+                    dxgi.mouse_delta.x = raw->data.mouse.lLastX;
+                    dxgi.mouse_delta.y = raw->data.mouse.lLastY;
+                }
             }
             break;
         }
