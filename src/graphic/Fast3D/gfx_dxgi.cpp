@@ -602,8 +602,8 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
     if (dxgi.is_mouse_captured && dxgi.in_focus) {
-        *x = dxgi.mouse_delta.x * 80;
-        *y = dxgi.mouse_delta.y * 80;
+        *x = dxgi.mouse_delta.x;
+        *y = dxgi.mouse_delta.y;
     } else {
         *x = 0;
         *y = 0;
