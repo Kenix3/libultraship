@@ -434,8 +434,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
                 GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
 
                 if (raw->header.dwType == RIM_TYPEMOUSE) {
-                    dxgi.mouse_delta.x = raw->data.mouse.lLastX;
-                    dxgi.mouse_delta.y = raw->data.mouse.lLastY;
+                    dxgi.mouse_delta.x += raw->data.mouse.lLastX;
+                    dxgi.mouse_delta.y += raw->data.mouse.lLastY;
                 }
             }
             break;
