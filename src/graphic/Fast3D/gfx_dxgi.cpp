@@ -94,7 +94,7 @@ static struct {
     bool is_mouse_captured;
     bool in_focus;
     RAWINPUTDEVICE raw_input_device[1];
-    POINT mouse_delta;
+    POINT raw_mouse_delta;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
@@ -428,14 +428,14 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
         case WM_INPUT: {
-            if (dxgi.in_focus) {
+            if (dxgi.is_mouse_captured && dxgi.in_focus) {
                 uint32_t size = sizeof(RAWINPUT);
                 static RAWINPUT raw[sizeof(RAWINPUT)];
                 GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
 
                 if (raw->header.dwType == RIM_TYPEMOUSE) {
-                    dxgi.mouse_delta.x += raw->data.mouse.lLastX;
-                    dxgi.mouse_delta.y += raw->data.mouse.lLastY;
+                    dxgi.raw_mouse_delta.x += raw->data.mouse.lLastX;
+                    dxgi.raw_mouse_delta.y += raw->data.mouse.lLastY;
                 }
             }
             break;
@@ -601,15 +601,21 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 }
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
-    if (dxgi.is_mouse_captured && dxgi.in_focus) {
-        *x = dxgi.mouse_delta.x;
-        *y = dxgi.mouse_delta.y;
-    } else {
+    if (!dxgi.in_focus) {
         *x = 0;
         *y = 0;
+    } else if (dxgi.is_mouse_captured) {
+        *x = dxgi.raw_mouse_delta.x;
+        *y = dxgi.raw_mouse_delta.y;
+    } else {
+        static int32_t prev_x = 0, prev_y = 0;
+        int32_t current_x, current_y;
+        gfx_dxgi_get_mouse_pos(&current_x, &current_y);
+        *x = current_x - prev_x;
+        *y = current_y - prev_y;
+        prev_x = current_x;
+        prev_y = current_y;
     }
-    dxgi.mouse_delta.x = 0;
-    dxgi.mouse_delta.y = 0;
 }
 
 static void gfx_dxgi_get_mouse_wheel(float* x, float* y) {
