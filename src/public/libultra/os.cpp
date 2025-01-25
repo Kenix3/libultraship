@@ -14,18 +14,18 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
     *controllerBits = 0;
     status->status |= 1;
 
-    SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
-        SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-
     std::string controllerDb = Ship::Context::LocateFileAcrossAppDirs("gamecontrollerdb.txt");
     int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb.c_str());
     if (mappingsAdded >= 0) {
         SPDLOG_INFO("Added SDL game controllers from \"{}\" ({})", controllerDb, mappingsAdded);
     } else {
         SPDLOG_ERROR("Failed add SDL game controller mappings from \"{}\" ({})", controllerDb, SDL_GetError());
+    }
+
+    SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
+    if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
+        SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
+        exit(EXIT_FAILURE);
     }
 
     Ship::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
