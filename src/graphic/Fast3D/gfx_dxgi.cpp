@@ -94,7 +94,7 @@ static struct {
     bool is_mouse_captured;
     bool in_focus;
     RAWINPUTDEVICE raw_input_device[1];
-    POINT raw_mouse_delta;
+    POINT raw_mouse_delta_buf;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
@@ -434,8 +434,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
                 GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
 
                 if (raw->header.dwType == RIM_TYPEMOUSE) {
-                    dxgi.raw_mouse_delta.x += raw->data.mouse.lLastX;
-                    dxgi.raw_mouse_delta.y += raw->data.mouse.lLastY;
+                    dxgi.raw_mouse_delta_buf.x += raw->data.mouse.lLastX;
+                    dxgi.raw_mouse_delta_buf.y += raw->data.mouse.lLastY;
                 }
             }
             break;
@@ -605,8 +605,10 @@ static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
         *x = 0;
         *y = 0;
     } else if (dxgi.is_mouse_captured) {
-        *x = dxgi.raw_mouse_delta.x;
-        *y = dxgi.raw_mouse_delta.y;
+        *x = dxgi.raw_mouse_delta_buf.x;
+        *y = dxgi.raw_mouse_delta_buf.y;
+        dxgi.raw_mouse_delta_buf.x = 0;
+        dxgi.raw_mouse_delta_buf.y = 0;
     } else {
         static int32_t prev_x = 0, prev_y = 0;
         int32_t current_x, current_y;
