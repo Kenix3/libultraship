@@ -543,13 +543,13 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     DragAcceptFiles(dxgi.h_wnd, TRUE);
 
-    // Mouse init
-    #ifndef HID_USAGE_PAGE_GENERIC
-    #define HID_USAGE_PAGE_GENERIC ((unsigned short) 0x01)
-    #endif
-    #ifndef HID_USAGE_GENERIC_MOUSE
-    #define HID_USAGE_GENERIC_MOUSE ((unsigned short) 0x02)
-    #endif
+// Mouse init
+#ifndef HID_USAGE_PAGE_GENERIC
+#define HID_USAGE_PAGE_GENERIC ((unsigned short)0x01)
+#endif
+#ifndef HID_USAGE_GENERIC_MOUSE
+#define HID_USAGE_GENERIC_MOUSE ((unsigned short)0x02)
+#endif
 
     dxgi.raw_input_device[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
     dxgi.raw_input_device[0].usUsage = HID_USAGE_GENERIC_MOUSE;
