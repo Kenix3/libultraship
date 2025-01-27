@@ -17,7 +17,6 @@
 #include "gfx_rendering_api.h"
 
 #include "resource/type/Texture.h"
-#include "resource/type/Light.h"
 #include "resource/Resource.h"
 
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
@@ -417,43 +416,12 @@ public:
 
 
 
-//extern "C" {
-
-// extern struct XYWidthHeight
-//     gfx_native_dimensions; // The dimensions of the VI mode for the console (typically SCREEN_WIDTH, SCREEN_HEIGHT)
-//
-// extern struct GfxDimensions gfx_current_window_dimensions; // The dimensions of the window
-// extern struct GfxDimensions
-//     gfx_current_dimensions; // The dimensions of the draw area the game draws to, before scaling (if applicable)
-// extern struct XYWidthHeight
-//     gfx_current_game_window_viewport; // The area of the window the game is drawn to, (0, 0) is top-left corner
-// extern uint32_t gfx_msaa_level;
-// }
-
-//void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
-//              bool start_in_fullscreen, uint32_t width = SCREEN_WIDTH, uint32_t height = SCREEN_HEIGHT,
-//              uint32_t posX = 100, uint32_t posY = 100);
-//void gfx_destroy(void);
-//struct GfxRenderingAPI* gfx_get_current_rendering_api(void);
-//void gfx_start_frame(void);
-
-// Since this function is "exposted" to the games, it needs to take a normal Gfx
-//void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
-//void gfx_end_frame(void);
-
 void gfx_set_target_ucode(UcodeHandlers ucode);
-//void gfx_set_target_fps(int);
-//void gfx_set_maximum_frame_latency(int latency);
-//void gfx_texture_cache_delete(const uint8_t* orig_addr);
 extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
-//void gfx_get_pixel_depth_prepare(float x, float y);
-//uint16_t gfx_get_pixel_depth(float x, float y);
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
-//void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* replacement = nullptr);
-//void gfx_unregister_blended_texture(const char* name);
 const char* GfxGetOpcodeName(int8_t opcode);
 
 #endif
