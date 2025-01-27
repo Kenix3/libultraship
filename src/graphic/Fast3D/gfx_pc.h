@@ -2,17 +2,19 @@
 #define GFX_PC_H
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <unordered_map>
 #include <list>
 #include <cstddef>
 #include <vector>
 #include <stack>
+#include <string>
 
 #include "graphic/Fast3D/lus_gbi.h"
 #include "libultraship/libultra/types.h"
 #include "public/bridge/gfxbridge.h"
+#include "gfx_cc.h"
+#include "gfx_rendering_api.h"
 
 #include "resource/type/Texture.h"
 #include "resource/type/Light.h"
@@ -21,9 +23,6 @@
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
-
-extern uintptr_t gSegmentPointers[];
-extern uintptr_t gfxFramebuffer;
 
 struct GfxRenderingAPI;
 struct GfxWindowManagerAPI;
@@ -215,49 +214,246 @@ typedef enum Attribute {
     MV_LIGHT,
 } Attribute;
 
-extern RDP g_rdp;
-extern RSP g_rsp;
-
 extern GfxExecStack g_exec_stack;
 
-extern "C" {
+struct GfxTextureCache {
+    TextureCacheMap map;
+    std::list<TextureCacheMapIter> lru;
+    std::vector<uint32_t> free_texture_ids;
+};
 
-extern struct XYWidthHeight
-    gfx_native_dimensions; // The dimensions of the VI mode for the console (typically SCREEN_WIDTH, SCREEN_HEIGHT)
+struct ColorCombiner {
+    uint64_t shader_id0;
+    uint32_t shader_id1;
+    bool used_textures[2];
+    struct ShaderProgram* prg[16];
+    uint8_t shader_input_mapping[2][7];
+};
 
-extern struct GfxDimensions gfx_current_window_dimensions; // The dimensions of the window
-extern struct GfxDimensions
-    gfx_current_dimensions; // The dimensions of the draw area the game draws to, before scaling (if applicable)
-extern struct XYWidthHeight
-    gfx_current_game_window_viewport; // The area of the window the game is drawn to, (0, 0) is top-left corner
-extern uint32_t gfx_msaa_level;
-}
+struct RenderingState {
+    uint8_t depth_test_and_mask; // 1: depth test, 2: depth mask
+    bool decal_mode;
+    bool alpha_blend;
+    struct XYWidthHeight viewport, scissor;
+    struct ShaderProgram* shader_program;
+    TextureCacheNode* textures[SHADER_MAX_TEXTURES];
+};
 
-void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
-              bool start_in_fullscreen, uint32_t width = SCREEN_WIDTH, uint32_t height = SCREEN_HEIGHT,
-              uint32_t posX = 100, uint32_t posY = 100);
-void gfx_destroy();
-struct GfxRenderingAPI* gfx_get_current_rendering_api();
-void gfx_start_frame();
+struct FBInfo {
+    uint32_t orig_width, orig_height;       // Original shape
+    uint32_t applied_width, applied_height; // Up-scaled for the viewport
+    uint32_t native_width, native_height;   // Max "native" size of the screen, used for up-scaling
+    bool resize;                            // Scale to match the viewport
+};
+
+struct MaskedTextureEntry {
+    uint8_t* mask;
+    uint8_t* replacementData;
+};
+
+class GfxPc {
+    GfxPc();
+public:
+    static GfxPc* GetInstance();
+    static GfxPc* CreateInstance();
+
+
+    void Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
+              bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
+    void Destroy();
+    void GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
+    GfxRenderingAPI* GetCurrentRenderingAPI();
+    void StartFrame();
+    void Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
+    void EndFrame();
+    void HandleWindowEvents();
+    bool IsFrameReady();
+    void SetTargetFPS(int fps);
+    void SetMaxFrameLatency(int latency);
+    int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
+                                      uint8_t resize);
+    void SetFrameBuffer(int fb, float noiseScale);
+    void CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr);
+    void ResetFrameBuffer();
+    void AdjustPixelDepthCoordinates(float& x, float& y);
+    void GetPixelDepthPrepare(float x, float y);
+    uint16_t GetPixelDepth(float x, float y);
+    void RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_t* replacement);
+    void UnregisterBlendedTexture(const char* name);
+
+    void SetNativeDimensions(float width, float height);
+    void SetResolutionMultiplier(float multiplier);
+    void SetMsaaLevel(uint32_t level);
+    void GetCurDimensions(uint32_t* width, uint32_t* height);
+
+    //private: TODO make these private
+    void Flush();
+    ShaderProgram* LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1);
+    ColorCombiner* LookupOrCreateColorCombiner(const ColorCombinerKey& key);
+    void TextureCacheClear();
+    bool TextureCacheLookup(int i, const TextureCacheKey& key);
+    void TextureCacheDelete(const uint8_t* origAddr);
+    void ImportTextureRgba16(int tile, bool importReplacement);
+    void ImportTextureRgba32(int tile, bool importReplacement);
+    void ImportTextureIA4(int tile, bool importReplacement);
+    void ImportTextureIA8(int tile, bool importReplacement);
+    void ImportTextureIA16(int tile, bool importReplacement);
+    void ImportTextureI4(int tile, bool importReplacement);
+    void ImportTextureI8(int tile, bool importReplacement);
+    void ImportTextureCi4(int tile, bool importReplacement);
+    void ImportTextureCi8(int tile, bool importReplacement);
+    void ImportTextureRaw(int tile, bool importReplacement);
+	void ImportTextureImg(int tile, bool importReplacement)
+    void ImportTexture(int i, int tile, bool importReplacement);
+    void ImportTextureMask(int i, int tile);
+    void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
+
+    void GfxSpMatrix(uint8_t params, const int32_t* addr);
+    void GfxSpPopMatrix(uint32_t count);
+    void GfxSpVertex(size_t numVertices, size_t destIndex, const F3DVtx* vertices);
+    void GfxSpModifyVertex(uint16_t vtxIdx, uint8_t where, uint32_t val);
+    void GfxSpTri1(uint8_t vtx1Idx, uint8_t vtx2Idx, uint8_t vtx3Idx, bool isRect);
+    void GfxSpGeometryMode(uint32_t clear, uint32_t set);
+    void GfxSpExtraGeometryMode(uint32_t clear, uint32_t set);
+    void GfxSpMovememF3dex2(uint8_t index, uint8_t offset, const void* data);
+    void GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* data);
+    void GfxSpMovewordF3dex2(uint8_t index, uint16_t offset, uintptr_t data);
+    void GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t data);
+    void GfxSpTexture(uint16_t sc, uint16_t tc, uint8_t level, uint8_t tile, uint8_t on);
+    void GfxDpSetScissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32_t lrx, uint32_t lry);
+    void GfxDpSetTextureImage(uint32_t format, uint32_t size, uint32_t width, const char* texPath,
+                                     uint32_t texFlags, RawTexMetadata rawTexMetdata, const void* addr);
+    void GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette,
+                            uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks,
+                            uint32_t shifts);
+    void GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uint16_t lrs, uint16_t lrt);
+    void GfxDpLoadTlut(uint8_t tile, uint32_t high_index);
+    void GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt);
+    void GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt);
+    void GfxDpSetCombineMode(uint32_t rgb, uint32_t alpha, uint32_t rgb_cyc2, uint32_t alpha_cyc2);
+    void GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    void GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    void GfxDpSetPrimColor(uint8_t m, uint8_t r, uint8_t l, uint8_t g, uint8_t b, uint8_t a);
+    void GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    void GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    void GfxDpSetFillColor(uint32_t pickedColor);
+    void GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry);
+    void GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, uint8_t tile, int16_t uls,
+                                     int16_t ult, int16_t dsdx, int16_t dtdy, bool flip);
+    void GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_t ulx, int32_t uly, int16_t uls,
+                                   int16_t ult, int32_t lrx, int32_t lry, int16_t lrs, int16_t lrt);
+    void GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry);
+    void GfxDpSetZImage(void* zBufAddr);
+    void GfxDpSetColorImage(uint32_t format, uint32_t size, uint32_t width, void* address);
+    void GfxSpSetOtherMode(uint32_t shift, uint32_t num_bits, uint64_t mode);
+    void GfxDpSetOtherMode(uint32_t h, uint32_t l);
+
+    void Gfxs2dexBgCopy(F3DuObjBg* bg);
+    void Gfxs2dexBg1cyc(F3DuObjBg* bg);
+    void Gfxs2dexRecyCopy(F3DuObjSprite* spr);
+
+
+    void AdjustWidthHeightForScale(uint32_t& width, uint32_t& height, uint32_t nativeWidth, uint32_t nativeHeight) const;
+    float AdjXForAspectRatio(float x) const;
+    void AdjustVIewportOrScissor(XYWidthHeight* area);
+    void CalcAndSetViewport(const F3DVp_t* viewport);
+
+    void SpReset();
+    void* SegAddr(uintptr_t w1);
+
+    static const char* CCMUXtoStr(uint32_t ccmux);
+    static const char* ACMUXtoStr(uint32_t acmux);
+    static void GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key);
+    static std::string GetBaseTexturePath(const std::string& path);
+    static void NormalizeVector(float v[3]);
+    static void TransposedMatrixMul(float res[3], const float a[3], const float b[4][4]);
+    static void MatrixMul(float res[4][4], const float a[4][4], const float b[4][4]);
+
+
+    RSP mRsp;
+    RDP mRdp;
+    RenderingState mRenderingState;
+
+    GfxTextureCache mTextureCache;
+    std::map<ColorCombinerKey, ColorCombiner> mColorCombinerPool;//color_combiner_pool;
+    std::map<ColorCombinerKey, ColorCombiner>::iterator mPrevCombiner = mColorCombinerPool.end();
+    uint8_t* mTexUploadBuffer;
+
+    GfxDimensions mGfxCurrentWindowDimensions;//gfx_current_window_dimensions;
+    int32_t mCurWindowPosX;
+    int32_t mCurWindowPosY;
+    GfxDimensions mCurDimensions;//gfx_current_dimensions;
+    GfxDimensions mPrvDimensions;//gfx_prev_dimensions;
+    XYWidthHeight mGameWindowViewport;//gfx_current_game_window_viewport;
+    XYWidthHeight mNativeDimensions;//gfx_native_dimensions;
+    XYWidthHeight mPrevNativeDimensions;//gfx_prev_native_dimensions;
+    uintptr_t mGfxFrameBuffer;
+
+    unsigned int mMsaaLevel = 1;
+    bool mDroppedFrame;
+    float mBufVbo[MAX_BUFFERED * (32 * 3)]; // 3 vertices in a triangle and 32 floats per vtx
+    size_t mBufVboLen;
+    size_t mBufVboNumTris;
+    GfxWindowManagerAPI* mWapi;
+    GfxRenderingAPI* mRapi;
+
+    uintptr_t mSegmentPointers[16];
+
+    bool mFbActive;
+    bool mRendersToFb;//game_renders_to_framebuffer;
+    std::map<int, FBInfo>::iterator mActiveFrameBuffer;
+    std::map<int, FBInfo> mFrameBuffers;
+
+    int mGameFb;//game_framebuffer;
+    int mGameFbMsaaResolved;//game_framebuffer_msaa_resolved;
+
+    std::set<std::pair<float, float>> mGetPixelDepthPending;//get_pixel_depth_pending;
+    std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> mGetPixelDepthCached;//get_pixel_depth_cached;
+    std::map<std::string, MaskedTextureEntry> mMaskedTextures;
+
+    const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
+    bool mMarkerOn; //This was originally a debug feature. Now it seems to control s2dex?
+};
+
+
+
+//extern "C" {
+
+// extern struct XYWidthHeight
+//     gfx_native_dimensions; // The dimensions of the VI mode for the console (typically SCREEN_WIDTH, SCREEN_HEIGHT)
+//
+// extern struct GfxDimensions gfx_current_window_dimensions; // The dimensions of the window
+// extern struct GfxDimensions
+//     gfx_current_dimensions; // The dimensions of the draw area the game draws to, before scaling (if applicable)
+// extern struct XYWidthHeight
+//     gfx_current_game_window_viewport; // The area of the window the game is drawn to, (0, 0) is top-left corner
+// extern uint32_t gfx_msaa_level;
+// }
+
+//void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
+//              bool start_in_fullscreen, uint32_t width = SCREEN_WIDTH, uint32_t height = SCREEN_HEIGHT,
+//              uint32_t posX = 100, uint32_t posY = 100);
+//void gfx_destroy(void);
+//struct GfxRenderingAPI* gfx_get_current_rendering_api(void);
+//void gfx_start_frame(void);
 
 // Since this function is "exposted" to the games, it needs to take a normal Gfx
-void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
-void gfx_handle_window_events();
-bool gfx_is_frame_ready();
-void gfx_end_frame();
+//void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
+//void gfx_end_frame(void);
+
 void gfx_set_target_ucode(UcodeHandlers ucode);
-void gfx_set_target_fps(int);
-void gfx_set_maximum_frame_latency(int latency);
-void gfx_texture_cache_delete(const uint8_t* orig_addr);
+//void gfx_set_target_fps(int);
+//void gfx_set_maximum_frame_latency(int latency);
+//void gfx_texture_cache_delete(const uint8_t* orig_addr);
 extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
-void gfx_get_pixel_depth_prepare(float x, float y);
-uint16_t gfx_get_pixel_depth(float x, float y);
+//void gfx_get_pixel_depth_prepare(float x, float y);
+//uint16_t gfx_get_pixel_depth(float x, float y);
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
-void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* replacement = nullptr);
-void gfx_unregister_blended_texture(const char* name);
+//void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* replacement = nullptr);
+//void gfx_unregister_blended_texture(const char* name);
 const char* GfxGetOpcodeName(int8_t opcode);
 
 #endif
