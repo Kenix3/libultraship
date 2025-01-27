@@ -218,6 +218,10 @@ std::shared_ptr<File> Archive::LoadFile(const std::string& filePath, std::shared
             fileToLoad->InitData = initDataFromMetaFile;
         } else {
             fileToLoad = LoadFileRaw(filePath);
+            if (fileToLoad == nullptr) {
+                SPDLOG_ERROR("Failed to load file at path {}.", filePath);
+                return nullptr;
+            }
             fileToLoad->InitData = ReadResourceInitDataLegacy(filePath, fileToLoad);
         }
     }
