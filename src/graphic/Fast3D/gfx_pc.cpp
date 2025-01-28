@@ -15,6 +15,7 @@
 #include <vector>
 #include <list>
 #include <stack>
+#include "resource/type/Light.h"
 
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
