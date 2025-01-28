@@ -13,9 +13,8 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
-    if (controllerDefaultMappings == nullptr) {
-        mControllerDefaultMappings = std::make_shared<ControllerDefaultMappings>();
-    }
+    mControllerDefaultMappings = controllerDefaultMappings == nullptr ? std::make_shared<ControllerDefaultMappings>()
+                                                                      : controllerDefaultMappings;
 }
 
 ControlDeck::~ControlDeck() {
