@@ -34,7 +34,7 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
     auto fileToLoad = std::make_shared<File>();
     DWORD fileSize = SFileGetFileSize(fileHandle, 0);
     if (fileSize == 0) {
-        SPDLOG_TRACE("({}) Failed to read file {} from mpq archive {}; filesize == 0", GetLastError(), filePath, GetPath());
+        SPDLOG_TRACE("({}) Failed to load file {}; filesize 0", GetLastError(), filePath, GetPath());
         return nullptr;
     }
     DWORD readBytes;
@@ -46,7 +46,7 @@ std::shared_ptr<File> OtrArchive::LoadFileRaw(const std::string& filePath) {
         bool closeFileSuccess = SFileCloseFile(fileHandle);
         if (!closeFileSuccess) {
             SPDLOG_ERROR("({}) Failed to close file {} from mpq after read failure in archive {}", GetLastError(),
-                            filePath, GetPath());
+                         filePath, GetPath());
         }
         return nullptr;
     }
