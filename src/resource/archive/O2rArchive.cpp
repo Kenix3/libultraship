@@ -36,6 +36,12 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
         return nullptr;
     }
 
+    // Filesize 0, no logging needed
+    if (zipEntryStat.size == 0) {
+        SPDLOG_TRACE("({}) Failed to read file {} from mpq archive {}; filesize == 0", GetLastError(), filePath, GetPath());
+        return nullptr;
+    }
+
     struct zip_file* zipEntryFile = zip_fopen_index(mZipArchive, zipEntryIndex, 0);
     if (!zipEntryFile) {
         SPDLOG_TRACE("Failed to open file {} in zip archive  {}.", filePath, GetPath());
