@@ -106,7 +106,8 @@ static std::string GetPathWithoutFileName(char* filePath) {
     return filePath;
 }
 
-GfxPc::GfxPc(){}
+GfxPc::GfxPc() {
+}
 static GfxPc* mInstance;
 GfxPc* GfxPc::GetInstance() {
     return mInstance;
@@ -115,7 +116,6 @@ GfxPc* GfxPc::GetInstance() {
 GfxPc* GfxPc::CreateInstance() {
     if (mInstance == nullptr) {
         mInstance = new GfxPc();
-
     }
     return mInstance;
 }
@@ -185,7 +185,7 @@ void GfxPc::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
     uint64_t shaderId0 = 0;
     uint32_t shaderId1 = key.options;
     uint8_t shaderInputMapping[2][7] = { { 0 } };
-    bool usedTextures[2] {};
+    bool usedTextures[2]{};
     for (uint32_t i = 0; i < 2 && (i == 0 || is2Cyc); i++) {
         uint32_t rgbA = (key.combine_mode >> (i * 28)) & 0xf;
         uint32_t rgbB = (key.combine_mode >> (i * 28 + 4)) & 0xf;
@@ -417,7 +417,7 @@ bool GfxPc::TextureCacheLookup(int i, const TextureCacheKey& key) {
         mRapi->select_texture(i, it->second.texture_id);
         *n = &*it;
         mTextureCache.lru.splice(mTextureCache.lru.end(), mTextureCache.lru,
-                                     it->second.lru_location); // move to back
+                                 it->second.lru_location); // move to back
         return true;
     }
 
@@ -448,7 +448,7 @@ bool GfxPc::TextureCacheLookup(int i, const TextureCacheKey& key) {
     return false;
 }
 
-std::string GfxPc::GetBaseTexturePath(const std::string &path) {
+std::string GfxPc::GetBaseTexturePath(const std::string& path) {
     if (path.starts_with(Ship::IResource::gAltAssetPrefix)) {
         return path.substr(Ship::IResource::gAltAssetPrefix.length());
     }
@@ -480,8 +480,7 @@ void GfxPc::ImportTextureRgba16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
@@ -523,8 +522,7 @@ void GfxPc::ImportTextureRgba32(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
@@ -541,8 +539,7 @@ void GfxPc::ImportTextureIA4(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
@@ -574,8 +571,7 @@ void GfxPc::ImportTextureIA8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
@@ -605,8 +601,7 @@ void GfxPc::ImportTextureIA16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
@@ -648,8 +643,7 @@ void GfxPc::ImportTextureI4(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
@@ -693,8 +687,7 @@ void GfxPc::ImportTextureI8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
@@ -717,12 +710,11 @@ void GfxPc::ImportTextureI8(int tile, bool importReplacement) {
 
 void GfxPc::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t fullImageLineSizeBytes =
-            mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
+        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t lineSizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
@@ -766,8 +758,7 @@ void GfxPc::ImportTextureCi8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
     uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
@@ -805,8 +796,7 @@ void GfxPc::ImportTextureRaw(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
 
     uint16_t width = metadata->width;
@@ -865,8 +855,7 @@ void GfxPc::ImportTextureRaw(int tile, bool importReplacement) {
     }
 
     // Safely only copy the amount of bytes the resource can allow
-    for (uint32_t i = 0, j = 0; i < safeLoadedBytes;
-         i += safeLineSizeBytes, j += safeFullImageLineSizeBytes) {
+    for (uint32_t i = 0, j = 0; i < safeLoadedBytes; i += safeLineSizeBytes, j += safeFullImageLineSizeBytes) {
         memcpy(mTexUploadBuffer + i, addr + j, safeLineSizeBytes);
     }
 
@@ -889,8 +878,7 @@ void GfxPc::ImportTexture(int i, int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* origAddr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp.loaded_texture[tmemIdex].addr;
 
     TextureCacheKey key;
@@ -921,7 +909,7 @@ void GfxPc::ImportTexture(int i, int tile, bool importReplacement) {
                 // OTRTODO: Sometimes, seemingly randomly, we end up here. Could be a bad dlist, could be
                 // something F3D does not have supported. Further investigation is needed.
             }
-        break;
+            break;
         case G_IM_FMT_IA:
             if (siz == G_IM_SIZ_4b) {
                 ImportTextureIA4(tile, importReplacement);
@@ -930,9 +918,10 @@ void GfxPc::ImportTexture(int i, int tile, bool importReplacement) {
             } else if (siz == G_IM_SIZ_16b) {
                 ImportTextureIA16(tile, importReplacement);
             } else {
-                SPDLOG_ERROR("IA Texture that isn't 4, 8, or 16 bit. Size = {}", siz);;
+                SPDLOG_ERROR("IA Texture that isn't 4, 8, or 16 bit. Size = {}", siz);
+                ;
             }
-        break;
+            break;
         case G_IM_FMT_CI:
             if (siz == G_IM_SIZ_4b) {
                 ImportTextureCi4(tile, importReplacement);
@@ -941,7 +930,7 @@ void GfxPc::ImportTexture(int i, int tile, bool importReplacement) {
             } else {
                 SPDLOG_ERROR("CI Texture that isn't 4 or 8 bit. Size = {}", siz);
             }
-        break;
+            break;
         case G_IM_FMT_I:
             if (siz == G_IM_SIZ_4b) {
                 ImportTextureI4(tile, importReplacement);
@@ -950,13 +939,13 @@ void GfxPc::ImportTexture(int i, int tile, bool importReplacement) {
             } else {
                 SPDLOG_ERROR("I Texture that isn't 4 or 8 bit. Size = {}", siz);
             }
-        break;
+            break;
         case G_IM_FMT_YUV:
             SPDLOG_ERROR("YUV Textures not supported");
-        break;
+            break;
         default:
             SPDLOG_ERROR("Invalid texture format. Fmt = {}", fmt);
-        break;
+            break;
     }
 }
 
@@ -1101,12 +1090,11 @@ void GfxPc::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
             memcpy(mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1], matrix, sizeof(matrix));
         } else {
             MatrixMul(mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1], matrix,
-                           mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1]);
+                      mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1]);
         }
         mRsp.lights_changed = 1;
     }
-    MatrixMul(mRsp.MP_matrix, mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1],
-                   mRsp.P_matrix);
+    MatrixMul(mRsp.MP_matrix, mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1], mRsp.P_matrix);
 }
 
 void GfxPc::GfxSpPopMatrix(uint32_t count) {
@@ -1115,7 +1103,7 @@ void GfxPc::GfxSpPopMatrix(uint32_t count) {
             --mRsp.modelview_matrix_stack_size;
             if (mRsp.modelview_matrix_stack_size > 0) {
                 MatrixMul(mRsp.MP_matrix, mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1],
-                               mRsp.P_matrix);
+                          mRsp.P_matrix);
             }
         }
     }
@@ -1132,7 +1120,7 @@ float GfxPc::AdjXForAspectRatio(float x) const {
 
 // Scale the width and height value based on the ratio of the viewport to the native size
 void GfxPc::AdjustWidthHeightForScale(uint32_t& width, uint32_t& height, uint32_t nativeWidth,
-                                              uint32_t nativeHeight) const {
+                                      uint32_t nativeHeight) const {
     width = round(width * (mGfxCurrentWindowDimensions.width / (2.0f * (nativeWidth / 2))));
     height = round(height * (mGfxCurrentWindowDimensions.height / (2.0f * (nativeHeight / 2))));
 
@@ -1154,14 +1142,14 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
             return;
         }
 
-        float x = v->ob[0] * mRsp.MP_matrix[0][0] + v->ob[1] * mRsp.MP_matrix[1][0] +
-                  v->ob[2] * mRsp.MP_matrix[2][0] + mRsp.MP_matrix[3][0];
-        float y = v->ob[0] * mRsp.MP_matrix[0][1] + v->ob[1] * mRsp.MP_matrix[1][1] +
-                  v->ob[2] * mRsp.MP_matrix[2][1] + mRsp.MP_matrix[3][1];
-        float z = v->ob[0] * mRsp.MP_matrix[0][2] + v->ob[1] * mRsp.MP_matrix[1][2] +
-                  v->ob[2] * mRsp.MP_matrix[2][2] + mRsp.MP_matrix[3][2];
-        float w = v->ob[0] * mRsp.MP_matrix[0][3] + v->ob[1] * mRsp.MP_matrix[1][3] +
-                  v->ob[2] * mRsp.MP_matrix[2][3] + mRsp.MP_matrix[3][3];
+        float x = v->ob[0] * mRsp.MP_matrix[0][0] + v->ob[1] * mRsp.MP_matrix[1][0] + v->ob[2] * mRsp.MP_matrix[2][0] +
+                  mRsp.MP_matrix[3][0];
+        float y = v->ob[0] * mRsp.MP_matrix[0][1] + v->ob[1] * mRsp.MP_matrix[1][1] + v->ob[2] * mRsp.MP_matrix[2][1] +
+                  mRsp.MP_matrix[3][1];
+        float z = v->ob[0] * mRsp.MP_matrix[0][2] + v->ob[1] * mRsp.MP_matrix[1][2] + v->ob[2] * mRsp.MP_matrix[2][2] +
+                  mRsp.MP_matrix[3][2];
+        float w = v->ob[0] * mRsp.MP_matrix[0][3] + v->ob[1] * mRsp.MP_matrix[1][3] + v->ob[2] * mRsp.MP_matrix[2][3] +
+                  mRsp.MP_matrix[3][3];
 
         float world_pos[3] = { 0.0 };
         if (mRsp.geometry_mode & G_LIGHTING_POSITIONAL) {
@@ -1207,7 +1195,7 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
                     // Transform distance vector (which acts as a direction light vector) into model's space
                     float light_model[3];
                     TransposedMatrixMul(light_model, dist_vec,
-                                              mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1]);
+                                        mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1]);
 
                     // Calculate intensity for each axis using standard formula for intensity
                     float light_intensity[3];
@@ -1786,12 +1774,10 @@ void GfxPc::AdjustVIewportOrScissor(XYWidthHeight* area) {
         area->x *= RATIO_X(mActiveFrameBuffer, mCurDimensions);
         area->y *= RATIO_Y(mActiveFrameBuffer, mCurDimensions);
 
-        if (!mRendersToFb ||
-            (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
-             mCurDimensions.height == mGameWindowViewport.height)) {
+        if (!mRendersToFb || (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
+                              mCurDimensions.height == mGameWindowViewport.height)) {
             area->x += mGameWindowViewport.x;
-            area->y += mGfxCurrentWindowDimensions.height -
-                       (mGameWindowViewport.y + mGameWindowViewport.height);
+            area->y += mGfxCurrentWindowDimensions.height - (mGameWindowViewport.y + mGameWindowViewport.height);
         }
     } else {
         area->y = mActiveFrameBuffer->second.orig_height - area->y;
@@ -1926,8 +1912,8 @@ void GfxPc::GfxDpSetScissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32_t 
     mRdp.viewport_or_scissor_changed = true;
 }
 
-void GfxPc::GfxDpSetTextureImage(uint32_t format, uint32_t size, uint32_t width, const char* texPath,
-                                     uint32_t texFlags, RawTexMetadata rawTexMetdata, const void* addr) {
+void GfxPc::GfxDpSetTextureImage(uint32_t format, uint32_t size, uint32_t width, const char* texPath, uint32_t texFlags,
+                                 RawTexMetadata rawTexMetdata, const void* addr) {
     // fprintf(stderr, "GfxDpSetTextureImage: %s (width=%d; size=0x%X)\n",
     //         rawTexMetdata.resource ? rawTexMetdata.resource->GetInitData()->Path.c_str() : nullptr, width, size);
     mRdp.texture_to_load.addr = (const uint8_t*)addr;
@@ -1938,8 +1924,7 @@ void GfxPc::GfxDpSetTextureImage(uint32_t format, uint32_t size, uint32_t width,
 }
 
 void GfxPc::GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette,
-                            uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks,
-                            uint32_t shifts) {
+                         uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks, uint32_t shifts) {
     // OTRTODO:
     // SUPPORT_CHECK(tmem == 0 || tmem == 256);
 
@@ -2266,8 +2251,7 @@ void GfxPc::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry)
     // The coordinates for texture rectangle shall bypass the viewport setting
     struct XYWidthHeight default_viewport;
     if (!mFbActive) {
-        default_viewport = { 0, (int16_t)mNativeDimensions.height, mNativeDimensions.width,
-                             mNativeDimensions.height };
+        default_viewport = { 0, (int16_t)mNativeDimensions.height, mNativeDimensions.width, mNativeDimensions.height };
     } else {
         default_viewport = { 0, (int16_t)mActiveFrameBuffer->second.orig_height, mActiveFrameBuffer->second.orig_width,
                              mActiveFrameBuffer->second.orig_height };
@@ -2295,7 +2279,7 @@ void GfxPc::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry)
 }
 
 void GfxPc::GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, uint8_t tile, int16_t uls,
-                                     int16_t ult, int16_t dsdx, int16_t dtdy, bool flip) {
+                                  int16_t ult, int16_t dsdx, int16_t dtdy, bool flip) {
     // printf("render %d at %d\n", tile, lrx);
     uint64_t saved_combine_mode = mRdp.combine_mode;
     if ((mRdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_COPY) {
@@ -2360,8 +2344,8 @@ void GfxPc::GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t
     mRdp.combine_mode = saved_combine_mode;
 }
 
-void GfxPc::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_t ulx, int32_t uly, int16_t uls,
-                                   int16_t ult, int32_t lrx, int32_t lry, int16_t lrs, int16_t lrt) {
+void GfxPc::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_t ulx, int32_t uly, int16_t uls, int16_t ult,
+                                int32_t lrx, int32_t lry, int16_t lrs, int16_t lrt) {
 
     LoadedVertex* ul = &mRsp.loaded_vertices[MAX_VERTICES + 0];
     LoadedVertex* ll = &mRsp.loaded_vertices[MAX_VERTICES + 1];
@@ -2511,12 +2495,10 @@ void GfxPc::Gfxs2dexBgCopy(F3DuObjBg* bg) {
     GfxDpSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, nullptr, texFlags, rawTexMetadata, (void*)data);
     GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, 0, 0, 0, 0, 0, 0);
     GfxDpLoadBlock(G_TX_LOADTILE, 0, 0, (bg->b.imageW * bg->b.imageH >> 4) - 1, 0);
-    GfxDpSetTile(bg->b.imageFmt, G_IM_SIZ_16b, bg->b.imageW >> 4, 0, G_TX_RENDERTILE, bg->b.imagePal, 0, 0, 0, 0, 0,
-                    0);
+    GfxDpSetTile(bg->b.imageFmt, G_IM_SIZ_16b, bg->b.imageW >> 4, 0, G_TX_RENDERTILE, bg->b.imagePal, 0, 0, 0, 0, 0, 0);
     GfxDpSetTileSize(G_TX_RENDERTILE, 0, 0, bg->b.imageW, bg->b.imageH);
-    GfxDpTextureRectangle(bg->b.frameX, bg->b.frameY, bg->b.frameX + bg->b.imageW - 4,
-                             bg->b.frameY + bg->b.imageH - 4, G_TX_RENDERTILE, uls, bg->b.imageY << 3, dsdx, 1 << 10,
-                             false);
+    GfxDpTextureRectangle(bg->b.frameX, bg->b.frameY, bg->b.frameX + bg->b.imageW - 4, bg->b.frameY + bg->b.imageH - 4,
+                          G_TX_RENDERTILE, uls, bg->b.imageY << 3, dsdx, 1 << 10, false);
 }
 
 void GfxPc::Gfxs2dexBg1cyc(F3DuObjBg* bg) {
@@ -2551,15 +2533,15 @@ void GfxPc::Gfxs2dexBg1cyc(F3DuObjBg* bg) {
     }
 
     GfxDpSetTextureImage(bg->b.imageFmt, bg->b.imageSiz, bg->b.imageW >> 2, nullptr, texFlags, rawTexMetadata,
-                             (void*)data);
+                         (void*)data);
     GfxDpSetTile(bg->b.imageFmt, bg->b.imageSiz, 0, 0, G_TX_LOADTILE, 0, 0, 0, 0, 0, 0, 0);
     GfxDpLoadBlock(G_TX_LOADTILE, 0, 0, (bg->b.imageW * bg->b.imageH >> 4) - 1, 0);
     GfxDpSetTile(bg->b.imageFmt, bg->b.imageSiz, (((lrs - uls) * bg->b.imageSiz) + 7) >> 3, 0, G_TX_RENDERTILE,
-                    bg->b.imagePal, 0, 0, 0, 0, 0, 0);
+                 bg->b.imagePal, 0, 0, 0, 0, 0, 0);
     GfxDpSetTileSize(G_TX_RENDERTILE, 0, 0, bg->b.imageW, bg->b.imageH);
 
     GfxDpTextureRectangle(bg->b.frameX, bg->b.frameY, bg->b.frameW, bg->b.frameH, G_TX_RENDERTILE, ulsRect,
-                             bg->b.imageY << 3, dsdxRect, 1 << 10, false);
+                          bg->b.imageY << 3, dsdxRect, 1 << 10, false);
 }
 
 void GfxPc::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
@@ -2582,8 +2564,8 @@ void GfxPc::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
     int testY = (realY + (realH / realSH));
 
     GfxDpTextureRectangle(realX << 2, realY << 2, testX << 2, testY << 2, G_TX_RENDERTILE,
-                             mRdp.texture_tile[0].uls << 3, mRdp.texture_tile[0].ult << 3, (float)(1 << 10) * realSW,
-                             (float)(1 << 10) * realSH, false);
+                          mRdp.texture_tile[0].uls << 3, mRdp.texture_tile[0].ult << 3, (float)(1 << 10) * realSW,
+                          (float)(1 << 10) * realSH, false);
 }
 
 void* GfxPc::SegAddr(uintptr_t w1) {
@@ -2677,7 +2659,7 @@ typedef bool (*GfxOpcodeHandlerFunc)(F3DGfx** gfx);
 bool gfx_load_ucode_handler_f3dex2(F3DGfx** cmd) {
     GfxPc* gfx = GfxPc::GetInstance();
     gfx->mRsp.fog_mul = 0;
-    gfx-> mRsp.fog_offset = 0;
+    gfx->mRsp.fog_offset = 0;
     return false;
 }
 
@@ -3100,7 +3082,8 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
 
     (*cmd0)++;
 
-    if (gfx->mRsp.loaded_vertices[vbidx].z <= zval || (gfx->mRsp.extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
+    if (gfx->mRsp.loaded_vertices[vbidx].z <= zval ||
+        (gfx->mRsp.extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
         F3DGfx* gfx = (F3DGfx*)ResourceGetDataByCrc(hash);
@@ -3396,7 +3379,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
         uint32_t width = C0(0, 10);
 
         gfx->GfxDpSetTextureImage(fmt, size, width, fileName, texFlags, rawTexMetadata,
-                                 reinterpret_cast<char*>(texture->ImageData));
+                                  reinterpret_cast<char*>(texture->ImageData));
     } else {
         SPDLOG_ERROR("G_SETTIMG_OTR_FILEPATH: Texture is null");
     }
@@ -3426,7 +3409,7 @@ bool gfx_reset_fb_handler_custom(F3DGfx** cmd0) {
     gfx->mFbActive = false;
     gfx->mActiveFrameBuffer = gfx->mFrameBuffers.end();
     gfx->mRapi->start_draw_to_framebuffer(gfx->mRendersToFb ? gfx->mGameFb : 0,
-                                        (float)gfx->mCurDimensions.height / gfx->mNativeDimensions.height);
+                                          (float)gfx->mCurDimensions.height / gfx->mNativeDimensions.height);
     // Force viewport and scissor to reapply against the main framebuffer, in case a previous smaller
     // framebuffer truncated the values
     gfx->mRdp.viewport_or_scissor_changed = true;
@@ -3548,7 +3531,7 @@ bool gfx_set_tile_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     gfx->GfxDpSetTile(C0(21, 3), C0(19, 2), C0(9, 9), C0(0, 9), C1(24, 3), C1(20, 4), C1(18, 2), C1(14, 4), C1(10, 4),
-                    C1(8, 2), C1(4, 4), C1(0, 4));
+                      C1(8, 2), C1(4, 4), C1(0, 4));
     return false;
 }
 
@@ -3826,13 +3809,13 @@ class UcodeHandler {
 static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
-    { RDP_G_RDPLOADSYNC, { "mRdpLOADSYNC", gfx_stubbed_command_handler } },         // mRdpLOADSYNC (-26)
-    { RDP_G_RDPPIPESYNC, { "mRdpPIPESYNC", gfx_stubbed_command_handler } },         // mRdpPIPESYNC (-25)
-    { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_stubbed_command_handler } },         // mRdpPIPESYNC (-24)
-    { RDP_G_RDPFULLSYNC, { "mRdpFULLSYNC", gfx_stubbed_command_handler } },         // mRdpFULLSYNC (-23)
+    { RDP_G_RDPLOADSYNC, { "mRdpLOADSYNC", gfx_stubbed_command_handler } },          // mRdpLOADSYNC (-26)
+    { RDP_G_RDPPIPESYNC, { "mRdpPIPESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-25)
+    { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-24)
+    { RDP_G_RDPFULLSYNC, { "mRdpFULLSYNC", gfx_stubbed_command_handler } },          // mRdpFULLSYNC (-23)
     { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_set_scissor_handler_rdp } },           // G_SETSCISSOR (-19)
     { RDP_G_SETPRIMDEPTH, { "G_SETPRIMDEPTH", gfx_set_prim_depth_handler_rdp } },    // G_SETPRIMDEPTH (-18)
-    { RDP_G_RDPSETOTHERMODE, { "mRdpSETOTHERMODE", gfx_rdp_set_other_mode_rdp } },  // mRdpSETOTHERMODE (-17)
+    { RDP_G_RDPSETOTHERMODE, { "mRdpSETOTHERMODE", gfx_rdp_set_other_mode_rdp } },   // mRdpSETOTHERMODE (-17)
     { RDP_G_LOADTLUT, { "G_LOADTLUT", gfx_load_tlut_handler_rdp } },                 // G_LOADTLUT (-16)
     { RDP_G_SETTILESIZE, { "G_SETTILESIZE", gfx_set_tile_size_handler_rdp } },       // G_SETTILESIZE (-14)
     { RDP_G_LOADBLOCK, { "G_LOADBLOCK", gfx_load_block_handler_rdp } },              // G_LOADBLOCK (-13)
@@ -4087,7 +4070,7 @@ void GfxPc::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int3
 }
 
 void GfxPc::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
-              bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY) {
+                 bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY) {
     mWapi = wapi;
     mRapi = rapi;
     mWapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
@@ -4147,8 +4130,8 @@ bool GfxPc::IsFrameReady() {
 }
 
 void GfxPc::StartFrame() {
-    mWapi->get_dimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height,
-                             &mCurWindowPosX, &mCurWindowPosY);
+    mWapi->get_dimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height, &mCurWindowPosX,
+                          &mCurWindowPosY);
     if (mCurDimensions.height == 0) {
         // Avoid division by zero
         mCurDimensions.height = 1;
@@ -4156,8 +4139,7 @@ void GfxPc::StartFrame() {
     mCurDimensions.aspect_ratio = (float)mCurDimensions.width / (float)mCurDimensions.height;
 
     // Update the framebuffer sizes when the viewport or native dimension changes
-    if (mCurDimensions.width != mPrvDimensions.width ||
-        mCurDimensions.height != mPrvDimensions.height ||
+    if (mCurDimensions.width != mPrvDimensions.width || mCurDimensions.height != mPrvDimensions.height ||
         mNativeDimensions.width != mPrevNativeDimensions.width ||
         mNativeDimensions.height != mPrevNativeDimensions.height) {
 
@@ -4177,24 +4159,23 @@ void GfxPc::StartFrame() {
     mPrvDimensions = mCurDimensions;
     mPrevNativeDimensions = mNativeDimensions;
 
-    bool different_size = mCurDimensions.width != mGameWindowViewport.width ||
-                          mCurDimensions.height != mGameWindowViewport.height;
+    bool different_size =
+        mCurDimensions.width != mGameWindowViewport.width || mCurDimensions.height != mGameWindowViewport.height;
     if (different_size || mMsaaLevel > 1) {
         mRendersToFb = true;
         if (different_size) {
-            mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width,
-                                                    mCurDimensions.height, mMsaaLevel, true, true, true,
-                                                    true);
+            mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
+                                                 true, true, true);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
             // match the window size
             mRapi->update_framebuffer_parameters(mGameFb, mGfxCurrentWindowDimensions.width,
-                                                    mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true,
-                                                    true, true);
+                                                 mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true,
+                                                 true);
         }
         if (mMsaaLevel > 1 && different_size) {
-            mRapi->update_framebuffer_parameters(mGameFbMsaaResolved, mCurDimensions.width,
-                                                    mCurDimensions.height, 1, false, false, false, false);
+            mRapi->update_framebuffer_parameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
+                                                 false, false, false, false);
         }
     } else {
         mRendersToFb = false;
@@ -4213,12 +4194,11 @@ void GfxPc::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replace
 
     mCurMtxReplacements = &mtx_replacements;
 
-    mRapi->update_framebuffer_parameters(0, mGfxCurrentWindowDimensions.width,
-                                            mGfxCurrentWindowDimensions.height, 1, false, true, true,
-                                            !mRendersToFb);
+    mRapi->update_framebuffer_parameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
+                                         false, true, true, !mRendersToFb);
     mRapi->start_frame();
     mRapi->start_draw_to_framebuffer(mRendersToFb ? mGameFb : 0,
-                                        (float)mCurDimensions.height / mNativeDimensions.height);
+                                     (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->clear_framebuffer(false, true);
     mRdp.viewport_or_scissor_changed = true;
     mRenderingState.viewport = {};
@@ -4296,7 +4276,7 @@ void GfxPc::SetMaxFrameLatency(int latency) {
 }
 
 int GfxPc::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
-                                      uint8_t resize) {
+                             uint8_t resize) {
     uint32_t orig_width = width, orig_height = height;
     if (resize) {
         AdjustWidthHeightForScale(width, height, native_width, native_height);
@@ -4332,9 +4312,8 @@ void GfxPc::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* h
 
     // When rendering to the main window buffer or MSAA is enabled with a buffer size equal to the view port,
     // then the source coordinates must account for any docked ImGui elements
-    if (fb_src_id == 0 ||
-        (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
-         mCurDimensions.height == mGameWindowViewport.height)) {
+    if (fb_src_id == 0 || (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
+                           mCurDimensions.height == mGameWindowViewport.height)) {
         srcX0 = mGameWindowViewport.x;
         srcY0 = mGameWindowViewport.y;
         srcX1 = mGameWindowViewport.x + mGameWindowViewport.width;
@@ -4364,14 +4343,13 @@ void GfxPc::ResetFrameBuffer() {
 }
 
 void GfxPc::AdjustPixelDepthCoordinates(float& x, float& y) {
-    x = x * RATIO_X(mActiveFrameBuffer, mCurDimensions) - (mNativeDimensions.width * RATIO_X(mActiveFrameBuffer, mCurDimensions) - mCurDimensions.width) / 2;
+    x = x * RATIO_X(mActiveFrameBuffer, mCurDimensions) -
+        (mNativeDimensions.width * RATIO_X(mActiveFrameBuffer, mCurDimensions) - mCurDimensions.width) / 2;
     y *= RATIO_Y(mActiveFrameBuffer, mCurDimensions);
-    if (!mRendersToFb ||
-        (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
-         mCurDimensions.height == mGameWindowViewport.height)) {
+    if (!mRendersToFb || (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
+                          mCurDimensions.height == mGameWindowViewport.height)) {
         x += mGameWindowViewport.x;
-        y += mGfxCurrentWindowDimensions.height -
-             (mGameWindowViewport.y + mGameWindowViewport.height);
+        y += mGfxCurrentWindowDimensions.height - (mGameWindowViewport.y + mGameWindowViewport.height);
     }
 }
 
@@ -4454,19 +4432,19 @@ void GfxPc::SetResolutionMultiplier(float multiplier) {
 }
 
 void GfxPc::SetMsaaLevel(uint32_t level) {
-        mMsaaLevel = level;
+    mMsaaLevel = level;
 }
 
-void GfxPc::GetCurDimensions(uint32_t *width, uint32_t *height) {
+void GfxPc::GetCurDimensions(uint32_t* width, uint32_t* height) {
     *width = mCurDimensions.width;
     *height = mCurDimensions.height;
 }
 
-extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height, uint8_t resize) {
-    return GfxPc::GetInstance()->CreateFrameBuffer(width, height, native_width,native_height, resize);
+extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
+                                      uint8_t resize) {
+    return GfxPc::GetInstance()->CreateFrameBuffer(width, height, native_width, native_height, resize);
 }
 
 extern "C" void gfx_texture_cache_clear() {
     GfxPc::GetInstance()->TextureCacheClear();
 }
-

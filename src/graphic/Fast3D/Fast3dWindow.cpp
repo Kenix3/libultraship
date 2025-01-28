@@ -79,7 +79,7 @@ void Fast3dWindow::Init() {
     InitWindowManager();
     gfxPc = GfxPc::CreateInstance();
     gfxPc->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen, width,
-             height, posX, posY);
+                height, posX, posY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
     mWindowManagerApi->set_mouse_callbacks(MouseButtonDown, MouseButtonUp);
