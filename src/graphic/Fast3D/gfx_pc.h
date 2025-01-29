@@ -197,7 +197,7 @@ struct RDP {
 };
 
 typedef enum Attribute {
-    MTX_PROJECTION,
+    MTX_PROJECTION = 0,
     MTX_LOAD,
     MTX_PUSH,
     MTX_NOPUSH,
