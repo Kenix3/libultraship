@@ -14,7 +14,7 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryMatrixV0::ReadResource(std
     for (size_t i = 0; i < 4; i++) {
         for (size_t j = 0; j < 4; j++) {
 #ifdef GBI_FLOATS
-            matrix->Matrx.mf[i][j] = reader->ReadInt32();
+            matrix->Matrx.mf[i][j] = reader->ReadFloat();
 #else
             matrix->Matrx.m[i][j] = reader->ReadInt32();
 #endif
