@@ -109,31 +109,45 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
-    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, LEFT,
-                                                            LUS_DEFAULT_KB_MAPPING_STICKLEFT),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, RIGHT,
-                                                            LUS_DEFAULT_KB_MAPPING_STICKRIGHT),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, UP, LUS_DEFAULT_KB_MAPPING_STICKUP),
-        std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, DOWN,
-                                                            LUS_DEFAULT_KB_MAPPING_STICKDOWN)
-    };
+    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
+
+    auto defaultsForStick = Context::GetInstance()
+                                ->GetControlDeck()
+                                ->GetControllerDefaultMappings()
+                                ->GetDefaultKeyboardKeyToAxisDirectionMappings()[stickIndex];
+
+    for (const auto& [direction, scancode] : defaultsForStick) {
+        mappings.push_back(
+            std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, direction, scancode));
+    }
 
     return mappings;
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
-    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings = {
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stickIndex, LEFT,
-                                                                 stickIndex == LEFT_STICK ? 0 : 2, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stickIndex, RIGHT,
-                                                                 stickIndex == LEFT_STICK ? 0 : 2, 1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stickIndex, UP,
-                                                                 stickIndex == LEFT_STICK ? 1 : 3, -1),
-        std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(portIndex, stickIndex, DOWN,
-                                                                 stickIndex == LEFT_STICK ? 1 : 3, 1)
-    };
+    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
+
+    auto defaultButtonsForStick = Context::GetInstance()
+                                      ->GetControlDeck()
+                                      ->GetControllerDefaultMappings()
+                                      ->GetDefaultSDLButtonToAxisDirectionMappings()[stickIndex];
+
+    for (const auto& [direction, sdlGamepadButton] : defaultButtonsForStick) {
+        mappings.push_back(
+            std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stickIndex, direction, sdlGamepadButton));
+    }
+
+    auto defaultAxisDirectionsForStick = Context::GetInstance()
+                                             ->GetControlDeck()
+                                             ->GetControllerDefaultMappings()
+                                             ->GetDefaultSDLAxisDirectionToAxisDirectionMappings()[stickIndex];
+
+    for (const auto& [direction, sdlGamepadAxisDirection] : defaultAxisDirectionsForStick) {
+        auto [sdlGamepadAxis, sdlGamepadDirection] = sdlGamepadAxisDirection;
+        mappings.push_back(std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
+            portIndex, stickIndex, direction, sdlGamepadAxis, sdlGamepadDirection));
+    }
 
     return mappings;
 }
