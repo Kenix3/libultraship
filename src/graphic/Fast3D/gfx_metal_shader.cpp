@@ -467,7 +467,12 @@ MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats
     }
 
     if (cc_features.opt_grayscale) {
-        append_line(buf, &len, "    float intensity = (texel.x + texel.y + texel.z) / 3.0;");
+        append_line(buf, &len, "    float p = float(0x19);");
+        append_line(buf, &len, "    float r = texel.r*float(0x55);");
+        append_line(buf, &len, "    float g = texel.g*float(0x4B);");
+        append_line(buf, &len, "    float b = texel.b*float(0x5F);");
+        append_line(buf, &len, "    float intensity = (r+g+b) / 256.0;");
+        append_line(buf, &len, "    intensity = pow(intensity, (p * 1.5 / 256.0) + 0.25);");
         append_line(buf, &len, "    float3 new_texel = in.grayscale.xyz * intensity;");
         append_line(buf, &len, "    texel.xyz = mix(texel.xyz, new_texel, in.grayscale.w);");
     }
