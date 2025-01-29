@@ -604,7 +604,14 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_grayscale) {
-        append_line(fs_buf, &fs_len, "float intensity = (texel.r + texel.g + texel.b) / 3.0;");
+        append_line(fs_buf, &fs_len, "float p = float(0x19);");
+        append_line(fs_buf, &fs_len, "float r = texel.r*float(0x55);");
+        append_line(fs_buf, &fs_len, "float g = texel.g*float(0x4B);");
+        append_line(fs_buf, &fs_len, "float b = texel.b*float(0x5F);");
+        append_line(fs_buf, &fs_len, "float intensity = (r+g+b) / 256.0;");
+        append_line(fs_buf, &fs_len, "intensity *= 255.0/256.0;");
+        append_line(fs_buf, &fs_len, "intensity = pow(intensity, (p * 1.5 / 256.0) + 0.25);");
+        append_line(fs_buf, &fs_len, "intensity *= 31.0/32.0;");
         append_line(fs_buf, &fs_len, "vec3 new_texel = vGrayscaleColor.rgb * intensity;");
         append_line(fs_buf, &fs_len, "texel.rgb = mix(texel.rgb, new_texel, vGrayscaleColor.a);");
     }

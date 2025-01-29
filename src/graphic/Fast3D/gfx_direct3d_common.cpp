@@ -467,7 +467,14 @@ void gfx_direct3d_common_build_shader(char buf[8192], size_t& len, size_t& num_f
     }
 
     if (cc_features.opt_grayscale) {
-        append_line(buf, &len, "float intensity = (texel.r + texel.g + texel.b) / 3.0;");
+        append_line(buf, &len, "float p = float(0x19);");
+        append_line(buf, &len, "float r = texel.r*float(0x55);");
+        append_line(buf, &len, "float g = texel.g*float(0x4B);");
+        append_line(buf, &len, "float b = texel.b*float(0x5F);");
+        append_line(buf, &len, "float intensity = (r+g+b) / 256.0;");
+        append_line(buf, &len, "intensity *= 255.0/256.0;");
+        append_line(buf, &len, "intensity = pow(intensity, (p * 1.5 / 256.0) + 0.25);");
+        append_line(buf, &len, "intensity *= 31.0/32.0;");
         append_line(buf, &len, "float3 new_texel = input.grayscale.rgb * intensity;");
         append_line(buf, &len, "texel.rgb = lerp(texel.rgb, new_texel, input.grayscale.a);");
     }
