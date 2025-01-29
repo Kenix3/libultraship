@@ -166,7 +166,7 @@ static constexpr std::array ucode_attr_handlers = {
     &f3dex2AttrHandler, // ucode_s2dex
 };
 
-static constexpr uint32_t get_attr(Attribute attr) {
+static uint32_t get_attr(Attribute attr) {
     const auto ucode_map = ucode_attr_handlers[ucode_handler_index];
     // assert(ucode_map->contains(attr) && "Attribute not found in the current ucode handler");
     return (*ucode_map)[attr];
