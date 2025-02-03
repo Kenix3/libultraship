@@ -18,6 +18,7 @@ function(check_patch)
     set(ret ${ret} PARENT_SCOPE)
 endfunction()
 
+# Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
 function(patch_if_needed)
     patch()
     if(NOT ret EQUAL 0)
@@ -26,6 +27,7 @@ function(patch_if_needed)
     set(ret ${ret} PARENT_SCOPE)
 endfunction()
 
+# Resets code and reapply patch, if old (potentially incompatible) patch applied
 function(patch_if_needed_with_reset)
     patch_if_needed()
     if(NOT ret EQUAL 0)
@@ -46,12 +48,12 @@ function(patch_if_needed_with_reset)
 endfunction()
 
 message(STATUS "Trying to apply patch ${patch_file}")
-message(STATUS "${CMAKE_CURRENT_LIST_DIR}")
 if(with_reset)
     patch_if_needed_with_reset()
 else()
     patch_if_needed()
 endif()
+
 if(NOT ret EQUAL 0)
     message(FATAL_ERROR "Failed to apply patch ${patch_file}")
 else()
