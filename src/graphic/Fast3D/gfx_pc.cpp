@@ -4076,11 +4076,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     gfx_rapi->init();
     gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
-#ifdef __APPLE__
-    gfx_current_dimensions.internal_mul = 1;
-#else
     gfx_current_dimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
-#endif
     gfx_msaa_level = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
     gfx_current_dimensions.width = width;
