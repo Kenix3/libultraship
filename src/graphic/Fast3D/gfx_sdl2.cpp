@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include "gfx_pc.h"
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
 #ifdef __MINGW32__
@@ -490,7 +490,11 @@ static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_
 }
 
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+#ifdef __APPLE__
+    SDL_GetWindowSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#else
     SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#endif
     SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
@@ -567,8 +571,12 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
-                    break;
+#ifdef __APPLE__
+                    SDL_GetWindowSize(wnd, &window_width, &window_height);
+#else
+                        SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+#endif
+                break;
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(wnd)) {
                         // We listen specifically for main window close because closing main window
@@ -694,6 +702,16 @@ void gfx_sdl_destroy() {
 
 bool gfx_sdl_is_fullscreen() {
     return fullscreen_state;
+}
+int apple_retina_scaling_factor() {
+    int pixelWidth = 0, pixelHeight = 0;
+    SDL_GL_GetDrawableSize(wnd, &pixelWidth, &pixelHeight);
+
+    int scalingFactor = pixelWidth / gfx_current_dimensions.width;
+    if (scalingFactor > 1 && (pixelHeight / gfx_current_dimensions.height) > 1) {
+        return scalingFactor;
+    }
+    return 1;
 }
 
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
