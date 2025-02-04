@@ -252,6 +252,5 @@ int32_t gfx_check_image_signature(const char* imgData);
 void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* replacement = nullptr);
 void gfx_unregister_blended_texture(const char* name);
 const char* GfxGetOpcodeName(int8_t opcode);
-int apple_retina_scaling_factor();
 
 #endif
