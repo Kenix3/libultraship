@@ -707,11 +707,12 @@ bool gfx_sdl_is_fullscreen() {
 int apple_retina_scaling_factor() {
     int pixelWidth = 0, pixelHeight = 0;
     SDL_GL_GetDrawableSize(wnd, &pixelWidth, &pixelHeight);
-    int scalingFactor = pixelWidth / gfx_current_dimensions.width;
-    if (scalingFactor > 1 && (pixelHeight / gfx_current_dimensions.height) > 1) {
-        return scalingFactor;
-    }
-    return 1;
+    float logicalWidth = ImGui::GetContentRegionAvail().x;
+    float logicalHeight = ImGui::GetContentRegionAvail().y;
+    int factorW = pixelWidth / (int)logicalWidth;
+    int factorH = pixelHeight / (int)logicalHeight;
+    int factor = std::min(factorW, factorH);
+    return (factor > 1) ? factor : 1;
 }
 
 struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
