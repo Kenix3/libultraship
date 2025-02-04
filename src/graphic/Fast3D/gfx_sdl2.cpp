@@ -703,10 +703,10 @@ void gfx_sdl_destroy() {
 bool gfx_sdl_is_fullscreen() {
     return fullscreen_state;
 }
+
 int apple_retina_scaling_factor() {
     int pixelWidth = 0, pixelHeight = 0;
     SDL_GL_GetDrawableSize(wnd, &pixelWidth, &pixelHeight);
-
     int scalingFactor = pixelWidth / gfx_current_dimensions.width;
     if (scalingFactor > 1 && (pixelHeight / gfx_current_dimensions.height) > 1) {
         return scalingFactor;
