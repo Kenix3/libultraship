@@ -574,9 +574,9 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
 #ifdef __APPLE__
                     SDL_GetWindowSize(wnd, &window_width, &window_height);
 #else
-                        SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+                    SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
 #endif
-                break;
+                    break;
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(wnd)) {
                         // We listen specifically for main window close because closing main window
