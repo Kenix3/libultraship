@@ -830,19 +830,7 @@ static bool gfx_dxgi_is_frame_ready() {
 
 static void gfx_dxgi_swap_buffers_begin() {
     LARGE_INTEGER t;
-    ComPtr<ID3D11Device> device;
-    dxgi.swap_chain_device.As(&device);
 
-    if (device != nullptr) {
-        ComPtr<ID3D11DeviceContext> dev_ctx;
-        device->GetImmediateContext(&dev_ctx);
-
-        if (dev_ctx != nullptr) {
-            // Always flush the immediate context before forcing a CPU-wait, otherwise the GPU might only start
-            // working when the SwapChain is presented.
-            dev_ctx->Flush();
-        }
-    }
     QueryPerformanceCounter(&t);
     int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                    FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
