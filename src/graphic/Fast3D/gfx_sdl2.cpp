@@ -662,6 +662,13 @@ static inline void sync_framerate_with_timer() {
 }
 
 static void gfx_sdl_swap_buffers_begin() {
+    if (vsync_enabled !=
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1)) {
+        // Make sure only 0 or 1 is set.
+        vsync_enabled =
+            !!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
+    }
+    SDL_GL_SetSwapInterval(vsync_enabled);
     sync_framerate_with_timer();
     SDL_GL_SwapWindow(wnd);
 }
@@ -686,7 +693,7 @@ static const char* gfx_sdl_get_key_name(int scancode) {
 }
 
 bool gfx_sdl_can_disable_vsync() {
-    return false;
+    return true;
 }
 
 bool gfx_sdl_is_running() {
