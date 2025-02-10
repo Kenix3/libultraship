@@ -410,4 +410,10 @@ void ResourceManager::SetAltAssetsEnabled(bool isEnabled) {
     mAltAssetsEnabled = isEnabled;
 }
 
+void ResourceManager::ShutDownThreadPool() {
+    mThreadPool->pause();
+    mThreadPool->wait_for(std::chrono::duration<double>(2));
+    mThreadPool->purge();
+}
+
 } // namespace Ship
