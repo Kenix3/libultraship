@@ -6,6 +6,7 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 union Gfx;
+#include "gfx_pc.h"
 
 namespace Fast {
 class Fast3dWindow : public Ship::Window {
@@ -63,5 +64,6 @@ class Fast3dWindow : public Ship::Window {
   private:
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
+    GfxPc* gfxPc;
 };
 } // namespace Fast

@@ -4,7 +4,7 @@
 #include <vector>
 
 union F3DGfx;
-
+class GfxPc;
 namespace LUS {
 
 class GfxDebuggerWindow : public Ship::GuiWindow {
@@ -23,6 +23,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const F3DGfx*> mLastBreakPoint = {};
+    GfxPc* mGfxPc;
 };
 
 } // namespace LUS
