@@ -43,6 +43,8 @@
 #include "gfx_rendering_api.h"
 #include "window/gui/Gui.h"
 #include "gfx_pc.h"
+#include <prism/processor.h>
+#include <fstream>
 #include <public/bridge/consolevariablebridge.h>
 
 using namespace std;
@@ -151,6 +153,14 @@ static void append_line(char* buf, size_t* len, const char* str) {
     buf[(*len)++] = '\n';
 }
 
+prism::ContextTypes* add_text(prism::ContextTypes* arg1, prism::ContextTypes* arg2, prism::ContextTypes* arg3) {
+    std::string items = "";
+    for (int i = 0; i < 3; i++) {
+        items += "add";
+    }
+    return new prism::ContextTypes{ items };
+}
+
 #define RAND_NOISE "((random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + 1.0) / 2.0)"
 
 static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
@@ -224,48 +234,60 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_NOISE:
                 return RAND_NOISE;
         }
+
+        int bp = 0;
     }
     return "";
 }
 
-#undef RAND_NOISE
-
-static void append_formula(char* buf, size_t* len, uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix,
-                           bool with_alpha, bool only_alpha, bool opt_alpha, bool first_cycle) {
-    if (do_single) {
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-    } else if (do_multiply) {
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, " * ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
-    } else if (do_mix) {
-        append_str(buf, len, "mix(");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, ", ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, ", ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
-        append_str(buf, len, ")");
-    } else {
-        append_str(buf, len, "(");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, " - ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, ") * ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
-        append_str(buf, len, " + ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, first_cycle, false));
+bool get_bool(prism::ContextTypes* value) {
+    if (std::holds_alternative<bool>(*value)) {
+        return std::get<bool>(*value);
+    } else if (std::holds_alternative<int>(*value)) {
+        return std::get<int>(*value) == 1;
     }
+    return false;
+}
+
+prism::ContextTypes* append_formula(prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
+                                    prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
+                                    prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
+                                    prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
+    // uint8_t c[2][4] =
+    auto c = std::get<prism::MTDArray<int>>(*a_arg);
+    bool do_single = get_bool(a_single);
+    bool do_multiply = get_bool(a_mult);
+    bool do_mix = get_bool(a_mix);
+    bool with_alpha = get_bool(a_with_alpha);
+    bool only_alpha = get_bool(a_only_alpha);
+    bool opt_alpha = get_bool(a_alpha);
+    bool first_cycle = get_bool(a_first_cycle);
+    std::string out = "";
+    if (do_single) {
+        out += shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+    } else if (do_multiply) {
+        out += shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += " * ";
+        out += shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+    } else if (do_mix) {
+        out += "mix(";
+        out += shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += ", ";
+        out += shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += ", ";
+        out += shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+        out += ")";
+    } else {
+        out += "(";
+        out += shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += " - ";
+        out += shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += ") * ";
+        out += shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+        out += " + ";
+        out += shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+    }
+    return new prism::ContextTypes{ out };
 }
 
 static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
@@ -273,10 +295,74 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
     char vs_buf[1024];
-    char fs_buf[6000];
     size_t vs_len = 0;
-    size_t fs_len = 0;
     size_t num_floats = 4;
+
+    prism::Processor processor;
+    prism::ContextItems context = {
+        { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
+        { "o_alpha", cc_features.opt_alpha },
+        { "o_fog", cc_features.opt_fog },
+        { "o_texture_edge", cc_features.opt_texture_edge },
+        { "o_noise", cc_features.opt_noise },
+        { "o_2cyc", cc_features.opt_2cyc },
+        { "o_alpha_threshold", cc_features.opt_alpha_threshold },
+        { "o_invisible", cc_features.opt_invisible },
+        { "o_grayscale", cc_features.opt_grayscale },
+        { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+        { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
+        { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
+        { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
+        { "o_inputs", cc_features.num_inputs },
+        { "o_do_mix", M_ARRAY(cc_features.do_mix, bool, 2, 2) },
+        { "o_do_single", M_ARRAY(cc_features.do_single, bool, 2, 2) },
+        { "o_do_multiply", M_ARRAY(cc_features.do_multiply, bool, 2, 2) },
+        { "o_color_alpha_same", M_ARRAY(cc_features.color_alpha_same, bool, 2) },
+        { "o_current_filter", current_filter_mode },
+        { "FILTER_THREE_POINT", FILTER_THREE_POINT },
+        { "FILTER_LINEAR", FILTER_LINEAR },
+        { "FILTER_NONE", FILTER_NONE },
+        { "srgb_mode", srgb_mode },
+        { "SHADER_0", SHADER_0 },
+        { "SHADER_INPUT_1", SHADER_INPUT_1 },
+        { "SHADER_INPUT_2", SHADER_INPUT_2 },
+        { "SHADER_INPUT_3", SHADER_INPUT_3 },
+        { "SHADER_INPUT_4", SHADER_INPUT_4 },
+        { "SHADER_INPUT_5", SHADER_INPUT_5 },
+        { "SHADER_INPUT_6", SHADER_INPUT_6 },
+        { "SHADER_INPUT_7", SHADER_INPUT_7 },
+        { "SHADER_TEXEL0", SHADER_TEXEL0 },
+        { "SHADER_TEXEL0A", SHADER_TEXEL0A },
+        { "SHADER_TEXEL1", SHADER_TEXEL1 },
+        { "SHADER_TEXEL1A", SHADER_TEXEL1A },
+        { "SHADER_1", SHADER_1 },
+        { "SHADER_COMBINED", SHADER_COMBINED },
+        { "SHADER_NOISE", SHADER_NOISE },
+        { "append_formula", (InvokeFunc) append_formula },
+#ifdef __APPLE__
+        { "GLSL_VERSION", "#version 410 core" },
+        { "attr", "in" },
+        { "opengles", false },
+        { "core_opengl", true },
+        { "texture", "texture" },
+        { "vOutColor", "vOutColor" },
+#elif defined(USE_OPENGLES)
+        { "GLSL_VERSION", "#version 300 es\nprecision mediump float;" },
+        { "attr", "in" },
+        { "opengles", true },
+        { "core_opengl", false },
+        { "texture", "texture" },
+        { "vOutColor", "vOutColor" },
+#else
+        { "GLSL_VERSION", "#version 130" },
+        { "attr", "varying" },
+        { "opengles", false },
+        { "core_opengl", false },
+        { "texture", "texture2D" },
+        { "vOutColor", "gl_FragColor" },
+#endif
+    };
+    processor.populate(context);
 
     // Vertex shader
 #if defined(__APPLE__)
@@ -373,283 +459,30 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     append_line(vs_buf, &vs_len, "}");
 
     // Fragment shader
-#if defined(__APPLE__)
-    append_line(fs_buf, &fs_len, "#version 410 core");
-#elif defined(USE_OPENGLES)
-    append_line(fs_buf, &fs_len, "#version 300 es");
-    append_line(fs_buf, &fs_len, "precision mediump float;");
-#else
-    append_line(fs_buf, &fs_len, "#version 130");
-#endif
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-            fs_len += sprintf(fs_buf + fs_len, "in vec2 vTexCoord%d;\n", i);
-#else
-            fs_len += sprintf(fs_buf + fs_len, "varying vec2 vTexCoord%d;\n", i);
-#endif
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-                    fs_len += sprintf(fs_buf + fs_len, "in float vTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
-#else
-                    fs_len += sprintf(fs_buf + fs_len, "varying float vTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
-#endif
-                }
-            }
-        }
-    }
-    if (cc_features.opt_fog) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(fs_buf, &fs_len, "in vec4 vFog;");
-#else
-        append_line(fs_buf, &fs_len, "varying vec4 vFog;");
-#endif
-    }
-    if (cc_features.opt_grayscale) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(fs_buf, &fs_len, "in vec4 vGrayscaleColor;");
-#else
-        append_line(fs_buf, &fs_len, "varying vec4 vGrayscaleColor;");
-#endif
-    }
-    for (int i = 0; i < cc_features.num_inputs; i++) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        fs_len += sprintf(fs_buf + fs_len, "in vec%d vInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
-#else
-        fs_len += sprintf(fs_buf + fs_len, "varying vec%d vInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
-#endif
-    }
-    if (cc_features.used_textures[0]) {
-        append_line(fs_buf, &fs_len, "uniform sampler2D uTex0;");
-    }
-    if (cc_features.used_textures[1]) {
-        append_line(fs_buf, &fs_len, "uniform sampler2D uTex1;");
-    }
-    if (cc_features.used_masks[0]) {
-        append_line(fs_buf, &fs_len, "uniform sampler2D uTexMask0;");
-    }
-    if (cc_features.used_masks[1]) {
-        append_line(fs_buf, &fs_len, "uniform sampler2D uTexMask1;");
-    }
-    if (cc_features.used_blend[0]) {
-        append_line(fs_buf, &fs_len, "uniform sampler2D uTexBlend0;");
-    }
-    if (cc_features.used_blend[1]) {
-        append_line(fs_buf, &fs_len, "uniform sampler2D uTexBlend1;");
+    std::string frag = "/Volumes/Moon/dot/Lywx/prism/examples/script.prism";
+    std::ifstream input(frag);
+    if (!input.is_open()) {
+        SPDLOG_ERROR("Failed to open file: {}", frag);
+        abort();
     }
 
-    append_line(fs_buf, &fs_len, "uniform int frame_count;");
-    append_line(fs_buf, &fs_len, "uniform float noise_scale;");
-
-    append_line(fs_buf, &fs_len, "float random(in vec3 value) {");
-    append_line(fs_buf, &fs_len, "    float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));");
-    append_line(fs_buf, &fs_len, "    return fract(sin(random) * 143758.5453);");
-    append_line(fs_buf, &fs_len, "}");
-
-    if (current_filter_mode == FILTER_THREE_POINT) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(fs_buf, &fs_len, "#define TEX_OFFSET(off) texture(tex, texCoord - (off)/texSize)");
-#else
-        append_line(fs_buf, &fs_len, "#define TEX_OFFSET(off) texture2D(tex, texCoord - (off)/texSize)");
-#endif
-        append_line(fs_buf, &fs_len, "vec4 filter3point(in sampler2D tex, in vec2 texCoord, in vec2 texSize) {");
-        append_line(fs_buf, &fs_len, "    vec2 offset = fract(texCoord*texSize - vec2(0.5));");
-        append_line(fs_buf, &fs_len, "    offset -= step(1.0, offset.x + offset.y);");
-        append_line(fs_buf, &fs_len, "    vec4 c0 = TEX_OFFSET(offset);");
-        append_line(fs_buf, &fs_len, "    vec4 c1 = TEX_OFFSET(vec2(offset.x - sign(offset.x), offset.y));");
-        append_line(fs_buf, &fs_len, "    vec4 c2 = TEX_OFFSET(vec2(offset.x, offset.y - sign(offset.y)));");
-        append_line(fs_buf, &fs_len, "    return c0 + abs(offset.x)*(c1-c0) + abs(offset.y)*(c2-c0);");
-        append_line(fs_buf, &fs_len, "}");
-        append_line(fs_buf, &fs_len, "vec4 hookTexture2D(in sampler2D tex, in vec2 uv, in vec2 texSize) {");
-        append_line(fs_buf, &fs_len, "    return filter3point(tex, uv, texSize);");
-        append_line(fs_buf, &fs_len, "}");
-    } else {
-        append_line(fs_buf, &fs_len, "vec4 hookTexture2D(in sampler2D tex, in vec2 uv, in vec2 texSize) {");
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(fs_buf, &fs_len, "    return texture(tex, uv);");
-#else
-        append_line(fs_buf, &fs_len, "    return texture2D(tex, uv);");
-#endif
-        append_line(fs_buf, &fs_len, "}");
-    }
-
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-    append_line(fs_buf, &fs_len, "out vec4 outColor;");
-#endif
-
-    if (srgb_mode) {
-        append_line(fs_buf, &fs_len, "vec4 fromLinear(vec4 linearRGB){");
-        append_line(fs_buf, &fs_len, "    bvec3 cutoff = lessThan(linearRGB.rgb, vec3(0.0031308));");
-        append_line(fs_buf, &fs_len, "    vec3 higher = vec3(1.055)*pow(linearRGB.rgb, vec3(1.0/2.4)) - vec3(0.055);");
-        append_line(fs_buf, &fs_len, "    vec3 lower = linearRGB.rgb * vec3(12.92);");
-        append_line(fs_buf, &fs_len, "return vec4(mix(higher, lower, cutoff), linearRGB.a);}");
-    }
-
-    append_line(fs_buf, &fs_len, "void main() {");
-
-    // Reference approach to color wrapping as per GLideN64
-    // Return wrapped value of x in interval [low, high)
-    append_line(fs_buf, &fs_len, "#define WRAP(x, low, high) mod((x)-(low), (high)-(low)) + (low)");
-
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-            bool s = cc_features.clamp[i][0], t = cc_features.clamp[i][1];
-
-#if defined(USE_OPENGLES)
-            fs_len += sprintf(fs_buf + fs_len, "vec2 texSize%d = vec2(textureSize(uTex%d, 0));\n", i, i);
-#else
-            fs_len += sprintf(fs_buf + fs_len, "vec2 texSize%d = textureSize(uTex%d, 0);\n", i, i);
-#endif
-
-            if (!s && !t) {
-                fs_len += sprintf(fs_buf + fs_len, "vec2 vTexCoordAdj%d = vTexCoord%d;\n", i, i);
-            } else {
-                if (s && t) {
-                    fs_len += sprintf(fs_buf + fs_len,
-                                      "vec2 vTexCoordAdj%d = clamp(vTexCoord%d, 0.5 / texSize%d, "
-                                      "vec2(vTexClampS%d, vTexClampT%d));\n",
-                                      i, i, i, i, i);
-                } else if (s) {
-                    fs_len += sprintf(fs_buf + fs_len,
-                                      "vec2 vTexCoordAdj%d = vec2(clamp(vTexCoord%d.s, 0.5 / "
-                                      "texSize%d.s, vTexClampS%d), vTexCoord%d.t);\n",
-                                      i, i, i, i, i);
-                } else {
-                    fs_len += sprintf(fs_buf + fs_len,
-                                      "vec2 vTexCoordAdj%d = vec2(vTexCoord%d.s, clamp(vTexCoord%d.t, "
-                                      "0.5 / texSize%d.t, vTexClampT%d));\n",
-                                      i, i, i, i, i);
-                }
-            }
-
-            fs_len += sprintf(fs_buf + fs_len, "vec4 texVal%d = hookTexture2D(uTex%d, vTexCoordAdj%d, texSize%d);\n", i,
-                              i, i, i);
-            if (cc_features.used_masks[i]) {
-#ifdef USE_OPENGLES
-                fs_len += sprintf(fs_buf + fs_len, "vec2 maskSize%d = vec2(textureSize(uTexMask%d, 0));\n", i, i);
-#else
-                fs_len += sprintf(fs_buf + fs_len, "vec2 maskSize%d = textureSize(uTexMask%d, 0);\n", i, i);
-#endif
-                fs_len +=
-                    sprintf(fs_buf + fs_len,
-                            "vec4 maskVal%d = hookTexture2D(uTexMask%d, vTexCoordAdj%d, maskSize%d);\n", i, i, i, i);
-                if (cc_features.used_blend[i]) {
-                    fs_len += sprintf(fs_buf + fs_len,
-                                      "vec4 blendVal%d = hookTexture2D(uTexBlend%d, vTexCoordAdj%d, texSize%d);\n", i,
-                                      i, i, i);
-                } else {
-                    fs_len += sprintf(fs_buf + fs_len, "vec4 blendVal%d = vec4(0, 0, 0, 0);\n", i);
-                }
-
-                fs_len += sprintf(fs_buf + fs_len, "texVal%d = mix(texVal%d, blendVal%d, maskVal%d.a);\n", i, i, i, i);
-            }
-        }
-    }
-
-    append_line(fs_buf, &fs_len, cc_features.opt_alpha ? "vec4 texel;" : "vec3 texel;");
-    for (int c = 0; c < (cc_features.opt_2cyc ? 2 : 1); c++) {
-        if (c == 1) {
-            if (cc_features.opt_alpha) {
-                if (cc_features.c[c][1][2] == SHADER_COMBINED) {
-                    append_line(fs_buf, &fs_len, "texel.a = WRAP(texel.a, -1.01, 1.01);");
-                } else {
-                    append_line(fs_buf, &fs_len, "texel.a = WRAP(texel.a, -0.51, 1.51);");
-                }
-            }
-
-            if (cc_features.c[c][0][2] == SHADER_COMBINED) {
-                append_line(fs_buf, &fs_len, "texel.rgb = WRAP(texel.rgb, -1.01, 1.01);");
-            } else {
-                append_line(fs_buf, &fs_len, "texel.rgb = WRAP(texel.rgb, -0.51, 1.51);");
-            }
-        }
-
-        append_str(fs_buf, &fs_len, "texel = ");
-        if (!cc_features.color_alpha_same[c] && cc_features.opt_alpha) {
-            append_str(fs_buf, &fs_len, "vec4(");
-            append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][0],
-                           cc_features.do_multiply[c][0], cc_features.do_mix[c][0], false, false, true, c == 0);
-            append_str(fs_buf, &fs_len, ", ");
-            append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][1],
-                           cc_features.do_multiply[c][1], cc_features.do_mix[c][1], true, true, true, c == 0);
-            append_str(fs_buf, &fs_len, ")");
-        } else {
-            append_formula(fs_buf, &fs_len, cc_features.c[c], cc_features.do_single[c][0],
-                           cc_features.do_multiply[c][0], cc_features.do_mix[c][0], cc_features.opt_alpha, false,
-                           cc_features.opt_alpha, c == 0);
-        }
-        append_line(fs_buf, &fs_len, ";");
-    }
-
-    append_str(fs_buf, &fs_len, "texel = WRAP(texel, -0.51, 1.51);");
-    append_str(fs_buf, &fs_len, "texel = clamp(texel, 0.0, 1.0);");
-    // TODO discard if alpha is 0?
-    if (cc_features.opt_fog) {
-        if (cc_features.opt_alpha) {
-            append_line(fs_buf, &fs_len, "texel = vec4(mix(texel.rgb, vFog.rgb, vFog.a), texel.a);");
-        } else {
-            append_line(fs_buf, &fs_len, "texel = mix(texel, vFog.rgb, vFog.a);");
-        }
-    }
-
-    if (cc_features.opt_texture_edge && cc_features.opt_alpha) {
-        append_line(fs_buf, &fs_len, "if (texel.a > 0.19) texel.a = 1.0; else discard;");
-    }
-
-    if (cc_features.opt_alpha && cc_features.opt_noise) {
-        append_line(fs_buf, &fs_len,
-                    "texel.a *= floor(clamp(random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + "
-                    "texel.a, 0.0, 1.0));");
-    }
-
-    if (cc_features.opt_grayscale) {
-        append_line(fs_buf, &fs_len, "float intensity = (texel.r + texel.g + texel.b) / 3.0;");
-        append_line(fs_buf, &fs_len, "vec3 new_texel = vGrayscaleColor.rgb * intensity;");
-        append_line(fs_buf, &fs_len, "texel.rgb = mix(texel.rgb, new_texel, vGrayscaleColor.a);");
-    }
-
-    if (cc_features.opt_alpha) {
-        if (cc_features.opt_alpha_threshold) {
-            append_line(fs_buf, &fs_len, "if (texel.a < 8.0 / 256.0) discard;");
-        }
-        if (cc_features.opt_invisible) {
-            append_line(fs_buf, &fs_len, "texel.a = 0.0;");
-        }
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(fs_buf, &fs_len, "outColor = texel;");
-#else
-        append_line(fs_buf, &fs_len, "gl_FragColor = texel;");
-#endif
-    } else {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(fs_buf, &fs_len, "outColor = vec4(texel, 1.0);");
-#else
-        append_line(fs_buf, &fs_len, "gl_FragColor = vec4(texel, 1.0);");
-#endif
-    }
-
-    if (srgb_mode) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(fs_buf, &fs_len, "outColor = fromLinear(outColor);");
-#else
-        append_line(fs_buf, &fs_len, "gl_FragColor = fromLinear(gl_FragColor);");
-#endif
-    }
-
-    append_line(fs_buf, &fs_len, "}");
+    std::vector<uint8_t> data = std::vector<uint8_t>(std::istreambuf_iterator(input), {});
+    input.close();
+    processor.load(std::string(data.begin(), data.end()));
+    auto frag_buf = processor.process();
 
     vs_buf[vs_len] = '\0';
-    fs_buf[fs_len] = '\0';
 
     /*puts("Vertex shader:");
     puts(vs_buf);
     puts("Fragment shader:");
     puts(fs_buf);
     puts("End");*/
-
-    const GLchar* sources[2] = { vs_buf, fs_buf };
-    const GLint lengths[2] = { (GLint)vs_len, (GLint)fs_len };
+    SPDLOG_INFO("=========== FRAGMENT SHADER ============");
+    SPDLOG_INFO(frag_buf);
+    SPDLOG_INFO("========================================");
+    const GLchar* sources[2] = { vs_buf, frag_buf.data() };
+    const GLint lengths[2] = { (GLint)vs_len, (GLint) frag_buf.size() };
     GLint success;
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
