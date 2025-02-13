@@ -117,7 +117,7 @@ set(USE_STANDALONE OFF)
 FetchContent_Declare(
     prism
     GIT_REPOSITORY https://github.com/KiritoDv/prism-processor.git
-    GIT_TAG c01f1d79b094c3ca90f5e652689fc97c467753cd
+    GIT_TAG 66df62fc0986e5306ccbadee6b65a109e21033fd
 )
 FetchContent_MakeAvailable(prism)
 list(APPEND ADDITIONAL_LIB_INCLUDES ${prism_SOURCE_DIR}/src)
