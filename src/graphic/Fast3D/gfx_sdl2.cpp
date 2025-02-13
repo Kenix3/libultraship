@@ -253,10 +253,10 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_SetWindowSize(wnd, window_width, window_height);
     }
 #if defined(__APPLE__)
-    //Current implementation of the fullscreening with native macOS fullscreen for Windowed Mode and
-    //SDL for Exclusive Fullscreen. This code can and will be changed when we upgrade to SDL3 because of the
-    //ability to use SDL_HINT_VIDEO_MAC_FULLSCREEN_MENU_VISIBILITY to get the menubar working instead of this
-    //workaround
+    // Current implementation of the fullscreening with native macOS fullscreen for Windowed Mode and
+    // SDL for Exclusive Fullscreen. This code can and will be changed when we upgrade to SDL3 because of the
+    // ability to use SDL_HINT_VIDEO_MAC_FULLSCREEN_MENU_VISIBILITY to get the menubar working instead of this
+    // workaround
     bool useNativeMacOSFullscreen = !CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0);
 
     if (useNativeMacOSFullscreen && (on || isNativeMacOSFullscreenActive(wnd))) {
@@ -277,8 +277,9 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
 #else
     if (SDL_SetWindowFullscreen(wnd,
-    on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
-    : SDL_WINDOW_FULLSCREEN): 0) >= 0) {
+                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                                                                      : SDL_WINDOW_FULLSCREEN)
+                                   : 0) >= 0) {
         fullscreen_state = on;
     } else {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
