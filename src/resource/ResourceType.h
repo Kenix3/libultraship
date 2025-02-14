@@ -7,6 +7,7 @@ enum class ResourceType {
 
     Blob = 0x4F424C42, // OBLB
     Json = 0x4A534F4E, // JSON
+    Shader = 0x53484144, // SHAD
 };
 } // namespace Ship
 

@@ -45,6 +45,8 @@
 #include "gfx_pc.h"
 #include <prism/processor.h>
 #include <fstream>
+#include "Context.h"
+#include <ShaderFactory.h>
 #include <public/bridge/consolevariablebridge.h>
 
 using namespace std;
@@ -153,14 +155,6 @@ static void append_line(char* buf, size_t* len, const char* str) {
     buf[(*len)++] = '\n';
 }
 
-prism::ContextTypes* add_text(prism::ContextTypes* arg1, prism::ContextTypes* arg2, prism::ContextTypes* arg3) {
-    std::string items = "";
-    for (int i = 0; i < 3; i++) {
-        items += "add";
-    }
-    return new prism::ContextTypes{ items };
-}
-
 #define RAND_NOISE "((random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + 1.0) / 2.0)"
 
 static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
@@ -234,8 +228,6 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_NOISE:
                 return RAND_NOISE;
         }
-
-        int bp = 0;
     }
     return "";
 }
@@ -253,7 +245,6 @@ prism::ContextTypes* append_formula(prism::ContextTypes* a_arg, prism::ContextTy
                                     prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
                                     prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
                                     prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
-    // uint8_t c[2][4] =
     auto c = std::get<prism::MTDArray<int>>(*a_arg);
     bool do_single = get_bool(a_single);
     bool do_multiply = get_bool(a_mult);
@@ -290,14 +281,7 @@ prism::ContextTypes* append_formula(prism::ContextTypes* a_arg, prism::ContextTy
     return new prism::ContextTypes{ out };
 }
 
-static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
-    struct CCFeatures cc_features;
-    gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
-
-    char vs_buf[1024];
-    size_t vs_len = 0;
-    size_t num_floats = 4;
-
+static std::string build_fs_shader(const CCFeatures& cc_features) {
     prism::Processor processor;
     prism::ContextItems context = {
         { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
@@ -363,126 +347,92 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 #endif
     };
     processor.populate(context);
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = (uint32_t) Ship::ResourceType::Shader;
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource("shaders/opengl/default.shader.fs", true, init));
 
-    // Vertex shader
-#if defined(__APPLE__)
-    append_line(vs_buf, &vs_len, "#version 410 core");
-    append_line(vs_buf, &vs_len, "in vec4 aVtxPos;");
-#elif defined(USE_OPENGLES)
-    append_line(vs_buf, &vs_len, "#version 300 es");
-    append_line(vs_buf, &vs_len, "in vec4 aVtxPos;");
-#else
-    append_line(vs_buf, &vs_len, "#version 110");
-    append_line(vs_buf, &vs_len, "attribute vec4 aVtxPos;");
-#endif
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-            vs_len += sprintf(vs_buf + vs_len, "in vec2 aTexCoord%d;\n", i);
-            vs_len += sprintf(vs_buf + vs_len, "out vec2 vTexCoord%d;\n", i);
-#else
-            vs_len += sprintf(vs_buf + vs_len, "attribute vec2 aTexCoord%d;\n", i);
-            vs_len += sprintf(vs_buf + vs_len, "varying vec2 vTexCoord%d;\n", i);
-#endif
-            num_floats += 2;
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-                    vs_len += sprintf(vs_buf + vs_len, "in float aTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
-                    vs_len += sprintf(vs_buf + vs_len, "out float vTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
-#else
-                    vs_len += sprintf(vs_buf + vs_len, "attribute float aTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
-                    vs_len += sprintf(vs_buf + vs_len, "varying float vTexClamp%s%d;\n", j == 0 ? "S" : "T", i);
-#endif
-                    num_floats += 1;
-                }
-            }
-        }
-    }
-    if (cc_features.opt_fog) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(vs_buf, &vs_len, "in vec4 aFog;");
-        append_line(vs_buf, &vs_len, "out vec4 vFog;");
-#else
-        append_line(vs_buf, &vs_len, "attribute vec4 aFog;");
-        append_line(vs_buf, &vs_len, "varying vec4 vFog;");
-#endif
-        num_floats += 4;
-    }
-
-    if (cc_features.opt_grayscale) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        append_line(vs_buf, &vs_len, "in vec4 aGrayscaleColor;");
-        append_line(vs_buf, &vs_len, "out vec4 vGrayscaleColor;");
-#else
-        append_line(vs_buf, &vs_len, "attribute vec4 aGrayscaleColor;");
-        append_line(vs_buf, &vs_len, "varying vec4 vGrayscaleColor;");
-#endif
-        num_floats += 4;
-    }
-
-    for (int i = 0; i < cc_features.num_inputs; i++) {
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-        vs_len += sprintf(vs_buf + vs_len, "in vec%d aInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
-        vs_len += sprintf(vs_buf + vs_len, "out vec%d vInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
-#else
-        vs_len += sprintf(vs_buf + vs_len, "attribute vec%d aInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
-        vs_len += sprintf(vs_buf + vs_len, "varying vec%d vInput%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
-#endif
-        num_floats += cc_features.opt_alpha ? 4 : 3;
-    }
-    append_line(vs_buf, &vs_len, "void main() {");
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-            vs_len += sprintf(vs_buf + vs_len, "vTexCoord%d = aTexCoord%d;\n", i, i);
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-                    vs_len += sprintf(vs_buf + vs_len, "vTexClamp%s%d = aTexClamp%s%d;\n", j == 0 ? "S" : "T", i,
-                                      j == 0 ? "S" : "T", i);
-                }
-            }
-        }
-    }
-    if (cc_features.opt_fog) {
-        append_line(vs_buf, &vs_len, "vFog = aFog;");
-    }
-    if (cc_features.opt_grayscale) {
-        append_line(vs_buf, &vs_len, "vGrayscaleColor = aGrayscaleColor;");
-    }
-    for (int i = 0; i < cc_features.num_inputs; i++) {
-        vs_len += sprintf(vs_buf + vs_len, "vInput%d = aInput%d;\n", i + 1, i + 1);
-    }
-    append_line(vs_buf, &vs_len, "gl_Position = aVtxPos;");
-#if defined(USE_OPENGLES) // workaround for no GL_DEPTH_CLAMP
-    append_line(vs_buf, &vs_len, "gl_Position.z *= 0.3f;");
-#endif
-    append_line(vs_buf, &vs_len, "}");
-
-    // Fragment shader
-    std::string frag = "/Volumes/Moon/dot/Lywx/prism/examples/script.prism";
-    std::ifstream input(frag);
-    if (!input.is_open()) {
-        SPDLOG_ERROR("Failed to open file: {}", frag);
+    if (res == nullptr) {
+        SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
         abort();
     }
 
-    std::vector<uint8_t> data = std::vector<uint8_t>(std::istreambuf_iterator(input), {});
-    input.close();
-    processor.load(std::string(data.begin(), data.end()));
-    auto frag_buf = processor.process();
+    auto shader = static_cast<std::string*>(res->GetRawPointer());
+    processor.load(*shader);
+    auto result = processor.process();
+    // SPDLOG_INFO("=========== FRAGMENT SHADER ============");
+    // SPDLOG_INFO(result);
+    // SPDLOG_INFO("========================================");
+    return result;
+}
 
-    vs_buf[vs_len] = '\0';
+static size_t num_floats = 0;
 
-    /*puts("Vertex shader:");
-    puts(vs_buf);
-    puts("Fragment shader:");
-    puts(fs_buf);
-    puts("End");*/
-    SPDLOG_INFO("=========== FRAGMENT SHADER ============");
-    SPDLOG_INFO(frag_buf);
-    SPDLOG_INFO("========================================");
-    const GLchar* sources[2] = { vs_buf, frag_buf.data() };
-    const GLint lengths[2] = { (GLint)vs_len, (GLint) frag_buf.size() };
+prism::ContextTypes* update_floats(prism::ContextTypes* num) {
+    num_floats += std::get<int>(*num);
+    return nullptr;
+}
+
+static std::string build_vs_shader(const CCFeatures& cc_features) {
+    num_floats = 4;
+    prism::Processor processor;
+    prism::ContextItems context = {
+        { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+        { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
+        { "o_fog", cc_features.opt_fog },
+        { "o_grayscale", cc_features.opt_grayscale },
+        { "o_alpha", cc_features.opt_alpha },
+        { "o_inputs", cc_features.num_inputs },
+        { "update_floats", (InvokeFunc) update_floats },
+#ifdef __APPLE__
+        { "GLSL_VERSION", "#version 410 core" },
+        { "attr", "in" },
+        { "out", "out" },
+        { "opengles", false }
+#elif defined(USE_OPENGLES)
+        { "GLSL_VERSION", "#version 300 es" },
+        { "attr", "in" },
+        { "out", "out" },
+        { "opengles", true }
+#else
+        { "GLSL_VERSION", "#version 110" },
+        { "attr", "attribute" },
+        { "out", "varying" },
+        { "opengles", false }
+#endif
+    };
+    processor.populate(context);
+
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = (uint32_t) Ship::ResourceType::Shader;
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource("shaders/opengl/default.shader.vs", true, init));
+
+    if (res == nullptr) {
+        SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");
+        abort();
+    }
+
+    auto shader = static_cast<std::string*>(res->GetRawPointer());
+    processor.load(*shader);
+    auto result = processor.process();
+    // SPDLOG_INFO("=========== VERTEX SHADER ============");
+    // SPDLOG_INFO(result);
+    // SPDLOG_INFO("========================================");
+    return result;
+}
+
+static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
+    CCFeatures cc_features;
+    gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
+    const auto fs_buf = build_fs_shader(cc_features);
+    const auto vs_buf = build_vs_shader(cc_features);
+    const GLchar* sources[2] = { vs_buf.data(), fs_buf.data() };
+    const GLint lengths[2] = { (GLint) vs_buf.size(), (GLint) fs_buf.size() };
     GLint success;
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -1120,3 +1070,5 @@ struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
                                           gfx_opengl_enable_srgb_mode };
 
 #endif
+
+#pragma clang diagnostic pop
