@@ -10,18 +10,18 @@ struct FrameUniforms {
 };
 
 struct Vertex {
-    float4 position [[attribute(@{get_vertex_index(0)})]];
+    float4 position [[attribute(@{get_vertex_index()})]];
     @{update_floats(4)}
     @for(i in 0..2)
         @if(o_textures[i])
-            float2 texCoord@{i} [[attribute(@{get_vertex_index(0)})]];
+            float2 texCoord@{i} [[attribute(@{get_vertex_index()})]];
             @{update_floats(2)}
             @for(j in 0..2)
                 @if(o_clamp[i][j])
                     @if(j == 0)
-                        float texClampS@{i} [[attribute(@{get_vertex_index(0)})]];
+                        float texClampS@{i} [[attribute(@{get_vertex_index()})]];
                     @else
-                        float texClampT@{i} [[attribute(@{get_vertex_index(0)})]];
+                        float texClampT@{i} [[attribute(@{get_vertex_index()})]];
                     @end
                     @{update_floats(1)}
                 @end
@@ -29,19 +29,19 @@ struct Vertex {
         @end
     @end
     @if(o_fog)
-        float4 fog [[attribute(@{get_vertex_index(0)})]];
+        float4 fog [[attribute(@{get_vertex_index()})]];
         @{update_floats(4)}
     @end
     @if(o_grayscale)
-        float4 grayscale [[attribute(@{get_vertex_index(0)})]];
+        float4 grayscale [[attribute(@{get_vertex_index()})]];
         @{update_floats(4)}
     @end
     @for(i in 0..o_inputs)
         @if(o_alpha)
-            float4 input@{i + 1} [[attribute(@{get_vertex_index(0)})]];
+            float4 input@{i + 1} [[attribute(@{get_vertex_index()})]];
             @{update_floats(4)}
         @else
-            float3 input@{i + 1} [[attribute(@{get_vertex_index(0)})]];
+            float3 input@{i + 1} [[attribute(@{get_vertex_index()})]];
             @{update_floats(3)}
         @end
     @end

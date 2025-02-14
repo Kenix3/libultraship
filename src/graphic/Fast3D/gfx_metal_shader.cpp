@@ -180,7 +180,7 @@ prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
     return nullptr;
 }
 
-prism::ContextTypes* get_vertex_index(prism::ContextTypes* num) {
+prism::ContextTypes* get_vertex_index() {
     return new prism::ContextTypes{ vertex_index };
 }
 
