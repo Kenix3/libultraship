@@ -9,21 +9,9 @@
 #include <ShaderFactory.h>
 #include <Context.h>
 
-static void append_str(char* buf, size_t* len, const char* str) {
-    while (*str != '\0')
-        buf[(*len)++] = *str++;
-}
-
-static void append_line(char* buf, size_t* len, const char* str) {
-    while (*str != '\0')
-        buf[(*len)++] = *str++;
-    buf[(*len)++] = '\r';
-    buf[(*len)++] = '\n';
-}
-
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
-static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
+static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
                                       bool first_cycle, bool hint_single_element) {
     if (!only_alpha) {
         switch (item) {
@@ -99,7 +87,7 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
     }
 }
 
-bool get_bool(prism::ContextTypes* value) {
+bool prism_get_bool(prism::ContextTypes* value) {
     if (std::holds_alternative<bool>(*value)) {
         return std::get<bool>(*value);
     } else if (std::holds_alternative<int>(*value)) {
@@ -110,49 +98,49 @@ bool get_bool(prism::ContextTypes* value) {
 
 #undef RAND_NOISE
 
-prism::ContextTypes* append_formula(prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
+prism::ContextTypes* prism_append_formula(prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
                                     prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
                                     prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
                                     prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
     auto c = std::get<prism::MTDArray<int>>(*a_arg);
-    bool do_single = get_bool(a_single);
-    bool do_multiply = get_bool(a_mult);
-    bool do_mix = get_bool(a_mix);
-    bool with_alpha = get_bool(a_with_alpha);
-    bool only_alpha = get_bool(a_only_alpha);
-    bool opt_alpha = get_bool(a_alpha);
-    bool first_cycle = get_bool(a_first_cycle);
+    bool do_single = prism_get_bool(a_single);
+    bool do_multiply = prism_get_bool(a_mult);
+    bool do_mix = prism_get_bool(a_mix);
+    bool with_alpha = prism_get_bool(a_with_alpha);
+    bool only_alpha = prism_get_bool(a_only_alpha);
+    bool opt_alpha = prism_get_bool(a_alpha);
+    bool first_cycle = prism_get_bool(a_first_cycle);
     std::string out = "";
     if (do_single) {
-        out += shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += prism_shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
     } else if (do_multiply) {
-        out += shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += prism_shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
         out += " * ";
-        out += shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+        out += prism_shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
     } else if (do_mix) {
         out += "mix(";
-        out += shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += prism_shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
         out += ", ";
-        out += shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += prism_shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
         out += ", ";
-        out += shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+        out += prism_shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
         out += ")";
     } else {
         out += "(";
-        out += shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += prism_shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
         out += " - ";
-        out += shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += prism_shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
         out += ") * ";
-        out += shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+        out += prism_shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
         out += " + ";
-        out += shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += prism_shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
     }
     return new prism::ContextTypes{ out };
 }
 
 static size_t raw_num_floats = 0;
 
-prism::ContextTypes* update_floats(prism::ContextTypes* num) {
+prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
     raw_num_floats += std::get<int>(*num);
     return nullptr;
 }
@@ -199,7 +187,7 @@ std::string gfx_direct3d_common_build_shader(size_t& num_floats, const CCFeature
         { "o_root_signature", include_root_signature },
         { "o_three_point_filtering", three_point_filtering },
         { "srgb_mode", use_srgb },
-        { "update_floats", (InvokeFunc) update_floats },
+        { "update_floats", (InvokeFunc) update_raw_floats },
     };
     processor.populate(context);
     auto init = std::make_shared<Ship::ResourceInitData>();
