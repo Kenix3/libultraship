@@ -4125,14 +4125,14 @@ bool gfx_is_frame_ready() {
     return gfx_wapi->is_frame_ready();
 }
 
-bool viewport_matches_render_resolution(){
+bool viewport_matches_render_resolution() {
 #ifdef __APPLE__
     // Always treat the viewport as not matching the render resolution on mac
     // to avoid issues with retina scaling.
     return false;
 #else
-    if(gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&
-       gfx_current_dimensions.height == gfx_current_game_window_viewport.height) {
+    if (gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&
+        gfx_current_dimensions.height == gfx_current_game_window_viewport.height) {
         return true;
     }
     return false;
