@@ -120,7 +120,7 @@ PSInput VSMain(
 @if(o_grayscale)
     , float4 grayscale : GRAYSCALE
 @end
-@if(o_inputs > 0)
+@for(i in 0..o_inputs)
     @if(o_alpha)
         , float4 input@{i + 1} : INPUT@{i}
     @else
@@ -206,7 +206,7 @@ float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {
                         float2 maskSize@{i};
                         g_textureMask@{i}.GetDimensions(maskSize@{i}.x, maskSize@{i}.y);
                         float4 maskVal@{i} = tex2D3PointFilter(g_textureMask@{i}, g_sampler@{i}, tc@{i}, maskSize@{i});
-                        @if(o_blend[@{i}])
+                        @if(o_blend[i])
                             float4 blendVal@{i} = tex2D3PointFilter(g_textureBlend@{i}, g_sampler@{i}, tc@{i}, float2(textures[@{i}].width, textures[@{i}].height));
                         @else
                             float4 blendVal@{i} = float4(0, 0, 0, 0);
@@ -219,7 +219,7 @@ float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {
                 } else {
                     texVal@{i} = g_texture@{i}.Sample(g_sampler@{i}, tc@{i});
                     @if(o_masks[i])
-                        @if(o_blend[@{i}])
+                        @if(o_blend[i])
                             float4 blendVal@{i} = g_textureBlend@{i}.Sample(g_sampler@{i}, tc@{i});
                         @else
                             float4 blendVal@{i} = float4(0, 0, 0, 0);
@@ -230,7 +230,7 @@ float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {
             @else
                 float4 texVal@{i} = g_texture@{i}.Sample(g_sampler@{i}, tc@{i});
                 @if(o_masks[i])
-                    @if(o_blend[@{i}])
+                    @if(o_blend[i])
                         float4 blendVal@{i} = g_textureBlend@{i}.Sample(g_sampler@{i}, tc@{i});
                     @else
                         float4 blendVal@{i} = float4(0, 0, 0, 0);

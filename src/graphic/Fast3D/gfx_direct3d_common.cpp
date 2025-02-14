@@ -118,7 +118,7 @@ prism::ContextTypes* prism_append_formula(prism::ContextTypes* a_arg, prism::Con
         out += " * ";
         out += prism_shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
     } else if (do_mix) {
-        out += "mix(";
+        out += "lerp(";
         out += prism_shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
         out += ", ";
         out += prism_shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
@@ -187,6 +187,7 @@ std::string gfx_direct3d_common_build_shader(size_t& num_floats, const CCFeature
         { "o_root_signature", include_root_signature },
         { "o_three_point_filtering", three_point_filtering },
         { "srgb_mode", use_srgb },
+        { "append_formula", (InvokeFunc) prism_append_formula },
         { "update_floats", (InvokeFunc) update_raw_floats },
     };
     processor.populate(context);
