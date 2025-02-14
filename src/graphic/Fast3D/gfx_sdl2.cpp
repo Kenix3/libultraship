@@ -490,7 +490,11 @@ static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_
 }
 
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+#ifdef __APPLE__
+    SDL_GetWindowSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#else
     SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#endif
     SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
@@ -567,7 +571,11 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
+#ifdef __APPLE__
+                    SDL_GetWindowSize(wnd, &window_width, &window_height);
+#else
                     SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+#endif
                     break;
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(wnd)) {
