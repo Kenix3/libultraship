@@ -572,7 +572,6 @@ void ConsoleWindow::Dispatch(const std::string& line) {
 int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
     const auto instance = static_cast<ConsoleWindow*>(data->UserData);
     const bool emptyHistory = instance->mHistory.empty();
-    const int historyIndex = instance->mHistoryIndex;
     auto console = Context::GetInstance()->GetConsole();
     std::string history;
 
@@ -591,9 +590,9 @@ int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
             if (emptyHistory) {
                 break;
             }
-            if (historyIndex > 0) {
+            if (instance->mHistoryIndex > 0) {
                 instance->mHistoryIndex -= 1;
-            } else if (historyIndex < 0) {
+            } else if (instance->mHistoryIndex < 0) {
                 instance->mHistoryIndex = static_cast<int>(instance->mHistory.size()) - 1;
             }
             data->DeleteChars(0, data->BufTextLen);
@@ -606,7 +605,8 @@ int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
             if (emptyHistory) {
                 break;
             }
-            if (historyIndex >= 0 && historyIndex < static_cast<int>(instance->mHistory.size()) - 1) {
+            if (instance->mHistoryIndex >= 0 &&
+                instance->mHistoryIndex < static_cast<int>(instance->mHistory.size()) - 1) {
                 instance->mHistoryIndex += 1;
             } else {
                 instance->mHistoryIndex = -1;
