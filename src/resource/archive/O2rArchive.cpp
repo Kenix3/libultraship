@@ -38,7 +38,7 @@ std::shared_ptr<File> O2rArchive::LoadFileRaw(const std::string& filePath) {
 
     // Filesize 0, no logging needed
     if (zipEntryStat.size == 0) {
-        SPDLOG_TRACE("({}) Failed to load file {}; filesize 0", GetLastError(), filePath, GetPath());
+        SPDLOG_TRACE("Failed to load file {}; filesize 0", filePath, GetPath());
         return nullptr;
     }
 
