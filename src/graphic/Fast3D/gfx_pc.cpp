@@ -4182,7 +4182,7 @@ void gfx_start_frame() {
                                                     gfx_current_window_dimensions.height, gfx_msaa_level, false, true,
                                                     true, true);
         }
-        if (gfx_msaa_level > 1 && (!viewport_matches_render_resolution())) {
+        if (gfx_msaa_level > 1 && !viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer_msaa_resolved, gfx_current_dimensions.width,
                                                     gfx_current_dimensions.height, 1, false, false, false, false);
         }
