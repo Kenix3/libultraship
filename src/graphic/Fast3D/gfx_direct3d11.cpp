@@ -417,7 +417,7 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     char* buf;
     size_t len, num_floats;
 
-    auto shader = gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
+    auto shader = gfx_direct3d_common_build_shader(num_floats, cc_features, false,
                                      d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
 
     buf = shader.data();

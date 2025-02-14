@@ -113,11 +113,10 @@ FetchContent_MakeAvailable(ThreadPool)
 list(APPEND ADDITIONAL_LIB_INCLUDES ${threadpool_SOURCE_DIR}/include)
 
 #=========== prism ===========
-set(USE_STANDALONE OFF)
+option(PRISM_STANDALONE "Build prism as a standalone library" OFF)
 FetchContent_Declare(
     prism
     GIT_REPOSITORY https://github.com/KiritoDv/prism-processor.git
-    GIT_TAG 66df62fc0986e5306ccbadee6b65a109e21033fd
+    GIT_TAG 3a44e54e3b5d372456ba01011cbd9fe78fe6d5c1
 )
 FetchContent_MakeAvailable(prism)
-list(APPEND ADDITIONAL_LIB_INCLUDES ${prism_SOURCE_DIR}/src)

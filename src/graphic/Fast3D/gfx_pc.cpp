@@ -2957,7 +2957,7 @@ bool gfx_set_shader_custom(F3DGfx** cmd0) {
 //        g_rdp.current_shader = { 0, 0, false };
 //        return false;
 //    }
-    g_rdp.current_shader = { shaderId, C0(16, 1), true };
+    g_rdp.current_shader = { true, shaderId, (uint8_t) C0(16, 1) };
     return false;
 }
 

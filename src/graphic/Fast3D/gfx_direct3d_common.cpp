@@ -4,7 +4,10 @@
 
 #include "gfx_direct3d_common.h"
 #include "gfx_cc.h"
+#include <prism/processor.h>
 #include <public/bridge/consolevariablebridge.h>
+#include <ShaderFactory.h>
+#include <Context.h>
 
 static void append_str(char* buf, size_t* len, const char* str) {
     while (*str != '\0')
@@ -94,6 +97,15 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
                 return RAND_NOISE;
         }
     }
+}
+
+bool get_bool(prism::ContextTypes* value) {
+    if (std::holds_alternative<bool>(*value)) {
+        return std::get<bool>(*value);
+    } else if (std::holds_alternative<int>(*value)) {
+        return std::get<int>(*value) == 1;
+    }
+    return false;
 }
 
 #undef RAND_NOISE

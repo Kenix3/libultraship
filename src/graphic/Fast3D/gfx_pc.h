@@ -119,7 +119,7 @@ struct RawTexMetadata {
 
 struct ShaderMod {
     bool enabled = false;
-    uint16_t id;
+    int16_t id;
     uint8_t type;
 };
 
