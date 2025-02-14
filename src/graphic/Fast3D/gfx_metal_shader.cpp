@@ -249,9 +249,9 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_f
     auto shader = static_cast<std::string*>(res->GetRawPointer());
     processor.load(*shader);
     result = processor.process();
-    SPDLOG_INFO("=========== METAL SHADER ============");
-    SPDLOG_INFO(result);
-    SPDLOG_INFO("====================================");
+    // SPDLOG_INFO("=========== METAL SHADER ============");
+    // SPDLOG_INFO(result);
+    // SPDLOG_INFO("====================================");
     vertex_descriptor->layouts()->object(0)->setStride(raw_num_floats * sizeof(float));
     vertex_descriptor->layouts()->object(0)->setStepFunction(MTL::VertexStepFunctionPerVertex);
     num_floats = raw_num_floats;
