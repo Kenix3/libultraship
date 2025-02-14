@@ -4125,12 +4125,19 @@ bool gfx_is_frame_ready() {
     return gfx_wapi->is_frame_ready();
 }
 
+bool viewport_matches_render_resolution(){
 #ifdef __APPLE__
-// macOS should use framebuffer like different_size in all cases. This flag Fixes issue with 1:1 on Retina.
-constexpr bool is_macOS = true;
+    // Always treat the viewport as not matching the render resolution on mac
+    // to avoid issues with retina scaling.
+    return false;
 #else
-constexpr bool is_macOS = false;
+    if(gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&
+       gfx_current_dimensions.height == gfx_current_game_window_viewport.height) {
+        return true;
+    }
+    return false;
 #endif
+}
 
 void gfx_start_frame() {
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
@@ -4162,12 +4169,9 @@ void gfx_start_frame() {
 
     gfx_prev_dimensions = gfx_current_dimensions;
     gfx_prev_native_dimensions = gfx_native_dimensions;
-
-    bool different_size = gfx_current_dimensions.width != gfx_current_game_window_viewport.width ||
-                          gfx_current_dimensions.height != gfx_current_game_window_viewport.height;
-    if (is_macOS || different_size || gfx_msaa_level > 1) {
+    if (!viewport_matches_render_resolution() || gfx_msaa_level > 1) {
         game_renders_to_framebuffer = true;
-        if (is_macOS || different_size) {
+        if (!viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer, gfx_current_dimensions.width,
                                                     gfx_current_dimensions.height, gfx_msaa_level, true, true, true,
                                                     true);
@@ -4178,7 +4182,7 @@ void gfx_start_frame() {
                                                     gfx_current_window_dimensions.height, gfx_msaa_level, false, true,
                                                     true, true);
         }
-        if (gfx_msaa_level > 1 && (is_macOS || different_size)) {
+        if (gfx_msaa_level > 1 && (!viewport_matches_render_resolution())) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer_msaa_resolved, gfx_current_dimensions.width,
                                                     gfx_current_dimensions.height, 1, false, false, false, false);
         }
@@ -4241,10 +4245,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
         gfx_rapi->clear_framebuffer(true, true);
 
         if (gfx_msaa_level > 1) {
-            bool different_size = gfx_current_dimensions.width != gfx_current_game_window_viewport.width ||
-                                  gfx_current_dimensions.height != gfx_current_game_window_viewport.height;
-
-            if (is_macOS || different_size) {
+            if (!viewport_matches_render_resolution()) {
                 gfx_rapi->resolve_msaa_color_buffer(game_framebuffer_msaa_resolved, game_framebuffer);
                 gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer_msaa_resolved);
             } else {
