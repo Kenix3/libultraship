@@ -251,7 +251,7 @@ static struct ShaderProgram* gfx_direct3d12_create_and_load_new_shader(uint32_t 
     size_t len, num_floats;
 
     auto shader = gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
-                                     d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
+                                                   d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
 
     buf = shader.data();
     len = shader.size();
