@@ -362,7 +362,8 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
         gfx_metal_build_shader(buf, num_floats, cc_features, mctx.current_filter_mode == FILTER_THREE_POINT);
 
     NS::Error* error = nullptr;
-    MTL::Library* library = mctx.device->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
+    MTL::Library* library =
+        mctx.device->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
 
     if (error != nullptr)
         SPDLOG_ERROR("Failed to compile shader library, error {}",

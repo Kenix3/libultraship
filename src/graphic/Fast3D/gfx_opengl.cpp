@@ -322,7 +322,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "SHADER_1", SHADER_1 },
         { "SHADER_COMBINED", SHADER_COMBINED },
         { "SHADER_NOISE", SHADER_NOISE },
-        { "append_formula", (InvokeFunc) append_formula },
+        { "append_formula", (InvokeFunc)append_formula },
 #ifdef __APPLE__
         { "GLSL_VERSION", "#version 410 core" },
         { "attr", "in" },
@@ -348,11 +348,11 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
     };
     processor.populate(context);
     auto init = std::make_shared<Ship::ResourceInitData>();
-    init->Type = (uint32_t) Ship::ResourceType::Shader;
+    init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource("shaders/opengl/default.shader.fs", true, init));
+    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
+        "shaders/opengl/default.shader.fs", true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
@@ -378,39 +378,38 @@ prism::ContextTypes* update_floats(prism::ContextTypes* num) {
 static std::string build_vs_shader(const CCFeatures& cc_features) {
     num_floats = 4;
     prism::Processor processor;
-    prism::ContextItems context = {
-        { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
-        { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
-        { "o_fog", cc_features.opt_fog },
-        { "o_grayscale", cc_features.opt_grayscale },
-        { "o_alpha", cc_features.opt_alpha },
-        { "o_inputs", cc_features.num_inputs },
-        { "update_floats", (InvokeFunc) update_floats },
+    prism::ContextItems context = { { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+                                    { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
+                                    { "o_fog", cc_features.opt_fog },
+                                    { "o_grayscale", cc_features.opt_grayscale },
+                                    { "o_alpha", cc_features.opt_alpha },
+                                    { "o_inputs", cc_features.num_inputs },
+                                    { "update_floats", (InvokeFunc)update_floats },
 #ifdef __APPLE__
-        { "GLSL_VERSION", "#version 410 core" },
-        { "attr", "in" },
-        { "out", "out" },
-        { "opengles", false }
+                                    { "GLSL_VERSION", "#version 410 core" },
+                                    { "attr", "in" },
+                                    { "out", "out" },
+                                    { "opengles", false }
 #elif defined(USE_OPENGLES)
-        { "GLSL_VERSION", "#version 300 es" },
-        { "attr", "in" },
-        { "out", "out" },
-        { "opengles", true }
+                                    { "GLSL_VERSION", "#version 300 es" },
+                                    { "attr", "in" },
+                                    { "out", "out" },
+                                    { "opengles", true }
 #else
-        { "GLSL_VERSION", "#version 110" },
-        { "attr", "attribute" },
-        { "out", "varying" },
-        { "opengles", false }
+                                    { "GLSL_VERSION", "#version 110" },
+                                    { "attr", "attribute" },
+                                    { "out", "varying" },
+                                    { "opengles", false }
 #endif
     };
     processor.populate(context);
 
     auto init = std::make_shared<Ship::ResourceInitData>();
-    init->Type = (uint32_t) Ship::ResourceType::Shader;
+    init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource("shaders/opengl/default.shader.vs", true, init));
+    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
+        "shaders/opengl/default.shader.vs", true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");
@@ -432,7 +431,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     const auto fs_buf = build_fs_shader(cc_features);
     const auto vs_buf = build_vs_shader(cc_features);
     const GLchar* sources[2] = { vs_buf.data(), fs_buf.data() };
-    const GLint lengths[2] = { (GLint) vs_buf.size(), (GLint) fs_buf.size() };
+    const GLint lengths[2] = { (GLint)vs_buf.size(), (GLint)fs_buf.size() };
     GLint success;
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);

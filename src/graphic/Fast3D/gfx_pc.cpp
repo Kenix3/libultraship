@@ -2935,7 +2935,7 @@ int16_t gfx_create_shader(const std::string& path) {
     initData->IsCustom = false;
     initData->ByteOrder = Ship::Endianness::Native;
     auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path, initData);
-    if(shader == nullptr || !shader->IsLoaded) {
+    if (shader == nullptr || !shader->IsLoaded) {
         return -1;
     }
     shader_ids.push_back(std::string(shader->Buffer->data()));
@@ -2946,18 +2946,14 @@ bool gfx_set_shader_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     char* file = (char*)cmd->words.w1;
 
-    if(file == nullptr) {
+    if (file == nullptr) {
         g_rdp.current_shader = { 0, 0, false };
         return false;
     }
 
     const auto path = std::string(file);
     const auto shaderId = gfx_create_shader(path);
-//    if(shaderId == -1) {
-//        g_rdp.current_shader = { 0, 0, false };
-//        return false;
-//    }
-    g_rdp.current_shader = { true, shaderId, (uint8_t) C0(16, 1) };
+    g_rdp.current_shader = { true, shaderId, (uint8_t)C0(16, 1) };
     return false;
 }
 
@@ -3905,7 +3901,7 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_REGBLENDEDTEX,
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
-    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } }, // OTR_G_MOVEMEM_HASH
+    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_LOAD_SHADER, { "G_LOAD_SHADER", gfx_set_shader_custom } },
 };
 
