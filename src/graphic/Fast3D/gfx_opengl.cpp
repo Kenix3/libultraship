@@ -46,7 +46,7 @@
 #include <prism/processor.h>
 #include <fstream>
 #include "Context.h"
-#include <ShaderFactory.h>
+#include <resource/factory/ShaderFactory.h>
 #include <public/bridge/consolevariablebridge.h>
 
 using namespace std;

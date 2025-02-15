@@ -6,7 +6,7 @@
 #include "gfx_cc.h"
 #include <prism/processor.h>
 #include <public/bridge/consolevariablebridge.h>
-#include <ShaderFactory.h>
+#include <resource/factory/ShaderFactory.h>
 #include <Context.h>
 
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
