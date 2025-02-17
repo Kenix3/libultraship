@@ -18,9 +18,9 @@ struct PSInput {
         @for(j in 0..2)
             @if(o_clamp[i][j])
                 @if(j == 0)
-                    float texClampS@{i};
+                    float texClampS@{i} : TEXCLAMPS@{i};
                 @else
-                    float texClampT@{i};
+                    float texClampT@{i} : TEXCLAMPT@{i};
                 @end
                 @{update_floats(1)}
             @end
@@ -107,9 +107,9 @@ PSInput VSMain(
     @for(j in 0..2)
         @if(o_clamp[i][j])
             @if(j == 0)
-                , float texClampS@{i}
+                , float texClampS@{i} : TEXCLAMPS@{i}
             @else
-                , float texClampT@{i}
+                , float texClampT@{i} : TEXCLAMPT@{i}
             @end
         @end
     @end
