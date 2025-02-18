@@ -662,10 +662,10 @@ static inline void sync_framerate_with_timer() {
 }
 
 static void gfx_sdl_swap_buffers_begin() {
-    if (vsync_enabled != Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1)) {
-        // Make sure only 0 or 1 is set.
-        vsync_enabled =
-            (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0);
+    // Make sure only 0 or 1 is set.
+    if (vsync_enabled =
+            !(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0)) {
+        vsync_enabled = !vsync_enabled;
         SDL_GL_SetSwapInterval(vsync_enabled);
         SDL_RenderSetVSync(renderer, vsync_enabled);
     }
