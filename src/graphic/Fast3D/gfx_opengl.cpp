@@ -281,12 +281,13 @@ prism::ContextTypes* append_formula(prism::ContextTypes* a_arg, prism::ContextTy
     return new prism::ContextTypes{ out };
 }
 
-std::optional<std::string> opengl_include_fs(const std::string& path){
+std::optional<std::string> opengl_include_fs(const std::string& path) {
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
