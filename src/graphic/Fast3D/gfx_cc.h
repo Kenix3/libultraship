@@ -55,6 +55,7 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
+    USE_SHADER,
     MAX
 };
 
@@ -76,7 +77,7 @@ struct ColorCombinerKey {
 #define SHADER_FIRST_REPLACEMENT_TEXTURE 4
 
 struct CCFeatures {
-    uint8_t c[2][2][4];
+    int c[2][2][4];
     bool opt_alpha;
     bool opt_fog;
     bool opt_texture_edge;
@@ -94,6 +95,7 @@ struct CCFeatures {
     bool do_multiply[2][2];
     bool do_mix[2][2];
     bool color_alpha_same[2];
+    int16_t shader_id;
 };
 
 void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features);
