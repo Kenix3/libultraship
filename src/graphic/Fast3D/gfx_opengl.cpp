@@ -281,6 +281,19 @@ prism::ContextTypes* append_formula(prism::ContextTypes* a_arg, prism::ContextTy
     return new prism::ContextTypes{ out };
 }
 
+std::optional<std::string> opengl_include_fs(const std::string& path){
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = (uint32_t)Ship::ResourceType::Shader;
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+    if (res == nullptr) {
+        return std::nullopt;
+    }
+    auto inc = static_cast<std::string*>(res->GetRawPointer());
+    return *inc;
+}
+
 static std::string build_fs_shader(const CCFeatures& cc_features) {
     prism::Processor processor;
     prism::ContextItems context = {
@@ -361,6 +374,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
 
     auto shader = static_cast<std::string*>(res->GetRawPointer());
     processor.load(*shader);
+    processor.bind_include_loader(opengl_include_fs);
     auto result = processor.process();
     // SPDLOG_INFO("=========== FRAGMENT SHADER ============");
     // SPDLOG_INFO(result);
@@ -418,6 +432,7 @@ static std::string build_vs_shader(const CCFeatures& cc_features) {
 
     auto shader = static_cast<std::string*>(res->GetRawPointer());
     processor.load(*shader);
+    processor.bind_include_loader(opengl_include_fs);
     auto result = processor.process();
     // SPDLOG_INFO("=========== VERTEX SHADER ============");
     // SPDLOG_INFO(result);

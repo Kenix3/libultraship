@@ -184,6 +184,19 @@ prism::ContextTypes* get_vertex_index() {
     return new prism::ContextTypes{ vertex_index };
 }
 
+std::optional<std::string> metal_include_fs(const std::string& path){
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = (uint32_t)Ship::ResourceType::Shader;
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+    if (res == nullptr) {
+        return std::nullopt;
+    }
+    auto inc = static_cast<std::string*>(res->GetRawPointer());
+    return *inc;
+}
+
 // MARK: - Public Methods
 
 MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_floats, const CCFeatures& cc_features,
@@ -248,6 +261,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_f
 
     auto shader = static_cast<std::string*>(res->GetRawPointer());
     processor.load(*shader);
+    processor.bind_include_loader(metal_include_fs);
     result = processor.process();
     // SPDLOG_INFO("=========== METAL SHADER ============");
     // SPDLOG_INFO(result);
