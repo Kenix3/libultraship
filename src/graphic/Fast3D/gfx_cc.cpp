@@ -23,6 +23,10 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     cc_features->clamp[1][0] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_S);
     cc_features->clamp[1][1] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_T);
 
+    if (shader_id1 & SHADER_OPT(USE_SHADER)) {
+        cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
+    }
+
     cc_features->used_textures[0] = false;
     cc_features->used_textures[1] = false;
     cc_features->used_masks[0] = false;

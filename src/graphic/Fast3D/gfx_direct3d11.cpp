@@ -414,11 +414,14 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
-    char buf[8192];
+    char* buf;
     size_t len, num_floats;
 
-    gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
-                                     d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
+    auto shader = gfx_direct3d_common_build_shader(num_floats, cc_features, false,
+                                                   d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
+
+    buf = shader.data();
+    len = shader.size();
 
     ComPtr<ID3DBlob> vs, ps;
     ComPtr<ID3DBlob> error_blob;
