@@ -110,6 +110,8 @@ struct XYWidthHeight gfx_prev_native_dimensions;
 static bool game_renders_to_framebuffer;
 static int game_framebuffer;
 static int game_framebuffer_msaa_resolved;
+static int game_framebuffer_colour_id;
+std::vector<uint8_t> colour_id_data;
 
 uint32_t gfx_msaa_level = 1;
 
@@ -4110,7 +4112,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     gfx_rapi = rapi;
     gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     gfx_rapi->init();
-    gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
+    gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true, NULL);
     gfx_current_dimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
     gfx_msaa_level = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
@@ -4119,6 +4121,9 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 
     game_framebuffer = gfx_rapi->create_framebuffer();
     game_framebuffer_msaa_resolved = gfx_rapi->create_framebuffer();
+
+    colour_id_data.resize(width * height * 4);
+    game_framebuffer_colour_id = gfx_rapi->create_framebuffer();
 
     gfx_native_dimensions.width = SCREEN_WIDTH;
     gfx_native_dimensions.height = SCREEN_HEIGHT;
@@ -4195,7 +4200,7 @@ void gfx_start_frame() {
                 gfx_adjust_width_height_for_scale(width, height, fb.second.native_width, fb.second.native_height);
             }
             if (width != fb.second.applied_width || height != fb.second.applied_height) {
-                gfx_rapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true);
+                gfx_rapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true, NULL);
                 fb.second.applied_width = width;
                 fb.second.applied_height = height;
             }
@@ -4204,22 +4209,26 @@ void gfx_start_frame() {
 
     gfx_prev_dimensions = gfx_current_dimensions;
     gfx_prev_native_dimensions = gfx_native_dimensions;
+
+    gfx_rapi->update_framebuffer_parameters(game_framebuffer_colour_id, gfx_current_dimensions.width,
+        gfx_current_dimensions.height, 1, false, false, false, false, (uint8_t*)colour_id_data.data());
+
     if (!viewport_matches_render_resolution() || gfx_msaa_level > 1) {
         game_renders_to_framebuffer = true;
         if (!viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer, gfx_current_dimensions.width,
                                                     gfx_current_dimensions.height, gfx_msaa_level, true, true, true,
-                                                    true);
+                                                    true, NULL);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
             // match the window size
             gfx_rapi->update_framebuffer_parameters(game_framebuffer, gfx_current_window_dimensions.width,
                                                     gfx_current_window_dimensions.height, gfx_msaa_level, false, true,
-                                                    true, true);
+                                                    true, true, NULL);
         }
         if (gfx_msaa_level > 1 && !viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer_msaa_resolved, gfx_current_dimensions.width,
-                                                    gfx_current_dimensions.height, 1, false, false, false, false);
+                                                    gfx_current_dimensions.height, 1, false, false, false, false, NULL);
         }
     } else {
         game_renders_to_framebuffer = false;
@@ -4240,7 +4249,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
     gfx_rapi->update_framebuffer_parameters(0, gfx_current_window_dimensions.width,
                                             gfx_current_window_dimensions.height, 1, false, true, true,
-                                            !game_renders_to_framebuffer);
+                                            !game_renders_to_framebuffer, NULL);
     gfx_rapi->start_frame();
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
                                         (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
@@ -4325,7 +4334,7 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
     }
 
     int fb = gfx_rapi->create_framebuffer();
-    gfx_rapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true);
+    gfx_rapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true, NULL);
 
     framebuffers[fb] = {
         orig_width, orig_height, width, height, native_width, native_height, static_cast<bool>(resize)

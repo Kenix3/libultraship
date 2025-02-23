@@ -857,7 +857,7 @@ int gfx_d3d11_create_framebuffer() {
 
 static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                     bool opengl_invert_y, bool render_target, bool has_depth_buffer,
-                                                    bool can_extract_depth) {
+                                                    bool can_extract_depth, uint8_t* image_data) {
     Framebuffer& fb = d3d.framebuffers[fb_id];
     TextureData& tex = d3d.textures[fb.texture_id];
 
@@ -887,7 +887,14 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             texture_desc.SampleDesc.Count = msaa_level;
             texture_desc.SampleDesc.Quality = 0;
 
-            ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, tex.texture.ReleaseAndGetAddressOf()));
+            D3D11_SUBRESOURCE_DATA init_data;
+            if (image_data != NULL) {
+                init_data.pSysMem = image_data;
+                init_data.SysMemPitch = width * 4;  // 4 bytes per pixel for RGBA format
+                init_data.SysMemSlicePitch = 0;  // Not needed for 2D textures
+            }
+
+            ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, (image_data == NULL) ? NULL : &init_data, tex.texture.ReleaseAndGetAddressOf()));
 
             if (msaa_level <= 1) {
                 ThrowIfFailed(d3d.device->CreateShaderResourceView(tex.texture.Get(), nullptr,
