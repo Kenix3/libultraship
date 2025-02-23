@@ -966,7 +966,7 @@ static int gfx_opengl_create_framebuffer() {
     GLuint clrbuf;
     glGenTextures(1, &clrbuf);
     glBindTexture(GL_TEXTURE_2D, clrbuf);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -996,7 +996,7 @@ static int gfx_opengl_create_framebuffer() {
 
 static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                      bool opengl_invert_y, bool render_target, bool has_depth_buffer,
-                                                     bool can_extract_depth) {
+                                                     bool can_extract_depth, uint8_t* image_data) {
     Framebuffer& fb = framebuffers[fb_id];
 
     width = max(width, 1U);
@@ -1009,7 +1009,7 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
         if (fb.width != width || fb.height != height || fb.msaa_level != msaa_level) {
             if (msaa_level <= 1) {
                 glBindTexture(GL_TEXTURE_2D, fb.clrbuf);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
                 glBindTexture(GL_TEXTURE_2D, 0);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
             } else {
