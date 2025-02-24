@@ -4,7 +4,7 @@
 
 @if(core_opengl || opengles)
 out vec4 vOutColor;
-out uint vObjectID;
+out vec4 vColourId;
 @end
 
 @for(i in 0..2)
@@ -211,10 +211,5 @@ void main() {
         @{vOutColor} = fromLinear(@{vOutColor});
     @end
 
-    vObjectID = vec4(
-        (0 & 0xFF) / 255.0,
-        ((255 >> 8) & 0xFF) / 255.0,
-        ((0 >> 16) & 0xFF) / 255.0,
-        ((255 >> 24) & 0xFF) / 255.0
-    );
+    @{vColourId} = vec4(0.8, 0.2, 0.3, 1.0);
 }

@@ -344,6 +344,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "core_opengl", true },
         { "texture", "texture" },
         { "vOutColor", "vOutColor" },
+        { "vColourId", "vColourId" },
 #elif defined(USE_OPENGLES)
         { "GLSL_VERSION", "#version 300 es\nprecision mediump float;" },
         { "attr", "in" },
@@ -351,13 +352,15 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "core_opengl", false },
         { "texture", "texture" },
         { "vOutColor", "vOutColor" },
+        { "vColourId", "vColourId" },
 #else
         { "GLSL_VERSION", "#version 130" },
         { "attr", "varying" },
         { "opengles", false },
         { "core_opengl", false },
         { "texture", "texture2D" },
-        { "vOutColor", "gl_FragColor" },
+        { "vOutColor", "gl_FragData[0]" },
+        { "vColourId", "gl_FragData[3]" },
 #endif
     };
     processor.populate(context);
@@ -809,7 +812,12 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
                 glBindTexture(GL_TEXTURE_2D, fb.clrbuf);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
                 glBindTexture(GL_TEXTURE_2D, 0);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
+                if (image_data == NULL) {
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
+                } else {
+                    printf("\nFB ID %d\n\n", fb_id);
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, fb.clrbuf, 0);
+                }
             } else {
                 glBindRenderbuffer(GL_RENDERBUFFER, fb.clrbuf_msaa);
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_level, GL_RGB8, width, height);

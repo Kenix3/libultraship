@@ -4264,11 +4264,13 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                                             gfx_current_window_dimensions.height, 1, false, true, true,
                                             !game_renders_to_framebuffer, NULL);
     gfx_rapi->start_frame();
-//    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-//                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
+                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
 
-gfx_rapi->start_draw_to_framebuffer(game_framebuffer, gfx_current_dimensions.height / gfx_native_dimensions.height);
-
+// #define VIEW_COLOUR_ID_FRAMEBUFFER
+#ifdef VIEW_COLOUR_ID_FRAMEBUFFER
+gfx_rapi->start_draw_to_framebuffer(game_framebuffer_colour_id, gfx_current_dimensions.height / gfx_native_dimensions.height);
+#endif
     gfx_rapi->clear_framebuffer(false, true);
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
@@ -4312,8 +4314,10 @@ gfx_rapi->start_draw_to_framebuffer(game_framebuffer, gfx_current_dimensions.hei
                 gfx_rapi->resolve_msaa_color_buffer(0, game_framebuffer);
             }
         } else {
+            #ifdef VIEW_COLOUR_ID_FRAMEBUFFER
             gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer_colour_id);
-//            gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
+            #endif
+            //gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
     } else if (fbActive) {
         // Failsafe reset to main framebuffer to prevent softlocking the renderer
