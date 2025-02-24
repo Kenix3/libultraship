@@ -12,7 +12,7 @@
 #include "graphic/Fast3D/gfx_pc.h"
 
 #include <fstream>
-
+extern void GfxSetInstance(std::shared_ptr<GfxPc> gfx);
 namespace Fast {
 Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>>()) {
 }
@@ -20,6 +20,8 @@ Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::Gu
 Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows) : Ship::Window(guiWindows) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
+    gfxPc = std::make_shared<GfxPc>();
+    GfxSetInstance(gfxPc);
 
 #ifdef _WIN32
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_DXGI_DX11);
@@ -77,9 +79,8 @@ void Fast3dWindow::Init() {
     SetForceCursorVisibility(CVarGetInteger("gForceCursorVisibility", 0));
 
     InitWindowManager();
-    gfxPc = GfxPc::CreateInstance();
     gfxPc->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen, width,
-             height, posX, posY);
+                height, posX, posY);
     mWindowManagerApi->set_fullscreen_changed_callback(OnFullscreenChanged);
     mWindowManagerApi->set_keyboard_callbacks(KeyDown, KeyUp, AllKeysUp);
     mWindowManagerApi->set_mouse_callbacks(MouseButtonDown, MouseButtonUp);
@@ -204,6 +205,10 @@ uint32_t Fast3dWindow::GetHeight() {
     return height;
 }
 
+float Fast3dWindow::GetAspectRatio() {
+    return gfxPc->mCurDimensions.aspect_ratio;
+}
+
 int32_t Fast3dWindow::GetPosX() {
     uint32_t width, height;
     int32_t posX, posY;
@@ -292,6 +297,10 @@ bool Fast3dWindow::IsRunning() {
     return mWindowManagerApi->is_running();
 }
 
+uintptr_t Fast3dWindow::GetGfxFrameBuffer() {
+    return gfxPc->mGfxFrameBuffer;
+}
+
 const char* Fast3dWindow::GetKeyName(int32_t scancode) {
     return mWindowManagerApi->get_key_name(scancode);
 }
@@ -348,4 +357,9 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
         wnd->SetMouseCapture(false);
     }
 }
+
+std::weak_ptr<GfxPc> Fast3dWindow::GetGfxPcWeak() const {
+    return gfxPc;
+}
+
 } // namespace Fast

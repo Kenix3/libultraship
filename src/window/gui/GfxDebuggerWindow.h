@@ -2,6 +2,7 @@
 
 #include "window/gui/GuiWindow.h"
 #include <vector>
+#include <memory>
 
 union F3DGfx;
 class GfxPc;
@@ -23,7 +24,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const F3DGfx*> mLastBreakPoint = {};
-    GfxPc* mGfxPc;
+    std::weak_ptr<GfxPc> mGfxPc;
 };
 
 } // namespace LUS

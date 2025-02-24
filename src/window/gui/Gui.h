@@ -134,7 +134,7 @@ class Gui {
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     ImVec2 mTemporaryWindowPos;
-    GfxPc* mGfxPc;
+    std::weak_ptr<GfxPc> mGfxPc;
 };
 } // namespace Ship
 

@@ -47,6 +47,7 @@
 #include <graphic/Fast3D/gfx_direct3d11.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
+#include "graphic/Fast3D/Fast3dWindow.h"
 
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -59,7 +60,6 @@ namespace Ship {
 
 Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
-    mGfxPc = GfxPc::CreateInstance();
 
     for (auto& guiWindow : guiWindows) {
         AddGuiWindow(guiWindow);
@@ -154,6 +154,7 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
     CVarClear(CVAR_NEW_FILE_DROPPED);
     CVarClear(CVAR_DROPPED_FILE);
+    mGfxPc = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetGfxPcWeak();
 }
 
 void Gui::ImGuiWMInit() {
@@ -220,7 +221,7 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     auto guiTexture = std::static_pointer_cast<GuiTexture>(
         Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
 
-    GfxRenderingAPI* api = mGfxPc->GetCurrentRenderingAPI();
+    GfxRenderingAPI* api = mGfxPc.lock()->GetCurrentRenderingAPI();
 
     // TODO: Nothing ever unloads the texture from Fast3D here.
     guiTexture->Metadata.RendererTextureId = api->new_texture();
@@ -358,7 +359,7 @@ void Gui::ApplyResolutionChanges() {
     const uint32_t maxResolutionHeight = 4320; // on either axis. if you have the VRAM for it.
     uint32_t newWidth;
     uint32_t newHeight;
-    mGfxPc->GetCurDimensions(&newWidth, &newHeight);
+    mGfxPc.lock()->GetCurDimensions(&newWidth, &newHeight);
 
     if (verticalResolutionToggle) { // Use fixed vertical resolution
         if (aspectRatioIsEnabled) {
@@ -369,12 +370,12 @@ void Gui::ApplyResolutionChanges() {
         newHeight = verticalPixelCount;
     } else { // Use the window's resolution
         if (aspectRatioIsEnabled) {
-            if (((float)mGfxPc->mGameWindowViewport.height / mGfxPc->mGameWindowViewport.width) <
+            if (((float)mGfxPc.lock()->mGameWindowViewport.height / mGfxPc.lock()->mGameWindowViewport.width) <
                 (aspectRatioY / aspectRatioX)) {
                 // when pillarboxed
-                newWidth = uint32_t(float(mGfxPc->mCurDimensions.height / aspectRatioY) * aspectRatioX);
+                newWidth = uint32_t(float(mGfxPc.lock()->mCurDimensions.height / aspectRatioY) * aspectRatioX);
             } else { // when letterboxed
-                newHeight = uint32_t(float(mGfxPc->mCurDimensions.width / aspectRatioX) * aspectRatioY);
+                newHeight = uint32_t(float(mGfxPc.lock()->mCurDimensions.width / aspectRatioX) * aspectRatioY);
             }
         } // else, having both options turned off does nothing.
     }
@@ -392,8 +393,8 @@ void Gui::ApplyResolutionChanges() {
         newHeight = maxResolutionHeight;
     }
     // apply new dimensions
-    mGfxPc->mCurDimensions.width = newWidth;
-    mGfxPc->mCurDimensions.height = newHeight;
+    mGfxPc.lock()->mCurDimensions.width = newWidth;
+    mGfxPc.lock()->mCurDimensions.height = newHeight;
     // centring the image is done in Gui::StartFrame().
 }
 
@@ -405,16 +406,17 @@ int16_t Gui::GetIntegerScaleFactor() {
             // Screen bounds take priority over whatever Factor is set to.
 
             // The same comparison as below, but checked against the configured factor
-            if (((float)mGfxPc->mGameWindowViewport.height / mGfxPc->mGameWindowViewport.width) <
-                ((float)mGfxPc->mCurDimensions.height / mGfxPc->mCurDimensions.width)) {
-                if ((uint32_t)factor > mGfxPc->mGameWindowViewport.height / mGfxPc->mCurDimensions.height) {
+            if (((float)mGfxPc.lock()->mGameWindowViewport.height / mGfxPc.lock()->mGameWindowViewport.width) <
+                ((float)mGfxPc.lock()->mCurDimensions.height / mGfxPc.lock()->mCurDimensions.width)) {
+                if ((uint32_t)factor >
+                    mGfxPc.lock()->mGameWindowViewport.height / mGfxPc.lock()->mCurDimensions.height) {
                     // Scale to window height
-                    factor = mGfxPc->mGameWindowViewport.height / mGfxPc->mCurDimensions.height;
+                    factor = mGfxPc.lock()->mGameWindowViewport.height / mGfxPc.lock()->mCurDimensions.height;
                 }
             } else {
-                if ((uint32_t)factor > mGfxPc->mGameWindowViewport.width / mGfxPc->mCurDimensions.width) {
+                if ((uint32_t)factor > mGfxPc.lock()->mGameWindowViewport.width / mGfxPc.lock()->mCurDimensions.width) {
                     // Scale to window width
-                    factor = mGfxPc->mGameWindowViewport.width / mGfxPc->mCurDimensions.width;
+                    factor = mGfxPc.lock()->mGameWindowViewport.width / mGfxPc.lock()->mCurDimensions.width;
                 }
             }
         }
@@ -427,13 +429,13 @@ int16_t Gui::GetIntegerScaleFactor() {
         int16_t factor = 1;
 
         // Compare aspect ratios of game framebuffer and GUI
-        if (((float)mGfxPc->mGameWindowViewport.height / mGfxPc->mGameWindowViewport.width) <
-            ((float)mGfxPc->mCurDimensions.height / mGfxPc->mCurDimensions.width)) {
+        if (((float)mGfxPc.lock()->mGameWindowViewport.height / mGfxPc.lock()->mGameWindowViewport.width) <
+            ((float)mGfxPc.lock()->mCurDimensions.height / mGfxPc.lock()->mCurDimensions.width)) {
             // Scale to window height
-            factor = mGfxPc->mGameWindowViewport.height / mGfxPc->mCurDimensions.height;
+            factor = mGfxPc.lock()->mGameWindowViewport.height / mGfxPc.lock()->mCurDimensions.height;
         } else {
             // Scale to window width
-            factor = mGfxPc->mGameWindowViewport.width / mGfxPc->mCurDimensions.width;
+            factor = mGfxPc.lock()->mGameWindowViewport.width / mGfxPc.lock()->mCurDimensions.width;
         }
 
         // Add screen bounds offset, if set.
@@ -573,12 +575,12 @@ void Gui::CalculateGameViewport() {
     mainPos.x -= mTemporaryWindowPos.x;
     mainPos.y -= mTemporaryWindowPos.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
-    mGfxPc->mCurDimensions.width = (uint32_t)(size.x * mGfxPc->mCurDimensions.internal_mul);
-    mGfxPc->mCurDimensions.height = (uint32_t)(size.y * mGfxPc->mCurDimensions.internal_mul);
-    mGfxPc->mGameWindowViewport.x = (int16_t)mainPos.x;
-    mGfxPc->mGameWindowViewport.y = (int16_t)mainPos.y;
-    mGfxPc->mGameWindowViewport.width = (int16_t)size.x;
-    mGfxPc->mGameWindowViewport.height = (int16_t)size.y;
+    mGfxPc.lock()->mCurDimensions.width = (uint32_t)(size.x * mGfxPc.lock()->mCurDimensions.internal_mul);
+    mGfxPc.lock()->mCurDimensions.height = (uint32_t)(size.y * mGfxPc.lock()->mCurDimensions.internal_mul);
+    mGfxPc.lock()->mGameWindowViewport.x = (int16_t)mainPos.x;
+    mGfxPc.lock()->mGameWindowViewport.y = (int16_t)mainPos.y;
+    mGfxPc.lock()->mGameWindowViewport.width = (int16_t)size.x;
+    mGfxPc.lock()->mGameWindowViewport.height = (int16_t)size.y;
 
     if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
         ApplyResolutionChanges();
@@ -586,24 +588,24 @@ void Gui::CalculateGameViewport() {
 
     switch (CVarGetInteger(CVAR_LOW_RES_MODE, 0)) {
         case 1: { // N64 Mode
-            mGfxPc->mCurDimensions.width = 320;
-            mGfxPc->mCurDimensions.height = 240;
+            mGfxPc.lock()->mCurDimensions.width = 320;
+            mGfxPc.lock()->mCurDimensions.height = 240;
             /*
             const int sw = size.y * 320 / 240;
-            mGfxPc->mGameWindowViewport.x += ((int)size.x - sw) / 2;
-            mGfxPc->mGameWindowViewport.width = sw;*/
+            mGfxPc.lock()->mGameWindowViewport.x += ((int)size.x - sw) / 2;
+            mGfxPc.lock()->mGameWindowViewport.width = sw;*/
             break;
         }
         case 2: { // 240p Widescreen
             const int vertRes = 240;
-            mGfxPc->mCurDimensions.width = vertRes * size.x / size.y;
-            mGfxPc->mCurDimensions.height = vertRes;
+            mGfxPc.lock()->mCurDimensions.width = vertRes * size.x / size.y;
+            mGfxPc.lock()->mCurDimensions.height = vertRes;
             break;
         }
         case 3: { // 480p Widescreen
             const int vertRes = 480;
-            mGfxPc->mCurDimensions.width = vertRes * size.x / size.y;
-            mGfxPc->mCurDimensions.height = vertRes;
+            mGfxPc.lock()->mCurDimensions.width = vertRes * size.x / size.y;
+            mGfxPc.lock()->mCurDimensions.height = vertRes;
             break;
         }
     }
@@ -635,8 +637,8 @@ void Gui::DrawGame() {
     } else if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
         if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
             if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
-                float sWdth = size.y * mGfxPc->mCurDimensions.width / mGfxPc->mCurDimensions.height;
-                float sHght = size.x * mGfxPc->mCurDimensions.height / mGfxPc->mCurDimensions.width;
+                float sWdth = size.y * mGfxPc.lock()->mCurDimensions.width / mGfxPc.lock()->mCurDimensions.height;
+                float sHght = size.x * mGfxPc.lock()->mCurDimensions.height / mGfxPc.lock()->mCurDimensions.width;
                 float sPosX = floor(size.x / 2.0f - sWdth / 2.0f);
                 float sPosY = floor(size.y / 2.0f - sHght / 2.0f);
                 if (sPosY < 0.0f) { // pillarbox
@@ -652,15 +654,17 @@ void Gui::DrawGame() {
             }
         } else { // in pixel perfect mode it's much easier
             const int factor = GetIntegerScaleFactor();
-            float sPosX = floor(size.x / 2.0f - (mGfxPc->mCurDimensions.width * factor) / 2.0f);
-            float sPosY = floor(size.y / 2.0f - (mGfxPc->mCurDimensions.height * factor) / 2.0f);
+            float sPosX = floor(size.x / 2.0f - (mGfxPc.lock()->mCurDimensions.width * factor) / 2.0f);
+            float sPosY = floor(size.y / 2.0f - (mGfxPc.lock()->mCurDimensions.height * factor) / 2.0f);
             pos = ImVec2(sPosX, sPosY);
-            size = ImVec2(float(mGfxPc->mCurDimensions.width) * factor, float(mGfxPc->mCurDimensions.height) * factor);
+            size = ImVec2(float(mGfxPc.lock()->mCurDimensions.width) * factor,
+                          float(mGfxPc.lock()->mCurDimensions.height) * factor);
         }
     }
-    if (GfxPc::GetInstance()->mGfxFrameBuffer) {
+    uintptr_t fb = Ship::Context::GetInstance()->GetWindow()->GetGfxFrameBuffer();
+    if (fb) {
         ImGui::SetCursorPos(pos);
-        ImGui::Image(reinterpret_cast<ImTextureID>(GfxPc::GetInstance()->mGfxFrameBuffer), size);
+        ImGui::Image(reinterpret_cast<ImTextureID>(fb), size);
     }
 
     ImGui::End();
@@ -814,7 +818,7 @@ std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
 }
 
 void Gui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const ImVec4& tint) {
-    GfxRenderingAPI* api = mGfxPc->GetCurrentRenderingAPI();
+    GfxRenderingAPI* api = mGfxPc.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res.Width * res.Height * 4);
 
@@ -958,7 +962,7 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
 void Gui::UnloadTexture(const std::string& name) {
     if (mGuiTextures.contains(name)) {
         GuiTextureMetadata tex = mGuiTextures[name];
-        GfxRenderingAPI* api = mGfxPc->GetCurrentRenderingAPI();
+        GfxRenderingAPI* api = mGfxPc.lock()->GetCurrentRenderingAPI();
         api->delete_texture(tex.RendererTextureId);
         mGuiTextures.erase(name);
     }
