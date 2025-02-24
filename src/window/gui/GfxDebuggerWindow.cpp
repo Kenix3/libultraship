@@ -635,7 +635,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
             ImGui::Text("Loaded Textures");
             for (size_t i = 0; i < 2; i++) {
-                auto& tex = mGfxPc.lock()->mRdp.loaded_texture[i];
+                auto& tex = mGfxPc.lock()->mRdp->loaded_texture[i];
                 // ImGui::Text("%s", fmt::format("{}: {}x{} type={}", i, tex.raw_tex_metadata.width,
                 //                               tex.raw_tex_metadata.height, getTexType(tex.raw_tex_metadata.type))
                 //                       .c_str());
@@ -643,7 +643,7 @@ void GfxDebuggerWindow::DrawDisas() {
             }
             ImGui::Text("Texture To Load");
             {
-                auto& tex = mGfxPc.lock()->mRdp.texture_to_load;
+                auto& tex = mGfxPc.lock()->mRdp->texture_to_load;
                 // ImGui::Text("%s", fmt::format("{}x{} type={}", tex.raw_tex_metadata.width,
                 // tex.raw_tex_metadata.height,
                 //                               getTexType(tex.raw_tex_metadata.type))
@@ -671,11 +671,11 @@ void GfxDebuggerWindow::DrawDisas() {
                 ImGui::ColorEdit3(text, cf, ImGuiColorEditFlags_NoInputs);
             };
 
-            showColor("Env Color", mGfxPc.lock()->mRdp.env_color);
-            showColor("Prim Color", mGfxPc.lock()->mRdp.prim_color);
-            showColor("Fog Color", mGfxPc.lock()->mRdp.fog_color);
-            showColor("Fill Color", mGfxPc.lock()->mRdp.fill_color);
-            showColor("Grayscale Color", mGfxPc.lock()->mRdp.grayscale_color);
+            showColor("Env Color", mGfxPc.lock()->mRdp->env_color);
+            showColor("Prim Color", mGfxPc.lock()->mRdp->prim_color);
+            showColor("Fog Color", mGfxPc.lock()->mRdp->fog_color);
+            showColor("Fill Color", mGfxPc.lock()->mRdp->fill_color);
+            showColor("Grayscale Color", mGfxPc.lock()->mRdp->grayscale_color);
         }
 
         ImGui::EndGroup();
