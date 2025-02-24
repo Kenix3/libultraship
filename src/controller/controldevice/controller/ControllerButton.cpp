@@ -266,8 +266,10 @@ bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) 
 }
 
 void ControllerButton::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
-    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask)) {
-        AddButtonMapping(mapping);
+    if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask)) {
+            AddButtonMapping(mapping);
+        }
     }
 
     if (physicalDeviceType == PhysicalDeviceType::Keyboard) {

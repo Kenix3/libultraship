@@ -107,6 +107,7 @@ void Controller::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
         button->AddDefaultMappings(physicalDeviceType);
     }
     GetLeftStick()->AddDefaultMappings(physicalDeviceType);
+    GetRightStick()->AddDefaultMappings(physicalDeviceType);
     GetRumble()->AddDefaultMappings(physicalDeviceType);
 
     const std::string hasConfigCvarKey =

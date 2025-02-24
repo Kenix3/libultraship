@@ -44,6 +44,13 @@
 #define NANOSECOND_IN_SECOND 1000000000
 #define _100NANOSECONDS_IN_SECOND 10000000
 
+#ifndef HID_USAGE_PAGE_GENERIC
+#define HID_USAGE_PAGE_GENERIC ((unsigned short)0x01)
+#endif
+#ifndef HID_USAGE_GENERIC_MOUSE
+#define HID_USAGE_GENERIC_MOUSE ((unsigned short)0x02)
+#endif
+
 using namespace Microsoft::WRL; // For ComPtr
 
 static struct {
@@ -93,6 +100,8 @@ static struct {
     LARGE_INTEGER previous_present_time;
     bool is_mouse_captured;
     bool in_focus;
+    RAWINPUTDEVICE raw_input_device[1];
+    POINT raw_mouse_delta_buf;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
@@ -425,6 +434,19 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
+        case WM_INPUT: {
+            if (dxgi.is_mouse_captured && dxgi.in_focus) {
+                uint32_t size = sizeof(RAWINPUT);
+                static RAWINPUT raw[sizeof(RAWINPUT)];
+                GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
+
+                if (raw->header.dwType == RIM_TYPEMOUSE) {
+                    dxgi.raw_mouse_delta_buf.x += raw->data.mouse.lLastX;
+                    dxgi.raw_mouse_delta_buf.y += raw->data.mouse.lLastY;
+                }
+            }
+            break;
+        }
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
@@ -462,7 +484,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     dxgi.qpc_freq = qpc_freq.QuadPart;
 
     dxgi.target_fps = 60;
-    dxgi.maximum_frame_latency = 1;
+    dxgi.maximum_frame_latency = 2;
 
     // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
     dxgi.timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
@@ -527,6 +549,13 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     }
 
     DragAcceptFiles(dxgi.h_wnd, TRUE);
+
+    // Mouse init
+    dxgi.raw_input_device[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+    dxgi.raw_input_device[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+    dxgi.raw_input_device[0].dwFlags = RIDEV_INPUTSINK;
+    dxgi.raw_input_device[0].hwndTarget = dxgi.h_wnd;
+    RegisterRawInputDevices(dxgi.raw_input_device, 1, sizeof(dxgi.raw_input_device[0]));
 }
 
 static void gfx_dxgi_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
@@ -572,19 +601,22 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 }
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
-    if (dxgi.is_mouse_captured && dxgi.in_focus) {
-        POINT p;
-        GetCursorPos(&p);
-        ScreenToClient(dxgi.h_wnd, &p);
-        int32_t centerX, centerY;
-        centerX = dxgi.current_width / 2;
-        centerY = dxgi.current_height / 2;
-        *x = p.x - centerX;
-        *y = p.y - centerY;
-        SetCursorPos(dxgi.posX + centerX, dxgi.posY + centerY);
-    } else {
+    if (!dxgi.in_focus) {
         *x = 0;
         *y = 0;
+    } else if (dxgi.is_mouse_captured) {
+        *x = dxgi.raw_mouse_delta_buf.x;
+        *y = dxgi.raw_mouse_delta_buf.y;
+        dxgi.raw_mouse_delta_buf.x = 0;
+        dxgi.raw_mouse_delta_buf.y = 0;
+    } else {
+        static int32_t prev_x = 0, prev_y = 0;
+        int32_t current_x, current_y;
+        gfx_dxgi_get_mouse_pos(&current_x, &current_y);
+        *x = current_x - prev_x;
+        *y = current_y - prev_y;
+        prev_x = current_x;
+        prev_y = current_y;
     }
 }
 
@@ -801,12 +833,8 @@ static bool gfx_dxgi_is_frame_ready() {
     // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
-    if (dxgi.is_vsync_enabled !=
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1)) {
-        // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
-        dxgi.is_vsync_enabled =
-            !!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
-    }
+    dxgi.is_vsync_enabled =
+        (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0);
     dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
     return true;
 }

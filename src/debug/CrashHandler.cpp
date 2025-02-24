@@ -440,6 +440,7 @@ CrashHandler::CrashHandler(CrashHandlerCallback callback) {
 
 CrashHandler::~CrashHandler() {
     SPDLOG_TRACE("destruct crash handler");
+    delete[] mOutBuffer;
 }
 
 void CrashHandler::RegisterCallback(CrashHandlerCallback callback) {

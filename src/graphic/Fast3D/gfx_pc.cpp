@@ -1958,11 +1958,7 @@ void GfxPc::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uint16_t 
 }
 
 void GfxPc::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
-    SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(mRdp.texture_to_load.siz == G_IM_SIZ_16b);
-    // BENTODO
-    // SUPPORT_CHECK((mRdp.texture_tile[tile].tmem == 256 && (high_index <= 127 || high_index == 255)) ||
-    //              (mRdp.texture_tile[tile].tmem == 384 && high_index == 127));
 
     if (mRdp.texture_tile[tile].tmem == 256) {
         mRdp.palettes[0] = mRdp.texture_to_load.addr;
@@ -4070,11 +4066,8 @@ void GfxPc::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi,
     mWapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     mRapi->init();
     mRapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
-#ifdef __APPLE__
-    mCurDimensions.internal_mul = 1;
-#else
+
     mCurDimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
-#endif
     mMsaaLevel = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
     mCurDimensions.width = width;
@@ -4123,6 +4116,19 @@ bool GfxPc::IsFrameReady() {
     return IsFrameReady();
 }
 
+bool GfxPc::ViewportMatchesRendererResolution() {
+#ifdef __APPLE__
+    // Always treat the viewport as not matching the render resolution on mac
+    // to avoid issues with retina scaling.
+    return false;
+#else
+    if (mCurDimensions.width == mGameWindowViewport.width && mCurDimensions.height == mGameWindowViewport.height) {
+        return true;
+    }
+    return false;
+#endif
+}
+
 void GfxPc::StartFrame() {
     mWapi->get_dimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height, &mCurWindowPosX,
                           &mCurWindowPosY);
@@ -4152,12 +4158,9 @@ void GfxPc::StartFrame() {
 
     mPrvDimensions = mCurDimensions;
     mPrevNativeDimensions = mNativeDimensions;
-
-    bool different_size =
-        mCurDimensions.width != mGameWindowViewport.width || mCurDimensions.height != mGameWindowViewport.height;
-    if (different_size || mMsaaLevel > 1) {
+    if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
         mRendersToFb = true;
-        if (different_size) {
+        if (!ViewportMatchesRendererResolution()) {
             mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
                                                  true, true, true);
         } else {
@@ -4167,7 +4170,7 @@ void GfxPc::StartFrame() {
                                                  mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true,
                                                  true);
         }
-        if (mMsaaLevel > 1 && different_size) {
+        if (mMsaaLevel > 1 && !ViewportMatchesRendererResolution()) {
             mRapi->update_framebuffer_parameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
                                                  false, false, false, false);
         }
@@ -4229,10 +4232,7 @@ void GfxPc::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replace
         mRapi->clear_framebuffer(true, true);
 
         if (mMsaaLevel > 1) {
-            bool different_size = mCurDimensions.width != mGameWindowViewport.width ||
-                                  mCurDimensions.height != mGameWindowViewport.height;
-
-            if (different_size) {
+            if (!ViewportMatchesRendererResolution()) {
                 mRapi->resolve_msaa_color_buffer(mGameFbMsaaResolved, mGameFb);
                 mGfxFrameBuffer = (uintptr_t)mRapi->get_framebuffer_texture_id(mGameFbMsaaResolved);
             } else {

@@ -46,6 +46,8 @@ class ConsoleWindow : public GuiWindow {
                                 std::string* output);
     static int32_t HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                std::string* output);
+    static int32_t UnbindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                 std::string* output);
     static int32_t BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                std::string* output);
     static int32_t BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
@@ -64,7 +66,7 @@ class ConsoleWindow : public GuiWindow {
     bool mOpenAutocomplete = false;
     char* mInputBuffer = nullptr;
     char* mFilterBuffer = nullptr;
-    std::string mCmdHint = "Null";
+    std::string mCmdHint = "None";
     spdlog::level::level_enum mLevelFilter = spdlog::level::trace;
     std::map<ImGuiKey, std::string> mBindings;
     std::map<ImGuiKey, std::string> mBindingToggle;

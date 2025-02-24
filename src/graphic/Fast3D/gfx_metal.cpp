@@ -592,7 +592,7 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2;
-        switch (CVarGetInteger("gZFightingMode", 0)) {
+        switch (CVarGetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)mctx.render_target_height / n64modeFactor;
                 break;

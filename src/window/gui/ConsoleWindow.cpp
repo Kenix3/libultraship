@@ -59,6 +59,60 @@ int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std:
     return 0;
 }
 
+int32_t ConsoleWindow::UnbindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
+                                     std::string* output) {
+    if (args.size() > 1) {
+        auto window = std::static_pointer_cast<ConsoleWindow>(
+            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+        if (!window) {
+            if (output) {
+                *output += "A console window is necessary for Unbind";
+            }
+
+            return 1;
+        }
+
+        for (int k = ImGuiKey_NamedKey_BEGIN; k < ImGuiKey_NamedKey_END; k++) {
+            std::string key(ImGui::GetKeyName((ImGuiKey)k));
+            bool unbound = false;
+
+            if (toLowerCase(args[1]) == toLowerCase(key)) {
+                if (window->mBindings.contains((ImGuiKey)k)) {
+                    if (output) {
+                        *output += "Unbound '" + args[1] + " from " + window->mBindings[(ImGuiKey)k];
+                    }
+                    window->mBindings.erase((ImGuiKey)k);
+                    unbound = true;
+                }
+                if (window->mBindingToggle.contains((ImGuiKey)k)) {
+                    if (output) {
+                        if (unbound) {
+                            *output += "\n";
+                        }
+                        *output += "Unbound toggle '" + args[1] + " from " + window->mBindingToggle[(ImGuiKey)k];
+                    }
+                    window->mBindingToggle.erase((ImGuiKey)k);
+                    unbound = true;
+                }
+
+                if (!unbound) {
+                    if (output) {
+                        *output += "Nothing bound to '" + args[1];
+                    }
+                }
+                break;
+            }
+        }
+    } else {
+        if (output) {
+            *output += "Not enough arguments";
+        }
+        return 1;
+    }
+
+    return 0;
+}
+
 int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (args.size() > 2) {
@@ -72,9 +126,7 @@ int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::
             return 1;
         }
 
-        const ImGuiIO* io = &ImGui::GetIO();
-
-        for (size_t k = 0; k < std::size(io->KeysData); k++) {
+        for (int k = ImGuiKey_NamedKey_BEGIN; k < ImGuiKey_NamedKey_END; k++) {
             std::string key(ImGui::GetKeyName((ImGuiKey)k));
 
             if (toLowerCase(args[1]) == toLowerCase(key)) {
@@ -112,9 +164,7 @@ int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const
             return 1;
         }
 
-        const ImGuiIO* io = &ImGui::GetIO();
-
-        for (size_t k = 0; k < std::size(io->KeysData); k++) {
+        for (int k = ImGuiKey_NamedKey_BEGIN; k < ImGuiKey_NamedKey_END; k++) {
             std::string key(ImGui::GetKeyName((ImGuiKey)k));
 
             if (toLowerCase(args[1]) == toLowerCase(key)) {
@@ -254,9 +304,11 @@ void ConsoleWindow::InitElement() {
                  "Sets a console variable.",
                  { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand(
-        "get", { GetCommand, "Bind key as a bool toggle", { { "varName", ArgumentType::TEXT } } });
+        "get", { GetCommand, "Gets a console variable", { { "varName", ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand("help", { HelpCommand, "Shows all the commands" });
     Context::GetInstance()->GetConsole()->AddCommand("clear", { ClearCommand, "Clear the console history" });
+    Context::GetInstance()->GetConsole()->AddCommand(
+        "unbind", { UnbindCommand, "Unbinds a key", { { "key", ArgumentType::TEXT } } });
     Context::GetInstance()->GetConsole()->AddCommand(
         "bind",
         { BindCommand, "Binds key to commands", { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
@@ -311,7 +363,7 @@ void ConsoleWindow::DrawElement() {
             }
             ImGui::EndTable();
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
             mOpenAutocomplete = false;
         }
         ImGui::PopStyleColor();
@@ -333,7 +385,7 @@ void ConsoleWindow::DrawElement() {
 
     // Renders top bar filters
     if (ImGui::Button("Clear")) {
-        mLog[mCurrentChannel].clear();
+        ClearLogs(mCurrentChannel);
     }
 
     if (CVarGetInteger("gSinkEnabled", 0)) {
@@ -386,19 +438,20 @@ void ConsoleWindow::DrawElement() {
                       ImGuiWindowFlags_HorizontalScrollbar);
     ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(.3f, .3f, .3f, 1.0f));
     if (ImGui::BeginTable("History", 1)) {
+        bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+        const std::vector<ConsoleLine> channel = mLog[mCurrentChannel];
 
-        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-            if (mSelectedId < (int32_t)mLog.size() - 1) {
+        if (focused && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+            if (mSelectedId < (int32_t)channel.size() - 1) {
                 ++mSelectedId;
             }
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+        if (focused && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
             if (mSelectedId > 0) {
                 --mSelectedId;
             }
         }
 
-        const std::vector<ConsoleLine> channel = mLog[mCurrentChannel];
         for (size_t i = 0; i < channel.size(); i++) {
             ConsoleLine line = channel[i];
             if (!mFilter.empty() && line.Text.find(mFilter) == std::string::npos) {
@@ -442,6 +495,9 @@ void ConsoleWindow::DrawElement() {
                                               ImGuiInputTextFlags_CallbackCompletion |
                                               ImGuiInputTextFlags_CallbackHistory;
         ImGui::PushItemWidth(-53.0f);
+
+        float yBeforeInput = ImGui::GetCursorPosY();
+
         if (ImGui::InputTextWithHint("##CMDInput", ">", mInputBuffer, gMaxBufferSize, flags,
                                      &ConsoleWindow::CallbackStub, this)) {
             inputFocus = true;
@@ -453,7 +509,8 @@ void ConsoleWindow::DrawElement() {
 
         if (mCmdHint != "None") {
             if (ImGui::IsItemFocused()) {
-                ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + size.y));
+                // Place the tooltip above the console input field
+                ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + size.y - ((size.y - yBeforeInput) * 2)));
                 ImGui::SameLine();
                 ImGui::BeginTooltip();
                 ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -481,6 +538,7 @@ void ConsoleWindow::DrawElement() {
 
 void ConsoleWindow::Dispatch(const std::string& line) {
     mCmdHint = "None";
+    mHistoryIndex = -1;
     mHistory.push_back(line);
     SendInfoMessage("> " + line);
     auto console = Context::GetInstance()->GetConsole();
@@ -514,7 +572,6 @@ void ConsoleWindow::Dispatch(const std::string& line) {
 int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
     const auto instance = static_cast<ConsoleWindow*>(data->UserData);
     const bool emptyHistory = instance->mHistory.empty();
-    const int historyIndex = instance->mHistoryIndex;
     auto console = Context::GetInstance()->GetConsole();
     std::string history;
 
@@ -533,23 +590,30 @@ int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
             if (emptyHistory) {
                 break;
             }
-            if (historyIndex < static_cast<int>(instance->mHistory.size()) - 1) {
-                instance->mHistoryIndex += 1;
+            if (instance->mHistoryIndex > 0) {
+                instance->mHistoryIndex -= 1;
+            } else if (instance->mHistoryIndex < 0) {
+                instance->mHistoryIndex = static_cast<int>(instance->mHistory.size()) - 1;
             }
             data->DeleteChars(0, data->BufTextLen);
-            data->InsertChars(0, instance->mHistory[instance->mHistoryIndex].c_str());
+            if (instance->mHistoryIndex >= 0) {
+                data->InsertChars(0, instance->mHistory[instance->mHistoryIndex].c_str());
+            }
             instance->mCmdHint = "None";
             break;
         case ImGuiKey_DownArrow:
             if (emptyHistory) {
                 break;
             }
-            if (historyIndex > -1) {
-                instance->mHistoryIndex -= 1;
+            if (instance->mHistoryIndex >= 0 &&
+                instance->mHistoryIndex < static_cast<int>(instance->mHistory.size()) - 1) {
+                instance->mHistoryIndex += 1;
+            } else {
+                instance->mHistoryIndex = -1;
             }
             data->DeleteChars(0, data->BufTextLen);
-            if (historyIndex >= 0) {
-                data->InsertChars(0, instance->mHistory[historyIndex].c_str());
+            if (instance->mHistoryIndex >= 0) {
+                data->InsertChars(0, instance->mHistory[instance->mHistoryIndex].c_str());
             }
             instance->mCmdHint = "None";
             break;
@@ -591,7 +655,8 @@ void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum
     vsnprintf(buf.data(), buf.size(), fmt, args);
 
     buf[buf.size() - 1] = 0;
-    mLog[channel].push_back({ std::string(buf.begin(), buf.end()), priority });
+    // Do not copy the null terminator into the std::string
+    mLog[channel].push_back({ std::string(buf.begin(), buf.end() - 1), priority });
 }
 
 void ConsoleWindow::Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, ...) {
@@ -625,12 +690,16 @@ void ConsoleWindow::SendErrorMessage(const std::string& str) {
 
 void ConsoleWindow::ClearLogs(std::string channel) {
     mLog[channel].clear();
+    mSelectedEntries.clear();
+    mSelectedId = -1;
 }
 
 void ConsoleWindow::ClearLogs() {
     for (auto [key, var] : mLog) {
         var.clear();
     }
+    mSelectedEntries.clear();
+    mSelectedId = -1;
 }
 
 std::string ConsoleWindow::GetCurrentChannel() {

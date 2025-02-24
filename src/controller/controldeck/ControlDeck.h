@@ -6,12 +6,14 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "controller/physicaldevice/GlobalSDLDeviceSettings.h"
+#include "controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
 
 namespace Ship {
 
 class ControlDeck {
   public:
-    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+                std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings);
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);
@@ -28,6 +30,7 @@ class ControlDeck {
 
     std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
     std::shared_ptr<GlobalSDLDeviceSettings> GetGlobalSDLDeviceSettings();
+    std::shared_ptr<ControllerDefaultMappings> GetControllerDefaultMappings();
 
   protected:
     bool AllGameInputBlocked();
@@ -38,6 +41,7 @@ class ControlDeck {
     std::unordered_map<int32_t, bool> mGameInputBlockers;
     std::shared_ptr<ConnectedPhysicalDeviceManager> mConnectedPhysicalDeviceManager;
     std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;
+    std::shared_ptr<ControllerDefaultMappings> mControllerDefaultMappings;
 };
 } // namespace Ship
 
@@ -46,6 +50,8 @@ class ControlDeck : public Ship::ControlDeck {
   public:
     ControlDeck();
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+                std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings);
 
     OSContPad* GetPads();
     void WriteToPad(void* pad) override;
