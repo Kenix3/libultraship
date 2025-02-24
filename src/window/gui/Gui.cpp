@@ -11,7 +11,6 @@
 #include "Context.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "resource/type/Texture.h"
-#include "graphic/Fast3D/gfx_pc.h"
 #include "resource/File.h"
 #include <stb_image.h>
 #include "window/gui/Fonts.h"
@@ -20,7 +19,7 @@
 
 #include "window/gui/GfxDebuggerWindow.h"
 #include "graphic/Fast3D/gfx_pc.h"
-
+#include "graphic/Fast3D/Fast3dWindow.h"
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
@@ -47,7 +46,6 @@
 #include <graphic/Fast3D/gfx_direct3d11.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
-#include "graphic/Fast3D/Fast3dWindow.h"
 
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
