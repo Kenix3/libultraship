@@ -7,10 +7,17 @@
 
 #ifdef __APPLE__
 
+#include <Context.h>
+#include <resource/factory/ShaderFactory.h>
+// This is a workaround for conflicting defines on Metal.hpp
+#define TRUE 1
+#define FALSE 0
 #include <Metal/Metal.hpp>
+#undef TRUE
+#undef FALSE
 #include <public/bridge/consolevariablebridge.h>
-
 #include "gfx_metal_shader.h"
+#include <prism/processor.h>
 
 // MARK: - String Helpers
 
@@ -18,19 +25,8 @@
     "((random(float3(floor(in.position.xy * frameUniforms.noiseScale), float(frameUniforms.frameCount))) + 1.0) / " \
     "2.0)"
 
-static void append_str(char* buf, size_t* len, const char* str) {
-    while (*str != '\0')
-        buf[(*len)++] = *str++;
-}
-
-static void append_line(char* buf, size_t* len, const char* str) {
-    while (*str != '\0')
-        buf[(*len)++] = *str++;
-    buf[(*len)++] = '\n';
-}
-
-static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
-                                      bool first_cycle, bool hint_single_element) {
+static const char* p_shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
+                                        bool first_cycle, bool hint_single_element) {
     if (!only_alpha) {
         switch (item) {
             case SHADER_0:
@@ -104,392 +100,176 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
     return "";
 }
 
+bool p_get_bool(prism::ContextTypes* value) {
+    if (std::holds_alternative<bool>(*value)) {
+        return std::get<bool>(*value);
+    } else if (std::holds_alternative<int>(*value)) {
+        return std::get<int>(*value) == 1;
+    }
+    return false;
+}
+
 #undef RAND_NOISE
 
-static void append_formula(char* buf, size_t* len, const uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix,
-                           bool with_alpha, bool only_alpha, bool opt_alpha, bool first_cycle) {
+prism::ContextTypes* p_append_formula(prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
+                                      prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
+                                      prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
+                                      prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
+    auto c = std::get<prism::MTDArray<int>>(*a_arg);
+    bool do_single = p_get_bool(a_single);
+    bool do_multiply = p_get_bool(a_mult);
+    bool do_mix = p_get_bool(a_mix);
+    bool with_alpha = p_get_bool(a_with_alpha);
+    bool only_alpha = p_get_bool(a_only_alpha);
+    bool opt_alpha = p_get_bool(a_alpha);
+    bool first_cycle = p_get_bool(a_first_cycle);
+    std::string out = "";
     if (do_single) {
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, first_cycle, false));
+        out += p_shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
     } else if (do_multiply) {
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, " * ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
+        out += p_shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += " * ";
+        out += p_shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
     } else if (do_mix) {
-        append_str(buf, len, "mix(");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, ", ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, ", ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
-        append_str(buf, len, ")");
+        out += "mix(";
+        out += p_shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += ", ";
+        out += p_shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += ", ";
+        out += p_shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+        out += ")";
     } else {
-        append_str(buf, len, "(");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][0], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, " - ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][1], with_alpha, only_alpha, opt_alpha, first_cycle, false));
-        append_str(buf, len, ") * ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][2], with_alpha, only_alpha, opt_alpha, first_cycle, true));
-        append_str(buf, len, " + ");
-        append_str(buf, len,
-                   shader_item_to_str(c[only_alpha][3], with_alpha, only_alpha, opt_alpha, first_cycle, false));
+        out += "(";
+        out += p_shader_item_to_str(c.at(only_alpha, 0), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += " - ";
+        out += p_shader_item_to_str(c.at(only_alpha, 1), with_alpha, only_alpha, opt_alpha, first_cycle, false);
+        out += ") * ";
+        out += p_shader_item_to_str(c.at(only_alpha, 2), with_alpha, only_alpha, opt_alpha, first_cycle, true);
+        out += " + ";
+        out += p_shader_item_to_str(c.at(only_alpha, 3), with_alpha, only_alpha, opt_alpha, first_cycle, false);
     }
+    return new prism::ContextTypes{ out };
+}
+
+static int vertex_index;
+static size_t raw_num_floats = 0;
+static MTL::VertexDescriptor* vertex_descriptor;
+
+prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
+    MTL::VertexFormat format;
+    int size = std::get<int>(*num);
+    switch (size) {
+        case 4:
+            format = MTL::VertexFormatFloat4;
+            break;
+        case 3:
+            format = MTL::VertexFormatFloat3;
+            break;
+        case 2:
+            format = MTL::VertexFormatFloat2;
+            break;
+        case 1:
+            format = MTL::VertexFormatFloat;
+            break;
+    }
+    vertex_descriptor->attributes()->object(vertex_index)->setFormat(format);
+    vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
+    vertex_descriptor->attributes()->object(vertex_index++)->setOffset(raw_num_floats * sizeof(float));
+    raw_num_floats += size;
+
+    return nullptr;
+}
+
+prism::ContextTypes* get_vertex_index() {
+    return new prism::ContextTypes{ vertex_index };
+}
+
+std::optional<std::string> metal_include_fs(const std::string& path) {
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = (uint32_t)Ship::ResourceType::Shader;
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+    if (res == nullptr) {
+        return std::nullopt;
+    }
+    auto inc = static_cast<std::string*>(res->GetRawPointer());
+    return *inc;
 }
 
 // MARK: - Public Methods
 
-MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats, const CCFeatures& cc_features,
+MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_floats, const CCFeatures& cc_features,
                                               bool three_point_filtering) {
 
-    size_t len = 0;
-    int vertex_index = 0;
+    vertex_descriptor = MTL::VertexDescriptor::vertexDescriptor();
+    vertex_index = 0;
+    raw_num_floats = 0;
 
-    MTL::VertexDescriptor* vertex_descriptor = MTL::VertexDescriptor::vertexDescriptor();
+    prism::Processor processor;
+    prism::ContextItems context = {
+        { "SHADER_0", SHADER_0 },
+        { "SHADER_INPUT_1", SHADER_INPUT_1 },
+        { "SHADER_INPUT_2", SHADER_INPUT_2 },
+        { "SHADER_INPUT_3", SHADER_INPUT_3 },
+        { "SHADER_INPUT_4", SHADER_INPUT_4 },
+        { "SHADER_INPUT_5", SHADER_INPUT_5 },
+        { "SHADER_INPUT_6", SHADER_INPUT_6 },
+        { "SHADER_INPUT_7", SHADER_INPUT_7 },
+        { "SHADER_TEXEL0", SHADER_TEXEL0 },
+        { "SHADER_TEXEL0A", SHADER_TEXEL0A },
+        { "SHADER_TEXEL1", SHADER_TEXEL1 },
+        { "SHADER_TEXEL1A", SHADER_TEXEL1A },
+        { "SHADER_1", SHADER_1 },
+        { "SHADER_COMBINED", SHADER_COMBINED },
+        { "SHADER_NOISE", SHADER_NOISE },
+        { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
+        { "o_alpha", cc_features.opt_alpha },
+        { "o_fog", cc_features.opt_fog },
+        { "o_texture_edge", cc_features.opt_texture_edge },
+        { "o_noise", cc_features.opt_noise },
+        { "o_2cyc", cc_features.opt_2cyc },
+        { "o_alpha_threshold", cc_features.opt_alpha_threshold },
+        { "o_invisible", cc_features.opt_invisible },
+        { "o_grayscale", cc_features.opt_grayscale },
+        { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+        { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
+        { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
+        { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
+        { "o_inputs", cc_features.num_inputs },
+        { "o_do_mix", M_ARRAY(cc_features.do_mix, bool, 2, 2) },
+        { "o_do_single", M_ARRAY(cc_features.do_single, bool, 2, 2) },
+        { "o_do_multiply", M_ARRAY(cc_features.do_multiply, bool, 2, 2) },
+        { "o_color_alpha_same", M_ARRAY(cc_features.color_alpha_same, bool, 2) },
+        { "o_three_point_filtering", three_point_filtering },
+        { "get_vertex_index", (InvokeFunc)get_vertex_index },
+        { "append_formula", (InvokeFunc)p_append_formula },
+        { "update_floats", (InvokeFunc)update_raw_floats },
+    };
+    processor.populate(context);
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = (uint32_t)Ship::ResourceType::Shader;
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
+        "shaders/metal/default.shader.metal", true, init));
 
-    append_line(buf, &len, "#include <metal_stdlib>");
-    append_line(buf, &len, "using namespace metal;");
-
-    // Uniforms struct
-    append_line(buf, &len, "struct FrameUniforms {");
-    append_line(buf, &len, "    int frameCount;");
-    append_line(buf, &len, "    float noiseScale;");
-    append_line(buf, &len, "};");
-    // end uniforms struct
-
-    // Vertex struct
-    append_line(buf, &len, "struct Vertex {");
-    len += sprintf(buf + len, "    float4 position [[attribute(%d)]];\n", vertex_index);
-    vertex_descriptor->attributes()->object(vertex_index)->setFormat(MTL::VertexFormatFloat4);
-    vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
-    vertex_descriptor->attributes()->object(vertex_index++)->setOffset(0);
-    num_floats += 4;
-
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-            len += sprintf(buf + len, "    float2 texCoord%d [[attribute(%d)]];\n", i, vertex_index);
-            vertex_descriptor->attributes()->object(vertex_index)->setFormat(MTL::VertexFormatFloat2);
-            vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
-            vertex_descriptor->attributes()->object(vertex_index++)->setOffset(num_floats * sizeof(float));
-            num_floats += 2;
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-                    len += sprintf(buf + len, "    float texClamp%s%d [[attribute(%d)]];\n", j == 0 ? "S" : "T", i,
-                                   vertex_index);
-                    vertex_descriptor->attributes()->object(vertex_index)->setFormat(MTL::VertexFormatFloat);
-                    vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
-                    vertex_descriptor->attributes()->object(vertex_index++)->setOffset(num_floats * sizeof(float));
-                    num_floats += 1;
-                }
-            }
-        }
-    }
-    if (cc_features.opt_fog) {
-        len += sprintf(buf + len, "    float4 fog [[attribute(%d)]];\n", vertex_index);
-        vertex_descriptor->attributes()->object(vertex_index)->setFormat(MTL::VertexFormatFloat4);
-        vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
-        vertex_descriptor->attributes()->object(vertex_index++)->setOffset(num_floats * sizeof(float));
-        num_floats += 4;
-    }
-    if (cc_features.opt_grayscale) {
-        len += sprintf(buf + len, "    float4 grayscale [[attribute(%d)]];\n", vertex_index);
-        vertex_descriptor->attributes()->object(vertex_index)->setFormat(MTL::VertexFormatFloat4);
-        vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
-        vertex_descriptor->attributes()->object(vertex_index++)->setOffset(num_floats * sizeof(float));
-        num_floats += 4;
-    }
-    for (int i = 0; i < cc_features.num_inputs; i++) {
-        len += sprintf(buf + len, "    float%d input%d [[attribute(%d)]];\n", cc_features.opt_alpha ? 4 : 3, i + 1,
-                       vertex_index);
-        vertex_descriptor->attributes()
-            ->object(vertex_index)
-            ->setFormat(cc_features.opt_alpha ? MTL::VertexFormatFloat4 : MTL::VertexFormatFloat3);
-        vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
-        vertex_descriptor->attributes()->object(vertex_index++)->setOffset(num_floats * sizeof(float));
-        num_floats += cc_features.opt_alpha ? 4 : 3;
-    }
-    append_line(buf, &len, "};");
-    // end vertex struct
-
-    // vertex output struct
-    append_line(buf, &len, "struct ProjectedVertex {");
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-            len += sprintf(buf + len, "    float2 texCoord%d;\n", i);
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-                    len += sprintf(buf + len, "    float texClamp%s%d;\n", j == 0 ? "S" : "T", i);
-                }
-            }
-        }
+    if (res == nullptr) {
+        SPDLOG_ERROR("Failed to load default metal shader, missing f3d.o2r?");
+        abort();
     }
 
-    if (cc_features.opt_fog) {
-        append_line(buf, &len, "    float4 fog;");
-    }
-    if (cc_features.opt_grayscale) {
-        append_line(buf, &len, "    float4 grayscale;");
-    }
-    for (int i = 0; i < cc_features.num_inputs; i++) {
-        len += sprintf(buf + len, "    float%d input%d;\n", cc_features.opt_alpha ? 4 : 3, i + 1);
-    }
-    append_line(buf, &len, "    float4 position [[position]];");
-    append_line(buf, &len, "};");
-    // end vertex output struct
-
-    // vertex shader
-    append_line(buf, &len, "vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]) {");
-    append_line(buf, &len, "    ProjectedVertex out;");
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-            len += sprintf(buf + len, "    out.texCoord%d = in.texCoord%d;\n", i, i);
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-                    len += sprintf(buf + len, "    out.texClamp%s%d = in.texClamp%s%d;\n", j == 0 ? "S" : "T", i,
-                                   j == 0 ? "S" : "T", i);
-                }
-            }
-        }
-    }
-
-    if (cc_features.opt_fog) {
-        append_line(buf, &len, "    out.fog = in.fog;");
-    }
-    if (cc_features.opt_grayscale) {
-        append_line(buf, &len, "    out.grayscale = in.grayscale;");
-    }
-    for (int i = 0; i < cc_features.num_inputs; i++) {
-        len += sprintf(buf + len, "    out.input%d = in.input%d;\n", i + 1, i + 1);
-    }
-
-    append_line(buf, &len, "    out.position = in.position;");
-    append_line(buf, &len, "    return out;");
-    append_line(buf, &len, "}");
-    // end vertex shader
-
-    append_line(buf, &len, "float mod(float a, float b) {");
-    append_line(buf, &len, "    return float(a - b * floor(a / b));");
-    append_line(buf, &len, "}");
-
-    append_line(buf, &len, "float3 mod(float3 a, float3 b) {");
-    append_line(
-        buf, &len,
-        "    return float3(a.x - b.x * floor(a.x / b.x), a.y - b.y * floor(a.y / b.y), a.z - b.z * floor(a.z / b.z));");
-    append_line(buf, &len, "}");
-
-    append_line(buf, &len, "float4 mod(float4 a, float4 b) {");
-    append_line(buf, &len,
-                "    return float4(a.x - b.x * floor(a.x / b.x), a.y - b.y * floor(a.y / b.y), a.z - b.z * floor(a.z / "
-                "b.z), a.w - b.w * floor(a.w / b.w));");
-    append_line(buf, &len, "}");
-
-    append_line(buf, &len, "#define WRAP(x, low, high) mod((x)-(low), (high)-(low)) + (low)");
-
-    // fragment shader
-    if (three_point_filtering) {
-        append_line(
-            buf, &len,
-            "#define TEX_OFFSET(tex, texSmplr, texCoord, off, texSize) tex.sample(texSmplr, texCoord - off / texSize)");
-        append_line(buf, &len,
-                    "float4 filter3point(thread const texture2d<float> tex, thread const sampler texSmplr, thread "
-                    "const float2& texCoord, thread const float2& texSize) {");
-        append_line(buf, &len, "    float2 offset = fract((texCoord * texSize) - float2(0.5));");
-        append_line(buf, &len, "    offset -= float2(step(1.0, offset.x + offset.y));");
-        append_line(buf, &len, "    float4 c0 = TEX_OFFSET(tex, texSmplr, texCoord, offset, texSize);");
-        append_line(buf, &len,
-                    "    float4 c1 = TEX_OFFSET(tex, texSmplr, texCoord, float2(offset.x - sign(offset.x), offset.y), "
-                    "texSize);");
-        append_line(buf, &len,
-                    "    float4 c2 = TEX_OFFSET(tex, texSmplr, texCoord, float2(offset.x, offset.y - sign(offset.y)), "
-                    "texSize);");
-        append_line(buf, &len, "    return c0 + abs(offset.x) * (c1 - c0) + abs(offset.y) * (c2 - c0);");
-        append_line(buf, &len, "}");
-
-        append_line(buf, &len,
-                    "float4 hookTexture2D(thread const texture2d<float> tex, thread const sampler texSmplr, thread "
-                    "const float2& uv, thread const float2& texSize) {");
-        append_line(buf, &len, "    return filter3point(tex, texSmplr, uv, texSize);");
-        append_line(buf, &len, "}");
-    } else {
-        append_line(buf, &len,
-                    "float4 hookTexture2D(thread const texture2d<float> tex, thread const sampler texSmplr, thread "
-                    "const float2& uv, thread const float2& texSize) {");
-        append_line(buf, &len, "   return tex.sample(texSmplr, uv);");
-        append_line(buf, &len, "}");
-    }
-
-    append_line(buf, &len, "float random(float3 value) {");
-    append_line(buf, &len, "    float random = dot(sin(value), float3(12.9898, 78.233, 37.719));");
-    append_line(buf, &len, "    return fract(sin(random) * 143758.5453);");
-    append_line(buf, &len, "}");
-
-    append_str(buf, &len,
-               "fragment float4 fragmentShader(ProjectedVertex in [[stage_in]], constant FrameUniforms &frameUniforms "
-               "[[buffer(0)]]");
-
-    if (cc_features.used_textures[0]) {
-        append_str(buf, &len, ", texture2d<float> uTex0 [[texture(0)]], sampler uTex0Smplr [[sampler(0)]]");
-    }
-    if (cc_features.used_textures[1]) {
-        append_str(buf, &len, ", texture2d<float> uTex1 [[texture(1)]], sampler uTex1Smplr [[sampler(1)]]");
-    }
-    if (cc_features.used_masks[0]) {
-        append_str(buf, &len, ", texture2d<float> uTexMask0 [[texture(2)]]");
-    }
-    if (cc_features.used_masks[1]) {
-        append_str(buf, &len, ", texture2d<float> uTexMask1 [[texture(3)]]");
-    }
-    if (cc_features.used_blend[0]) {
-        append_str(buf, &len, ", texture2d<float> uTexBlend0 [[texture(4)]]");
-    }
-    if (cc_features.used_blend[1]) {
-        append_str(buf, &len, ", texture2d<float> uTexBlend1 [[texture(5)]]");
-    }
-    append_line(buf, &len, ") {");
-
-    for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
-            bool s = cc_features.clamp[i][0], t = cc_features.clamp[i][1];
-
-            len += sprintf(buf + len, "    float2 texSize%d = float2(uTex%d.get_width(), uTex%d.get_height());\n", i, i,
-                           i);
-
-            if (!s && !t) {
-                len += sprintf(buf + len, "    float2 vTexCoordAdj%d = in.texCoord%d;\n", i, i);
-            } else {
-                if (s && t) {
-                    len += sprintf(buf + len,
-                                   "    float2 vTexCoordAdj%d = fast::clamp(in.texCoord%d, float2(0.5) / texSize%d, "
-                                   "float2(in.texClampS%d, in.texClampT%d));\n",
-                                   i, i, i, i, i);
-                } else if (s) {
-                    len += sprintf(buf + len,
-                                   "    float2 vTexCoordAdj%d = float2(fast::clamp(in.texCoord%d.x, 0.5 / texSize%d.x, "
-                                   "in.texClampS%d), in.texCoord%d.y);\n",
-                                   i, i, i, i, i);
-                } else {
-                    len += sprintf(buf + len,
-                                   "    float2 vTexCoordAdj%d = float2(in.texCoord%d.x, fast::clamp(in.texCoord%d.y, "
-                                   "0.5 / texSize%d.y, in.texClampT%d));\n",
-                                   i, i, i, i, i);
-                }
-            }
-
-            len += sprintf(buf + len,
-                           "    float4 texVal%d = hookTexture2D(uTex%d, uTex%dSmplr, vTexCoordAdj%d, texSize%d);\n", i,
-                           i, i, i, i);
-
-            if (cc_features.used_masks[i]) {
-                len +=
-                    sprintf(buf + len, "float2 maskSize%d = float2(uTexMask%d.get_width(), uTexMask%d.get_height());\n",
-                            i, i, i);
-
-                len +=
-                    sprintf(buf + len,
-                            "float4 maskVal%d = hookTexture2D(uTexMask%d, uTex%dSmplr, vTexCoordAdj%d, maskSize%d);\n",
-                            i, i, i, i, i);
-                if (cc_features.used_blend[i]) {
-                    len += sprintf(
-                        buf + len,
-                        "float4 blendVal%d = hookTexture2D(uTexBlend%d, uTex%dSmplr, vTexCoordAdj%d, texSize%d);\n", i,
-                        i, i, i, i);
-                } else {
-                    len += sprintf(buf + len, "float4 blendVal%d = float4(0, 0, 0, 0);\n", i);
-                }
-
-                len += sprintf(buf + len, "texVal%d = mix(texVal%d, blendVal%d, maskVal%d.w);\n", i, i, i, i);
-            }
-        }
-    }
-
-    append_line(buf, &len, cc_features.opt_alpha ? "    float4 texel;" : "    float3 texel;");
-    for (int c = 0; c < (cc_features.opt_2cyc ? 2 : 1); c++) {
-        if (c == 1) {
-            if (cc_features.opt_alpha) {
-                if (cc_features.c[c][1][2] == SHADER_COMBINED) {
-                    append_line(buf, &len, "texel.w = WRAP(texel.w, -1.01, 1.01);");
-                } else {
-                    append_line(buf, &len, "texel.w = WRAP(texel.w, -0.51, 1.51);");
-                }
-            }
-
-            if (cc_features.c[c][0][2] == SHADER_COMBINED) {
-                append_line(buf, &len, "texel.xyz = WRAP(texel.xyz, -1.01, 1.01);");
-            } else {
-                append_line(buf, &len, "texel.xyz = WRAP(texel.xyz, -0.51, 1.51);");
-            }
-        }
-
-        append_str(buf, &len, "    texel = ");
-
-        if (!cc_features.color_alpha_same[c] && cc_features.opt_alpha) {
-            append_str(buf, &len, "float4(");
-            append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0],
-                           cc_features.do_mix[c][0], false, false, true, c == 0);
-            append_str(buf, &len, ", ");
-            append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][1], cc_features.do_multiply[c][1],
-                           cc_features.do_mix[c][1], true, true, true, c == 0);
-            append_str(buf, &len, ")");
-        } else {
-            append_formula(buf, &len, cc_features.c[c], cc_features.do_single[c][0], cc_features.do_multiply[c][0],
-                           cc_features.do_mix[c][0], cc_features.opt_alpha, false, cc_features.opt_alpha, c == 0);
-        }
-        append_line(buf, &len, ";");
-    }
-
-    append_str(buf, &len, "texel = WRAP(texel, -0.51, 1.51);");
-    append_str(buf, &len, "texel = clamp(texel, 0.0, 1.0);");
-
-    if (cc_features.opt_fog) {
-        if (cc_features.opt_alpha) {
-            append_line(buf, &len, "    texel = float4(mix(texel.xyz, in.fog.xyz, in.fog.w), texel.w);");
-        } else {
-            append_line(buf, &len, "    texel = mix(texel, in.fog.xyz, in.fog.w);");
-        }
-    }
-
-    if (cc_features.opt_texture_edge && cc_features.opt_alpha) {
-        append_line(buf, &len, "    if (texel.w > 0.19) texel.w = 1.0; else discard_fragment();");
-    }
-
-    if (cc_features.opt_alpha && cc_features.opt_noise) {
-        append_line(buf, &len, "    float2 coords = in.position.xy * frameUniforms.noiseScale;");
-        append_line(buf, &len,
-                    "    texel.w *= floor(fast::clamp(random(float3(floor(coords), float(frameUniforms.frameCount))) + "
-                    "texel.w, 0.0, 1.0));");
-    }
-
-    if (cc_features.opt_grayscale) {
-        append_line(buf, &len, "    float intensity = (texel.x + texel.y + texel.z) / 3.0;");
-        append_line(buf, &len, "    float3 new_texel = in.grayscale.xyz * intensity;");
-        append_line(buf, &len, "    texel.xyz = mix(texel.xyz, new_texel, in.grayscale.w);");
-    }
-
-    if (cc_features.opt_alpha) {
-        if (cc_features.opt_alpha_threshold) {
-            append_line(buf, &len, "    if (texel.w < 8.0 / 256.0) discard_fragment();");
-        }
-        if (cc_features.opt_invisible) {
-            append_line(buf, &len, "    texel.w = 0.0;");
-        }
-        append_line(buf, &len, "    return texel;");
-    } else {
-        append_line(buf, &len, "    return float4(texel, 1.0);");
-    }
-
-    append_line(buf, &len, "}");
-    // end fragment shader
-
-    vertex_descriptor->layouts()->object(0)->setStride(num_floats * sizeof(float));
+    auto shader = static_cast<std::string*>(res->GetRawPointer());
+    processor.load(*shader);
+    processor.bind_include_loader(metal_include_fs);
+    result = processor.process();
+    // SPDLOG_INFO("=========== METAL SHADER ============");
+    // SPDLOG_INFO(result);
+    // SPDLOG_INFO("====================================");
+    vertex_descriptor->layouts()->object(0)->setStride(raw_num_floats * sizeof(float));
     vertex_descriptor->layouts()->object(0)->setStepFunction(MTL::VertexStepFunctionPerVertex);
-
+    num_floats = raw_num_floats;
     return vertex_descriptor;
 }
 

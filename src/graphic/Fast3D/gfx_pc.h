@@ -117,6 +117,12 @@ struct RawTexMetadata {
     Fast::TextureType type;
 };
 
+struct ShaderMod {
+    bool enabled = false;
+    int16_t id;
+    uint8_t type;
+};
+
 #define MAX_BUFFERED 256
 // #define MAX_LIGHTS 2
 #define MAX_LIGHTS 32
@@ -187,6 +193,7 @@ struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     bool grayscale;
+    ShaderMod current_shader;
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
@@ -194,6 +201,8 @@ struct RDP {
     bool viewport_or_scissor_changed;
     void* z_buf_address;
     void* color_image_address;
+    bool using_colour_id;
+    uint32_t colour_id;
 };
 
 typedef enum Attribute {

@@ -247,10 +247,14 @@ static struct ShaderProgram* gfx_direct3d12_create_and_load_new_shader(uint32_t 
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id, &cc_features);
 
-    char buf[2048];
+    char buf*;
     size_t len, num_floats;
 
-    gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, true, false, false);
+    auto shader = gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
+                                                   d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
+
+    buf = shader.data();
+    len = shader.size();
 
     // fwrite(buf, 1, len, stdout);
 

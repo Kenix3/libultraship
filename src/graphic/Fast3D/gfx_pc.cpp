@@ -110,6 +110,8 @@ struct XYWidthHeight gfx_prev_native_dimensions;
 static bool game_renders_to_framebuffer;
 static int game_framebuffer;
 static int game_framebuffer_msaa_resolved;
+static int game_framebuffer_colour_id;
+std::vector<uint8_t> colour_id_data;
 
 uint32_t gfx_msaa_level = 1;
 
@@ -145,6 +147,7 @@ struct MaskedTextureEntry {
 };
 
 static map<string, MaskedTextureEntry> masked_textures;
+static std::vector<std::string> shader_ids;
 
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
@@ -1505,6 +1508,7 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool invisible =
         (g_rdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = g_rdp.grayscale;
+    auto shader = g_rdp.current_shader;
 
     if (texture_edge) {
         if (use_alpha) {
@@ -1550,13 +1554,17 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     if (g_rdp.loaded_texture[1].blended) {
         cc_options |= SHADER_OPT(TEXEL1_BLEND);
     }
+    if (shader.enabled) {
+        cc_options |= SHADER_OPT(USE_SHADER);
+        cc_options |= (shader.id << 17);
+    }
 
     ColorCombinerKey key;
     key.combine_mode = g_rdp.combine_mode;
     key.options = cc_options;
 
     // If we are not using alpha, clear the alpha components of the combiner as they have no effect
-    if (!use_alpha) {
+    if (!use_alpha && !shader.enabled) {
         key.combine_mode &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
     }
 
@@ -1647,7 +1655,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     struct ShaderProgram* prg = comb->prg[tm];
     if (prg == NULL) {
         comb->prg[tm] = prg =
-            gfx_lookup_or_create_shader_program(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
+        gfx_lookup_or_create_shader_program(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
+        if (g_rdp.using_colour_id) {
+            gfx_rapi->set_colour_id(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S), g_rdp.colour_id);
+        }
     }
     if (prg != rendering_state.shader_program) {
         gfx_flush();
@@ -2922,6 +2933,43 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
+int16_t gfx_create_shader(const std::string& path) {
+    std::shared_ptr<Ship::ResourceInitData> initData = std::make_shared<Ship::ResourceInitData>();
+    initData->Path = path;
+    initData->IsCustom = false;
+    initData->ByteOrder = Ship::Endianness::Native;
+    auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path, initData);
+    if (shader == nullptr || !shader->IsLoaded) {
+        return -1;
+    }
+    shader_ids.push_back(std::string(shader->Buffer->data()));
+    return shader_ids.size() - 1;
+}
+
+bool gfx_set_shader_custom(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    char* file = (char*)cmd->words.w1;
+
+    if (file == nullptr) {
+        g_rdp.current_shader = { 0, 0, false };
+        return false;
+    }
+
+    const auto path = std::string(file);
+    const auto shaderId = gfx_create_shader(path);
+    g_rdp.current_shader = { true, shaderId, (uint8_t)C0(16, 1) };
+    return false;
+}
+
+bool gfx_set_colour_id(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    g_rdp.using_colour_id = true;
+    g_rdp.colour_id = cmd->words.w1;
+
+    return false;
+}
+
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
@@ -3866,7 +3914,9 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_REGBLENDEDTEX,
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
-    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },
+    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
+    { OTR_G_LOAD_SHADER, { "G_LOAD_SHADER", gfx_set_shader_custom } },
+    { OTR_G_SETCOLOURID, { "G_SETCOLOURID", gfx_set_colour_id } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
@@ -4074,7 +4124,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     gfx_rapi = rapi;
     gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     gfx_rapi->init();
-    gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
+    gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true, NULL);
     gfx_current_dimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
     gfx_msaa_level = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
@@ -4083,6 +4133,10 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 
     game_framebuffer = gfx_rapi->create_framebuffer();
     game_framebuffer_msaa_resolved = gfx_rapi->create_framebuffer();
+
+    colour_id_data.resize(width * height * 4);
+    game_framebuffer_colour_id = gfx_rapi->create_framebuffer();
+    gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, false, false, false, (uint8_t*)colour_id_data.data());
 
     gfx_native_dimensions.width = SCREEN_WIDTH;
     gfx_native_dimensions.height = SCREEN_HEIGHT;
@@ -4159,7 +4213,7 @@ void gfx_start_frame() {
                 gfx_adjust_width_height_for_scale(width, height, fb.second.native_width, fb.second.native_height);
             }
             if (width != fb.second.applied_width || height != fb.second.applied_height) {
-                gfx_rapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true);
+                gfx_rapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true, NULL);
                 fb.second.applied_width = width;
                 fb.second.applied_height = height;
             }
@@ -4168,22 +4222,26 @@ void gfx_start_frame() {
 
     gfx_prev_dimensions = gfx_current_dimensions;
     gfx_prev_native_dimensions = gfx_native_dimensions;
+
+    gfx_rapi->update_framebuffer_parameters(game_framebuffer_colour_id, gfx_current_dimensions.width,
+        gfx_current_dimensions.height, 1, false, false, false, false, (uint8_t*)colour_id_data.data());
+
     if (!viewport_matches_render_resolution() || gfx_msaa_level > 1) {
         game_renders_to_framebuffer = true;
         if (!viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer, gfx_current_dimensions.width,
                                                     gfx_current_dimensions.height, gfx_msaa_level, true, true, true,
-                                                    true);
+                                                    true, NULL);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
             // match the window size
             gfx_rapi->update_framebuffer_parameters(game_framebuffer, gfx_current_window_dimensions.width,
                                                     gfx_current_window_dimensions.height, gfx_msaa_level, false, true,
-                                                    true, true);
+                                                    true, true, NULL);
         }
         if (gfx_msaa_level > 1 && !viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer_msaa_resolved, gfx_current_dimensions.width,
-                                                    gfx_current_dimensions.height, 1, false, false, false, false);
+                                                    gfx_current_dimensions.height, 1, false, false, false, false, NULL);
         }
     } else {
         game_renders_to_framebuffer = false;
@@ -4204,10 +4262,21 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
     gfx_rapi->update_framebuffer_parameters(0, gfx_current_window_dimensions.width,
                                             gfx_current_window_dimensions.height, 1, false, true, true,
-                                            !game_renders_to_framebuffer);
+                                            !game_renders_to_framebuffer, NULL);
     gfx_rapi->start_frame();
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
                                         (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+
+#define VIEW_COLOUR_ID_FRAMEBUFFER
+#ifdef VIEW_COLOUR_ID_FRAMEBUFFER
+
+gfx_rapi->start_draw_to_framebuffer(game_framebuffer_colour_id, gfx_current_dimensions.height / gfx_native_dimensions.height);
+// test colours to colour id (this worked at one point but not now)
+for (size_t i = 0; i < 1000; i++) {
+    colour_id_data[i] = 0x00FF00FF;
+}
+
+#endif
     gfx_rapi->clear_framebuffer(false, true);
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
@@ -4251,7 +4320,10 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                 gfx_rapi->resolve_msaa_color_buffer(0, game_framebuffer);
             }
         } else {
-            gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
+            #ifdef VIEW_COLOUR_ID_FRAMEBUFFER
+            gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer_colour_id);
+            #endif
+            //gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
     } else if (fbActive) {
         // Failsafe reset to main framebuffer to prevent softlocking the renderer
@@ -4289,7 +4361,7 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
     }
 
     int fb = gfx_rapi->create_framebuffer();
-    gfx_rapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true);
+    gfx_rapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true, NULL);
 
     framebuffers[fb] = {
         orig_width, orig_height, width, height, native_width, native_height, static_cast<bool>(resize)

@@ -6,15 +6,14 @@
 //
 
 #ifdef __APPLE__
-
-#ifndef GFX_METAL_SHADER_H
-#define GFX_METAL_SHADER_H
-
+#ifdef __cplusplus
+#pragma once
 #include <stdio.h>
 #include "gfx_cc.h"
+#include <string>
 
-MTL::VertexDescriptor* gfx_metal_build_shader(char buf[8192], size_t& num_floats, const CCFeatures& cc_features,
+MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_floats, const CCFeatures& cc_features,
                                               bool three_point_filtering);
 
-#endif /* GFX_METAL_SHADER_H */
+#endif
 #endif

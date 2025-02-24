@@ -414,11 +414,14 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
-    char buf[8192];
+    char* buf;
     size_t len, num_floats;
 
-    gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false,
-                                     d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
+    auto shader = gfx_direct3d_common_build_shader(num_floats, cc_features, false,
+                                                   d3d.current_filter_mode == FILTER_THREE_POINT, d3d.srgb_mode);
+
+    buf = shader.data();
+    len = shader.size();
 
     ComPtr<ID3DBlob> vs, ps;
     ComPtr<ID3DBlob> error_blob;
@@ -854,7 +857,7 @@ int gfx_d3d11_create_framebuffer() {
 
 static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                     bool opengl_invert_y, bool render_target, bool has_depth_buffer,
-                                                    bool can_extract_depth) {
+                                                    bool can_extract_depth, uint8_t* image_data) {
     Framebuffer& fb = d3d.framebuffers[fb_id];
     TextureData& tex = d3d.textures[fb.texture_id];
 
@@ -884,7 +887,14 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             texture_desc.SampleDesc.Count = msaa_level;
             texture_desc.SampleDesc.Quality = 0;
 
-            ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, tex.texture.ReleaseAndGetAddressOf()));
+            D3D11_SUBRESOURCE_DATA init_data;
+            if (image_data != NULL) {
+                init_data.pSysMem = image_data;
+                init_data.SysMemPitch = width * 4;  // 4 bytes per pixel for RGBA format
+                init_data.SysMemSlicePitch = 0;  // Not needed for 2D textures
+            }
+
+            ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, (image_data == NULL) ? NULL : &init_data, tex.texture.ReleaseAndGetAddressOf()));
 
             if (msaa_level <= 1) {
                 ThrowIfFailed(d3d.device->CreateShaderResourceView(tex.texture.Get(), nullptr,
@@ -1237,6 +1247,10 @@ void gfx_d3d11_enable_srgb_mode() {
     d3d.srgb_mode = true;
 }
 
+void gfx_d3d11_set_colour_id(uint64_t shader_id0, uint32_t shader_id1, uint32_t colour_id) {
+
+}
+
 struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
                                               gfx_d3d11_get_max_texture_size,
                                               gfx_d3d11_get_clip_parameters,
@@ -1273,6 +1287,7 @@ struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
                                               gfx_d3d11_delete_texture,
                                               gfx_d3d11_set_texture_filter,
                                               gfx_d3d11_get_texture_filter,
-                                              gfx_d3d11_enable_srgb_mode };
+                                              gfx_d3d11_enable_srgb_mode,
+                                              gfx_d3d11_set_colour_id };
 
 #endif

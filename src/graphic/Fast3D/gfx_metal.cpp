@@ -355,16 +355,15 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
     size_t num_floats = 0;
-    char buf[8192];
-
-    memset(buf, 0, sizeof(buf));
+    std::string buf;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
     MTL::VertexDescriptor* vertex_descriptor =
         gfx_metal_build_shader(buf, num_floats, cc_features, mctx.current_filter_mode == FILTER_THREE_POINT);
 
     NS::Error* error = nullptr;
-    MTL::Library* library = mctx.device->newLibrary(NS::String::string(buf, NS::UTF8StringEncoding), nullptr, &error);
+    MTL::Library* library =
+        mctx.device->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
 
     if (error != nullptr)
         SPDLOG_ERROR("Failed to compile shader library, error {}",
@@ -805,7 +804,7 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
 
 static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                     bool opengl_invert_y, bool render_target, bool has_depth_buffer,
-                                                    bool can_extract_depth) {
+                                                    bool can_extract_depth, uint8_t* image_data) {
     // Screen framebuffer is handled separately on a frame by frame basis
     // see `gfx_metal_setup_screen_framebuffer`.
     if (fb_id == 0) {
@@ -884,6 +883,20 @@ static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, u
         tex.height = height;
 
         tex_descriptor->release();
+    }
+
+    if (image_data) {
+        // Create a Metal buffer from image_data and update the texture with the pixel data
+        MTL::Buffer* buffer = mctx.device->newBuffer(image_data, width * height * 4, MTL::ResourceStorageModeShared);
+
+        // Copy the data to the texture
+        MTL::CommandBuffer* commandBuffer = mctx.commandQueue->commandBuffer();
+        MTL::BlitCommandEncoder* blitEncoder = commandBuffer->blitCommandEncoder();
+        blitEncoder->copyFromBuffer(buffer, 0, tex.texture, 0);
+        blitEncoder->endEncoding();
+        
+        commandBuffer->commit();
+        commandBuffer->waitUntilCompleted();
     }
 
     if (has_depth_buffer && (diff || !fb.has_depth_buffer || (fb.depth_texture != nullptr) != can_extract_depth)) {
@@ -1301,6 +1314,10 @@ void gfx_metal_enable_srgb_mode() {
     mctx.srgb_mode = true;
 }
 
+void gfx_metal_set_colour_id(uint64_t shader_id0, uint32_t shader_id1, uint32_t colour_id) {
+
+}
+
 struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_get_max_texture_size,
                                          gfx_metal_get_clip_parameters,
@@ -1337,5 +1354,6 @@ struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_delete_texture,
                                          gfx_metal_set_texture_filter,
                                          gfx_metal_get_texture_filter,
-                                         gfx_metal_enable_srgb_mode };
+                                         gfx_metal_enable_srgb_mode,
+                                         gfx_metal_set_colour_id };
 #endif
