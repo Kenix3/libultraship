@@ -360,7 +360,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "core_opengl", false },
         { "texture", "texture2D" },
         { "vOutColor", "gl_FragData[0]" },
-        { "vColourId", "gl_FragData[3]" },
+        { "vColourId", "gl_FragData[2]" },
 #endif
     };
     processor.populate(context);
@@ -484,6 +484,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     GLuint shader_program = glCreateProgram();
     glAttachShader(shader_program, vertex_shader);
     glAttachShader(shader_program, fragment_shader);
+    glBindFragDataLocation(shader_program, GL_COLOR_ATTACHMENT2, "vColourId");
     glLinkProgram(shader_program);
 
     size_t cnt = 0;
@@ -816,7 +817,7 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
                     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
                 } else {
                     printf("\nFB ID %d\n\n", fb_id);
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, fb.clrbuf, 0);
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, fb.clrbuf, 0);
                 }
             } else {
                 glBindRenderbuffer(GL_RENDERBUFFER, fb.clrbuf_msaa);
@@ -825,6 +826,9 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fb.clrbuf_msaa);
             }
         }
+        
+        GLenum att[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT2 };
+        glDrawBuffers(2, att);
 
         if (has_depth_buffer &&
             (fb.width != width || fb.height != height || fb.msaa_level != msaa_level || !fb.has_depth_buffer)) {

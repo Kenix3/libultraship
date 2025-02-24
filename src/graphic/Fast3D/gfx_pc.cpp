@@ -4137,6 +4137,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
 
     colour_id_data.resize(width * height * 4);
     game_framebuffer_colour_id = gfx_rapi->create_framebuffer();
+    gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, false, false, false, (uint8_t*)colour_id_data.data());
 
     gfx_native_dimensions.width = SCREEN_WIDTH;
     gfx_native_dimensions.height = SCREEN_HEIGHT;
@@ -4267,9 +4268,15 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
     gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
                                         (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
 
-// #define VIEW_COLOUR_ID_FRAMEBUFFER
+#define VIEW_COLOUR_ID_FRAMEBUFFER
 #ifdef VIEW_COLOUR_ID_FRAMEBUFFER
+
 gfx_rapi->start_draw_to_framebuffer(game_framebuffer_colour_id, gfx_current_dimensions.height / gfx_native_dimensions.height);
+// test colours to colour id (this worked at one point but not now)
+for (size_t i = 0; i < 1000; i++) {
+    colour_id_data[i] = 0x00FF00FF;
+}
+
 #endif
     gfx_rapi->clear_framebuffer(false, true);
     g_rdp.viewport_or_scissor_changed = true;

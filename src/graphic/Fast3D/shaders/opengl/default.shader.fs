@@ -211,5 +211,5 @@ void main() {
         @{vOutColor} = fromLinear(@{vOutColor});
     @end
 
-    @{vColourId} = vec4(0.8, 0.2, 0.3, 1.0);
+    @{vColourId} = colour_id;
 }
