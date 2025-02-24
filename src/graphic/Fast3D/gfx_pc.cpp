@@ -107,7 +107,17 @@ static std::string GetPathWithoutFileName(char* filePath) {
 }
 
 GfxPc::GfxPc() {
+    mRsp = new RSP();
+    mRdp = new RDP();
+    mBufVbo = new float[MAX_BUFFERED * (32 * 3)];
 }
+
+GfxPc::~GfxPc() {
+    delete mRsp;
+    delete mRdp;
+    delete[] mBufVbo;
+}
+
 static std::weak_ptr<GfxPc> mInstance;
 // Set a cached pointer to the instance so we don't need to go through the window every time
 void GfxSetInstance(std::shared_ptr<GfxPc> gfx) {
@@ -471,18 +481,18 @@ void GfxPc::TextureCacheDelete(const uint8_t* origAddr) {
 }
 
 void GfxPc::ImportTextureRgba16(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t line_size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes / 2;
-    uint32_t height = sizeBytes / mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes / 2;
+    uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
     // A single line of pixels should not equal the entire image (height == 1 non-withstanding)
     if (fullImageLineSizeBytes == sizeBytes) {
@@ -513,32 +523,32 @@ void GfxPc::ImportTextureRgba16(int tile, bool importReplacement) {
 }
 
 void GfxPc::ImportTextureRgba32(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t line_size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
     SUPPORT_CHECK(full_image_line_size_bytes == line_size_bytes);
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes / 2;
-    uint32_t height = (size_bytes / 2) / mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes / 2;
+    uint32_t height = (size_bytes / 2) / mRdp->texture_tile[tile].line_size_bytes;
     mRapi->upload_texture(addr, width, height);
 }
 
 void GfxPc::ImportTextureIA4(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t lineSizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
     SUPPORT_CHECK(fullImageLineSizeBytes == lineSizeBytes);
 
     for (uint32_t i = 0; i < sizeBytes * 2; i++) {
@@ -555,22 +565,22 @@ void GfxPc::ImportTextureIA4(int tile, bool importReplacement) {
         mTexUploadBuffer[4 * i + 3] = alpha ? 255 : 0;
     }
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes * 2;
-    uint32_t height = sizeBytes / mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes * 2;
+    uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
     mRapi->upload_texture(mTexUploadBuffer, width, height);
 }
 
 void GfxPc::ImportTextureIA8(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t lineSizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
     SUPPORT_CHECK(fullImageLineSizeBytes == lineSizeBytes);
 
     for (uint32_t i = 0; i < sizeBytes; i++) {
@@ -585,25 +595,25 @@ void GfxPc::ImportTextureIA8(int tile, bool importReplacement) {
         mTexUploadBuffer[4 * i + 3] = SCALE_4_8(alpha);
     }
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes;
-    uint32_t height = sizeBytes / mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes;
+    uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
     mRapi->upload_texture(mTexUploadBuffer, width, height);
 }
 
 void GfxPc::ImportTextureIA16(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t line_size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes / 2;
-    uint32_t height = size_bytes / mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes / 2;
+    uint32_t height = size_bytes / mRdp->texture_tile[tile].line_size_bytes;
 
     // A single line of pixels should not equal the entire image (height == 1 non-withstanding)
     if (full_image_line_size_bytes == size_bytes) {
@@ -634,18 +644,18 @@ void GfxPc::ImportTextureIA16(int tile, bool importReplacement) {
 }
 
 void GfxPc::ImportTextureI4(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t lineSizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes * 2;
-    uint32_t height = sizeBytes / mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes * 2;
+    uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
     // A single line of pixels should not equal the entire image (height == 1 non-withstanding)
     if (fullImageLineSizeBytes == sizeBytes) {
@@ -678,15 +688,15 @@ void GfxPc::ImportTextureI4(int tile, bool importReplacement) {
 }
 
 void GfxPc::ImportTextureI8(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t line_size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
     for (uint32_t i = 0; i < sizeBytes; i++) {
         uint8_t intensity = addr[i];
@@ -696,30 +706,30 @@ void GfxPc::ImportTextureI8(int tile, bool importReplacement) {
         mTexUploadBuffer[4 * i + 3] = intensity;
     }
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes;
-    uint32_t height = sizeBytes / mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes;
+    uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
     mRapi->upload_texture(mTexUploadBuffer, width, height);
 }
 
 void GfxPc::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t fullImageLineSizeBytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
-    uint32_t lineSizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
-    uint32_t palIdx = mRdp.texture_tile[tile].palette; // 0-15
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
+    uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
+    uint32_t palIdx = mRdp->texture_tile[tile].palette; // 0-15
 
     const uint8_t* palette;
 
     if (palIdx > 7)
-        palette = mRdp.palettes[palIdx / 8]; // 16 pixel entries, 16 bits each
+        palette = mRdp->palettes[palIdx / 8]; // 16 pixel entries, 16 bits each
     else
-        palette = mRdp.palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
+        palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
 
     SUPPORT_CHECK(fullImageLineSizeBytes == lineSizeBytes);
 
@@ -737,7 +747,7 @@ void GfxPc::ImportTextureCi4(int tile, bool importReplacement) {
         mTexUploadBuffer[4 * i + 3] = a ? 255 : 0;
     }
 
-    uint32_t resultLineSizeBytes = mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t resultLineSizeBytes = mRdp->texture_tile[tile].line_size_bytes;
     if (metadata->h_byte_scale != 1) {
         resultLineSizeBytes *= metadata->h_byte_scale;
     }
@@ -749,21 +759,21 @@ void GfxPc::ImportTextureCi4(int tile, bool importReplacement) {
 }
 
 void GfxPc::ImportTextureCi8(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
-    uint32_t sizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+    uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t lineSizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
     for (uint32_t i = 0, j = 0; i < sizeBytes; j += fullImageLineSizeBytes - lineSizeBytes) {
         for (uint32_t k = 0; k < lineSizeBytes; i++, k++, j++) {
             uint8_t idx = addr[j];
-            uint16_t col16 = (mRdp.palettes[idx / 128][(idx % 128) * 2] << 8) |
-                             mRdp.palettes[idx / 128][(idx % 128) * 2 + 1]; // Big endian load
+            uint16_t col16 = (mRdp->palettes[idx / 128][(idx % 128) * 2] << 8) |
+                             mRdp->palettes[idx / 128][(idx % 128) * 2 + 1]; // Big endian load
             uint8_t a = col16 & 1;
             uint8_t r = col16 >> 11;
             uint8_t g = (col16 >> 6) & 0x1f;
@@ -775,7 +785,7 @@ void GfxPc::ImportTextureCi8(int tile, bool importReplacement) {
         }
     }
 
-    uint32_t resultLineSizeBytes = mRdp.texture_tile[tile].line_size_bytes;
+    uint32_t resultLineSizeBytes = mRdp->texture_tile[tile].line_size_bytes;
     if (metadata->h_byte_scale != 1) {
         resultLineSizeBytes *= metadata->h_byte_scale;
     }
@@ -800,11 +810,11 @@ static void GfxPc::ImportTextureImg(int tile, bool importReplacement) {
 }
 
 void GfxPc::ImportTextureRaw(int tile, bool importReplacement) {
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr;
+            : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
@@ -823,11 +833,11 @@ void GfxPc::ImportTextureRaw(int tile, bool importReplacement) {
             break;
     }
 
-    uint32_t numLoadedBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes;
-    uint32_t numOriginallyLoadedBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].orig_size_bytes;
+    uint32_t numLoadedBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
+    uint32_t numOriginallyLoadedBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
 
-    uint32_t resultOrigLineSize = mRdp.texture_tile[tile].line_size_bytes;
-    switch (mRdp.texture_tile[tile].siz) {
+    uint32_t resultOrigLineSize = mRdp->texture_tile[tile].line_size_bytes;
+    switch (mRdp->texture_tile[tile].siz) {
         case G_IM_SIZ_32b:
             resultOrigLineSize *= 2;
             break;
@@ -843,8 +853,8 @@ void GfxPc::ImportTextureRaw(int tile, bool importReplacement) {
     }
 
     uint32_t fullImageLineSizeBytes =
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes;
-    uint32_t line_size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+    uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
     // Get the resource's true image size
     uint32_t resourceImageSizeBytes = resource->ImageDataSize;
@@ -875,22 +885,22 @@ void GfxPc::ImportTextureRaw(int tile, bool importReplacement) {
 }
 
 void GfxPc::ImportTexture(int i, int tile, bool importReplacement) {
-    uint8_t fmt = mRdp.texture_tile[tile].fmt;
-    uint8_t siz = mRdp.texture_tile[tile].siz;
-    uint32_t texFlags = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].tex_flags;
-    uint32_t tmemIdex = mRdp.texture_tile[tile].tmem_index;
-    uint8_t paletteIndex = mRdp.texture_tile[tile].palette;
-    uint32_t origSizeBytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].orig_size_bytes;
+    uint8_t fmt = mRdp->texture_tile[tile].fmt;
+    uint8_t siz = mRdp->texture_tile[tile].siz;
+    uint32_t texFlags = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags;
+    uint32_t tmemIdex = mRdp->texture_tile[tile].tmem_index;
+    uint8_t paletteIndex = mRdp->texture_tile[tile].palette;
+    uint32_t origSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
 
-    const RawTexMetadata* metadata = &mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata;
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* origAddr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp.loaded_texture[tmemIdex].addr;
+            : mRdp->loaded_texture[tmemIdex].addr;
 
     TextureCacheKey key;
     if (fmt == G_IM_FMT_CI) {
-        key = { origAddr, { mRdp.palettes[0], mRdp.palettes[1] }, fmt, siz, paletteIndex, origSizeBytes };
+        key = { origAddr, { mRdp->palettes[0], mRdp->palettes[1] }, fmt, siz, paletteIndex, origSizeBytes };
     } else {
         key = { origAddr, {}, fmt, siz, paletteIndex, origSizeBytes };
     }
@@ -962,8 +972,8 @@ void GfxPc::ImportTexture(int i, int tile, bool importReplacement) {
 }
 
 void GfxPc::ImportTextureMask(int i, int tile) {
-    uint32_t tmemIndex = mRdp.texture_tile[tile].tmem_index;
-    RawTexMetadata metadata = mRdp.loaded_texture[tmemIndex].raw_tex_metadata;
+    uint32_t tmemIndex = mRdp->texture_tile[tile].tmem_index;
+    RawTexMetadata metadata = mRdp->loaded_texture[tmemIndex].raw_tex_metadata;
 
     if (metadata.resource == nullptr) {
         return;
@@ -986,10 +996,10 @@ void GfxPc::ImportTextureMask(int i, int tile) {
         return;
     }
 
-    uint32_t width = mRdp.texture_tile[tile].line_size_bytes;
-    uint32_t height = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].orig_size_bytes /
-                      mRdp.texture_tile[tile].line_size_bytes;
-    switch (mRdp.texture_tile[tile].siz) {
+    uint32_t width = mRdp->texture_tile[tile].line_size_bytes;
+    uint32_t height = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes /
+                      mRdp->texture_tile[tile].line_size_bytes;
+    switch (mRdp->texture_tile[tile].siz) {
         case G_IM_SIZ_4b:
             width *= 2;
             break;
@@ -1048,7 +1058,7 @@ void GfxPc::MatrixMul(float res[4][4], const float a[4][4], const float b[4][4])
 void GfxPc::CalculateNormalDir(const F3DLight_t* light, float coeffs[3]) {
     float light_dir[3] = { light->dir[0] / 127.0f, light->dir[1] / 127.0f, light->dir[2] / 127.0f };
 
-    GfxPc::TransposedMatrixMul(coeffs, light_dir, mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1]);
+    GfxPc::TransposedMatrixMul(coeffs, light_dir, mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1]);
     GfxPc::NormalizeVector(coeffs);
 }
 
@@ -1086,40 +1096,40 @@ void GfxPc::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
 
     if (parameters & mtx_projection) {
         if (parameters & mtx_load) {
-            memcpy(mRsp.P_matrix, matrix, sizeof(matrix));
+            memcpy(mRsp->P_matrix, matrix, sizeof(matrix));
         } else {
-            MatrixMul(mRsp.P_matrix, matrix, mRsp.P_matrix);
+            MatrixMul(mRsp->P_matrix, matrix, mRsp->P_matrix);
         }
     } else { // G_MTX_MODELVIEW
-        if ((parameters & mtx_push) && mRsp.modelview_matrix_stack_size < 11) {
-            ++mRsp.modelview_matrix_stack_size;
-            memcpy(mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1],
-                   mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 2], sizeof(matrix));
+        if ((parameters & mtx_push) && mRsp->modelview_matrix_stack_size < 11) {
+            ++mRsp->modelview_matrix_stack_size;
+            memcpy(mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1],
+                   mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 2], sizeof(matrix));
         }
         if (parameters & mtx_load) {
-            if (mRsp.modelview_matrix_stack_size == 0)
-                ++mRsp.modelview_matrix_stack_size;
-            memcpy(mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1], matrix, sizeof(matrix));
+            if (mRsp->modelview_matrix_stack_size == 0)
+                ++mRsp->modelview_matrix_stack_size;
+            memcpy(mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1], matrix, sizeof(matrix));
         } else {
-            MatrixMul(mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1], matrix,
-                      mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1]);
+            MatrixMul(mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1], matrix,
+                      mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1]);
         }
-        mRsp.lights_changed = 1;
+        mRsp->lights_changed = 1;
     }
-    MatrixMul(mRsp.MP_matrix, mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1], mRsp.P_matrix);
+    MatrixMul(mRsp->MP_matrix, mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1], mRsp->P_matrix);
 }
 
 void GfxPc::GfxSpPopMatrix(uint32_t count) {
     while (count--) {
-        if (mRsp.modelview_matrix_stack_size > 0) {
-            --mRsp.modelview_matrix_stack_size;
-            if (mRsp.modelview_matrix_stack_size > 0) {
-                MatrixMul(mRsp.MP_matrix, mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1],
-                          mRsp.P_matrix);
+        if (mRsp->modelview_matrix_stack_size > 0) {
+            --mRsp->modelview_matrix_stack_size;
+            if (mRsp->modelview_matrix_stack_size > 0) {
+                MatrixMul(mRsp->MP_matrix, mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1],
+                          mRsp->P_matrix);
             }
         }
     }
-    mRsp.lights_changed = true;
+    mRsp->lights_changed = true;
 }
 
 float GfxPc::AdjXForAspectRatio(float x) const {
@@ -1148,24 +1158,24 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
     for (size_t i = 0; i < n_vertices; i++, dest_index++) {
         const F3DVtx_t* v = &vertices[i].v;
         const F3DVtx_tn* vn = &vertices[i].n;
-        struct LoadedVertex* d = &mRsp.loaded_vertices[dest_index];
+        struct LoadedVertex* d = &mRsp->loaded_vertices[dest_index];
 
         if (v == nullptr) {
             return;
         }
 
-        float x = v->ob[0] * mRsp.MP_matrix[0][0] + v->ob[1] * mRsp.MP_matrix[1][0] + v->ob[2] * mRsp.MP_matrix[2][0] +
-                  mRsp.MP_matrix[3][0];
-        float y = v->ob[0] * mRsp.MP_matrix[0][1] + v->ob[1] * mRsp.MP_matrix[1][1] + v->ob[2] * mRsp.MP_matrix[2][1] +
-                  mRsp.MP_matrix[3][1];
-        float z = v->ob[0] * mRsp.MP_matrix[0][2] + v->ob[1] * mRsp.MP_matrix[1][2] + v->ob[2] * mRsp.MP_matrix[2][2] +
-                  mRsp.MP_matrix[3][2];
-        float w = v->ob[0] * mRsp.MP_matrix[0][3] + v->ob[1] * mRsp.MP_matrix[1][3] + v->ob[2] * mRsp.MP_matrix[2][3] +
-                  mRsp.MP_matrix[3][3];
+        float x = v->ob[0] * mRsp->MP_matrix[0][0] + v->ob[1] * mRsp->MP_matrix[1][0] + v->ob[2] * mRsp->MP_matrix[2][0] +
+                  mRsp->MP_matrix[3][0];
+        float y = v->ob[0] * mRsp->MP_matrix[0][1] + v->ob[1] * mRsp->MP_matrix[1][1] + v->ob[2] * mRsp->MP_matrix[2][1] +
+                  mRsp->MP_matrix[3][1];
+        float z = v->ob[0] * mRsp->MP_matrix[0][2] + v->ob[1] * mRsp->MP_matrix[1][2] + v->ob[2] * mRsp->MP_matrix[2][2] +
+                  mRsp->MP_matrix[3][2];
+        float w = v->ob[0] * mRsp->MP_matrix[0][3] + v->ob[1] * mRsp->MP_matrix[1][3] + v->ob[2] * mRsp->MP_matrix[2][3] +
+                  mRsp->MP_matrix[3][3];
 
         float world_pos[3] = { 0.0 };
-        if (mRsp.geometry_mode & G_LIGHTING_POSITIONAL) {
-            float(*mtx)[4] = mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1];
+        if (mRsp->geometry_mode & G_LIGHTING_POSITIONAL) {
+            float(*mtx)[4] = mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1];
             world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
             world_pos[1] = v->ob[0] * mtx[0][1] + v->ob[1] * mtx[1][1] + v->ob[2] * mtx[2][1] + mtx[3][1];
             world_pos[2] = v->ob[0] * mtx[0][2] + v->ob[1] * mtx[1][2] + v->ob[2] * mtx[2][2] + mtx[3][2];
@@ -1173,32 +1183,32 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
 
         x = AdjXForAspectRatio(x);
 
-        short U = v->tc[0] * mRsp.texture_scaling_factor.s >> 16;
-        short V = v->tc[1] * mRsp.texture_scaling_factor.t >> 16;
+        short U = v->tc[0] * mRsp->texture_scaling_factor.s >> 16;
+        short V = v->tc[1] * mRsp->texture_scaling_factor.t >> 16;
 
-        if (mRsp.geometry_mode & G_LIGHTING) {
-            if (mRsp.lights_changed) {
-                for (int i = 0; i < mRsp.current_num_lights - 1; i++) {
-                    CalculateNormalDir(&mRsp.current_lights[i].l, mRsp.current_lights_coeffs[i]);
+        if (mRsp->geometry_mode & G_LIGHTING) {
+            if (mRsp->lights_changed) {
+                for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
+                    CalculateNormalDir(&mRsp->current_lights[i].l, mRsp->current_lights_coeffs[i]);
                 }
                 /*static const Light_t lookat_x = {{0, 0, 0}, 0, {0, 0, 0}, 0, {127, 0, 0}, 0};
                 static const Light_t lookat_y = {{0, 0, 0}, 0, {0, 0, 0}, 0, {0, 127, 0}, 0};*/
-                CalculateNormalDir(&mRsp.lookat[0], mRsp.current_lookat_coeffs[0]);
-                CalculateNormalDir(&mRsp.lookat[1], mRsp.current_lookat_coeffs[1]);
-                mRsp.lights_changed = false;
+                CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
+                CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
+                mRsp->lights_changed = false;
             }
 
-            int r = mRsp.current_lights[mRsp.current_num_lights - 1].l.col[0];
-            int g = mRsp.current_lights[mRsp.current_num_lights - 1].l.col[1];
-            int b = mRsp.current_lights[mRsp.current_num_lights - 1].l.col[2];
+            int r = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[0];
+            int g = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[1];
+            int b = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[2];
 
-            for (int i = 0; i < mRsp.current_num_lights - 1; i++) {
+            for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
                 float intensity = 0;
-                if ((mRsp.geometry_mode & G_LIGHTING_POSITIONAL) && (mRsp.current_lights[i].p.unk3 != 0)) {
+                if ((mRsp->geometry_mode & G_LIGHTING_POSITIONAL) && (mRsp->current_lights[i].p.unk3 != 0)) {
                     // Calculate distance from the light to the vertex
-                    float dist_vec[3] = { mRsp.current_lights[i].p.pos[0] - world_pos[0],
-                                          mRsp.current_lights[i].p.pos[1] - world_pos[1],
-                                          mRsp.current_lights[i].p.pos[2] - world_pos[2] };
+                    float dist_vec[3] = { mRsp->current_lights[i].p.pos[0] - world_pos[0],
+                                          mRsp->current_lights[i].p.pos[1] - world_pos[1],
+                                          mRsp->current_lights[i].p.pos[2] - world_pos[2] };
                     float dist_sq =
                         dist_vec[0] * dist_vec[0] + dist_vec[1] * dist_vec[1] +
                         dist_vec[2] * dist_vec[2] * 2; // The *2 comes from GLideN64, unsure of why it does it
@@ -1207,7 +1217,7 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
                     // Transform distance vector (which acts as a direction light vector) into model's space
                     float light_model[3];
                     TransposedMatrixMul(light_model, dist_vec,
-                                        mRsp.modelview_matrix_stack[mRsp.modelview_matrix_stack_size - 1]);
+                                        mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1]);
 
                     // Calculate intensity for each axis using standard formula for intensity
                     float light_intensity[3];
@@ -1226,21 +1236,21 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
                     // Specific coefficients for MM's microcode sourced from GLideN64
                     // https://github.com/gonetz/GLideN64/blob/3b43a13a80dfc2eb6357673440b335e54eaa3896/src/gSP.cpp#L636
                     float distf = floorf(dist);
-                    float attenuation = (distf * mRsp.current_lights[i].p.unk7 * 2.0f +
-                                         distf * distf * mRsp.current_lights[i].p.unkE / 8.0f) /
+                    float attenuation = (distf * mRsp->current_lights[i].p.unk7 * 2.0f +
+                                         distf * distf * mRsp->current_lights[i].p.unkE / 8.0f) /
                                             (float)0xFFFF +
                                         1.0f;
                     intensity = total_intensity / attenuation;
                 } else {
-                    intensity += vn->n[0] * mRsp.current_lights_coeffs[i][0];
-                    intensity += vn->n[1] * mRsp.current_lights_coeffs[i][1];
-                    intensity += vn->n[2] * mRsp.current_lights_coeffs[i][2];
+                    intensity += vn->n[0] * mRsp->current_lights_coeffs[i][0];
+                    intensity += vn->n[1] * mRsp->current_lights_coeffs[i][1];
+                    intensity += vn->n[2] * mRsp->current_lights_coeffs[i][2];
                     intensity /= 127.0f;
                 }
                 if (intensity > 0.0f) {
-                    r += intensity * mRsp.current_lights[i].l.col[0];
-                    g += intensity * mRsp.current_lights[i].l.col[1];
-                    b += intensity * mRsp.current_lights[i].l.col[2];
+                    r += intensity * mRsp->current_lights[i].l.col[0];
+                    g += intensity * mRsp->current_lights[i].l.col[1];
+                    b += intensity * mRsp->current_lights[i].l.col[2];
                 }
             }
 
@@ -1248,14 +1258,14 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
             d->color.g = g > 255 ? 255 : g;
             d->color.b = b > 255 ? 255 : b;
 
-            if (mRsp.geometry_mode & G_TEXTURE_GEN) {
+            if (mRsp->geometry_mode & G_TEXTURE_GEN) {
                 float dotx = 0, doty = 0;
-                dotx += vn->n[0] * mRsp.current_lookat_coeffs[0][0];
-                dotx += vn->n[1] * mRsp.current_lookat_coeffs[0][1];
-                dotx += vn->n[2] * mRsp.current_lookat_coeffs[0][2];
-                doty += vn->n[0] * mRsp.current_lookat_coeffs[1][0];
-                doty += vn->n[1] * mRsp.current_lookat_coeffs[1][1];
-                doty += vn->n[2] * mRsp.current_lookat_coeffs[1][2];
+                dotx += vn->n[0] * mRsp->current_lookat_coeffs[0][0];
+                dotx += vn->n[1] * mRsp->current_lookat_coeffs[0][1];
+                dotx += vn->n[2] * mRsp->current_lookat_coeffs[0][2];
+                doty += vn->n[0] * mRsp->current_lookat_coeffs[1][0];
+                doty += vn->n[1] * mRsp->current_lookat_coeffs[1][1];
+                doty += vn->n[2] * mRsp->current_lookat_coeffs[1][2];
 
                 dotx /= 127.0f;
                 doty /= 127.0f;
@@ -1263,7 +1273,7 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
                 dotx = Ship::Math::clamp(dotx, -1.0f, 1.0f);
                 doty = Ship::Math::clamp(doty, -1.0f, 1.0f);
 
-                if (mRsp.geometry_mode & G_TEXTURE_GEN_LINEAR) {
+                if (mRsp->geometry_mode & G_TEXTURE_GEN_LINEAR) {
                     // Not sure exactly what formula we should use to get accurate values
                     /*dotx = (2.906921f * dotx * dotx + 1.36114f) * dotx;
                     doty = (2.906921f * doty * doty + 1.36114f) * doty;
@@ -1276,8 +1286,8 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
                     doty = (doty + 1.0f) / 4.0f;
                 }
 
-                U = (int32_t)(dotx * mRsp.texture_scaling_factor.s);
-                V = (int32_t)(doty * mRsp.texture_scaling_factor.t);
+                U = (int32_t)(dotx * mRsp->texture_scaling_factor.s);
+                V = (int32_t)(doty * mRsp->texture_scaling_factor.t);
             }
         } else {
             d->color.r = v->cn[0];
@@ -1312,7 +1322,7 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
         d->z = z;
         d->w = w;
 
-        if (mRsp.geometry_mode & G_FOG) {
+        if (mRsp->geometry_mode & G_FOG) {
             if (fabsf(w) < 0.001f) {
                 // To avoid division by zero
                 w = 0.001f;
@@ -1323,7 +1333,7 @@ void GfxPc::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vert
                 winv = std::numeric_limits<int16_t>::max();
             }
 
-            float fog_z = z * winv * mRsp.fog_mul + mRsp.fog_offset;
+            float fog_z = z * winv * mRsp->fog_mul + mRsp->fog_offset;
             fog_z = Ship::Math::clamp(fog_z, 0.0f, 255.0f);
             d->color.a = fog_z; // Use alpha variable to store fog factor
         } else {
@@ -1338,15 +1348,15 @@ void GfxPc::GfxSpModifyVertex(uint16_t vtx_idx, uint8_t where, uint32_t val) {
     int16_t s = (int16_t)(val >> 16);
     int16_t t = (int16_t)val;
 
-    LoadedVertex* v = &mRsp.loaded_vertices[vtx_idx];
+    LoadedVertex* v = &mRsp->loaded_vertices[vtx_idx];
     v->u = s;
     v->v = t;
 }
 
 void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool is_rect) {
-    struct LoadedVertex* v1 = &mRsp.loaded_vertices[vtx1_idx];
-    struct LoadedVertex* v2 = &mRsp.loaded_vertices[vtx2_idx];
-    struct LoadedVertex* v3 = &mRsp.loaded_vertices[vtx3_idx];
+    struct LoadedVertex* v1 = &mRsp->loaded_vertices[vtx1_idx];
+    struct LoadedVertex* v2 = &mRsp->loaded_vertices[vtx2_idx];
+    struct LoadedVertex* v3 = &mRsp->loaded_vertices[vtx3_idx];
     struct LoadedVertex* v_arr[3] = { v1, v2, v3 };
 
     // if (rand()%2) return;
@@ -1360,7 +1370,7 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
     const auto cull_front = get_attr<uint32_t>(CULL_FRONT);
     const auto cull_back = get_attr<uint32_t>(CULL_BACK);
 
-    if ((mRsp.geometry_mode & cull_both) != 0) {
+    if ((mRsp->geometry_mode & cull_both) != 0) {
         float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
         float dy1 = v1->y / (v1->w) - v2->y / (v2->w);
         float dx2 = v3->x / (v3->w) - v2->x / (v2->w);
@@ -1375,11 +1385,11 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
 
         // If inverted culling is requested, negate the cross
         if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 &&
-            (mRsp.extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
+            (mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
             cross = -cross;
         }
 
-        auto cull_type = mRsp.geometry_mode & cull_both;
+        auto cull_type = mRsp->geometry_mode & cull_both;
 
         if (cull_type == cull_front) {
             if (cross <= 0) {
@@ -1395,8 +1405,8 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
         }
     }
 
-    bool depth_test = (mRsp.geometry_mode & G_ZBUFFER) == G_ZBUFFER;
-    bool depth_mask = (mRdp.other_mode_l & Z_UPD) == Z_UPD;
+    bool depth_test = (mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER;
+    bool depth_mask = (mRdp->other_mode_l & Z_UPD) == Z_UPD;
     uint8_t depth_test_and_mask = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
     if (depth_test_and_mask != mRenderingState.depth_test_and_mask) {
         Flush();
@@ -1404,42 +1414,43 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
         mRenderingState.depth_test_and_mask = depth_test_and_mask;
     }
 
-    bool zmode_decal = (mRdp.other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+    bool zmode_decal = (mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
     if (zmode_decal != mRenderingState.decal_mode) {
         Flush();
         mRapi->set_zmode_decal(zmode_decal);
         mRenderingState.decal_mode = zmode_decal;
     }
 
-    if (mRdp.viewport_or_scissor_changed) {
-        if (memcmp(&mRdp.viewport, &mRenderingState.viewport, sizeof(mRdp.viewport)) != 0) {
+    if (mRdp->viewport_or_scissor_changed) {
+        if (memcmp(&mRdp->viewport, &mRenderingState.viewport, sizeof(mRdp->viewport)) != 0) {
             Flush();
-            mRapi->set_viewport(mRdp.viewport.x, mRdp.viewport.y, mRdp.viewport.width, mRdp.viewport.height);
-            mRenderingState.viewport = mRdp.viewport;
+            mRapi->set_viewport(mRdp->viewport.x, mRdp->viewport.y, mRdp->viewport.width, mRdp->viewport.height);
+            mRenderingState.viewport = mRdp->viewport;
         }
-        if (memcmp(&mRdp.scissor, &mRenderingState.scissor, sizeof(mRdp.scissor)) != 0) {
+        if (memcmp(&mRdp->scissor, &mRenderingState.scissor, sizeof(mRdp->scissor)) != 0) {
             Flush();
-            mRapi->set_scissor(mRdp.scissor.x, mRdp.scissor.y, mRdp.scissor.width, mRdp.scissor.height);
-            mRenderingState.scissor = mRdp.scissor;
+            mRapi->set_scissor(mRdp->scissor.x, mRdp->scissor.y, mRdp->scissor.width, mRdp->scissor.height);
+            mRenderingState.scissor = mRdp->scissor;
         }
-        mRdp.viewport_or_scissor_changed = false;
+        mRdp->viewport_or_scissor_changed = false;
     }
 
-    uint64_t cc_id = mRdp.combine_mode;
+    uint64_t cc_id = mRdp->combine_mode;
     uint64_t cc_options = 0;
-    bool use_alpha = ((mRdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
-                      (mRdp.other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
-                     ((mRdp.other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
-                      (mRdp.other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
-    bool use_fog = (mRdp.other_mode_l >> 30) == G_BL_CLR_FOG;
-    bool texture_edge = (mRdp.other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
-    bool use_noise = (mRdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
-    bool use_2cyc = (mRdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
-    bool alpha_threshold = (mRdp.other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
+    bool use_alpha = ((mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
+                      (mRdp->other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
+                     ((mRdp->other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
+                      (mRdp->other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
+    bool use_fog = (mRdp->other_mode_l >> 30) == G_BL_CLR_FOG;
+    bool texture_edge = (mRdp->other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
+    bool use_noise = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
+    bool use_2cyc = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
+    bool alpha_threshold = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
     bool invisible =
         (mRdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = mRdp.grayscale;
 	auto shader = mRdp.current_shader;
+
     if (texture_edge) {
         if (use_alpha) {
             alpha_threshold = true;
@@ -1472,16 +1483,16 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
     if (use_grayscale) {
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
-    if (mRdp.loaded_texture[0].masked) {
+    if (mRdp->loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
     }
-    if (mRdp.loaded_texture[1].masked) {
+    if (mRdp->loaded_texture[1].masked) {
         cc_options |= SHADER_OPT(TEXEL1_MASK);
     }
-    if (mRdp.loaded_texture[0].blended) {
+    if (mRdp->loaded_texture[0].blended) {
         cc_options |= SHADER_OPT(TEXEL0_BLEND);
     }
-    if (mRdp.loaded_texture[1].blended) {
+    if (mRdp->loaded_texture[1].blended) {
         cc_options |= SHADER_OPT(TEXEL1_BLEND);
     }
     if (shader.enabled) {
@@ -1490,7 +1501,7 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
     }
 
     ColorCombinerKey key;
-    key.combine_mode = mRdp.combine_mode;
+    key.combine_mode = mRdp->combine_mode;
     key.options = cc_options;
 
     // If we are not using alpha, clear the alpha components of the combiner as they have no effect
@@ -1504,32 +1515,32 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
     uint32_t tex_width[2], tex_height[2], tex_width2[2], tex_height2[2];
 
     for (int i = 0; i < 2; i++) {
-        uint32_t tile = mRdp.first_tile_index + i;
+        uint32_t tile = mRdp->first_tile_index + i;
         if (comb->used_textures[i]) {
-            if (mRdp.textures_changed[i]) {
+            if (mRdp->textures_changed[i]) {
                 Flush();
                 ImportTexture(i, tile, false);
-                if (mRdp.loaded_texture[i].masked) {
+                if (mRdp->loaded_texture[i].masked) {
                     ImportTextureMask(SHADER_FIRST_MASK_TEXTURE + i, tile);
                 }
-                if (mRdp.loaded_texture[i].blended) {
+                if (mRdp->loaded_texture[i].blended) {
                     ImportTexture(SHADER_FIRST_REPLACEMENT_TEXTURE + i, tile, true);
                 }
-                mRdp.textures_changed[i] = false;
+                mRdp->textures_changed[i] = false;
             }
 
-            uint8_t cms = mRdp.texture_tile[tile].cms;
-            uint8_t cmt = mRdp.texture_tile[tile].cmt;
+            uint8_t cms = mRdp->texture_tile[tile].cms;
+            uint8_t cmt = mRdp->texture_tile[tile].cmt;
 
-            uint32_t tex_size_bytes = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].orig_size_bytes;
-            uint32_t line_size = mRdp.texture_tile[tile].line_size_bytes;
+            uint32_t tex_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
+            uint32_t line_size = mRdp->texture_tile[tile].line_size_bytes;
 
             if (line_size == 0) {
                 line_size = 1;
             }
 
             tex_height[i] = tex_size_bytes / line_size;
-            switch (mRdp.texture_tile[tile].siz) {
+            switch (mRdp->texture_tile[tile].siz) {
                 case G_IM_SIZ_4b:
                     line_size <<= 1;
                     break;
@@ -1545,8 +1556,8 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
             }
             tex_width[i] = line_size;
 
-            tex_width2[i] = (mRdp.texture_tile[tile].lrs - mRdp.texture_tile[tile].uls + 4) / 4;
-            tex_height2[i] = (mRdp.texture_tile[tile].lrt - mRdp.texture_tile[tile].ult + 4) / 4;
+            tex_width2[i] = (mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4;
+            tex_height2[i] = (mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4;
 
             uint32_t tex_width1 = tex_width[i] << (cms & G_TX_MIRROR);
             uint32_t tex_height1 = tex_height[i] << (cmt & G_TX_MIRROR);
@@ -1564,13 +1575,13 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
                 continue;
             }
 
-            bool linear_filter = (mRdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
+            bool linear_filter = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
             if (linear_filter != mRenderingState.textures[i]->second.linear_filter ||
                 cms != mRenderingState.textures[i]->second.cms || cmt != mRenderingState.textures[i]->second.cmt) {
                 Flush();
 
                 // Set the same sampler params on the blended texture. Needed for opengl.
-                if (mRdp.loaded_texture[i].blended) {
+                if (mRdp->loaded_texture[i].blended) {
                     mRapi->set_sampler_parameters(SHADER_FIRST_REPLACEMENT_TEXTURE + i, linear_filter, cms, cmt);
                 }
 
@@ -1623,8 +1634,8 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
             float u = v_arr[i]->u / 32.0f;
             float v = v_arr[i]->v / 32.0f;
 
-            int shifts = mRdp.texture_tile[mRdp.first_tile_index + t].shifts;
-            int shiftt = mRdp.texture_tile[mRdp.first_tile_index + t].shiftt;
+            int shifts = mRdp->texture_tile[mRdp->first_tile_index + t].shifts;
+            int shiftt = mRdp->texture_tile[mRdp->first_tile_index + t].shiftt;
             if (shifts != 0) {
                 if (shifts <= 10) {
                     u /= 1 << shifts;
@@ -1640,10 +1651,10 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
                 }
             }
 
-            u -= mRdp.texture_tile[mRdp.first_tile_index + t].uls / 4.0f;
-            v -= mRdp.texture_tile[mRdp.first_tile_index + t].ult / 4.0f;
+            u -= mRdp->texture_tile[mRdp->first_tile_index + t].uls / 4.0f;
+            v -= mRdp->texture_tile[mRdp->first_tile_index + t].ult / 4.0f;
 
-            if ((mRdp.other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT) {
+            if ((mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT) {
                 // Linear filter adds 0.5f to the coordinates
                 if (!is_rect) {
                     u += 0.5f;
@@ -1667,17 +1678,17 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
         }
 
         if (use_fog) {
-            mBufVbo[mBufVboLen++] = mRdp.fog_color.r / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp.fog_color.g / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp.fog_color.b / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
             mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
         }
 
         if (use_grayscale) {
-            mBufVbo[mBufVboLen++] = mRdp.grayscale_color.r / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp.grayscale_color.g / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp.grayscale_color.b / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp.grayscale_color.a / 255.0f; // lerp interpolation factor (not alpha)
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.r / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.g / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.b / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.a / 255.0f; // lerp interpolation factor (not alpha)
         }
 
         for (int j = 0; j < num_inputs; j++) {
@@ -1688,31 +1699,31 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
                         // Note: CCMUX constants and ACMUX constants used here have same value, which is why this works
                         // (except LOD fraction).
                     case G_CCMUX_PRIMITIVE:
-                        color = &mRdp.prim_color;
+                        color = &mRdp->prim_color;
                         break;
                     case G_CCMUX_SHADE:
                         color = &v_arr[i]->color;
                         break;
                     case G_CCMUX_ENVIRONMENT:
-                        color = &mRdp.env_color;
+                        color = &mRdp->env_color;
                         break;
                     case G_CCMUX_PRIMITIVE_ALPHA: {
-                        tmp.r = tmp.g = tmp.b = mRdp.prim_color.a;
+                        tmp.r = tmp.g = tmp.b = mRdp->prim_color.a;
                         color = &tmp;
                         break;
                     }
                     case G_CCMUX_ENV_ALPHA: {
-                        tmp.r = tmp.g = tmp.b = mRdp.env_color.a;
+                        tmp.r = tmp.g = tmp.b = mRdp->env_color.a;
                         color = &tmp;
                         break;
                     }
                     case G_CCMUX_PRIM_LOD_FRAC: {
-                        tmp.r = tmp.g = tmp.b = mRdp.prim_lod_fraction;
+                        tmp.r = tmp.g = tmp.b = mRdp->prim_lod_fraction;
                         color = &tmp;
                         break;
                     }
                     case G_CCMUX_LOD_FRACTION: {
-                        if (mRdp.other_mode_l & G_TL_LOD) {
+                        if (mRdp->other_mode_l & G_TL_LOD) {
                             // "Hack" that works for Bowser - Peach painting
                             float distance_frac = (v1->w - 3000.0f) / 3000.0f;
                             if (distance_frac < 0.0f) {
@@ -1729,7 +1740,7 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
                         break;
                     }
                     case G_ACMUX_PRIM_LOD_FRAC:
-                        tmp.a = mRdp.prim_lod_fraction;
+                        tmp.a = mRdp->prim_lod_fraction;
                         color = &tmp;
                         break;
                     default:
@@ -1766,13 +1777,13 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
 }
 
 void GfxPc::GfxSpGeometryMode(uint32_t clear, uint32_t set) {
-    mRsp.geometry_mode &= ~clear;
-    mRsp.geometry_mode |= set;
+    mRsp->geometry_mode &= ~clear;
+    mRsp->geometry_mode |= set;
 }
 
 void GfxPc::GfxSpExtraGeometryMode(uint32_t clear, uint32_t set) {
-    mRsp.extra_geometry_mode &= ~clear;
-    mRsp.extra_geometry_mode |= set;
+    mRsp->extra_geometry_mode &= ~clear;
+    mRsp->extra_geometry_mode |= set;
 }
 
 void GfxPc::AdjustVIewportOrScissor(XYWidthHeight* area) {
@@ -1814,14 +1825,14 @@ void GfxPc::CalcAndSetViewport(const F3DVp_t* viewport) {
     float x = (viewport->vtrans[0] / 4.0f) - width / 2.0f;
     float y = ((viewport->vtrans[1] / 4.0f) + height / 2.0f);
 
-    mRdp.viewport.x = x;
-    mRdp.viewport.y = y;
-    mRdp.viewport.width = width;
-    mRdp.viewport.height = height;
+    mRdp->viewport.x = x;
+    mRdp->viewport.y = y;
+    mRdp->viewport.width = width;
+    mRdp->viewport.height = height;
 
-    AdjustVIewportOrScissor(&mRdp.viewport);
+    AdjustVIewportOrScissor(&mRdp->viewport);
 
-    mRdp.viewport_or_scissor_changed = true;
+    mRdp->viewport_or_scissor_changed = true;
 }
 
 void GfxPc::GfxSpMovememF3dex2(uint8_t index, uint8_t offset, const void* data) {
@@ -1833,9 +1844,9 @@ void GfxPc::GfxSpMovememF3dex2(uint8_t index, uint8_t offset, const void* data) 
             int lightidx = offset / 24 - 2;
             if (lightidx >= 0 && lightidx <= MAX_LIGHTS) { // skip lookat
                 // NOTE: reads out of bounds if it is an ambient light
-                memcpy(mRsp.current_lights + lightidx, data, sizeof(F3DLight));
+                memcpy(mRsp->current_lights + lightidx, data, sizeof(F3DLight));
             } else if (lightidx < 0) {
-                memcpy(mRsp.lookat + offset / 24, data, sizeof(F3DLight_t)); // TODO Light?
+                memcpy(mRsp->lookat + offset / 24, data, sizeof(F3DLight_t)); // TODO Light?
             }
             break;
         }
@@ -1849,7 +1860,7 @@ void GfxPc::GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* data) {
             break;
         case F3DEX_G_MV_LOOKATY:
         case F3DEX_G_MV_LOOKATX:
-            memcpy(mRsp.lookat + (index - F3DEX_G_MV_LOOKATY) / 2, data, sizeof(F3DLight_t));
+            memcpy(mRsp->lookat + (index - F3DEX_G_MV_LOOKATY) / 2, data, sizeof(F3DLight_t));
             break;
         case F3DEX_G_MV_L0:
         case F3DEX_G_MV_L1:
@@ -1860,7 +1871,7 @@ void GfxPc::GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* data) {
         case F3DEX_G_MV_L6:
         case F3DEX_G_MV_L7:
             // NOTE: reads out of bounds if it is an ambient light
-            memcpy(mRsp.current_lights + (index - F3DEX_G_MV_L0) / 2, data, sizeof(F3DLight_t));
+            memcpy(mRsp->current_lights + (index - F3DEX_G_MV_L0) / 2, data, sizeof(F3DLight_t));
             break;
     }
 }
@@ -1868,12 +1879,12 @@ void GfxPc::GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* data) {
 void GfxPc::GfxSpMovewordF3dex2(uint8_t index, uint16_t offset, uintptr_t data) {
     switch (index) {
         case G_MW_NUMLIGHT:
-            mRsp.current_num_lights = data / 24 + 1; // add ambient light
-            mRsp.lights_changed = true;
+            mRsp->current_num_lights = data / 24 + 1; // add ambient light
+            mRsp->lights_changed = true;
             break;
         case G_MW_FOG:
-            mRsp.fog_mul = (int16_t)(data >> 16);
-            mRsp.fog_offset = (int16_t)data;
+            mRsp->fog_mul = (int16_t)(data >> 16);
+            mRsp->fog_offset = (int16_t)data;
             break;
         case G_MW_SEGMENT:
             int segNumber = offset / 4;
@@ -1887,12 +1898,12 @@ void GfxPc::GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t data) {
         case G_MW_NUMLIGHT:
             // Ambient light is included
             // The 31st bit is a flag that lights should be recalculated
-            mRsp.current_num_lights = (data - 0x80000000U) / 32;
-            mRsp.lights_changed = true;
+            mRsp->current_num_lights = (data - 0x80000000U) / 32;
+            mRsp->lights_changed = true;
             break;
         case G_MW_FOG:
-            mRsp.fog_mul = (int16_t)(data >> 16);
-            mRsp.fog_offset = (int16_t)data;
+            mRsp->fog_mul = (int16_t)(data >> 16);
+            mRsp->fog_offset = (int16_t)data;
             break;
         case G_MW_SEGMENT:
             int segNumber = offset / 4;
@@ -1902,14 +1913,14 @@ void GfxPc::GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t data) {
 }
 
 void GfxPc::GfxSpTexture(uint16_t sc, uint16_t tc, uint8_t level, uint8_t tile, uint8_t on) {
-    mRsp.texture_scaling_factor.s = sc;
-    mRsp.texture_scaling_factor.t = tc;
-    if (mRdp.first_tile_index != tile) {
-        mRdp.textures_changed[0] = true;
-        mRdp.textures_changed[1] = true;
+    mRsp->texture_scaling_factor.s = sc;
+    mRsp->texture_scaling_factor.t = tc;
+    if (mRdp->first_tile_index != tile) {
+        mRdp->textures_changed[0] = true;
+        mRdp->textures_changed[1] = true;
     }
 
-    mRdp.first_tile_index = tile;
+    mRdp->first_tile_index = tile;
 }
 
 void GfxPc::GfxDpSetScissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32_t lrx, uint32_t lry) {
@@ -1918,25 +1929,25 @@ void GfxPc::GfxDpSetScissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32_t 
     float width = (lrx - ulx) / 4.0f;
     float height = (lry - uly) / 4.0f;
 
-    mRdp.scissor.x = x;
-    mRdp.scissor.y = y;
-    mRdp.scissor.width = width;
-    mRdp.scissor.height = height;
+    mRdp->scissor.x = x;
+    mRdp->scissor.y = y;
+    mRdp->scissor.width = width;
+    mRdp->scissor.height = height;
 
-    AdjustVIewportOrScissor(&mRdp.scissor);
+    AdjustVIewportOrScissor(&mRdp->scissor);
 
-    mRdp.viewport_or_scissor_changed = true;
+    mRdp->viewport_or_scissor_changed = true;
 }
 
 void GfxPc::GfxDpSetTextureImage(uint32_t format, uint32_t size, uint32_t width, const char* texPath, uint32_t texFlags,
                                  RawTexMetadata rawTexMetdata, const void* addr) {
     // fprintf(stderr, "GfxDpSetTextureImage: %s (width=%d; size=0x%X)\n",
     //         rawTexMetdata.resource ? rawTexMetdata.resource->GetInitData()->Path.c_str() : nullptr, width, size);
-    mRdp.texture_to_load.addr = (const uint8_t*)addr;
-    mRdp.texture_to_load.siz = size;
-    mRdp.texture_to_load.width = width;
-    mRdp.texture_to_load.tex_flags = texFlags;
-    mRdp.texture_to_load.raw_tex_metadata = rawTexMetdata;
+    mRdp->texture_to_load.addr = (const uint8_t*)addr;
+    mRdp->texture_to_load.siz = size;
+    mRdp->texture_to_load.width = width;
+    mRdp->texture_to_load.tex_flags = texFlags;
+    mRdp->texture_to_load.raw_tex_metadata = rawTexMetdata;
 }
 
 void GfxPc::GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette,
@@ -1951,48 +1962,44 @@ void GfxPc::GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem
         cmt = G_TX_CLAMP;
     }
 
-    mRdp.texture_tile[tile].palette = palette; // palette should set upper 4 bits of color index in 4b mode
-    mRdp.texture_tile[tile].fmt = fmt;
-    mRdp.texture_tile[tile].siz = siz;
-    mRdp.texture_tile[tile].cms = cms;
-    mRdp.texture_tile[tile].cmt = cmt;
-    mRdp.texture_tile[tile].shifts = shifts;
-    mRdp.texture_tile[tile].shiftt = shiftt;
-    mRdp.texture_tile[tile].line_size_bytes = line * 8;
+    mRdp->texture_tile[tile].palette = palette; // palette should set upper 4 bits of color index in 4b mode
+    mRdp->texture_tile[tile].fmt = fmt;
+    mRdp->texture_tile[tile].siz = siz;
+    mRdp->texture_tile[tile].cms = cms;
+    mRdp->texture_tile[tile].cmt = cmt;
+    mRdp->texture_tile[tile].shifts = shifts;
+    mRdp->texture_tile[tile].shiftt = shiftt;
+    mRdp->texture_tile[tile].line_size_bytes = line * 8;
 
-    mRdp.texture_tile[tile].tmem = tmem;
-    // mRdp.texture_tile[tile].tmem_index = tmem / 256; // tmem is the 64-bit word offset, so 256 words means 2 kB
+    mRdp->texture_tile[tile].tmem = tmem;
+    // mRdp->texture_tile[tile].tmem_index = tmem / 256; // tmem is the 64-bit word offset, so 256 words means 2 kB
 
-    mRdp.texture_tile[tile].tmem_index =
+    mRdp->texture_tile[tile].tmem_index =
         tmem != 0; // assume one texture is loaded at address 0 and another texture at any other address
 
-    mRdp.textures_changed[0] = true;
-    mRdp.textures_changed[1] = true;
+    mRdp->textures_changed[0] = true;
+    mRdp->textures_changed[1] = true;
 }
 
 void GfxPc::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uint16_t lrs, uint16_t lrt) {
-    mRdp.texture_tile[tile].uls = uls;
-    mRdp.texture_tile[tile].ult = ult;
-    mRdp.texture_tile[tile].lrs = lrs;
-    mRdp.texture_tile[tile].lrt = lrt;
-    mRdp.textures_changed[0] = true;
-    mRdp.textures_changed[1] = true;
+    mRdp->texture_tile[tile].uls = uls;
+    mRdp->texture_tile[tile].ult = ult;
+    mRdp->texture_tile[tile].lrs = lrs;
+    mRdp->texture_tile[tile].lrt = lrt;
+    mRdp->textures_changed[0] = true;
+    mRdp->textures_changed[1] = true;
 }
 
 void GfxPc::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
-    SUPPORT_CHECK(tile == G_TX_LOADTILE);
-    SUPPORT_CHECK(mRdp.texture_to_load.siz == G_IM_SIZ_16b);
-    // BENTODO
-    // SUPPORT_CHECK((mRdp.texture_tile[tile].tmem == 256 && (high_index <= 127 || high_index == 255)) ||
-    //              (mRdp.texture_tile[tile].tmem == 384 && high_index == 127));
+    SUPPORT_CHECK(mRdp->texture_to_load.siz == G_IM_SIZ_16b);
 
-    if (mRdp.texture_tile[tile].tmem == 256) {
-        mRdp.palettes[0] = mRdp.texture_to_load.addr;
+    if (mRdp->texture_tile[tile].tmem == 256) {
+        mRdp->palettes[0] = mRdp->texture_to_load.addr;
         if (high_index == 255) {
-            mRdp.palettes[1] = mRdp.texture_to_load.addr + 2 * 128;
+            mRdp->palettes[1] = mRdp->texture_to_load.addr + 2 * 128;
         }
     } else {
-        mRdp.palettes[1] = mRdp.texture_to_load.addr;
+        mRdp->palettes[1] = mRdp->texture_to_load.addr;
     }
 }
 
@@ -2002,7 +2009,7 @@ void GfxPc::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lr
 
     // The lrs field rather seems to be number of pixels to load
     uint32_t word_size_shift = 0;
-    switch (mRdp.texture_to_load.siz) {
+    switch (mRdp->texture_to_load.siz) {
         case G_IM_SIZ_4b:
             word_size_shift = -1;
             break;
@@ -2019,45 +2026,45 @@ void GfxPc::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lr
     uint32_t orig_size_bytes =
         word_size_shift > 0 ? (lrs + 1) << word_size_shift : (lrs + 1) >> (-(int64_t)word_size_shift);
     uint32_t size_bytes = orig_size_bytes;
-    if (mRdp.texture_to_load.raw_tex_metadata.h_byte_scale != 1 ||
-        mRdp.texture_to_load.raw_tex_metadata.v_pixel_scale != 1) {
-        size_bytes *= mRdp.texture_to_load.raw_tex_metadata.h_byte_scale;
-        size_bytes *= mRdp.texture_to_load.raw_tex_metadata.v_pixel_scale;
+    if (mRdp->texture_to_load.raw_tex_metadata.h_byte_scale != 1 ||
+        mRdp->texture_to_load.raw_tex_metadata.v_pixel_scale != 1) {
+        size_bytes *= mRdp->texture_to_load.raw_tex_metadata.h_byte_scale;
+        size_bytes *= mRdp->texture_to_load.raw_tex_metadata.v_pixel_scale;
     }
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].orig_size_bytes = orig_size_bytes;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes = size_bytes;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes = size_bytes;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes = size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes = orig_size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes = size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes = size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes = size_bytes;
     // assert(size_bytes <= 4096 && "bug: too big texture");
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].tex_flags = mRdp.texture_to_load.tex_flags;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata = mRdp.texture_to_load.raw_tex_metadata;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr = mRdp.texture_to_load.addr;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags = mRdp->texture_to_load.tex_flags;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr = mRdp->texture_to_load.addr;
     // fprintf(stderr, "GfxDpLoadBlock: line_size = 0x%x; orig = 0x%x; bpp=%d; lrs=%d\n", size_bytes,
     // orig_size_bytes,
-    //         mRdp.texture_to_load.siz, lrs);
+    //         mRdp->texture_to_load.siz, lrs);
 
     const std::string& texPath =
-        mRdp.texture_to_load.raw_tex_metadata.resource != nullptr
-            ? GetBaseTexturePath(mRdp.texture_to_load.raw_tex_metadata.resource->GetInitData()->Path)
+        mRdp->texture_to_load.raw_tex_metadata.resource != nullptr
+            ? GetBaseTexturePath(mRdp->texture_to_load.raw_tex_metadata.resource->GetInitData()->Path)
             : "";
     auto maskedTextureIter = mMaskedTextures.find(texPath);
     if (maskedTextureIter != mMaskedTextures.end()) {
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].masked = true;
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].blended =
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].masked = true;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended =
             maskedTextureIter->second.replacementData != nullptr;
     } else {
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].masked = false;
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].blended = false;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].masked = false;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended = false;
     }
 
-    mRdp.textures_changed[mRdp.texture_tile[tile].tmem_index] = true;
+    mRdp->textures_changed[mRdp->texture_tile[tile].tmem_index] = true;
 }
 
 void GfxPc::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt) {
     SUPPORT_CHECK(tile == G_TX_LOADTILE);
 
     uint32_t word_size_shift = 0;
-    switch (mRdp.texture_to_load.siz) {
+    switch (mRdp->texture_to_load.siz) {
         case G_IM_SIZ_4b:
             word_size_shift = 0;
             break;
@@ -2076,7 +2083,7 @@ void GfxPc::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs
     uint32_t offset_y = ult >> G_TEXTURE_IMAGE_FRAC;
     uint32_t tile_width = ((lrs - uls) >> G_TEXTURE_IMAGE_FRAC) + 1;
     uint32_t tile_height = ((lrt - ult) >> G_TEXTURE_IMAGE_FRAC) + 1;
-    uint32_t full_image_width = mRdp.texture_to_load.width + 1;
+    uint32_t full_image_width = mRdp->texture_to_load.width + 1;
 
     uint32_t offset_x_in_bytes = offset_x << word_size_shift;
     uint32_t tile_line_size_bytes = tile_width << word_size_shift;
@@ -2086,8 +2093,8 @@ void GfxPc::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs
     uint32_t size_bytes = orig_size_bytes;
     uint32_t start_offset_bytes = full_image_line_size_bytes * offset_y + offset_x_in_bytes;
 
-    float h_byte_scale = mRdp.texture_to_load.raw_tex_metadata.h_byte_scale;
-    float v_pixel_scale = mRdp.texture_to_load.raw_tex_metadata.v_pixel_scale;
+    float h_byte_scale = mRdp->texture_to_load.raw_tex_metadata.h_byte_scale;
+    float v_pixel_scale = mRdp->texture_to_load.raw_tex_metadata.v_pixel_scale;
 
     if (h_byte_scale != 1 || v_pixel_scale != 1) {
         start_offset_bytes = h_byte_scale * (v_pixel_scale * offset_y * full_image_line_size_bytes + offset_x_in_bytes);
@@ -2096,36 +2103,36 @@ void GfxPc::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs
         tile_line_size_bytes *= h_byte_scale;
     }
 
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].orig_size_bytes = orig_size_bytes;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].size_bytes = size_bytes;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].full_image_line_size_bytes = full_image_line_size_bytes;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].line_size_bytes = tile_line_size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes = orig_size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes = size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes = full_image_line_size_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes = tile_line_size_bytes;
 
     //    assert(size_bytes <= 4096 && "bug: too big texture");
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].tex_flags = mRdp.texture_to_load.tex_flags;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].raw_tex_metadata = mRdp.texture_to_load.raw_tex_metadata;
-    mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].addr = mRdp.texture_to_load.addr + start_offset_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags = mRdp->texture_to_load.tex_flags;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr = mRdp->texture_to_load.addr + start_offset_bytes;
 
     const std::string& texPath =
-        mRdp.texture_to_load.raw_tex_metadata.resource != nullptr
-            ? GetBaseTexturePath(mRdp.texture_to_load.raw_tex_metadata.resource->GetInitData()->Path)
+        mRdp->texture_to_load.raw_tex_metadata.resource != nullptr
+            ? GetBaseTexturePath(mRdp->texture_to_load.raw_tex_metadata.resource->GetInitData()->Path)
             : "";
     auto maskedTextureIter = mMaskedTextures.find(texPath);
     if (maskedTextureIter != mMaskedTextures.end()) {
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].masked = true;
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].blended =
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].masked = true;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended =
             maskedTextureIter->second.replacementData != nullptr;
     } else {
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].masked = false;
-        mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index].blended = false;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].masked = false;
+        mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended = false;
     }
 
-    mRdp.texture_tile[tile].uls = uls;
-    mRdp.texture_tile[tile].ult = ult;
-    mRdp.texture_tile[tile].lrs = lrs;
-    mRdp.texture_tile[tile].lrt = lrt;
+    mRdp->texture_tile[tile].uls = uls;
+    mRdp->texture_tile[tile].ult = ult;
+    mRdp->texture_tile[tile].lrs = lrs;
+    mRdp->texture_tile[tile].lrt = lrt;
 
-    mRdp.textures_changed[mRdp.texture_tile[tile].tmem_index] = true;
+    mRdp->textures_changed[mRdp->texture_tile[tile].tmem_index] = true;
 }
 
 /*static uint8_t color_comb_component(uint32_t v) {
@@ -2157,11 +2164,11 @@ static inline uint32_t color_comb(uint32_t a, uint32_t b, uint32_t c, uint32_t d
 }
 
 static void GfxDpSetCombineMode(uint32_t rgb, uint32_t alpha) {
-    mRdp.combine_mode = rgb | (alpha << 12);
+    mRdp->combine_mode = rgb | (alpha << 12);
 }*/
 
 void GfxPc::GfxDpSetCombineMode(uint32_t rgb, uint32_t alpha, uint32_t rgb_cyc2, uint32_t alpha_cyc2) {
-    mRdp.combine_mode = rgb | (alpha << 16) | ((uint64_t)rgb_cyc2 << 28) | ((uint64_t)alpha_cyc2 << 44);
+    mRdp->combine_mode = rgb | (alpha << 16) | ((uint64_t)rgb_cyc2 << 28) | ((uint64_t)alpha_cyc2 << 44);
 }
 
 static inline uint32_t color_comb(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
@@ -2173,32 +2180,32 @@ static inline uint32_t alpha_comb(uint32_t a, uint32_t b, uint32_t c, uint32_t d
 }
 
 void GfxPc::GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    mRdp.grayscale_color.r = r;
-    mRdp.grayscale_color.g = g;
-    mRdp.grayscale_color.b = b;
-    mRdp.grayscale_color.a = a;
+    mRdp->grayscale_color.r = r;
+    mRdp->grayscale_color.g = g;
+    mRdp->grayscale_color.b = b;
+    mRdp->grayscale_color.a = a;
 }
 
 void GfxPc::GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    mRdp.env_color.r = r;
-    mRdp.env_color.g = g;
-    mRdp.env_color.b = b;
-    mRdp.env_color.a = a;
+    mRdp->env_color.r = r;
+    mRdp->env_color.g = g;
+    mRdp->env_color.b = b;
+    mRdp->env_color.a = a;
 }
 
 void GfxPc::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    mRdp.prim_lod_fraction = l;
-    mRdp.prim_color.r = r;
-    mRdp.prim_color.g = g;
-    mRdp.prim_color.b = b;
-    mRdp.prim_color.a = a;
+    mRdp->prim_lod_fraction = l;
+    mRdp->prim_color.r = r;
+    mRdp->prim_color.g = g;
+    mRdp->prim_color.b = b;
+    mRdp->prim_color.a = a;
 }
 
 void GfxPc::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    mRdp.fog_color.r = r;
-    mRdp.fog_color.g = g;
-    mRdp.fog_color.b = b;
-    mRdp.fog_color.a = a;
+    mRdp->fog_color.r = r;
+    mRdp->fog_color.g = g;
+    mRdp->fog_color.b = b;
+    mRdp->fog_color.a = a;
 }
 
 void GfxPc::GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
@@ -2211,18 +2218,18 @@ void GfxPc::GfxDpSetFillColor(uint32_t packed_color) {
     uint32_t g = (col16 >> 6) & 0x1f;
     uint32_t b = (col16 >> 1) & 0x1f;
     uint32_t a = col16 & 1;
-    mRdp.fill_color.r = SCALE_5_8(r);
-    mRdp.fill_color.g = SCALE_5_8(g);
-    mRdp.fill_color.b = SCALE_5_8(b);
-    mRdp.fill_color.a = a * 255;
+    mRdp->fill_color.r = SCALE_5_8(r);
+    mRdp->fill_color.g = SCALE_5_8(g);
+    mRdp->fill_color.b = SCALE_5_8(b);
+    mRdp->fill_color.a = a * 255;
 }
 
 void GfxPc::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
-    uint32_t saved_other_mode_h = mRdp.other_mode_h;
-    uint32_t cycle_type = (mRdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE));
+    uint32_t saved_other_mode_h = mRdp->other_mode_h;
+    uint32_t cycle_type = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
 
     if (cycle_type == G_CYC_COPY) {
-        mRdp.other_mode_h = (mRdp.other_mode_h & ~(3U << G_MDSFT_TEXTFILT)) | G_TF_POINT;
+        mRdp->other_mode_h = (mRdp->other_mode_h & ~(3U << G_MDSFT_TEXTFILT)) | G_TF_POINT;
     }
 
     // U10.2 coordinates
@@ -2239,10 +2246,10 @@ void GfxPc::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry)
     ulxf = AdjXForAspectRatio(ulxf);
     lrxf = AdjXForAspectRatio(lrxf);
 
-    struct LoadedVertex* ul = &mRsp.loaded_vertices[MAX_VERTICES + 0];
-    struct LoadedVertex* ll = &mRsp.loaded_vertices[MAX_VERTICES + 1];
-    struct LoadedVertex* lr = &mRsp.loaded_vertices[MAX_VERTICES + 2];
-    struct LoadedVertex* ur = &mRsp.loaded_vertices[MAX_VERTICES + 3];
+    struct LoadedVertex* ul = &mRsp->loaded_vertices[MAX_VERTICES + 0];
+    struct LoadedVertex* ll = &mRsp->loaded_vertices[MAX_VERTICES + 1];
+    struct LoadedVertex* lr = &mRsp->loaded_vertices[MAX_VERTICES + 2];
+    struct LoadedVertex* ur = &mRsp->loaded_vertices[MAX_VERTICES + 3];
 
     ul->x = ulxf;
     ul->y = ulyf;
@@ -2273,32 +2280,32 @@ void GfxPc::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry)
                              mActiveFrameBuffer->second.orig_height };
     }
 
-    struct XYWidthHeight viewport_saved = mRdp.viewport;
-    uint32_t geometry_mode_saved = mRsp.geometry_mode;
+    struct XYWidthHeight viewport_saved = mRdp->viewport;
+    uint32_t geometry_mode_saved = mRsp->geometry_mode;
 
     AdjustVIewportOrScissor(&default_viewport);
 
-    mRdp.viewport = default_viewport;
-    mRdp.viewport_or_scissor_changed = true;
-    mRsp.geometry_mode = 0;
+    mRdp->viewport = default_viewport;
+    mRdp->viewport_or_scissor_changed = true;
+    mRsp->geometry_mode = 0;
 
     GfxSpTri1(MAX_VERTICES + 0, MAX_VERTICES + 1, MAX_VERTICES + 3, true);
     GfxSpTri1(MAX_VERTICES + 1, MAX_VERTICES + 2, MAX_VERTICES + 3, true);
 
-    mRsp.geometry_mode = geometry_mode_saved;
-    mRdp.viewport = viewport_saved;
-    mRdp.viewport_or_scissor_changed = true;
+    mRsp->geometry_mode = geometry_mode_saved;
+    mRdp->viewport = viewport_saved;
+    mRdp->viewport_or_scissor_changed = true;
 
     if (cycle_type == G_CYC_COPY) {
-        mRdp.other_mode_h = saved_other_mode_h;
+        mRdp->other_mode_h = saved_other_mode_h;
     }
 }
 
 void GfxPc::GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, uint8_t tile, int16_t uls,
                                   int16_t ult, int16_t dsdx, int16_t dtdy, bool flip) {
     // printf("render %d at %d\n", tile, lrx);
-    uint64_t saved_combine_mode = mRdp.combine_mode;
-    if ((mRdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_COPY) {
+    uint64_t saved_combine_mode = mRdp->combine_mode;
+    if ((mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_COPY) {
         // Per RDP Command Summary Set Tile's shift s and this dsdx should be set to 4 texels
         // Divide by 4 to get 1 instead
         dsdx >>= 2;
@@ -2324,10 +2331,10 @@ void GfxPc::GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t
     float lrs = ((uls << 7) + dsdx * width) >> 7;
     float lrt = ((ult << 7) + dtdy * height) >> 7;
 
-    LoadedVertex* ul = &mRsp.loaded_vertices[MAX_VERTICES + 0];
-    LoadedVertex* ll = &mRsp.loaded_vertices[MAX_VERTICES + 1];
-    LoadedVertex* lr = &mRsp.loaded_vertices[MAX_VERTICES + 2];
-    LoadedVertex* ur = &mRsp.loaded_vertices[MAX_VERTICES + 3];
+    LoadedVertex* ul = &mRsp->loaded_vertices[MAX_VERTICES + 0];
+    LoadedVertex* ll = &mRsp->loaded_vertices[MAX_VERTICES + 1];
+    LoadedVertex* lr = &mRsp->loaded_vertices[MAX_VERTICES + 2];
+    LoadedVertex* ur = &mRsp->loaded_vertices[MAX_VERTICES + 3];
     ul->u = uls;
     ul->v = ult;
     lr->u = lrs;
@@ -2344,29 +2351,29 @@ void GfxPc::GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t
         ur->v = lrt;
     }
 
-    uint8_t saved_tile = mRdp.first_tile_index;
+    uint8_t saved_tile = mRdp->first_tile_index;
     if (saved_tile != tile) {
-        mRdp.textures_changed[0] = true;
-        mRdp.textures_changed[1] = true;
+        mRdp->textures_changed[0] = true;
+        mRdp->textures_changed[1] = true;
     }
-    mRdp.first_tile_index = tile;
+    mRdp->first_tile_index = tile;
 
     GfxDrawRectangle(ulx, uly, lrx, lry);
     if (saved_tile != tile) {
-        mRdp.textures_changed[0] = true;
-        mRdp.textures_changed[1] = true;
+        mRdp->textures_changed[0] = true;
+        mRdp->textures_changed[1] = true;
     }
-    mRdp.first_tile_index = saved_tile;
-    mRdp.combine_mode = saved_combine_mode;
+    mRdp->first_tile_index = saved_tile;
+    mRdp->combine_mode = saved_combine_mode;
 }
 
 void GfxPc::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_t ulx, int32_t uly, int16_t uls, int16_t ult,
                                 int32_t lrx, int32_t lry, int16_t lrs, int16_t lrt) {
 
-    LoadedVertex* ul = &mRsp.loaded_vertices[MAX_VERTICES + 0];
-    LoadedVertex* ll = &mRsp.loaded_vertices[MAX_VERTICES + 1];
-    LoadedVertex* lr = &mRsp.loaded_vertices[MAX_VERTICES + 2];
-    LoadedVertex* ur = &mRsp.loaded_vertices[MAX_VERTICES + 3];
+    LoadedVertex* ul = &mRsp->loaded_vertices[MAX_VERTICES + 0];
+    LoadedVertex* ll = &mRsp->loaded_vertices[MAX_VERTICES + 1];
+    LoadedVertex* lr = &mRsp->loaded_vertices[MAX_VERTICES + 2];
+    LoadedVertex* ur = &mRsp->loaded_vertices[MAX_VERTICES + 3];
     ul->u = uls * 32;
     ul->v = ult * 32;
     lr->u = lrs * 32;
@@ -2377,43 +2384,43 @@ void GfxPc::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_t ulx,
     ur->v = ult * 32;
 
     // ensure we have the correct texture size, format and starting position
-    mRdp.texture_tile[tile].siz = G_IM_SIZ_8b;
-    mRdp.texture_tile[tile].fmt = G_IM_FMT_RGBA;
-    mRdp.texture_tile[tile].cms = 0;
-    mRdp.texture_tile[tile].cmt = 0;
-    mRdp.texture_tile[tile].shifts = 0;
-    mRdp.texture_tile[tile].shiftt = 0;
-    mRdp.texture_tile[tile].uls = 0 * 4;
-    mRdp.texture_tile[tile].ult = 0 * 4;
-    mRdp.texture_tile[tile].lrs = w * 4;
-    mRdp.texture_tile[tile].lrt = h * 4;
-    mRdp.texture_tile[tile].line_size_bytes = w << (mRdp.texture_tile[tile].siz >> 1);
+    mRdp->texture_tile[tile].siz = G_IM_SIZ_8b;
+    mRdp->texture_tile[tile].fmt = G_IM_FMT_RGBA;
+    mRdp->texture_tile[tile].cms = 0;
+    mRdp->texture_tile[tile].cmt = 0;
+    mRdp->texture_tile[tile].shifts = 0;
+    mRdp->texture_tile[tile].shiftt = 0;
+    mRdp->texture_tile[tile].uls = 0 * 4;
+    mRdp->texture_tile[tile].ult = 0 * 4;
+    mRdp->texture_tile[tile].lrs = w * 4;
+    mRdp->texture_tile[tile].lrt = h * 4;
+    mRdp->texture_tile[tile].line_size_bytes = w << (mRdp->texture_tile[tile].siz >> 1);
 
-    auto& loadtex = mRdp.loaded_texture[mRdp.texture_tile[tile].tmem_index];
-    loadtex.full_image_line_size_bytes = loadtex.line_size_bytes = mRdp.texture_tile[tile].line_size_bytes;
+    auto& loadtex = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index];
+    loadtex.full_image_line_size_bytes = loadtex.line_size_bytes = mRdp->texture_tile[tile].line_size_bytes;
     loadtex.size_bytes = loadtex.orig_size_bytes = loadtex.line_size_bytes * h;
 
-    uint8_t saved_tile = mRdp.first_tile_index;
+    uint8_t saved_tile = mRdp->first_tile_index;
     if (saved_tile != tile) {
-        mRdp.textures_changed[0] = true;
-        mRdp.textures_changed[1] = true;
+        mRdp->textures_changed[0] = true;
+        mRdp->textures_changed[1] = true;
     }
-    mRdp.first_tile_index = tile;
+    mRdp->first_tile_index = tile;
 
     GfxDrawRectangle(ulx, uly, lrx, lry);
     if (saved_tile != tile) {
-        mRdp.textures_changed[0] = true;
-        mRdp.textures_changed[1] = true;
+        mRdp->textures_changed[0] = true;
+        mRdp->textures_changed[1] = true;
     }
-    mRdp.first_tile_index = saved_tile;
+    mRdp->first_tile_index = saved_tile;
 }
 
 void GfxPc::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
-    if (mRdp.color_image_address == mRdp.z_buf_address) {
+    if (mRdp->color_image_address == mRdp->z_buf_address) {
         // Don't clear Z buffer here since we already did it with glClear
         return;
     }
-    uint32_t mode = (mRdp.other_mode_h & (3U << G_MDSFT_CYCLETYPE));
+    uint32_t mode = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
 
     // OTRTODO: This is a bit of a hack for widescreen screen fades, but it'll work for now...
     if (ulx == 0 && uly == 0 && lrx == (319 * 4) && lry == (239 * 4)) {
@@ -2430,39 +2437,39 @@ void GfxPc::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lr
     }
 
     for (int i = MAX_VERTICES; i < MAX_VERTICES + 4; i++) {
-        LoadedVertex* v = &mRsp.loaded_vertices[i];
-        v->color = mRdp.fill_color;
+        LoadedVertex* v = &mRsp->loaded_vertices[i];
+        v->color = mRdp->fill_color;
     }
 
-    uint64_t saved_combine_mode = mRdp.combine_mode;
+    uint64_t saved_combine_mode = mRdp->combine_mode;
 
     if (mode == G_CYC_FILL) {
         GfxDpSetCombineMode(color_comb(0, 0, 0, G_CCMUX_SHADE), alpha_comb(0, 0, 0, G_ACMUX_SHADE), 0, 0);
     }
 
     GfxDrawRectangle(ulx, uly, lrx, lry);
-    mRdp.combine_mode = saved_combine_mode;
+    mRdp->combine_mode = saved_combine_mode;
 }
 
 void GfxPc::GfxDpSetZImage(void* zBufAddr) {
-    mRdp.z_buf_address = zBufAddr;
+    mRdp->z_buf_address = zBufAddr;
 }
 
 void GfxPc::GfxDpSetColorImage(uint32_t format, uint32_t size, uint32_t width, void* address) {
-    mRdp.color_image_address = address;
+    mRdp->color_image_address = address;
 }
 
 void GfxPc::GfxSpSetOtherMode(uint32_t shift, uint32_t num_bits, uint64_t mode) {
     uint64_t mask = (((uint64_t)1 << num_bits) - 1) << shift;
-    uint64_t om = mRdp.other_mode_l | ((uint64_t)mRdp.other_mode_h << 32);
+    uint64_t om = mRdp->other_mode_l | ((uint64_t)mRdp->other_mode_h << 32);
     om = (om & ~mask) | mode;
-    mRdp.other_mode_l = (uint32_t)om;
-    mRdp.other_mode_h = (uint32_t)(om >> 32);
+    mRdp->other_mode_l = (uint32_t)om;
+    mRdp->other_mode_h = (uint32_t)(om >> 32);
 }
 
 void GfxPc::GfxDpSetOtherMode(uint32_t h, uint32_t l) {
-    mRdp.other_mode_h = h;
-    mRdp.other_mode_l = l;
+    mRdp->other_mode_h = h;
+    mRdp->other_mode_l = l;
 }
 
 void GfxPc::Gfxs2dexBgCopy(F3DuObjBg* bg) {
@@ -2580,7 +2587,7 @@ void GfxPc::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
     int testY = (realY + (realH / realSH));
 
     GfxDpTextureRectangle(realX << 2, realY << 2, testX << 2, testY << 2, G_TX_RENDERTILE,
-                          mRdp.texture_tile[0].uls << 3, mRdp.texture_tile[0].ult << 3, (float)(1 << 10) * realSW,
+                          mRdp->texture_tile[0].uls << 3, mRdp->texture_tile[0].ult << 3, (float)(1 << 10) * realSW,
                           (float)(1 << 10) * realSH, false);
 }
 
@@ -2674,8 +2681,8 @@ typedef bool (*GfxOpcodeHandlerFunc)(F3DGfx** gfx);
 
 bool gfx_load_ucode_handler_f3dex2(F3DGfx** cmd) {
     GfxPc* gfx = mInstance.lock().get();
-    gfx->mRsp.fog_mul = 0;
-    gfx->mRsp.fog_offset = 0;
+    gfx->mRsp->fog_mul = 0;
+    gfx->mRsp->fog_offset = 0;
     return false;
 }
 
@@ -3126,8 +3133,8 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
 
     (*cmd0)++;
 
-    if (gfx->mRsp.loaded_vertices[vbidx].z <= zval ||
-        (gfx->mRsp.extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
+    if (gfx->mRsp->loaded_vertices[vbidx].z <= zval ||
+        (gfx->mRsp->extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
         F3DGfx* gfx = (F3DGfx*)ResourceGetDataByCrc(hash);
@@ -3456,7 +3463,7 @@ bool gfx_reset_fb_handler_custom(F3DGfx** cmd0) {
                                           (float)gfx->mCurDimensions.height / gfx->mNativeDimensions.height);
     // Force viewport and scissor to reapply against the main framebuffer, in case a previous smaller
     // framebuffer truncated the values
-    gfx->mRdp.viewport_or_scissor_changed = true;
+    gfx->mRdp->viewport_or_scissor_changed = true;
     gfx->mRenderingState.viewport = {};
     gfx->mRenderingState.scissor = {};
     return false;
@@ -3541,8 +3548,8 @@ bool gfx_set_timg_fb_handler_custom(F3DGfx** cmd0) {
 
     gfx->Flush();
     gfx->mRapi->select_texture_fb((uint32_t)cmd->words.w1);
-    gfx->mRdp.textures_changed[0] = false;
-    gfx->mRdp.textures_changed[1] = false;
+    gfx->mRdp->textures_changed[0] = false;
+    gfx->mRdp->textures_changed[1] = false;
     return false;
 }
 
@@ -3550,7 +3557,7 @@ bool gfx_set_grayscale_handler_custom(F3DGfx** cmd0) {
     GfxPc* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
-    gfx->mRdp.grayscale = cmd->words.w1;
+    gfx->mRdp->grayscale = cmd->words.w1;
     return false;
 }
 
@@ -4039,8 +4046,8 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
         case ucode_f3dex:
         case ucode_f3dexb:
         case ucode_f3dex2:
-            gfx->mRsp.fog_mul = 0;
-            gfx->mRsp.fog_offset = 0;
+            gfx->mRsp->fog_mul = 0;
+            gfx->mRsp->fog_offset = 0;
             break;
         default:
             break;
@@ -4097,17 +4104,17 @@ static void gfx_step() {
 }
 
 void GfxPc::SpReset() {
-    mRsp.modelview_matrix_stack_size = 1;
-    mRsp.current_num_lights = 2;
-    mRsp.lights_changed = true;
-    mRsp.lookat[0].dir[0] = 0;
-    mRsp.lookat[0].dir[1] = 127;
-    mRsp.lookat[0].dir[2] = 0;
-    mRsp.lookat[1].dir[0] = 127;
-    mRsp.lookat[1].dir[1] = 0;
-    mRsp.lookat[1].dir[2] = 0;
-    CalculateNormalDir(&mRsp.lookat[0], mRsp.current_lookat_coeffs[0]);
-    CalculateNormalDir(&mRsp.lookat[1], mRsp.current_lookat_coeffs[1]);
+    mRsp->modelview_matrix_stack_size = 1;
+    mRsp->current_num_lights = 2;
+    mRsp->lights_changed = true;
+    mRsp->lookat[0].dir[0] = 0;
+    mRsp->lookat[0].dir[1] = 127;
+    mRsp->lookat[0].dir[2] = 0;
+    mRsp->lookat[1].dir[0] = 127;
+    mRsp->lookat[1].dir[1] = 0;
+    mRsp->lookat[1].dir[2] = 0;
+    CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
+    CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
 }
 
 void GfxPc::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
@@ -4153,9 +4160,9 @@ void GfxPc::Destroy() {
 
     // Texture cache and loaded textures store references to Resources which need to be unreferenced.
     TextureCacheClear();
-    mRdp.texture_to_load.raw_tex_metadata.resource = nullptr;
-    mRdp.loaded_texture[0].raw_tex_metadata.resource = nullptr;
-    mRdp.loaded_texture[1].raw_tex_metadata.resource = nullptr;
+    mRdp->texture_to_load.raw_tex_metadata.resource = nullptr;
+    mRdp->loaded_texture[0].raw_tex_metadata.resource = nullptr;
+    mRdp->loaded_texture[1].raw_tex_metadata.resource = nullptr;
 }
 
 GfxRenderingAPI* GfxPc::GetCurrentRenderingAPI() {
@@ -4253,7 +4260,7 @@ void GfxPc::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replace
     mRapi->start_draw_to_framebuffer(mRendersToFb ? mGameFb : 0,
                                      (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->clear_framebuffer(false, true);
-    mRdp.viewport_or_scissor_changed = true;
+    mRdp->viewport_or_scissor_changed = true;
     mRenderingState.viewport = {};
     mRenderingState.scissor = {};
 

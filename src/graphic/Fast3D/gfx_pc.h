@@ -253,8 +253,7 @@ struct MaskedTextureEntry {
 class GfxPc {
   public:
     GfxPc();
-    static GfxPc* GetInstance();
-    static GfxPc* CreateInstance();
+    ~GfxPc();
 
     void Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
               bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
@@ -366,8 +365,8 @@ class GfxPc {
     static void TransposedMatrixMul(float res[3], const float a[3], const float b[4][4]);
     static void MatrixMul(float res[4][4], const float a[4][4], const float b[4][4]);
 
-    RSP mRsp{};
-    RDP mRdp{};
+    RSP* mRsp;
+    RDP* mRdp;
     RenderingState mRenderingState{};
 
     GfxTextureCache mTextureCache{};
@@ -387,7 +386,7 @@ class GfxPc {
 
     unsigned int mMsaaLevel = 1;
     bool mDroppedFrame{};
-    float mBufVbo[MAX_BUFFERED * (32 * 3)]; // 3 vertices in a triangle and 32 floats per vtx
+    float* mBufVbo; // 3 vertices in a triangle and 32 floats per vtx
     size_t mBufVboLen{};
     size_t mBufVboNumTris{};
     GfxWindowManagerAPI* mWapi = nullptr;
