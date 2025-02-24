@@ -201,6 +201,8 @@ struct RDP {
     bool viewport_or_scissor_changed;
     void* z_buf_address;
     void* color_image_address;
+    bool using_colour_id;
+    uint32_t colour_id;
 };
 
 typedef enum Attribute {

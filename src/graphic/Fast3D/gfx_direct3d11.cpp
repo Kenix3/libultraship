@@ -1247,6 +1247,10 @@ void gfx_d3d11_enable_srgb_mode() {
     d3d.srgb_mode = true;
 }
 
+void gfx_d3d11_set_colour_id(uint64_t shader_id0, uint32_t shader_id1, uint32_t colour_id) {
+
+}
+
 struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
                                               gfx_d3d11_get_max_texture_size,
                                               gfx_d3d11_get_clip_parameters,
@@ -1283,6 +1287,7 @@ struct GfxRenderingAPI gfx_direct3d11_api = { gfx_d3d11_get_name,
                                               gfx_d3d11_delete_texture,
                                               gfx_d3d11_set_texture_filter,
                                               gfx_d3d11_get_texture_filter,
-                                              gfx_d3d11_enable_srgb_mode };
+                                              gfx_d3d11_enable_srgb_mode,
+                                              gfx_d3d11_set_colour_id };
 
 #endif

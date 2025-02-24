@@ -4,6 +4,7 @@
 
 @if(core_opengl || opengles)
 out vec4 vOutColor;
+out uint vObjectID;
 @end
 
 @for(i in 0..2)
@@ -43,6 +44,8 @@ out vec4 vOutColor;
 
 uniform int frame_count;
 uniform float noise_scale;
+
+uniform uint colour_id;
 
 #define TEX_OFFSET(off) @{texture}(tex, texCoord - off / texSize)
 #define WRAP(x, low, high) mod((x)-(low), (high)-(low)) + (low)
@@ -207,4 +210,11 @@ void main() {
     @if(srgb_mode)
         @{vOutColor} = fromLinear(@{vOutColor});
     @end
+
+    vObjectID = vec4(
+        (0 & 0xFF) / 255.0,
+        ((255 >> 8) & 0xFF) / 255.0,
+        ((0 >> 16) & 0xFF) / 255.0,
+        ((255 >> 24) & 0xFF) / 255.0
+    );
 }

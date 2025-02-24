@@ -159,6 +159,7 @@
 #define G_TEXRECT 0xe4         /* -28 */
 
 // CUSTOM OTR COMMANDS
+#define G_SETCOLOURID 0x19
 #define G_SETTIMG_OTR_HASH 0x20
 #define G_SETFB 0x21
 #define G_RESETFB 0x22
@@ -1707,6 +1708,14 @@ typedef union Gfx {
 #endif
     long long int force_structure_alignment;
 } Gfx;
+
+#define gDPSetColourId(pkt, id)                                           \
+    _DW({                                                                  \
+        Gfx* _g = (Gfx*)pkt;                                               \
+                                                                           \
+        _g->words.w0 = _SHIFTL(G_SETCOLOURID, 24, 8);                       \
+        _g->words.w1 = (id);                                               \
+    })
 
 /*
  * Macros to assemble the graphics display list

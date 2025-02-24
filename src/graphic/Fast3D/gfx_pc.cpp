@@ -1655,7 +1655,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     struct ShaderProgram* prg = comb->prg[tm];
     if (prg == NULL) {
         comb->prg[tm] = prg =
-            gfx_lookup_or_create_shader_program(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
+        gfx_lookup_or_create_shader_program(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
+        if (g_rdp.using_colour_id) {
+            gfx_rapi->set_colour_id(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S), g_rdp.colour_id);
+        }
     }
     if (prg != rendering_state.shader_program) {
         gfx_flush();
@@ -2959,6 +2962,15 @@ bool gfx_set_shader_custom(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_set_colour_id(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    g_rdp.using_colour_id = true;
+    g_rdp.colour_id = cmd->words.w1;
+
+    return false;
+}
+
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
@@ -3905,6 +3917,7 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_LOAD_SHADER, { "G_LOAD_SHADER", gfx_set_shader_custom } },
+    { OTR_G_SETCOLOURID, { "G_SETCOLOURID", gfx_set_colour_id } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
@@ -4251,8 +4264,11 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                                             gfx_current_window_dimensions.height, 1, false, true, true,
                                             !game_renders_to_framebuffer, NULL);
     gfx_rapi->start_frame();
-    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
-                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+//    gfx_rapi->start_draw_to_framebuffer(game_renders_to_framebuffer ? game_framebuffer : 0,
+//                                        (float)gfx_current_dimensions.height / gfx_native_dimensions.height);
+
+gfx_rapi->start_draw_to_framebuffer(game_framebuffer, gfx_current_dimensions.height / gfx_native_dimensions.height);
+
     gfx_rapi->clear_framebuffer(false, true);
     g_rdp.viewport_or_scissor_changed = true;
     rendering_state.viewport = {};
@@ -4296,7 +4312,8 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
                 gfx_rapi->resolve_msaa_color_buffer(0, game_framebuffer);
             }
         } else {
-            gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
+            gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer_colour_id);
+//            gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer);
         }
     } else if (fbActive) {
         // Failsafe reset to main framebuffer to prevent softlocking the renderer

@@ -71,6 +71,7 @@ struct GfxRenderingAPI {
     void (*set_texture_filter)(FilteringMode mode);
     FilteringMode (*get_texture_filter)();
     void (*enable_srgb_mode)();
+    void (*set_colour_id)(uint64_t shader_id0, uint32_t shader_id1, uint32_t colour_id);
 };
 
 #endif

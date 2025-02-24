@@ -1046,6 +1046,12 @@ void gfx_opengl_enable_srgb_mode() {
     srgb_mode = true;
 }
 
+void gfx_opengl_set_colour_id(uint64_t shader_id0, uint32_t shader_id1, uint32_t colour_id) {
+    ShaderProgram* shader_program = gfx_opengl_lookup_shader(shader_id0, shader_id1);
+    GLint sampler_location = glGetUniformLocation(shader_program->opengl_program_id, "colour_id");
+    glUniform1i(sampler_location, colour_id);
+}
+
 struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
                                           gfx_opengl_get_max_texture_size,
                                           gfx_opengl_get_clip_parameters,
@@ -1082,7 +1088,8 @@ struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
                                           gfx_opengl_delete_texture,
                                           gfx_opengl_set_texture_filter,
                                           gfx_opengl_get_texture_filter,
-                                          gfx_opengl_enable_srgb_mode };
+                                          gfx_opengl_enable_srgb_mode,
+                                          gfx_opengl_set_colour_id };
 
 #endif
 

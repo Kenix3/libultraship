@@ -1314,6 +1314,10 @@ void gfx_metal_enable_srgb_mode() {
     mctx.srgb_mode = true;
 }
 
+void gfx_metal_set_colour_id(uint64_t shader_id0, uint32_t shader_id1, uint32_t colour_id) {
+
+}
+
 struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_get_max_texture_size,
                                          gfx_metal_get_clip_parameters,
@@ -1350,5 +1354,6 @@ struct GfxRenderingAPI gfx_metal_api = { gfx_metal_get_name,
                                          gfx_metal_delete_texture,
                                          gfx_metal_set_texture_filter,
                                          gfx_metal_get_texture_filter,
-                                         gfx_metal_enable_srgb_mode };
+                                         gfx_metal_enable_srgb_mode,
+                                         gfx_metal_set_colour_id };
 #endif
