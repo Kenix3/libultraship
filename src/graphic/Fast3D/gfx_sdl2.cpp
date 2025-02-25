@@ -271,7 +271,7 @@ static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
 
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(display_in_use, &mode);
-    *refresh_rate = mode.refresh_rate;
+    *refresh_rate = mode.refresh_rate != 0 ? mode.refresh_rate : 60;
 }
 
 static uint64_t previous_time;
