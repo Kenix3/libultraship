@@ -13,6 +13,8 @@
 #include <gfxd.h>
 #endif
 
+using namespace Fast;
+
 namespace LUS {
 
 GfxDebuggerWindow::~GfxDebuggerWindow() {

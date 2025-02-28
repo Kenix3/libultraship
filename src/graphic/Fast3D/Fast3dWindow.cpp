@@ -12,8 +12,10 @@
 #include "graphic/Fast3D/gfx_pc.h"
 
 #include <fstream>
-extern void GfxSetInstance(std::shared_ptr<GfxPc> gfx);
 namespace Fast {
+
+extern void GfxSetInstance(std::shared_ptr<GfxPc> gfx);
+
 Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>>()) {
 }
 

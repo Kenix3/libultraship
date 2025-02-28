@@ -2,9 +2,9 @@
 
 #include <vector>
 
-union F3DGfx;
 
 namespace Fast {
+union F3DGfx;
 
 class GfxDebugger {
   public:
