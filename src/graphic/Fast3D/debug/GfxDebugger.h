@@ -2,7 +2,6 @@
 
 #include <vector>
 
-
 namespace Fast {
 union F3DGfx;
 
