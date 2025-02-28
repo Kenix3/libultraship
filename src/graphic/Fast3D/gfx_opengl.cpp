@@ -1236,8 +1236,8 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
 }
 
 void gfx_opengl_set_texture_filter(FilteringMode mode) {
-    current_filter_mode = mode;
     gfx_texture_cache_clear();
+    current_filter_mode = mode;
 }
 
 FilteringMode gfx_opengl_get_texture_filter() {

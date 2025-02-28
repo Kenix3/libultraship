@@ -22,6 +22,10 @@
 #include "resource/type/Texture.h"
 #include "window/gui/resource/GuiTexture.h"
 
+namespace Fast {
+class GfxPc;
+}
+
 namespace Ship {
 
 typedef struct {
@@ -132,6 +136,7 @@ class Gui {
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     ImVec2 mTemporaryWindowPos;
+    std::weak_ptr<Fast::GfxPc> mGfxPc;
 };
 } // namespace Ship
 
