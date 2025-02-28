@@ -25,6 +25,36 @@
 
 struct GfxRenderingAPI;
 struct GfxWindowManagerAPI;
+union Gfx;
+
+namespace Fast {
+
+struct GfxExecStack {
+    // This is a dlist stack used to handle dlist calls.
+    std::stack<F3DGfx*> cmd_stack = {};
+    // This is also a dlist stack but a std::vector is used to make it possible
+    // to iterate on the elements.
+    // The purpose of this is to identify an instruction at a poin in time
+    // which would not be possible with just a F3DGfx* because a dlist can be called multiple times
+    // what we do instead is store the call path that leads to the instruction (including branches)
+    std::vector<const F3DGfx*> gfx_path = {};
+    struct CodeDisp {
+        const char* file;
+        int line;
+    };
+    // stack for OpenDisp/CloseDisps
+    std::vector<CodeDisp> disp_stack{};
+
+    void start(F3DGfx* dlist);
+    void stop();
+    F3DGfx*& currCmd();
+    void openDisp(const char* file, int line);
+    void closeDisp();
+    const std::vector<CodeDisp>& getDisp() const;
+    void branch(F3DGfx* caller);
+    void call(F3DGfx* caller, F3DGfx* callee);
+    F3DGfx* ret();
+};
 
 struct XYWidthHeight {
     int16_t x, y;
@@ -68,34 +98,6 @@ struct TextureCacheValue {
 struct TextureCacheMapIter {
     TextureCacheMap::iterator it;
 };
-union Gfx;
-
-struct GfxExecStack {
-    // This is a dlist stack used to handle dlist calls.
-    std::stack<F3DGfx*> cmd_stack = {};
-    // This is also a dlist stack but a std::vector is used to make it possible
-    // to iterate on the elements.
-    // The purpose of this is to identify an instruction at a poin in time
-    // which would not be possible with just a F3DGfx* because a dlist can be called multiple times
-    // what we do instead is store the call path that leads to the instruction (including branches)
-    std::vector<const F3DGfx*> gfx_path = {};
-    struct CodeDisp {
-        const char* file;
-        int line;
-    };
-    // stack for OpenDisp/CloseDisps
-    std::vector<CodeDisp> disp_stack{};
-
-    void start(F3DGfx* dlist);
-    void stop();
-    F3DGfx*& currCmd();
-    void openDisp(const char* file, int line);
-    void closeDisp();
-    const std::vector<CodeDisp>& getDisp() const;
-    void branch(F3DGfx* caller);
-    void call(F3DGfx* caller, F3DGfx* callee);
-    F3DGfx* ret();
-};
 
 struct RGBA {
     uint8_t r, g, b, a;
@@ -121,8 +123,6 @@ struct ShaderMod {
     uint8_t type;
 };
 
-#define MAX_BUFFERED 256
-// #define MAX_LIGHTS 2
 #define MAX_LIGHTS 32
 #define MAX_VERTICES 64
 
@@ -411,11 +411,14 @@ class GfxPc {
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
-extern "C" void gfx_texture_cache_clear();
-extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
-                                      uint8_t resize);
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* GfxGetOpcodeName(int8_t opcode);
+
+} // namespace Fast
+
+extern "C" void gfx_texture_cache_clear();
+extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
+                                      uint8_t resize);
 
 #endif

@@ -63,6 +63,8 @@ std::stack<std::string> currentDir;
 
 #define TEXTURE_CACHE_MAX_SIZE 500
 
+namespace Fast {
+
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
 const static std::unordered_map<Attribute, std::any> f3dex2AttrHandler = {
@@ -106,10 +108,12 @@ static std::string GetPathWithoutFileName(char* filePath) {
     return filePath;
 }
 
+constexpr size_t MAX_TRI_BUFFER = 256;
+
 GfxPc::GfxPc() {
     mRsp = new RSP();
     mRdp = new RDP();
-    mBufVbo = new float[MAX_BUFFERED * (32 * 3)];
+    mBufVbo = new float[MAX_TRI_BUFFER * (32 * 3)];
 }
 
 GfxPc::~GfxPc() {
@@ -1770,7 +1774,7 @@ void GfxPc::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool
         // mBufVbo[mBufVboLen++] = color->a / 255.0f;
     }
 
-    if (++mBufVboNumTris == MAX_BUFFERED) {
+    if (++mBufVboNumTris == MAX_TRI_BUFFER) {
         // if (++mBufVbo_num_tris == 1) {
         Flush();
     }
@@ -4496,11 +4500,13 @@ void GfxPc::GetCurDimensions(uint32_t* width, uint32_t* height) {
     *height = mCurDimensions.height;
 }
 
+} // namespace Fast
+
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize) {
-    return mInstance.lock().get()->CreateFrameBuffer(width, height, native_width, native_height, resize);
+    return Fast::mInstance.lock().get()->CreateFrameBuffer(width, height, native_width, native_height, resize);
 }
 
 extern "C" void gfx_texture_cache_clear() {
-    mInstance.lock().get()->TextureCacheClear();
+    Fast::mInstance.lock().get()->TextureCacheClear();
 }
