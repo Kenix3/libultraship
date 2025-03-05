@@ -490,7 +490,11 @@ static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_
 }
 
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+#ifdef __APPLE__
+    SDL_GetWindowSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#else
     SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#endif
     SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
@@ -567,7 +571,11 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
+#ifdef __APPLE__
+                    SDL_GetWindowSize(wnd, &window_width, &window_height);
+#else
                     SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+#endif
                     break;
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(wnd)) {
@@ -615,7 +623,7 @@ static inline void sync_framerate_with_timer() {
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
     int64_t left = next - t;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
     // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
     left -= 15000UL;
 #endif
@@ -632,10 +640,14 @@ static inline void sync_framerate_with_timer() {
 #endif
     }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
     while (t < next) {
-        YieldProcessor(); // TODO: Find a way for other compilers, OSes and architectures
+#ifdef _WIN32
+        YieldProcessor();
+#elif defined(__APPLE__)
+        sched_yield();
+#endif
         t = qpc_to_100ns(SDL_GetPerformanceCounter());
     }
 #endif
@@ -650,6 +662,14 @@ static inline void sync_framerate_with_timer() {
 }
 
 static void gfx_sdl_swap_buffers_begin() {
+    // Make sure only 0 or 1 is set.
+    if (vsync_enabled =
+            !(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0)) {
+        vsync_enabled = !vsync_enabled;
+        SDL_GL_SetSwapInterval(vsync_enabled);
+        SDL_RenderSetVSync(renderer, vsync_enabled);
+    }
+
     sync_framerate_with_timer();
     SDL_GL_SwapWindow(wnd);
 }
@@ -674,7 +694,7 @@ static const char* gfx_sdl_get_key_name(int scancode) {
 }
 
 bool gfx_sdl_can_disable_vsync() {
-    return false;
+    return true;
 }
 
 bool gfx_sdl_is_running() {
