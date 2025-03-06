@@ -213,7 +213,13 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, st
             break;
     }
 
-    initData->Parent = shared_from_this();
+    // initData->Parent = shared_from_this();
+
+    auto factory = GetFactory(initData->Format, initData->Type, initData->ResourceVersion);
+    if (factory == nullptr) {
+        SPDLOG_ERROR("LoadResource failed to find factory for the resource at path: {}", initData->Path);
+        return nullptr;
+    }
 
     return factory->ReadResource(fileToLoad, initData);
 }
