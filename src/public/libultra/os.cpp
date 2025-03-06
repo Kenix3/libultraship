@@ -9,6 +9,7 @@ typedef std::chrono::duration<long long, n64CycleRate> n64CycleRateDuration;
 
 extern "C" {
 uint8_t __osMaxControllers = MAXCONTROLLERS;
+uint64_t __osCurrentTime = 0;
 
 int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status) {
     *controllerBits = 0;
@@ -43,11 +44,15 @@ void osContGetReadData(OSContPad* pad) {
     Ship::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
 }
 
+void osSetTime(OSTime time) {
+    __osCurrentTime = std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
+        .count() + time;
+}
+
 // Returns the OS time matching the N64 46.875MHz cycle rate
-// LUSTODO: This should be adjusted to return the time since "boot"
 uint64_t osGetTime() {
     return std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
-        .count();
+        .count() - __osCurrentTime;
 }
 
 // Returns the CPU clock count matching the N64 46.875Mhz cycle rate
