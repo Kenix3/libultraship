@@ -45,14 +45,16 @@ void osContGetReadData(OSContPad* pad) {
 }
 
 void osSetTime(OSTime time) {
-    __osCurrentTime = std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
-        .count() + time;
+    __osCurrentTime =
+        std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch()).count() +
+        time;
 }
 
 // Returns the OS time matching the N64 46.875MHz cycle rate
 uint64_t osGetTime() {
     return std::chrono::duration_cast<n64CycleRateDuration>(std::chrono::steady_clock::now().time_since_epoch())
-        .count() - __osCurrentTime;
+               .count() -
+           __osCurrentTime;
 }
 
 // Returns the CPU clock count matching the N64 46.875Mhz cycle rate
