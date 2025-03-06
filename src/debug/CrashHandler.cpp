@@ -411,8 +411,8 @@ extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
 CrashHandler::CrashHandler() {
     mOutBuffer = new char[gMaxBufferSize];
 #if defined(__linux__) && !defined(__ANDROID__)
-    struct sigaction action;
-    struct sigaction shutdownAction;
+    struct sigaction action = { 0 };
+    struct sigaction shutdownAction = { 0 };
 
     action.sa_flags = SA_SIGINFO;
     action.sa_sigaction = ErrorHandler;
@@ -440,6 +440,7 @@ CrashHandler::CrashHandler(CrashHandlerCallback callback) {
 
 CrashHandler::~CrashHandler() {
     SPDLOG_TRACE("destruct crash handler");
+    delete[] mOutBuffer;
 }
 
 void CrashHandler::RegisterCallback(CrashHandlerCallback callback) {

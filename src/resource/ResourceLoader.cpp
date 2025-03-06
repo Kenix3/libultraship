@@ -78,7 +78,8 @@ std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, std
 
 std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitDataLegacy(const std::string& filePath,
                                                                              std::shared_ptr<File> fileToLoad) {
-    if (fileToLoad->Buffer->at(0) == '<') { // Determine if file is binary or XML...
+    // Determine if file is binary or XML...
+    if (fileToLoad->Buffer->at(0) == '<') {
         // File is XML
         // Read the xml document
         auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
@@ -212,13 +213,7 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, st
             break;
     }
 
-    // initData->Parent = shared_from_this();
-
-    auto factory = GetFactory(initData->Format, initData->Type, initData->ResourceVersion);
-    if (factory == nullptr) {
-        SPDLOG_ERROR("LoadResource failed to find factory for the resource at path: {}", initData->Path);
-        return nullptr;
-    }
+    initData->Parent = shared_from_this();
 
     return factory->ReadResource(fileToLoad, initData);
 }

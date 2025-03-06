@@ -10,7 +10,7 @@ namespace Ship {
 
 class ControllerGyroMapping : virtual public ControllerInputMapping {
   public:
-    ControllerGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity);
+    ControllerGyroMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, float sensitivity);
     ~ControllerGyroMapping();
     virtual void UpdatePad(float& x, float& y) = 0;
     virtual void SaveToConfig() = 0;

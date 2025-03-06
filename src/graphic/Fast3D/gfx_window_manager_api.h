@@ -24,7 +24,7 @@ struct GfxWindowManagerAPI {
     bool (*is_mouse_captured)();
     void (*get_dimensions)(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
     void (*handle_events)();
-    bool (*start_frame)();
+    bool (*is_frame_ready)();
     void (*swap_buffers_begin)();
     void (*swap_buffers_end)();
     double (*get_time)(); // For debug

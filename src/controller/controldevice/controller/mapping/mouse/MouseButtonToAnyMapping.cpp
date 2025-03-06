@@ -6,7 +6,7 @@
 
 namespace Ship {
 MouseButtonToAnyMapping::MouseButtonToAnyMapping(MouseBtn button)
-    : ControllerInputMapping(ShipDeviceIndex::Mouse), mButton(button), mKeyPressed(false) {
+    : ControllerInputMapping(PhysicalDeviceType::Mouse), mButton(button), mKeyPressed(false) {
 }
 
 MouseButtonToAnyMapping::~MouseButtonToAnyMapping() {
@@ -27,9 +27,5 @@ bool MouseButtonToAnyMapping::ProcessMouseButtonEvent(bool isPressed, MouseBtn b
 
 std::string MouseButtonToAnyMapping::GetPhysicalDeviceName() {
     return "Mouse";
-}
-
-bool MouseButtonToAnyMapping::PhysicalDeviceIsConnected() {
-    return true;
 }
 } // namespace Ship

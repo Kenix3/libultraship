@@ -4,13 +4,16 @@
 #include <vector>
 #include <config/Config.h>
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "controller/deviceindex/ShipDeviceIndexMappingManager.h"
+#include "controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
+#include "controller/physicaldevice/GlobalSDLDeviceSettings.h"
+#include "controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
 
 namespace Ship {
 
 class ControlDeck {
   public:
-    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+                std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings);
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);
@@ -22,12 +25,12 @@ class ControlDeck {
     bool GamepadGameInputBlocked();
     bool KeyboardGameInputBlocked();
     bool MouseGameInputBlocked();
-    void SetSinglePlayerMappingMode(bool singlePlayer);
-    bool IsSinglePlayerMappingMode();
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
     bool ProcessMouseButtonEvent(bool isPressed, MouseBtn button);
 
-    std::shared_ptr<ShipDeviceIndexMappingManager> GetDeviceIndexMappingManager();
+    std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
+    std::shared_ptr<GlobalSDLDeviceSettings> GetGlobalSDLDeviceSettings();
+    std::shared_ptr<ControllerDefaultMappings> GetControllerDefaultMappings();
 
   protected:
     bool AllGameInputBlocked();
@@ -35,9 +38,10 @@ class ControlDeck {
 
   private:
     uint8_t* mControllerBits = nullptr;
-    bool mSinglePlayerMappingMode;
     std::unordered_map<int32_t, bool> mGameInputBlockers;
-    std::shared_ptr<ShipDeviceIndexMappingManager> mDeviceIndexMappingManager;
+    std::shared_ptr<ConnectedPhysicalDeviceManager> mConnectedPhysicalDeviceManager;
+    std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;
+    std::shared_ptr<ControllerDefaultMappings> mControllerDefaultMappings;
 };
 } // namespace Ship
 
@@ -46,6 +50,8 @@ class ControlDeck : public Ship::ControlDeck {
   public:
     ControlDeck();
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+                std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings);
 
     OSContPad* GetPads();
     void WriteToPad(void* pad) override;

@@ -113,8 +113,6 @@ static int game_framebuffer_msaa_resolved;
 
 uint32_t gfx_msaa_level = 1;
 
-static bool dropped_frame;
-
 static const std::unordered_map<Mtx*, MtxF>* current_mtx_replacements;
 
 static float buf_vbo[MAX_BUFFERED * (32 * 3)]; // 3 vertices in a triangle and 32 floats per vtx
@@ -2065,7 +2063,6 @@ static void gfx_dp_set_tile_size(uint8_t tile, uint16_t uls, uint16_t ult, uint1
 }
 
 static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
-    SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(g_rdp.texture_to_load.siz == G_IM_SIZ_16b);
     // BENTODO
     // SUPPORT_CHECK((g_rdp.texture_tile[tile].tmem == 256 && (high_index <= 127 || high_index == 255)) ||
@@ -4096,11 +4093,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     gfx_wapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     gfx_rapi->init();
     gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
-#ifdef __APPLE__
-    gfx_current_dimensions.internal_mul = 1;
-#else
     gfx_current_dimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
-#endif
     gfx_msaa_level = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
     gfx_current_dimensions.width = width;
@@ -4141,8 +4134,29 @@ struct GfxRenderingAPI* gfx_get_current_rendering_api() {
     return gfx_rapi;
 }
 
-void gfx_start_frame() {
+void gfx_handle_window_events() {
     gfx_wapi->handle_events();
+}
+
+bool gfx_is_frame_ready() {
+    return gfx_wapi->is_frame_ready();
+}
+
+bool viewport_matches_render_resolution() {
+#ifdef __APPLE__
+    // Always treat the viewport as not matching the render resolution on mac
+    // to avoid issues with retina scaling.
+    return false;
+#else
+    if (gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&
+        gfx_current_dimensions.height == gfx_current_game_window_viewport.height) {
+        return true;
+    }
+    return false;
+#endif
+}
+
+void gfx_start_frame() {
     gfx_wapi->get_dimensions(&gfx_current_window_dimensions.width, &gfx_current_window_dimensions.height,
                              &gfx_current_window_position_x, &gfx_current_window_position_y);
     if (gfx_current_dimensions.height == 0) {
@@ -4172,12 +4186,9 @@ void gfx_start_frame() {
 
     gfx_prev_dimensions = gfx_current_dimensions;
     gfx_prev_native_dimensions = gfx_native_dimensions;
-
-    bool different_size = gfx_current_dimensions.width != gfx_current_game_window_viewport.width ||
-                          gfx_current_dimensions.height != gfx_current_game_window_viewport.height;
-    if (different_size || gfx_msaa_level > 1) {
+    if (!viewport_matches_render_resolution() || gfx_msaa_level > 1) {
         game_renders_to_framebuffer = true;
-        if (different_size) {
+        if (!viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer, gfx_current_dimensions.width,
                                                     gfx_current_dimensions.height, gfx_msaa_level, true, true, true,
                                                     true);
@@ -4188,7 +4199,7 @@ void gfx_start_frame() {
                                                     gfx_current_window_dimensions.height, gfx_msaa_level, false, true,
                                                     true, true);
         }
-        if (gfx_msaa_level > 1 && different_size) {
+        if (gfx_msaa_level > 1 && !viewport_matches_render_resolution()) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer_msaa_resolved, gfx_current_dimensions.width,
                                                     gfx_current_dimensions.height, 1, false, false, false, false);
         }
@@ -4202,19 +4213,10 @@ void gfx_start_frame() {
 GfxExecStack g_exec_stack = {};
 
 void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->SetupRendererFrame();
-
     gfx_sp_reset();
 
     get_pixel_depth_pending.clear();
     get_pixel_depth_cached.clear();
-
-    if (!gfx_wapi->start_frame()) {
-        dropped_frame = true;
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
-        return;
-    }
-    dropped_frame = false;
 
     current_mtx_replacements = &mtx_replacements;
 
@@ -4260,10 +4262,7 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
         gfx_rapi->clear_framebuffer(true, true);
 
         if (gfx_msaa_level > 1) {
-            bool different_size = gfx_current_dimensions.width != gfx_current_game_window_viewport.width ||
-                                  gfx_current_dimensions.height != gfx_current_game_window_viewport.height;
-
-            if (different_size) {
+            if (!viewport_matches_render_resolution()) {
                 gfx_rapi->resolve_msaa_color_buffer(game_framebuffer_msaa_resolved, game_framebuffer);
                 gfxFramebuffer = (uintptr_t)gfx_rapi->get_framebuffer_texture_id(game_framebuffer_msaa_resolved);
             } else {
@@ -4279,16 +4278,13 @@ void gfx_run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacemen
 
         assert(0 && "active framebuffer was never reset back to original");
     }
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->Draw();
-    gfx_rapi->end_frame();
-    gfx_wapi->swap_buffers_begin();
 }
 
 void gfx_end_frame() {
-    if (!dropped_frame) {
-        gfx_rapi->finish_render();
-        gfx_wapi->swap_buffers_end();
-    }
+    gfx_rapi->end_frame();
+    gfx_wapi->swap_buffers_begin();
+    gfx_rapi->finish_render();
+    gfx_wapi->swap_buffers_end();
 }
 
 void gfx_set_target_ucode(UcodeHandlers ucode) {

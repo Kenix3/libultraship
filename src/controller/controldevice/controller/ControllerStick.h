@@ -18,10 +18,10 @@ class ControllerStick {
     ~ControllerStick();
 
     void ReloadAllMappingsFromConfig();
-    void AddDefaultMappings(ShipDeviceIndex lusIndex);
+    void AddDefaultMappings(PhysicalDeviceType physicalDeviceType);
 
     void ClearAllMappings();
-    void ClearAllMappingsForDevice(ShipDeviceIndex lusIndex);
+    void ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDeviceType);
     void UpdatePad(int8_t& x, int8_t& y);
     std::shared_ptr<ControllerAxisDirectionMapping> GetAxisDirectionMappingById(Direction direction, std::string id);
     std::unordered_map<Direction, std::unordered_map<std::string, std::shared_ptr<ControllerAxisDirectionMapping>>>
@@ -54,7 +54,7 @@ class ControllerStick {
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
     bool ProcessMouseButtonEvent(bool isPressed, Ship::MouseBtn button);
 
-    bool HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex);
+    bool HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType);
     StickIndex GetStickIndex();
 
   private:

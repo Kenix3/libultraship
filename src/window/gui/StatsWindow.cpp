@@ -1,7 +1,4 @@
 #include "StatsWindow.h"
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui.h>
 #include "public/bridge/consolevariablebridge.h"
 #include "spdlog/spdlog.h"

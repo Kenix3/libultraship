@@ -234,13 +234,11 @@ bool Metal_Init(SDL_Renderer* renderer) {
 
 static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height);
 
-void Metal_SetupFrame(SDL_Renderer* renderer) {
+void Metal_NewFrame(SDL_Renderer* renderer) {
     int width, height;
     SDL_GetRendererOutputSize(renderer, &width, &height);
     gfx_metal_setup_screen_framebuffer(width, height);
-}
 
-void Metal_NewFrame(SDL_Renderer* renderer) {
     MTL::RenderPassDescriptor* current_render_pass = mctx.framebuffers[0].render_pass_descriptor;
     ImGui_ImplMetal_NewFrame(current_render_pass);
 }
@@ -594,7 +592,7 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2;
-        switch (CVarGetInteger("gZFightingMode", 0)) {
+        switch (CVarGetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)mctx.render_target_height / n64modeFactor;
                 break;

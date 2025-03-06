@@ -2,10 +2,9 @@
 #include "SDLMapping.h"
 
 namespace Ship {
-class SDLGyroMapping final : public ControllerGyroMapping, public SDLMapping {
+class SDLGyroMapping final : public ControllerGyroMapping {
   public:
-    SDLGyroMapping(ShipDeviceIndex shipDeviceIndex, uint8_t portIndex, float sensitivity, float neutralPitch,
-                   float neutralYaw, float neutralRoll);
+    SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll);
     void UpdatePad(float& x, float& y) override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
@@ -13,7 +12,6 @@ class SDLGyroMapping final : public ControllerGyroMapping, public SDLMapping {
     std::string GetGyroMappingId() override;
 
     std::string GetPhysicalDeviceName() override;
-    bool PhysicalDeviceIsConnected() override;
 
   private:
     float mNeutralPitch;

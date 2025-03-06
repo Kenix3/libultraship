@@ -36,6 +36,8 @@ class Window {
     virtual void Close() = 0;
     virtual void StartFrame() = 0;
     virtual void EndFrame() = 0;
+    virtual bool IsFrameReady() = 0;
+    virtual void HandleEvents() = 0;
     virtual void SetCursorVisibility(bool visible) = 0;
     virtual uint32_t GetWidth() = 0;
     virtual uint32_t GetHeight() = 0;
@@ -76,7 +78,7 @@ class Window {
 
   private:
     std::shared_ptr<Gui> mGui;
-    int32_t mLastScancode;
+    int32_t mLastScancode = -1;
     WindowBackend mWindowBackend;
     std::shared_ptr<std::vector<WindowBackend>> mAvailableWindowBackends;
     // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton

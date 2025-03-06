@@ -65,10 +65,10 @@ bool ArchiveManager::HasFile(uint64_t hash) {
 
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
     std::list<std::string> includes = {};
-    if (searchMask.size() > 0) {
+    if (!searchMask.empty()) {
         includes.push_back(searchMask);
     }
-    return ListFiles({ searchMask }, {});
+    return ListFiles(includes, {});
 }
 
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::list<std::string>& includes,

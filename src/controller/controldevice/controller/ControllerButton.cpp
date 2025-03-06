@@ -146,10 +146,10 @@ void ControllerButton::ClearAllButtonMappings() {
     SaveButtonMappingIdsToConfig();
 }
 
-void ControllerButton::ClearAllButtonMappingsForDevice(ShipDeviceIndex shipDeviceIndex) {
+void ControllerButton::ClearAllButtonMappingsForDeviceType(PhysicalDeviceType physicalDeviceType) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [id, mapping] : mButtonMappings) {
-        if (mapping->GetShipDeviceIndex() == shipDeviceIndex) {
+        if (mapping->GetPhysicalDeviceType() == physicalDeviceType) {
             mapping->EraseFromConfig();
             mappingIdsToRemove.push_back(id);
         }
@@ -170,9 +170,10 @@ void ControllerButton::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     }
 }
 
-bool ControllerButton::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
-    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(),
-                       [lusIndex](const auto& mapping) { return mapping.second->GetShipDeviceIndex() == lusIndex; });
+bool ControllerButton::HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType) {
+    return std::any_of(mButtonMappings.begin(), mButtonMappings.end(), [physicalDeviceType](const auto& mapping) {
+        return mapping.second->GetPhysicalDeviceType() == physicalDeviceType;
+    });
 }
 
 bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bitmask, std::string id) {
@@ -264,12 +265,14 @@ bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) 
     return result;
 }
 
-void ControllerButton::AddDefaultMappings(ShipDeviceIndex shipDeviceIndex) {
-    for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(shipDeviceIndex, mPortIndex, mBitmask)) {
-        AddButtonMapping(mapping);
+void ControllerButton::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
+    if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask)) {
+            AddButtonMapping(mapping);
+        }
     }
 
-    if (shipDeviceIndex == ShipDeviceIndex::Keyboard) {
+    if (physicalDeviceType == PhysicalDeviceType::Keyboard) {
         for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
             AddButtonMapping(mapping);
         }

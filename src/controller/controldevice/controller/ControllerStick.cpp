@@ -49,11 +49,11 @@ void ControllerStick::ClearAllMappings() {
     SetNotchSnapAngle(0);
 }
 
-void ControllerStick::ClearAllMappingsForDevice(ShipDeviceIndex lusIndex) {
+void ControllerStick::ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDeviceType) {
     std::vector<std::string> mappingIdsToRemove;
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
-            if (mapping->GetShipDeviceIndex() == lusIndex) {
+            if (mapping->GetPhysicalDeviceType() == physicalDeviceType) {
                 mapping->EraseFromConfig();
                 mappingIdsToRemove.push_back(id);
             }
@@ -124,13 +124,15 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
     mAxisDirectionMappings[direction][mapping->GetAxisDirectionMappingId()] = mapping;
 }
 
-void ControllerStick::AddDefaultMappings(ShipDeviceIndex lusIndex) {
-    for (auto mapping :
-         AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(lusIndex, mPortIndex, mStickIndex)) {
-        AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+void ControllerStick::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
+    if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
+        for (auto mapping :
+             AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStickIndex)) {
+            AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+        }
     }
 
-    if (lusIndex == ShipDeviceIndex::Keyboard) {
+    if (physicalDeviceType == PhysicalDeviceType::Keyboard) {
         for (auto mapping :
              AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStickIndex)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
@@ -445,12 +447,13 @@ bool ControllerStick::NotchSnapAngleIsDefault() {
     return mNotchSnapAngle == DEFAULT_NOTCH_SNAP_ANGLE;
 }
 
-bool ControllerStick::HasMappingsForShipDeviceIndex(ShipDeviceIndex lusIndex) {
+bool ControllerStick::HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType) {
     return std::any_of(mAxisDirectionMappings.begin(), mAxisDirectionMappings.end(),
-                       [lusIndex](const auto& directionMappings) {
+                       [physicalDeviceType](const auto& directionMappings) {
                            return std::any_of(directionMappings.second.begin(), directionMappings.second.end(),
-                                              [lusIndex](const auto& mappingPair) {
-                                                  return mappingPair.second->GetShipDeviceIndex() == lusIndex;
+                                              [physicalDeviceType](const auto& mappingPair) {
+                                                  return mappingPair.second->GetPhysicalDeviceType() ==
+                                                         physicalDeviceType;
                                               });
                        });
 }

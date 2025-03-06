@@ -4,13 +4,12 @@
 #include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
 namespace Ship {
-class SDLAxisDirectionToAnyMapping : virtual public ControllerInputMapping, public SDLMapping {
+class SDLAxisDirectionToAnyMapping : virtual public ControllerInputMapping {
   public:
-    SDLAxisDirectionToAnyMapping(ShipDeviceIndex shipDeviceIndex, int32_t sdlControllerAxis, int32_t axisDirection);
+    SDLAxisDirectionToAnyMapping(int32_t sdlControllerAxis, int32_t axisDirection);
     ~SDLAxisDirectionToAnyMapping();
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;
-    bool PhysicalDeviceIsConnected() override;
     bool AxisIsTrigger();
     bool AxisIsStick();
 

@@ -1,9 +1,6 @@
 #pragma once
 
 #ifdef __cplusplus
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -15,8 +12,7 @@
 #include <SDL2/SDL.h>
 #include "window/gui/ConsoleWindow.h"
 #include "window/gui/InputEditorWindow.h"
-#include "controller/deviceindex/ControllerDisconnectedWindow.h"
-#include "controller/deviceindex/ControllerReorderingWindow.h"
+#include "controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
 #include "window/gui/IconsFontAwesome4.h"
 #include "window/gui/GameOverlay.h"
 #include "window/gui/StatsWindow.h"
@@ -72,9 +68,9 @@ class Gui {
     ~Gui();
 
     void Init(GuiWindowInitData windowImpl);
-    void Draw();
+    void StartDraw();
+    void EndDraw();
     void HandleWindowEvents(WindowEvent event);
-    void SetupRendererFrame();
     void SaveConsoleVariablesNextFrame();
     bool SupportsViewports();
     ImGuiID GetMainGameWindowID();
@@ -112,6 +108,7 @@ class Gui {
     void DrawFloatingWindows();
     void DrawMenu();
     void DrawGame();
+    void CalculateGameViewport();
 
     void ImGuiBackendNewFrame();
     void ImGuiWMNewFrame();
