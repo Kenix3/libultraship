@@ -10,7 +10,6 @@
 #include "resource/Resource.h"
 #include <memory>
 
-
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name);
 std::shared_ptr<Ship::IResource> ResourceLoad(uint64_t crc);
 template <class T> std::shared_ptr<T> ResourceLoad(const char* name) {
