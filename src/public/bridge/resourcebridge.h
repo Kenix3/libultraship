@@ -8,6 +8,8 @@
 #ifdef __cplusplus
 #include "resource/type/Texture.h"
 #include "resource/Resource.h"
+#include <memory>
+
 
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name);
 std::shared_ptr<Ship::IResource> ResourceLoad(uint64_t crc);
