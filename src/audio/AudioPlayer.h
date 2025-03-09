@@ -4,11 +4,13 @@
 #include <string>
 
 namespace Ship {
+enum class AudioSurroundSetting { stereo, surround51 };
 
 struct AudioSettings {
     int32_t SampleRate = 44100;
     int32_t SampleLength = 1024;
     int32_t DesiredBuffered = 2480;
+    AudioSurroundSetting AudioSurround = AudioSurroundSetting::stereo;
 };
 
 class AudioPlayer {
@@ -29,12 +31,16 @@ class AudioPlayer {
     int32_t GetSampleLength() const;
 
     int32_t GetDesiredBuffered() const;
+    
+    AudioSurroundSetting GetAudioSurround() const;
 
     void SetSampleRate(int32_t rate);
 
     void SetSampleLength(int32_t length);
 
     void SetDesiredBuffered(int32_t size);
+    
+    void SetAudioSurround(AudioSurroundSetting surround);
 
   protected:
     virtual bool DoInit() = 0;

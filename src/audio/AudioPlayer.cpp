@@ -27,6 +27,10 @@ int32_t AudioPlayer::GetDesiredBuffered() const {
     return mAudioSettings.DesiredBuffered;
 }
 
+AudioSurroundSetting AudioPlayer::GetAudioSurround() const {
+    return mAudioSettings.AudioSurround;
+}
+
 void AudioPlayer::SetSampleRate(int32_t rate) {
     mAudioSettings.SampleRate = rate;
 }
@@ -37,5 +41,9 @@ void AudioPlayer::SetSampleLength(int32_t length) {
 
 void AudioPlayer::SetDesiredBuffered(int32_t size) {
     mAudioSettings.DesiredBuffered = size;
+}
+
+void AudioPlayer::SetAudioSurround(AudioSurroundSetting surround) {
+    mAudioSettings.AudioSurround = surround;
 }
 } // namespace Ship

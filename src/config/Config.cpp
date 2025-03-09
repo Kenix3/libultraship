@@ -226,6 +226,11 @@ AudioBackend Config::GetCurrentAudioBackend() {
     return AudioBackend::SDL;
 }
 
+AudioSurroundSetting Config::GetCurrentAudioSurround() {
+    bool audio6Channels = GetBool("CVars.gAudioSurround51");
+    return audio6Channels ? AudioSurroundSetting::surround51 : AudioSurroundSetting::stereo;
+}
+
 void Config::SetCurrentAudioBackend(AudioBackend backend) {
     switch (backend) {
         case AudioBackend::WASAPI:
