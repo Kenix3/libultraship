@@ -1,9 +1,6 @@
 #ifdef _WIN32
 #include "WasapiAudioPlayer.h"
 #include <spdlog/spdlog.h>
-#include <cmath>
-#include <thread>
-#include <iostream>
 
 // These constants are currently missing from the MinGW headers.
 #ifndef AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
@@ -19,25 +16,6 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioRenderClient = __uuidof(IAudioRenderClient);
 
 namespace Ship {
-
-const double PI = 3.14159265358979323846;
-
-void GenerateSineWave(int16_t* buffer, int sampleRate, int frequency, int duration, int numChannels, int channel) {
-    int numSamples = sampleRate * duration;
-    double amplitude = 32760; // Max amplitude for 16-bit audio
-    double phaseIncrement = 2.0 * PI * frequency / sampleRate;
-
-    for (int i = 0; i < numSamples; ++i) {
-        double sample = amplitude * sin(phaseIncrement * i);
-        for (int ch = 0; ch < numChannels; ++ch) {
-            if (ch == channel) {
-                buffer[i * numChannels + ch] = static_cast<int16_t>(sample);
-            } else {
-                buffer[i * numChannels + ch] = 0;
-            }
-        }
-    }
-}
 
 void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
     if (FAILED(res)) {
@@ -88,12 +66,7 @@ bool WasapiAudioPlayer::SetupStream() {
 
         mStarted = false;
         mInitialized = true;
-
-        std::cout << "Audio stream initialized" << std::endl;
-    } catch (HRESULT res) {    
-        std::cout << "Audio stream not initialized" << std::endl;
-        return false;
-    }
+    } catch (HRESULT res) { return false; }
 
     return true;
 }
