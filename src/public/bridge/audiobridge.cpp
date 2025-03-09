@@ -30,6 +30,18 @@ int32_t AudioPlayerGetDesiredBuffered() {
     return audio->GetDesiredBuffered();
 }
 
+AudioSurroundSetting GetAudioSurround() {
+    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    // TODO: Surround51 forced for now
+    return surround51;
+
+    if (audio == nullptr) {
+        return stereo;
+    }
+
+    return audio->GetAudioSurround();
+}
+
 void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
     auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
     if (audio == nullptr) {
