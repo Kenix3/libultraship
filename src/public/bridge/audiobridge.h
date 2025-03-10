@@ -18,6 +18,7 @@ extern "C" {
 int32_t AudioPlayerBuffered();
 int32_t AudioPlayerGetDesiredBuffered();
 AudioSurroundSetting GetAudioSurround();
+int32_t GetNumAudioChannels();
 void AudioPlayerPlayFrame(const uint8_t* buf, size_t len);
 
 #ifdef __cplusplus

@@ -227,8 +227,8 @@ AudioBackend Config::GetCurrentAudioBackend() {
 }
 
 AudioSurroundSetting Config::GetCurrentAudioSurround() {
-    bool audio6Channels = GetBool("CVars.gAudioSurround51");
-    return audio6Channels ? AudioSurroundSetting::surround51 : AudioSurroundSetting::stereo;
+    int surround = GetInt("CVars.gSurroundAudio");
+    return surround ? AudioSurroundSetting::surround51 : AudioSurroundSetting::stereo;
 }
 
 void Config::SetCurrentAudioBackend(AudioBackend backend) {

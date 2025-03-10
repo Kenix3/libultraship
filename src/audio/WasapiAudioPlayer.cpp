@@ -28,9 +28,7 @@ bool WasapiAudioPlayer::SetupStream() {
         ThrowIfFailed(mDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &mDevice));
         ThrowIfFailed(mDevice->Activate(IID_IAudioClient, CLSCTX_ALL, nullptr, IID_PPV_ARGS_Helper(&mClient)));
 
-        // TODO: For now audioSurround is forced
-        // const auto audioSurround = this->GetAudioSurround();
-        const auto audioSurround = AudioSurroundSetting::surround51;
+        auto audioSurround = this->GetAudioSurround();
         if (audioSurround == AudioSurroundSetting::stereo) {
             mNumChannels = 2;
             WAVEFORMATEX desired;
