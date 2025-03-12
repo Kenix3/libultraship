@@ -226,9 +226,14 @@ AudioBackend Config::GetCurrentAudioBackend() {
     return AudioBackend::SDL;
 }
 
-AudioSurroundSetting Config::GetCurrentAudioSurround() {
+AudioChannelsSetting Config::GetCurrentAudioSurround() {
     int surround = GetInt("CVars.gSurroundAudio");
-    return surround ? AudioSurroundSetting::surround51 : AudioSurroundSetting::stereo;
+    switch (surround) {
+        case 1:
+            return AudioChannelsSetting::surround51;
+        default:
+            return AudioChannelsSetting::stereo;
+    }
 }
 
 void Config::SetCurrentAudioBackend(AudioBackend backend) {

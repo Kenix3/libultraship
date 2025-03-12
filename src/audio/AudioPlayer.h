@@ -10,7 +10,7 @@ struct AudioSettings {
     int32_t SampleRate = 44100;
     int32_t SampleLength = 1024;
     int32_t DesiredBuffered = 2480;
-    AudioSurroundSetting AudioSurround = AudioSurroundSetting::stereo;
+    AudioChannelsSetting AudioSurround = AudioChannelsSetting::stereo;
 };
 
 class AudioPlayer {
@@ -32,7 +32,7 @@ class AudioPlayer {
 
     int32_t GetDesiredBuffered() const;
     
-    AudioSurroundSetting GetAudioSurround() const;
+    AudioChannelsSetting GetAudioChannels() const;
 
     void SetSampleRate(int32_t rate);
 
@@ -40,7 +40,7 @@ class AudioPlayer {
 
     void SetDesiredBuffered(int32_t size);
     
-    void SetAudioSurround(AudioSurroundSetting surround);
+    void SetAudioChannels(AudioChannelsSetting surround);
 
   protected:
     virtual bool DoInit() = 0;

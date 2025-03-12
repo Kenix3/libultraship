@@ -27,7 +27,7 @@ int32_t AudioPlayer::GetDesiredBuffered() const {
     return mAudioSettings.DesiredBuffered;
 }
 
-AudioSurroundSetting AudioPlayer::GetAudioSurround() const {
+AudioChannelsSetting AudioPlayer::GetAudioChannels() const {
     return mAudioSettings.AudioSurround;
 }
 
@@ -43,7 +43,7 @@ void AudioPlayer::SetDesiredBuffered(int32_t size) {
     mAudioSettings.DesiredBuffered = size;
 }
 
-void AudioPlayer::SetAudioSurround(AudioSurroundSetting surround) {
+void AudioPlayer::SetAudioChannels(AudioChannelsSetting surround) {
     mAudioSettings.AudioSurround = surround;
 }
 } // namespace Ship

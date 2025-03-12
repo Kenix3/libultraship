@@ -28,8 +28,8 @@ bool WasapiAudioPlayer::SetupStream() {
         ThrowIfFailed(mDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &mDevice));
         ThrowIfFailed(mDevice->Activate(IID_IAudioClient, CLSCTX_ALL, nullptr, IID_PPV_ARGS_Helper(&mClient)));
 
-        auto audioSurround = this->GetAudioSurround();
-        if (audioSurround == AudioSurroundSetting::stereo) {
+        auto audioSurround = this->GetAudioChannels();
+        if (audioSurround == AudioChannelsSetting::stereo) {
             mNumChannels = 2;
             WAVEFORMATEX desired;
             desired.wFormatTag = WAVE_FORMAT_PCM;
@@ -43,7 +43,7 @@ bool WasapiAudioPlayer::SetupStream() {
             ThrowIfFailed(mClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
                                               AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
                                               2000000, 0, &desired, nullptr));
-        } else if (audioSurround == AudioSurroundSetting::surround51) {
+        } else if (audioSurround == AudioChannelsSetting::surround51) {
             mNumChannels = 6;
             WAVEFORMATEXTENSIBLE desired;
             desired.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
