@@ -50,26 +50,38 @@ bool WasapiAudioPlayer::SetupStream() {
         ThrowIfFailed(mDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &mDevice));
         ThrowIfFailed(mDevice->Activate(IID_IAudioClient, CLSCTX_ALL, nullptr, IID_PPV_ARGS_Helper(&mClient)));
 
-        WAVEFORMATEXTENSIBLE desired;
-        desired.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
-        desired.Format.nChannels = 6; // 6 channels for 5.1 audio
-        desired.Format.wBitsPerSample = 16; // 16-bit audio
-        desired.Format.nSamplesPerSec = this->GetSampleRate();
+        if (this->GetAudioSurround() == AudioSurroundSetting::stereo) {
+            mNumChannels = 2;
+            WAVEFORMATEX desired;
+            desired.wFormatTag = WAVE_FORMAT_PCM;
+            desired.nChannels = mNumChannels; // Stereo audio
+            desired.wBitsPerSample = 16; // 16-bit audio
+            desired.nSamplesPerSec = this->GetSampleRate();
+            desired.nBlockAlign = desired.nChannels * desired.wBitsPerSample / 8;
+            desired.nAvgBytesPerSec = desired.nSamplesPerSec * desired.nBlockAlign; // 2 bytes per sample (16-bit audio)
+            desired.cbSize = 0;
 
-        std::cout << "Sample rate: " << desired.Format.nSamplesPerSec << std::endl;
+            ThrowIfFailed(mClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+                                              AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
+                                              2000000, 0, &desired, nullptr));
+        } else if (this->GetAudioSurround() == AudioSurroundSetting::surround51) {
+            mNumChannels = 6;
+            WAVEFORMATEXTENSIBLE desired;
+            desired.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+            desired.Format.nChannels = mNumChannels; // 6 channels for 5.1 audio
+            desired.Format.wBitsPerSample = 16; // 16-bit audio
+            desired.Format.nSamplesPerSec = this->GetSampleRate();
+            desired.Format.nBlockAlign = desired.Format.nChannels * desired.Format.wBitsPerSample / 8;
+            desired.Format.nAvgBytesPerSec = desired.Format.nSamplesPerSec * desired.Format.nBlockAlign; // 2 bytes per sample (16-bit audio)
+            desired.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
+            desired.dwChannelMask = KSAUDIO_SPEAKER_5POINT1;
+            desired.Samples.wValidBitsPerSample = 16;
+            desired.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
 
-        desired.Format.nBlockAlign = desired.Format.nChannels * desired.Format.wBitsPerSample / 8;
-        desired.Format.nAvgBytesPerSec = desired.Format.nSamplesPerSec * desired.Format.nBlockAlign; // 2 bytes per sample (16-bit audio)
-        desired.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
-        desired.dwChannelMask = KSAUDIO_SPEAKER_5POINT1;
-        desired.Samples.wValidBitsPerSample = 16;
-        desired.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
-
-        ThrowIfFailed(mClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                          AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
-                                          2000000, 0, (WAVEFORMATEX*) &desired, nullptr));
-
-        std::cout << "Audio stream initialized" << std::endl;
+            ThrowIfFailed(mClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+                                              AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
+                                              2000000, 0, (WAVEFORMATEX*) &desired, nullptr));
+        }
 
         ThrowIfFailed(mClient->GetBufferSize(&mBufferFrameCount));
         ThrowIfFailed(mClient->GetService(IID_PPV_ARGS(&mRenderClient)));
@@ -77,17 +89,7 @@ bool WasapiAudioPlayer::SetupStream() {
         mStarted = false;
         mInitialized = true;
 
-        // // Test 6-channel audio by playing a tone on each channel for 1 second
-        // int sampleRate = this->GetSampleRate();
-        // int duration = 1;
-        // int16_t* buffer = new int16_t[sampleRate * desired.Format.nChannels * duration];
-        // for (int ch = 0; ch < desired.Format.nChannels; ++ch) {
-        //     GenerateSineWave(buffer, sampleRate, 440, duration, desired.Format.nChannels, ch); // 440 Hz tone
-        //     Play(reinterpret_cast<uint8_t*>(buffer), sampleRate * desired.Format.nChannels * 2 * duration);
-        //     std::this_thread::sleep_for(std::chrono::milliseconds(duration * 1000));
-        // }
-        // delete[] buffer;
-
+        std::cout << "Audio stream initialized" << std::endl;
     } catch (HRESULT res) {    
         std::cout << "Audio stream not initialized" << std::endl;
         return false;
@@ -127,9 +129,7 @@ void WasapiAudioPlayer::Play(const uint8_t* buf, size_t len) {
         }
     }
     try {
-        // Calculate the number of frames based on 6 channels (5.1 audio)
-        UINT32 frames = len / (6 * 2); // 6 channels, 2 bytes per sample (16-bit audio)
-
+        UINT32 frames = len / (mNumChannels * sizeof(int16_t));
         UINT32 padding;
         ThrowIfFailed(mClient->GetCurrentPadding(&padding));
 
@@ -143,7 +143,7 @@ void WasapiAudioPlayer::Play(const uint8_t* buf, size_t len) {
 
         BYTE* data;
         ThrowIfFailed(mRenderClient->GetBuffer(frames, &data));
-        memcpy(data, buf, frames * 6 * 2); // 6 channels, 2 bytes per sample
+        memcpy(data, buf, frames * mNumChannels * sizeof(int16_t));
         ThrowIfFailed(mRenderClient->ReleaseBuffer(frames, 0));
 
         if (!mStarted && padding + frames > 1500) {
