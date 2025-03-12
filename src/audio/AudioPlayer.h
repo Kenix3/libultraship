@@ -2,9 +2,9 @@
 #include "stdint.h"
 #include "stddef.h"
 #include <string>
+#include "public/bridge/audiobridge.h"
 
 namespace Ship {
-enum class AudioSurroundSetting { stereo, surround51 };
 
 struct AudioSettings {
     int32_t SampleRate = 44100;
