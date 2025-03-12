@@ -50,6 +50,7 @@
 #ifndef HID_USAGE_GENERIC_MOUSE
 #define HID_USAGE_GENERIC_MOUSE ((unsigned short)0x02)
 #endif
+using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
 
 using namespace Microsoft::WRL; // For ComPtr
 
@@ -343,6 +344,57 @@ static void apply_mouse_capture_clip() {
     ClipCursor(&rect);
 }
 
+void gfx_dxgi_handle_raw_input_buffered() {
+    static UINT offset = -1;
+    if (offset == -1) {
+        offset = sizeof(RAWINPUTHEADER);
+
+        BOOL isWow64;
+        if (IsWow64Process(GetCurrentProcess(), &isWow64) && isWow64) {
+            offset += 8;
+        }
+    }
+
+    static BYTE* buf = NULL;
+    static size_t bufsize;
+    static const UINT RAWINPUT_BUFFER_SIZE_INCREMENT = 48 * 4; // 4 64-bit raw mouse packets
+
+    while (true) {
+        RAWINPUT* input = (RAWINPUT*)buf;
+        UINT size = bufsize;
+        UINT count = GetRawInputBuffer(input, &size, sizeof(RAWINPUTHEADER));
+
+        if (!buf || (count == -1 && GetLastError() == ERROR_INSUFFICIENT_BUFFER)) {
+            // realloc
+            BYTE* newbuf = (BYTE*)std::realloc(buf, bufsize + RAWINPUT_BUFFER_SIZE_INCREMENT);
+            if (!newbuf) {
+                break;
+            }
+            buf = newbuf;
+            bufsize += RAWINPUT_BUFFER_SIZE_INCREMENT;
+            input = (RAWINPUT*)newbuf;
+        } else if (count == -1) {
+            // unhandled error
+            DWORD err = GetLastError();
+            fprintf(stderr, "Error: %lu\n", err);
+        } else if (count == 0) {
+            // there are no events
+            break;
+        } else {
+            if (dxgi.is_mouse_captured && dxgi.in_focus) {
+                while (count--) {
+                    if (input->header.dwType == RIM_TYPEMOUSE) {
+                        RAWMOUSE* rawmouse = (RAWMOUSE*)((BYTE*)input + offset);
+                        dxgi.raw_mouse_delta_buf.x += rawmouse->lLastX;
+                        dxgi.raw_mouse_delta_buf.y += rawmouse->lLastY;
+                    }
+                    input = NEXTRAWINPUTBLOCK(input);
+                }
+            }
+        }
+    }
+}
+
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
     Ship::WindowEvent event_impl;
@@ -435,6 +487,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
         case WM_INPUT: {
+            // At this point the top most message should already be off the queue.
+            // So we don't need to get it all, if mouse isn't captured.
             if (dxgi.is_mouse_captured && dxgi.in_focus) {
                 uint32_t size = sizeof(RAWINPUT);
                 static RAWINPUT raw[sizeof(RAWINPUT)];
@@ -445,6 +499,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
                     dxgi.raw_mouse_delta_buf.y += raw->data.mouse.lLastY;
                 }
             }
+            // The rest still needs to use that, to get them off the queue.
+            gfx_dxgi_handle_raw_input_buffered();
             break;
         }
         case WM_DROPFILES:
