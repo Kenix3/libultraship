@@ -31,7 +31,7 @@ class AudioPlayer {
     int32_t GetSampleLength() const;
 
     int32_t GetDesiredBuffered() const;
-    
+
     AudioChannelsSetting GetAudioChannels() const;
 
     void SetSampleRate(int32_t rate);
@@ -39,7 +39,7 @@ class AudioPlayer {
     void SetSampleLength(int32_t length);
 
     void SetDesiredBuffered(int32_t size);
-    
+
     void SetAudioChannels(AudioChannelsSetting surround);
 
   protected:

@@ -6,10 +6,7 @@
 #include "stdint.h"
 #include "stddef.h"
 
-typedef enum AudioChannelsSetting {
-    stereo,
-    surround51
-} AudioChannelsSetting;
+typedef enum AudioChannelsSetting { stereo, surround51 } AudioChannelsSetting;
 
 #ifdef __cplusplus
 extern "C" {

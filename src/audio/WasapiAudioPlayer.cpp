@@ -34,32 +34,33 @@ bool WasapiAudioPlayer::SetupStream() {
             WAVEFORMATEX desired;
             desired.wFormatTag = WAVE_FORMAT_PCM;
             desired.nChannels = mNumChannels; // Stereo audio
-            desired.wBitsPerSample = 16; // 16-bit audio
+            desired.wBitsPerSample = 16;      // 16-bit audio
             desired.nSamplesPerSec = this->GetSampleRate();
             desired.nBlockAlign = desired.nChannels * desired.wBitsPerSample / 8;
             desired.nAvgBytesPerSec = desired.nSamplesPerSec * desired.nBlockAlign; // 2 bytes per sample (16-bit audio)
             desired.cbSize = 0;
 
-            ThrowIfFailed(mClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                              AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
-                                              2000000, 0, &desired, nullptr));
+            ThrowIfFailed(mClient->Initialize(
+                AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
+                2000000, 0, &desired, nullptr));
         } else if (audioSurround == AudioChannelsSetting::surround51) {
             mNumChannels = 6;
             WAVEFORMATEXTENSIBLE desired;
             desired.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
             desired.Format.nChannels = mNumChannels; // 6 channels for 5.1 audio
-            desired.Format.wBitsPerSample = 16; // 16-bit audio
+            desired.Format.wBitsPerSample = 16;      // 16-bit audio
             desired.Format.nSamplesPerSec = this->GetSampleRate();
             desired.Format.nBlockAlign = desired.Format.nChannels * desired.Format.wBitsPerSample / 8;
-            desired.Format.nAvgBytesPerSec = desired.Format.nSamplesPerSec * desired.Format.nBlockAlign; // 2 bytes per sample (16-bit audio)
+            desired.Format.nAvgBytesPerSec =
+                desired.Format.nSamplesPerSec * desired.Format.nBlockAlign; // 2 bytes per sample (16-bit audio)
             desired.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
             desired.dwChannelMask = KSAUDIO_SPEAKER_5POINT1;
             desired.Samples.wValidBitsPerSample = 16;
             desired.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
 
-            ThrowIfFailed(mClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                              AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
-                                              2000000, 0, (WAVEFORMATEX*) &desired, nullptr));
+            ThrowIfFailed(mClient->Initialize(
+                AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
+                2000000, 0, (WAVEFORMATEX*)&desired, nullptr));
         }
 
         ThrowIfFailed(mClient->GetBufferSize(&mBufferFrameCount));
