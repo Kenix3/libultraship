@@ -956,6 +956,7 @@ typedef union {
 #define G_MW_NUMLIGHT 0x02
 #define G_MW_CLIP 0x04
 #define G_MW_SEGMENT 0x06
+#define G_MW_SEGMENT_INTERP 0x07
 #define G_MW_FOG 0x08
 #define G_MW_LIGHTCOL 0x0a
 #define G_MW_PERSPNORM 0x0e

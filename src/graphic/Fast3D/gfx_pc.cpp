@@ -123,7 +123,8 @@ static struct GfxWindowManagerAPI* gfx_wapi;
 static struct GfxRenderingAPI* gfx_rapi;
 
 static int markerOn;
-uintptr_t gSegmentPointers[16];
+uintptr_t gSegmentPointers[MAX_SEGMENT_POINTERS];
+int gInterpolationIndex = 0;
 
 struct FBInfo {
     uint32_t orig_width, orig_height;       // Original shape
@@ -1939,10 +1940,21 @@ static void gfx_sp_moveword_f3dex2(uint8_t index, uint16_t offset, uintptr_t dat
             g_rsp.fog_mul = (int16_t)(data >> 16);
             g_rsp.fog_offset = (int16_t)data;
             break;
-        case G_MW_SEGMENT:
-            int segNumber = offset / 4;
-            gSegmentPointers[segNumber] = data;
+		case G_MW_SEGMENT:
+		{
+			int segNumber = offset / 4;
+			gSegmentPointers[segNumber] = data;
+		}
             break;
+		case G_MW_SEGMENT_INTERP:
+		{
+			int segNumber = offset % 16;
+			int segIndex = offset / 16;
+
+			if (segIndex == gInterpolationIndex)
+				gSegmentPointers[segNumber] = data;
+		}
+			break;
     }
 }
 
@@ -1958,10 +1970,21 @@ static void gfx_sp_moveword_f3d(uint8_t index, uint16_t offset, uintptr_t data) 
             g_rsp.fog_mul = (int16_t)(data >> 16);
             g_rsp.fog_offset = (int16_t)data;
             break;
-        case G_MW_SEGMENT:
-            int segNumber = offset / 4;
-            gSegmentPointers[segNumber] = data;
+		case G_MW_SEGMENT:
+		{
+			int segNumber = offset / 4;
+			gSegmentPointers[segNumber] = data;
+		}
             break;
+		case G_MW_SEGMENT_INTERP:
+		{
+			int segNumber = offset % 16;
+			int segIndex = offset / 16;
+
+			if (segIndex == gInterpolationIndex)
+				gSegmentPointers[segNumber] = data;
+		}
+		break;
     }
 }
 
@@ -4092,7 +4115,7 @@ void gfx_init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, co
     gfx_native_dimensions.width = SCREEN_WIDTH;
     gfx_native_dimensions.height = SCREEN_HEIGHT;
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < MAX_SEGMENT_POINTERS; i++) {
         gSegmentPointers[i] = 0;
     }
 

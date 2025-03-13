@@ -1172,6 +1172,7 @@ typedef union {
 #define G_MW_NUMLIGHT 0x02
 #define G_MW_CLIP 0x04
 #define G_MW_SEGMENT 0x06
+#define G_MW_SEGMENT_INTERP 0x07
 #define G_MW_FOG 0x08
 #define G_MW_LIGHTCOL 0x0a
 #ifdef F3DEX_GBI_2
@@ -2155,6 +2156,7 @@ typedef union Gfx {
     { _SHIFTL(G_CULLDL, 24, 8) | ((0x0f & (vstart)) * 40), ((0x0f & ((vend) + 1)) * 40) }
 #endif
 
+#define __gSPSegmentInterp(pkt, segment, base) gMoveWd(pkt, G_MW_SEGMENT_INTERP, segment, base)
 #define __gSPSegment(pkt, segment, base) gMoveWd(pkt, G_MW_SEGMENT, (segment)*4, base)
 #define gsSPSegment(segment, base) gsMoveWd(G_MW_SEGMENT, (segment)*4, base)
 

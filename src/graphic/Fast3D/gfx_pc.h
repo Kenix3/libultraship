@@ -22,8 +22,11 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 
-extern uintptr_t gSegmentPointers[];
+#define MAX_SEGMENT_POINTERS 16
+
+extern uintptr_t gSegmentPointers[MAX_SEGMENT_POINTERS];
 extern uintptr_t gfxFramebuffer;
+extern int gInterpolationIndex;
 
 struct GfxRenderingAPI;
 struct GfxWindowManagerAPI;
