@@ -92,7 +92,6 @@ static struct {
     uint32_t maximum_frame_latency;
     uint32_t applied_maximum_frame_latency;
     HANDLE timer;
-    bool use_timer;
     bool tearing_support;
     bool is_vsync_enabled;
     bool mouse_pressed[5];
@@ -729,8 +728,6 @@ static bool gfx_dxgi_is_frame_ready() {
         dxgi.frame_stats.clear();
     }
 
-    dxgi.use_timer = false;
-
     dxgi.frame_timestamp += FRAME_INTERVAL_NS_NUMERATOR;
 
     if (dxgi.frame_stats.size() >= 2) {
@@ -821,14 +818,6 @@ static bool gfx_dxgi_is_frame_ready() {
                 return false;
             }
         }
-        // printf("v: %d\n", (int)vsyncs_to_wait);
-        if (vsyncs_to_wait > 4) {
-            // Invalid, so use timer based solution
-            vsyncs_to_wait = 4;
-            dxgi.use_timer = true;
-        }
-    } else {
-        dxgi.use_timer = true;
     }
     // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
@@ -841,40 +830,26 @@ static bool gfx_dxgi_is_frame_ready() {
 
 static void gfx_dxgi_swap_buffers_begin() {
     LARGE_INTEGER t;
-    dxgi.use_timer = true;
-    if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
-        ComPtr<ID3D11Device> device;
-        dxgi.swap_chain_device.As(&device);
 
-        if (device != nullptr) {
-            ComPtr<ID3D11DeviceContext> dev_ctx;
-            device->GetImmediateContext(&dev_ctx);
+    QueryPerformanceCounter(&t);
+    int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
+                   FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
+    int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
+    if (left > 0) {
+        LARGE_INTEGER li;
+        li.QuadPart = -left;
+        SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
+        WaitForSingleObject(dxgi.timer, INFINITE);
+    }
 
-            if (dev_ctx != nullptr) {
-                // Always flush the immediate context before forcing a CPU-wait, otherwise the GPU might only start
-                // working when the SwapChain is presented.
-                dev_ctx->Flush();
-            }
-        }
-        QueryPerformanceCounter(&t);
-        int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
-                       FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
-        int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
-        if (left > 0) {
-            LARGE_INTEGER li;
-            li.QuadPart = -left;
-            SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
-            WaitForSingleObject(dxgi.timer, INFINITE);
-        }
-
+    QueryPerformanceCounter(&t);
+    t.QuadPart = qpc_to_100ns(t.QuadPart);
+    while (t.QuadPart < next) {
+        YieldProcessor();
         QueryPerformanceCounter(&t);
         t.QuadPart = qpc_to_100ns(t.QuadPart);
-        while (t.QuadPart < next) {
-            YieldProcessor();
-            QueryPerformanceCounter(&t);
-            t.QuadPart = qpc_to_100ns(t.QuadPart);
-        }
     }
+
     QueryPerformanceCounter(&t);
     dxgi.previous_present_time = t;
     if (dxgi.tearing_support && !dxgi.length_in_vsync_frames) {
