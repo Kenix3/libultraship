@@ -190,6 +190,7 @@
 #define G_DL_INDEX 0x3d
 #define G_READFB 0x3e
 #define G_SETINTENSITY 0x40
+#define G_LOAD_SHADER 0x43
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -2789,6 +2790,12 @@ typedef union Gfx {
 
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
+
+#define gsSPLoadShader(shader, type) gsDma1p(G_LOAD_SHADER, shader, 0, type)
+#define gsSPUnloadShader() gsDma1p(G_LOAD_SHADER, 0, 0, 0)
+
+#define gSPLoadShader(pkt, shader, type) gDma1p(pkt, G_LOAD_SHADER, shader, 0, type)
+#define gSPUnloadShader(pkt) gDma1p(pkt, G_LOAD_SHADER, 0, 0, 0)
 
 #define gSPExtraGeometryMode(pkt, c, s)                                                 \
     _DW({                                                                               \

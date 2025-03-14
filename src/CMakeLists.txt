@@ -218,6 +218,8 @@ if (USE_OPENGLES)
     endif()
 endif()
 
+target_link_libraries(libultraship PUBLIC prism)
+
 #=================== Compile Options & Defs ===================
 
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})

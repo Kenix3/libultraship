@@ -7,6 +7,7 @@
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/binarytools/BinaryReader.h"
 #include "factory/JsonFactory.h"
+#include "factory/ShaderFactory.h"
 
 namespace Ship {
 ResourceLoader::ResourceLoader() {
@@ -20,6 +21,8 @@ ResourceLoader::~ResourceLoader() {
 void ResourceLoader::RegisterGlobalResourceFactories() {
     RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryJsonV0>(), RESOURCE_FORMAT_BINARY, "Json",
                             static_cast<uint32_t>(ResourceType::Json), 0);
+    RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryShaderV0>(), RESOURCE_FORMAT_BINARY, "Shader",
+                            static_cast<uint32_t>(ResourceType::Shader), 0);
 }
 
 bool ResourceLoader::RegisterResourceFactory(std::shared_ptr<ResourceFactory> factory, uint32_t format,
