@@ -21,7 +21,6 @@
 #include "libultra/r4300.h"
 #include "libultra/rcp.h"
 #include "libultra/rdp.h"
-#include "libultra/rsp.h"
 #include "libultra/sptask.h"
 #include "libultra/thread.h"
 #include "libultra/time.h"
