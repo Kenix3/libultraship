@@ -475,6 +475,19 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     return 0;
 }
 
+static BOOL CALLBACK WIN_ResourceNameCallback(HMODULE hModule, LPCTSTR lpType, LPTSTR lpName, LONG_PTR lParam) {
+    WNDCLASSEX* wcex = (WNDCLASSEX*)lParam;
+
+    (void)lpType; /* We already know that the resource type is RT_GROUP_ICON. */
+
+    /* We leave hIconSm as NULL as it will allow Windows to automatically
+       choose the appropriate small icon size to suit the current DPI. */
+    wcex->hIcon = LoadIcon(hModule, lpName);
+
+    /* Do not bother enumerating any more. */
+    return FALSE;
+}
+
 void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
                    uint32_t height, int32_t posX, int32_t posY) {
     LARGE_INTEGER qpc_init, qpc_freq;
@@ -510,13 +523,16 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     wcex.lpfnWndProc = gfx_dxgi_wnd_proc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
-    wcex.hInstance = nullptr;
+    wcex.hInstance = GetModuleHandle(nullptr);
     wcex.hIcon = nullptr;
+    wcex.hIconSm = nullptr;
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wcex.lpszMenuName = nullptr;
     wcex.lpszClassName = WINCLASS_NAME;
     wcex.hIconSm = nullptr;
+
+    EnumResourceNames(wcex.hInstance, RT_GROUP_ICON, WIN_ResourceNameCallback, (LONG_PTR)&wcex);
 
     ATOM winclass = RegisterClassExW(&wcex);
 
