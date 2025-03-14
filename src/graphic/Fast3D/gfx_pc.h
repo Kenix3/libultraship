@@ -183,7 +183,7 @@ struct RDP {
         uint8_t siz;
         uint8_t cms, cmt;
         uint8_t shifts, shiftt;
-        uint16_t uls, ult, lrs, lrt; // U10.2
+        float uls, ult, lrs, lrt; // U10.2
         uint16_t tmem;               // 0-511, in 64-bit word units
         uint32_t line_size_bytes;
         uint8_t palette;
