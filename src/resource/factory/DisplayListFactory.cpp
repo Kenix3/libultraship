@@ -151,12 +151,14 @@ int8_t GetEndOpcodeByUCode(UcodeHandlers ucode) {
     return -1;
 }
 
-std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
-    if (!FileHasValidFormatAndReader(file)) {
+std::shared_ptr<Ship::IResource>
+ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
+                                                 std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
 
-    auto displayList = std::make_shared<DisplayList>(file->InitData);
+    auto displayList = std::make_shared<DisplayList>(initData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
     auto ucode = (UcodeHandlers)reader->ReadInt8();
 
@@ -204,12 +206,14 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
     return displayList;
 }
 
-std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
-    if (!FileHasValidFormatAndReader(file)) {
+std::shared_ptr<Ship::IResource>
+ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
+                                              std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
 
-    auto dl = std::make_shared<DisplayList>(file->InitData);
+    auto dl = std::make_shared<DisplayList>(initData);
     auto child =
         std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
 

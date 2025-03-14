@@ -4,12 +4,14 @@
 
 namespace Fast {
 
-std::shared_ptr<Ship::IResource> ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<Ship::File> file) {
-    if (!FileHasValidFormatAndReader(file)) {
+std::shared_ptr<Ship::IResource>
+ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<Ship::File> file,
+                                             std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
 
-    auto texture = std::make_shared<Texture>(file->InitData);
+    auto texture = std::make_shared<Texture>(initData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
 
     texture->Type = (TextureType)reader->ReadUInt32();
@@ -23,12 +25,14 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryTextureV0::ReadResource(st
     return texture;
 }
 
-std::shared_ptr<Ship::IResource> ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<Ship::File> file) {
-    if (!FileHasValidFormatAndReader(file)) {
+std::shared_ptr<Ship::IResource>
+ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<Ship::File> file,
+                                             std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
 
-    auto texture = std::make_shared<Texture>(file->InitData);
+    auto texture = std::make_shared<Texture>(initData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
 
     texture->Type = (TextureType)reader->ReadUInt32();
