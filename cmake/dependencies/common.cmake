@@ -2,22 +2,15 @@ include(FetchContent)
 
 find_package(OpenGL QUIET)
 
-# When using the Visual Studio generator, it is necessary to suppress stderr output entirely so it does not interrupt the patch command.
-# Redirecting to nul is used here instead of the `--quiet` flag, as that flag was only recently introduced in git 2.25.0 (Jan 2022)
-if (CMAKE_GENERATOR MATCHES "Visual Studio")
-    set(git_hide_output 2> nul)
-endif()
-
 #=================== ImGui ===================
 set(imgui_fixes_and_config_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/imgui-fixes-and-config.patch)
+set(imgui_apply_patch_command ${CMAKE_COMMAND} -Dpatch_file=${imgui_fixes_and_config_patch_file} -Dwith_reset=TRUE -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/git-patch.cmake)
 
-# Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
-set(imgui_apply_patch_if_needed git apply ${imgui_fixes_and_config_patch_file} ${git_hide_output} || git apply --reverse --check ${imgui_fixes_and_config_patch_file})
 FetchContent_Declare(
     ImGui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
     GIT_TAG v1.91.6-docking
-    PATCH_COMMAND ${imgui_apply_patch_if_needed}
+    PATCH_COMMAND ${imgui_apply_patch_command}
 )
 FetchContent_MakeAvailable(ImGui)
 list(APPEND ADDITIONAL_LIB_INCLUDES ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
@@ -45,15 +38,13 @@ target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/
 # ========= StormLib =============
 if(NOT EXCLUDE_MPQ_SUPPORT)
     set(stormlib_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/stormlib-optimizations.patch)
-
-    # Applies the patch or checks if it has already been applied successfully previously. Will error otherwise.
-    set(stormlib_apply_patch_if_needed git apply ${stormlib_patch_file} ${git_hide_output} || git apply --reverse --check ${stormlib_patch_file})
+    set(stormlib_apply_patch_command ${CMAKE_COMMAND} -Dpatch_file=${stormlib_patch_file} -Dwith_reset=TRUE -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/git-patch.cmake)
 
     FetchContent_Declare(
         StormLib
         GIT_REPOSITORY https://github.com/ladislav-zezula/StormLib.git
         GIT_TAG v9.25
-        PATCH_COMMAND ${stormlib_apply_patch_if_needed}
+        PATCH_COMMAND ${stormlib_apply_patch_command}
     )
     FetchContent_MakeAvailable(StormLib)
     list(APPEND ADDITIONAL_LIB_INCLUDES ${stormlib_SOURCE_DIR}/src)
