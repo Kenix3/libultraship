@@ -125,6 +125,7 @@ static struct GfxRenderingAPI* gfx_rapi;
 static int markerOn;
 uintptr_t gSegmentPointers[MAX_SEGMENT_POINTERS];
 int gInterpolationIndex = 0;
+int gInterpolationIndexTarget = 0;
 
 struct FBInfo {
     uint32_t orig_width, orig_height;       // Original shape
@@ -3626,6 +3627,22 @@ bool gfx_set_tile_size_handler_rdp(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
+	F3DGfx* cmd = *cmd0;
+
+	if (gInterpolationIndex == gInterpolationIndexTarget)
+		gfx_dp_set_tile_size(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
+	
+	return false;
+}
+
+bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
+	F3DGfx* cmd = *cmd0;
+
+	gInterpolationIndexTarget = cmd->words.w1;
+	return false;
+}
+
 bool gfx_load_tlut_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
@@ -3869,7 +3886,9 @@ class UcodeHandler {
 };
 
 static constexpr UcodeHandler rdpHandlers = {
-    { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
+	{ RDP_G_SETTARGETINTERPINDEX, { "G_SETTARGETINTERPINDEX", gfx_set_interpolation_index_target } },				// G_SETTARGETINTERPINDEX
+	{ RDP_G_SETTILESIZE_INTERP, { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },       // G_SETTILESIZE_INTERP
+	{ RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "G_RDPLOADSYNC", gfx_stubbed_command_handler } },         // G_RDPLOADSYNC (-26)
     { RDP_G_RDPPIPESYNC, { "G_RDPPIPESYNC", gfx_stubbed_command_handler } },         // G_RDPPIPESYNC (-25)
@@ -3879,7 +3898,7 @@ static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_SETPRIMDEPTH, { "G_SETPRIMDEPTH", gfx_set_prim_depth_handler_rdp } },    // G_SETPRIMDEPTH (-18)
     { RDP_G_RDPSETOTHERMODE, { "G_RDPSETOTHERMODE", gfx_rdp_set_other_mode_rdp } },  // G_RDPSETOTHERMODE (-17)
     { RDP_G_LOADTLUT, { "G_LOADTLUT", gfx_load_tlut_handler_rdp } },                 // G_LOADTLUT (-16)
-    { RDP_G_SETTILESIZE, { "G_SETTILESIZE", gfx_set_tile_size_handler_rdp } },       // G_SETTILESIZE (-14)
+	{ RDP_G_SETTILESIZE, { "G_SETTILESIZE", gfx_set_tile_size_handler_rdp } },       // G_SETTILESIZE (-14)
     { RDP_G_LOADBLOCK, { "G_LOADBLOCK", gfx_load_block_handler_rdp } },              // G_LOADBLOCK (-13)
     { RDP_G_LOADTILE, { "G_LOADTILE", gfx_load_tile_handler_rdp } },                 // G_LOADTILE (-12)
     { RDP_G_SETTILE, { "G_SETTILE", gfx_set_tile_handler_rdp } },                    // G_SETTILE (-11)
