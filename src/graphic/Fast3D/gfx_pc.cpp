@@ -2951,7 +2951,7 @@ int16_t gfx_create_shader(const std::string& path) {
     initData->Path = path;
     initData->IsCustom = false;
     initData->ByteOrder = Ship::Endianness::Native;
-    auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path, initData);
+    auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path);
     if (shader == nullptr || !shader->IsLoaded) {
         return -1;
     }
