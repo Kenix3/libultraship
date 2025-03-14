@@ -40,6 +40,7 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     UINT32 mBufferFrameCount = 0;
     bool mInitialized = false;
     bool mStarted = false;
+    int32_t mNumChannels = 2;
 };
 } // namespace Ship
 #endif

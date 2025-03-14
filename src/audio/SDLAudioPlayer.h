@@ -17,5 +17,6 @@ class SDLAudioPlayer : public AudioPlayer {
 
   private:
     SDL_AudioDeviceID mDevice;
+    int32_t mNumChannels = 2;
 };
 } // namespace Ship
