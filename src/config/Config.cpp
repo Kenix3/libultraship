@@ -227,7 +227,7 @@ AudioBackend Config::GetCurrentAudioBackend() {
 }
 
 AudioChannelsSetting Config::GetCurrentAudioSurround() {
-    int surround = GetInt("CVars.gSurroundAudio");
+    int surround = GetInt("CVars.gAudioChannelsSetting");
     switch (surround) {
         case 1:
             return AudioChannelsSetting::surround51;
