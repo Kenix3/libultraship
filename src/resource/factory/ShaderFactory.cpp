@@ -2,8 +2,9 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-std::shared_ptr<IResource> ResourceFactoryBinaryShaderV0::ReadResource(std::shared_ptr<File> file,
-                                                                       std::shared_ptr<Ship::ResourceInitData> initData) {
+std::shared_ptr<IResource>
+ResourceFactoryBinaryShaderV0::ReadResource(std::shared_ptr<File> file,
+                                            std::shared_ptr<Ship::ResourceInitData> initData) {
     if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
