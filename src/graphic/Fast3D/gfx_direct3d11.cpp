@@ -32,7 +32,7 @@
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
-#include "gfx_pc.h"
+#include "interpreter.h"
 #define DEBUG_D3D 0
 
 using namespace Microsoft::WRL; // For ComPtr

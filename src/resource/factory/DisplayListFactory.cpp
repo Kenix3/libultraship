@@ -181,7 +181,7 @@ ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> fil
         // These are 128-bit commands, so read an extra 64 bits...
         if (isExpanded) {
 #ifdef USE_GBI_TRACE
-            command.words.trace.file = file->InitData->Path.c_str();
+            command.words.trace.file = initData->Path.c_str();
             command.words.trace.idx = idx++;
             command.words.trace.valid = true;
 #endif
@@ -191,7 +191,7 @@ ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> fil
         }
 
 #ifdef USE_GBI_TRACE
-        command.words.trace.file = file->InitData->Path.c_str();
+        command.words.trace.file = initData->Path.c_str();
         command.words.trace.idx = idx++;
         command.words.trace.valid = true;
 #endif

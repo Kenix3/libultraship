@@ -33,7 +33,7 @@
 #include <spdlog/fmt/fmt.h>
 
 #include "gfx_cc.h"
-#include "gfx_pc.h"
+#include "interpreter.h"
 #include "gfx_metal_shader.h"
 
 #include "libultraship/libultra/abi.h"
