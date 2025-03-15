@@ -804,8 +804,7 @@ void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
-                  ->second.replacementData
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
 
     uint16_t width = metadata->width;
@@ -1454,7 +1453,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     bool invisible =
         (mRdp->other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = mRdp->grayscale;
-	auto shader = mRdp->current_shader;
+    auto shader = mRdp->current_shader;
 
     if (texture_edge) {
         if (use_alpha) {
@@ -4136,7 +4135,7 @@ void Interpreter::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI*
     mWapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     mRapi->init();
     mRapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
-	mCurDimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
+    mCurDimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
     mMsaaLevel = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
     mCurDimensions.width = width;
@@ -4230,9 +4229,8 @@ void Interpreter::StartFrame() {
     if (ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
         mRendersToFb = true;
         if (ViewportMatchesRendererResolution()) {
-            mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width,
-                                                    mCurDimensions.height, mMsaaLevel, true, true, true,
-                                                    true);
+            mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
+                                                 true, true, true);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
             // match the window size
@@ -4241,8 +4239,8 @@ void Interpreter::StartFrame() {
                                                  true);
         }
         if (mMsaaLevel > 1 && !ViewportMatchesRendererResolution()) {
-            mRapi->update_framebuffer_parameters(mGameFbMsaaResolved, mCurDimensions.width,
-                                                    mCurDimensions.height, 1, false, false, false, false);
+            mRapi->update_framebuffer_parameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
+                                                 false, false, false, false);
         }
     } else {
         mRendersToFb = false;
