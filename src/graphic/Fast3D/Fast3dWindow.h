@@ -55,7 +55,7 @@ class Fast3dWindow : public Ship::Window {
     void EnableSRGBMode();
     bool DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements);
 
-    std::weak_ptr<Interpreter> GetGfxPcWeak() const;
+    std::weak_ptr<Interpreter> GetInterpreterWeak() const;
 
   protected:
     static bool KeyDown(int32_t scancode);
@@ -68,6 +68,6 @@ class Fast3dWindow : public Ship::Window {
   private:
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
-    std::shared_ptr<Interpreter> interpreter = nullptr;
+    std::shared_ptr<Interpreter> mInterpreter = nullptr;
 };
 } // namespace Fast
