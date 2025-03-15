@@ -800,11 +800,11 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     mRapi->upload_texture(mTexUploadBuffer, width, height);
 }
 
-static void GfxPc::ImportTextureImg(int tile, bool importReplacement) {
+void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
-            ? masked_textures.find(gfx_get_base_texture_path(metadata->resource->GetInitData()->Path))
+            ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))
                   ->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
 
@@ -1452,9 +1452,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     bool use_2cyc = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
     bool alpha_threshold = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
     bool invisible =
-        (mRdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
-    bool use_grayscale = mRdp.grayscale;
-	auto shader = mRdp.current_shader;
+        (mRdp->other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
+    bool use_grayscale = mRdp->grayscale;
+	auto shader = mRdp->current_shader;
 
     if (texture_edge) {
         if (use_alpha) {
@@ -2886,12 +2886,12 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
-int16_t gfx_create_shader(const std::string& path) {
+int16_t Interpreter::CreateShader(const std::string& path) {
     std::shared_ptr<Ship::ResourceInitData> initData = std::make_shared<Ship::ResourceInitData>();
     initData->Path = path;
     initData->IsCustom = false;
     initData->ByteOrder = Ship::Endianness::Native;
-    auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path, initData);
+    auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path);
     if (shader == nullptr || !shader->IsLoaded) {
         return -1;
     }
@@ -2900,17 +2900,19 @@ int16_t gfx_create_shader(const std::string& path) {
 }
 
 bool gfx_set_shader_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+
     F3DGfx* cmd = *cmd0;
     char* file = (char*)cmd->words.w1;
 
     if (file == nullptr) {
-        g_rdp.current_shader = { 0, 0, false };
+        gfx->mRsp->current_shader = { 0, 0, false };
         return false;
     }
 
     const auto path = std::string(file);
-    const auto shaderId = gfx_create_shader(path);
-    g_rdp.current_shader = { true, shaderId, (uint8_t)C0(16, 1) };
+    const auto shaderId = gfx->CreateShader(path);
+    gfx->mRdp->current_shader = { true, shaderId, (uint8_t)C0(16, 1) };
     return false;
 }
 
@@ -4189,8 +4191,7 @@ bool Interpreter::ViewportMatchesRendererResolution() {
     // to avoid issues with retina scaling.
     return false;
 #else
-    if (gfx_current_dimensions.width == gfx_current_game_window_viewport.width &&
-        gfx_current_dimensions.height == gfx_current_game_window_viewport.height) {
+    if (mCurDimensions.width == mGameWindowViewport.width && mCurDimensions.height == mGameWindowViewport.height) {
         return true;
     }
     return false;
@@ -4226,9 +4227,9 @@ void Interpreter::StartFrame() {
 
     mPrvDimensions = mCurDimensions;
     mPrevNativeDimensions = mNativeDimensions;
-    if (viewport_matches_render_resolution() || mMsaaLevel > 1) {
+    if (ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
         mRendersToFb = true;
-        if (viewport_matches_render_resolution()) {
+        if (ViewportMatchesRendererResolution()) {
             mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width,
                                                     mCurDimensions.height, mMsaaLevel, true, true, true,
                                                     true);
@@ -4239,7 +4240,7 @@ void Interpreter::StartFrame() {
                                                  mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true,
                                                  true);
         }
-        if (mMsaaLevel > 1 && !viewport_matches_render_resolution()) {
+        if (mMsaaLevel > 1 && !ViewportMatchesRendererResolution()) {
             mRapi->update_framebuffer_parameters(mGameFbMsaaResolved, mCurDimensions.width,
                                                     mCurDimensions.height, 1, false, false, false, false);
         }
@@ -4300,7 +4301,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
         mRapi->start_draw_to_framebuffer(0, 1);
         mRapi->clear_framebuffer(true, true);
         if (mMsaaLevel > 1) {
-            if (viewport_matches_render_resolution()) {
+            if (ViewportMatchesRendererResolution()) {
                 mRapi->resolve_msaa_color_buffer(mGameFbMsaaResolved, mGameFb);
                 mGfxFrameBuffer = (uintptr_t)mRapi->get_framebuffer_texture_id(mGameFbMsaaResolved);
             } else {

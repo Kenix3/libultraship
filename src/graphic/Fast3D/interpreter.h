@@ -151,6 +151,7 @@ struct RSP {
     } texture_scaling_factor;
 
     struct LoadedVertex loaded_vertices[MAX_VERTICES + 4];
+    ShaderMod current_shader;
 };
 
 struct RDP {
@@ -265,6 +266,7 @@ class Interpreter {
     void EndFrame();
     void HandleWindowEvents();
     bool IsFrameReady();
+    bool ViewportMatchesRendererResolution();
     void SetTargetFPS(int fps);
     void SetMaxFrameLatency(int latency);
     int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
@@ -300,7 +302,7 @@ class Interpreter {
     void ImportTextureCi4(int tile, bool importReplacement);
     void ImportTextureCi8(int tile, bool importReplacement);
     void ImportTextureRaw(int tile, bool importReplacement);
-	void ImportTextureImg(int tile, bool importReplacement)
+    void ImportTextureImg(int tile, bool importReplacement);
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
@@ -353,6 +355,7 @@ class Interpreter {
     float AdjXForAspectRatio(float x) const;
     void AdjustVIewportOrScissor(XYWidthHeight* area);
     void CalcAndSetViewport(const F3DVp_t* viewport);
+    int16_t CreateShader(const std::string& path);
 
     void SpReset();
     void* SegAddr(uintptr_t w1);
@@ -408,6 +411,7 @@ class Interpreter {
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
+    std::vector<std::string> shader_ids;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);

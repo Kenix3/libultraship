@@ -42,15 +42,11 @@
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 #include "window/gui/Gui.h"
-<<<<<<< HEAD
-#include "gfx_pc.h"
 #include <prism/processor.h>
 #include <fstream>
 #include "Context.h"
 #include <resource/factory/ShaderFactory.h>
-=======
 #include "interpreter.h"
->>>>>>> bc7612e (Rename the class)
 #include <public/bridge/consolevariablebridge.h>
 
 using namespace std;
