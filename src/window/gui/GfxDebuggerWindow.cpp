@@ -6,7 +6,7 @@
 #include <stack>
 #include <spdlog/fmt/fmt.h>
 #include "libultraship/bridge.h"
-#include <graphic/Fast3D/gfx_pc.h>
+#include <graphic/Fast3D/interpreter.h>
 #include <graphic/Fast3D/Fast3dWindow.h>
 #include <optional>
 #ifdef GFX_DEBUG_DISASSEMBLER

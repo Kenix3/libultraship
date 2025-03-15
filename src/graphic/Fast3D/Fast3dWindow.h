@@ -6,7 +6,7 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 union Gfx;
-#include "gfx_pc.h"
+#include "interpreter.h"
 
 namespace Fast {
 class Fast3dWindow : public Ship::Window {
@@ -55,7 +55,7 @@ class Fast3dWindow : public Ship::Window {
     void EnableSRGBMode();
     bool DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements);
 
-    std::weak_ptr<GfxPc> GetGfxPcWeak() const;
+    std::weak_ptr<Interpreter> GetGfxPcWeak() const;
 
   protected:
     static bool KeyDown(int32_t scancode);
@@ -68,6 +68,6 @@ class Fast3dWindow : public Ship::Window {
   private:
     GfxRenderingAPI* mRenderingApi;
     GfxWindowManagerAPI* mWindowManagerApi;
-    std::shared_ptr<GfxPc> gfxPc = nullptr;
+    std::shared_ptr<Interpreter> interpreter = nullptr;
 };
 } // namespace Fast

@@ -18,7 +18,7 @@
 #include "graphic/Fast3D/gfx_rendering_api.h"
 
 #include "window/gui/GfxDebuggerWindow.h"
-#include "graphic/Fast3D/gfx_pc.h"
+#include "graphic/Fast3D/interpreter.h"
 #include "graphic/Fast3D/Fast3dWindow.h"
 #ifdef __APPLE__
 #include <SDL_hints.h>

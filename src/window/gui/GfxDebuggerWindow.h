@@ -6,7 +6,7 @@
 
 namespace Fast {
 union F3DGfx;
-class GfxPc;
+class Interpreter;
 } // namespace Fast
 
 namespace LUS {
@@ -27,7 +27,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const Fast::F3DGfx*> mLastBreakPoint = {};
-    std::weak_ptr<Fast::GfxPc> mGfxPc;
+    std::weak_ptr<Fast::Interpreter> mGfxPc;
 };
 
 } // namespace LUS

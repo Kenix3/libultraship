@@ -23,7 +23,7 @@
 #include "window/gui/resource/GuiTexture.h"
 
 namespace Fast {
-class GfxPc;
+class Interpreter;
 }
 
 namespace Ship {
@@ -136,7 +136,7 @@ class Gui {
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
     ImVec2 mTemporaryWindowPos;
-    std::weak_ptr<Fast::GfxPc> mGfxPc;
+    std::weak_ptr<Fast::Interpreter> mGfxPc;
 };
 } // namespace Ship
 

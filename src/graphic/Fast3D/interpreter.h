@@ -250,10 +250,10 @@ struct MaskedTextureEntry {
     uint8_t* replacementData;
 };
 
-class GfxPc {
+class Interpreter {
   public:
-    GfxPc();
-    ~GfxPc();
+    Interpreter();
+    ~Interpreter();
 
     void Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
               bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
