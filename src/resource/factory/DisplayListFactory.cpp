@@ -431,6 +431,22 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
                                child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
                                child->IntAttribute("V12"), child->IntAttribute("Flag1"));
+#else
+            g = gsSP1TriangleOTR(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
+                                 child->IntAttribute("Flag0"));
+            g.words.w0 &= 0xFF000000;
+            g.words.w0 |= child->IntAttribute("V00");
+            g.words.w1 |= child->IntAttribute("V01") << 16;
+            g.words.w1 |= child->IntAttribute("V02") << 0;
+
+            dl->Instructions.push_back(g);
+
+            g = gsSP1TriangleOTR(child->IntAttribute("V10"), child->IntAttribute("V11"), child->IntAttribute("V12"),
+                                 child->IntAttribute("Flag1"));
+            g.words.w0 &= 0xFF000000;
+            g.words.w0 |= child->IntAttribute("V10");
+            g.words.w1 |= child->IntAttribute("V11") << 16;
+            g.words.w1 |= child->IntAttribute("V12") << 0;
 #endif
         } else if (childName == "LoadVertices") {
             std::string fName = child->Attribute("Path");
