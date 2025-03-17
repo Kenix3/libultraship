@@ -118,9 +118,22 @@ struct RawTexMetadata {
 };
 
 struct ShaderMod {
-    bool enabled = false;
-    int16_t id;
-    uint8_t type;
+    const char* vertex;
+    const char* fragment;
+
+    std::optional<std::string> GetVertex() const {
+        if (vertex) {
+            return std::string(vertex);
+        }
+        return std::nullopt;
+    }
+
+    std::optional<std::string> GetFragment() const {
+        if (fragment) {
+            return std::string(fragment);
+        }
+        return std::nullopt;
+    }
 };
 
 #define MAX_BUFFERED 256
@@ -193,7 +206,7 @@ struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     bool grayscale;
-    ShaderMod current_shader;
+    int16_t current_shader = -1;
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
@@ -259,5 +272,8 @@ int32_t gfx_check_image_signature(const char* imgData);
 void gfx_register_blended_texture(const char* name, uint8_t* mask, uint8_t* replacement = nullptr);
 void gfx_unregister_blended_texture(const char* name);
 const char* GfxGetOpcodeName(int8_t opcode);
+#endif
 
+#ifdef __cplusplus
+extern std::optional<ShaderMod> gfx_get_shader(int16_t id);
 #endif

@@ -47,6 +47,7 @@ enum class ShaderOpts {
     ALPHA_THRESHOLD,
     INVISIBLE,
     GRAYSCALE,
+    USE_SHADER,
     TEXEL0_CLAMP_S,
     TEXEL0_CLAMP_T,
     TEXEL1_CLAMP_S,
@@ -55,7 +56,6 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
-    USE_SHADER,
     MAX
 };
 

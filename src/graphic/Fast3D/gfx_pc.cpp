@@ -145,7 +145,7 @@ struct MaskedTextureEntry {
 };
 
 static map<string, MaskedTextureEntry> masked_textures;
-static std::vector<std::string> shader_ids;
+static std::vector<ShaderMod> shader_ids;
 
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
@@ -1524,7 +1524,6 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     bool invisible =
         (g_rdp.other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (g_rdp.other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = g_rdp.grayscale;
-    auto shader = g_rdp.current_shader;
 
     if (texture_edge) {
         if (use_alpha) {
@@ -1558,6 +1557,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     if (use_grayscale) {
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
+    if (g_rdp.current_shader != -1) {
+        cc_options |= SHADER_OPT(USE_SHADER);
+        cc_options |= (g_rdp.current_shader << 17);
+    }
     if (g_rdp.loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
     }
@@ -1570,19 +1573,10 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     if (g_rdp.loaded_texture[1].blended) {
         cc_options |= SHADER_OPT(TEXEL1_BLEND);
     }
-    if (shader.enabled) {
-        cc_options |= SHADER_OPT(USE_SHADER);
-        cc_options |= (shader.id << 17);
-    }
 
     ColorCombinerKey key;
     key.combine_mode = g_rdp.combine_mode;
     key.options = cc_options;
-
-    // If we are not using alpha, clear the alpha components of the combiner as they have no effect
-    if (!use_alpha && !shader.enabled) {
-        key.combine_mode &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
-    }
 
     ColorCombiner* comb = gfx_lookup_or_create_color_combiner(key);
 
@@ -2946,32 +2940,44 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
-int16_t gfx_create_shader(const std::string& path) {
-    std::shared_ptr<Ship::ResourceInitData> initData = std::make_shared<Ship::ResourceInitData>();
-    initData->Path = path;
-    initData->IsCustom = false;
-    initData->ByteOrder = Ship::Endianness::Native;
-    auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path);
-    if (shader == nullptr || !shader->IsLoaded) {
-        return -1;
+int16_t gfx_search_existing_shader(const char* vertex, const char* fragment) {
+    ShaderMod shader = { vertex, fragment };
+    for (int i = 0; i < shader_ids.size(); i++) {
+        if (memcmp(&shader_ids[i], &shader, sizeof(ShaderMod)) == 0) {
+            return i;
+        }
     }
-    shader_ids.push_back(std::string(shader->Buffer->data()));
-    return shader_ids.size() - 1;
+    return -1;
 }
 
 bool gfx_set_shader_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
-    char* file = (char*)cmd->words.w1;
+    ShaderMod shader = { NULL, NULL };
+    shader.vertex = (char*) cmd->words.w1;
+    (*cmd0)++;
+    shader.fragment = (char*) ((*cmd0)->words.w1);
 
-    if (file == nullptr) {
-        g_rdp.current_shader = { 0, 0, false };
-        return false;
+    if (shader.vertex != NULL || shader.fragment != NULL) {
+        // Search for duplicate shaders
+        auto cache = gfx_search_existing_shader(shader.vertex, shader.fragment);
+        if(cache != -1) {
+            g_rdp.current_shader = cache;
+        } else {
+            shader_ids.push_back(shader);
+            g_rdp.current_shader = shader_ids.size() - 1;
+        }
+    } else {
+        g_rdp.current_shader = -1;
     }
 
-    const auto path = std::string(file);
-    const auto shaderId = gfx_create_shader(path);
-    g_rdp.current_shader = { true, shaderId, (uint8_t)C0(16, 1) };
     return false;
+}
+
+std::optional<ShaderMod> gfx_get_shader(int16_t id) {
+    if (id < 0 || id >= shader_ids.size()) {
+        return std::nullopt;
+    }
+    return shader_ids[id];
 }
 
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
@@ -4107,6 +4113,7 @@ static void gfx_sp_reset() {
     g_rsp.modelview_matrix_stack_size = 1;
     g_rsp.current_num_lights = 2;
     g_rsp.lights_changed = true;
+    g_rdp.current_shader = -1;
     g_rsp.lookat[0].dir[0] = 0;
     g_rsp.lookat[0].dir[1] = 127;
     g_rsp.lookat[0].dir[2] = 0;
