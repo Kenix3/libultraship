@@ -67,7 +67,7 @@ class Config {
     void SetCurrentAudioBackend(AudioBackend backend);
     WindowBackend GetWindowBackend();
     void SetWindowBackend(WindowBackend backend);
-    AudioChannelsSetting GetCurrentAudioSurround();
+    AudioChannelsSetting GetCurrentAudioChannelsSetting();
 
     /**
      * @brief Adds a ConfigVersionUpdater instance to the list to be run later via RunVersionUpdates
