@@ -2791,7 +2791,7 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gSPSetShader(shader, frag, vtx) \
+#define gsSPSetShader(shader, frag, vtx) \
     { (_SHIFTL(G_LOAD_SHADER, 24, 8)), (vtx) }, \
     { 0, (frag) }
 

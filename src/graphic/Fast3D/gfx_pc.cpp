@@ -2952,14 +2952,14 @@ int16_t gfx_search_existing_shader(const char* vertex, const char* fragment) {
 bool gfx_set_shader_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     ShaderMod shader = { NULL, NULL };
-    shader.vertex = (char*) cmd->words.w1;
+    shader.vertex = (char*)cmd->words.w1;
     (*cmd0)++;
-    shader.fragment = (char*) ((*cmd0)->words.w1);
+    shader.fragment = (char*)((*cmd0)->words.w1);
 
     if (shader.vertex != NULL || shader.fragment != NULL) {
         // Search for duplicate shaders
         auto cache = gfx_search_existing_shader(shader.vertex, shader.fragment);
-        if(cache != -1) {
+        if (cache != -1) {
             g_rdp.current_shader = cache;
         } else {
             shader_ids.push_back(shader);
