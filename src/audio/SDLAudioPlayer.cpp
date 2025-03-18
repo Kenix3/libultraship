@@ -13,7 +13,7 @@ bool SDLAudioPlayer::DoInit() {
         SPDLOG_ERROR("SDL init error: %s\n", SDL_GetError());
         return false;
     }
-    mNumChannels = this->GetAudioChannels() == AudioChannelsSetting::surround51 ? 6 : 2;
+    mNumChannels = this->GetAudioChannels() == AudioChannelsSetting::audioSurround51 ? 6 : 2;
     SDL_AudioSpec want, have;
     SDL_zero(want);
     want.freq = this->GetSampleRate();

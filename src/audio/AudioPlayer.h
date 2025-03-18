@@ -10,7 +10,7 @@ struct AudioSettings {
     int32_t SampleRate = 44100;
     int32_t SampleLength = 1024;
     int32_t DesiredBuffered = 2480;
-    AudioChannelsSetting AudioSurround = AudioChannelsSetting::stereo;
+    AudioChannelsSetting AudioSurround = AudioChannelsSetting::audioStereo;
 };
 
 class AudioPlayer {

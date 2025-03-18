@@ -34,7 +34,7 @@ AudioChannelsSetting GetAudioChannels() {
     auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
 
     if (audio == nullptr) {
-        return stereo;
+        return audioStereo;
     }
 
     return audio->GetAudioChannels();
@@ -42,7 +42,7 @@ AudioChannelsSetting GetAudioChannels() {
 
 int32_t GetNumAudioChannels() {
     switch (GetAudioChannels()) {
-        case surround51:
+        case audioSurround51:
             return 6;
         default:
             return 2;
