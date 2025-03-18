@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <vector>
 #include <stack>
+#include <optional>
 
 #include "graphic/Fast3D/lus_gbi.h"
 #include "libultraship/libultra/types.h"
