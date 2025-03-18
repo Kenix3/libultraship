@@ -76,7 +76,7 @@ static struct {
 
 struct ColorCombiner {
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
     bool used_textures[2];
     struct ShaderProgram* prg[16];
     uint8_t shader_input_mapping[2][7];
@@ -198,7 +198,7 @@ static void gfx_flush() {
     }
 }
 
-static struct ShaderProgram* gfx_lookup_or_create_shader_program(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_lookup_or_create_shader_program(uint64_t shader_id0, uint64_t shader_id1) {
     struct ShaderProgram* prg = gfx_rapi->lookup_shader(shader_id0, shader_id1);
     if (prg == NULL) {
         gfx_rapi->unload_shader(rendering_state.shader_program);
@@ -254,7 +254,7 @@ static void gfx_generate_cc(struct ColorCombiner* comb, const ColorCombinerKey& 
 
     uint8_t c[2][2][4];
     uint64_t shader_id0 = 0;
-    uint32_t shader_id1 = key.options;
+    uint64_t shader_id1 = key.options;
     uint8_t shader_input_mapping[2][7] = { { 0 } };
     bool used_textures[2] = { false, false };
     for (uint32_t i = 0; i < 2 && (i == 0 || is_2cyc); i++) {
@@ -1557,10 +1557,9 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bo
     if (use_grayscale) {
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
-    if (g_rdp.current_shader != -1) {
-        cc_options |= SHADER_OPT(USE_SHADER);
-        cc_options |= (g_rdp.current_shader << 17);
-    }
+
+    cc_options |= (g_rdp.current_shader << 16);
+
     if (g_rdp.loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
     }

@@ -1,6 +1,6 @@
 #include "gfx_cc.h"
 
-void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features) {
+void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeatures* cc_features) {
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 4; k++) {
@@ -79,7 +79,5 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
         cc_features->used_blend[1] = true;
     }
 
-    if (shader_id1 & SHADER_OPT(USE_SHADER)) {
-        cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
-    }
+    cc_features->shader_id = (shader_id1 >> 16) & 0xFFFF;
 }
