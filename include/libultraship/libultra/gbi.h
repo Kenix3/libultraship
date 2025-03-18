@@ -2794,13 +2794,14 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gsSPSetShader(shader, frag, vtx) \
-    { (_SHIFTL(G_LOAD_SHADER, 24, 8)), (vtx) }, \
-    { 0, (frag) }
+#define gsSPSetShader(shader, frag, vtx)          \
+    { (_SHIFTL(G_LOAD_SHADER, 24, 8)), (vtx) }, { \
+        0, (frag)                                 \
+    }
 
 #define gSPSetShader(pkt, frag, vtx)                   \
     {                                                  \
-        Gfx* _g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);    \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);    \
                                                        \
         _g0->words.w0 = _SHIFTL(G_LOAD_SHADER, 24, 8); \
         _g0->words.w1 = vtx;                           \
