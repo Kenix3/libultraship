@@ -296,8 +296,19 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = std::static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        "shaders/opengl/default.shader.fs", true, init));
+
+    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/opengl/default.shader.fs";
+
+    if (shaderMod.has_value()) {
+        auto raw = shaderMod.value().GetFragment();
+        if (raw.has_value()) {
+            path = raw.value() + ".fs";
+        }
+    }
+
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
@@ -354,8 +365,19 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = std::static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        "shaders/opengl/default.shader.vs", true, init));
+
+    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/opengl/default.shader.vs";
+
+    if (shaderMod.has_value()) {
+        auto raw = shaderMod.value().GetVertex();
+        if (raw.has_value()) {
+            path = raw.value() + ".vs";
+        }
+    }
+
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");

@@ -255,12 +255,15 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     auto shaderMod = gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/metal/default.shader.metal";
 
-    if(shaderMod.has_value()) {
-        path = shaderMod.value().GetFragment().value_or(path);
+    if (shaderMod.has_value()) {
+        auto raw = shaderMod.value().GetFragment();
+        if (raw.has_value()) {
+            path = raw.value() + ".metal";
+        }
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        path, true, init));
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default metal shader, missing f3d.o2r?");
