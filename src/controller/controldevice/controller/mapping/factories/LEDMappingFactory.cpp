@@ -3,6 +3,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "Context.h"
 
 namespace Ship {

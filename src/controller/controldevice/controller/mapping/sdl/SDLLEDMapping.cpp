@@ -3,6 +3,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor)
