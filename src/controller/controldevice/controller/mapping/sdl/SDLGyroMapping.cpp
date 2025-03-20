@@ -5,6 +5,7 @@
 
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,
