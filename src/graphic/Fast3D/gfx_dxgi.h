@@ -16,6 +16,7 @@ HWND gfx_dxgi_get_h_wnd();
 IDXGISwapChain1* gfx_dxgi_get_swap_chain();
 void ThrowIfFailed(HRESULT res);
 void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message);
+void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y);
 #endif
 
 extern "C" struct GfxWindowManagerAPI gfx_dxgi_api;
