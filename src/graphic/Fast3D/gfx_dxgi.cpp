@@ -99,6 +99,7 @@ static struct {
     float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
     bool is_mouse_captured;
+    bool is_mouse_hovered;
     bool in_focus;
     RAWINPUTDEVICE raw_input_device[1];
     POINT raw_mouse_delta_buf;
@@ -428,6 +429,12 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             on_mouse_button_up(btn);
             break;
         }
+        case WM_MOUSEMOVE:
+            dxgi.is_mouse_hovered = true;
+            break;
+        case WM_MOUSELEAVE:
+            dxgi.is_mouse_hovered = false;
+            break;
         case WM_MOUSEHWHEEL:
             dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
@@ -601,7 +608,7 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 }
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
-    if (!dxgi.in_focus) {
+    if (!dxgi.is_mouse_hovered) {
         *x = 0;
         *y = 0;
     } else if (dxgi.is_mouse_captured) {
