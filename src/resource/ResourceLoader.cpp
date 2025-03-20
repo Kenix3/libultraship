@@ -9,6 +9,8 @@
 #include "factory/JsonFactory.h"
 #include "factory/ShaderFactory.h"
 #include <spdlog/spdlog.h>
+#include <tinyxml2.h>
+#include "nlohmann/json.hpp"
 
 namespace Ship {
 ResourceLoader::ResourceLoader() {
