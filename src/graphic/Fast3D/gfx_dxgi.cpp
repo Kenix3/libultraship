@@ -494,7 +494,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     dxgi.qpc_freq = qpc_freq.QuadPart;
 
     dxgi.target_fps = 60;
-    dxgi.maximum_frame_latency = 1;
+    dxgi.maximum_frame_latency = 2;
 
     // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
     dxgi.timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
