@@ -455,8 +455,6 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_MOUSELEAVE:
             dxgi.is_mouse_hovered = false;
-            //gfx_dxgi_get_mouse_pos(reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.x),
-            //reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.y));
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
