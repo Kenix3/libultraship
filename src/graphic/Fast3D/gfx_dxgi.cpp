@@ -101,6 +101,7 @@ static struct {
     bool is_mouse_captured;
     bool is_mouse_hovered;
     bool in_focus;
+    bool has_mouse_position;
     RAWINPUTDEVICE raw_input_device[1];
     POINT raw_mouse_delta_buf;
     POINT prev_mouse_cursor_pos;
@@ -430,12 +431,6 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             on_mouse_button_up(btn);
             break;
         }
-        case WM_MOUSEMOVE:
-            dxgi.is_mouse_hovered = true;
-            break;
-        case WM_MOUSELEAVE:
-            dxgi.is_mouse_hovered = false;
-            break;
         case WM_MOUSEHWHEEL:
             dxgi.mouse_wheel[0] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
@@ -443,7 +438,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
         case WM_INPUT: {
-            if (dxgi.is_mouse_captured && dxgi.in_focus) {
+            if (dxgi.is_mouse_captured && dxgi.is_mouse_hovered && dxgi.has_mouse_position) {
                 uint32_t size = sizeof(RAWINPUT);
                 static RAWINPUT raw[sizeof(RAWINPUT)];
                 GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
@@ -455,6 +450,14 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         }
+        case WM_MOUSEMOVE:
+            dxgi.is_mouse_hovered = true;
+            break;
+        case WM_MOUSELEAVE:
+            dxgi.is_mouse_hovered = false;
+            //gfx_dxgi_get_mouse_pos(reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.x),
+            //reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.y));
+            break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
@@ -470,8 +473,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_SETFOCUS:
             dxgi.in_focus = true;
-            gfx_dxgi_get_mouse_pos(reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.x),
-                                   reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.y));
+            dxgi.has_mouse_position = false;
             if (dxgi.is_mouse_captured) {
                 apply_mouse_capture_clip();
             }
@@ -494,7 +496,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
     dxgi.qpc_freq = qpc_freq.QuadPart;
 
     dxgi.target_fps = 60;
-    dxgi.maximum_frame_latency = 2;
+    dxgi.maximum_frame_latency = 1;
 
     // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
     dxgi.timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
@@ -611,19 +613,36 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 }
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
-    if (!dxgi.is_mouse_hovered) {
+    int32_t current_x, current_y;
+
+    // prev_mouse_cursor_pos must be set prior to applying delta
+    if (!dxgi.has_mouse_position) {
+        dxgi.has_mouse_position = true;
         *x = 0;
         *y = 0;
+        gfx_dxgi_get_mouse_pos(&current_x, &current_y);
+        dxgi.prev_mouse_cursor_pos.x = current_x;
+        dxgi.prev_mouse_cursor_pos.y = current_y;
+        return;
+    }
+
+    if (!dxgi.is_mouse_hovered) {
+      *x = 0;
+       *y = 0;
+       gfx_dxgi_get_mouse_pos(&current_x, &current_y);
+       dxgi.prev_mouse_cursor_pos.x = current_x;
+       dxgi.prev_mouse_cursor_pos.y = current_y;
     } else if (dxgi.is_mouse_captured) {
         *x = dxgi.raw_mouse_delta_buf.x;
         *y = dxgi.raw_mouse_delta_buf.y;
         dxgi.raw_mouse_delta_buf.x = 0;
         dxgi.raw_mouse_delta_buf.y = 0;
     } else {
-        int32_t current_x, current_y;
         gfx_dxgi_get_mouse_pos(&current_x, &current_y);
         *x = current_x - dxgi.prev_mouse_cursor_pos.x;
         *y = current_y - dxgi.prev_mouse_cursor_pos.y;
+        dxgi.prev_mouse_cursor_pos.x = current_x;
+        dxgi.prev_mouse_cursor_pos.y = current_y;
     }
 }
 
@@ -840,8 +859,12 @@ static bool gfx_dxgi_is_frame_ready() {
     // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
-    dxgi.is_vsync_enabled =
-        (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0);
+    if (dxgi.is_vsync_enabled !=
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1)) {
+        // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
+        dxgi.is_vsync_enabled =
+            !!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
+    }
     dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
     return true;
 }
