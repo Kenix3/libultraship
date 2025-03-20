@@ -625,11 +625,11 @@ static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
     }
 
     if (!dxgi.is_mouse_hovered) {
-      *x = 0;
-       *y = 0;
-       gfx_dxgi_get_mouse_pos(&current_x, &current_y);
-       dxgi.prev_mouse_cursor_pos.x = current_x;
-       dxgi.prev_mouse_cursor_pos.y = current_y;
+        *x = 0;
+        *y = 0;
+        gfx_dxgi_get_mouse_pos(&current_x, &current_y);
+        dxgi.prev_mouse_cursor_pos.x = current_x;
+        dxgi.prev_mouse_cursor_pos.y = current_y;
     } else if (dxgi.is_mouse_captured) {
         *x = dxgi.raw_mouse_delta_buf.x;
         *y = dxgi.raw_mouse_delta_buf.y;
