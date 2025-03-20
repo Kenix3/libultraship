@@ -6,6 +6,9 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "install_config.h"
 #include "graphic/Fast3D/debug/GfxDebugger.h"
+#include "config/ConsoleVariable.h"
+#include "controller/controldeck/ControlDeck.h"
+#include "debug/CrashHandler.h"
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -16,6 +19,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #endif
+
 
 namespace Ship {
 std::weak_ptr<Context> Context::mContext;

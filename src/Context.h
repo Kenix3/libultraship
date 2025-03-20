@@ -5,18 +5,27 @@
 #include <unordered_set>
 #include <vector>
 #include <unordered_map>
-#include <spdlog/spdlog.h>
-#include "config/Config.h"
-#include "resource/ResourceManager.h"
-#include "controller/controldeck/ControlDeck.h"
-#include "debug/CrashHandler.h"
 #include "audio/Audio.h"
-#include "window/Window.h"
-#include "config/ConsoleVariable.h"
-#include "debug/Console.h"
-#include "graphic/Fast3D/debug/GfxDebugger.h"
+
+namespace spdlog
+{
+	class logger;
+}
+
+namespace Fast
+{
+	class GfxDebugger;
+}
 
 namespace Ship {
+
+	class Console;
+	class ConsoleVariable;
+	class ControlDeck;
+	class CrashHandler;
+	class Window;
+	class Config;
+	class ResourceManager;
 
 class Context {
   public:

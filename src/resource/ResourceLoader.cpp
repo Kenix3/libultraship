@@ -8,6 +8,7 @@
 #include "utils/binarytools/BinaryReader.h"
 #include "factory/JsonFactory.h"
 #include "factory/ShaderFactory.h"
+#include <spdlog/spdlog.h>
 
 namespace Ship {
 ResourceLoader::ResourceLoader() {

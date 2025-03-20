@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include "utils/StrHash64.h"
+#include "window/Window.h"
 
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name) {
     return Ship::Context::GetInstance()->GetResourceManager()->LoadResource(name);

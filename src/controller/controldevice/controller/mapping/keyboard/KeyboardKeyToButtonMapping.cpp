@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "Context.h"
 
 namespace Ship {

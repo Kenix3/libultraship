@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
 #include "graphic/Fast3D/lus_gbi.h"
+#include <tinyxml2.h>
 
 namespace Fast {
 std::unordered_map<std::string, uint32_t> renderModes = {
