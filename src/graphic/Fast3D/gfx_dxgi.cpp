@@ -857,12 +857,8 @@ static bool gfx_dxgi_is_frame_ready() {
     // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
-    if (dxgi.is_vsync_enabled !=
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1)) {
-        // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
-        dxgi.is_vsync_enabled =
-            !!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
-    }
+    dxgi.is_vsync_enabled =
+        (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0);
     dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
     return true;
 }
