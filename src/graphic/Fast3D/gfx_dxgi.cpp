@@ -103,6 +103,7 @@ static struct {
     bool in_focus;
     RAWINPUTDEVICE raw_input_device[1];
     POINT raw_mouse_delta_buf;
+    POINT prev_mouse_cursor_pos;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
@@ -469,6 +470,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_SETFOCUS:
             dxgi.in_focus = true;
+            gfx_dxgi_get_mouse_pos(reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.x),
+                                   reinterpret_cast<int32_t*>(&dxgi.prev_mouse_cursor_pos.y));
             if (dxgi.is_mouse_captured) {
                 apply_mouse_capture_clip();
             }
@@ -617,13 +620,10 @@ static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
         dxgi.raw_mouse_delta_buf.x = 0;
         dxgi.raw_mouse_delta_buf.y = 0;
     } else {
-        static int32_t prev_x = 0, prev_y = 0;
         int32_t current_x, current_y;
         gfx_dxgi_get_mouse_pos(&current_x, &current_y);
-        *x = current_x - prev_x;
-        *y = current_y - prev_y;
-        prev_x = current_x;
-        prev_y = current_y;
+        *x = current_x - dxgi.prev_mouse_cursor_pos.x;
+        *y = current_y - dxgi.prev_mouse_cursor_pos.y;
     }
 }
 
