@@ -101,6 +101,7 @@ class Gui {
     bool GamepadNavigationEnabled();
     void BlockGamepadNavigation();
     void UnblockGamepadNavigation();
+    std::function<void()> mDockBuilderImpl = nullptr;
 
   protected:
     void StartFrame();
