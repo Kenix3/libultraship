@@ -106,7 +106,7 @@ class Gui {
     void StartFrame();
     void EndFrame();
     void DrawFloatingWindows();
-    void DrawMenu();
+    virtual void DrawMenu();
     void DrawGame();
     void CalculateGameViewport();
 
