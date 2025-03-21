@@ -32,6 +32,21 @@ Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWind
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
 }
 
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui) {
+    mWindowManagerApi = nullptr;
+    mRenderingApi = nullptr;
+
+#ifdef _WIN32
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_DXGI_DX11);
+#endif
+#ifdef __APPLE__
+    if (Metal_IsSupported()) {
+        AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_METAL);
+    }
+#endif
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
+}
+
 Fast3dWindow::~Fast3dWindow() {
     SPDLOG_DEBUG("destruct fast3dwindow");
     gfx_destroy();
