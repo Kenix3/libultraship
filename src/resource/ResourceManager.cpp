@@ -290,14 +290,14 @@ ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_p
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<IResource>>>
-ResourceManager::LoadResourcesProcess(const ResourceFilter& filter) {
+ResourceManager::LoadResourcesProcess(const ResourceFilter& filter, bool exact) {
     auto loadedList = std::make_shared<std::vector<std::shared_ptr<IResource>>>();
     auto fileList = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
     loadedList->reserve(fileList->size());
 
     for (size_t i = 0; i < fileList->size(); i++) {
         auto fileName = std::string(fileList->operator[](i));
-        auto resource = LoadResource({ fileName, filter.Owner, filter.Parent });
+        auto resource = LoadResource({ fileName, filter.Owner, filter.Parent }, exact);
         loadedList->push_back(resource);
     }
 
@@ -305,25 +305,25 @@ ResourceManager::LoadResourcesProcess(const ResourceFilter& filter) {
 }
 
 std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
-ResourceManager::LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
+ResourceManager::LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority, bool exact) {
     return mThreadPool->submit_task(
-        [this, filter]() -> std::shared_ptr<std::vector<std::shared_ptr<IResource>>> {
-            return LoadResourcesProcess(filter);
+        [this, filter, exact]() -> std::shared_ptr<std::vector<std::shared_ptr<IResource>>> {
+            return LoadResourcesProcess(filter, exact);
         },
         priority);
 }
 
 std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
-ResourceManager::LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority) {
-    return LoadResourcesAsync({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive }, priority);
+ResourceManager::LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority, bool exact) {
+    return LoadResourcesAsync({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive }, priority, exact);
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const std::string& searchMask) {
-    return LoadResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive });
+std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const std::string& searchMask, bool exact) {
+    return LoadResources({ { searchMask }, {}, mDefaultCacheOwner, mDefaultCacheArchive }, exact);
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const ResourceFilter& filter) {
-    return LoadResourcesAsync(filter, BS::pr::highest).get();
+std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadResources(const ResourceFilter& filter, bool exact) {
+    return LoadResourcesAsync(filter, BS::pr::highest, exact).get();
 }
 
 void ResourceManager::DirtyResources(const ResourceFilter& filter) {
@@ -408,6 +408,16 @@ bool ResourceManager::IsAltAssetsEnabled() {
 
 void ResourceManager::SetAltAssetsEnabled(bool isEnabled) {
     mAltAssetsEnabled = isEnabled;
+}
+
+void ResourceManager::ShutDownThreadPool() {
+    mThreadPool->pause();
+    mThreadPool->wait_for(std::chrono::duration<double>(2));
+    mThreadPool->purge();
+}
+
+void ResourceManager::ThreadPoolWait(std::chrono::duration<double> interval) {
+    mThreadPool->wait_for(interval);
 }
 
 } // namespace Ship
