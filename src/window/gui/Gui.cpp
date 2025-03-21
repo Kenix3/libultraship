@@ -473,20 +473,14 @@ void Gui::DrawMenu() {
     if (!ImGui::DockBuilderGetNode(dockId)) {
         ImGui::DockBuilderRemoveNode(dockId);
         ImGui::DockBuilderAddNode(dockId, ImGuiDockNodeFlags_NoTabBar);
+        ImGui::DockBuilderSetNodeSize(dockId, ImVec2(viewport->Size.x, viewport->Size.y));
 
         ImGui::DockBuilderDockWindow("Main Game", dockId);
 
-        ImGuiID rightId = ImGui::DockBuilderSplitNode(dockId, ImGuiDir_Right, 0.25f, nullptr, nullptr);
-        ImGuiID topId = ImGui::DockBuilderSplitNode(dockId, ImGuiDir_Up, 0.25f, nullptr, nullptr);
-        ImGuiID bottomId = ImGui::DockBuilderSplitNode(dockId, ImGuiDir_Down, 0.25f, nullptr, nullptr);
-        ImGui::DockBuilderSetNodeSize(rightId, ImVec2(viewport->Size.x * 0.2f, viewport->Size.y));
-        ImGui::DockBuilderSetNodeSize(topId, ImVec2(viewport->Size.x, viewport->Size.y * 0.1f));
-        ImGui::DockBuilderSetNodeSize(bottomId, ImVec2(viewport->Size.x, viewport->Size.y * 0.1f));
-        
-        ImGui::DockBuilderDockWindow("Scene Explorer", rightId);
-        ImGui::DockBuilderDockWindow("Track Properties", rightId); // Attach as second tab
-        ImGui::DockBuilderDockWindow("Tools", topId);
-        ImGui::DockBuilderDockWindow("Content Browser", bottomId);
+        // This allows ports to configure their own window docking setup.
+        if (nullptr != mDockBuilderImpl) {
+            mDockBuilderImpl();
+        }
 
         ImGui::DockBuilderFinish(dockId);
     }
