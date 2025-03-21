@@ -477,7 +477,7 @@ void Gui::DrawMenu() {
 
         ImGui::DockBuilderDockWindow("Main Game", dockId);
 
-        // This allows ports to configure their own window docking setup.
+        // This allows ports to configure their own window docking setup. See PR #842
         if (nullptr != mDockBuilderImpl) {
             mDockBuilderImpl();
         }
