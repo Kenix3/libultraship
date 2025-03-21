@@ -32,7 +32,7 @@ Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWind
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
 }
 
-Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui) {
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui) : Ship::Window(gui) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
 
