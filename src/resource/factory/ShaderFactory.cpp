@@ -9,7 +9,7 @@ ResourceFactoryBinaryShaderV0::ReadResource(std::shared_ptr<File> file,
         return nullptr;
     }
 
-    auto shader = std::make_shared<Shader>(file->InitData);
+    auto shader = std::make_shared<Shader>(initData);
     auto reader = std::get<std::shared_ptr<BinaryReader>>(file->Reader);
 
     shader->Data = reader->ReadCString();
