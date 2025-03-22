@@ -126,6 +126,7 @@ void osViSetEvent(OSMesgQueue*, OSMesg, u32);
 void osCreateViManager(OSPri);
 void osCreatePiManager(OSPri pri, OSMesgQueue* cmdQ, OSMesg* cmdBuf, s32 cmdMsgCnt);
 
+void osSetTime(OSTime time);
 uint64_t osGetTime(void);
 uint32_t osGetCount(void);
 s32 osEepromProbe(OSMesgQueue*);
