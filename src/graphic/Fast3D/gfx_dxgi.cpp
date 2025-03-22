@@ -99,9 +99,12 @@ static struct {
     float mouse_wheel[2];
     LARGE_INTEGER previous_present_time;
     bool is_mouse_captured;
+    bool is_mouse_hovered;
     bool in_focus;
+    bool has_mouse_position;
     RAWINPUTDEVICE raw_input_device[1];
     POINT raw_mouse_delta_buf;
+    POINT prev_mouse_cursor_pos;
 
     void (*on_fullscreen_changed)(bool is_now_fullscreen);
     bool (*on_key_down)(int scancode);
@@ -343,6 +346,17 @@ static void apply_mouse_capture_clip() {
     ClipCursor(&rect);
 }
 
+static void update_mouse_prev_pos() {
+    if (!dxgi.has_mouse_position && dxgi.is_mouse_hovered && !dxgi.is_mouse_captured) {
+        dxgi.has_mouse_position = true;
+
+        int32_t x, y;
+        gfx_dxgi_get_mouse_pos(&x, &y);
+        dxgi.prev_mouse_cursor_pos.x = x;
+        dxgi.prev_mouse_cursor_pos.y = y;
+    }
+}
+
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
     char fileName[256];
     Ship::WindowEvent event_impl;
@@ -447,6 +461,16 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         }
+        case WM_MOUSEMOVE:
+            if (!dxgi.is_mouse_hovered) {
+                dxgi.is_mouse_hovered = true;
+                update_mouse_prev_pos();
+            }
+            break;
+        case WM_MOUSELEAVE:
+            dxgi.is_mouse_hovered = false;
+            dxgi.has_mouse_position = false;
+            break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
@@ -601,22 +625,21 @@ static void gfx_dxgi_get_mouse_pos(int32_t* x, int32_t* y) {
 }
 
 static void gfx_dxgi_get_mouse_delta(int32_t* x, int32_t* y) {
-    if (!dxgi.in_focus) {
-        *x = 0;
-        *y = 0;
-    } else if (dxgi.is_mouse_captured) {
+    if (dxgi.is_mouse_captured) {
         *x = dxgi.raw_mouse_delta_buf.x;
         *y = dxgi.raw_mouse_delta_buf.y;
         dxgi.raw_mouse_delta_buf.x = 0;
         dxgi.raw_mouse_delta_buf.y = 0;
-    } else {
-        static int32_t prev_x = 0, prev_y = 0;
+    } else if (dxgi.has_mouse_position) {
         int32_t current_x, current_y;
         gfx_dxgi_get_mouse_pos(&current_x, &current_y);
-        *x = current_x - prev_x;
-        *y = current_y - prev_y;
-        prev_x = current_x;
-        prev_y = current_y;
+        *x = current_x - dxgi.prev_mouse_cursor_pos.x;
+        *y = current_y - dxgi.prev_mouse_cursor_pos.y;
+        dxgi.prev_mouse_cursor_pos.x = current_x;
+        dxgi.prev_mouse_cursor_pos.y = current_y;
+    } else {
+        *x = 0;
+        *y = 0;
     }
 }
 
@@ -632,16 +655,18 @@ static bool gfx_dxgi_get_mouse_state(uint32_t btn) {
 }
 
 static void gfx_dxgi_set_mouse_capture(bool capture) {
+    dxgi.is_mouse_captured = capture;
     if (capture) {
         apply_mouse_capture_clip();
         gfx_dxgi_set_cursor_visibility(false);
         SetCapture(dxgi.h_wnd);
+        dxgi.has_mouse_position = false;
     } else {
         ClipCursor(nullptr);
         gfx_dxgi_set_cursor_visibility(true);
         ReleaseCapture();
+        update_mouse_prev_pos();
     }
-    dxgi.is_mouse_captured = capture;
 }
 
 static bool gfx_dxgi_is_mouse_captured() {
