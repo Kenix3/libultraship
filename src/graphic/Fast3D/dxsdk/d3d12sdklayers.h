@@ -3163,8 +3163,8 @@ interface ID3D12InfoQueue {
 
 #endif /* __ID3D12InfoQueue_INTERFACE_DEFINED__ */
 
-/* interface __MIDL_itf_d3d12sdklayers_0000_0013 */
-/* [local] */
+    /* interface __MIDL_itf_d3d12sdklayers_0000_0013 */
+    /* [local] */
 
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP | WINAPI_PARTITION_GAMES) */
 #pragma endregion
