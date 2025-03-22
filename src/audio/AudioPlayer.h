@@ -2,6 +2,7 @@
 #include "stdint.h"
 #include "stddef.h"
 #include <string>
+#include "public/bridge/audiobridge.h"
 
 namespace Ship {
 
@@ -9,6 +10,7 @@ struct AudioSettings {
     int32_t SampleRate = 44100;
     int32_t SampleLength = 1024;
     int32_t DesiredBuffered = 2480;
+    AudioChannelsSetting AudioSurround = AudioChannelsSetting::audioStereo;
 };
 
 class AudioPlayer {
@@ -30,11 +32,15 @@ class AudioPlayer {
 
     int32_t GetDesiredBuffered() const;
 
+    AudioChannelsSetting GetAudioChannels() const;
+
     void SetSampleRate(int32_t rate);
 
     void SetSampleLength(int32_t length);
 
     void SetDesiredBuffered(int32_t size);
+
+    void SetAudioChannels(AudioChannelsSetting surround);
 
   protected:
     virtual bool DoInit() = 0;
