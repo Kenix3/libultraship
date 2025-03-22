@@ -156,7 +156,7 @@ constexpr int8_t OTR_G_MOVEMEM_HASH = OPCODE(0x42);
  */
 #define G_MAXFBZ 0x3fff /* 3b exp, 11b mantissa */
 
-#define GPACK_RGBA5551(r, g, b, a) ((((r) << 8) & 0xf800) | (((g) << 3) & 0x7c0) | (((b) >> 2) & 0x3e) | ((a)&0x1))
+#define GPACK_RGBA5551(r, g, b, a) ((((r) << 8) & 0xf800) | (((g) << 3) & 0x7c0) | (((b) >> 2) & 0x3e) | ((a) & 0x1))
 #define GPACK_ZDZ(z, dz) ((z) << 2 | (dz))
 
 /*
@@ -1324,7 +1324,7 @@ typedef struct {
 } F3DuObjTxtrTile_t;               /* 24 bytes */
 
 #define GS_PAL_HEAD(head) ((head) + 256)
-#define GS_PAL_NUM(num) ((num)-1)
+#define GS_PAL_NUM(num) ((num) - 1)
 
 typedef struct {
     unsigned int type;             /* G_OBJLT_TLUT divided into types */

@@ -21,7 +21,7 @@
 #endif
 #include "graphic/Fast3D/debug/GfxDebugger.h"
 #include "libultraship/libultra/types.h"
-//#include "libultraship/libultra/gs2dex.h"
+// #include "libultraship/libultra/gs2dex.h"
 #include <string>
 
 #include "gfx_pc.h"
@@ -49,11 +49,11 @@ using namespace std;
 #define SUPPORT_CHECK(x) assert(x)
 
 // SCALE_M_N: upscale/downscale M-bit integer to N-bit
-#define SCALE_5_8(VAL_) (((VAL_)*0xFF) / 0x1F)
+#define SCALE_5_8(VAL_) (((VAL_) * 0xFF) / 0x1F)
 #define SCALE_8_5(VAL_) ((((VAL_) + 4) * 0x1F) / 0xFF)
-#define SCALE_4_8(VAL_) ((VAL_)*0x11)
+#define SCALE_4_8(VAL_) ((VAL_) * 0x11)
 #define SCALE_8_4(VAL_) ((VAL_) / 0x11)
-#define SCALE_3_8(VAL_) ((VAL_)*0x24)
+#define SCALE_3_8(VAL_) ((VAL_) * 0x24)
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
 // Based off the current set native dimensions or active framebuffer
@@ -1940,21 +1940,17 @@ static void gfx_sp_moveword_f3dex2(uint8_t index, uint16_t offset, uintptr_t dat
             g_rsp.fog_mul = (int16_t)(data >> 16);
             g_rsp.fog_offset = (int16_t)data;
             break;
-		case G_MW_SEGMENT:
-		{
-			int segNumber = offset / 4;
-			gSegmentPointers[segNumber] = data;
-		}
-            break;
-		case G_MW_SEGMENT_INTERP:
-		{
-			int segNumber = offset % 16;
-			int segIndex = offset / 16;
+        case G_MW_SEGMENT: {
+            int segNumber = offset / 4;
+            gSegmentPointers[segNumber] = data;
+        } break;
+        case G_MW_SEGMENT_INTERP: {
+            int segNumber = offset % 16;
+            int segIndex = offset / 16;
 
-			if (segIndex == gInterpolationIndex)
-				gSegmentPointers[segNumber] = data;
-		}
-			break;
+            if (segIndex == gInterpolationIndex)
+                gSegmentPointers[segNumber] = data;
+        } break;
     }
 }
 
@@ -1970,21 +1966,17 @@ static void gfx_sp_moveword_f3d(uint8_t index, uint16_t offset, uintptr_t data) 
             g_rsp.fog_mul = (int16_t)(data >> 16);
             g_rsp.fog_offset = (int16_t)data;
             break;
-		case G_MW_SEGMENT:
-		{
-			int segNumber = offset / 4;
-			gSegmentPointers[segNumber] = data;
-		}
-            break;
-		case G_MW_SEGMENT_INTERP:
-		{
-			int segNumber = offset % 16;
-			int segIndex = offset / 16;
+        case G_MW_SEGMENT: {
+            int segNumber = offset / 4;
+            gSegmentPointers[segNumber] = data;
+        } break;
+        case G_MW_SEGMENT_INTERP: {
+            int segNumber = offset % 16;
+            int segIndex = offset / 16;
 
-			if (segIndex == gInterpolationIndex)
-				gSegmentPointers[segNumber] = data;
-		}
-		break;
+            if (segIndex == gInterpolationIndex)
+                gSegmentPointers[segNumber] = data;
+        } break;
     }
 }
 

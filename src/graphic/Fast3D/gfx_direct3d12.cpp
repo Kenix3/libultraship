@@ -182,7 +182,7 @@ static D3D12_CPU_DESCRIPTOR_HANDLE get_cpu_descriptor_handle(ComPtr<ID3D12Descri
     // the return value as the first argument". The method here is a non-static member function, and hence we need to
     // pass the address to the return value as a parameter. MinGW32 has the same issue.
     auto fn = heap->GetCPUDescriptorHandleForHeapStart;
-    void (STDMETHODCALLTYPE ID3D12DescriptorHeap::*fun)(D3D12_CPU_DESCRIPTOR_HANDLE * out) =
+    void (STDMETHODCALLTYPE ID3D12DescriptorHeap::*fun)(D3D12_CPU_DESCRIPTOR_HANDLE* out) =
         (void(STDMETHODCALLTYPE ID3D12DescriptorHeap::*)(D3D12_CPU_DESCRIPTOR_HANDLE * out)) fn;
     D3D12_CPU_DESCRIPTOR_HANDLE handle;
     (heap.Get()->*fun)(&handle);
@@ -196,7 +196,7 @@ static D3D12_GPU_DESCRIPTOR_HANDLE get_gpu_descriptor_handle(ComPtr<ID3D12Descri
 #ifdef __MINGW32__
     // See get_cpu_descriptor_handle
     auto fn = heap->GetGPUDescriptorHandleForHeapStart;
-    void (STDMETHODCALLTYPE ID3D12DescriptorHeap::*fun)(D3D12_GPU_DESCRIPTOR_HANDLE * out) =
+    void (STDMETHODCALLTYPE ID3D12DescriptorHeap::*fun)(D3D12_GPU_DESCRIPTOR_HANDLE* out) =
         (void(STDMETHODCALLTYPE ID3D12DescriptorHeap::*)(D3D12_GPU_DESCRIPTOR_HANDLE * out)) fn;
     D3D12_GPU_DESCRIPTOR_HANDLE handle;
     (heap.Get()->*fun)(&handle);
@@ -210,7 +210,7 @@ static D3D12_RESOURCE_ALLOCATION_INFO get_resource_allocation_info(const D3D12_R
 #ifdef __MINGW32__
     // See get_cpu_descriptor_handle
     auto fn = d3d.device->GetResourceAllocationInfo;
-    void (STDMETHODCALLTYPE ID3D12Device::*fun)(D3D12_RESOURCE_ALLOCATION_INFO * out, UINT visibleMask,
+    void (STDMETHODCALLTYPE ID3D12Device::*fun)(D3D12_RESOURCE_ALLOCATION_INFO* out, UINT visibleMask,
                                                 UINT numResourceDescs, const D3D12_RESOURCE_DESC* pResourceDescs) =
         (void(STDMETHODCALLTYPE ID3D12Device::*)(D3D12_RESOURCE_ALLOCATION_INFO * out, UINT visibleMask,
                                                  UINT numResourceDescs, const D3D12_RESOURCE_DESC* pResourceDescs)) fn;
