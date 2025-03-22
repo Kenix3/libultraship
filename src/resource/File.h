@@ -27,7 +27,6 @@ struct ResourceInitData {
 };
 
 struct File {
-    std::shared_ptr<ResourceInitData> InitData;
     std::shared_ptr<std::vector<char>> Buffer;
     std::variant<std::shared_ptr<tinyxml2::XMLDocument>, std::shared_ptr<BinaryReader>> Reader;
     bool IsLoaded = false;
