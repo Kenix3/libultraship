@@ -365,8 +365,18 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        "shaders/opengl/default.shader.fs", true, init));
+    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/opengl/default.shader.fs";
+
+    if (shaderMod.has_value()) {
+        auto raw = shaderMod.value().GetFragment();
+        if (raw.has_value()) {
+            path = raw.value() + ".fs";
+        }
+    }
+
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
@@ -423,8 +433,18 @@ static std::string build_vs_shader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        "shaders/opengl/default.shader.vs", true, init));
+    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/opengl/default.shader.vs";
+
+    if (shaderMod.has_value()) {
+        auto raw = shaderMod.value().GetVertex();
+        if (raw.has_value()) {
+            path = raw.value() + ".vs";
+        }
+    }
+
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");
@@ -441,7 +461,7 @@ static std::string build_vs_shader(const CCFeatures& cc_features) {
     return result;
 }
 
-static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
     const auto fs_buf = build_fs_shader(cc_features);
@@ -573,7 +593,7 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     return prg;
 }
 
-static struct ShaderProgram* gfx_opengl_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_opengl_lookup_shader(uint64_t shader_id0, uint64_t shader_id1) {
     auto it = shader_program_pool.find(make_pair(shader_id0, shader_id1));
     return it == shader_program_pool.end() ? nullptr : &it->second;
 }

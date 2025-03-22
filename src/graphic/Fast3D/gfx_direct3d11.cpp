@@ -83,7 +83,7 @@ struct ShaderProgramD3D11 {
     ComPtr<ID3D11BlendState> blend_state;
 
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
     uint8_t num_inputs;
     uint8_t num_floats;
     bool used_textures[SHADER_MAX_TEXTURES];
@@ -410,7 +410,7 @@ static void gfx_d3d11_load_shader(struct ShaderProgram* new_prg) {
     d3d.shader_program = (struct ShaderProgramD3D11*)new_prg;
 }
 
-static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
@@ -549,7 +549,7 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
     return (struct ShaderProgram*)(d3d.shader_program = prg);
 }
 
-static struct ShaderProgram* gfx_d3d11_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_d3d11_lookup_shader(uint64_t shader_id0, uint64_t shader_id1) {
     auto it = d3d.shader_program_pool.find(std::make_pair(shader_id0, shader_id1));
     return it == d3d.shader_program_pool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }

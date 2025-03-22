@@ -63,7 +63,7 @@ struct hash_pair_shader_ids {
 
 struct ShaderProgramMetal {
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
 
     uint8_t num_inputs;
     uint8_t num_floats;
@@ -350,7 +350,7 @@ static void gfx_metal_load_shader(struct ShaderProgram* new_prg) {
     mctx.shader_program = (struct ShaderProgramMetal*)new_prg;
 }
 
-static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
@@ -438,7 +438,7 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     return (struct ShaderProgram*)prg;
 }
 
-static struct ShaderProgram* gfx_metal_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
+static struct ShaderProgram* gfx_metal_lookup_shader(uint64_t shader_id0, uint64_t shader_id1) {
     auto it = mctx.shader_program_pool.find(std::make_pair(shader_id0, shader_id1));
     return it == mctx.shader_program_pool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }

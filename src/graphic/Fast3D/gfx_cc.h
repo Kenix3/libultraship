@@ -55,7 +55,6 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
-    USE_SHADER,
     MAX
 };
 
@@ -65,6 +64,7 @@ enum class ShaderOpts {
 struct ColorCombinerKey {
     uint64_t combine_mode;
     uint64_t options;
+    uint64_t shader_id;
 
 #ifdef __cplusplus
     auto operator<=>(const ColorCombinerKey&) const = default;
@@ -98,6 +98,6 @@ struct CCFeatures {
     int16_t shader_id;
 };
 
-void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features);
+void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeatures* cc_features);
 
 #endif
