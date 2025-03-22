@@ -438,7 +438,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
         case WM_INPUT: {
-            if (dxgi.is_mouse_captured && dxgi.is_mouse_hovered && dxgi.has_mouse_position) {
+            if (dxgi.is_mouse_captured && dxgi.in_focus && dxgi.has_mouse_position) {
                 uint32_t size = sizeof(RAWINPUT);
                 static RAWINPUT raw[sizeof(RAWINPUT)];
                 GetRawInputData((HRAWINPUT)l_param, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
