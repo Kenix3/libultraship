@@ -17,7 +17,7 @@ Window::Window(std::shared_ptr<Gui> gui) {
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
     mConfig = Context::GetInstance()->GetConfig();
 }
-    
+
 Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : Window(std::make_shared<Gui>(guiWindows)) {
 }
 
