@@ -63,6 +63,10 @@ bool ArchiveManager::HasFile(uint64_t hash) {
     return mFileToArchive.count(hash) > 0;
 }
 
+std::shared_ptr<Archive> ArchiveManager::GetArchiveFromAsset(const std::string& filePath) {
+    return mFileToArchive[CRC64(filePath.c_str())];
+}
+
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
     std::list<std::string> includes = {};
     if (!searchMask.empty()) {
@@ -133,6 +137,14 @@ void ArchiveManager::ResetVirtualFileSystem() {
         archive->Load();
         AddArchive(archive);
     }
+}
+
+bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filename, const std::vector<uint8_t>& data) {
+    if (archive) {
+        archive->WriteFile(filename, data);
+        return true;
+    }
+    return false;
 }
 
 size_t ArchiveManager::RemoveArchive(const std::string& path) {
