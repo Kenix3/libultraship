@@ -87,6 +87,15 @@ bool O2rArchive::Open() {
     return true;
 }
 
+bool O2rArchive::Close() {
+    if (zip_close(mZipArchive) == -1) {
+        SPDLOG_ERROR("Failed to close zip file \"{}\"", GetPath());
+        return false;
+    }
+
+    return true;
+}
+
 bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
     printf("Writing file\n");
     if (!mZipArchive) {
@@ -137,12 +146,4 @@ bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_
     return true;
 }
 
-bool O2rArchive::Close() {
-    if (zip_close(mZipArchive) == -1) {
-        SPDLOG_ERROR("Failed to close zip file \"{}\"", GetPath());
-        return false;
-    }
-
-    return true;
-}
 } // namespace Ship
