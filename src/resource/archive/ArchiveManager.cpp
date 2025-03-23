@@ -63,7 +63,7 @@ bool ArchiveManager::HasFile(uint64_t hash) {
     return mFileToArchive.count(hash) > 0;
 }
 
-std::shared_ptr<Archive> ArchiveManager::GetArchiveFromAsset(const std::string& filePath) {
+std::shared_ptr<Archive> ArchiveManager::GetArchiveFromFile(const std::string& filePath) {
     return mFileToArchive[CRC64(filePath.c_str())];
 }
 
