@@ -65,7 +65,7 @@ std::shared_ptr<File> O2rArchive::LoadFile(const std::string& filePath) {
 }
 
 bool O2rArchive::Open() {
-    mZipArchive = zip_open(GetPath().c_str(), ZIP_RDONLY, nullptr);
+    mZipArchive = zip_open(GetPath().c_str(), ZIP_CREATE, nullptr);
     if (mZipArchive == nullptr) {
         SPDLOG_ERROR("Failed to load zip file \"{}\"", GetPath());
         return false;
@@ -95,4 +95,55 @@ bool O2rArchive::Close() {
 
     return true;
 }
+
+bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
+    printf("Writing file\n");
+    if (!mZipArchive) {
+        SPDLOG_ERROR("Cannot write to ZIP: Archive is not open.");
+        return false;
+    }
+
+    // Create a new zip source from the data buffer
+    zip_source_t* source = zip_source_buffer(mZipArchive, data.data(), data.size(), 0);
+    if (!source) {
+        SPDLOG_ERROR("Failed to create zip source for file \"{}\"", filename);
+        return false;
+    }
+
+    // Add or replace the file in the ZIP archive
+    zip_int64_t index = zip_name_locate(mZipArchive, filename.c_str(), 0);
+    if (index >= 0) {
+        // File exists, replace it
+        if (zip_file_replace(mZipArchive, index, source, ZIP_FL_OVERWRITE) < 0) {
+            SPDLOG_ERROR("Failed to replace file \"{}\" in ZIP", filename);
+            zip_source_free(source);
+            return false;
+        }
+    } else {
+        // File doesn't exist, add it
+        if (zip_file_add(mZipArchive, filename.c_str(), source, ZIP_FL_ENC_UTF_8) < 0) {
+            SPDLOG_ERROR("Failed to add file \"{}\" to ZIP", filename);
+            zip_source_free(source);
+            return false;
+        }
+    }
+    printf("Success wrote file\n");
+
+    // Save changes to disk
+    if (zip_close(mZipArchive) < 0) {
+        SPDLOG_ERROR("Failed to save changes to ZIP archive.");
+        return false;
+    }
+
+    // Reopen the zip file for reading
+    mZipArchive = zip_open(GetPath().c_str(), ZIP_CREATE, nullptr);
+    if (mZipArchive == nullptr) {
+        SPDLOG_ERROR("Failed to reopen ZIP file after writing.");
+        return false;
+    }
+
+    // Success
+    return true;
+}
+
 } // namespace Ship

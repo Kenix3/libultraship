@@ -28,6 +28,7 @@ class OtrArchive : virtual public Archive {
 
     bool Open();
     bool Close();
+    bool WriteFile(const std::string& filename, const std::vector<uint8_t>& data);
 
     std::shared_ptr<File> LoadFile(const std::string& filePath);
     std::shared_ptr<File> LoadFile(uint64_t hash);

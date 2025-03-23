@@ -105,6 +105,11 @@ bool OtrArchive::Close() {
     return closed;
 }
 
+bool OtrArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
+    SPDLOG_INFO("otr does not support WriteFile, please use an o2r instead");
+    return false;
+}
+
 } // namespace Ship
 
 #endif // EXCLUDE_MPQ_SUPPORT
