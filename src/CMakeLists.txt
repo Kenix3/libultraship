@@ -101,6 +101,13 @@ else()
     list(REMOVE_ITEM Header_Files__include ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.h)
 endif()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/macUtils.mm)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/macUtils.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+else()
+    list(REMOVE_ITEM Header_Files__include ${CMAKE_CURRENT_SOURCE_DIR}/utils/macUtils.h)
+endif()
+
 source_group("utils" FILES ${Source_Files__Utils})
 target_sources(libultraship PRIVATE ${Source_Files__Utils})
 
@@ -198,6 +205,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
     target_link_libraries(libultraship PRIVATE Threads::Threads)
+    find_library(COCOA Cocoa)
+    target_link_libraries(libultraship PRIVATE ${COCOA})
+
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
