@@ -125,6 +125,7 @@ static struct GfxRenderingAPI* gfx_rapi;
 static int markerOn;
 uintptr_t gSegmentPointers[MAX_SEGMENT_POINTERS];
 int gInterpolationIndex = 0;
+int gInterpolationIndexTarget = 0;
 
 struct FBInfo {
     uint32_t orig_width, orig_height;       // Original shape
@@ -2681,8 +2682,8 @@ static void gfx_s2dex_rect_copy(F3DuObjSprite* spr) {
     int testY = (realY + (realH / realSH));
 
     gfx_dp_texture_rectangle(realX << 2, realY << 2, testX << 2, testY << 2, G_TX_RENDERTILE,
-                             g_rdp.texture_tile[0].uls << 3, g_rdp.texture_tile[0].ult << 3, (float)(1 << 10) * realSW,
-                             (float)(1 << 10) * realSH, false);
+                             (s32)g_rdp.texture_tile[0].uls << 3, (s32)g_rdp.texture_tile[0].ult << 3,
+                             (float)(1 << 10) * realSW, (float)(1 << 10) * realSH, false);
 }
 
 static inline void* seg_addr(uintptr_t w1) {
@@ -3626,6 +3627,33 @@ bool gfx_set_tile_size_handler_rdp(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    if (gInterpolationIndex == gInterpolationIndexTarget) {
+        int tile = C1(24, 3);
+        gfx_dp_set_tile_size(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
+        ++(*cmd0);
+        memcpy(&g_rdp.texture_tile[tile].uls, &(*cmd0)->words.w0, sizeof(float));
+        memcpy(&g_rdp.texture_tile[tile].ult, &(*cmd0)->words.w1, sizeof(float));
+        ++(*cmd0);
+        memcpy(&g_rdp.texture_tile[tile].lrs, &(*cmd0)->words.w0, sizeof(float));
+        memcpy(&g_rdp.texture_tile[tile].lrt, &(*cmd0)->words.w1, sizeof(float));
+    } else {
+        ++(*cmd0);
+        ++(*cmd0);
+    }
+
+    return false;
+}
+
+bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    gInterpolationIndexTarget = cmd->words.w1;
+    return false;
+}
+
 bool gfx_load_tlut_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
@@ -3869,6 +3897,10 @@ class UcodeHandler {
 };
 
 static constexpr UcodeHandler rdpHandlers = {
+    { RDP_G_SETTARGETINTERPINDEX,
+      { "G_SETTARGETINTERPINDEX", gfx_set_interpolation_index_target } }, // G_SETTARGETINTERPINDEX
+    { RDP_G_SETTILESIZE_INTERP,
+      { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },            // G_SETTILESIZE_INTERP
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "G_RDPLOADSYNC", gfx_stubbed_command_handler } },         // G_RDPLOADSYNC (-26)
