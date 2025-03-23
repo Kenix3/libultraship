@@ -184,7 +184,7 @@ struct RDP {
         uint8_t cms, cmt;
         uint8_t shifts, shiftt;
         float uls, ult, lrs, lrt; // U10.2
-        uint16_t tmem;               // 0-511, in 64-bit word units
+        uint16_t tmem;            // 0-511, in 64-bit word units
         uint32_t line_size_bytes;
         uint8_t palette;
         uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively

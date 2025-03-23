@@ -3214,17 +3214,16 @@ typedef union Gfx {
             _SHIFTL(tile, 24, 3) | _SHIFTL(lrs, 12, 12) | _SHIFTL(lrt, 0, 12) \
     }
 
-#define gDPSetInterpolation(pkt, index) \
-    _DW({                                                                                 \
-        Gfx* _g = (Gfx*)(pkt);                                                            \
-                                                                                          \
-        _g->words.w0 = G_SETTARGETINTERPINDEX << 24;												\
-        _g->words.w1 = index; \
+#define gDPSetInterpolation(pkt, index)              \
+    _DW({                                            \
+        Gfx* _g = (Gfx*)(pkt);                       \
+                                                     \
+        _g->words.w0 = G_SETTARGETINTERPINDEX << 24; \
+        _g->words.w1 = index;                        \
     })
 
-
-
-#define __gDPSetTileSizeInterp(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_SETTILESIZE_INTERP, t, uls, ult, lrs, lrt)
+#define __gDPSetTileSizeInterp(pkt, t, uls, ult, lrs, lrt) \
+    gDPLoadTileGeneric(pkt, G_SETTILESIZE_INTERP, t, uls, ult, lrs, lrt)
 #define gDPSetTileSize(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gsDPSetTileSize(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gDPLoadTile(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_LOADTILE, t, uls, ult, lrs, lrt)
