@@ -226,6 +226,19 @@ AudioBackend Config::GetCurrentAudioBackend() {
     return AudioBackend::SDL;
 }
 
+AudioChannelsSetting Config::GetCurrentAudioChannelsSetting() {
+    int32_t surround =
+        GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
+    switch (surround) {
+        case AudioChannelsSetting::audioSurround51:
+            return AudioChannelsSetting::audioSurround51;
+        case AudioChannelsSetting::audioStereo:
+        case AudioChannelsSetting::audioMax:
+        default:
+            return AudioChannelsSetting::audioStereo;
+    }
+}
+
 void Config::SetCurrentAudioBackend(AudioBackend backend) {
     switch (backend) {
         case AudioBackend::WASAPI:

@@ -271,7 +271,7 @@ static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
 
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(display_in_use, &mode);
-    *refresh_rate = mode.refresh_rate;
+    *refresh_rate = mode.refresh_rate != 0 ? mode.refresh_rate : 60;
 }
 
 static uint64_t previous_time;
@@ -490,7 +490,11 @@ static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_
 }
 
 static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+#ifdef __APPLE__
+    SDL_GetWindowSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#else
     SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+#endif
     SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
@@ -567,7 +571,11 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
+#ifdef __APPLE__
+                    SDL_GetWindowSize(wnd, &window_width, &window_height);
+#else
                     SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+#endif
                     break;
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(wnd)) {
@@ -654,6 +662,14 @@ static inline void sync_framerate_with_timer() {
 }
 
 static void gfx_sdl_swap_buffers_begin() {
+    bool nextVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
+
+    if (vsync_enabled != nextVsyncEnabled) {
+        vsync_enabled = nextVsyncEnabled;
+        SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
+        SDL_RenderSetVSync(renderer, vsync_enabled ? 1 : 0);
+    }
+
     sync_framerate_with_timer();
     SDL_GL_SwapWindow(wnd);
 }
@@ -678,7 +694,7 @@ static const char* gfx_sdl_get_key_name(int scancode) {
 }
 
 bool gfx_sdl_can_disable_vsync() {
-    return false;
+    return true;
 }
 
 bool gfx_sdl_is_running() {

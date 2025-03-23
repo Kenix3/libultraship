@@ -355,16 +355,15 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
     size_t num_floats = 0;
-    char buf[8192];
-
-    memset(buf, 0, sizeof(buf));
+    std::string buf;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
     MTL::VertexDescriptor* vertex_descriptor =
         gfx_metal_build_shader(buf, num_floats, cc_features, mctx.current_filter_mode == FILTER_THREE_POINT);
 
     NS::Error* error = nullptr;
-    MTL::Library* library = mctx.device->newLibrary(NS::String::string(buf, NS::UTF8StringEncoding), nullptr, &error);
+    MTL::Library* library =
+        mctx.device->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
 
     if (error != nullptr)
         SPDLOG_ERROR("Failed to compile shader library, error {}",
@@ -592,7 +591,7 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2;
-        switch (CVarGetInteger("gZFightingMode", 0)) {
+        switch (CVarGetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)mctx.render_target_height / n64modeFactor;
                 break;

@@ -151,12 +151,14 @@ int8_t GetEndOpcodeByUCode(UcodeHandlers ucode) {
     return -1;
 }
 
-std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
-    if (!FileHasValidFormatAndReader(file)) {
+std::shared_ptr<Ship::IResource>
+ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
+                                                 std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
 
-    auto displayList = std::make_shared<DisplayList>(file->InitData);
+    auto displayList = std::make_shared<DisplayList>(initData);
     auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
     auto ucode = (UcodeHandlers)reader->ReadInt8();
 
@@ -178,13 +180,18 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
 
         // These are 128-bit commands, so read an extra 64 bits...
         if (isExpanded) {
+#ifdef USE_GBI_TRACE
+            command.words.trace.file = initData->Path.c_str();
+            command.words.trace.idx = idx++;
+            command.words.trace.valid = true;
+#endif
             displayList->Instructions.push_back(command);
             command.words.w0 = reader->ReadUInt32();
             command.words.w1 = reader->ReadUInt32();
         }
 
 #ifdef USE_GBI_TRACE
-        command.words.trace.file = file->InitData->Path.c_str();
+        command.words.trace.file = initData->Path.c_str();
         command.words.trace.idx = idx++;
         command.words.trace.valid = true;
 #endif
@@ -199,12 +206,14 @@ std::shared_ptr<Ship::IResource> ResourceFactoryBinaryDisplayListV0::ReadResourc
     return displayList;
 }
 
-std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file) {
-    if (!FileHasValidFormatAndReader(file)) {
+std::shared_ptr<Ship::IResource>
+ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
+                                              std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
         return nullptr;
     }
 
-    auto dl = std::make_shared<DisplayList>(file->InitData);
+    auto dl = std::make_shared<DisplayList>(initData);
     auto child =
         std::get<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)->FirstChildElement()->FirstChildElement();
 
@@ -422,6 +431,22 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLDisplayListV0::ReadResource(s
             g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
                                child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
                                child->IntAttribute("V12"), child->IntAttribute("Flag1"));
+#else
+            g = gsSP1TriangleOTR(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
+                                 child->IntAttribute("Flag0"));
+            g.words.w0 &= 0xFF000000;
+            g.words.w0 |= child->IntAttribute("V00");
+            g.words.w1 |= child->IntAttribute("V01") << 16;
+            g.words.w1 |= child->IntAttribute("V02") << 0;
+
+            dl->Instructions.push_back(g);
+
+            g = gsSP1TriangleOTR(child->IntAttribute("V10"), child->IntAttribute("V11"), child->IntAttribute("V12"),
+                                 child->IntAttribute("Flag1"));
+            g.words.w0 &= 0xFF000000;
+            g.words.w0 |= child->IntAttribute("V10");
+            g.words.w1 |= child->IntAttribute("V11") << 16;
+            g.words.w1 |= child->IntAttribute("V12") << 0;
 #endif
         } else if (childName == "LoadVertices") {
             std::string fName = child->Attribute("Path");
