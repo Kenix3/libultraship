@@ -139,7 +139,8 @@ void ArchiveManager::ResetVirtualFileSystem() {
     }
 }
 
-bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filename, const std::vector<uint8_t>& data) {
+bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filename,
+                               const std::vector<uint8_t>& data) {
     if (archive) {
         archive->WriteFile(filename, data);
         return true;
