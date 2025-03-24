@@ -224,7 +224,7 @@ float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {
                         @else
                             float4 blendVal@{i} = float4(0, 0, 0, 0);
                         @end
-                        texval@{i} = lerp(texVal@{i}, blendVal@{i}, g_textureMask@{i}.Sample(g_sampler@{i}, tc@{i}).a);
+                        texVal@{i} = lerp(texVal@{i}, blendVal@{i}, g_textureMask@{i}.Sample(g_sampler@{i}, tc@{i}).a);
                     @end
                 }
             @else
