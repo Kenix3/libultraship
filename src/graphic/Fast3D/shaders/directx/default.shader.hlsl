@@ -186,7 +186,7 @@ float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {
             float2 tc@{i} = input.uv@{i};
             @{s = o_clamp[i][0]}
             @{t = o_clamp[i][1]}
-            @if(s && t)
+            @if(s || t)
                 int2 texSize@{i};
                 g_texture@{i}.GetDimensions(texSize@{i}.x, texSize@{i}.y);
                 @if(s && t)
