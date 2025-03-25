@@ -503,9 +503,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
 
             if (fName[0] == '>' && fName[1] == '0' && (fName[2] == 'x' || fName[2] == 'X')) {
                 uint32_t seg = std::stoul(fName.substr(1), nullptr, 16);
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, seg | 1) };
+                g = { gsDPSetTextureImage(fmtVal, sizVal, width, seg | 1) };
             } else {
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, 0) };
+                g = { gsDPSetTextureImage(fmtVal, sizVal, width, 0) };
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
                 char* str = (char*)malloc(fName.size() + 1);
@@ -950,7 +950,7 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             }
 
-            g = { gsDPSetTextureImage(fmt, siz, width + 1, 0) };
+            g = { gsDPSetTextureImage(fmt, siz, width, 0) };
             g.words.w0 &= 0x00FFFFFF;
             g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
             char* str = (char*)malloc(fName.size() + 1);

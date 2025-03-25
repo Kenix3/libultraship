@@ -2175,7 +2175,7 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
     uint32_t offset_y = ult >> G_TEXTURE_IMAGE_FRAC;
     uint32_t tile_width = ((lrs - uls) >> G_TEXTURE_IMAGE_FRAC) + 1;
     uint32_t tile_height = ((lrt - ult) >> G_TEXTURE_IMAGE_FRAC) + 1;
-    uint32_t full_image_width = g_rdp.texture_to_load.width + 1;
+    uint32_t full_image_width = g_rdp.texture_to_load.width;
 
     uint32_t offset_x_in_bytes = offset_x << word_size_shift;
     uint32_t tile_line_size_bytes = tile_width << word_size_shift;
@@ -3376,7 +3376,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
         }
     }
 
-    gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 10), imgData, texFlags, rawTexMetdata, (void*)i);
+    gfx_dp_set_texture_image(C0(21, 3), C0(19, 2), C0(0, 12) + 1, imgData, texFlags, rawTexMetdata, (void*)i);
 
     return false;
 }
@@ -3438,7 +3438,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
         F3DGfx* cmd = (*cmd0);
         uint32_t fmt = C0(21, 3);
         uint32_t size = C0(19, 2);
-        uint32_t width = C0(0, 10);
+        uint32_t width = C0(0, 12) + 1;
 
         if (tex != NULL) {
             gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata, tex);
@@ -3471,7 +3471,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
 
         uint32_t fmt = C0(21, 3);
         uint32_t size = C0(19, 2);
-        uint32_t width = C0(0, 10);
+        uint32_t width = C0(0, 12) + 1;
 
         gfx_dp_set_texture_image(fmt, size, width, fileName, texFlags, rawTexMetadata,
                                  reinterpret_cast<char*>(texture->ImageData));
