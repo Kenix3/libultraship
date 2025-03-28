@@ -242,9 +242,7 @@ static void set_fullscreen(bool on, bool call_callback) {
     }
 
 #if defined(__APPLE__)
-    // Current implementation of the fullscreening with native macOS fullscreen.
-    // This code can and will be changed when we upgrade to SDL3 because of the ability to use
-    // SDL_HINT_VIDEO_MAC_FULLSCREEN_MENU_VISIBILITY to get the menubar working instead of this workaround bool
+    // Implement fullscreening with native macOS APIs
     if (on != isNativeMacOSFullscreenActive(wnd)) {
         toggleNativeMacOSFullscreen(wnd);
     }
