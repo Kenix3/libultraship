@@ -263,8 +263,7 @@ uint32_t Fast3dWindow::GetCurrentRefreshRate() {
 }
 
 bool Fast3dWindow::SupportsWindowedFullscreen() {
-    if (GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_OPENGL ||
-        GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_METAL) {
+    if (GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_OPENGL) {
         return true;
     }
 
