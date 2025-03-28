@@ -239,19 +239,8 @@ static void set_fullscreen(bool on, bool call_callback) {
         } else {
             SPDLOG_ERROR(SDL_GetError());
         }
-    } else {
-        auto conf = Ship::Context::GetInstance()->GetConfig();
-        window_width = conf->GetInt("Window.Width", 640);
-        window_height = conf->GetInt("Window.Height", 480);
-        int32_t posX = conf->GetInt("Window.PositionX", 100);
-        int32_t posY = conf->GetInt("Window.PositionY", 100);
-        if (display_in_use < 0) { // Fallback to default if out of bounds
-            posX = 100;
-            posY = 100;
-        }
-        SDL_SetWindowPosition(wnd, posX, posY);
-        SDL_SetWindowSize(wnd, window_width, window_height);
     }
+
 #if defined(__APPLE__)
     // Current implementation of the fullscreening with native macOS fullscreen.
     // This code can and will be changed when we upgrade to SDL3 because of the ability to use
@@ -271,6 +260,20 @@ static void set_fullscreen(bool on, bool call_callback) {
         SPDLOG_ERROR(SDL_GetError());
     }
 #endif
+
+    if (!on) {
+        auto conf = Ship::Context::GetInstance()->GetConfig();
+        window_width = conf->GetInt("Window.Width", 640);
+        window_height = conf->GetInt("Window.Height", 480);
+        int32_t posX = conf->GetInt("Window.PositionX", 100);
+        int32_t posY = conf->GetInt("Window.PositionY", 100);
+        if (display_in_use < 0) { // Fallback to default if out of bounds
+            posX = 100;
+            posY = 100;
+        }
+        SDL_SetWindowPosition(wnd, posX, posY);
+        SDL_SetWindowSize(wnd, window_width, window_height);
+    }
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
         on_fullscreen_changed_callback(on);
@@ -419,6 +422,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         if (renderer == NULL) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
+        }
+
+        if (start_in_fullscreen) {
+            set_fullscreen(true, false);
         }
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
@@ -617,6 +624,17 @@ static void gfx_sdl_handle_events() {
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
         gfx_sdl_handle_single_event(event);
     }
+
+    // resync fullscreen state
+#ifdef __APPLE__
+    auto nextFullscreenState = isNativeMacOSFullscreenActive(wnd);
+    if (fullscreen_state != nextFullscreenState) {
+        fullscreen_state = nextFullscreenState;
+        if (on_fullscreen_changed_callback != nullptr) {
+            on_fullscreen_changed_callback(fullscreen_state);
+        }
+    }
+#endif
 }
 
 static bool gfx_sdl_is_frame_ready() {

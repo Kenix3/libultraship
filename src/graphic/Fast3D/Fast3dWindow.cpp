@@ -263,6 +263,10 @@ uint32_t Fast3dWindow::GetCurrentRefreshRate() {
 }
 
 bool Fast3dWindow::SupportsWindowedFullscreen() {
+#ifdef __APPLE__
+    return false;
+#endif
+
     if (GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_OPENGL) {
         return true;
     }
@@ -283,6 +287,7 @@ void Fast3dWindow::SetMsaaLevel(uint32_t value) {
 }
 
 void Fast3dWindow::SetFullscreen(bool isFullscreen) {
+    // Save current window position before fullscreening
     SaveWindowToConfig();
     mWindowManagerApi->set_fullscreen(isFullscreen);
 }
@@ -344,11 +349,13 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
 
     if (isNowFullscreen) {
-        auto menuBar = wnd->GetGui()->GetMenuBar();
-        wnd->SetMouseCapture(!(menuBar && menuBar->IsVisible() || wnd->ShouldForceCursorVisibility() ||
-                               CVarGetInteger("gWindows.Menu", 0)));
+        auto menuVisible = wnd->GetGui()->GetMenuOrMenubarVisible();
+        wnd->SetMouseCapture(!(menuVisible || wnd->ShouldForceCursorVisibility()));
     } else {
         wnd->SetMouseCapture(false);
     }
+
+    // Re-save fullscreen enabled after
+    Ship::Context::GetInstance()->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
 }
 } // namespace Fast
