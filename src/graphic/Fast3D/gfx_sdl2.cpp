@@ -239,7 +239,27 @@ static void set_fullscreen(bool on, bool call_callback) {
         } else {
             SPDLOG_ERROR(SDL_GetError());
         }
+    }
+
+#if defined(__APPLE__)
+    // Implement fullscreening with native macOS APIs
+    if (on != isNativeMacOSFullscreenActive(wnd)) {
+        toggleNativeMacOSFullscreen(wnd);
+    }
+    fullscreen_state = on;
+#else
+    if (SDL_SetWindowFullscreen(wnd,
+                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                                                                      : SDL_WINDOW_FULLSCREEN)
+                                   : 0) >= 0) {
+        fullscreen_state = on;
     } else {
+        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
+        SPDLOG_ERROR(SDL_GetError());
+    }
+#endif
+
+    if (!on) {
         auto conf = Ship::Context::GetInstance()->GetConfig();
         window_width = conf->GetInt("Window.Width", 640);
         window_height = conf->GetInt("Window.Height", 480);
@@ -252,40 +272,6 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_SetWindowPosition(wnd, posX, posY);
         SDL_SetWindowSize(wnd, window_width, window_height);
     }
-#if defined(__APPLE__)
-    // Current implementation of the fullscreening with native macOS fullscreen for Windowed Mode and
-    // SDL for Exclusive Fullscreen. This code can and will be changed when we upgrade to SDL3 because of the
-    // ability to use SDL_HINT_VIDEO_MAC_FULLSCREEN_MENU_VISIBILITY to get the menubar working instead of this
-    // workaround
-    bool useNativeMacOSFullscreen = !CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0);
-
-    if (useNativeMacOSFullscreen && (on || isNativeMacOSFullscreenActive(wnd))) {
-        toggleNativeMacOSFullscreen(wnd);
-        fullscreen_state = on;
-    } else {
-        if (on && isNativeMacOSFullscreenActive(wnd)) {
-            toggleNativeMacOSFullscreen(wnd);
-            return;
-        }
-        int exclusiveFullscreenFlag = on ? SDL_WINDOW_FULLSCREEN : 0;
-        if (SDL_SetWindowFullscreen(wnd, exclusiveFullscreenFlag) >= 0) {
-            fullscreen_state = on;
-        } else {
-            SPDLOG_ERROR("Failed to %s exclusive fullscreen mode.", on ? "switch to" : "exit");
-            SPDLOG_ERROR(SDL_GetError());
-        }
-    }
-#else
-    if (SDL_SetWindowFullscreen(wnd,
-                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
-                                                                                      : SDL_WINDOW_FULLSCREEN)
-                                   : 0) >= 0) {
-        fullscreen_state = on;
-    } else {
-        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
-        SPDLOG_ERROR(SDL_GetError());
-    }
-#endif
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
         on_fullscreen_changed_callback(on);
@@ -434,6 +420,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         if (renderer == NULL) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
+        }
+
+        if (start_in_fullscreen) {
+            set_fullscreen(true, false);
         }
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
@@ -632,6 +622,17 @@ static void gfx_sdl_handle_events() {
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
         gfx_sdl_handle_single_event(event);
     }
+
+    // resync fullscreen state
+#ifdef __APPLE__
+    auto nextFullscreenState = isNativeMacOSFullscreenActive(wnd);
+    if (fullscreen_state != nextFullscreenState) {
+        fullscreen_state = nextFullscreenState;
+        if (on_fullscreen_changed_callback != nullptr) {
+            on_fullscreen_changed_callback(fullscreen_state);
+        }
+    }
+#endif
 }
 
 static bool gfx_sdl_is_frame_ready() {
