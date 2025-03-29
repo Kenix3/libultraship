@@ -57,6 +57,17 @@ static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
     return g;
 }
 
+static void GsSPSetShader(std::vector<Gfx>& inst, const char* vtx, const char* frag) {
+    Gfx g0;
+    g0.words.w0 = (uintptr_t)(_SHIFTL(G_LOAD_SHADER, 24, 8));
+    g0.words.w1 = (uintptr_t)(vtx);
+    Gfx g1;
+    g1.words.w0 = (uintptr_t)(0);
+    g1.words.w1 = (uintptr_t)(frag);
+    inst.push_back(g0);
+    inst.push_back(g1);
+}
+
 uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(const char* valStr) {
     static const char* strings[] = {
         "G_CCMUX_COMBINED",
@@ -1132,6 +1143,10 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             std::string rawMode1 = child->Attribute("Mode1");
             std::string rawMode2 = child->Attribute("Mode2");
             g = gsDPSetRenderMode(renderModes[rawMode1], renderModes[rawMode2]);
+        } else if (childName == "SetShader") {
+            const char* vtx = child->Attribute("Vertex", nullptr);
+            const char* frag = child->Attribute("Fragment", nullptr);
+            GsSPSetShader(dl->Instructions, vtx, frag);
         } else {
             printf("DisplayListXML: Unknown node %s\n", childName.c_str());
             g = gsDPPipeSync();

@@ -1,6 +1,6 @@
 #include "gfx_cc.h"
 
-void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features) {
+void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeatures* cc_features) {
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 4; k++) {
@@ -22,10 +22,6 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
     cc_features->clamp[1][0] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_S);
     cc_features->clamp[1][1] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_T);
-
-    if (shader_id1 & SHADER_OPT(USE_SHADER)) {
-        cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
-    }
 
     cc_features->used_textures[0] = false;
     cc_features->used_textures[1] = false;
@@ -82,4 +78,6 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     if (cc_features->used_textures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
         cc_features->used_blend[1] = true;
     }
+
+    cc_features->shader_id = (shader_id1 >> 16) & 0xFFFF;
 }

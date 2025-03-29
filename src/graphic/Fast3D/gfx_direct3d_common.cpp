@@ -4,6 +4,7 @@
 
 #include "gfx_direct3d_common.h"
 #include "gfx_cc.h"
+#include "gfx_pc.h"
 #include <prism/processor.h>
 #include <public/bridge/consolevariablebridge.h>
 #include <resource/factory/ShaderFactory.h>
@@ -210,8 +211,18 @@ std::string gfx_direct3d_common_build_shader(size_t& num_floats, const CCFeature
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        "shaders/directx/default.shader.hlsl", true, init));
+    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/directx/default.shader.hlsl";
+
+    if (shaderMod.has_value()) {
+        auto raw = shaderMod.value().GetFragment();
+        if (raw.has_value()) {
+            path = raw.value() + ".hlsl";
+        }
+    }
+
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default directx shader, missing f3d.o2r?");

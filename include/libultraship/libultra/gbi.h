@@ -2795,11 +2795,19 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gsSPLoadShader(shader, type) gsDma1p(G_LOAD_SHADER, shader, 0, type)
-#define gsSPUnloadShader() gsDma1p(G_LOAD_SHADER, 0, 0, 0)
+#define gsSPSetShader(shader, frag, vtx)          \
+    { (_SHIFTL(G_LOAD_SHADER, 24, 8)), (vtx) }, { \
+        0, (frag)                                 \
+    }
 
-#define gSPLoadShader(pkt, shader, type) gDma1p(pkt, G_LOAD_SHADER, shader, 0, type)
-#define gSPUnloadShader(pkt) gDma1p(pkt, G_LOAD_SHADER, 0, 0, 0)
+#define gSPSetShader(pkt, frag, vtx)                   \
+    {                                                  \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);    \
+                                                       \
+        _g0->words.w0 = _SHIFTL(G_LOAD_SHADER, 24, 8); \
+        _g0->words.w1 = vtx;                           \
+        _g1->words.w1 = frag;                          \
+    }
 
 #define gSPExtraGeometryMode(pkt, c, s)                                                 \
     _DW({                                                                               \
