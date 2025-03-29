@@ -4,6 +4,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
