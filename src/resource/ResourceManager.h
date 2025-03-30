@@ -85,12 +85,12 @@ class ResourceManager {
     size_t UnloadResource(const ResourceIdentifier& identifier);
     size_t UnloadResource(const std::string& filePath);
 
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const std::string& searchMask);
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const ResourceFilter& filter);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const std::string& searchMask, bool exact = false);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const ResourceFilter& filter, bool exact = false);
     std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
-    LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal);
+    LoadResourcesAsync(const std::string& searchMask, BS::priority_t priority = BS::pr::normal, bool exact = false);
     std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
-    LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority = BS::pr::normal);
+    LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority = BS::pr::normal, bool exact = false);
 
     void DirtyResources(const std::string& searchMask);
     void DirtyResources(const ResourceFilter& filter);
@@ -102,9 +102,11 @@ class ResourceManager {
     bool OtrSignatureCheck(const char* fileName);
     bool IsAltAssetsEnabled();
     void SetAltAssetsEnabled(bool isEnabled);
+    void ShutDownThreadPool();
+    void ThreadPoolWait(std::chrono::duration<double> interval);
 
   protected:
-    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
+    std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter, bool exact = false);
     void UnloadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
                                                                            bool loadExact = false);
