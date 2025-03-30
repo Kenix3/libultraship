@@ -13,6 +13,7 @@
 #include <algorithm>
 
 #include "Context.h"
+#include "window/Window.h"
 
 // for some reason windows isn't seeing M_PI
 // this is copied from my system's math.h

@@ -10,6 +10,7 @@
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
 #include "graphic/Fast3D/gfx_pc.h"
+#include "controller/controldeck/ControlDeck.h"
 
 #include <fstream>
 
