@@ -110,7 +110,7 @@ class Gui {
     void StartFrame();
     void EndFrame();
     void DrawFloatingWindows();
-    void DrawMenu();
+    virtual void DrawMenu();
     void DrawGame();
     void CalculateGameViewport();
 
@@ -125,18 +125,18 @@ class Gui {
     int16_t GetIntegerScaleFactor();
     void CheckSaveCvars();
     void HandleMouseCapture();
+    ImVec2 mTemporaryWindowPos;
+    ImGuiIO* mImGuiIo;
+    std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
+    std::weak_ptr<Fast::Interpreter> mInterpreter;
 
   private:
     GuiWindowInitData mImpl;
-    ImGuiIO* mImGuiIo;
     bool mNeedsConsoleVariableSave;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
     std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
-    std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
-    ImVec2 mTemporaryWindowPos;
-    std::weak_ptr<Fast::Interpreter> mInterpreter;
 };
 } // namespace Ship
 

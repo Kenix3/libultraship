@@ -68,6 +68,8 @@ constexpr int8_t OTR_G_REGBLENDEDTEX = OPCODE(0x3f);
 constexpr int8_t OTR_G_SETINTENSITY = OPCODE(0x40);
 constexpr int8_t OTR_G_MOVEMEM_HASH = OPCODE(0x42);
 constexpr int8_t OTR_G_LOAD_SHADER = OPCODE(0x43);
+constexpr int8_t RDP_G_SETTILESIZE_INTERP = OPCODE(0x44);
+constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x45);
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -958,6 +960,7 @@ typedef union {
 #define G_MW_NUMLIGHT 0x02
 #define G_MW_CLIP 0x04
 #define G_MW_SEGMENT 0x06
+#define G_MW_SEGMENT_INTERP 0x07
 #define G_MW_FOG 0x08
 #define G_MW_LIGHTCOL 0x0a
 #define G_MW_PERSPNORM 0x0e

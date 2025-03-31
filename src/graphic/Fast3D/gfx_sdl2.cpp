@@ -19,6 +19,7 @@
 #elif __APPLE__
 #include <SDL.h>
 #include "gfx_metal.h"
+#include "utils/macUtils.h"
 #else
 #include <SDL2/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
@@ -238,7 +239,27 @@ static void set_fullscreen(bool on, bool call_callback) {
         } else {
             SPDLOG_ERROR(SDL_GetError());
         }
+    }
+
+#if defined(__APPLE__)
+    // Implement fullscreening with native macOS APIs
+    if (on != isNativeMacOSFullscreenActive(wnd)) {
+        toggleNativeMacOSFullscreen(wnd);
+    }
+    fullscreen_state = on;
+#else
+    if (SDL_SetWindowFullscreen(wnd,
+                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                                                                      : SDL_WINDOW_FULLSCREEN)
+                                   : 0) >= 0) {
+        fullscreen_state = on;
     } else {
+        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
+        SPDLOG_ERROR(SDL_GetError());
+    }
+#endif
+
+    if (!on) {
         auto conf = Ship::Context::GetInstance()->GetConfig();
         window_width = conf->GetInt("Window.Width", 640);
         window_height = conf->GetInt("Window.Height", 480);
@@ -251,15 +272,6 @@ static void set_fullscreen(bool on, bool call_callback) {
         SDL_SetWindowPosition(wnd, posX, posY);
         SDL_SetWindowSize(wnd, window_width, window_height);
     }
-    if (SDL_SetWindowFullscreen(wnd,
-                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
-                                                                                      : SDL_WINDOW_FULLSCREEN)
-                                   : 0) >= 0) {
-        fullscreen_state = on;
-    } else {
-        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
-        SPDLOG_ERROR(SDL_GetError());
-    }
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
         on_fullscreen_changed_callback(on);
@@ -271,7 +283,7 @@ static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
 
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(display_in_use, &mode);
-    *refresh_rate = mode.refresh_rate;
+    *refresh_rate = mode.refresh_rate != 0 ? mode.refresh_rate : 60;
 }
 
 static uint64_t previous_time;
@@ -408,6 +420,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         if (renderer == NULL) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
+        }
+
+        if (start_in_fullscreen) {
+            set_fullscreen(true, false);
         }
 
         SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
@@ -606,6 +622,17 @@ static void gfx_sdl_handle_events() {
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
         gfx_sdl_handle_single_event(event);
     }
+
+    // resync fullscreen state
+#ifdef __APPLE__
+    auto nextFullscreenState = isNativeMacOSFullscreenActive(wnd);
+    if (fullscreen_state != nextFullscreenState) {
+        fullscreen_state = nextFullscreenState;
+        if (on_fullscreen_changed_callback != nullptr) {
+            on_fullscreen_changed_callback(fullscreen_state);
+        }
+    }
+#endif
 }
 
 static bool gfx_sdl_is_frame_ready() {
@@ -662,12 +689,12 @@ static inline void sync_framerate_with_timer() {
 }
 
 static void gfx_sdl_swap_buffers_begin() {
-    // Make sure only 0 or 1 is set.
-    if (vsync_enabled =
-            !(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0)) {
-        vsync_enabled = !vsync_enabled;
-        SDL_GL_SetSwapInterval(vsync_enabled);
-        SDL_RenderSetVSync(renderer, vsync_enabled);
+    bool nextVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
+
+    if (vsync_enabled != nextVsyncEnabled) {
+        vsync_enabled = nextVsyncEnabled;
+        SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
+        SDL_RenderSetVSync(renderer, vsync_enabled ? 1 : 0);
     }
 
     sync_framerate_with_timer();

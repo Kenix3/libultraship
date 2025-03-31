@@ -30,8 +30,11 @@ class ArchiveManager {
     bool IsLoaded();
     std::shared_ptr<File> LoadFile(const std::string& filePath);
     std::shared_ptr<File> LoadFile(uint64_t hash);
+    bool WriteFile(std::shared_ptr<Archive> archive, const std::string& filename, const std::vector<uint8_t>& data);
     bool HasFile(const std::string& filePath);
     bool HasFile(uint64_t hash);
+    std::shared_ptr<Archive>
+    GetArchiveFromFile(const std::string& filePath); // Retrieves a ptr to the archive that the asset is inside of
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask = "");
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::list<std::string>& includes,
                                                         const std::list<std::string>& excludes);

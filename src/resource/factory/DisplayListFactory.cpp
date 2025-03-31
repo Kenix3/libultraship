@@ -431,6 +431,22 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             g = gsSP2Triangles(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
                                child->IntAttribute("Flag0"), child->IntAttribute("V10"), child->IntAttribute("V11"),
                                child->IntAttribute("V12"), child->IntAttribute("Flag1"));
+#else
+            g = gsSP1TriangleOTR(child->IntAttribute("V00"), child->IntAttribute("V01"), child->IntAttribute("V02"),
+                                 child->IntAttribute("Flag0"));
+            g.words.w0 &= 0xFF000000;
+            g.words.w0 |= child->IntAttribute("V00");
+            g.words.w1 |= child->IntAttribute("V01") << 16;
+            g.words.w1 |= child->IntAttribute("V02") << 0;
+
+            dl->Instructions.push_back(g);
+
+            g = gsSP1TriangleOTR(child->IntAttribute("V10"), child->IntAttribute("V11"), child->IntAttribute("V12"),
+                                 child->IntAttribute("Flag1"));
+            g.words.w0 &= 0xFF000000;
+            g.words.w0 |= child->IntAttribute("V10");
+            g.words.w1 |= child->IntAttribute("V11") << 16;
+            g.words.w1 |= child->IntAttribute("V12") << 0;
 #endif
         } else if (childName == "LoadVertices") {
             std::string fName = child->Attribute("Path");
@@ -487,9 +503,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
 
             if (fName[0] == '>' && fName[1] == '0' && (fName[2] == 'x' || fName[2] == 'X')) {
                 uint32_t seg = std::stoul(fName.substr(1), nullptr, 16);
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, seg | 1) };
+                g = { gsDPSetTextureImage(fmtVal, sizVal, width, seg | 1) };
             } else {
-                g = { gsDPSetTextureImage(fmtVal, sizVal, width + 1, 0) };
+                g = { gsDPSetTextureImage(fmtVal, sizVal, width, 0) };
                 g.words.w0 &= 0x00FFFFFF;
                 g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
                 char* str = (char*)malloc(fName.size() + 1);
@@ -934,7 +950,7 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             }
 
-            g = { gsDPSetTextureImage(fmt, siz, width + 1, 0) };
+            g = { gsDPSetTextureImage(fmt, siz, width, 0) };
             g.words.w0 &= 0x00FFFFFF;
             g.words.w0 += (G_SETTIMG_OTR_FILEPATH << 24);
             char* str = (char*)malloc(fName.size() + 1);

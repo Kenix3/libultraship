@@ -67,19 +67,14 @@ namespace Fast {
 
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
-const static std::unordered_map<Attribute, std::any> f3dex2AttrHandler = {
-    { MTX_PROJECTION, F3DEX2_G_MTX_PROJECTION }, { MTX_LOAD, F3DEX2_G_MTX_LOAD },     { MTX_PUSH, F3DEX2_G_MTX_PUSH },
-    { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },          { CULL_FRONT, F3DEX2_G_CULL_FRONT }, { CULL_BACK, F3DEX2_G_CULL_BACK },
-    { CULL_BOTH, F3DEX2_G_CULL_BOTH },
+const static uint32_t f3dex2AttrHandler[] = {
+    F3DEX2_G_MTX_PROJECTION, F3DEX2_G_MTX_LOAD,  F3DEX2_G_MTX_PUSH,  F3DEX_G_MTX_NOPUSH,
+    F3DEX2_G_CULL_FRONT,     F3DEX2_G_CULL_BACK, F3DEX2_G_CULL_BOTH,
 };
 
-const static std::unordered_map<Attribute, std::any> f3dexAttrHandler = { { MTX_PROJECTION, F3DEX_G_MTX_PROJECTION },
-                                                                          { MTX_LOAD, F3DEX_G_MTX_LOAD },
-                                                                          { MTX_PUSH, F3DEX_G_MTX_PUSH },
-                                                                          { MTX_NOPUSH, F3DEX_G_MTX_NOPUSH },
-                                                                          { CULL_FRONT, F3DEX_G_CULL_FRONT },
-                                                                          { CULL_BACK, F3DEX_G_CULL_BACK },
-                                                                          { CULL_BOTH, F3DEX_G_CULL_BOTH } };
+const static uint32_t f3dexAttrHandler[] = { F3DEX_G_MTX_PROJECTION, F3DEX_G_MTX_LOAD,   F3DEX_G_MTX_PUSH,
+                                             F3DEX_G_MTX_NOPUSH,     F3DEX_G_CULL_FRONT, F3DEX_G_CULL_BACK,
+                                             F3DEX_G_CULL_BOTH };
 
 static constexpr std::array ucode_attr_handlers = {
     &f3dexAttrHandler,  // ucode_f3db
@@ -90,10 +85,10 @@ static constexpr std::array ucode_attr_handlers = {
     &f3dex2AttrHandler, // ucode_s2dex
 };
 
-template <typename T> static constexpr T get_attr(Attribute attr) {
+static uint32_t get_attr(Attribute attr) {
     const auto ucode_map = ucode_attr_handlers[ucode_handler_index];
-    assert(ucode_map->contains(attr) && "Attribute not found in the current ucode handler");
-    return std::any_cast<T>(ucode_map->at(attr));
+    // assert(ucode_map->contains(attr) && "Attribute not found in the current ucode handler");
+    return (*ucode_map)[attr];
 }
 
 static std::string GetPathWithoutFileName(char* filePath) {
@@ -1094,9 +1089,9 @@ void Interpreter::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
 #endif
     }
 
-    const auto mtx_projection = get_attr<int8_t>(MTX_PROJECTION);
-    const auto mtx_load = get_attr<int8_t>(MTX_LOAD);
-    const auto mtx_push = get_attr<int8_t>(MTX_PUSH);
+    const int8_t mtx_projection = get_attr(MTX_PROJECTION);
+    const int8_t mtx_load = get_attr(MTX_LOAD);
+    const int8_t mtx_push = get_attr(MTX_PUSH);
 
     if (parameters & mtx_projection) {
         if (parameters & mtx_load) {
@@ -1370,9 +1365,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         return;
     }
 
-    const auto cull_both = get_attr<uint32_t>(CULL_BOTH);
-    const auto cull_front = get_attr<uint32_t>(CULL_FRONT);
-    const auto cull_back = get_attr<uint32_t>(CULL_BACK);
+    const uint32_t cull_both = get_attr(CULL_BOTH);
+    const uint32_t cull_front = get_attr(CULL_FRONT);
+    const uint32_t cull_back = get_attr(CULL_BACK);
 
     if ((mRsp->geometry_mode & cull_both) != 0) {
         float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
@@ -1890,10 +1885,17 @@ void Interpreter::GfxSpMovewordF3dex2(uint8_t index, uint16_t offset, uintptr_t 
             mRsp->fog_mul = (int16_t)(data >> 16);
             mRsp->fog_offset = (int16_t)data;
             break;
-        case G_MW_SEGMENT:
+        case G_MW_SEGMENT: {
             int segNumber = offset / 4;
             mSegmentPointers[segNumber] = data;
-            break;
+        } break;
+        case G_MW_SEGMENT_INTERP: {
+            int segNumber = offset % 16;
+            int segIndex = offset / 16;
+
+            if (segIndex == gInterpolationIndex)
+                mSegmentPointers[segNumber] = data;
+        } break;
     }
 }
 
@@ -1909,10 +1911,17 @@ void Interpreter::GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t dat
             mRsp->fog_mul = (int16_t)(data >> 16);
             mRsp->fog_offset = (int16_t)data;
             break;
-        case G_MW_SEGMENT:
+        case G_MW_SEGMENT: {
             int segNumber = offset / 4;
             mSegmentPointers[segNumber] = data;
-            break;
+        } break;
+        case G_MW_SEGMENT_INTERP: {
+            int segNumber = offset % 16;
+            int segIndex = offset / 16;
+
+            if (segIndex == gInterpolationIndex)
+                mSegmentPointers[segNumber] = data;
+        } break;
     }
 }
 
@@ -2088,7 +2097,7 @@ void Interpreter::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32
     uint32_t offset_y = ult >> G_TEXTURE_IMAGE_FRAC;
     uint32_t tile_width = ((lrs - uls) >> G_TEXTURE_IMAGE_FRAC) + 1;
     uint32_t tile_height = ((lrt - ult) >> G_TEXTURE_IMAGE_FRAC) + 1;
-    uint32_t full_image_width = mRdp->texture_to_load.width + 1;
+    uint32_t full_image_width = mRdp->texture_to_load.width;
 
     uint32_t offset_x_in_bytes = offset_x << word_size_shift;
     uint32_t tile_line_size_bytes = tile_width << word_size_shift;
@@ -2592,8 +2601,8 @@ void Interpreter::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
     int testY = (realY + (realH / realSH));
 
     GfxDpTextureRectangle(realX << 2, realY << 2, testX << 2, testY << 2, G_TX_RENDERTILE,
-                          mRdp->texture_tile[0].uls << 3, mRdp->texture_tile[0].ult << 3, (float)(1 << 10) * realSW,
-                          (float)(1 << 10) * realSH, false);
+                             (s32)mRdp->texture_tile[0].uls << 3, (s32)mRdp->texture_tile[0].ult << 3,
+                             (float)(1 << 10) * realSW, (float)(1 << 10) * realSH, false);
 }
 
 void* Interpreter::SegAddr(uintptr_t w1) {
@@ -3346,7 +3355,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
         }
     }
 
-    gfx->GfxDpSetTextureImage(C0(21, 3), C0(19, 2), C0(0, 10), imgData, texFlags, rawTexMetdata, (void*)i);
+    gfx->GfxDpSetTextureImage(C0(21, 3), C0(19, 2), C0(0, 12) + 1, imgData, texFlags, rawTexMetdata, (void*)i);
 
     return false;
 }
@@ -3399,7 +3408,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
         F3DGfx* cmd = (*cmd0);
         uint32_t fmt = C0(21, 3);
         uint32_t size = C0(19, 2);
-        uint32_t width = C0(0, 10);
+        uint32_t width = C0(0, 12) + 1;
 
         if (tex != NULL) {
             Interpreter* gfx = mInstance.lock().get();
@@ -3434,7 +3443,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
 
         uint32_t fmt = C0(21, 3);
         uint32_t size = C0(19, 2);
-        uint32_t width = C0(0, 10);
+        uint32_t width = C0(0, 12) + 1;
 
         gfx->GfxDpSetTextureImage(fmt, size, width, fileName, texFlags, rawTexMetadata,
                                   reinterpret_cast<char*>(texture->ImageData));
@@ -3598,6 +3607,33 @@ bool gfx_set_tile_size_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     gfx->GfxDpSetTileSize(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
+    return false;
+}
+
+bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    if (gInterpolationIndex == gInterpolationIndexTarget) {
+        int tile = C1(24, 3);
+        gfx_dp_set_tile_size(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
+        ++(*cmd0);
+        memcpy(&g_rdp.texture_tile[tile].uls, &(*cmd0)->words.w0, sizeof(float));
+        memcpy(&g_rdp.texture_tile[tile].ult, &(*cmd0)->words.w1, sizeof(float));
+        ++(*cmd0);
+        memcpy(&g_rdp.texture_tile[tile].lrs, &(*cmd0)->words.w0, sizeof(float));
+        memcpy(&g_rdp.texture_tile[tile].lrt, &(*cmd0)->words.w1, sizeof(float));
+    } else {
+        ++(*cmd0);
+        ++(*cmd0);
+    }
+
+    return false;
+}
+
+bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+
+    gInterpolationIndexTarget = cmd->words.w1;
     return false;
 }
 
@@ -3865,6 +3901,10 @@ class UcodeHandler {
 };
 
 static constexpr UcodeHandler rdpHandlers = {
+    { RDP_G_SETTARGETINTERPINDEX,
+      { "G_SETTARGETINTERPINDEX", gfx_set_interpolation_index_target } }, // G_SETTARGETINTERPINDEX
+    { RDP_G_SETTILESIZE_INTERP,
+      { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },            // G_SETTILESIZE_INTERP
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "mRdpLOADSYNC", gfx_stubbed_command_handler } },          // mRdpLOADSYNC (-26)
@@ -4147,7 +4187,7 @@ void Interpreter::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI*
     mNativeDimensions.width = SCREEN_WIDTH;
     mNativeDimensions.height = SCREEN_HEIGHT;
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < MAX_SEGMENT_POINTERS; i++) {
         mSegmentPointers[i] = 0;
     }
 

@@ -31,6 +31,10 @@ endif()
 option(GBI_UCODE "Specify the GBI ucode version" F3DEX_GBI_2)
 
 # =========== Dependencies =============
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    include(cmake/dependencies/windows-vcpkg.cmake)
+endif()
+
 include(cmake/dependencies/common.cmake)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")

@@ -8,14 +8,15 @@
 #ifdef __cplusplus
 #include "resource/type/Texture.h"
 #include "resource/Resource.h"
+#include <memory>
 
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name);
 std::shared_ptr<Ship::IResource> ResourceLoad(uint64_t crc);
 template <class T> std::shared_ptr<T> ResourceLoad(const char* name) {
-    return static_pointer_cast<T>(ResourceLoad(name));
+    return std::static_pointer_cast<T>(ResourceLoad(name));
 }
 template <class T> std::shared_ptr<T> ResourceLoad(uint64_t crc) {
-    return static_pointer_cast<T>(ResourceLoad(crc));
+    return std::static_pointer_cast<T>(ResourceLoad(crc));
 }
 
 extern "C" {

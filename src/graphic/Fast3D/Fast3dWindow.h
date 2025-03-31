@@ -1,5 +1,6 @@
 #pragma once
 #include "window/Window.h"
+#include "window/gui/Gui.h"
 #include "graphic/Fast3D/gfx_window_manager_api.h"
 #include "graphic/Fast3D/gfx_rendering_api.h"
 #include "public/bridge/gfxbridge.h"
@@ -13,6 +14,7 @@ class Fast3dWindow : public Ship::Window {
   public:
     Fast3dWindow();
     Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows);
+    Fast3dWindow(std::shared_ptr<Ship::Gui> gui);
     ~Fast3dWindow();
 
     void Init() override;

@@ -30,6 +30,7 @@ class Window {
   public:
     Window();
     Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
+    Window(std::shared_ptr<Gui> gui);
     ~Window();
 
     virtual void Init() = 0;
