@@ -29,7 +29,7 @@ union Gfx;
 
 namespace Fast {
 
-constexpr  size_t MAX_SEGMENT_POINTERS = 16;
+constexpr size_t MAX_SEGMENT_POINTERS = 16;
 
 struct GfxExecStack {
     // This is a dlist stack used to handle dlist calls.
@@ -414,6 +414,8 @@ class Interpreter {
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
     std::vector<std::string> shader_ids;
+    int mInterpolationIndex;
+    int mInterpolationIndexTarget;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);

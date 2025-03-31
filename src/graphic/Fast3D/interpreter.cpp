@@ -63,9 +63,6 @@ std::stack<std::string> currentDir;
 
 #define TEXTURE_CACHE_MAX_SIZE 500
 
-int gInterpolationIndex;
-int gInterpolationIndexTarget;
-
 namespace Fast {
 
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
@@ -1896,7 +1893,7 @@ void Interpreter::GfxSpMovewordF3dex2(uint8_t index, uint16_t offset, uintptr_t 
             int segNumber = offset % 16;
             int segIndex = offset / 16;
 
-            if (segIndex == gInterpolationIndex)
+            if (segIndex == mInterpolationIndex)
                 mSegmentPointers[segNumber] = data;
         } break;
     }
@@ -1922,7 +1919,7 @@ void Interpreter::GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t dat
             int segNumber = offset % 16;
             int segIndex = offset / 16;
 
-            if (segIndex == gInterpolationIndex)
+            if (segIndex == mInterpolationIndex)
                 mSegmentPointers[segNumber] = data;
         } break;
     }
@@ -2604,8 +2601,8 @@ void Interpreter::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
     int testY = (realY + (realH / realSH));
 
     GfxDpTextureRectangle(realX << 2, realY << 2, testX << 2, testY << 2, G_TX_RENDERTILE,
-                             (s32)mRdp->texture_tile[0].uls << 3, (s32)mRdp->texture_tile[0].ult << 3,
-                             (float)(1 << 10) * realSW, (float)(1 << 10) * realSH, false);
+                          (s32)mRdp->texture_tile[0].uls << 3, (s32)mRdp->texture_tile[0].ult << 3,
+                          (float)(1 << 10) * realSW, (float)(1 << 10) * realSH, false);
 }
 
 void* Interpreter::SegAddr(uintptr_t w1) {
@@ -3615,10 +3612,10 @@ bool gfx_set_tile_size_handler_rdp(F3DGfx** cmd0) {
 
 bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
+    Interpreter* gfx = mInstance.lock().get();
 
-    if (gInterpolationIndex == gInterpolationIndexTarget) {
+    if (gfx->mInterpolationIndex == gfx->mInterpolationIndexTarget) {
         int tile = C1(24, 3);
-        Interpreter* gfx = mInstance.lock().get();
         gfx->GfxDpSetTileSize(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
         ++(*cmd0);
         memcpy(&gfx->mRdp->texture_tile[tile].uls, &(*cmd0)->words.w0, sizeof(float));
@@ -3636,8 +3633,9 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
 
 bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
+    Interpreter* gfx = mInstance.lock().get();
 
-    gInterpolationIndexTarget = cmd->words.w1;
+    gfx->mInterpolationIndexTarget = cmd->words.w1;
     return false;
 }
 

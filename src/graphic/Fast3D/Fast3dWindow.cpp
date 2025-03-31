@@ -15,7 +15,6 @@ namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
 
-
 Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui) : Ship::Window(gui) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
