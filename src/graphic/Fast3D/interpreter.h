@@ -29,6 +29,8 @@ union Gfx;
 
 namespace Fast {
 
+constexpr  size_t MAX_SEGMENT_POINTERS = 16;
+
 struct GfxExecStack {
     // This is a dlist stack used to handle dlist calls.
     std::stack<F3DGfx*> cmd_stack = {};
@@ -395,7 +397,7 @@ class Interpreter {
     GfxWindowManagerAPI* mWapi = nullptr;
     GfxRenderingAPI* mRapi = nullptr;
 
-    uintptr_t mSegmentPointers[16]{};
+    uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};
 
     bool mFbActive{};
     bool mRendersToFb{}; // game_renders_to_framebuffer;
