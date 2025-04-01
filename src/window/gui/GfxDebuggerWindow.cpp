@@ -24,8 +24,8 @@ void GfxDebuggerWindow::InitElement() {
 }
 
 void GfxDebuggerWindow::UpdateElement() {
-    if (interpreter.lock() == nullptr) {
-        interpreter =
+    if (mInterpreter.lock() == nullptr) {
+        mInterpreter =
             dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetInterpreterWeak();
     }
 }
@@ -168,7 +168,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
 #else
             case F3DEX_G_DL: {
 #endif
-                F3DGfx* subGFX = (F3DGfx*)interpreter.lock()->SegAddr(cmd->words.w1);
+                F3DGfx* subGFX = (F3DGfx*)mInterpreter.lock()->SegAddr(cmd->words.w1);
                 if (C0(16, 1) == 0) {
                     nodeWithText(cmd0, fmt::format("G_DL: 0x{:x} -> {}", cmd->words.w1, (void*)subGFX), subGFX);
                     cmd++;
@@ -251,7 +251,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 uint8_t segNum = (uint8_t)(cmd->words.w1 >> 24);
                 uint32_t index = (uint32_t)(cmd->words.w1 & 0x00FFFFFF);
                 uintptr_t segAddr = (segNum << 24) | (index * sizeof(F3DGfx)) + 1;
-                F3DGfx* subGFX = (F3DGfx*)interpreter.lock()->SegAddr(segAddr);
+                F3DGfx* subGFX = (F3DGfx*)mInterpreter.lock()->SegAddr(segAddr);
 
                 if (C0(16, 1) == 0) {
                     nodeWithText(cmd0, fmt::format("G_DL_INDEX: 0x{:x} -> {}", segAddr, (void*)subGFX), subGFX);
@@ -638,7 +638,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
             ImGui::Text("Loaded Textures");
             for (size_t i = 0; i < 2; i++) {
-                auto& tex = interpreter.lock()->mRdp->loaded_texture[i];
+                auto& tex = mInterpreter.lock()->mRdp->loaded_texture[i];
                 // ImGui::Text("%s", fmt::format("{}: {}x{} type={}", i, tex.raw_tex_metadata.width,
                 //                               tex.raw_tex_metadata.height, getTexType(tex.raw_tex_metadata.type))
                 //                       .c_str());
@@ -646,7 +646,7 @@ void GfxDebuggerWindow::DrawDisas() {
             }
             ImGui::Text("Texture To Load");
             {
-                auto& tex = interpreter.lock()->mRdp->texture_to_load;
+                auto& tex = mInterpreter.lock()->mRdp->texture_to_load;
                 // ImGui::Text("%s", fmt::format("{}x{} type={}", tex.raw_tex_metadata.width,
                 // tex.raw_tex_metadata.height,
                 //                               getTexType(tex.raw_tex_metadata.type))
@@ -674,11 +674,11 @@ void GfxDebuggerWindow::DrawDisas() {
                 ImGui::ColorEdit3(text, cf, ImGuiColorEditFlags_NoInputs);
             };
 
-            showColor("Env Color", interpreter.lock()->mRdp->env_color);
-            showColor("Prim Color", interpreter.lock()->mRdp->prim_color);
-            showColor("Fog Color", interpreter.lock()->mRdp->fog_color);
-            showColor("Fill Color", interpreter.lock()->mRdp->fill_color);
-            showColor("Grayscale Color", interpreter.lock()->mRdp->grayscale_color);
+            showColor("Env Color", mInterpreter.lock()->mRdp->env_color);
+            showColor("Prim Color", mInterpreter.lock()->mRdp->prim_color);
+            showColor("Fog Color", mInterpreter.lock()->mRdp->fog_color);
+            showColor("Fill Color", mInterpreter.lock()->mRdp->fill_color);
+            showColor("Grayscale Color", mInterpreter.lock()->mRdp->grayscale_color);
         }
 
         ImGui::EndGroup();
