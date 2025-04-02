@@ -6,11 +6,14 @@
 #include <stack>
 #include <spdlog/fmt/fmt.h>
 #include "libultraship/bridge.h"
-#include <graphic/Fast3D/gfx_pc.h>
+#include <graphic/Fast3D/interpreter.h>
+#include <graphic/Fast3D/Fast3dWindow.h>
 #include <optional>
 #ifdef GFX_DEBUG_DISASSEMBLER
 #include <gfxd.h>
 #endif
+
+using namespace Fast;
 
 namespace LUS {
 
@@ -21,29 +24,15 @@ void GfxDebuggerWindow::InitElement() {
 }
 
 void GfxDebuggerWindow::UpdateElement() {
+    if (mInterpreter.lock() == nullptr) {
+        mInterpreter =
+            dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetInterpreterWeak();
+    }
 }
 
 // LUSTODO handle switching ucodes
 static const char* GetOpName(int8_t op) {
     return GfxGetOpcodeName(op);
-}
-
-static inline void* seg_addr(uintptr_t w1) {
-    // Segmented?
-    if (w1 & 1) {
-        uint32_t segNum = (w1 >> 24);
-
-        uint32_t offset = w1 & 0x00FFFFFE;
-        // offset = 0; // Cursed Malon bug
-
-        if (gSegmentPointers[segNum] != 0) {
-            return (void*)(gSegmentPointers[segNum] + offset);
-        } else {
-            return (void*)w1;
-        }
-    } else {
-        return (void*)w1;
-    }
 }
 
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
@@ -179,7 +168,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
 #else
             case F3DEX_G_DL: {
 #endif
-                F3DGfx* subGFX = (F3DGfx*)seg_addr(cmd->words.w1);
+                F3DGfx* subGFX = (F3DGfx*)mInterpreter.lock()->SegAddr(cmd->words.w1);
                 if (C0(16, 1) == 0) {
                     nodeWithText(cmd0, fmt::format("G_DL: 0x{:x} -> {}", cmd->words.w1, (void*)subGFX), subGFX);
                     cmd++;
@@ -262,7 +251,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 uint8_t segNum = (uint8_t)(cmd->words.w1 >> 24);
                 uint32_t index = (uint32_t)(cmd->words.w1 & 0x00FFFFFF);
                 uintptr_t segAddr = (segNum << 24) | (index * sizeof(F3DGfx)) + 1;
-                F3DGfx* subGFX = (F3DGfx*)seg_addr(segAddr);
+                F3DGfx* subGFX = (F3DGfx*)mInterpreter.lock()->SegAddr(segAddr);
 
                 if (C0(16, 1) == 0) {
                     nodeWithText(cmd0, fmt::format("G_DL_INDEX: 0x{:x} -> {}", segAddr, (void*)subGFX), subGFX);
@@ -649,7 +638,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
             ImGui::Text("Loaded Textures");
             for (size_t i = 0; i < 2; i++) {
-                auto& tex = g_rdp.loaded_texture[i];
+                auto& tex = mInterpreter.lock()->mRdp->loaded_texture[i];
                 // ImGui::Text("%s", fmt::format("{}: {}x{} type={}", i, tex.raw_tex_metadata.width,
                 //                               tex.raw_tex_metadata.height, getTexType(tex.raw_tex_metadata.type))
                 //                       .c_str());
@@ -657,7 +646,7 @@ void GfxDebuggerWindow::DrawDisas() {
             }
             ImGui::Text("Texture To Load");
             {
-                auto& tex = g_rdp.texture_to_load;
+                auto& tex = mInterpreter.lock()->mRdp->texture_to_load;
                 // ImGui::Text("%s", fmt::format("{}x{} type={}", tex.raw_tex_metadata.width,
                 // tex.raw_tex_metadata.height,
                 //                               getTexType(tex.raw_tex_metadata.type))
@@ -685,11 +674,11 @@ void GfxDebuggerWindow::DrawDisas() {
                 ImGui::ColorEdit3(text, cf, ImGuiColorEditFlags_NoInputs);
             };
 
-            showColor("Env Color", g_rdp.env_color);
-            showColor("Prim Color", g_rdp.prim_color);
-            showColor("Fog Color", g_rdp.fog_color);
-            showColor("Fill Color", g_rdp.fill_color);
-            showColor("Grayscale Color", g_rdp.grayscale_color);
+            showColor("Env Color", mInterpreter.lock()->mRdp->env_color);
+            showColor("Prim Color", mInterpreter.lock()->mRdp->prim_color);
+            showColor("Fog Color", mInterpreter.lock()->mRdp->fog_color);
+            showColor("Fill Color", mInterpreter.lock()->mRdp->fill_color);
+            showColor("Grayscale Color", mInterpreter.lock()->mRdp->grayscale_color);
         }
 
         ImGui::EndGroup();

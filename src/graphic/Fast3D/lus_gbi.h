@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+namespace Fast {
 #define OPCODE(x) (int8_t)(x)
 
 #include "f3dex.h"
@@ -1354,5 +1355,5 @@ typedef struct {
     F3DuObjTxtr txtr;
     F3DuObjSprite sprite;
 } F3DuObjTxSprite; /* 48 bytes */
-
+}
 #endif

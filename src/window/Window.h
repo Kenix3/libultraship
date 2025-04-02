@@ -42,6 +42,7 @@ class Window {
     virtual void SetCursorVisibility(bool visible) = 0;
     virtual uint32_t GetWidth() = 0;
     virtual uint32_t GetHeight() = 0;
+    virtual float GetAspectRatio() = 0;
     virtual int32_t GetPosX() = 0;
     virtual int32_t GetPosY() = 0;
     virtual void SetMousePos(Coords pos) = 0;
@@ -60,6 +61,7 @@ class Window {
     virtual bool IsFullscreen() = 0;
     virtual bool IsRunning() = 0;
     virtual const char* GetKeyName(int32_t scancode) = 0;
+    virtual uintptr_t GetGfxFrameBuffer() = 0;
 
     WindowBackend GetWindowBackend();
     std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
