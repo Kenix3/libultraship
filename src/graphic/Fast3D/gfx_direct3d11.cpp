@@ -834,7 +834,6 @@ static void gfx_d3d11_end_frame() {
 }
 
 static void gfx_d3d11_finish_render() {
-    d3d.context->Flush();
 }
 
 int gfx_d3d11_create_framebuffer() {
