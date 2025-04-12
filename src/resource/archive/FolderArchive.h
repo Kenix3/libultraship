@@ -20,9 +20,9 @@ class FolderArchive : virtual public Archive {
 
     bool Open();
     bool Close();
-	bool WriteFile(const std::string& filename, const std::vector<uint8_t>& data);
-	std::shared_ptr<File> LoadFile(const std::string& filePath);
-	std::shared_ptr<File> LoadFile(uint64_t hash);
+    bool WriteFile(const std::string& filename, const std::vector<uint8_t>& data);
+    std::shared_ptr<File> LoadFile(const std::string& filePath);
+    std::shared_ptr<File> LoadFile(uint64_t hash);
 
   protected:
     std::shared_ptr<File> LoadFileRaw(const std::string& filePath);
