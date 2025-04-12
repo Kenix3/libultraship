@@ -29,6 +29,6 @@ class FolderArchive : virtual public Archive {
     std::shared_ptr<File> LoadFileRaw(uint64_t hash);
 
   private:
-    std::string archiveBasePath;
+    std::string mArchiveBasePath;
 };
 } // namespace Ship

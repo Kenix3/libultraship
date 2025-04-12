@@ -10,7 +10,7 @@
 
 namespace Ship {
 FolderArchive::FolderArchive(const std::string& archivePath) : Archive(archivePath) {
-    archiveBasePath = archivePath + "/";
+    mArchiveBasePath = archivePath + "/";
 }
 
 Ship::FolderArchive::~FolderArchive() {
@@ -19,10 +19,10 @@ Ship::FolderArchive::~FolderArchive() {
 
 bool FolderArchive::Open() {
 
-    auto fileEntries = Directory::ListFiles(archiveBasePath);
+    auto fileEntries = Directory::ListFiles(mArchiveBasePath);
 
     for (auto i = 0; i < fileEntries.size(); i++) {
-        auto filePath = StringHelper::Split(fileEntries[i], archiveBasePath)[1];
+        auto filePath = StringHelper::Split(fileEntries[i], mArchiveBasePath)[1];
         IndexFile(filePath);
     }
 
@@ -34,7 +34,7 @@ bool FolderArchive::Close() {
 }
 
 bool FolderArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
-    Ship::FileHelper::WriteAllBytes(archiveBasePath + filename, data);
+    Ship::FileHelper::WriteAllBytes(mArchiveBasePath + filename, data);
     return true;
 }
 
@@ -50,8 +50,8 @@ std::shared_ptr<File> Ship::FolderArchive::LoadFile(uint64_t hash) {
 }
 
 std::shared_ptr<File> FolderArchive::LoadFileRaw(const std::string& filePath) {
-    if (Ship::FileHelper::Exists(archiveBasePath + filePath)) {
-        auto data = Ship::FileHelper::ReadAllBytes(archiveBasePath + filePath);
+    if (Ship::FileHelper::Exists(mArchiveBasePath + filePath)) {
+        auto data = Ship::FileHelper::ReadAllBytes(mArchiveBasePath + filePath);
         auto fileToLoad = std::make_shared<File>();
 
         fileToLoad->Buffer = std::make_shared<std::vector<char>>(data.size());
