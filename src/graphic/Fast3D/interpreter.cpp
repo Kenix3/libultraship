@@ -52,14 +52,14 @@ std::stack<std::string> currentDir;
 #define SCALE_8_3(VAL_) ((VAL_) / 0x24)
 
 // Based off the current set native dimensions or active framebuffer
-#define HALF_SCREEN_WIDTH(activeFb, dims) ((mFbActive ? activeFb->second.orig_width : mNativeDimensions.width) / 2)
-#define HALF_SCREEN_HEIGHT(activeFb, dims) ((mFbActive ? activeFb->second.orig_height : mNativeDimensions.height) / 2)
+#define HALF_SCREEN_WIDTH(activeFb) ((mFbActive ? activeFb->second.orig_width : mNativeDimensions.width) / 2)
+#define HALF_SCREEN_HEIGHT(activeFb) ((mFbActive ? activeFb->second.orig_height : mNativeDimensions.height) / 2)
 
 // Ratios for current window dimensions or active framebuffer scaled size
 #define RATIO_X(activeFb, dims) \
-    ((mFbActive ? activeFb->second.applied_width : dims.width) / (2.0f * HALF_SCREEN_WIDTH(activeFb, dims)))
+    ((mFbActive ? activeFb->second.applied_width : dims.width) / (2.0f * HALF_SCREEN_WIDTH(activeFb)))
 #define RATIO_Y(activeFb, dims) \
-    ((mFbActive ? activeFb->second.applied_height : dims.height) / (2.0f * HALF_SCREEN_HEIGHT(activeFb, dims)))
+    ((mFbActive ? activeFb->second.applied_height : dims.height) / (2.0f * HALF_SCREEN_HEIGHT(activeFb)))
 
 #define TEXTURE_CACHE_MAX_SIZE 500
 
@@ -2252,10 +2252,10 @@ void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_
     float lrxf = lrx;
     float lryf = lry;
 
-    ulxf = ulxf / (4.0f * HALF_SCREEN_WIDTH(mActiveFrameBuffer, mCurDimensions)) - 1.0f;
-    ulyf = -(ulyf / (4.0f * HALF_SCREEN_HEIGHT(mActiveFrameBuffer, mCurDimensions))) + 1.0f;
-    lrxf = lrxf / (4.0f * HALF_SCREEN_WIDTH(mActiveFrameBuffer, mCurDimensions)) - 1.0f;
-    lryf = -(lryf / (4.0f * HALF_SCREEN_HEIGHT(mActiveFrameBuffer, mCurDimensions))) + 1.0f;
+    ulxf = ulxf / (4.0f * HALF_SCREEN_WIDTH(mActiveFrameBuffer)) - 1.0f;
+    ulyf = -(ulyf / (4.0f * HALF_SCREEN_HEIGHT(mActiveFrameBuffer))) + 1.0f;
+    lrxf = lrxf / (4.0f * HALF_SCREEN_WIDTH(mActiveFrameBuffer)) - 1.0f;
+    lryf = -(lryf / (4.0f * HALF_SCREEN_HEIGHT(mActiveFrameBuffer))) + 1.0f;
 
     ulxf = AdjXForAspectRatio(ulxf);
     lrxf = AdjXForAspectRatio(lrxf);
@@ -4268,9 +4268,9 @@ void Interpreter::StartFrame() {
 
     mPrvDimensions = mCurDimensions;
     mPrevNativeDimensions = mNativeDimensions;
-    if (ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
+    if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
         mRendersToFb = true;
-        if (ViewportMatchesRendererResolution()) {
+        if (!ViewportMatchesRendererResolution()) {
             mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
                                                  true, true, true);
         } else {
@@ -4341,7 +4341,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
         mRapi->start_draw_to_framebuffer(0, 1);
         mRapi->clear_framebuffer(true, true);
         if (mMsaaLevel > 1) {
-            if (ViewportMatchesRendererResolution()) {
+            if (!ViewportMatchesRendererResolution()) {
                 mRapi->resolve_msaa_color_buffer(mGameFbMsaaResolved, mGameFb);
                 mGfxFrameBuffer = (uintptr_t)mRapi->get_framebuffer_texture_id(mGameFbMsaaResolved);
             } else {
