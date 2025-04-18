@@ -6,11 +6,10 @@
 #include <mutex>
 #include "utils/binarytools/BinaryReader.h"
 
-namespace tinyxml2
-{
-	class XMLDocument;
-	class XMLElement;
-}
+namespace tinyxml2 {
+class XMLDocument;
+class XMLElement;
+} // namespace tinyxml2
 
 namespace Ship {
 #define OTR_HEADER_SIZE ((size_t)64)

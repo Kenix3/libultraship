@@ -20,7 +20,6 @@
 #include <pwd.h>
 #endif
 
-
 namespace Ship {
 std::weak_ptr<Context> Context::mContext;
 

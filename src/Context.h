@@ -7,25 +7,23 @@
 #include <unordered_map>
 #include "audio/Audio.h"
 
-namespace spdlog
-{
-	class logger;
+namespace spdlog {
+class logger;
 }
 
-namespace Fast
-{
-	class GfxDebugger;
+namespace Fast {
+class GfxDebugger;
 }
 
 namespace Ship {
 
-	class Console;
-	class ConsoleVariable;
-	class ControlDeck;
-	class CrashHandler;
-	class Window;
-	class Config;
-	class ResourceManager;
+class Console;
+class ConsoleVariable;
+class ControlDeck;
+class CrashHandler;
+class Window;
+class Config;
+class ResourceManager;
 
 class Context {
   public:
