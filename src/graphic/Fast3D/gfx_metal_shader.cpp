@@ -18,7 +18,7 @@
 #include <public/bridge/consolevariablebridge.h>
 #include "gfx_metal_shader.h"
 #include <prism/processor.h>
-#include "ResourceManager.h"
+#include "resource/ResourceManager.h"
 
 // MARK: - String Helpers
 
