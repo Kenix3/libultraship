@@ -29,6 +29,7 @@
 #include "window/gui/Gui.h"
 #include "Context.h"
 #include "config/ConsoleVariable.h"
+#include "window/Window.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"

@@ -1,6 +1,8 @@
 #include "Fast3dWindow.h"
 
 #include "Context.h"
+#include "config/Config.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "graphic/Fast3D/interpreter.h"
 #include "graphic/Fast3D/gfx_sdl.h"

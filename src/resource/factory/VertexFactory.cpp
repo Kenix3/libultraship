@@ -2,6 +2,7 @@
 #include "resource/type/Vertex.h"
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
+#include <tinyxml2.h>
 
 namespace Fast {
 std::shared_ptr<Ship::IResource>

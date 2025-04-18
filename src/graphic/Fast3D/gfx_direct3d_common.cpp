@@ -8,6 +8,9 @@
 #include <public/bridge/consolevariablebridge.h>
 #include <resource/factory/ShaderFactory.h>
 #include <Context.h>
+#include <resource/ResourceManager.h>
+#include "spdlog/spdlog.h"
+#include "nlohmann/json.hpp"
 
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 

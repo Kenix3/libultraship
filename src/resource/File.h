@@ -5,9 +5,13 @@
 #include <vector>
 #include <memory>
 #include <stdint.h>
-#include <tinyxml2.h>
 #include "resource/ResourceType.h"
 #include "utils/binarytools/BinaryReader.h"
+
+namespace tinyxml2 {
+class XMLDocument;
+class XMLElement;
+} // namespace tinyxml2
 
 namespace Ship {
 class Archive;
