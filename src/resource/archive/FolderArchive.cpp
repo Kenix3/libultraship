@@ -7,6 +7,7 @@
 #include "Context.h"
 #include "spdlog/spdlog.h"
 #include "utils/filesystemtools/FileHelper.h"
+#include "resource/ResourceManager.h"
 
 namespace Ship {
 FolderArchive::FolderArchive(const std::string& archivePath) : Archive(archivePath) {
