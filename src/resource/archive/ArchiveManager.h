@@ -38,7 +38,7 @@ class ArchiveManager {
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask = "");
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::list<std::string>& includes,
                                                         const std::list<std::string>& excludes);
-    std::shared_ptr<std::vector<std::string>> ListDirectories(const std::string& pattern = "");
+    std::shared_ptr<std::vector<std::string>> ListDirectories(const std::string& searchMask = "");
     std::vector<uint32_t> GetGameVersions();
     const std::string* HashToString(uint64_t hash) const;
     bool IsGameVersionValid(uint32_t gameVersion);
