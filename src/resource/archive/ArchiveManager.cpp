@@ -109,7 +109,7 @@ std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::l
     return list;
 }
 
-std::shared_ptr<std::vector<std::string>> ArchiveManager::ListDirectories(const std::string& pattern) {
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListDirectories(const std::string& searchMask) {
     auto list = std::make_shared<std::vector<std::string>>();
     for (const std::string& dir : mDirectories) {
         if (glob_match(pattern.c_str(), dir.c_str())) {
