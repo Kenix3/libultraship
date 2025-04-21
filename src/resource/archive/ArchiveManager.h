@@ -38,6 +38,7 @@ class ArchiveManager {
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::string& searchMask = "");
     std::shared_ptr<std::vector<std::string>> ListFiles(const std::list<std::string>& includes,
                                                         const std::list<std::string>& excludes);
+    std::shared_ptr<std::vector<std::string>> ListDirectories(const std::string& pattern);
     std::vector<uint32_t> GetGameVersions();
     const std::string* HashToString(uint64_t hash) const;
     bool IsGameVersionValid(uint32_t gameVersion);
@@ -52,6 +53,7 @@ class ArchiveManager {
     std::vector<uint32_t> mGameVersions;
     std::unordered_set<uint32_t> mValidGameVersions;
     std::unordered_map<uint64_t, std::string> mHashes;
+    std::unordered_set<std::string> mDirectories;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
 };
 } // namespace Ship
