@@ -297,6 +297,7 @@ void CrashHandler::PrintRegisters(CONTEXT* ctx) {
 }
 
 void CrashHandler::PrintStack(CONTEXT* ctx) {
+    #if 0
     BOOL result;
     HANDLE process;
     HANDLE thread;
@@ -387,6 +388,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     PrintCommon();
     Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
+    #endif
 }
 
 extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
