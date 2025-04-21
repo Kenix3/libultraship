@@ -109,6 +109,16 @@ std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::l
     return list;
 }
 
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListDirectories(const std::string& pattern) {
+    auto list = std::make_shared<std::vector<std::string>>();
+    for (const std::string& dir : mDirectories) {
+        if (glob_match(pattern.c_str(), dir.c_str())) {
+            list->push_back(dir);
+        }
+    }
+    return list;
+}
+
 std::vector<uint32_t> ArchiveManager::GetGameVersions() {
     return mGameVersions;
 }
