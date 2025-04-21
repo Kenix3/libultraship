@@ -267,6 +267,12 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     for (auto& [hash, filename] : *fileList.get()) {
         mHashes[hash] = filename;
         mFileToArchive[hash] = archive;
+
+        size_t lastSlash = filename.find_last_of('/');
+        if (lastSlash != std::string::npos) {
+            std::string dir = filename.substr(0, lastSlash);
+            mDirectories.insert(dir);
+        }
     }
     return archive;
 }
