@@ -160,7 +160,7 @@ static const u64 CRC64_Table[256] = {
     CONST64(0x5dedc41a34bbeeb2), CONST64(0x1f1d25f19d51d821), CONST64(0xd80c07cd676f8394), CONST64(0x9afce626ce85b507)
 };
 
-uint64_t update_crc64(const void* buf, unint len, u64 crc) {
+__declspec(no_sanitize_address) uint64_t update_crc64(const void* buf, unint len, u64 crc) {
     const u8* b = (const u8*)buf;
     unint i;
     for (i = 0; i < len; i++) {
@@ -169,11 +169,11 @@ uint64_t update_crc64(const void* buf, unint len, u64 crc) {
     return ~crc;
 }
 
-u64 crc64(const void* buf, unint len) {
+__declspec(no_sanitize_address) u64 crc64(const void* buf, unint len) {
     return update_crc64(buf, len, INITIAL_CRC64);
 }
 
-u64 CRC64(const char* t) {
+__declspec(no_sanitize_address) u64 CRC64(const char* t) {
     u64 crc = INITIAL_CRC64;
     const u8* s = (const u8*)t;
     while (*s) {
