@@ -97,7 +97,6 @@ bool O2rArchive::Close() {
 }
 
 bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
-    SPDLOG_INFO("Writing file");
     if (!mZipArchive) {
         SPDLOG_ERROR("Cannot write to ZIP: Archive is not open.");
         return false;
@@ -116,7 +115,7 @@ bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_
         zip_source_free(source);
         return false;
     }
-    SPDLOG_INFO("Success wrote file");
+    SPDLOG_INFO("Successfully wrote file: {}", filename);
 
     // Save changes to disk
     if (zip_close(mZipArchive) < 0) {
