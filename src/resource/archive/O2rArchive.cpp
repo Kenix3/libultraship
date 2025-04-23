@@ -123,7 +123,7 @@ bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_
         SPDLOG_ERROR("Failed to save changes to zip archive: {} ({})",
                     zip_error_strerror(error),
                     zip_error_code_zip(error));
-        zip_discard(mZipArchive); // Optional, if not already discarded
+        zip_discard(mZipArchive); // Close zip and discard changes
         return false;
     }
 
