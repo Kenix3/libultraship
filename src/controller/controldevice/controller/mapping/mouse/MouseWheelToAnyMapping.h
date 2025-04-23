@@ -7,7 +7,7 @@ namespace Ship {
 class MouseWheelToAnyMapping : virtual public ControllerInputMapping {
   public:
     MouseWheelToAnyMapping(WheelDirection wheelDirection);
-    ~MouseWheelToAnyMapping();
+    virtual ~MouseWheelToAnyMapping();
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;
 

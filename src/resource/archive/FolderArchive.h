@@ -13,7 +13,7 @@
 namespace Ship {
 struct File;
 
-class FolderArchive : virtual public Archive {
+class FolderArchive final : virtual public Archive {
   public:
     FolderArchive(const std::string& archivePath);
     ~FolderArchive();

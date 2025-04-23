@@ -14,7 +14,7 @@ namespace Ship {
 class InputEditorWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
-    ~InputEditorWindow();
+    virtual ~InputEditorWindow();
 
     void DrawInputChip(const char* buttonName, ImVec4 color);
     void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);

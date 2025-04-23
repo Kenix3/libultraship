@@ -7,7 +7,7 @@ namespace Ship {
 class SDLAxisDirectionToAnyMapping : virtual public ControllerInputMapping {
   public:
     SDLAxisDirectionToAnyMapping(int32_t sdlControllerAxis, int32_t axisDirection);
-    ~SDLAxisDirectionToAnyMapping();
+    virtual ~SDLAxisDirectionToAnyMapping();
     std::string GetPhysicalInputName() override;
     std::string GetPhysicalDeviceName() override;
     bool AxisIsTrigger();

@@ -15,7 +15,7 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
   public:
     ControllerAxisDirectionMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, StickIndex stickIndex,
                                    Direction direction);
-    ~ControllerAxisDirectionMapping();
+    virtual ~ControllerAxisDirectionMapping();
     virtual float GetNormalizedAxisDirectionValue() = 0;
     virtual int8_t GetMappingType();
 

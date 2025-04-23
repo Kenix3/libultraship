@@ -69,7 +69,7 @@ class Gui {
   public:
     Gui();
     Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
-    ~Gui();
+    virtual ~Gui();
 
     void Init(GuiWindowInitData windowImpl);
     void StartDraw();
