@@ -99,7 +99,7 @@ bool O2rArchive::Close() {
 bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
     printf("Writing file\n");
     if (!mZipArchive) {
-        SPDLOG_ERROR("Cannot write to ZIP: Archive is not open.");
+        SPDLOG_ERROR("Cannot write to zip: Archive is not open.");
         return false;
     }
 
@@ -110,35 +110,29 @@ bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_
         return false;
     }
 
-    // Add or replace the file in the ZIP archive
-    zip_int64_t index = zip_name_locate(mZipArchive, filename.c_str(), 0);
-    if (index >= 0) {
-        // File exists, replace it
-        if (zip_file_replace(mZipArchive, index, source, ZIP_FL_OVERWRITE) < 0) {
-            SPDLOG_ERROR("Failed to replace file \"{}\" in ZIP", filename);
-            zip_source_free(source);
-            return false;
-        }
-    } else {
-        // File doesn't exist, add it
-        if (zip_file_add(mZipArchive, filename.c_str(), source, ZIP_FL_ENC_UTF_8) < 0) {
-            SPDLOG_ERROR("Failed to add file \"{}\" to ZIP", filename);
-            zip_source_free(source);
-            return false;
-        }
-    }
-    printf("Success wrote file\n");
-
-    // Save changes to disk
-    if (zip_close(mZipArchive) < 0) {
-        SPDLOG_ERROR("Failed to save changes to ZIP archive.");
+    // Add or replace the file in the zip archive
+    if (zip_file_add(mZipArchive, filename.c_str(), source, ZIP_FL_ENC_UTF_8 | ZIP_FL_OVERWRITE) < 0) {
+        SPDLOG_ERROR("Failed to add file \"{}\" to ZIP", filename);
+        zip_source_free(source);
         return false;
     }
 
-    // Reopen the zip file for reading
+    // Save changes to disk
+    if (zip_close(mZipArchive) < 0) {
+        zip_error_t* error = zip_get_error(mZipArchive);
+        SPDLOG_ERROR("Failed to save changes to zip archive: {} ({})",
+                    zip_error_strerror(error),
+                    zip_error_code_zip(error));
+        zip_discard(mZipArchive); // Optional, if not already discarded
+        return false;
+    }
+
+    SPDLOG_INFO("Successfully wrote file: {}", filename);
+
+    // Reopen the zip file so that it may continued to be used by libultraship
     mZipArchive = zip_open(GetPath().c_str(), ZIP_CREATE, nullptr);
     if (mZipArchive == nullptr) {
-        SPDLOG_ERROR("Failed to reopen ZIP file after writing.");
+        SPDLOG_ERROR("Failed to reopen zip file after writing.");
         return false;
     }
 
