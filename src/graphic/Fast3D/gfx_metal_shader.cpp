@@ -18,7 +18,8 @@
 #include <public/bridge/consolevariablebridge.h>
 #include "gfx_metal_shader.h"
 #include <prism/processor.h>
-
+#include "resource/ResourceManager.h"
+#include "spdlog/spdlog.h"
 // MARK: - String Helpers
 
 #define RAND_NOISE                                                                                                  \

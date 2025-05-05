@@ -9,7 +9,9 @@
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/glob.h"
 #include "utils/StrHash64.h"
+#include "window/Window.h"
 #include <nlohmann/json.hpp>
+#include <tinyxml2.h>
 
 namespace Ship {
 Archive::Archive(const std::string& path)

@@ -10,6 +10,7 @@
 
 #include "Context.h"
 #include "config/ConsoleVariable.h"
+#include "controller/controldeck/ControlDeck.h"
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
