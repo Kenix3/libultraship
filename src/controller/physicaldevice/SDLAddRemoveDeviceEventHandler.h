@@ -7,7 +7,7 @@ namespace Ship {
 class SDLAddRemoveDeviceEventHandler : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
-    ~SDLAddRemoveDeviceEventHandler();
+    virtual ~SDLAddRemoveDeviceEventHandler();
 
   protected:
     void InitElement() override;

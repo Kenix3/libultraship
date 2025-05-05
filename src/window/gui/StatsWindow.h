@@ -6,7 +6,7 @@ namespace Ship {
 class StatsWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
-    ~StatsWindow();
+    virtual ~StatsWindow();
 
   private:
     void InitElement() override;
