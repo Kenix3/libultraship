@@ -11,7 +11,9 @@
 #include "debug/CrashHandler.h"
 
 #ifdef _WIN32
+#include <libloaderapi.h>
 #include <tchar.h>
+#include <windows.h>
 #endif
 
 #ifdef __APPLE__
@@ -405,6 +407,23 @@ std::string Context::GetAppBundlePath() {
 
         // Find the last '/' and remove everything after it
         long unsigned int lastSlash = progpath.find_last_of("/");
+        if (lastSlash != std::string::npos) {
+            progpath.erase(lastSlash);
+        }
+
+        return progpath;
+    }
+#endif
+
+#ifdef _WIN32
+    std::string progpath(MAX_PATH, '\0');
+
+    int len = GetModuleFileNameA(NULL, &progpath[0], progpath.size());
+    if (len != 0 && len < progpath.size()) {
+        progpath.resize(len);
+
+        // Find the last '\' and remove everything after it
+        long unsigned int lastSlash = progpath.find_last_of("\\");
         if (lastSlash != std::string::npos) {
             progpath.erase(lastSlash);
         }
