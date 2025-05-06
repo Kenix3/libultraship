@@ -57,6 +57,7 @@ class Config {
     void SetUInt(const std::string& key, uint32_t value);
     void Erase(const std::string& key);
     void EraseBlock(const std::string& key);
+    void SetBlock(const std::string& key, nlohmann::json block);
     void Copy(const std::string& fromKey, const std::string& toKey);
     bool Contains(const std::string& key);
     void Reload();
