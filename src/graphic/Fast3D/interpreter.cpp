@@ -27,8 +27,8 @@
 #include "interpreter.h"
 #include "gfx_cc.h"
 #include "lus_gbi.h"
-#include "gfx_window_manager_api.h"
-#include "gfx_rendering_api.h"
+#include "backends/gfx_window_manager_api.h"
+#include "backends/gfx_rendering_api.h"
 
 #include "window/gui/Gui.h"
 #include "resource/ResourceManager.h"
@@ -4167,14 +4167,14 @@ void Interpreter::SpReset() {
 }
 
 void Interpreter::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
-    mWapi->get_dimensions(width, height, posX, posY);
+    mWapi->GetDimensions(width, height, posX, posY);
 }
 
-void Interpreter::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
+void Interpreter::Init(struct GfxBackend* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
                        bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY) {
     mWapi = wapi;
     mRapi = rapi;
-    mWapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
+    mWapi->Init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
     mRapi->init();
     mRapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
     mCurDimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
@@ -4205,7 +4205,7 @@ void Interpreter::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI*
 void Interpreter::Destroy() {
     // TODO: should also destroy rapi, and any other resources acquired in fast3d
     free(mTexUploadBuffer);
-    mWapi->destroy();
+    mWapi->Destroy();
 
     // Texture cache and loaded textures store references to Resources which need to be unreferenced.
     TextureCacheClear();
@@ -4219,7 +4219,7 @@ GfxRenderingAPI* Interpreter::GetCurrentRenderingAPI() {
 }
 
 void Interpreter::HandleWindowEvents() {
-    mWapi->handle_events();
+    mWapi->HandleEvents();
 }
 
 bool Interpreter::IsFrameReady() {
@@ -4240,7 +4240,7 @@ bool Interpreter::ViewportMatchesRendererResolution() {
 }
 
 void Interpreter::StartFrame() {
-    mWapi->get_dimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height, &mCurWindowPosX,
+    mWapi->GetDimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height, &mCurWindowPosX,
                           &mCurWindowPosY);
     if (mCurDimensions.height == 0) {
         // Avoid division by zero
@@ -4361,9 +4361,9 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
 
 void Interpreter::EndFrame() {
     mRapi->end_frame();
-    mWapi->swap_buffers_begin();
+    mWapi->SwapBuffersBegin();
     mRapi->finish_render();
-    mWapi->swap_buffers_end();
+    mWapi->SwapBuffersEnd();
 }
 
 void gfx_set_target_ucode(UcodeHandlers ucode) {
@@ -4371,11 +4371,11 @@ void gfx_set_target_ucode(UcodeHandlers ucode) {
 }
 
 void Interpreter::SetTargetFPS(int fps) {
-    mWapi->set_target_fps(fps);
+    mWapi->SetTargetFPS(fps);
 }
 
 void Interpreter::SetMaxFrameLatency(int latency) {
-    mWapi->set_maximum_frame_latency(latency);
+    mWapi->SetMaxFrameLatency(latency);
 }
 
 int Interpreter::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,

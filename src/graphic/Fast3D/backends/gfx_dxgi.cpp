@@ -1165,7 +1165,7 @@ bool gfx_dxgi_is_fullscreen() {
     return dxgi.is_full_screen;
 }
 
-extern "C" struct GfxWindowManagerAPI gfx_dxgi_api = { gfx_dxgi_init,
+extern "C" struct GfxBackend gfx_dxgi_api = { gfx_dxgi_init,
                                                        gfx_dxgi_close,
                                                        gfx_dxgi_set_keyboard_callbacks,
                                                        gfx_dxgi_set_mouse_callbacks,

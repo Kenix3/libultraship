@@ -39,14 +39,14 @@
 #include <SDL2/SDL_opengl.h>
 #endif
 
-#include "gfx_cc.h"
+#include "../gfx_cc.h"
 #include "gfx_rendering_api.h"
 #include "window/gui/Gui.h"
 #include <prism/processor.h>
 #include <fstream>
 #include "Context.h"
 #include <resource/factory/ShaderFactory.h>
-#include "interpreter.h"
+#include "../interpreter.h"
 #include <public/bridge/consolevariablebridge.h>
 
 using namespace std;

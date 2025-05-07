@@ -14,7 +14,7 @@
 #include "libultraship/libultra/types.h"
 #include "public/bridge/gfxbridge.h"
 #include "gfx_cc.h"
-#include "gfx_rendering_api.h"
+#include "backends/gfx_rendering_api.h"
 
 #include "resource/type/Texture.h"
 #include "resource/Resource.h"
@@ -24,7 +24,7 @@
 #define SCREEN_HEIGHT 240
 
 struct GfxRenderingAPI;
-struct GfxWindowManagerAPI;
+class GfxBackend;
 union Gfx;
 
 namespace Fast {
@@ -258,7 +258,7 @@ class Interpreter {
     Interpreter();
     ~Interpreter();
 
-    void Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
+    void Init(GfxBackend* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
               bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
     void Destroy();
     void GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
@@ -394,7 +394,7 @@ class Interpreter {
     float* mBufVbo; // 3 vertices in a triangle and 32 floats per vtx
     size_t mBufVboLen{};
     size_t mBufVboNumTris{};
-    GfxWindowManagerAPI* mWapi = nullptr;
+    GfxBackend* mWapi = nullptr;
     GfxRenderingAPI* mRapi = nullptr;
 
     uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};
