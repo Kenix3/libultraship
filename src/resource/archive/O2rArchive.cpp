@@ -98,7 +98,6 @@ bool O2rArchive::Close() {
 }
 
 bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
-    printf("Writing file\n");
     if (!mZipArchive) {
         SPDLOG_ERROR("Cannot write to ZIP: Archive is not open.");
         return false;
@@ -112,23 +111,12 @@ bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_
     }
 
     // Add or replace the file in the ZIP archive
-    zip_int64_t index = zip_name_locate(mZipArchive, filename.c_str(), 0);
-    if (index >= 0) {
-        // File exists, replace it
-        if (zip_file_replace(mZipArchive, index, source, ZIP_FL_OVERWRITE) < 0) {
-            SPDLOG_ERROR("Failed to replace file \"{}\" in ZIP", filename);
-            zip_source_free(source);
-            return false;
-        }
-    } else {
-        // File doesn't exist, add it
-        if (zip_file_add(mZipArchive, filename.c_str(), source, ZIP_FL_ENC_UTF_8) < 0) {
-            SPDLOG_ERROR("Failed to add file \"{}\" to ZIP", filename);
-            zip_source_free(source);
-            return false;
-        }
+    if (zip_file_add(mZipArchive, filename.c_str(), source, ZIP_FL_ENC_UTF_8 | ZIP_FL_OVERWRITE) < 0) {
+        SPDLOG_ERROR("Failed to add file \"{}\" to ZIP", filename);
+        zip_source_free(source);
+        return false;
     }
-    printf("Success wrote file\n");
+    SPDLOG_INFO("Successfully wrote file: {}", filename);
 
     // Save changes to disk
     if (zip_close(mZipArchive) < 0) {
