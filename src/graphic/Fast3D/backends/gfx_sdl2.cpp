@@ -261,8 +261,8 @@ void GfxBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
         SDL_SetWindowSize(mWnd, mWindowWidth, mWindowHeight);
     }
 
-    if (mOnFullscreenChangedCallback != nullptr && call_callback) {
-        mOnFullscreenChangedCallback(on);
+    if (mOnFullscreenChanged != nullptr && call_callback) {
+        mOnFullscreenChanged(on);
     }
 }
 
@@ -276,7 +276,7 @@ void GfxBackendSDL2::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
 
 static uint64_t previous_time;
 #ifdef _WIN32
-static HANDLE timer;
+static HANDLE mTimer;
 #endif
 
 #define FRAME_INTERVAL_US_NUMERATOR 1000000
@@ -293,12 +293,14 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
             // Something is wrong with SDLs original implementation of WM_GETDPISCALEDSIZE, so pass it to the default
             // system window procedure instead.
             return DefWindowProc(h_wnd, message, w_param, l_param);
-        case WM_ENDSESSION:
+        case WM_ENDSESSION: {
+            GfxBackendSDL2* self = reinterpret_cast<GfxBackendSDL2*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
             // Apparently SDL2 does not handle this
             if (w_param == TRUE) {
-                gfx_sdl_close();
+                self->Close();
             }
             break;
+        }
         default:
             // Pass anything else to SDLs original window procedure.
             return CallWindowProc((WNDPROC)SDL_WndProc, h_wnd, message, w_param, l_param);
@@ -343,11 +345,11 @@ void GfxBackendSDL2::Init(const char* gameName, const char* gfxApiName, bool sta
 #endif
 
 #ifdef _WIN32
-    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
-    timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
-    // Fallback to low resolution timer if unsupported by the OS
-    if (timer == nullptr) {
-        timer = CreateWaitableTimer(nullptr, false, nullptr);
+    // Use high-resolution mTimer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    mTimer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution mTimer if unsupported by the OS
+    if (mTimer == nullptr) {
+        mTimer = CreateWaitableTimer(nullptr, false, nullptr);
     }
 #endif
 
@@ -372,9 +374,10 @@ void GfxBackendSDL2::Init(const char* gameName, const char* gfxApiName, bool sta
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(wnd, &wmInfo);
+    SDL_GetWindowWMInfo(mWnd, &wmInfo);
     HWND hwnd = wmInfo.info.win.window;
     SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 #endif
     Ship::GuiWindowInitData window_impl;
 
@@ -432,8 +435,8 @@ void GfxBackendSDL2::Init(const char* gameName, const char* gfxApiName, bool sta
     }
 }
 
-void GfxBackendSDL2::SetFullscreenChangedCallback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
-    mOnFullscreenChangedCallback = on_fullscreen_changed;
+void GfxBackendSDL2::SetFullscreenChangedCallback(void (*onFullscreenChanged)(bool is_now_fullscreen)) {
+    mOnFullscreenChanged = onFullscreenChanged;
 }
 
 void GfxBackendSDL2::SetFullscreen(bool enable) {
@@ -479,16 +482,16 @@ bool GfxBackendSDL2::IsMouseCaptured() {
     return (SDL_GetRelativeMouseMode() == SDL_TRUE);
 }
 
-void  GfxBackendSDL2::SetKeyboardCallbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
-                                           void (*on_all_keys_up)()) {
-    mOnKeyDownCallback = on_key_down;
-    mOnKeyUpCallback = on_key_up;
-    mOnAllKeysUpCallback = on_all_keys_up;
+void  GfxBackendSDL2::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
+                                           void (*onAllKeysUp)()) {
+    mOnKeyDown = onKeyDown;
+    mOnKeyUp = onKeyUp;
+    mOnAllKeysUp = onAllKeysUp;
 }
 
-void GfxBackendSDL2::SetMouseCallbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
-    mOnMouseButtonDownCallback = on_btn_down;
-    mOnMouseButtonUpCallback = on_btn_up;
+void GfxBackendSDL2::SetMouseCallbacks(bool (*onMouseButtonDown)(int btn), bool (*onMouseButtonUp)(int btn)) {
+    mOnMouseButtonDown = onMouseButtonDown;
+    mOnMouseButtonUp = onMouseButtonUp;
 }
 
 void GfxBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
@@ -519,15 +522,15 @@ int GfxBackendSDL2::UntranslateScancode(int translatedScancode) const {
 
 void GfxBackendSDL2::OnKeydown(int scancode) const {
     int key = TranslateScancode(scancode);
-    if (mOnKeyDownCallback != nullptr) {
-        mOnKeyDownCallback(key);
+    if (mOnKeyDown != nullptr) {
+        mOnKeyDown(key);
     }
 }
 
 void GfxBackendSDL2::OnKeyup(int scancode) const {
     int key = TranslateScancode(scancode);
-    if (mOnKeyUpCallback != nullptr) {
-        mOnKeyUpCallback(key);
+    if (mOnKeyUp != nullptr) {
+        mOnKeyUp(key);
     }
 }
 
@@ -535,14 +538,14 @@ void GfxBackendSDL2::OnMouseButtonDown(int btn) const {
     if (!(btn >= 0 && btn < 5)) {
         return;
     }
-    if (mOnMouseButtonDownCallback != nullptr) {
-        mOnMouseButtonDownCallback(btn);
+    if (mOnMouseButtonDown != nullptr) {
+        mOnMouseButtonDown(btn);
     }
 }
 
 void GfxBackendSDL2::OnMouseButtonUp(int btn) const {
-    if (mOnMouseButtonUpCallback != nullptr) {
-        mOnMouseButtonUpCallback(btn);
+    if (mOnMouseButtonUp != nullptr) {
+        mOnMouseButtonUp(btn);
     }
 }
 
@@ -644,11 +647,11 @@ void GfxBackendSDL2::SyncFramerateWithTime() const {
         const timespec spec = { 0, left * 100 };
         nanosleep(&spec, nullptr);
 #else
-        // The accuracy of this timer seems to usually be within +- 1.0 ms
+        // The accuracy of this mTimer seems to usually be within +- 1.0 ms
         LARGE_INTEGER li;
         li.QuadPart = -left;
-        SetWaitableTimer(timer, &li, 0, nullptr, nullptr, false);
-        WaitForSingleObject(timer, INFINITE);
+        SetWaitableTimer(mTimer, &li, 0, nullptr, nullptr, false);
+        WaitForSingleObject(mTimer, INFINITE);
 #endif
     }
 
@@ -666,7 +669,7 @@ void GfxBackendSDL2::SyncFramerateWithTime() const {
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
     if (left > 0 && t - next < 10000) {
         // In case it takes some time for the application to wake up after sleep,
-        // or inaccurate timer,
+        // or inaccurate mTimer,
         // don't let that slow down the framerate.
         t = next;
     }

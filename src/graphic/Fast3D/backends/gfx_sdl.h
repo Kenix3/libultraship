@@ -10,10 +10,10 @@ public:
 
     void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
     void Close() override;
-    void SetKeyboardCallbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
-                                     void (*on_all_keys_up)()) override;
-    void SetMouseCallbacks(bool (*on_mouse_button_down)(int btn), bool (*on_mouse_button_up)(int btn)) override;
-    void SetFullscreenChangedCallback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) override;
+    void SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
+                              void (*onAllKeysUp)()) override;
+    void SetMouseCallbacks(bool (*onMouseButtonDown)(int btn), bool (*onMouseButtonUp)(int btn)) override;
+    void SetFullscreenChangedCallback(void (*onFullscreenChanged)(bool is_now_fullscreen)) override;
     void SetFullscreen(bool fullscreen) override;
     void GetActiveWindowRefreshRate(uint32_t* refreshRate) override;
     void SetCursorVisability(bool visability) override;
@@ -52,21 +52,12 @@ private:
     SDL_GLContext mCtx;
     SDL_Renderer* mRenderer;
     int mSdlToLusTable[512];
-    int mTargetFps = 60;
-    bool mVsyncEnabled = true;
     float mMouseWheelX = 0.0f;
     float mMouseWheelY = 0.0f;
     // OTRTODO: These are redundant. Info can be queried from SDL.
     int mWindowWidth = 640;
     int mWindowHeight = 480;
-    bool mFullScreen;
-    bool mIsRunning = true;
-    void (*mOnFullscreenChangedCallback)(bool is_now_fullscreen);
-    bool (*mOnKeyDownCallback)(int scancode);
-    bool (*mOnKeyUpCallback)(int scancode);
-    void (*mOnAllKeysUpCallback)();
-    bool (*mOnMouseButtonDownCallback)(int btn);
-    bool (*mOnMouseButtonUpCallback)(int btn);
+    void (*mOnAllKeysUp)();
 };
 
 #endif

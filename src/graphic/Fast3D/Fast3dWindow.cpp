@@ -14,6 +14,9 @@
 #include "backends/gfx_window_manager_api.h"
 
 #include <fstream>
+
+extern GfxBackendDXGI* dxgi;
+
 namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
@@ -45,7 +48,7 @@ Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::Gu
 Fast3dWindow::~Fast3dWindow() {
     SPDLOG_DEBUG("destruct fast3dwindow");
     mInterpreter->Destroy();
-    delete mInterpreter;
+    delete mWindowManagerApi;
 }
 
 void Fast3dWindow::Init() {
@@ -120,7 +123,8 @@ void Fast3dWindow::InitWindowManager() {
 #ifdef ENABLE_DX11
         case Ship::WindowBackend::FAST3D_DXGI_DX11:
             mRenderingApi = &gfx_direct3d11_api;
-            mWindowManagerApi = &gfx_dxgi_api;
+            mWindowManagerApi = new GfxBackendDXGI();
+            dxgi = (GfxBackendDXGI*)mWindowManagerApi;
             break;
 #endif
 #ifdef ENABLE_OPENGL

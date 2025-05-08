@@ -3,7 +3,7 @@
 #include <cstdio>
 
 #include "gfx_direct3d_common.h"
-#include "gfx_cc.h"
+#include "../gfx_cc.h"
 #include <prism/processor.h>
 #include <public/bridge/consolevariablebridge.h>
 #include <resource/factory/ShaderFactory.h>

@@ -31,10 +31,13 @@
 #include "config/ConsoleVariable.h"
 #include "window/Window.h"
 
-#include "gfx_cc.h"
+#include "../gfx_cc.h"
 #include "gfx_rendering_api.h"
-#include "interpreter.h"
+#include "../interpreter.h"
 #define DEBUG_D3D 0
+
+// TODO remove this after the graphics backend constructor takes the backend to store in a class.
+GfxBackendDXGI* dxgi;
 
 using namespace Microsoft::WRL; // For ComPtr
 
@@ -212,20 +215,20 @@ static void gfx_d3d11_init() {
     // Load d3d11.dll
     d3d.d3d11_module = LoadLibraryW(L"d3d11.dll");
     if (d3d.d3d11_module == nullptr) {
-        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), gfx_dxgi_get_h_wnd(), "d3d11.dll not found");
+        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), dxgi->GetWindowHandle(), "d3d11.dll not found");
     }
     d3d.D3D11CreateDevice = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(d3d.d3d11_module, "D3D11CreateDevice");
 
     // Load D3DCompiler_47.dll
     d3d.d3dcompiler_module = LoadLibraryW(L"D3DCompiler_47.dll");
     if (d3d.d3dcompiler_module == nullptr) {
-        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), gfx_dxgi_get_h_wnd(), "D3DCompiler_47.dll not found");
+        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), dxgi->GetWindowHandle(), "D3DCompiler_47.dll not found");
     }
     d3d.D3DCompile = (pD3DCompile)GetProcAddress(d3d.d3dcompiler_module, "D3DCompile");
 
     // Create D3D11 device
 
-    gfx_dxgi_create_factory_and_device(DEBUG_D3D, 11, [](IDXGIAdapter1* adapter, bool test_only) {
+    dxgi->CreateFactoryAndDevice(DEBUG_D3D, 11, [](IDXGIAdapter1* adapter, bool test_only) {
 #if DEBUG_D3D
         UINT device_creation_flags = D3D11_CREATE_DEVICE_DEBUG;
 #else
@@ -242,13 +245,13 @@ static void gfx_d3d11_init() {
         if (test_only) {
             return SUCCEEDED(res);
         } else {
-            ThrowIfFailed(res, gfx_dxgi_get_h_wnd(), "Failed to create D3D11 device.");
+            ThrowIfFailed(res, dxgi->GetWindowHandle(), "Failed to create D3D11 device.");
             return true;
         }
     });
 
     // Create the swap chain
-    gfx_dxgi_create_swap_chain(d3d.device.Get(), []() {
+    dxgi->CreateSwapChain(d3d.device.Get(), []() {
         d3d.framebuffers[0].render_target_view.Reset();
         d3d.textures[d3d.framebuffers[0].texture_id].texture.Reset();
         d3d.context->ClearState();
@@ -271,7 +274,7 @@ static void gfx_d3d11_init() {
 
 #if DEBUG_D3D
     ThrowIfFailed(d3d.device->QueryInterface(__uuidof(ID3D11Debug), (void**)d3d.debug.GetAddressOf()),
-                  gfx_dxgi_get_h_wnd(), "Failed to get ID3D11Debug device.");
+                  dxgi->GetWindowHandle(), "Failed to get ID3D11Debug device.");
 #endif
 
     // Create the default framebuffer which represents the window
@@ -279,7 +282,7 @@ static void gfx_d3d11_init() {
 
     // Check the size of the window
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
-    ThrowIfFailed(gfx_dxgi_get_swap_chain()->GetDesc1(&swap_chain_desc));
+    ThrowIfFailed(dxgi->GetSwapChain()->GetDesc1(&swap_chain_desc));
     d3d.textures[fb.texture_id].width = swap_chain_desc.Width;
     d3d.textures[fb.texture_id].height = swap_chain_desc.Height;
     fb.msaa_level = 1;
@@ -301,7 +304,7 @@ static void gfx_d3d11_init() {
     vertex_buffer_desc.MiscFlags = 0;
 
     ThrowIfFailed(d3d.device->CreateBuffer(&vertex_buffer_desc, nullptr, d3d.vertex_buffer.GetAddressOf()),
-                  gfx_dxgi_get_h_wnd(), "Failed to create vertex buffer.");
+                  dxgi->GetWindowHandle(), "Failed to create vertex buffer.");
 
     // Create per-frame constant buffer
 
@@ -315,7 +318,7 @@ static void gfx_d3d11_init() {
     constant_buffer_desc.MiscFlags = 0;
 
     ThrowIfFailed(d3d.device->CreateBuffer(&constant_buffer_desc, nullptr, d3d.per_frame_cb.GetAddressOf()),
-                  gfx_dxgi_get_h_wnd(), "Failed to create per-frame constant buffer.");
+                  dxgi->GetWindowHandle(), "Failed to create per-frame constant buffer.");
 
     // Create per-draw constant buffer
 
@@ -326,7 +329,7 @@ static void gfx_d3d11_init() {
     constant_buffer_desc.MiscFlags = 0;
 
     ThrowIfFailed(d3d.device->CreateBuffer(&constant_buffer_desc, nullptr, d3d.per_draw_cb.GetAddressOf()),
-                  gfx_dxgi_get_h_wnd(), "Failed to create per-draw constant buffer.");
+                  dxgi->GetWindowHandle(), "Failed to create per-draw constant buffer.");
 
     // Create compute shader that can be used to retrieve depth buffer values
 
@@ -368,7 +371,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(gfx_dxgi_get_h_wnd(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
@@ -381,14 +384,14 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(gfx_dxgi_get_h_wnd(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
     // Create ImGui
 
     Ship::GuiWindowInitData window_impl;
-    window_impl.Dx11 = { gfx_dxgi_get_h_wnd(), d3d.context.Get(), d3d.device.Get() };
+    window_impl.Dx11 = { dxgi->GetWindowHandle(), d3d.context.Get(), d3d.device.Get() };
     Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 }
 
@@ -438,7 +441,7 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(gfx_dxgi_get_h_wnd(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
@@ -447,7 +450,7 @@ static struct ShaderProgram* gfx_d3d11_create_and_load_new_shader(uint64_t shade
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(gfx_dxgi_get_h_wnd(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
@@ -895,7 +898,7 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             }
         } else if (diff || (render_target && tex.texture.Get() == nullptr)) {
             DXGI_SWAP_CHAIN_DESC1 desc1;
-            IDXGISwapChain1* swap_chain = gfx_dxgi_get_swap_chain();
+            IDXGISwapChain1* swap_chain = dxgi->GetSwapChain();
             ThrowIfFailed(swap_chain->GetDesc1(&desc1));
             if (desc1.Width != width || desc1.Height != height) {
                 fb.render_target_view.Reset();
