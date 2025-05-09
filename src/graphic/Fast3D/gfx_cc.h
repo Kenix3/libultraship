@@ -86,11 +86,11 @@ struct CCFeatures {
     bool opt_alpha_threshold;
     bool opt_invisible;
     bool opt_grayscale;
-    bool used_textures[2];
+    bool usedTextures[2];
     bool used_masks[2];
     bool used_blend[2];
     bool clamp[2][2];
-    int num_inputs;
+    int numInputs;
     bool do_single[2][2];
     bool do_multiply[2][2];
     bool do_mix[2][2];

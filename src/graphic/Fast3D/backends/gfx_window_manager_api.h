@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-class GfxBackend {
+class GfxWindowBackend {
   public:
-    virtual ~GfxBackend() = default;
+    virtual ~GfxWindowBackend() = default;
     virtual void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) = 0;
   virtual void Close() = 0;
   virtual void SetKeyboardCallbacks(bool (*mOnKeyDown)(int scancode), bool (*mOnKeyUp)(int scancode),
@@ -51,7 +51,7 @@ protected:
 
 #if 0
 
-struct GfxBackend {
+struct GfxWindowBackend {
     void (*init)(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
                  uint32_t height, int32_t posX, int32_t posY) = 0;
     void (*close)() = 0;

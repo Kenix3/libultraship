@@ -54,13 +54,13 @@ using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
 
 using namespace Microsoft::WRL; // For ComPtr
 
-void GfxBackendDXGI::LoadDxgi() {
+void GfxWindowBackendDXGI::LoadDxgi() {
     dxgi_module = LoadLibraryW(L"dxgi.dll");
     *(FARPROC*)&CreateDXGIFactory1 = GetProcAddress(dxgi_module, "CreateDXGIFactory1");
     *(FARPROC*)&CreateDXGIFactory2 = GetProcAddress(dxgi_module, "CreateDXGIFactory2");
 }
 
-void GfxBackendDXGI::ApplyMaxFrameLatency(bool first) {
+void GfxWindowBackendDXGI::ApplyMaxFrameLatency(bool first) {
     DXGI_SWAP_CHAIN_DESC swap_desc = {};
     swap_chain->GetDesc(&swap_desc);
 
@@ -140,7 +140,7 @@ static bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> Mon
     return false;
 }
 
-void GfxBackendDXGI::ToggleBorderlessWindowFullScreen(bool enable, bool call_callback) {
+void GfxWindowBackendDXGI::ToggleBorderlessWindowFullScreen(bool enable, bool call_callback) {
     // Windows 7 + flip mode + waitable object can't go to exclusive fullscreen,
     // so do borderless instead. If DWM is enabled, this means we get one monitor
     // sync interval of latency extra. On Win 10 however (maybe Win 8 too), due to
@@ -202,20 +202,20 @@ void GfxBackendDXGI::ToggleBorderlessWindowFullScreen(bool enable, bool call_cal
     }
 }
 
-void GfxBackendDXGI::OnKeydown(WPARAM wParam, LPARAM lParam) {
+void GfxWindowBackendDXGI::OnKeydown(WPARAM wParam, LPARAM lParam) {
     int key = ((lParam >> 16) & 0x1ff);
     if (mOnKeyDown != nullptr) {
         mOnKeyDown(key);
     }
 }
-void GfxBackendDXGI::OnKeyup(WPARAM wParam, LPARAM lParam) {
+void GfxWindowBackendDXGI::OnKeyup(WPARAM wParam, LPARAM lParam) {
     int key = ((lParam >> 16) & 0x1ff);
     if (mOnKeyUp != nullptr) {
         mOnKeyUp(key);
     }
 }
 
-void GfxBackendDXGI::OnMouseButtonDown(int btn) {
+void GfxWindowBackendDXGI::OnMouseButtonDown(int btn) {
     if (!(btn >= 0 && btn < 5)) {
         return;
     }
@@ -224,7 +224,7 @@ void GfxBackendDXGI::OnMouseButtonDown(int btn) {
         mOnMouseButtonDown(btn);
     }
 }
-void GfxBackendDXGI::OnMouseButtonUp(int btn) {
+void GfxWindowBackendDXGI::OnMouseButtonUp(int btn) {
     mMousePressed[btn] = false;
     if (mOnMouseButtonUp != nullptr) {
         mOnMouseButtonUp(btn);
@@ -273,11 +273,11 @@ static void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double&
     }
 }
 
-void GfxBackendDXGI::Close() {
+void GfxWindowBackendDXGI::Close() {
     mIsRunning = false;
 }
 
-void GfxBackendDXGI::ApplyMouseCaptureClip() {
+void GfxWindowBackendDXGI::ApplyMouseCaptureClip() {
     RECT rect;
     rect.left = mPosX + 1;
     rect.top = mPosY + 1;
@@ -286,7 +286,7 @@ void GfxBackendDXGI::ApplyMouseCaptureClip() {
     ClipCursor(&rect);
 }
 
-void GfxBackendDXGI::UpdateMousePrevPos() {
+void GfxWindowBackendDXGI::UpdateMousePrevPos() {
     if (!mHasMousePosition && mIsMouseHovered && !mIsMouseCaptured) {
         mHasMousePosition = true;
 
@@ -297,7 +297,7 @@ void GfxBackendDXGI::UpdateMousePrevPos() {
     }
 }
 
-void GfxBackendDXGI::HandleRawInputBuffered() {
+void GfxWindowBackendDXGI::HandleRawInputBuffered() {
     static UINT offset = -1;
     if (offset == -1) {
         offset = sizeof(RAWINPUTHEADER);
@@ -355,11 +355,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
     Ship::Context::GetInstance()->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
-    GfxBackendDXGI* self = reinterpret_cast<GfxBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
+    GfxWindowBackendDXGI* self = reinterpret_cast<GfxWindowBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
     switch (message) {
         case WM_CREATE: {
             LPCREATESTRUCT lpcs = reinterpret_cast<LPCREATESTRUCT>(l_param);
-            self = static_cast<GfxBackendDXGI*>(lpcs->lpCreateParams);
+            self = static_cast<GfxWindowBackendDXGI*>(lpcs->lpCreateParams);
             SetWindowLongPtr(h_wnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
             break;
         }
@@ -518,10 +518,10 @@ static BOOL CALLBACK WIN_ResourceNameCallback(HMODULE hModule, LPCTSTR lpType, L
 static uint64_t qpc_init, qpc_freq;
 
 
-GfxBackendDXGI::~GfxBackendDXGI() {
+GfxWindowBackendDXGI::~GfxWindowBackendDXGI() {
 }
 
-void GfxBackendDXGI::Init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
+void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
                    uint32_t height, int32_t posX, int32_t posY) {
     LARGE_INTEGER lqpc_init, lqpc_freq;
     QueryPerformanceCounter(&lqpc_init);
@@ -607,11 +607,11 @@ void GfxBackendDXGI::Init(const char* game_name, const char* gfx_api_name, bool 
     RegisterRawInputDevices(mRawInputDevice, 1, sizeof(mRawInputDevice[0]));
 }
 
-void GfxBackendDXGI::SetFullscreenChangedCallback(void (*mOnFullscreenChanged)(bool is_now_fullscreen)) {
+void GfxWindowBackendDXGI::SetFullscreenChangedCallback(void (*mOnFullscreenChanged)(bool is_now_fullscreen)) {
     mOnFullscreenChanged = mOnFullscreenChanged;
 }
 
-void GfxBackendDXGI::SetCursorVisability(bool visible) {
+void GfxWindowBackendDXGI::SetCursorVisability(bool visible) {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showcursor
     // https://devblogs.microsoft.com/oldnewthing/20091217-00/?p=15643
     // ShowCursor uses a counter, not a boolean value, and increments or decrements that value when called
@@ -637,11 +637,11 @@ void GfxBackendDXGI::SetCursorVisability(bool visible) {
     }
 }
 
-void GfxBackendDXGI::SetMousePos(int32_t x, int32_t y) {
+void GfxWindowBackendDXGI::SetMousePos(int32_t x, int32_t y) {
     SetCursorPos(x, y);
 }
 
-void GfxBackendDXGI::GetMousePos(int32_t* x, int32_t* y) {
+void GfxWindowBackendDXGI::GetMousePos(int32_t* x, int32_t* y) {
     POINT p;
     GetCursorPos(&p);
     ScreenToClient(h_wnd, &p);
@@ -649,7 +649,7 @@ void GfxBackendDXGI::GetMousePos(int32_t* x, int32_t* y) {
     *y = p.y;
 }
 
-void GfxBackendDXGI::GetMouseDelta(int32_t* x, int32_t* y) {
+void GfxWindowBackendDXGI::GetMouseDelta(int32_t* x, int32_t* y) {
     if (mIsMouseCaptured) {
         *x = mRawMouseDeltaBuf.x;
         *y = mRawMouseDeltaBuf.y;
@@ -668,18 +668,18 @@ void GfxBackendDXGI::GetMouseDelta(int32_t* x, int32_t* y) {
     }
 }
 
-void GfxBackendDXGI::GetMouseWheel(float* x, float* y) {
+void GfxWindowBackendDXGI::GetMouseWheel(float* x, float* y) {
     *x = mMouseWheel[0];
     *y = mMouseWheel[1];
     mMouseWheel[0] = 0;
     mMouseWheel[1] = 0;
 }
 
-bool GfxBackendDXGI::GetMouseState(uint32_t btn) {
+bool GfxWindowBackendDXGI::GetMouseState(uint32_t btn) {
     return mMousePressed[btn];
 }
 
-void GfxBackendDXGI::SetMouseCapture(bool capture) {
+void GfxWindowBackendDXGI::SetMouseCapture(bool capture) {
     mIsMouseCaptured = capture;
     if (capture) {
         ApplyMouseCaptureClip();
@@ -694,38 +694,38 @@ void GfxBackendDXGI::SetMouseCapture(bool capture) {
     }
 }
 
-bool GfxBackendDXGI::IsMouseCaptured() {
+bool GfxWindowBackendDXGI::IsMouseCaptured() {
     return mIsMouseCaptured;
 }
 
-void GfxBackendDXGI::SetFullscreen(bool enable) {
+void GfxWindowBackendDXGI::SetFullscreen(bool enable) {
     ToggleBorderlessWindowFullScreen(enable, true);
 }
 
-void GfxBackendDXGI::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
+void GfxWindowBackendDXGI::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
     *refresh_rate = (uint32_t)roundf(mDetectedHz);
 }
 
-void GfxBackendDXGI::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
+void GfxWindowBackendDXGI::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
                                             void (*onnAllKeysUp)()) {
     mOnKeyDown = onKeyDown;
     mOnKeyUp = onKeyUp;
     mOnAllKeysUp = onnAllKeysUp;
 }
 
-void GfxBackendDXGI::SetMouseCallbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
+void GfxWindowBackendDXGI::SetMouseCallbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
     mOnMouseButtonDown = on_btn_down;
     mOnMouseButtonUp = on_btn_up;
 }
 
-void GfxBackendDXGI::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+void GfxWindowBackendDXGI::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     *width = current_width;
     *height = current_height;
     *posX = mPosX;
     *posY = mPosY;
 }
 
-void GfxBackendDXGI::HandleEvents() {
+void GfxWindowBackendDXGI::HandleEvents() {
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
@@ -746,7 +746,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
            qpc % qpc_freq * _100NANOSECONDS_IN_SECOND / qpc_freq;
 }
 
-bool GfxBackendDXGI::IsFrameReady() {
+bool GfxWindowBackendDXGI::IsFrameReady() {
     DXGI_FRAME_STATISTICS stats;
     if (swap_chain->GetFrameStatistics(&stats) == S_OK &&
         (stats.SyncRefreshCount != 0 || stats.SyncQPCTime.QuadPart != 0ULL)) {
@@ -888,19 +888,19 @@ bool GfxBackendDXGI::IsFrameReady() {
     return true;
 }
 
-void GfxBackendDXGI::SwapBuffersBegin() {
+void GfxWindowBackendDXGI::SwapBuffersBegin() {
     LARGE_INTEGER t;
     mUseTimer = true;
     if (mUseTimer || (mTearingSupport && !mVsyncEnabled)) {
-        ComPtr<ID3D11Device> device;
-        mSwapChainDevice.As(&device);
+        ComPtr<ID3D11Device> mDevice;
+        mSwapChainDevice.As(&mDevice);
 
-        if (device != nullptr) {
+        if (mDevice != nullptr) {
             ComPtr<ID3D11DeviceContext> dev_ctx;
-            device->GetImmediateContext(&dev_ctx);
+            mDevice->GetImmediateContext(&dev_ctx);
 
             if (dev_ctx != nullptr) {
-                // Always flush the immediate context before forcing a CPU-wait, otherwise the GPU might only start
+                // Always flush the immediate mContext before forcing a CPU-wait, otherwise the GPU might only start
                 // working when the SwapChain is presented.
                 dev_ctx->Flush();
             }
@@ -940,7 +940,7 @@ void GfxBackendDXGI::SwapBuffersBegin() {
     mDroppedFrame = false;
 }
 
-void GfxBackendDXGI::SwapBuffersEnd() {
+void GfxWindowBackendDXGI::SwapBuffersEnd() {
     LARGE_INTEGER t0, t1, t2;
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
@@ -985,13 +985,13 @@ void GfxBackendDXGI::SwapBuffersEnd() {
     // stats.SyncRefreshCount, (unsigned long long)(stats.SyncQPCTime.QuadPart - qpc_init));
 }
 
-double GfxBackendDXGI::GetTime() {
+double GfxWindowBackendDXGI::GetTime() {
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);
     return (double)(t.QuadPart - qpc_init) / qpc_freq;
 }
 
-void GfxBackendDXGI::SetTargetFPS(int fps) {
+void GfxWindowBackendDXGI::SetTargetFPS(int fps) {
     uint32_t old_fps = mTargetFps;
     uint64_t t0 = mFrameTimeStamp / old_fps;
     uint32_t t1 = mFrameTimeStamp % old_fps;
@@ -999,12 +999,13 @@ void GfxBackendDXGI::SetTargetFPS(int fps) {
     mFrameTimeStamp = t0 * mTargetFps + t1 * mTargetFps / old_fps;
 }
 
-void GfxBackendDXGI::SetMaxFrameLatency(int latency) {
+void GfxWindowBackendDXGI::SetMaxFrameLatency(int latency) {
     mMaxFrameLatency = latency;
 }
 
-void GfxBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version,
-                                        bool (*create_device_fn)(IDXGIAdapter1* adapter, bool test_only)) {
+void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, class GfxRenderingAPIDX11* self,
+                                                  bool (*createFunc)(class GfxRenderingAPIDX11* self,
+                                                                     IDXGIAdapter1* adapter, bool test_only)) {
     if (CreateDXGIFactory2 != nullptr) {
         ThrowIfFailed(
             CreateDXGIFactory2(debug ? DXGI_CREATE_FACTORY_DEBUG : 0, __uuidof(IDXGIFactory2), &mFactory));
@@ -1033,14 +1034,14 @@ void GfxBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version,
         if (desc.Flags & 2 /*DXGI_ADAPTER_FLAG_SOFTWARE*/) { // declaration missing in mingw headers
             continue;
         }
-        if (create_device_fn(adapter.Get(), true)) {
+        if (createFunc(self, adapter.Get(), true)) {
             break;
         }
     }
-    create_device_fn(adapter.Get(), false);
+    createFunc(self, adapter.Get(), false);
 }
 
-void GfxBackendDXGI::CreateSwapChain(IUnknown* device, std::function<void()>&& before_destroy_fn) {
+void GfxWindowBackendDXGI::CreateSwapChain(IUnknown* mDevice, std::function<void()>&& before_destroy_fn) {
     bool win8 = IsWindows8OrGreater();                 // DXGI_SCALING_NONE is only supported on Win8 and beyond
     bool dxgi_13 = CreateDXGIFactory2 != nullptr; // DXGI 1.3 introduced waitable object
 
@@ -1060,26 +1061,26 @@ void GfxBackendDXGI::CreateSwapChain(IUnknown* device, std::function<void()>&& b
     }
     swap_chain_desc.SampleDesc.Count = 1;
 
-    ThrowIfFailed(mFactory->CreateSwapChainForHwnd(device, h_wnd, &swap_chain_desc, nullptr, nullptr, &swap_chain));
+    ThrowIfFailed(mFactory->CreateSwapChainForHwnd(mDevice, h_wnd, &swap_chain_desc, nullptr, nullptr, &swap_chain));
     ThrowIfFailed(mFactory->MakeWindowAssociation(h_wnd, DXGI_MWA_NO_ALT_ENTER));
 
     ApplyMaxFrameLatency(true);
 
     ThrowIfFailed(swap_chain->GetDesc1(&swap_chain_desc));
 
-    mSwapChainDevice = device;
+    mSwapChainDevice = mDevice;
     mBeforeDestroySwapChainFn = std::move(before_destroy_fn);
 }
 
-bool GfxBackendDXGI::IsRunning() {
+bool GfxWindowBackendDXGI::IsRunning() {
     return mIsRunning;
 }
 
-HWND GfxBackendDXGI::GetWindowHandle() {
+HWND GfxWindowBackendDXGI::GetWindowHandle() {
     return h_wnd;
 }
 
-IDXGISwapChain1* GfxBackendDXGI::GetSwapChain() {
+IDXGISwapChain1* GfxWindowBackendDXGI::GetSwapChain() {
     return swap_chain.Get();
 }
 
@@ -1099,22 +1100,21 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
     }
 }
 
-const char* GfxBackendDXGI::GetKeyName(int scancode) {
+const char* GfxWindowBackendDXGI::GetKeyName(int scancode) {
     static char text[64];
     GetKeyNameTextA(scancode << 16, text, 64);
     return text;
 }
 
-bool GfxBackendDXGI::CanDisableVsync() {
+bool GfxWindowBackendDXGI::CanDisableVsync() {
     return mTearingSupport;
 }
 
-void GfxBackendDXGI::Destroy() {
+void GfxWindowBackendDXGI::Destroy() {
     // TODO: destroy _any_ resources used by dxgi, including the window handle
-    
 }
 
-bool GfxBackendDXGI::IsFullscreen() {
+bool GfxWindowBackendDXGI::IsFullscreen() {
     return mFullScreen;
 }
 

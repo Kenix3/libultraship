@@ -1,19 +1,17 @@
 #ifndef GFX_RENDERING_API_H
 #define GFX_RENDERING_API_H
 
-#include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
-#include <map>
 #include <unordered_map>
 #include <set>
+#include "imgui.h"
 
 struct ShaderProgram;
 
 struct GfxClipParameters {
     bool z_is_from_0_to_1;
-    bool invert_y;
+    bool invertY;
 };
 
 enum FilteringMode { FILTER_THREE_POINT, FILTER_LINEAR, FILTER_NONE };
@@ -21,56 +19,68 @@ enum FilteringMode { FILTER_THREE_POINT, FILTER_LINEAR, FILTER_NONE };
 // A hash function used to hash a: pair<float, float>
 struct hash_pair_ff {
     size_t operator()(const std::pair<float, float>& p) const {
-        auto hash1 = std::hash<float>{}(p.first);
-        auto hash2 = std::hash<float>{}(p.second);
+        const auto hash1 = std::hash<float>{}(p.first);
+        const auto hash2 = std::hash<float>{}(p.second);
 
         // If hash1 == hash2, their XOR is zero.
         return (hash1 != hash2) ? hash1 ^ hash2 : hash1;
     }
 };
 
-struct GfxRenderingAPI {
-    const char* (*get_name)();
-    int (*get_max_texture_size)();
-    struct GfxClipParameters (*get_clip_parameters)();
-    void (*unload_shader)(struct ShaderProgram* old_prg);
-    void (*load_shader)(struct ShaderProgram* new_prg);
-    struct ShaderProgram* (*create_and_load_new_shader)(uint64_t shader_id0, uint32_t shader_id1);
-    struct ShaderProgram* (*lookup_shader)(uint64_t shader_id0, uint32_t shader_id1);
-    void (*shader_get_info)(struct ShaderProgram* prg, uint8_t* num_inputs, bool used_textures[2]);
-    uint32_t (*new_texture)();
-    void (*select_texture)(int tile, uint32_t texture_id);
-    void (*upload_texture)(const uint8_t* rgba32_buf, uint32_t width, uint32_t height);
-    void (*set_sampler_parameters)(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt);
-    void (*set_depth_test_and_mask)(bool depth_test, bool z_upd);
-    void (*set_zmode_decal)(bool zmode_decal);
-    void (*set_viewport)(int x, int y, int width, int height);
-    void (*set_scissor)(int x, int y, int width, int height);
-    void (*set_use_alpha)(bool use_alpha);
-    void (*draw_triangles)(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris);
-    void (*init)();
-    void (*on_resize)();
-    void (*start_frame)();
-    void (*end_frame)();
-    void (*finish_render)();
-    int (*create_framebuffer)();
-    void (*update_framebuffer_parameters)(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
-                                          bool opengl_invert_y, bool render_target, bool has_depth_buffer,
-                                          bool can_extract_depth);
-    void (*start_draw_to_framebuffer)(int fb_id, float noise_scale);
-    void (*copy_framebuffer)(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
-                             int dstY0, int dstX1, int dstY1);
-    void (*clear_framebuffer)(bool color, bool depth);
-    void (*read_framebuffer_to_cpu)(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf);
-    void (*resolve_msaa_color_buffer)(int fb_id_target, int fb_id_source);
-    std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> (*get_pixel_depth)(
-        int fb_id, const std::set<std::pair<float, float>>& coordinates);
-    void* (*get_framebuffer_texture_id)(int fb_id);
-    void (*select_texture_fb)(int fb_id);
-    void (*delete_texture)(uint32_t texID);
-    void (*set_texture_filter)(FilteringMode mode);
-    FilteringMode (*get_texture_filter)();
-    void (*enable_srgb_mode)();
+class GfxRenderingAPI {
+  public:
+    virtual ~GfxRenderingAPI() = default;
+    virtual const char* GetName() = 0;
+    virtual int GetMaxTextureSize() = 0;
+    virtual GfxClipParameters GetClipParameters() = 0;
+    virtual void UnloadShader(ShaderProgram* oldPrg) = 0;
+    virtual void LoadShader(ShaderProgram* newPrg) = 0;
+    virtual ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) = 0;
+    virtual ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) = 0;
+    virtual void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) = 0;
+    virtual uint32_t NewTexture() = 0;
+    virtual void SelectTexture(int tile, uint32_t textureId) = 0;
+    virtual void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) = 0;
+    virtual void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) = 0;
+    virtual void SetDepthTestAndMask(bool depth_test, bool z_upd) = 0;
+    virtual void SetZmodeDecal(bool decal) = 0;
+    virtual void SetViewport(int x, int y, int width, int height) = 0;
+    virtual void SetScissor(int x, int y, int width, int height) = 0;
+    virtual void SetUseAlpha(bool useAlpha) = 0;
+    virtual void DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) = 0;
+    virtual void Init() = 0;
+    virtual void OnResize() = 0;
+    virtual void StartFrame() = 0;
+    virtual void EndFrame() = 0;
+    virtual void FinishRender() = 0;
+    virtual int CreateFramebuffer() = 0;
+    virtual void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
+                                          bool opengl_invertY, bool render_target, bool has_depth_buffer,
+                                          bool can_extract_depth) = 0;
+    virtual void StartDrawToFramebuffer(int fbId, float noiseScale) = 0;
+    virtual void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
+                                int dstY0, int dstX1, int dstY1) = 0;
+    virtual void ClearFramebuffer(bool color, bool depth) = 0;
+    virtual void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) = 0;
+    virtual void ResolveMSAAColorBuffer(int fbIdTarger, int fbIdSrc) = 0;
+    virtual std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> GetPixelDepth(
+        int fb_id, const std::set<std::pair<float, float>>& coordinates) = 0;
+    virtual void* GetFramebufferTextureId(int fbId) = 0;
+    virtual void SelectTextureFb(int fbId) = 0;
+    virtual void DeleteTexture(uint32_t texId) = 0;
+    virtual void SetTextureFilter(FilteringMode mode) = 0;
+    virtual FilteringMode GetTextureFilter() = 0;
+    virtual void SetSrgbMode() = 0;
+    virtual ImTextureID GetTextureById(int id) = 0;
+
+protected:
+    int8_t mCurrentDepthTest = -1;
+    int8_t mCurrentDepthMask = -1;
+    int8_t mCurrentZmodeDecal = -1;
+    int8_t mLastDepthTest = -1;
+    int8_t mLastDepthMask = -1;
+    int8_t mLastZmodeDecal = -1;
+    bool mSrgbMode = false;
 };
 
 #endif

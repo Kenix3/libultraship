@@ -9,13 +9,16 @@
 #include "graphic/Fast3D/backends/gfx_dxgi.h"
 #include "graphic/Fast3D/backends/gfx_opengl.h"
 #include "graphic/Fast3D/backends/gfx_metal.h"
+#include "graphic/Fast3D/backends/gfx_direct3d_common.h"
 #include "graphic/Fast3D/backends/gfx_direct3d11.h"
 #include "graphic/Fast3D/backends/gfx_direct3d12.h"
 #include "backends/gfx_window_manager_api.h"
 
 #include <fstream>
 
-extern GfxBackendDXGI* dxgi;
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+extern GfxWindowBackendDXGI* dxgi;
+#endif
 
 namespace Fast {
 
@@ -122,21 +125,21 @@ void Fast3dWindow::InitWindowManager() {
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
         case Ship::WindowBackend::FAST3D_DXGI_DX11:
-            mRenderingApi = &gfx_direct3d11_api;
-            mWindowManagerApi = new GfxBackendDXGI();
-            dxgi = (GfxBackendDXGI*)mWindowManagerApi;
+            mRenderingApi = new GfxRenderingAPIDX11();
+            mWindowManagerApi = new GfxWindowBackendDXGI();
+            dxgi = (GfxWindowBackendDXGI*)mWindowManagerApi;
             break;
 #endif
 #ifdef ENABLE_OPENGL
         case Ship::WindowBackend::FAST3D_SDL_OPENGL:
-            mRenderingApi = &gfx_opengl_api;
-            mWindowManagerApi = new GfxBackendSDL2();
+            mRenderingApi = new GfxRenderingAPIOGL();
+            mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
 #endif
 #ifdef __APPLE__
         case Ship::WindowBackend::FAST3D_SDL_METAL:
             mRenderingApi = &gfx_metal_api;
-            mWindowManagerApi = new GfxBackendSDL2();
+            mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
 #endif
         default:
@@ -146,11 +149,11 @@ void Fast3dWindow::InitWindowManager() {
 }
 
 void Fast3dWindow::SetTextureFilter(FilteringMode filteringMode) {
-    mInterpreter->GetCurrentRenderingAPI()->set_texture_filter(filteringMode);
+    mInterpreter->GetCurrentRenderingAPI()->SetTextureFilter(filteringMode);
 }
 
 void Fast3dWindow::EnableSRGBMode() {
-    mInterpreter->mRapi->enable_srgb_mode();
+    mInterpreter->mRapi->SetSrgbMode();
 }
 
 void Fast3dWindow::SetRendererUCode(UcodeHandlers ucode) {

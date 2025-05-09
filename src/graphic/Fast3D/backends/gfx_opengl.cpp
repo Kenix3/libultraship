@@ -18,29 +18,8 @@
 #define FOR_WINDOWS 0
 #endif
 
-#ifdef _MSC_VER
-#include <SDL2/SDL.h>
-// #define GL_GLEXT_PROTOTYPES 1
-#include <GL/glew.h>
-#elif FOR_WINDOWS
-#include <GL/glew.h>
-#include "SDL.h"
-#define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
-#elif __APPLE__
-#include <SDL2/SDL.h>
-#include <GL/glew.h>
-#elif USE_OPENGLES
-#include <SDL2/SDL.h>
-#include <GLES3/gl3.h>
-#else
-#include <SDL2/SDL.h>
-#define GL_GLEXT_PROTOTYPES 1
-#include <SDL2/SDL_opengl.h>
-#endif
-
 #include "../gfx_cc.h"
-#include "gfx_rendering_api.h"
+#include "gfx_opengl.h"
 #include "window/gui/Gui.h"
 #include <prism/processor.h>
 #include <fstream>
@@ -49,99 +28,39 @@
 #include "../interpreter.h"
 #include <public/bridge/consolevariablebridge.h>
 
-using namespace std;
-
-struct ShaderProgram {
-    GLuint opengl_program_id;
-    uint8_t num_inputs;
-    bool used_textures[SHADER_MAX_TEXTURES];
-    uint8_t num_floats;
-    GLint attrib_locations[16];
-    uint8_t attrib_sizes[16];
-    uint8_t num_attribs;
-    GLint frame_count_location;
-    GLint noise_scale_location;
-    GLint texture_width_location;
-    GLint texture_height_location;
-    GLint texture_filtering_location;
-};
-
-struct Framebuffer {
-    uint32_t width, height;
-    bool has_depth_buffer;
-    uint32_t msaa_level;
-    bool invert_y;
-
-    GLuint fbo, clrbuf, clrbuf_msaa, rbo;
-};
-
-static map<pair<uint64_t, uint32_t>, struct ShaderProgram> shader_program_pool;
-static struct ShaderProgram* current_shader_program;
-static GLuint opengl_vbo;
-#if defined(__APPLE__) || defined(USE_OPENGLES)
-static GLuint opengl_vao;
-#endif
-
-static uint32_t frame_count;
-
-static vector<Framebuffer> framebuffers;
-static size_t current_framebuffer;
-static float current_noise_scale;
-static FilteringMode current_filter_mode = FILTER_THREE_POINT;
-static int8_t current_depth_test;
-static int8_t current_depth_mask;
-static int8_t current_zmode_decal;
-static int8_t last_depth_test;
-static int8_t last_depth_mask;
-static int8_t last_zmode_decal;
-static bool srgb_mode = false;
-
-GLint max_msaa_level = 1;
-GLuint pixel_depth_rb, pixel_depth_fb;
-size_t pixel_depth_rb_size;
-
-struct TextureInfo {
-    uint16_t width;
-    uint16_t height;
-    uint16_t filtering;
-} textures[1024];
-
-static GLuint current_texture_ids[2];
-static uint8_t current_tile;
-
-static int gfx_opengl_get_max_texture_size() {
+int GfxRenderingAPIOGL::GetMaxTextureSize() {
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
     return max_texture_size;
 }
 
-static const char* gfx_opengl_get_name() {
+const char* GfxRenderingAPIOGL::GetName() {
     return "OpenGL";
 }
 
-static struct GfxClipParameters gfx_opengl_get_clip_parameters() {
-    return { false, framebuffers[current_framebuffer].invert_y };
+GfxClipParameters GfxRenderingAPIOGL::GetClipParameters() {
+    return { false, mFrameBuffers[mCurrentFrameBuffer].invertY };
 }
 
-static void gfx_opengl_vertex_array_set_attribs(struct ShaderProgram* prg) {
-    size_t num_floats = prg->num_floats;
+static void VertexArraySetAttribs(ShaderProgram* prg) {
+    size_t numFloats = prg->numFloats;
     size_t pos = 0;
 
-    for (int i = 0; i < prg->num_attribs; i++) {
-        glEnableVertexAttribArray(prg->attrib_locations[i]);
-        glVertexAttribPointer(prg->attrib_locations[i], prg->attrib_sizes[i], GL_FLOAT, GL_FALSE,
-                              num_floats * sizeof(float), (void*)(pos * sizeof(float)));
-        pos += prg->attrib_sizes[i];
+    for (int i = 0; i < prg->numAttribs; i++) {
+        glEnableVertexAttribArray(prg->attribLocations[i]);
+        glVertexAttribPointer(prg->attribLocations[i], prg->attribSizes[i], GL_FLOAT, GL_FALSE,
+                              numFloats * sizeof(float), (void*)(pos * sizeof(float)));
+        pos += prg->attribSizes[i];
     }
 }
 
-static void gfx_opengl_set_uniforms(struct ShaderProgram* prg) {
-    glUniform1i(prg->frame_count_location, frame_count);
-    glUniform1f(prg->noise_scale_location, current_noise_scale);
+void GfxRenderingAPIOGL::SetUniforms(ShaderProgram* prg) const {
+    glUniform1i(prg->frameCountLocation, mFrameCount);
+    glUniform1f(prg->noiseScaleLocation, mCurrentNoiseScale);
 }
 
-static void gfx_opengl_set_per_draw_uniforms() {
-    if (current_shader_program->used_textures[0] || current_shader_program->used_textures[1]) {
+void GfxRenderingAPIOGL::SetPerDrawUniforms() {
+    if (current_shader_program->usedTextures[0] || current_shader_program->usedTextures[1]) {
         GLint filtering[2] = { textures[current_texture_ids[0]].filtering, textures[current_texture_ids[1]].filtering };
         glUniform1iv(current_shader_program->texture_filtering_location, 2, filtering);
 
@@ -153,33 +72,21 @@ static void gfx_opengl_set_per_draw_uniforms() {
     }
 }
 
-static void gfx_opengl_unload_shader(struct ShaderProgram* old_prg) {
-    if (old_prg != NULL) {
-        for (int i = 0; i < old_prg->num_attribs; i++) {
-            glDisableVertexAttribArray(old_prg->attrib_locations[i]);
+void GfxRenderingAPIOGL::UnloadShader(ShaderProgram* old_prg) {
+    if (old_prg != nullptr) {
+        for (unsigned int i = 0; i < old_prg->numAttribs; i++) {
+            glDisableVertexAttribArray(old_prg->attribLocations[i]);
+
         }
     }
 }
 
-static void gfx_opengl_load_shader(struct ShaderProgram* new_prg) {
+void GfxRenderingAPIOGL::LoadShader(ShaderProgram* new_prg) {
     // if (!new_prg) return;
     current_shader_program = new_prg;
-    glUseProgram(new_prg->opengl_program_id);
-    gfx_opengl_vertex_array_set_attribs(new_prg);
-    gfx_opengl_set_uniforms(new_prg);
-}
-
-static void append_str(char* buf, size_t* len, const char* str) {
-    while (*str != '\0') {
-        buf[(*len)++] = *str++;
-    }
-}
-
-static void append_line(char* buf, size_t* len, const char* str) {
-    while (*str != '\0') {
-        buf[(*len)++] = *str++;
-    }
-    buf[(*len)++] = '\n';
+    glUseProgram(new_prg->openglProgramId);
+    VertexArraySetAttribs(new_prg);
+    SetUniforms(new_prg);
 }
 
 #define RAND_NOISE "((random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + 1.0) / 2.0)"
@@ -320,9 +227,9 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
     return *inc;
 }
 
-static std::string build_fs_shader(const CCFeatures& cc_features) {
+std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     prism::Processor processor;
-    prism::ContextItems context = {
+    prism::ContextItems mContext = {
         { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
         { "o_alpha", cc_features.opt_alpha },
         { "o_fog", cc_features.opt_fog },
@@ -332,11 +239,11 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "o_alpha_threshold", cc_features.opt_alpha_threshold },
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
-        { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+        { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
-        { "o_inputs", cc_features.num_inputs },
+        { "o_inputs", cc_features.numInputs },
         { "o_do_mix", M_ARRAY(cc_features.do_mix, bool, 2, 2) },
         { "o_do_single", M_ARRAY(cc_features.do_single, bool, 2, 2) },
         { "o_do_multiply", M_ARRAY(cc_features.do_multiply, bool, 2, 2) },
@@ -344,7 +251,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "FILTER_THREE_POINT", FILTER_THREE_POINT },
         { "FILTER_LINEAR", FILTER_LINEAR },
         { "FILTER_NONE", FILTER_NONE },
-        { "srgb_mode", srgb_mode },
+        { "srgb_mode", mSrgbMode },
         { "SHADER_0", SHADER_0 },
         { "SHADER_INPUT_1", SHADER_INPUT_1 },
         { "SHADER_INPUT_2", SHADER_INPUT_2 },
@@ -360,7 +267,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "SHADER_1", SHADER_1 },
         { "SHADER_COMBINED", SHADER_COMBINED },
         { "SHADER_NOISE", SHADER_NOISE },
-        { "o_three_point_filtering", current_filter_mode == FILTER_THREE_POINT },
+        { "o_three_point_filtering", mCurrentFilterMode == FILTER_THREE_POINT },
         { "append_formula", (InvokeFunc)append_formula },
 #ifdef __APPLE__
         { "GLSL_VERSION", "#version 410 core" },
@@ -385,7 +292,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "vOutColor", "gl_FragColor" },
 #endif
     };
-    processor.populate(context);
+    processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
@@ -408,23 +315,23 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
     return result;
 }
 
-static size_t num_floats = 0;
+static size_t numFloats = 0;
 
-prism::ContextTypes* update_floats(prism::ContextTypes* num) {
-    num_floats += std::get<int>(*num);
+static prism::ContextTypes* UpdateFloats(prism::ContextTypes* num) {
+    numFloats += std::get<int>(*num);
     return nullptr;
 }
 
-static std::string build_vs_shader(const CCFeatures& cc_features) {
-    num_floats = 4;
+static std::string BuildVsShader(const CCFeatures& cc_features) {
+    numFloats = 4;
     prism::Processor processor;
-    prism::ContextItems context = { { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+    prism::ContextItems mContext = { { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
                                     { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
                                     { "o_fog", cc_features.opt_fog },
                                     { "o_grayscale", cc_features.opt_grayscale },
                                     { "o_alpha", cc_features.opt_alpha },
-                                    { "o_inputs", cc_features.num_inputs },
-                                    { "update_floats", (InvokeFunc)update_floats },
+                                    { "o_inputs", cc_features.numInputs },
+                                    { "update_floats", (InvokeFunc)UpdateFloats },
 #ifdef __APPLE__
                                     { "GLSL_VERSION", "#version 410 core" },
                                     { "attr", "in" },
@@ -442,7 +349,7 @@ static std::string build_vs_shader(const CCFeatures& cc_features) {
                                     { "opengles", false }
 #endif
     };
-    processor.populate(context);
+    processor.populate(mContext);
 
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -466,11 +373,11 @@ static std::string build_vs_shader(const CCFeatures& cc_features) {
     return result;
 }
 
-static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shader_id0, uint32_t shader_id1) {
+ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
-    const auto fs_buf = build_fs_shader(cc_features);
-    const auto vs_buf = build_vs_shader(cc_features);
+    const auto fs_buf = BuildFsShader(cc_features);
+    const auto vs_buf = BuildVsShader(cc_features);
     const GLchar* sources[2] = { vs_buf.data(), fs_buf.data() };
     const GLint lengths[2] = { (GLint)vs_buf.size(), (GLint)fs_buf.size() };
     GLint success;
@@ -510,24 +417,24 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 
     size_t cnt = 0;
 
-    struct ShaderProgram* prg = &shader_program_pool[make_pair(shader_id0, shader_id1)];
-    prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aVtxPos");
-    prg->attrib_sizes[cnt] = 4;
+    struct ShaderProgram* prg = &mShaderProgramPool[std::make_pair(shader_id0, shader_id1)];
+    prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aVtxPos");
+    prg->attribSizes[cnt] = 4;
     ++cnt;
 
     for (int i = 0; i < 2; i++) {
-        if (cc_features.used_textures[i]) {
+        if (cc_features.usedTextures[i]) {
             char name[32];
             sprintf(name, "aTexCoord%d", i);
-            prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, name);
-            prg->attrib_sizes[cnt] = 2;
+            prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
+            prg->attribSizes[cnt] = 2;
             ++cnt;
 
             for (int j = 0; j < 2; j++) {
                 if (cc_features.clamp[i][j]) {
                     sprintf(name, "aTexClamp%s%d", j == 0 ? "S" : "T", i);
-                    prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, name);
-                    prg->attrib_sizes[cnt] = 1;
+                    prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
+                    prg->attribSizes[cnt] = 1;
                     ++cnt;
                 }
             }
@@ -535,49 +442,49 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     }
 
     if (cc_features.opt_fog) {
-        prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aFog");
-        prg->attrib_sizes[cnt] = 4;
+        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aFog");
+        prg->attribSizes[cnt] = 4;
         ++cnt;
     }
 
     if (cc_features.opt_grayscale) {
-        prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, "aGrayscaleColor");
-        prg->attrib_sizes[cnt] = 4;
+        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aGrayscaleColor");
+        prg->attribSizes[cnt] = 4;
         ++cnt;
     }
 
-    for (int i = 0; i < cc_features.num_inputs; i++) {
+    for (int i = 0; i < cc_features.numInputs; i++) {
         char name[16];
         sprintf(name, "aInput%d", i + 1);
-        prg->attrib_locations[cnt] = glGetAttribLocation(shader_program, name);
-        prg->attrib_sizes[cnt] = cc_features.opt_alpha ? 4 : 3;
+        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
+        prg->attribSizes[cnt] = cc_features.opt_alpha ? 4 : 3;
         ++cnt;
     }
 
-    prg->opengl_program_id = shader_program;
-    prg->num_inputs = cc_features.num_inputs;
-    prg->used_textures[0] = cc_features.used_textures[0];
-    prg->used_textures[1] = cc_features.used_textures[1];
-    prg->used_textures[2] = cc_features.used_masks[0];
-    prg->used_textures[3] = cc_features.used_masks[1];
-    prg->used_textures[4] = cc_features.used_blend[0];
-    prg->used_textures[5] = cc_features.used_blend[1];
-    prg->num_floats = num_floats;
-    prg->num_attribs = cnt;
+    prg->openglProgramId = shader_program;
+    prg->numInputs = cc_features.numInputs;
+    prg->usedTextures[0] = cc_features.usedTextures[0];
+    prg->usedTextures[1] = cc_features.usedTextures[1];
+    prg->usedTextures[2] = cc_features.used_masks[0];
+    prg->usedTextures[3] = cc_features.used_masks[1];
+    prg->usedTextures[4] = cc_features.used_blend[0];
+    prg->usedTextures[5] = cc_features.used_blend[1];
+    prg->numFloats = numFloats;
+    prg->numAttribs = cnt;
 
-    prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
-    prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
+    prg->frameCountLocation = glGetUniformLocation(shader_program, "frame_count");
+    prg->noiseScaleLocation = glGetUniformLocation(shader_program, "noise_scale");
     prg->texture_width_location = glGetUniformLocation(shader_program, "texture_width");
     prg->texture_height_location = glGetUniformLocation(shader_program, "texture_height");
     prg->texture_filtering_location = glGetUniformLocation(shader_program, "texture_filtering");
 
-    gfx_opengl_load_shader(prg);
+    LoadShader(prg);
 
-    if (cc_features.used_textures[0]) {
+    if (cc_features.usedTextures[0]) {
         GLint sampler_location = glGetUniformLocation(shader_program, "uTex0");
         glUniform1i(sampler_location, 0);
     }
-    if (cc_features.used_textures[1]) {
+    if (cc_features.usedTextures[1]) {
         GLint sampler_location = glGetUniformLocation(shader_program, "uTex1");
         glUniform1i(sampler_location, 1);
     }
@@ -601,35 +508,35 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
     return prg;
 }
 
-static struct ShaderProgram* gfx_opengl_lookup_shader(uint64_t shader_id0, uint32_t shader_id1) {
-    auto it = shader_program_pool.find(make_pair(shader_id0, shader_id1));
-    return it == shader_program_pool.end() ? nullptr : &it->second;
+struct ShaderProgram* GfxRenderingAPIOGL::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
+    auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
+    return it == mShaderProgramPool.end() ? nullptr : &it->second;
 }
 
-static void gfx_opengl_shader_get_info(struct ShaderProgram* prg, uint8_t* num_inputs, bool used_textures[2]) {
-    *num_inputs = prg->num_inputs;
-    used_textures[0] = prg->used_textures[0];
-    used_textures[1] = prg->used_textures[1];
+void GfxRenderingAPIOGL::ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) {
+    *numInputs = prg->numInputs;
+    usedTextures[0] = prg->usedTextures[0];
+    usedTextures[1] = prg->usedTextures[1];
 }
 
-static GLuint gfx_opengl_new_texture() {
+GLuint GfxRenderingAPIOGL::NewTexture() {
     GLuint ret;
     glGenTextures(1, &ret);
     return ret;
 }
 
-static void gfx_opengl_delete_texture(uint32_t texID) {
+void GfxRenderingAPIOGL::DeleteTexture(uint32_t texID) {
     glDeleteTextures(1, &texID);
 }
 
-static void gfx_opengl_select_texture(int tile, GLuint texture_id) {
+void GfxRenderingAPIOGL::SelectTexture(int tile, GLuint texture_id) {
     glActiveTexture(GL_TEXTURE0 + tile);
     glBindTexture(GL_TEXTURE_2D, texture_id);
     current_texture_ids[tile] = texture_id;
     current_tile = tile;
 }
 
-static void gfx_opengl_upload_texture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
+void GfxRenderingAPIOGL::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
     textures[current_texture_ids[current_tile]].width = width;
     textures[current_texture_ids[current_tile]].height = height;
@@ -653,9 +560,9 @@ static uint32_t gfx_cm_to_opengl(uint32_t val) {
     return 0;
 }
 
-static void gfx_opengl_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
+void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
     glActiveTexture(GL_TEXTURE0 + tile);
-    GLint filter = linear_filter && current_filter_mode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
+    const GLint filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     textures[current_texture_ids[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
@@ -663,24 +570,24 @@ static void gfx_opengl_set_sampler_parameters(int tile, bool linear_filter, uint
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));
 }
 
-static void gfx_opengl_set_depth_test_and_mask(bool depth_test, bool z_upd) {
-    current_depth_test = depth_test;
-    current_depth_mask = z_upd;
+void GfxRenderingAPIOGL::SetDepthTestAndMask(bool depth_test, bool z_upd) {
+    mCurrentDepthTest = depth_test;
+    mCurrentDepthMask = z_upd;
 }
 
-static void gfx_opengl_set_zmode_decal(bool zmode_decal) {
-    current_zmode_decal = zmode_decal;
+void GfxRenderingAPIOGL::SetZmodeDecal(bool zmode_decal) {
+    mCurrentZmodeDecal = zmode_decal;
 }
 
-static void gfx_opengl_set_viewport(int x, int y, int width, int height) {
+void GfxRenderingAPIOGL::SetViewport(int x, int y, int width, int height) {
     glViewport(x, y, width, height);
 }
 
-static void gfx_opengl_set_scissor(int x, int y, int width, int height) {
+void GfxRenderingAPIOGL::SetScissor(int x, int y, int width, int height) {
     glScissor(x, y, width, height);
 }
 
-static void gfx_opengl_set_use_alpha(bool use_alpha) {
+void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
     if (use_alpha) {
         glEnable(GL_BLEND);
     } else {
@@ -688,23 +595,23 @@ static void gfx_opengl_set_use_alpha(bool use_alpha) {
     }
 }
 
-static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
-    if (current_depth_test != last_depth_test || current_depth_mask != last_depth_mask) {
-        last_depth_test = current_depth_test;
-        last_depth_mask = current_depth_mask;
+void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+    if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask) {
+        mLastDepthTest = mCurrentDepthTest;
+        mLastDepthMask = mCurrentDepthMask;
 
-        if (current_depth_test || last_depth_mask) {
+        if (mCurrentDepthTest || mLastDepthMask) {
             glEnable(GL_DEPTH_TEST);
-            glDepthMask(last_depth_mask ? GL_TRUE : GL_FALSE);
-            glDepthFunc(current_depth_test ? (current_zmode_decal ? GL_LEQUAL : GL_LESS) : GL_ALWAYS);
+            glDepthMask(mLastDepthMask ? GL_TRUE : GL_FALSE);
+            glDepthFunc(mCurrentDepthTest ? (mCurrentZmodeDecal ? GL_LEQUAL : GL_LESS) : GL_ALWAYS);
         } else {
             glDisable(GL_DEPTH_TEST);
         }
     }
 
-    if (current_zmode_decal != last_zmode_decal) {
-        last_zmode_decal = current_zmode_decal;
-        if (current_zmode_decal) {
+    if (mCurrentZmodeDecal != mLastZmodeDecal) {
+        mLastZmodeDecal = mCurrentZmodeDecal;
+        if (mCurrentZmodeDecal) {
             // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
             // fighting
             const int n64modeFactor = 120;
@@ -713,16 +620,16 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
             switch (CVarGetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
                 // scaled z-fighting (N64 mode like)
                 case 1:
-                    if (framebuffers.size() >
-                        current_framebuffer) { // safety check for vector size can probably be removed
-                        SSDB = -1.0f * (GLfloat)framebuffers[current_framebuffer].height / n64modeFactor;
+                    if (mFrameBuffers.size() >
+                        mCurrentFrameBuffer) { // safety check for vector size can probably be removed
+                        SSDB = -1.0f * (GLfloat)mFrameBuffers[mCurrentFrameBuffer].height / n64modeFactor;
                     }
                     break;
                 // no vanishing paths
                 case 2:
-                    if (framebuffers.size() >
-                        current_framebuffer) { // safety check for vector size can probably be removed
-                        SSDB = -1.0f * (GLfloat)framebuffers[current_framebuffer].height / noVanishFactor;
+                    if (mFrameBuffers.size() >
+                        mCurrentFrameBuffer) { // safety check for vector size can probably be removed
+                        SSDB = -1.0f * (GLfloat)mFrameBuffers[mCurrentFrameBuffer].height / noVanishFactor;
                     }
                     break;
                 // disabled
@@ -738,24 +645,24 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
         }
     }
 
-    gfx_opengl_set_per_draw_uniforms();
+    SetPerDrawUniforms();
 
     // printf("flushing %d tris\n", buf_vbo_num_tris);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_vbo_len, buf_vbo, GL_STREAM_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_tris);
 }
 
-static void gfx_opengl_init() {
+void GfxRenderingAPIOGL::Init() {
 #ifndef __linux__
     glewInit();
 #endif
 
-    glGenBuffers(1, &opengl_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
+    glGenBuffers(1, &mOpenglVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, mOpenglVbo);
 
 #if defined(__APPLE__) || defined(USE_OPENGLES)
-    glGenVertexArrays(1, &opengl_vao);
-    glBindVertexArray(opengl_vao);
+    glGenVertexArrays(1, &mOpenglVao);
+    glBindVertexArray(mOpenglVao);
 #endif
 
 #ifndef USE_OPENGLES // not supported on gles
@@ -764,38 +671,38 @@ static void gfx_opengl_init() {
     glDepthFunc(GL_LEQUAL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    framebuffers.resize(1); // for the default screen buffer
+    mFrameBuffers.resize(1); // for the default screen buffer
 
-    glGenRenderbuffers(1, &pixel_depth_rb);
-    glBindRenderbuffer(GL_RENDERBUFFER, pixel_depth_rb);
+    glGenRenderbuffers(1, &mPixelDepthRb);
+    glBindRenderbuffer(GL_RENDERBUFFER, mPixelDepthRb);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1, 1);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    glGenFramebuffers(1, &pixel_depth_fb);
-    glBindFramebuffer(GL_FRAMEBUFFER, pixel_depth_fb);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pixel_depth_rb);
+    glGenFramebuffers(1, &mPixelDepthFb);
+    glBindFramebuffer(GL_FRAMEBUFFER, mPixelDepthFb);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mPixelDepthRb);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    pixel_depth_rb_size = 1;
+    mPixelDepthRbSize = 1;
 
-    glGetIntegerv(GL_MAX_SAMPLES, &max_msaa_level);
+    glGetIntegerv(GL_MAX_SAMPLES, &mMaxMsaaLevel);
 }
 
-static void gfx_opengl_on_resize() {
+void GfxRenderingAPIOGL::OnResize() {
 }
 
-static void gfx_opengl_start_frame() {
-    frame_count++;
+void GfxRenderingAPIOGL::StartFrame() {
+    mFrameCount++;
 }
 
-static void gfx_opengl_end_frame() {
+void GfxRenderingAPIOGL::EndFrame() {
     glFlush();
 }
 
-static void gfx_opengl_finish_render() {
+void GfxRenderingAPIOGL::FinishRender() {
 }
 
-static int gfx_opengl_create_framebuffer() {
+int GfxRenderingAPIOGL::CreateFramebuffer() {
     GLuint clrbuf;
     glGenTextures(1, &clrbuf);
     glBindTexture(GL_TEXTURE_2D, clrbuf);
@@ -804,8 +711,8 @@ static int gfx_opengl_create_framebuffer() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    GLuint clrbuf_msaa;
-    glGenRenderbuffers(1, &clrbuf_msaa);
+    GLuint clrbufMsaa;
+    glGenRenderbuffers(1, &clrbufMsaa);
 
     GLuint rbo;
     glGenRenderbuffers(1, &rbo);
@@ -816,25 +723,25 @@ static int gfx_opengl_create_framebuffer() {
     GLuint fbo;
     glGenFramebuffers(1, &fbo);
 
-    size_t i = framebuffers.size();
-    framebuffers.resize(i + 1);
+    size_t i = mFrameBuffers.size();
+    mFrameBuffers.resize(i + 1);
 
-    framebuffers[i].fbo = fbo;
-    framebuffers[i].clrbuf = clrbuf;
-    framebuffers[i].clrbuf_msaa = clrbuf_msaa;
-    framebuffers[i].rbo = rbo;
+    mFrameBuffers[i].fbo = fbo;
+    mFrameBuffers[i].clrbuf = clrbuf;
+    mFrameBuffers[i].clrbufMsaa = clrbufMsaa;
+    mFrameBuffers[i].rbo = rbo;
 
     return i;
 }
 
-static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
-                                                     bool opengl_invert_y, bool render_target, bool has_depth_buffer,
+void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
+                                                     bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                                      bool can_extract_depth) {
-    Framebuffer& fb = framebuffers[fb_id];
+    Framebuffer& fb = mFrameBuffers[fb_id];
 
-    width = max(width, 1U);
-    height = max(height, 1U);
-    msaa_level = min(msaa_level, (uint32_t)max_msaa_level);
+    width = std::max(width, 1U);
+    height = std::max(height, 1U);
+    msaa_level = std:: min(msaa_level, (uint32_t)mMaxMsaaLevel);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
 
@@ -846,10 +753,10 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
             } else {
-                glBindRenderbuffer(GL_RENDERBUFFER, fb.clrbuf_msaa);
+                glBindRenderbuffer(GL_RENDERBUFFER, fb.clrbufMsaa);
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_level, GL_RGB8, width, height);
                 glBindRenderbuffer(GL_RENDERBUFFER, 0);
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fb.clrbuf_msaa);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fb.clrbufMsaa);
             }
         }
 
@@ -875,31 +782,31 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
     fb.height = height;
     fb.has_depth_buffer = has_depth_buffer;
     fb.msaa_level = msaa_level;
-    fb.invert_y = opengl_invert_y;
+    fb.invertY = opengl_invertY;
 }
 
-void gfx_opengl_start_draw_to_framebuffer(int fb_id, float noise_scale) {
-    Framebuffer& fb = framebuffers[fb_id];
+void GfxRenderingAPIOGL::StartDrawToFramebuffer(int fb_id, float noise_scale) {
+    Framebuffer& fb = mFrameBuffers[fb_id];
 
     if (noise_scale != 0.0f) {
-        current_noise_scale = 1.0f / noise_scale;
+        mCurrentNoiseScale = 1.0f / noise_scale;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
-    current_framebuffer = fb_id;
+    mCurrentFrameBuffer = fb_id;
 }
 
-void gfx_opengl_clear_framebuffer(bool color, bool depth) {
+void GfxRenderingAPIOGL::ClearFramebuffer(bool color, bool depth) {
     glDisable(GL_SCISSOR_TEST);
     glDepthMask(GL_TRUE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
-    glDepthMask(current_depth_mask ? GL_TRUE : GL_FALSE);
+    glDepthMask(mCurrentDepthMask ? GL_TRUE : GL_FALSE);
     glEnable(GL_SCISSOR_TEST);
 }
 
-void gfx_opengl_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
-    Framebuffer& fb_dst = framebuffers[fb_id_target];
-    Framebuffer& fb_src = framebuffers[fb_id_source];
+void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
+    Framebuffer& fb_dst = mFrameBuffers[fb_id_target];
+    Framebuffer& fb_src = mFrameBuffers[fb_id_source];
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_dst.fbo);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_src.fbo);
 
@@ -908,39 +815,39 @@ void gfx_opengl_resolve_msaa_color_buffer(int fb_id_target, int fb_id_source) {
 
     glBlitFramebuffer(0, 0, fb_src.width, fb_src.height, 0, 0, fb_dst.width, fb_dst.height, GL_COLOR_BUFFER_BIT,
                       GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, mCurrentFrameBuffer);
 
     glEnable(GL_SCISSOR_TEST);
 }
 
-void* gfx_opengl_get_framebuffer_texture_id(int fb_id) {
-    return (void*)(uintptr_t)framebuffers[fb_id].clrbuf;
+void* GfxRenderingAPIOGL::GetFramebufferTextureId(int fb_id) {
+    return (void*)(uintptr_t)mFrameBuffers[fb_id].clrbuf;
 }
 
-void gfx_opengl_select_texture_fb(int fb_id) {
+void GfxRenderingAPIOGL::SelectTextureFb(int fb_id) {
     // glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0 + 0);
-    glBindTexture(GL_TEXTURE_2D, framebuffers[fb_id].clrbuf);
+    glBindTexture(GL_TEXTURE_2D, mFrameBuffers[fb_id].clrbuf);
 }
 
-void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
+void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
                                  int dstY0, int dstX1, int dstY1) {
-    if (fb_dst_id >= (int)framebuffers.size() || fb_src_id >= (int)framebuffers.size()) {
+    if (fb_dst_id >= (int)mFrameBuffers.size() || fb_src_id >= (int)mFrameBuffers.size()) {
         return;
     }
 
-    Framebuffer src = framebuffers[fb_src_id];
-    const Framebuffer& dst = framebuffers[fb_dst_id];
+    Framebuffer src = mFrameBuffers[fb_src_id];
+    const Framebuffer& dst = mFrameBuffers[fb_dst_id];
 
     // Adjust y values for non-inverted source frame buffers because opengl uses bottom left for origin
-    if (!src.invert_y) {
+    if (!src.invertY) {
         int temp = srcY1 - srcY0;
         srcY1 = src.height - srcY0;
         srcY0 = srcY1 - temp;
     }
 
     // Flip the y values
-    if (src.invert_y != dst.invert_y) {
+    if (src.invertY != dst.invertY) {
         std::swap(srcY0, srcY1);
     }
 
@@ -952,12 +859,12 @@ void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int sr
     if (src.height != dst.height && src.width != dst.width && src.msaa_level > 1) {
         // Start with the main buffer (0) as the msaa resolved buffer
         int fb_resolve_id = 0;
-        Framebuffer fb_resolve = framebuffers[fb_resolve_id];
+        Framebuffer fb_resolve = mFrameBuffers[fb_resolve_id];
 
         // If the size doesn't match our source, then we need to use our separate color msaa resolved buffer (2)
         if (fb_resolve.height != src.height || fb_resolve.width != src.width) {
             fb_resolve_id = 2;
-            fb_resolve = framebuffers[fb_resolve_id];
+            fb_resolve = mFrameBuffers[fb_resolve_id];
         }
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
@@ -982,28 +889,28 @@ void gfx_opengl_copy_framebuffer(int fb_dst_id, int fb_src_id, int srcX0, int sr
 
     glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[current_framebuffer].fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[mCurrentFrameBuffer].fbo);
 
     glReadBuffer(GL_BACK);
 
     glEnable(GL_SCISSOR_TEST);
 }
 
-void gfx_opengl_read_framebuffer_to_cpu(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
-    if (fb_id >= (int)framebuffers.size()) {
+void GfxRenderingAPIOGL::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
+    if (fb_id >= (int)mFrameBuffers.size()) {
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[fb_id].fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[fb_id].fbo);
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (void*)rgba16_buf);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[current_framebuffer].fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[mCurrentFrameBuffer].fbo);
 }
 
-static std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
-gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
+std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
+GfxRenderingAPIOGL::GetPixelDepth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> res;
 
-    Framebuffer& fb = framebuffers[fb_id];
+    Framebuffer& fb = mFrameBuffers[fb_id];
 
     // When looking up one value and the framebuffer is single-sampled, we can read pixels directly
     // Otherwise we need to blit first to a new buffer then read it
@@ -1013,26 +920,26 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
         int x = coordinates.begin()->first;
         int y = coordinates.begin()->second;
 #ifndef USE_OPENGLES // not supported on gles. Runs fine without it, but this may cause issues
-        glReadPixels(x, fb.invert_y ? fb.height - y : y, 1, 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8,
+        glReadPixels(x, fb.invertY ? fb.height - y : y, 1, 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8,
                      &depth_stencil_value);
 #endif
         res.emplace(*coordinates.begin(), (depth_stencil_value >> 18) << 2);
     } else {
-        if (pixel_depth_rb_size < coordinates.size()) {
+        if (mPixelDepthRbSize < coordinates.size()) {
             // Resizing a renderbuffer seems broken with Intel's driver, so recreate one instead.
-            glBindFramebuffer(GL_FRAMEBUFFER, pixel_depth_fb);
-            glDeleteRenderbuffers(1, &pixel_depth_rb);
-            glGenRenderbuffers(1, &pixel_depth_rb);
-            glBindRenderbuffer(GL_RENDERBUFFER, pixel_depth_rb);
+            glBindFramebuffer(GL_FRAMEBUFFER, mPixelDepthFb);
+            glDeleteRenderbuffers(1, &mPixelDepthRb);
+            glGenRenderbuffers(1, &mPixelDepthRb);
+            glBindRenderbuffer(GL_RENDERBUFFER, mPixelDepthRb);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, coordinates.size(), 1);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pixel_depth_rb);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mPixelDepthRb);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-            pixel_depth_rb_size = coordinates.size();
+            mPixelDepthRbSize = coordinates.size();
         }
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fbo);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixel_depth_fb);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPixelDepthFb);
 
         glDisable(GL_SCISSOR_TEST); // needed for the blit operation
 
@@ -1041,7 +948,7 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
             for (const auto& coord : coordinates) {
                 int x = coord.first;
                 int y = coord.second;
-                if (fb.invert_y) {
+                if (fb.invertY) {
                     y = fb.height - y;
                 }
                 glBlitFramebuffer(x, y, x + 1, y + 1, i, 0, i + 1, 1, GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
@@ -1050,8 +957,8 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
             }
         }
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, pixel_depth_fb);
-        vector<uint32_t> depth_stencil_values(coordinates.size());
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, mPixelDepthFb);
+        std::vector<uint32_t> depth_stencil_values(coordinates.size());
 #ifndef USE_OPENGLES // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(0, 0, coordinates.size(), 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, depth_stencil_values.data());
 #endif
@@ -1063,61 +970,27 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
         }
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, mCurrentFrameBuffer);
 
     return res;
 }
 
-void gfx_opengl_set_texture_filter(FilteringMode mode) {
+void GfxRenderingAPIOGL::SetTextureFilter(FilteringMode mode) {
     gfx_texture_cache_clear();
-    current_filter_mode = mode;
+    mCurrentFilterMode = mode;
 }
 
-FilteringMode gfx_opengl_get_texture_filter() {
-    return current_filter_mode;
+FilteringMode GfxRenderingAPIOGL::GetTextureFilter() {
+    return mCurrentFilterMode;
 }
 
-void gfx_opengl_enable_srgb_mode() {
-    srgb_mode = true;
+void GfxRenderingAPIOGL::SetSrgbMode() {
+    mSrgbMode = true;
 }
 
-struct GfxRenderingAPI gfx_opengl_api = { gfx_opengl_get_name,
-                                          gfx_opengl_get_max_texture_size,
-                                          gfx_opengl_get_clip_parameters,
-                                          gfx_opengl_unload_shader,
-                                          gfx_opengl_load_shader,
-                                          gfx_opengl_create_and_load_new_shader,
-                                          gfx_opengl_lookup_shader,
-                                          gfx_opengl_shader_get_info,
-                                          gfx_opengl_new_texture,
-                                          gfx_opengl_select_texture,
-                                          gfx_opengl_upload_texture,
-                                          gfx_opengl_set_sampler_parameters,
-                                          gfx_opengl_set_depth_test_and_mask,
-                                          gfx_opengl_set_zmode_decal,
-                                          gfx_opengl_set_viewport,
-                                          gfx_opengl_set_scissor,
-                                          gfx_opengl_set_use_alpha,
-                                          gfx_opengl_draw_triangles,
-                                          gfx_opengl_init,
-                                          gfx_opengl_on_resize,
-                                          gfx_opengl_start_frame,
-                                          gfx_opengl_end_frame,
-                                          gfx_opengl_finish_render,
-                                          gfx_opengl_create_framebuffer,
-                                          gfx_opengl_update_framebuffer_parameters,
-                                          gfx_opengl_start_draw_to_framebuffer,
-                                          gfx_opengl_copy_framebuffer,
-                                          gfx_opengl_clear_framebuffer,
-                                          gfx_opengl_read_framebuffer_to_cpu,
-                                          gfx_opengl_resolve_msaa_color_buffer,
-                                          gfx_opengl_get_pixel_depth,
-                                          gfx_opengl_get_framebuffer_texture_id,
-                                          gfx_opengl_select_texture_fb,
-                                          gfx_opengl_delete_texture,
-                                          gfx_opengl_set_texture_filter,
-                                          gfx_opengl_get_texture_filter,
-                                          gfx_opengl_enable_srgb_mode };
+ImTextureID GfxRenderingAPIOGL::GetTextureById(int id) {
+    return reinterpret_cast<ImTextureID>(id);
+}
 
 #endif
 

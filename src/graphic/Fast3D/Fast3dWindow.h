@@ -69,7 +69,7 @@ class Fast3dWindow : public Ship::Window {
 
   private:
     GfxRenderingAPI* mRenderingApi;
-    GfxBackend* mWindowManagerApi;
+    GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
 };
 } // namespace Fast

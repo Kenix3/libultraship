@@ -1,5 +1,6 @@
 #ifndef GFX_DXGI_H
 #define GFX_DXGI_H
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
 #include "gfx_rendering_api.h"
 
@@ -8,10 +9,10 @@
 #include <dxgi1_2.h>
 
 
-class GfxBackendDXGI final : public GfxBackend {
+class GfxWindowBackendDXGI final : public GfxWindowBackend {
 public:
-  GfxBackendDXGI() = default;
-  ~GfxBackendDXGI() override;
+  GfxWindowBackendDXGI() = default;
+  ~GfxWindowBackendDXGI() override;
 
   void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
   void Close() override;
@@ -46,9 +47,10 @@ public:
   HWND GetWindowHandle();
   IDXGISwapChain1* GetSwapChain();
   // These need to be public to be accessible in the window callback
-  void CreateSwapChain(IUnknown* device, std::function<void()>&& before_destroy_fn);
+  void CreateSwapChain(IUnknown* mDevice, std::function<void()>&& before_destroy_fn);
   void CreateFactoryAndDevice(bool debug, int d3d_version,
-                              bool (*create_device_fn)(IDXGIAdapter1* adapter, bool test_only));
+                              class GfxRenderingAPIDX11* self,
+                              bool (*createFunc)(class GfxRenderingAPIDX11* self, IDXGIAdapter1* adapter, bool test_only));
   void OnKeydown(WPARAM wParam, LPARAM lParam);
   void OnKeyup(WPARAM wParam, LPARAM lParam);
   void OnMouseButtonDown(int btn);
@@ -114,4 +116,5 @@ void ThrowIfFailed(HRESULT res);
 void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message);
 #endif
 
+#endif
 #endif

@@ -23,8 +23,8 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 
-struct GfxRenderingAPI;
-class GfxBackend;
+class GfxRenderingAPI;
+class GfxWindowBackend;
 union Gfx;
 
 namespace Fast {
@@ -227,7 +227,7 @@ struct GfxTextureCache {
 struct ColorCombiner {
     uint64_t shader_id0;
     uint32_t shader_id1;
-    bool used_textures[2];
+    bool usedTextures[2];
     struct ShaderProgram* prg[16];
     uint8_t shader_input_mapping[2][7];
 };
@@ -237,8 +237,8 @@ struct RenderingState {
     bool decal_mode;
     bool alpha_blend;
     struct XYWidthHeight viewport, scissor;
-    struct ShaderProgram* shader_program;
-    TextureCacheNode* textures[SHADER_MAX_TEXTURES];
+    struct ShaderProgram* mShaderProgram;
+    TextureCacheNode* mTextures[SHADER_MAX_TEXTURES];
 };
 
 struct FBInfo {
@@ -258,7 +258,7 @@ class Interpreter {
     Interpreter();
     ~Interpreter();
 
-    void Init(GfxBackend* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
+    void Init(GfxWindowBackend* wapi, class GfxRenderingAPI* rapi, const char* game_name,
               bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
     void Destroy();
     void GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
@@ -394,7 +394,7 @@ class Interpreter {
     float* mBufVbo; // 3 vertices in a triangle and 32 floats per vtx
     size_t mBufVboLen{};
     size_t mBufVboNumTris{};
-    GfxBackend* mWapi = nullptr;
+    GfxWindowBackend* mWapi = nullptr;
     GfxRenderingAPI* mRapi = nullptr;
 
     uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};

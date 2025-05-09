@@ -12,7 +12,7 @@
 #include "gfx_cc.h"
 #include <string>
 
-MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_floats, const CCFeatures& cc_features,
+MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFloats, const CCFeatures& cc_features,
                                               bool three_point_filtering);
 
 #endif

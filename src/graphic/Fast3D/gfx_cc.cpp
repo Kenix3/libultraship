@@ -27,32 +27,32 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
         cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
     }
 
-    cc_features->used_textures[0] = false;
-    cc_features->used_textures[1] = false;
+    cc_features->usedTextures[0] = false;
+    cc_features->usedTextures[1] = false;
     cc_features->used_masks[0] = false;
     cc_features->used_masks[1] = false;
     cc_features->used_blend[0] = false;
     cc_features->used_blend[1] = false;
-    cc_features->num_inputs = 0;
+    cc_features->numInputs = 0;
 
     for (int c = 0; c < 2; c++) {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 4; j++) {
                 if (cc_features->c[c][i][j] >= SHADER_INPUT_1 && cc_features->c[c][i][j] <= SHADER_INPUT_7) {
-                    if (cc_features->c[c][i][j] > cc_features->num_inputs) {
-                        cc_features->num_inputs = cc_features->c[c][i][j];
+                    if (cc_features->c[c][i][j] > cc_features->numInputs) {
+                        cc_features->numInputs = cc_features->c[c][i][j];
                     }
                 }
                 if (cc_features->c[c][i][j] == SHADER_TEXEL0 || cc_features->c[c][i][j] == SHADER_TEXEL0A) {
-                    cc_features->used_textures[0] = true;
+                    cc_features->usedTextures[0] = true;
                     if (cc_features->opt_2cyc) {
-                        cc_features->used_textures[1] = true;
+                        cc_features->usedTextures[1] = true;
                     }
                 }
                 if (cc_features->c[c][i][j] == SHADER_TEXEL1 || cc_features->c[c][i][j] == SHADER_TEXEL1A) {
-                    cc_features->used_textures[1] = true;
+                    cc_features->usedTextures[1] = true;
                     if (cc_features->opt_2cyc) {
-                        cc_features->used_textures[0] = true;
+                        cc_features->usedTextures[0] = true;
                     }
                 }
             }
@@ -69,17 +69,17 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
         cc_features->color_alpha_same[c] = (shader_id0 >> c * 32 & 0xffff) == (shader_id0 >> c * 32 + 16 & 0xffff);
     }
 
-    if (cc_features->used_textures[0] && shader_id1 & SHADER_OPT(TEXEL0_MASK)) {
+    if (cc_features->usedTextures[0] && shader_id1 & SHADER_OPT(TEXEL0_MASK)) {
         cc_features->used_masks[0] = true;
     }
-    if (cc_features->used_textures[1] && shader_id1 & SHADER_OPT(TEXEL1_MASK)) {
+    if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_MASK)) {
         cc_features->used_masks[1] = true;
     }
 
-    if (cc_features->used_textures[0] && shader_id1 & SHADER_OPT(TEXEL0_BLEND)) {
+    if (cc_features->usedTextures[0] && shader_id1 & SHADER_OPT(TEXEL0_BLEND)) {
         cc_features->used_blend[0] = true;
     }
-    if (cc_features->used_textures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
+    if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
         cc_features->used_blend[1] = true;
     }
 }

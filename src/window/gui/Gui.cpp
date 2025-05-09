@@ -222,10 +222,10 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
 
     // TODO: Nothing ever unloads the texture from Fast3D here.
-    guiTexture->Metadata.RendererTextureId = api->new_texture();
-    api->select_texture(0, guiTexture->Metadata.RendererTextureId);
-    api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(guiTexture->Data, guiTexture->Metadata.Width, guiTexture->Metadata.Height);
+    guiTexture->Metadata.RendererTextureId = api->NewTexture();
+    api->SelectTexture(0, guiTexture->Metadata.RendererTextureId);
+    api->SetSamplerParameters(0, false, 0, 0);
+    api->UploadTexture(guiTexture->Data, guiTexture->Metadata.Width, guiTexture->Metadata.Height);
 
     mGuiTextures[name] = guiTexture->Metadata;
 }
@@ -677,16 +677,16 @@ void Gui::DrawGame() {
 void Gui::DrawFloatingWindows() {
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
-        // OpenGL requires extra platform handling on the GL context
+        // OpenGL requires extra platform handling on the GL mContext
         if (backend == WindowBackend::FAST3D_SDL_OPENGL && mImpl.Opengl.Context != nullptr) {
-            // Backup window and context before calling RenderPlatformWindowsDefault
+            // Backup window and mContext before calling RenderPlatformWindowsDefault
             SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
             SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
 
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
 
-            // Set back the GL context for next frame
+            // Set back the GL mContext for next frame
             SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
         } else {
 #ifdef __APPLE__
@@ -730,18 +730,8 @@ void Gui::EndDraw() {
 }
 
 ImTextureID Gui::GetTextureById(int32_t id) {
-#ifdef ENABLE_DX11
-    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_DXGI_DX11) {
-        return gfx_d3d11_get_texture_by_id(id);
-    }
-#endif
-#ifdef __APPLE__
-    if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_SDL_METAL) {
-        return gfx_metal_get_texture_by_id(id);
-    }
-#endif
-
-    return reinterpret_cast<ImTextureID>(id);
+    GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
+    return api->GetTextureById(id);
 }
 
 bool Gui::HasTextureByName(const std::string& name) {
@@ -945,13 +935,13 @@ void Gui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, cons
     }
 
     GuiTextureMetadata asset;
-    asset.RendererTextureId = api->new_texture();
+    asset.RendererTextureId = api->NewTexture();
     asset.Width = res.Width;
     asset.Height = res.Height;
 
-    api->select_texture(0, asset.RendererTextureId);
-    api->set_sampler_parameters(0, false, 0, 0);
-    api->upload_texture(texBuffer.data(), res.Width, res.Height);
+    api->SelectTexture(0, asset.RendererTextureId);
+    api->SetSamplerParameters(0, false, 0, 0);
+    api->UploadTexture(texBuffer.data(), res.Width, res.Height);
 
     mGuiTextures[name] = asset;
 }
@@ -967,7 +957,7 @@ void Gui::UnloadTexture(const std::string& name) {
     if (mGuiTextures.contains(name)) {
         GuiTextureMetadata tex = mGuiTextures[name];
         GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
-        api->delete_texture(tex.RendererTextureId);
+        api->DeleteTexture(tex.RendererTextureId);
         mGuiTextures.erase(name);
     }
 }
@@ -976,7 +966,7 @@ std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
 }
 
-void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
+void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar ) {
     mMenuBar = menuBar;
 
     if (GetMenuBar()) {

@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-#include "gfx_direct3d_common.h"
+//#include "gfx_direct3d_common.h"
 #include "../gfx_cc.h"
 #include <prism/processor.h>
 #include <public/bridge/consolevariablebridge.h>
@@ -139,10 +139,10 @@ prism::ContextTypes* prism_append_formula(prism::ContextTypes* a_arg, prism::Con
     return new prism::ContextTypes{ out };
 }
 
-static size_t raw_num_floats = 0;
+static size_t raw_numFloats = 0;
 
 prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
-    raw_num_floats += std::get<int>(*num);
+    raw_numFloats += std::get<int>(*num);
     return nullptr;
 }
 
@@ -161,12 +161,12 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
     return *inc;
 }
 
-std::string gfx_direct3d_common_build_shader(size_t& num_floats, const CCFeatures& cc_features,
+std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,
                                              bool include_root_signature, bool three_point_filtering, bool use_srgb) {
-    raw_num_floats = 4;
+    raw_numFloats = 4;
 
     prism::Processor processor;
-    prism::ContextItems context = {
+    prism::ContextItems mContext = {
         { "SHADER_0", SHADER_0 },
         { "SHADER_INPUT_1", SHADER_INPUT_1 },
         { "SHADER_INPUT_2", SHADER_INPUT_2 },
@@ -191,11 +191,11 @@ std::string gfx_direct3d_common_build_shader(size_t& num_floats, const CCFeature
         { "o_alpha_threshold", cc_features.opt_alpha_threshold },
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
-        { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+        { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
-        { "o_inputs", cc_features.num_inputs },
+        { "o_inputs", cc_features.numInputs },
         { "o_do_mix", M_ARRAY(cc_features.do_mix, bool, 2, 2) },
         { "o_do_single", M_ARRAY(cc_features.do_single, bool, 2, 2) },
         { "o_do_multiply", M_ARRAY(cc_features.do_multiply, bool, 2, 2) },
@@ -206,7 +206,7 @@ std::string gfx_direct3d_common_build_shader(size_t& num_floats, const CCFeature
         { "append_formula", (InvokeFunc)prism_append_formula },
         { "update_floats", (InvokeFunc)update_raw_floats },
     };
-    processor.populate(context);
+    processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
@@ -223,7 +223,7 @@ std::string gfx_direct3d_common_build_shader(size_t& num_floats, const CCFeature
     processor.load(*shader);
     processor.bind_include_loader(dx_include_fs);
     auto result = processor.process();
-    num_floats = raw_num_floats;
+    numFloats = raw_numFloats;
     // SPDLOG_INFO("=========== DX11 SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("====================================");

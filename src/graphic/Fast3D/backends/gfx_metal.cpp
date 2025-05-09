@@ -65,9 +65,9 @@ struct ShaderProgramMetal {
     uint64_t shader_id0;
     uint32_t shader_id1;
 
-    uint8_t num_inputs;
-    uint8_t num_floats;
-    bool used_textures[SHADER_MAX_TEXTURES];
+    uint8_t numInputs;
+    uint8_t numFloats;
+    bool usedTextures[SHADER_MAX_TEXTURES];
 
     // hashed by msaa_level
     MTL::RenderPipelineState* pipeline_state_variants[9];
@@ -354,12 +354,12 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
-    size_t num_floats = 0;
+    size_t numFloats = 0;
     std::string buf;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
     MTL::VertexDescriptor* vertex_descriptor =
-        gfx_metal_build_shader(buf, num_floats, cc_features, mctx.current_filter_mode == FILTER_THREE_POINT);
+        gfx_metal_build_shader(buf, numFloats, cc_features, mctx.current_filter_mode == FILTER_THREE_POINT);
 
     NS::Error* error = nullptr;
     MTL::Library* library =
@@ -398,14 +398,14 @@ static struct ShaderProgram* gfx_metal_create_and_load_new_shader(uint64_t shade
     struct ShaderProgramMetal* prg = &mctx.shader_program_pool[std::make_pair(shader_id0, shader_id1)];
     prg->shader_id0 = shader_id0;
     prg->shader_id1 = shader_id1;
-    prg->used_textures[0] = cc_features.used_textures[0];
-    prg->used_textures[1] = cc_features.used_textures[1];
-    prg->used_textures[2] = cc_features.used_masks[0];
-    prg->used_textures[3] = cc_features.used_masks[1];
-    prg->used_textures[4] = cc_features.used_blend[0];
-    prg->used_textures[5] = cc_features.used_blend[1];
-    prg->num_inputs = cc_features.num_inputs;
-    prg->num_floats = num_floats;
+    prg->usedTextures[0] = cc_features.usedTextures[0];
+    prg->usedTextures[1] = cc_features.usedTextures[1];
+    prg->usedTextures[2] = cc_features.used_masks[0];
+    prg->usedTextures[3] = cc_features.used_masks[1];
+    prg->usedTextures[4] = cc_features.used_blend[0];
+    prg->usedTextures[5] = cc_features.used_blend[1];
+    prg->numInputs = cc_features.numInputs;
+    prg->numFloats = numFloats;
 
     // Prepoluate pipeline state cache with program and available msaa levels
     for (int i = 0; i < ARRAY_COUNT(mctx.msaa_num_quality_levels); i++) {
@@ -443,12 +443,12 @@ static struct ShaderProgram* gfx_metal_lookup_shader(uint64_t shader_id0, uint32
     return it == mctx.shader_program_pool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }
 
-static void gfx_metal_shader_get_info(struct ShaderProgram* prg, uint8_t* num_inputs, bool used_textures[2]) {
+static void gfx_metal_shader_get_info(struct ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) {
     struct ShaderProgramMetal* p = (struct ShaderProgramMetal*)prg;
 
-    *num_inputs = p->num_inputs;
-    used_textures[0] = p->used_textures[0];
-    used_textures[1] = p->used_textures[1];
+    *numInputs = p->numInputs;
+    usedTextures[0] = p->usedTextures[0];
+    usedTextures[1] = p->usedTextures[1];
 }
 
 static uint32_t gfx_metal_new_texture() {
@@ -621,7 +621,7 @@ static void gfx_metal_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
     }
 
     for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
-        if (mctx.shader_program->used_textures[i]) {
+        if (mctx.shader_program->usedTextures[i]) {
             if (current_framebuffer.last_bound_textures[i] != mctx.textures[mctx.current_texture_ids[i]].texture) {
                 current_framebuffer.last_bound_textures[i] = mctx.textures[mctx.current_texture_ids[i]].texture;
                 current_framebuffer.command_encoder->setFragmentTexture(
@@ -803,7 +803,7 @@ static void gfx_metal_setup_screen_framebuffer(uint32_t width, uint32_t height) 
 }
 
 static void gfx_metal_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
-                                                    bool opengl_invert_y, bool render_target, bool has_depth_buffer,
+                                                    bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                                     bool can_extract_depth) {
     // Screen framebuffer is handled separately on a frame by frame basis
     // see `gfx_metal_setup_screen_framebuffer`.

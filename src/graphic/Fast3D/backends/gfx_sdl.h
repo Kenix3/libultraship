@@ -3,10 +3,10 @@
 
 #include "gfx_window_manager_api.h"
 
-class GfxBackendSDL2 final : public GfxBackend {
+class GfxWindowBackendSDL2 final : public GfxWindowBackend {
 public:
-    GfxBackendSDL2() = default;
-    ~GfxBackendSDL2() override;
+    GfxWindowBackendSDL2() = default;
+    ~GfxWindowBackendSDL2() override;
 
     void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
     void Close() override;
