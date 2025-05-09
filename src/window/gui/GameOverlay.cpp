@@ -214,7 +214,7 @@ void GameOverlay::Draw() {
                     TextDraw(30, textY, true, color, "%s %d", text, var->Integer);
                     break;
                 case ConsoleVariableType::String:
-                    TextDraw(30, textY, true, color, "%s %s", text, var->String.c_str());
+                    TextDraw(30, textY, true, color, "%s %s", text, var->String);
                     break;
                 case ConsoleVariableType::Color:
                     TextDraw(30, textY, true, color, "%s (%u, %u, %u, %u)", text, var->Color.r, var->Color.g,
