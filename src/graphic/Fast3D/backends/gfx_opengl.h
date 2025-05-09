@@ -2,6 +2,7 @@
 #define GFX_OPENGL_H
 
 #include "gfx_rendering_api.h"
+#include "../interpreter.h"
 
 #ifdef _MSC_VER
 #include <SDL2/SDL.h>

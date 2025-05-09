@@ -3,11 +3,10 @@
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
 #ifdef __cplusplus
-//#include "../gfx_cc.h"
-#include <cstdint>
+#include "../interpreter.h"
+#include<cstdint>
 #include <string>
 #include "gfx_rendering_api.h"
-#include "../gfx_cc.h"
 #include "d3d11.h"
 #include "d3dcompiler.h"
 

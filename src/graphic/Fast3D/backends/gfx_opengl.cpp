@@ -18,7 +18,6 @@
 #define FOR_WINDOWS 0
 #endif
 
-#include "../gfx_cc.h"
 #include "gfx_opengl.h"
 #include "window/gui/Gui.h"
 #include <prism/processor.h>

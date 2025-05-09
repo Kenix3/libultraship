@@ -25,7 +25,6 @@
 #include <string>
 
 #include "interpreter.h"
-#include "gfx_cc.h"
 #include "lus_gbi.h"
 #include "backends/gfx_window_manager_api.h"
 #include "backends/gfx_rendering_api.h"
@@ -4544,6 +4543,92 @@ void Interpreter::GetCurDimensions(uint32_t* width, uint32_t* height) {
 }
 
 } // namespace Fast
+
+void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features) {
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 4; k++) {
+                cc_features->c[i][j][k] = shader_id0 >> i * 32 + j * 16 + k * 4 & 0xf;
+            }
+        }
+    }
+
+    cc_features->opt_alpha = (shader_id1 & SHADER_OPT(ALPHA)) != 0;
+    cc_features->opt_fog = (shader_id1 & SHADER_OPT(FOG)) != 0;
+    cc_features->opt_texture_edge = (shader_id1 & SHADER_OPT(TEXTURE_EDGE)) != 0;
+    cc_features->opt_noise = (shader_id1 & SHADER_OPT(NOISE)) != 0;
+    cc_features->opt_2cyc = (shader_id1 & SHADER_OPT(_2CYC)) != 0;
+    cc_features->opt_alpha_threshold = (shader_id1 & SHADER_OPT(ALPHA_THRESHOLD)) != 0;
+    cc_features->opt_invisible = (shader_id1 & SHADER_OPT(INVISIBLE)) != 0;
+    cc_features->opt_grayscale = (shader_id1 & SHADER_OPT(GRAYSCALE)) != 0;
+
+    cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
+    cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
+    cc_features->clamp[1][0] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_S);
+    cc_features->clamp[1][1] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_T);
+
+    if (shader_id1 & SHADER_OPT(USE_SHADER)) {
+        cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
+    }
+
+    cc_features->usedTextures[0] = false;
+    cc_features->usedTextures[1] = false;
+    cc_features->used_masks[0] = false;
+    cc_features->used_masks[1] = false;
+    cc_features->used_blend[0] = false;
+    cc_features->used_blend[1] = false;
+    cc_features->numInputs = 0;
+
+    for (int c = 0; c < 2; c++) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (cc_features->c[c][i][j] >= SHADER_INPUT_1 && cc_features->c[c][i][j] <= SHADER_INPUT_7) {
+                    if (cc_features->c[c][i][j] > cc_features->numInputs) {
+                        cc_features->numInputs = cc_features->c[c][i][j];
+                    }
+                }
+                if (cc_features->c[c][i][j] == SHADER_TEXEL0 || cc_features->c[c][i][j] == SHADER_TEXEL0A) {
+                    cc_features->usedTextures[0] = true;
+                    if (cc_features->opt_2cyc) {
+                        cc_features->usedTextures[1] = true;
+                    }
+                }
+                if (cc_features->c[c][i][j] == SHADER_TEXEL1 || cc_features->c[c][i][j] == SHADER_TEXEL1A) {
+                    cc_features->usedTextures[1] = true;
+                    if (cc_features->opt_2cyc) {
+                        cc_features->usedTextures[0] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int c = 0; c < 2; c++) {
+        cc_features->do_single[c][0] = cc_features->c[c][0][2] == SHADER_0;
+        cc_features->do_single[c][1] = cc_features->c[c][1][2] == SHADER_0;
+        cc_features->do_multiply[c][0] = cc_features->c[c][0][1] == SHADER_0 && cc_features->c[c][0][3] == SHADER_0;
+        cc_features->do_multiply[c][1] = cc_features->c[c][1][1] == SHADER_0 && cc_features->c[c][1][3] == SHADER_0;
+        cc_features->do_mix[c][0] = cc_features->c[c][0][1] == cc_features->c[c][0][3];
+        cc_features->do_mix[c][1] = cc_features->c[c][1][1] == cc_features->c[c][1][3];
+        cc_features->color_alpha_same[c] = (shader_id0 >> c * 32 & 0xffff) == (shader_id0 >> c * 32 + 16 & 0xffff);
+    }
+
+    if (cc_features->usedTextures[0] && shader_id1 & SHADER_OPT(TEXEL0_MASK)) {
+        cc_features->used_masks[0] = true;
+    }
+    if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_MASK)) {
+        cc_features->used_masks[1] = true;
+    }
+
+    if (cc_features->usedTextures[0] && shader_id1 & SHADER_OPT(TEXEL0_BLEND)) {
+        cc_features->used_blend[0] = true;
+    }
+    if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
+        cc_features->used_blend[1] = true;
+    }
+}
+
+
 
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize) {
