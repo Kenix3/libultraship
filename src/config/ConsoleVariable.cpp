@@ -194,6 +194,7 @@ void ConsoleVariable::ClearVariable(const char* name) {
             conf->Erase(std::string("CVars.") + t);
         } else if (var->Type == ConsoleVariableType::String) {
             free(var->String);
+            var->String = nullptr;
         }
     }
     mVariables.erase(name);
