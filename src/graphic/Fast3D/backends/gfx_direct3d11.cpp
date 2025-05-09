@@ -157,7 +157,7 @@ void GfxRenderingAPIDX11::Init() {
 #endif
 
     // Create the default framebuffer which represents the window
-    Framebuffer& fb = mFrameBuffers[CreateFramebuffer()];
+    FramebufferDX11& fb = mFrameBuffers[CreateFramebuffer()];
 
     // Check the size of the window
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
@@ -725,7 +725,7 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
 
     size_t index = mFrameBuffers.size();
     mFrameBuffers.resize(mFrameBuffers.size() + 1);
-    Framebuffer& data = mFrameBuffers.back();
+    FramebufferDX11& data = mFrameBuffers.back();
     data.texture_id = texture_id;
 
     uint32_t tile = 0;
@@ -740,7 +740,7 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
 void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                     bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                                     bool can_extract_depth) {
-    Framebuffer& fb = mFrameBuffers[fb_id];
+    FramebufferDX11& fb = mFrameBuffers[fb_id];
     TextureData& tex = mTextures[fb.texture_id];
 
     width = ((width) > (1U) ? (width) : (1U));
@@ -812,7 +812,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
 }
 
 void GfxRenderingAPIDX11::StartDrawToFramebuffer(int fb_id, float noise_scale) {
-    Framebuffer& fb = mFrameBuffers[fb_id];
+    FramebufferDX11& fb = mFrameBuffers[fb_id];
     mRenderTargetHeight = mTextures[fb.texture_id].height;
 
     mContext->OMSetRenderTargets(1, fb.render_target_view.GetAddressOf(),
@@ -832,7 +832,7 @@ void GfxRenderingAPIDX11::StartDrawToFramebuffer(int fb_id, float noise_scale) {
 }
 
 void GfxRenderingAPIDX11::ClearFramebuffer(bool color, bool depth) {
-    Framebuffer& fb = mFrameBuffers[mCurrentFramebuffer];
+    FramebufferDX11& fb = mFrameBuffers[mCurrentFramebuffer];
     if (color) {
         const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
         mContext->ClearRenderTargetView(fb.render_target_view.Get(), clearColor);
@@ -843,8 +843,8 @@ void GfxRenderingAPIDX11::ClearFramebuffer(bool color, bool depth) {
 }
 
 void GfxRenderingAPIDX11::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
-    Framebuffer& fb_dst = mFrameBuffers[fb_id_target];
-    Framebuffer& fb_src = mFrameBuffers[fb_id_source];
+    FramebufferDX11& fb_dst = mFrameBuffers[fb_id_target];
+    FramebufferDX11& fb_src = mFrameBuffers[fb_id_source];
 
     mContext->ResolveSubresource(mTextures[fb_dst.texture_id].texture.Get(), 0,
                                     mTextures[fb_src.texture_id].texture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -866,8 +866,8 @@ void GfxRenderingAPIDX11::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX
         return;
     }
 
-    Framebuffer& fb_dst = mFrameBuffers[fb_dst_id];
-    Framebuffer& fb_src = mFrameBuffers[fb_src_id];
+    FramebufferDX11& fb_dst = mFrameBuffers[fb_dst_id];
+    FramebufferDX11& fb_src = mFrameBuffers[fb_src_id];
 
     TextureData& td_dst = mTextures[fb_dst.texture_id];
     TextureData& td_src = mTextures[fb_src.texture_id];
@@ -936,7 +936,7 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
         return;
     }
 
-    Framebuffer& fb = mFrameBuffers[fb_id];
+    FramebufferDX11& fb = mFrameBuffers[fb_id];
     TextureData& td = mTextures[fb.texture_id];
 
     ID3D11Texture2D* staging = nullptr;
@@ -1004,7 +1004,7 @@ FilteringMode GfxRenderingAPIDX11::GetTextureFilter() {
 
 std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
 GfxRenderingAPIDX11::GetPixelDepth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
-    Framebuffer& fb = mFrameBuffers[fb_id];
+    FramebufferDX11& fb = mFrameBuffers[fb_id];
     TextureData& td = mTextures[fb.texture_id];
 
     if (coordinates.size() > mCoordBufferSize) {

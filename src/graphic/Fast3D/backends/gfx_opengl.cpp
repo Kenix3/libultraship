@@ -737,7 +737,7 @@ int GfxRenderingAPIOGL::CreateFramebuffer() {
 void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                      bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                                      bool can_extract_depth) {
-    Framebuffer& fb = mFrameBuffers[fb_id];
+    FramebufferOGL& fb = mFrameBuffers[fb_id];
 
     width = std::max(width, 1U);
     height = std::max(height, 1U);
@@ -786,7 +786,7 @@ void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, 
 }
 
 void GfxRenderingAPIOGL::StartDrawToFramebuffer(int fb_id, float noise_scale) {
-    Framebuffer& fb = mFrameBuffers[fb_id];
+    FramebufferOGL& fb = mFrameBuffers[fb_id];
 
     if (noise_scale != 0.0f) {
         mCurrentNoiseScale = 1.0f / noise_scale;
@@ -805,8 +805,8 @@ void GfxRenderingAPIOGL::ClearFramebuffer(bool color, bool depth) {
 }
 
 void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
-    Framebuffer& fb_dst = mFrameBuffers[fb_id_target];
-    Framebuffer& fb_src = mFrameBuffers[fb_id_source];
+    FramebufferOGL& fb_dst = mFrameBuffers[fb_id_target];
+    FramebufferOGL& fb_src = mFrameBuffers[fb_id_source];
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_dst.fbo);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_src.fbo);
 
@@ -836,8 +836,8 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
         return;
     }
 
-    Framebuffer src = mFrameBuffers[fb_src_id];
-    const Framebuffer& dst = mFrameBuffers[fb_dst_id];
+    FramebufferOGL src = mFrameBuffers[fb_src_id];
+    const FramebufferOGL& dst = mFrameBuffers[fb_dst_id];
 
     // Adjust y values for non-inverted source frame buffers because opengl uses bottom left for origin
     if (!src.invertY) {
@@ -859,7 +859,7 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
     if (src.height != dst.height && src.width != dst.width && src.msaa_level > 1) {
         // Start with the main buffer (0) as the msaa resolved buffer
         int fb_resolve_id = 0;
-        Framebuffer fb_resolve = mFrameBuffers[fb_resolve_id];
+        FramebufferOGL fb_resolve = mFrameBuffers[fb_resolve_id];
 
         // If the size doesn't match our source, then we need to use our separate color msaa resolved buffer (2)
         if (fb_resolve.height != src.height || fb_resolve.width != src.width) {
@@ -910,7 +910,7 @@ std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
 GfxRenderingAPIOGL::GetPixelDepth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> res;
 
-    Framebuffer& fb = mFrameBuffers[fb_id];
+    FramebufferOGL& fb = mFrameBuffers[fb_id];
 
     // When looking up one value and the framebuffer is single-sampled, we can read pixels directly
     // Otherwise we need to blit first to a new buffer then read it

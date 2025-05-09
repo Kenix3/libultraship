@@ -5,7 +5,7 @@
 
 #include <unordered_map>
 #include <set>
-#include "imgui.h"
+#include "imconfig.h"
 
 struct ShaderProgram;
 
@@ -74,9 +74,9 @@ class GfxRenderingAPI {
     virtual ImTextureID GetTextureById(int id) = 0;
 
 protected:
-    int8_t mCurrentDepthTest = -1;
-    int8_t mCurrentDepthMask = -1;
-    int8_t mCurrentZmodeDecal = -1;
+    int8_t mCurrentDepthTest = 0;
+    int8_t mCurrentDepthMask = 0;
+    int8_t mCurrentZmodeDecal = 0;
     int8_t mLastDepthTest = -1;
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;

@@ -39,7 +39,7 @@ struct ShaderProgram {
   GLint texture_filtering_location;
 };
 
-struct Framebuffer {
+struct FramebufferOGL {
   uint32_t width, height;
   bool has_depth_buffer;
   uint32_t msaa_level;
@@ -116,7 +116,7 @@ private:
 
   uint32_t mFrameCount = 0;
 
-  std::vector<Framebuffer> mFrameBuffers;
+  std::vector<FramebufferOGL> mFrameBuffers;
   size_t mCurrentFrameBuffer = 0;
   float mCurrentNoiseScale = 0.0f;
   FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;

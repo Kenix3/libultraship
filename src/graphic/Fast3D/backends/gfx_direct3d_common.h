@@ -39,7 +39,7 @@ struct TextureData {
     bool linear_filtering;
 };
 
-struct Framebuffer {
+struct FramebufferDX11 {
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> render_target_view;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depth_stencil_view;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> depth_stencil_srv;
@@ -155,7 +155,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     int mCurrentTile;
     uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES];
 
-    std::vector<Framebuffer> mFrameBuffers;
+    std::vector<FramebufferDX11> mFrameBuffers;
 
     // Current state
 
