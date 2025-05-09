@@ -225,6 +225,9 @@ void ConsoleVariable::CopyVariable(const char* from, const char* to) {
             variableTo->Float = variableFrom->Float;
             break;
         case ConsoleVariableType::String:
+            if (variableTo->String != nullptr) {
+                free(variableTo->String);
+            }
             variableTo->String = strdup(variableFrom->String);
             break;
         case ConsoleVariableType::Color:
