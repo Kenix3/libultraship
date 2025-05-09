@@ -115,6 +115,9 @@ void ConsoleVariable::SetString(const char* name, const char* value) {
     }
 
     variable->Type = ConsoleVariableType::String;
+    if (variable->String != nullptr) {
+        free(variable->String);
+    }
     variable->String = strdup(value);
 }
 
