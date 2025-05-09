@@ -26,7 +26,6 @@ typedef struct CVar {
     }
 } CVar;
 
-
 class ConsoleVariable {
   public:
     ConsoleVariable();
