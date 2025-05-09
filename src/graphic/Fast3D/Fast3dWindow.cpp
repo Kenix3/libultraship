@@ -11,7 +11,6 @@
 #include "graphic/Fast3D/backends/gfx_metal.h"
 #include "graphic/Fast3D/backends/gfx_direct3d_common.h"
 #include "graphic/Fast3D/backends/gfx_direct3d11.h"
-#include "graphic/Fast3D/backends/gfx_direct3d12.h"
 #include "backends/gfx_window_manager_api.h"
 
 #include <fstream>
