@@ -24,7 +24,7 @@
 #include <SDL_hints.h>
 #include <SDL_video.h>
 
-#include "graphic/Fast3D/gfx_metal.h"
+#include "graphic/Fast3D/backends/gfx_metal.h"
 #include <imgui_impl_metal.h>
 #include <imgui_impl_sdl2.h>
 #else
@@ -148,11 +148,12 @@ void Gui::Init(GuiWindowInitData windowImpl) {
         static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
 
     ImGuiWMInit();
+    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetInterpreterWeak();
     ImGuiBackendInit();
 
     CVarClear(CVAR_NEW_FILE_DROPPED);
     CVarClear(CVAR_DROPPED_FILE);
-    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetInterpreterWeak();
+    
 }
 
 void Gui::ImGuiWMInit() {
@@ -194,9 +195,12 @@ void Gui::ImGuiBackendInit() {
 #endif
 
 #ifdef __APPLE__
-        case WindowBackend::FAST3D_SDL_METAL:
-            Metal_Init(mImpl.Metal.Renderer);
+        case WindowBackend::FAST3D_SDL_METAL: {
+            GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            
+            api->MetalInit(mImpl.Metal.Renderer);
             break;
+        }
 #endif
 
 #ifdef ENABLE_DX11
@@ -315,9 +319,12 @@ void Gui::ImGuiBackendNewFrame() {
 #endif
 
 #ifdef __APPLE__
-        case WindowBackend::FAST3D_SDL_METAL:
-            Metal_NewFrame(mImpl.Metal.Renderer);
+        case WindowBackend::FAST3D_SDL_METAL: {
+            GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            api->NewFrame();
+            //Metal_NewFrame();
             break;
+        }
 #endif
         default:
             break;
@@ -692,7 +699,8 @@ void Gui::DrawFloatingWindows() {
 #ifdef __APPLE__
             // Metal requires additional frame setup to get ImGui ready for drawing floating windows
             if (backend == WindowBackend::FAST3D_SDL_METAL) {
-                Metal_SetupFloatingFrame();
+                GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+                api->SetupFloatingFrame();
             }
 #endif
 
@@ -762,9 +770,11 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
 #endif
 
 #ifdef __APPLE__
-        case WindowBackend::FAST3D_SDL_METAL:
-            Metal_RenderDrawData(data);
+        case WindowBackend::FAST3D_SDL_METAL: {
+            GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            api->RenderDrawData(data);
             break;
+        }
 #endif
 
 #ifdef ENABLE_DX11
@@ -812,7 +822,7 @@ std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
 }
 
 void Gui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const ImVec4& tint) {
-    GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
+    GfxRenderingAPI* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res.Width * res.Height * 4);
 

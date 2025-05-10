@@ -9,8 +9,9 @@
 #ifdef __cplusplus
 #pragma once
 #include <stdio.h>
-#include "gfx_cc.h"
 #include <string>
+
+struct CCFeatures;
 
 MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFloats, const CCFeatures& cc_features,
                                               bool three_point_filtering);

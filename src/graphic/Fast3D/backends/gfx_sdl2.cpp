@@ -231,8 +231,8 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
 
 #if defined(__APPLE__)
     // Implement fullscreening with native macOS APIs
-    if (on != isNativeMacOSFullscreenActive(wnd)) {
-        toggleNativeMacOSFullscreen(wnd);
+    if (on != isNativeMacOSFullscreenActive(mWnd)) {
+        toggleNativeMacOSFullscreen(mWnd);
     }
     mFullScreen = on;
 #else
@@ -324,7 +324,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
 #if defined(__APPLE__)
-    bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
+    bool use_opengl = strcmp(gfxApiName, "OpenGL") == 0;
 #else
     constexpr bool use_opengl = true;
 #endif
@@ -496,7 +496,7 @@ void GfxWindowBackendSDL2::SetMouseCallbacks(bool (*onMouseButtonDown)(int btn),
 
 void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
 #ifdef __APPLE__
-    SDL_GetWindowSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    SDL_GetWindowSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #else
     SDL_GL_GetDrawableSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #endif
@@ -577,7 +577,7 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
 #ifdef __APPLE__
-                    SDL_GetWindowSize(wnd, &mWindowWidth, &mWindowHeight);
+                    SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
 #else
                     SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
 #endif
@@ -614,11 +614,11 @@ void GfxWindowBackendSDL2::HandleEvents() {
 
     // resync fullscreen state
 #ifdef __APPLE__
-    auto nextFullscreenState = isNativeMacOSFullscreenActive(wnd);
+    auto nextFullscreenState = isNativeMacOSFullscreenActive(mWnd);
     if (mFullScreen != nextFullscreenState) {
         mFullScreen = nextFullscreenState;
-        if (on_fullscreen_changed_callback != nullptr) {
-            on_fullscreen_changed_callback(mFullScreen);
+        if (mOnFullscreenChanged != nullptr) {
+            mOnFullscreenChanged(mFullScreen);
         }
     }
 #endif

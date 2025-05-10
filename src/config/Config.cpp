@@ -9,7 +9,7 @@
 #include "Context.h"
 
 #ifdef __APPLE__
-#include "graphic/Fast3D/gfx_metal.h"
+#include "graphic/Fast3D/backends/gfx_metal.h"
 #endif
 
 namespace fs = std::filesystem;
