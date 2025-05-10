@@ -3475,7 +3475,7 @@ bool gfx_reset_fb_handler_custom(F3DGfx** cmd0) {
     gfx->mFbActive = false;
     gfx->mActiveFrameBuffer = gfx->mFrameBuffers.end();
     gfx->mRapi->StartDrawToFramebuffer(gfx->mRendersToFb ? gfx->mGameFb : 0,
-                                          (float)gfx->mCurDimensions.height / gfx->mNativeDimensions.height);
+                                       (float)gfx->mCurDimensions.height / gfx->mNativeDimensions.height);
     // Force viewport and scissor to reapply against the main framebuffer, in case a previous smaller
     // framebuffer truncated the values
     gfx->mRdp->viewport_or_scissor_changed = true;
@@ -3912,7 +3912,7 @@ static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_RDPPIPESYNC, { "mRdpPIPESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-25)
     { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-24)
     { RDP_G_RDPFULLSYNC, { "mRdpFULLSYNC", gfx_stubbed_command_handler } },          // mRdpFULLSYNC (-23)
-    { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_SetScissor_handler_rdp } },           // G_SETSCISSOR (-19)
+    { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_SetScissor_handler_rdp } },            // G_SETSCISSOR (-19)
     { RDP_G_SETPRIMDEPTH, { "G_SETPRIMDEPTH", gfx_set_prim_depth_handler_rdp } },    // G_SETPRIMDEPTH (-18)
     { RDP_G_RDPSETOTHERMODE, { "mRdpSETOTHERMODE", gfx_rdp_set_other_mode_rdp } },   // mRdpSETOTHERMODE (-17)
     { RDP_G_LOADTLUT, { "G_LOADTLUT", gfx_load_tlut_handler_rdp } },                 // G_LOADTLUT (-16)
@@ -4240,7 +4240,7 @@ bool Interpreter::ViewportMatchesRendererResolution() {
 
 void Interpreter::StartFrame() {
     mWapi->GetDimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height, &mCurWindowPosX,
-                          &mCurWindowPosY);
+                         &mCurWindowPosY);
     if (mCurDimensions.height == 0) {
         // Avoid division by zero
         mCurDimensions.height = 1;
@@ -4271,17 +4271,16 @@ void Interpreter::StartFrame() {
         mRendersToFb = true;
         if (!ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
-                                                 true, true, true);
+                                               true, true, true);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
             // match the window size
             mRapi->UpdateFramebufferParameters(mGameFb, mGfxCurrentWindowDimensions.width,
-                                                 mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true,
-                                                 true);
+                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true, true);
         }
         if (mMsaaLevel > 1 && !ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
-                                                 false, false, false, false);
+                                               false, false, false, false);
         }
     } else {
         mRendersToFb = false;
@@ -4301,10 +4300,9 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mCurMtxReplacements = &mtx_replacements;
 
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
-                                         false, true, true, !mRendersToFb);
+                                       false, true, true, !mRendersToFb);
     mRapi->StartFrame();
-    mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0,
-                                     (float)mCurDimensions.height / mNativeDimensions.height);
+    mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->ClearFramebuffer(false, true);
     mRdp->viewport_or_scissor_changed = true;
     mRenderingState.viewport = {};
@@ -4627,8 +4625,6 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
         cc_features->used_blend[1] = true;
     }
 }
-
-
 
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize) {

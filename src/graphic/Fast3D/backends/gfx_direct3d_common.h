@@ -4,7 +4,7 @@
 
 #ifdef __cplusplus
 #include "../interpreter.h"
-#include<cstdint>
+#include <cstdint>
 #include <string>
 #include "gfx_rendering_api.h"
 #include "d3d11.h"
@@ -89,11 +89,11 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     void FinishRender() override;
     int CreateFramebuffer() override;
     void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
-                                             bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                             bool can_extract_depth) override;
+                                     bool opengl_invertY, bool render_target, bool has_depth_buffer,
+                                     bool can_extract_depth) override;
     void StartDrawToFramebuffer(int fbId, float noiseScale) override;
-    void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
-                                int dstY0, int dstX1, int dstY1) override;
+    void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
+                         int dstX1, int dstY1) override;
     void ClearFramebuffer(bool color, bool depth) override;
     void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) override;
     void ResolveMSAAColorBuffer(int fbIdTarger, int fbIdSrc) override;
@@ -113,13 +113,11 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
 
     D3D_FEATURE_LEVEL mFeatureLevel;
 
-    private:
+  private:
     void CreateDepthStencilObjects(uint32_t width, uint32_t height, uint32_t msaa_count, ID3D11DepthStencilView** view,
                                    ID3D11ShaderResourceView** srv);
-    
 
     HMODULE mDX11Module;
-    
 
     HMODULE mCompilerModule;
     pD3DCompile mD3dCompile;
@@ -164,8 +162,6 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     uint32_t mRenderTargetHeight;
     int mCurrentFramebuffer;
     FilteringMode mCurrentFilterMode = FILTER_NONE;
-
-
 
     // Previous states (to prevent setting states needlessly)
 

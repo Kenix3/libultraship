@@ -52,7 +52,7 @@ GfxRenderingAPIDX11::~GfxRenderingAPIDX11() {
 }
 
 void GfxRenderingAPIDX11::CreateDepthStencilObjects(uint32_t width, uint32_t height, uint32_t msaa_count,
-                                         ID3D11DepthStencilView** view, ID3D11ShaderResourceView** srv) {
+                                                    ID3D11DepthStencilView** view, ID3D11ShaderResourceView** srv) {
     D3D11_TEXTURE2D_DESC texture_desc;
     texture_desc.Width = width;
     texture_desc.Height = height;
@@ -71,8 +71,7 @@ void GfxRenderingAPIDX11::CreateDepthStencilObjects(uint32_t width, uint32_t hei
     ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, texture.GetAddressOf()));
 
     D3D11_DEPTH_STENCIL_VIEW_DESC view_desc;
-    view_desc.Format =
-        mFeatureLevel >= D3D_FEATURE_LEVEL_10_0 ? DXGI_FORMAT_D32_FLOAT : DXGI_FORMAT_D24_UNORM_S8_UINT;
+    view_desc.Format = mFeatureLevel >= D3D_FEATURE_LEVEL_10_0 ? DXGI_FORMAT_D32_FLOAT : DXGI_FORMAT_D24_UNORM_S8_UINT;
     view_desc.Flags = 0;
     if (msaa_count > 1) {
         view_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
@@ -104,10 +103,10 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, IDXGIAdapter1* ada
     D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
 
     HRESULT res = self->mDX11CreateDevice(adapter,
-                                    D3D_DRIVER_TYPE_UNKNOWN, // since we use a specific adapter
-                                    nullptr, device_creation_flags, FeatureLevels, ARRAYSIZE(FeatureLevels),
-                                    D3D11_SDK_VERSION, test_only ? nullptr : self->mDevice.GetAddressOf(), &self->mFeatureLevel,
-                                    test_only ? nullptr : self->mContext.GetAddressOf());
+                                          D3D_DRIVER_TYPE_UNKNOWN, // since we use a specific adapter
+                                          nullptr, device_creation_flags, FeatureLevels, ARRAYSIZE(FeatureLevels),
+                                          D3D11_SDK_VERSION, test_only ? nullptr : self->mDevice.GetAddressOf(),
+                                          &self->mFeatureLevel, test_only ? nullptr : self->mContext.GetAddressOf());
 
     if (test_only) {
         return SUCCEEDED(res);
@@ -159,8 +158,8 @@ void GfxRenderingAPIDX11::Init() {
     // Create D3D Debug mDevice if in debug mode
 
 #if DEBUG_D3D
-    ThrowIfFailed(mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)debug.GetAddressOf()),
-                  dxgi->GetWindowHandle(), "Failed to get ID3D11Debug device.");
+    ThrowIfFailed(mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)debug.GetAddressOf()), dxgi->GetWindowHandle(),
+                  "Failed to get ID3D11Debug device.");
 #endif
 
     // Create the default framebuffer which represents the window
@@ -175,7 +174,7 @@ void GfxRenderingAPIDX11::Init() {
 
     for (uint32_t sample_count = 1; sample_count <= D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT; sample_count++) {
         ThrowIfFailed(mDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sample_count,
-                                                                &mMsaaNumQualityLevels[sample_count - 1]));
+                                                             &mMsaaNumQualityLevels[sample_count - 1]));
     }
 
     // Create main vertex buffer
@@ -252,8 +251,8 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     ComPtr<ID3DBlob> cs, error_blob;
     HRESULT hr;
 
-    hr = mD3dCompile(shader_source, strlen(shader_source), nullptr, nullptr, nullptr, "CSMain", "cs_4_0",
-                        compile_flags, 0, cs.GetAddressOf(), error_blob.GetAddressOf());
+    hr = mD3dCompile(shader_source, strlen(shader_source), nullptr, nullptr, nullptr, "CSMain", "cs_4_0", compile_flags,
+                     0, cs.GetAddressOf(), error_blob.GetAddressOf());
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
@@ -262,11 +261,10 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     }
 
     ThrowIfFailed(mDevice->CreateComputeShader(cs->GetBufferPointer(), cs->GetBufferSize(), nullptr,
-                                                  mComputeShader.GetAddressOf()));
+                                               mComputeShader.GetAddressOf()));
 
     hr = mD3dCompile(shader_source_msaa, strlen(shader_source_msaa), nullptr, nullptr, nullptr, "CSMain", "cs_4_1",
-                        compile_flags, 0, mComputeShaderMsaaBlob.GetAddressOf(),
-                        error_blob.ReleaseAndGetAddressOf());
+                     compile_flags, 0, mComputeShaderMsaaBlob.GetAddressOf(), error_blob.ReleaseAndGetAddressOf());
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
@@ -323,7 +321,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
 #endif
 
     HRESULT hr = mD3dCompile(buf, len, nullptr, nullptr, nullptr, "VSMain", "vs_4_0", compile_flags, 0,
-                                vs.GetAddressOf(), error_blob.GetAddressOf());
+                             vs.GetAddressOf(), error_blob.GetAddressOf());
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
@@ -332,7 +330,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     }
 
     hr = mD3dCompile(buf, len, nullptr, nullptr, nullptr, "PSMain", "ps_4_0", compile_flags, 0, ps.GetAddressOf(),
-                        error_blob.GetAddressOf());
+                     error_blob.GetAddressOf());
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
@@ -343,9 +341,9 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     struct ShaderProgramD3D11* prg = &mShaderProgramPool[std::make_pair(shader_id0, shader_id1)];
 
     ThrowIfFailed(mDevice->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr,
-                                                 prg->vertex_shader.GetAddressOf()));
+                                              prg->vertex_shader.GetAddressOf()));
     ThrowIfFailed(mDevice->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr,
-                                                prg->pixel_shader.GetAddressOf()));
+                                             prg->pixel_shader.GetAddressOf()));
 
     // Input Layout
 
@@ -399,7 +397,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     }
 
     ThrowIfFailed(mDevice->CreateInputLayout(ied, ied_index, vs->GetBufferPointer(), vs->GetBufferSize(),
-                                                prg->input_layout.GetAddressOf()));
+                                             prg->input_layout.GetAddressOf()));
 
     // Blend state
 
@@ -507,7 +505,7 @@ void GfxRenderingAPIDX11::UploadTexture(const uint8_t* rgba32_buf, uint32_t widt
     // Create shader resource view from texture
 
     ThrowIfFailed(mDevice->CreateShaderResourceView(texture_data->texture.Get(), nullptr,
-                                                       texture_data->resource_view.ReleaseAndGetAddressOf()));
+                                                    texture_data->resource_view.ReleaseAndGetAddressOf()));
 }
 
 void GfxRenderingAPIDX11::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
@@ -515,7 +513,7 @@ void GfxRenderingAPIDX11::SetSamplerParameters(int tile, bool linear_filter, uin
     ZeroMemory(&sampler_desc, sizeof(D3D11_SAMPLER_DESC));
 
     sampler_desc.Filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
-                                                                                    : D3D11_FILTER_MIN_MAG_MIP_POINT;
+                                                                               : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
     sampler_desc.AddressU = gfx_cm_to_d3d11(cms);
     sampler_desc.AddressV = gfx_cm_to_d3d11(cmt);
@@ -581,7 +579,8 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         ZeroMemory(&depth_stencil_desc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
         depth_stencil_desc.DepthEnable = mCurrentDepthTest || mCurrentDepthMask;
-        depth_stencil_desc.DepthWriteMask = mCurrentDepthMask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+        depth_stencil_desc.DepthWriteMask =
+            mCurrentDepthMask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
         depth_stencil_desc.DepthFunc = mCurrentDepthTest
                                            ? (mCurrentZmodeDecal ? D3D11_COMPARISON_LESS_EQUAL : D3D11_COMPARISON_LESS)
                                            : D3D11_COMPARISON_ALWAYS;
@@ -637,14 +636,12 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         if (mShaderProgram->usedTextures[i]) {
             if (mLastResourceViews[i].Get() != mTextures[mCurrentTextureIds[i]].resource_view.Get()) {
                 mLastResourceViews[i] = mTextures[mCurrentTextureIds[i]].resource_view.Get();
-                mContext->PSSetShaderResources(
-                    i, 1, mTextures[mCurrentTextureIds[i]].resource_view.GetAddressOf());
+                mContext->PSSetShaderResources(i, 1, mTextures[mCurrentTextureIds[i]].resource_view.GetAddressOf());
 
                 if (mCurrentFilterMode == FILTER_THREE_POINT) {
                     mPerDrawCbData.mTextures[i].width = mTextures[mCurrentTextureIds[i]].width;
                     mPerDrawCbData.mTextures[i].height = mTextures[mCurrentTextureIds[i]].height;
-                    mPerDrawCbData.mTextures[i].linear_filtering =
-                        mTextures[mCurrentTextureIds[i]].linear_filtering;
+                    mPerDrawCbData.mTextures[i].linear_filtering = mTextures[mCurrentTextureIds[i]].linear_filtering;
                     textures_changed = true;
                 }
 
@@ -745,8 +742,8 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
 }
 
 void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
-                                                    bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                                    bool can_extract_depth) {
+                                                      bool opengl_invertY, bool render_target, bool has_depth_buffer,
+                                                      bool can_extract_depth) {
     FramebufferDX11& fb = mFrameBuffers[fb_id];
     TextureData& tex = mTextures[fb.texture_id];
 
@@ -780,7 +777,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
 
             if (msaa_level <= 1) {
                 ThrowIfFailed(mDevice->CreateShaderResourceView(tex.texture.Get(), nullptr,
-                                                                   tex.resource_view.ReleaseAndGetAddressOf()));
+                                                                tex.resource_view.ReleaseAndGetAddressOf()));
             }
         } else if (diff || (render_target && tex.texture.Get() == nullptr)) {
             DXGI_SWAP_CHAIN_DESC1 desc1;
@@ -796,7 +793,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
         }
         if (render_target) {
             ThrowIfFailed(mDevice->CreateRenderTargetView(tex.texture.Get(), nullptr,
-                                                             fb.render_target_view.ReleaseAndGetAddressOf()));
+                                                          fb.render_target_view.ReleaseAndGetAddressOf()));
         }
 
         tex.width = width;
@@ -807,7 +804,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
         (diff || !fb.has_depth_buffer || (fb.depth_stencil_srv.Get() != nullptr) != can_extract_depth)) {
         fb.depth_stencil_srv.Reset();
         CreateDepthStencilObjects(width, height, msaa_level, fb.depth_stencil_view.ReleaseAndGetAddressOf(),
-                                     can_extract_depth ? fb.depth_stencil_srv.GetAddressOf() : nullptr);
+                                  can_extract_depth ? fb.depth_stencil_srv.GetAddressOf() : nullptr);
     }
     if (!has_depth_buffer) {
         fb.depth_stencil_view.Reset();
@@ -823,7 +820,7 @@ void GfxRenderingAPIDX11::StartDrawToFramebuffer(int fb_id, float noise_scale) {
     mRenderTargetHeight = mTextures[fb.texture_id].height;
 
     mContext->OMSetRenderTargets(1, fb.render_target_view.GetAddressOf(),
-                                    fb.has_depth_buffer ? fb.depth_stencil_view.Get() : nullptr);
+                                 fb.has_depth_buffer ? fb.depth_stencil_view.Get() : nullptr);
 
     mCurrentFramebuffer = fb_id;
 
@@ -854,7 +851,7 @@ void GfxRenderingAPIDX11::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_sou
     FramebufferDX11& fb_src = mFrameBuffers[fb_id_source];
 
     mContext->ResolveSubresource(mTextures[fb_dst.texture_id].texture.Get(), 0,
-                                    mTextures[fb_src.texture_id].texture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+                                 mTextures[fb_src.texture_id].texture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 void* GfxRenderingAPIDX11::GetFramebufferTextureId(int fb_id) {
@@ -867,8 +864,7 @@ void GfxRenderingAPIDX11::SelectTextureFb(int fbID) {
 }
 
 void GfxRenderingAPIDX11::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
-                                          int dstX0,
-                                int dstY0, int dstX1, int dstY1) {
+                                          int dstX0, int dstY0, int dstX1, int dstY1) {
     if (fb_src_id >= (int)mFrameBuffers.size() || fb_dst_id >= (int)mFrameBuffers.size()) {
         return;
     }
@@ -884,8 +880,7 @@ void GfxRenderingAPIDX11::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX
         if (fb_src.msaa_level <= 1) {
             mContext->CopyResource(td_dst.texture.Get(), td_src.texture.Get());
         } else {
-            mContext->ResolveSubresource(td_dst.texture.Get(), 0, td_src.texture.Get(), 0,
-                                            DXGI_FORMAT_R8G8B8A8_UNORM);
+            mContext->ResolveSubresource(td_dst.texture.Get(), 0, td_src.texture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
         }
         return;
     }
@@ -930,11 +925,10 @@ void GfxRenderingAPIDX11::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX
         ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, td_resolved.texture.GetAddressOf()));
 
         // Resolve multi-sample to temporary
-        mContext->ResolveSubresource(td_resolved.texture.Get(), 0, td_src.texture.Get(), 0,
-                                        DXGI_FORMAT_R8G8B8A8_UNORM);
+        mContext->ResolveSubresource(td_resolved.texture.Get(), 0, td_src.texture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
         // Then copy the region to the destination
         mContext->CopySubresourceRegion(td_dst.texture.Get(), dstX0, dstY0, 0, 0, td_resolved.texture.Get(), 0,
-                                           &region);
+                                        &region);
     }
 }
 
@@ -1037,8 +1031,8 @@ GfxRenderingAPIDX11::GetPixelDepth(int fb_id, const std::set<std::pair<float, fl
         coord_buf_srv_desc.Buffer.FirstElement = 0;
         coord_buf_srv_desc.Buffer.NumElements = coordinates.size();
 
-        ThrowIfFailed(mDevice->CreateShaderResourceView(mCoordBuffer.Get(), &coord_buf_srv_desc,
-                                                           mCoordBufferSrv.GetAddressOf()));
+        ThrowIfFailed(
+            mDevice->CreateShaderResourceView(mCoordBuffer.Get(), &coord_buf_srv_desc, mCoordBufferSrv.GetAddressOf()));
 
         D3D11_BUFFER_DESC output_buffer_desc;
         output_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
@@ -1047,8 +1041,7 @@ GfxRenderingAPIDX11::GetPixelDepth(int fb_id, const std::set<std::pair<float, fl
         output_buffer_desc.CPUAccessFlags = 0;
         output_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
         output_buffer_desc.StructureByteStride = sizeof(float);
-        ThrowIfFailed(
-            mDevice->CreateBuffer(&output_buffer_desc, nullptr, mDepthValueOutputBuffer.GetAddressOf()));
+        ThrowIfFailed(mDevice->CreateBuffer(&output_buffer_desc, nullptr, mDepthValueOutputBuffer.GetAddressOf()));
 
         D3D11_UNORDERED_ACCESS_VIEW_DESC output_buffer_uav_desc;
         output_buffer_uav_desc.Format = DXGI_FORMAT_UNKNOWN;
@@ -1056,14 +1049,13 @@ GfxRenderingAPIDX11::GetPixelDepth(int fb_id, const std::set<std::pair<float, fl
         output_buffer_uav_desc.Buffer.FirstElement = 0;
         output_buffer_uav_desc.Buffer.NumElements = coordinates.size();
         output_buffer_uav_desc.Buffer.Flags = 0;
-        ThrowIfFailed(mDevice->CreateUnorderedAccessView(
-            mDepthValueOutputBuffer.Get(), &output_buffer_uav_desc, mDepthValueOutputUav.GetAddressOf()));
+        ThrowIfFailed(mDevice->CreateUnorderedAccessView(mDepthValueOutputBuffer.Get(), &output_buffer_uav_desc,
+                                                         mDepthValueOutputUav.GetAddressOf()));
 
         output_buffer_desc.Usage = D3D11_USAGE_STAGING;
         output_buffer_desc.BindFlags = 0;
         output_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        ThrowIfFailed(
-            mDevice->CreateBuffer(&output_buffer_desc, nullptr, mDepthValueOutputBufferCopy.GetAddressOf()));
+        ThrowIfFailed(mDevice->CreateBuffer(&output_buffer_desc, nullptr, mDepthValueOutputBufferCopy.GetAddressOf()));
 
         mCoordBufferSize = coordinates.size();
     }
@@ -1072,8 +1064,8 @@ GfxRenderingAPIDX11::GetPixelDepth(int fb_id, const std::set<std::pair<float, fl
 
     if (fb.msaa_level > 1 && mComputeShaderMsaa.Get() == nullptr) {
         ThrowIfFailed(mDevice->CreateComputeShader(mComputeShaderMsaaBlob->GetBufferPointer(),
-                                                      mComputeShaderMsaaBlob->GetBufferSize(), nullptr,
-                                                      mComputeShaderMsaa.GetAddressOf()));
+                                                   mComputeShaderMsaaBlob->GetBufferSize(), nullptr,
+                                                   mComputeShaderMsaa.GetAddressOf()));
     }
 
     // ImGui overwrites these values, so we cannot set them once at init
@@ -1127,7 +1119,6 @@ ImTextureID GfxRenderingAPIDX11::GetTextureById(int id) {
 void GfxRenderingAPIDX11::SetSrgbMode() {
     mSrgbMode = true;
 }
-
 
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
@@ -1348,8 +1339,5 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     // SPDLOG_INFO("====================================");
     return result;
 }
-
-
-
 
 #endif

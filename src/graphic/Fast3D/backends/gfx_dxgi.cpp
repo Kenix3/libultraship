@@ -106,8 +106,8 @@ static std::vector<std::tuple<HMONITOR, RECT, BOOL>> GetMonitorList() {
 }
 
 // Uses coordinates to get a Monitor handle from a list
-static bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorList, int x, int y, UINT cx, UINT cy,
-                        std::tuple<HMONITOR, RECT, BOOL>& MonitorInfo) {
+static bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorList, int x, int y, UINT cx,
+                               UINT cy, std::tuple<HMONITOR, RECT, BOOL>& MonitorInfo) {
     RECT wr = { x, y, (x + cx), (y + cy) };
     std::tuple<HMONITOR, RECT, BOOL> primary;
     for (std::tuple<HMONITOR, RECT, BOOL> i : MonitorList) {
@@ -517,12 +517,11 @@ static BOOL CALLBACK WIN_ResourceNameCallback(HMODULE hModule, LPCTSTR lpType, L
 
 static uint64_t qpc_init, qpc_freq;
 
-
 GfxWindowBackendDXGI::~GfxWindowBackendDXGI() {
 }
 
-void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
-                   uint32_t height, int32_t posX, int32_t posY) {
+void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen,
+                                uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
     LARGE_INTEGER lqpc_init, lqpc_freq;
     QueryPerformanceCounter(&lqpc_init);
     QueryPerformanceFrequency(&lqpc_freq);
@@ -553,7 +552,7 @@ void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name,
 
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = gfx_dxgi_wnd_proc;
-    
+
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = GetModuleHandle(nullptr);
@@ -576,14 +575,13 @@ void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name,
     monitor_list = GetMonitorList();
     posX = posX;
     posY = posY;
-    if (!GetMonitorAtCoords(monitor_list, posX, posY, current_width, current_height,
-                            mMonitor)) {
+    if (!GetMonitorAtCoords(monitor_list, posX, posY, current_width, current_height, mMonitor)) {
         posX = 100;
         posY = 100;
     }
 
-    h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, posX + wr.left, posY + wr.top,
-                               current_width, current_height, nullptr, nullptr, nullptr, this);
+    h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, posX + wr.left, posY + wr.top, current_width,
+                          current_height, nullptr, nullptr, nullptr, this);
 
     LoadDxgi();
 
@@ -707,7 +705,7 @@ void GfxWindowBackendDXGI::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
 }
 
 void GfxWindowBackendDXGI::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
-                                            void (*onnAllKeysUp)()) {
+                                                void (*onnAllKeysUp)()) {
     mOnKeyDown = onKeyDown;
     mOnKeyUp = onKeyUp;
     mOnAllKeysUp = onnAllKeysUp;
@@ -742,8 +740,7 @@ static uint64_t qpc_to_ns(uint64_t qpc) {
 }
 
 static uint64_t qpc_to_100ns(uint64_t qpc) {
-    return qpc / qpc_freq * _100NANOSECONDS_IN_SECOND +
-           qpc % qpc_freq * _100NANOSECONDS_IN_SECOND / qpc_freq;
+    return qpc / qpc_freq * _100NANOSECONDS_IN_SECOND + qpc % qpc_freq * _100NANOSECONDS_IN_SECOND / qpc_freq;
 }
 
 bool GfxWindowBackendDXGI::IsFrameReady() {
@@ -766,8 +763,7 @@ bool GfxWindowBackendDXGI::IsFrameReady() {
         }
     }
     if (!mFrameStats.empty()) {
-        while (!mPendingFrameStats.empty() &&
-               mPendingFrameStats.begin()->first < mFrameStats.rbegin()->first) {
+        while (!mPendingFrameStats.empty() && mPendingFrameStats.begin()->first < mFrameStats.rbegin()->first) {
             mPendingFrameStats.erase(mPendingFrameStats.begin());
         }
     }
@@ -1007,8 +1003,7 @@ void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, c
                                                   bool (*createFunc)(class GfxRenderingAPIDX11* self,
                                                                      IDXGIAdapter1* adapter, bool test_only)) {
     if (CreateDXGIFactory2 != nullptr) {
-        ThrowIfFailed(
-            CreateDXGIFactory2(debug ? DXGI_CREATE_FACTORY_DEBUG : 0, __uuidof(IDXGIFactory2), &mFactory));
+        ThrowIfFailed(CreateDXGIFactory2(debug ? DXGI_CREATE_FACTORY_DEBUG : 0, __uuidof(IDXGIFactory2), &mFactory));
     } else {
         ThrowIfFailed(CreateDXGIFactory1(__uuidof(IDXGIFactory2), &mFactory));
     }
@@ -1042,7 +1037,7 @@ void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, c
 }
 
 void GfxWindowBackendDXGI::CreateSwapChain(IUnknown* mDevice, std::function<void()>&& before_destroy_fn) {
-    bool win8 = IsWindows8OrGreater();                 // DXGI_SCALING_NONE is only supported on Win8 and beyond
+    bool win8 = IsWindows8OrGreater();            // DXGI_SCALING_NONE is only supported on Win8 and beyond
     bool dxgi_13 = CreateDXGIFactory2 != nullptr; // DXGI 1.3 introduced waitable object
 
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};

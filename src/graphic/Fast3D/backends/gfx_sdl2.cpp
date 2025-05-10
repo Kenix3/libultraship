@@ -40,7 +40,6 @@
 #define GFX_BACKEND_NAME "SDL"
 #define _100NANOSECONDS_IN_SECOND 10000000
 
-
 #ifdef _WIN32
 LONG_PTR SDL_WndProc;
 #endif
@@ -203,10 +202,8 @@ const SDL_Scancode scancode_rmapping_nonextended[][2] = { { SDL_SCANCODE_KP_7, S
                                                           { SDL_SCANCODE_KP_PERIOD, SDL_SCANCODE_DELETE },
                                                           { SDL_SCANCODE_KP_MULTIPLY, SDL_SCANCODE_PRINTSCREEN } };
 
- GfxWindowBackendSDL2::~GfxWindowBackendSDL2() {
-
+GfxWindowBackendSDL2::~GfxWindowBackendSDL2() {
 }
-
 
 void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     if (mFullScreen == on) {
@@ -294,7 +291,8 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
             // system window procedure instead.
             return DefWindowProc(h_wnd, message, w_param, l_param);
         case WM_ENDSESSION: {
-            GfxWindowBackendSDL2* self = reinterpret_cast<GfxWindowBackendSDL2*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
+            GfxWindowBackendSDL2* self =
+                reinterpret_cast<GfxWindowBackendSDL2*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
             // Apparently SDL2 does not handle this
             if (w_param == TRUE) {
                 self->Close();
@@ -310,7 +308,7 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
 #endif
 
 void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bool startFullScreen, uint32_t width,
-                         uint32_t height, int32_t posX, int32_t posY) {
+                                uint32_t height, int32_t posX, int32_t posY) {
     mWindowWidth = width;
     mWindowHeight = height;
 
@@ -421,7 +419,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
 
     Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 
-    for (size_t i = 0; i <  std::size(lus_to_sdl_table); i++) {
+    for (size_t i = 0; i < std::size(lus_to_sdl_table); i++) {
         mSdlToLusTable[lus_to_sdl_table[i]] = i;
     }
 
@@ -482,8 +480,8 @@ bool GfxWindowBackendSDL2::IsMouseCaptured() {
     return (SDL_GetRelativeMouseMode() == SDL_TRUE);
 }
 
-void  GfxWindowBackendSDL2::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
-                                           void (*onAllKeysUp)()) {
+void GfxWindowBackendSDL2::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
+                                                void (*onAllKeysUp)()) {
     mOnKeyDown = onKeyDown;
     mOnKeyUp = onKeyUp;
     mOnAllKeysUp = onAllKeysUp;

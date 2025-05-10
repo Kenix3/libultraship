@@ -153,7 +153,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
     CVarClear(CVAR_NEW_FILE_DROPPED);
     CVarClear(CVAR_DROPPED_FILE);
-    
 }
 
 void Gui::ImGuiWMInit() {
@@ -197,7 +196,7 @@ void Gui::ImGuiBackendInit() {
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL: {
             GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
-            
+
             api->MetalInit(mImpl.Metal.Renderer);
             break;
         }
@@ -322,7 +321,7 @@ void Gui::ImGuiBackendNewFrame() {
         case WindowBackend::FAST3D_SDL_METAL: {
             GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
             api->NewFrame();
-            //Metal_NewFrame();
+            // Metal_NewFrame();
             break;
         }
 #endif
@@ -976,7 +975,7 @@ std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
 }
 
-void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar ) {
+void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
     mMenuBar = menuBar;
 
     if (GetMenuBar()) {

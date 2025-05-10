@@ -4,11 +4,12 @@
 #include "gfx_window_manager_api.h"
 
 class GfxWindowBackendSDL2 final : public GfxWindowBackend {
-public:
+  public:
     GfxWindowBackendSDL2() = default;
     ~GfxWindowBackendSDL2() override;
 
-    void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
+    void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height,
+              int32_t posX, int32_t posY) override;
     void Close() override;
     void SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
                               void (*onAllKeysUp)()) override;
@@ -37,7 +38,8 @@ public:
     bool IsRunning() override;
     void Destroy() override;
     bool IsFullscreen() override;
-private:
+
+  private:
     void SetFullscreenImpl(bool on, bool call_callback);
     void HandleSingleEvent(SDL_Event& event);
     int TranslateScancode(int scancode) const;

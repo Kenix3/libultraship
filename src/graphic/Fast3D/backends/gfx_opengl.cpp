@@ -325,27 +325,27 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     numFloats = 4;
     prism::Processor processor;
     prism::ContextItems mContext = { { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
-                                    { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
-                                    { "o_fog", cc_features.opt_fog },
-                                    { "o_grayscale", cc_features.opt_grayscale },
-                                    { "o_alpha", cc_features.opt_alpha },
-                                    { "o_inputs", cc_features.numInputs },
-                                    { "update_floats", (InvokeFunc)UpdateFloats },
+                                     { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
+                                     { "o_fog", cc_features.opt_fog },
+                                     { "o_grayscale", cc_features.opt_grayscale },
+                                     { "o_alpha", cc_features.opt_alpha },
+                                     { "o_inputs", cc_features.numInputs },
+                                     { "update_floats", (InvokeFunc)UpdateFloats },
 #ifdef __APPLE__
-                                    { "GLSL_VERSION", "#version 410 core" },
-                                    { "attr", "in" },
-                                    { "out", "out" },
-                                    { "opengles", false }
+                                     { "GLSL_VERSION", "#version 410 core" },
+                                     { "attr", "in" },
+                                     { "out", "out" },
+                                     { "opengles", false }
 #elif defined(USE_OPENGLES)
-                                    { "GLSL_VERSION", "#version 300 es" },
-                                    { "attr", "in" },
-                                    { "out", "out" },
-                                    { "opengles", true }
+                                     { "GLSL_VERSION", "#version 300 es" },
+                                     { "attr", "in" },
+                                     { "out", "out" },
+                                     { "opengles", true }
 #else
-                                    { "GLSL_VERSION", "#version 110" },
-                                    { "attr", "attribute" },
-                                    { "out", "varying" },
-                                    { "opengles", false }
+                                     { "GLSL_VERSION", "#version 110" },
+                                     { "attr", "attribute" },
+                                     { "out", "varying" },
+                                     { "opengles", false }
 #endif
     };
     processor.populate(mContext);
@@ -740,7 +740,7 @@ void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, 
 
     width = std::max(width, 1U);
     height = std::max(height, 1U);
-    msaa_level = std:: min(msaa_level, (uint32_t)mMaxMsaaLevel);
+    msaa_level = std::min(msaa_level, (uint32_t)mMaxMsaaLevel);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
 
@@ -829,8 +829,8 @@ void GfxRenderingAPIOGL::SelectTextureFb(int fb_id) {
     glBindTexture(GL_TEXTURE_2D, mFrameBuffers[fb_id].clrbuf);
 }
 
-void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
-                                 int dstY0, int dstX1, int dstY1) {
+void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
+                                         int dstX0, int dstY0, int dstX1, int dstY1) {
     if (fb_dst_id >= (int)mFrameBuffers.size() || fb_src_id >= (int)mFrameBuffers.size()) {
         return;
     }

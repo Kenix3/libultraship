@@ -122,7 +122,6 @@ struct CCFeatures {
 
 void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features);
 
-
 class GfxRenderingAPI;
 class GfxWindowBackend;
 union Gfx;
@@ -358,8 +357,8 @@ class Interpreter {
     Interpreter();
     ~Interpreter();
 
-    void Init(GfxWindowBackend* wapi, class GfxRenderingAPI* rapi, const char* game_name,
-              bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
+    void Init(GfxWindowBackend* wapi, class GfxRenderingAPI* rapi, const char* game_name, bool start_in_fullscreen,
+              uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
     void Destroy();
     void GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
     GfxRenderingAPI* GetCurrentRenderingAPI();

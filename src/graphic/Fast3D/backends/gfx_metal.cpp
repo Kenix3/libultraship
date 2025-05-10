@@ -18,7 +18,6 @@
 #include <cmath>
 #include <stddef.h>
 
-
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
@@ -94,8 +93,7 @@ bool GfxRenderingMetal::MetalInit(SDL_Renderer* renderer) {
     mCommandQueue = mDevice->newCommandQueue();
 
     for (size_t i = 0; i < kMaxVertexBufferPoolSize; i++) {
-        MTL::Buffer* new_buffer =
-            mDevice->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
+        MTL::Buffer* new_buffer = mDevice->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
         mVertexBufferPool[i] = new_buffer;
     }
 
@@ -202,8 +200,7 @@ void GfxRenderingMetal::Init() {
                      error->localizedDescription()->cString(NS::UTF8StringEncoding));
 
     mDepthComputeFunction = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
-    mConvertToRgb5a1Function =
-        library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
+    mConvertToRgb5a1Function = library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
 
     library->release();
     autorelease_pool->release();
@@ -248,7 +245,7 @@ struct ShaderProgram* GfxRenderingMetal::CreateAndLoadNewShader(uint64_t shader_
     pipeline_descriptor->setVertexDescriptor(vertex_descriptor);
 
     pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(mSrgbMode ? MTL::PixelFormatBGRA8Unorm_sRGB
-                                                                                      : MTL::PixelFormatBGRA8Unorm);
+                                                                                 : MTL::PixelFormatBGRA8Unorm);
     pipeline_descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormatDepth32Float);
     if (cc_features.opt_alpha) {
         pipeline_descriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
@@ -441,7 +438,7 @@ void GfxRenderingMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_
         depth_descriptor->setDepthWriteEnabled(mCurrentDepthMask);
         depth_descriptor->setDepthCompareFunction(
             mCurrentDepthTest ? (mCurrentZmodeDecal ? MTL::CompareFunctionLessEqual : MTL::CompareFunctionLess)
-                            : MTL::CompareFunctionAlways);
+                              : MTL::CompareFunctionAlways);
 
         MTL::DepthStencilState* depth_stencil_state = mDevice->newDepthStencilState(depth_descriptor);
         current_framebuffer.mCommandEncoder->setDepthStencilState(depth_stencil_state);
@@ -494,8 +491,7 @@ void GfxRenderingMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_
         if (mShaderProgram->usedTextures[i]) {
             if (current_framebuffer.mLastBoundTextures[i] != mTextures[mCurrentTextureIds[i]].texture) {
                 current_framebuffer.mLastBoundTextures[i] = mTextures[mCurrentTextureIds[i]].texture;
-                current_framebuffer.mCommandEncoder->setFragmentTexture(
-                    mTextures[mCurrentTextureIds[i]].texture, i);
+                current_framebuffer.mCommandEncoder->setFragmentTexture(mTextures[mCurrentTextureIds[i]].texture, i);
 
                 if (current_framebuffer.mLastBoundSamplers[i] != mTextures[mCurrentTextureIds[i]].sampler) {
                     current_framebuffer.mLastBoundSamplers[i] = mTextures[mCurrentTextureIds[i]].sampler;
@@ -531,12 +527,10 @@ void GfxRenderingMetal::StartFrame() {
     }
 
     if (!mFrameUniformBuffer) {
-        mFrameUniformBuffer =
-            mDevice->newBuffer(sizeof(FrameUniforms), MTL::ResourceCPUCacheModeDefaultCache);
+        mFrameUniformBuffer = mDevice->newBuffer(sizeof(FrameUniforms), MTL::ResourceCPUCacheModeDefaultCache);
     }
     if (!mCoordUniformBuffer) {
-        mCoordUniformBuffer =
-            mDevice->newBuffer(sizeof(CoordUniforms), MTL::ResourceCPUCacheModeDefaultCache);
+        mCoordUniformBuffer = mDevice->newBuffer(sizeof(CoordUniforms), MTL::ResourceCPUCacheModeDefaultCache);
     }
 
     mCurrentVertexBufferOffset = 0;
@@ -853,8 +847,7 @@ void GfxRenderingMetal::ClearFramebuffer(bool color, bool depth) {
         srcColorAttachment->setLoadAction(MTL::LoadActionClear);
     }
 
-    MTL::RenderPassDepthAttachmentDescriptor* srcDepthAttachment =
-        framebuffer.mRenderPassDescriptor->depthAttachment();
+    MTL::RenderPassDepthAttachmentDescriptor* srcDepthAttachment = framebuffer.mRenderPassDescriptor->depthAttachment();
     MTL::LoadAction origDepthLoadAction = MTL::LoadActionDontCare;
     if (depth && framebuffer.mHasDepthBuffer) {
         origDepthLoadAction = srcDepthAttachment->loadAction();
@@ -978,8 +971,7 @@ GfxRenderingMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, floa
     command_buffer->setLabel(NS::String::string("Depth Shader Command Buffer", NS::UTF8StringEncoding));
 
     NS::Error* error = nullptr;
-    MTL::ComputePipelineState* compute_pipeline_state =
-        mDevice->newComputePipelineState(mDepthComputeFunction, &error);
+    MTL::ComputePipelineState* compute_pipeline_state = mDevice->newComputePipelineState(mDepthComputeFunction, &error);
 
     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
     compute_encoder->setComputePipelineState(compute_pipeline_state);
@@ -1028,8 +1020,8 @@ void GfxRenderingMetal::SelectTextureFb(int fb_id) {
     SelectTexture(tile, mFramebuffers[fb_id].mTextureId);
 }
 
-void GfxRenderingMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
-                                int dstY0, int dstX1, int dstY1) {
+void GfxRenderingMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
+                                        int dstX0, int dstY0, int dstX1, int dstY1) {
     if (fb_src_id >= (int)mFramebuffers.size() || fb_dst_id >= (int)mFramebuffers.size()) {
         return;
     }
@@ -1101,7 +1093,8 @@ void GfxRenderingMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0,
     source_framebuffer.mLastZmodeDecal = -1;
 }
 
-void GfxRenderingMetal::GfxRenderingMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
+void GfxRenderingMetal::GfxRenderingMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height,
+                                                                uint16_t* rgba16_buf) {
     if (fb_id >= (int)mFramebuffers.size()) {
         return;
     }
