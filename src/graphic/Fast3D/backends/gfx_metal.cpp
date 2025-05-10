@@ -75,7 +75,7 @@ bool Metal_IsSupported() {
 bool GfxRenderingMetal::NonUniformThreadGroupSupported() {
 #ifdef __IOS__
     // iOS devices with A11 or later support dispatch threads
-    return device->supportsFamily(MTL::GPUFamilyApple4);
+    return mDevice->supportsFamily(MTL::GPUFamilyApple4);
 #else
     // macOS devices with Metal 2 support dispatch threads
     return mDevice->supportsFamily(MTL::GPUFamilyMac2);
