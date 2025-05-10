@@ -1199,9 +1199,7 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
 }
 
 bool prism_get_bool(prism::ContextTypes* value) {
-    if (std::holds_alternative<bool>(*value)) {
-        return std::get<bool>(*value);
-    } else if (std::holds_alternative<int>(*value)) {
+    if (std::holds_alternative<int>(*value)) {
         return std::get<int>(*value) == 1;
     }
     return false;
