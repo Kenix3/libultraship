@@ -822,7 +822,7 @@ std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
 }
 
 void Gui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const ImVec4& tint) {
-    GfxRenderingAPI* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+    GfxRenderingAPI* api = (GfxRenderingAPI*)mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res.Width * res.Height * 4);
 
