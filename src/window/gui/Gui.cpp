@@ -195,7 +195,7 @@ void Gui::ImGuiBackendInit() {
 
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL: {
-            GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
 
             api->MetalInit(mImpl.Metal.Renderer);
             break;
@@ -319,7 +319,7 @@ void Gui::ImGuiBackendNewFrame() {
 
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL: {
-            GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
             api->NewFrame();
             // Metal_NewFrame();
             break;
@@ -698,7 +698,7 @@ void Gui::DrawFloatingWindows() {
 #ifdef __APPLE__
             // Metal requires additional frame setup to get ImGui ready for drawing floating windows
             if (backend == WindowBackend::FAST3D_SDL_METAL) {
-                GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+                GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
                 api->SetupFloatingFrame();
             }
 #endif
@@ -770,7 +770,7 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
 
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL: {
-            GfxRenderingMetal* api = (GfxRenderingMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter.lock()->GetCurrentRenderingAPI();
             api->RenderDrawData(data);
             break;
         }

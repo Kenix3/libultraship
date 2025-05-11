@@ -72,7 +72,7 @@ bool Metal_IsSupported() {
 #endif
 }
 
-bool GfxRenderingMetal::NonUniformThreadGroupSupported() {
+bool GfxRenderingAPIMetal::NonUniformThreadGroupSupported() {
 #ifdef __IOS__
     // iOS devices with A11 or later support dispatch threads
     return mDevice->supportsFamily(MTL::GPUFamilyApple4);
@@ -82,7 +82,7 @@ bool GfxRenderingMetal::NonUniformThreadGroupSupported() {
 #endif
 }
 
-bool GfxRenderingMetal::MetalInit(SDL_Renderer* renderer) {
+bool GfxRenderingAPIMetal::MetalInit(SDL_Renderer* renderer) {
     mRenderer = renderer;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
@@ -105,7 +105,7 @@ bool GfxRenderingMetal::MetalInit(SDL_Renderer* renderer) {
 
 static void SetupScreenFramebuffer(uint32_t width, uint32_t height);
 
-void GfxRenderingMetal::NewFrame() {
+void GfxRenderingAPIMetal::NewFrame() {
     int width, height;
     SDL_GetRendererOutputSize(mRenderer, &width, &height);
     SetupScreenFramebuffer(width, height);
@@ -114,7 +114,7 @@ void GfxRenderingMetal::NewFrame() {
     ImGui_ImplMetal_NewFrame(current_render_pass);
 }
 
-void GfxRenderingMetal::SetupFloatingFrame() {
+void GfxRenderingAPIMetal::SetupFloatingFrame() {
     // We need the descriptor for the main framebuffer and to clear the existing depth attachment
     // so that we can set ImGui up again for our floating windows. Helps avoid Metal API validation issues.
     MTL::RenderPassDescriptor* current_render_pass = mFramebuffers[0].mRenderPassDescriptor;
@@ -122,7 +122,7 @@ void GfxRenderingMetal::SetupFloatingFrame() {
     ImGui_ImplMetal_NewFrame(current_render_pass);
 }
 
-void GfxRenderingMetal::RenderDrawData(ImDrawData* drawData) {
+void GfxRenderingAPIMetal::RenderDrawData(ImDrawData* drawData) {
     auto framebuffer = mFramebuffers[0];
 
     // Workaround for detecting when transitioning to/from full screen mode.
@@ -137,15 +137,15 @@ void GfxRenderingMetal::RenderDrawData(ImDrawData* drawData) {
 
 // MARK: - Metal Graphics Rendering API
 
-const char* GfxRenderingMetal::GetName() {
+const char* GfxRenderingAPIMetal::GetName() {
     return "Metal";
 }
 
-int GfxRenderingMetal::GetMaxTextureSize() {
+int GfxRenderingAPIMetal::GetMaxTextureSize() {
     return mDevice->supportsFamily(MTL::GPUFamilyApple3) ? 16384 : 8192;
 }
 
-void GfxRenderingMetal::Init() {
+void GfxRenderingAPIMetal::Init() {
     // Create the default framebuffer which represents the window
     FramebufferMetal& fb = mFramebuffers[CreateFramebuffer()];
     fb.mMsaaLevel = 1;
@@ -206,18 +206,18 @@ void GfxRenderingMetal::Init() {
     autorelease_pool->release();
 }
 
-struct GfxClipParameters GfxRenderingMetal::GetClipParameters() {
+struct GfxClipParameters GfxRenderingAPIMetal::GetClipParameters() {
     return { true, false };
 }
 
-void GfxRenderingMetal::UnloadShader(struct ShaderProgram* old_prg) {
+void GfxRenderingAPIMetal::UnloadShader(struct ShaderProgram* old_prg) {
 }
 
-void GfxRenderingMetal::LoadShader(struct ShaderProgram* new_prg) {
+void GfxRenderingAPIMetal::LoadShader(struct ShaderProgram* new_prg) {
     mShaderProgram = (struct ShaderProgramMetal*)new_prg;
 }
 
-struct ShaderProgram* GfxRenderingMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
+struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
@@ -305,12 +305,12 @@ struct ShaderProgram* GfxRenderingMetal::CreateAndLoadNewShader(uint64_t shader_
     return (struct ShaderProgram*)prg;
 }
 
-struct ShaderProgram* GfxRenderingMetal::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
+struct ShaderProgram* GfxRenderingAPIMetal::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
     auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
     return it == mShaderProgramPool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }
 
-void GfxRenderingMetal::ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) {
+void GfxRenderingAPIMetal::ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) {
     struct ShaderProgramMetal* p = (struct ShaderProgramMetal*)prg;
 
     *numInputs = p->numInputs;
@@ -318,20 +318,20 @@ void GfxRenderingMetal::ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numInp
     usedTextures[1] = p->usedTextures[1];
 }
 
-uint32_t GfxRenderingMetal::NewTexture() {
+uint32_t GfxRenderingAPIMetal::NewTexture() {
     mTextures.resize(mTextures.size() + 1);
     return (uint32_t)(mTextures.size() - 1);
 }
 
-void GfxRenderingMetal::DeleteTexture(uint32_t texID) {
+void GfxRenderingAPIMetal::DeleteTexture(uint32_t texID) {
 }
 
-void GfxRenderingMetal::SelectTexture(int tile, uint32_t texture_id) {
+void GfxRenderingAPIMetal::SelectTexture(int tile, uint32_t texture_id) {
     mCurrentTile = tile;
     mCurrentTextureIds[tile] = texture_id;
 }
 
-void GfxRenderingMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
+void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
     TextureDataMetal* texture_data = &mTextures[mCurrentTextureIds[mCurrentTile]];
 
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
@@ -362,7 +362,7 @@ void GfxRenderingMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t width,
     autorelease_pool->release();
 }
 
-void GfxRenderingMetal::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
+void GfxRenderingAPIMetal::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
     TextureDataMetal* texture_data = &mTextures[mCurrentTextureIds[tile]];
     texture_data->linear_filtering = linear_filter;
 
@@ -385,16 +385,16 @@ void GfxRenderingMetal::SetSamplerParameters(int tile, bool linear_filter, uint3
     sampler_descriptor->release();
 }
 
-void GfxRenderingMetal::SetDepthTestAndMask(bool depth_test, bool depth_mask) {
+void GfxRenderingAPIMetal::SetDepthTestAndMask(bool depth_test, bool depth_mask) {
     mCurrentDepthTest = depth_test;
     mCurrentDepthMask = depth_mask;
 }
 
-void GfxRenderingMetal::SetZmodeDecal(bool zmode_decal) {
+void GfxRenderingAPIMetal::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
 }
 
-void GfxRenderingMetal::SetViewport(int x, int y, int width, int height) {
+void GfxRenderingAPIMetal::SetViewport(int x, int y, int width, int height) {
     FramebufferMetal& fb = mFramebuffers[mCurrentFramebuffer];
 
     fb.mViewport->originX = x;
@@ -407,7 +407,7 @@ void GfxRenderingMetal::SetViewport(int x, int y, int width, int height) {
     fb.mCommandEncoder->setViewport(*fb.mViewport);
 }
 
-void GfxRenderingMetal::SetScissor(int x, int y, int width, int height) {
+void GfxRenderingAPIMetal::SetScissor(int x, int y, int width, int height) {
     FramebufferMetal& fb = mFramebuffers[mCurrentFramebuffer];
     TextureDataMetal tex = mTextures[fb.mTextureId];
 
@@ -420,11 +420,11 @@ void GfxRenderingMetal::SetScissor(int x, int y, int width, int height) {
     fb.mCommandEncoder->setScissorRect(*fb.mScissorRect);
 }
 
-void GfxRenderingMetal::SetUseAlpha(bool use_alpha) {
+void GfxRenderingAPIMetal::SetUseAlpha(bool use_alpha) {
     // Already part of the pipeline state from shader info
 }
 
-void GfxRenderingMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
     auto& current_framebuffer = mFramebuffers[mCurrentFramebuffer];
@@ -516,10 +516,10 @@ void GfxRenderingMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_
     autorelease_pool->release();
 }
 
-void GfxRenderingMetal::OnResize() {
+void GfxRenderingAPIMetal::OnResize() {
 }
 
-void GfxRenderingMetal::StartFrame() {
+void GfxRenderingAPIMetal::StartFrame() {
     mFrameUniforms.frameCount++;
     if (mFrameUniforms.frameCount > 150) {
         // No high values, as noise starts to look ugly
@@ -538,7 +538,7 @@ void GfxRenderingMetal::StartFrame() {
     mFrameAutoreleasePool = NS::AutoreleasePool::alloc()->init();
 }
 
-void GfxRenderingMetal::EndFrame() {
+void GfxRenderingAPIMetal::EndFrame() {
     std::set<int>::iterator it = mDrawnFramebuffers.begin();
     it++;
 
@@ -584,10 +584,10 @@ void GfxRenderingMetal::EndFrame() {
     mFrameAutoreleasePool->release();
 }
 
-void GfxRenderingMetal::FinishRender() {
+void GfxRenderingAPIMetal::FinishRender() {
 }
 
-int GfxRenderingMetal::CreateFramebuffer() {
+int GfxRenderingAPIMetal::CreateFramebuffer() {
     uint32_t texture_id = NewTexture();
     TextureDataMetal& t = mTextures[texture_id];
 
@@ -607,7 +607,7 @@ int GfxRenderingMetal::CreateFramebuffer() {
     return (int)index;
 }
 
-void GfxRenderingMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) {
+void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) {
     mCurrentDrawable = nullptr;
     mCurrentDrawable = mLayer->nextDrawable();
 
@@ -668,7 +668,7 @@ void GfxRenderingMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) 
     autorelease_pool->release();
 }
 
-void GfxRenderingMetal::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
+void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                     bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                                     bool can_extract_depth) {
     // Screen framebuffer is handled separately on a frame by frame basis
@@ -801,7 +801,7 @@ void GfxRenderingMetal::UpdateFramebufferParameters(int fb_id, uint32_t width, u
     autorelease_pool->release();
 }
 
-void GfxRenderingMetal::StartDrawToFramebuffer(int fb_id, float noise_scale) {
+void GfxRenderingAPIMetal::StartDrawToFramebuffer(int fb_id, float noise_scale) {
     FramebufferMetal& fb = mFramebuffers[fb_id];
     mRenderTargetHeight = mTextures[fb.mTextureId].height;
 
@@ -829,7 +829,7 @@ void GfxRenderingMetal::StartDrawToFramebuffer(int fb_id, float noise_scale) {
     memcpy(mFrameUniformBuffer->contents(), &mFrameUniforms, sizeof(FrameUniforms));
 }
 
-void GfxRenderingMetal::ClearFramebuffer(bool color, bool depth) {
+void GfxRenderingAPIMetal::ClearFramebuffer(bool color, bool depth) {
     if (!color && !depth) {
         return;
     }
@@ -882,7 +882,7 @@ void GfxRenderingMetal::ClearFramebuffer(bool color, bool depth) {
     framebuffer.mLastZmodeDecal = -1;
 }
 
-void GfxRenderingMetal::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
+void GfxRenderingAPIMetal::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
     int source_texture_id = mFramebuffers[fb_id_source].mTextureId;
     MTL::Texture* source_texture = mTextures[source_texture_id].texture;
 
@@ -936,7 +936,7 @@ void GfxRenderingMetal::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_sourc
 }
 
 std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
-GfxRenderingMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
+GfxRenderingAPIMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
     auto framebuffer = mFramebuffers[fb_id];
 
     if (coordinates.size() > mCoordBufferSize) {
@@ -1011,16 +1011,16 @@ GfxRenderingMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, floa
     return res;
 }
 
-void* GfxRenderingMetal::GetFramebufferTextureId(int fb_id) {
+void* GfxRenderingAPIMetal::GetFramebufferTextureId(int fb_id) {
     return (void*)mTextures[mFramebuffers[fb_id].mTextureId].texture;
 }
 
-void GfxRenderingMetal::SelectTextureFb(int fb_id) {
+void GfxRenderingAPIMetal::SelectTextureFb(int fb_id) {
     int tile = 0;
     SelectTexture(tile, mFramebuffers[fb_id].mTextureId);
 }
 
-void GfxRenderingMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
+void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
                                         int dstX0, int dstY0, int dstX1, int dstY1) {
     if (fb_src_id >= (int)mFramebuffers.size() || fb_dst_id >= (int)mFramebuffers.size()) {
         return;
@@ -1093,7 +1093,7 @@ void GfxRenderingMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0,
     source_framebuffer.mLastZmodeDecal = -1;
 }
 
-void GfxRenderingMetal::GfxRenderingMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height,
+void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height,
                                                                 uint16_t* rgba16_buf) {
     if (fb_id >= (int)mFramebuffers.size()) {
         return;
@@ -1148,20 +1148,20 @@ void GfxRenderingMetal::GfxRenderingMetal::ReadFramebufferToCPU(int fb_id, uint3
     autorelease_pool->release();
 }
 
-void GfxRenderingMetal::SetTextureFilter(FilteringMode mode) {
+void GfxRenderingAPIMetal::SetTextureFilter(FilteringMode mode) {
     mCurrentFilterMode = mode;
     gfx_texture_cache_clear();
 }
 
-FilteringMode GfxRenderingMetal::GetTextureFilter() {
+FilteringMode GfxRenderingAPIMetal::GetTextureFilter() {
     return mCurrentFilterMode;
 }
 
-ImTextureID GfxRenderingMetal::GetTextureById(int fb_id) {
+ImTextureID GfxRenderingAPIMetal::GetTextureById(int fb_id) {
     return (void*)mTextures[fb_id].texture;
 }
 
-void GfxRenderingMetal::SetSrgbMode() {
+void GfxRenderingAPIMetal::SetSrgbMode() {
     mSrgbMode = true;
 }
 

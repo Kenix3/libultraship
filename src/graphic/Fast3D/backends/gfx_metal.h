@@ -115,9 +115,9 @@ struct CoordUniforms {
     simd::uint2 coords[MAX_PIXEL_DEPTH_COORDS];
 };
 
-class GfxRenderingMetal final : public GfxRenderingAPI {
+class GfxRenderingAPIMetal final : public GfxRenderingAPI {
   public:
-    ~GfxRenderingMetal() override = default;
+    ~GfxRenderingAPIMetal() override = default;
     const char* GetName() override;
     int GetMaxTextureSize() override;
     GfxClipParameters GetClipParameters() override;
