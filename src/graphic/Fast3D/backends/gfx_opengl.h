@@ -1,3 +1,4 @@
+#ifdef ENABLE_OPENGL
 #ifndef GFX_OPENGL_H
 #define GFX_OPENGL_H
 
@@ -131,4 +132,5 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
 
 // extern struct GfxRenderingAPI gfx_opengl_api;
 
+#endif
 #endif
