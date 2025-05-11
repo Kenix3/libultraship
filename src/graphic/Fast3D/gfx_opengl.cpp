@@ -360,6 +360,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "SHADER_1", SHADER_1 },
         { "SHADER_COMBINED", SHADER_COMBINED },
         { "SHADER_NOISE", SHADER_NOISE },
+        { "o_three_point_filtering", current_filter_mode == FILTER_THREE_POINT },
         { "append_formula", (InvokeFunc)append_formula },
 #ifdef __APPLE__
         { "GLSL_VERSION", "#version 410 core" },
@@ -654,8 +655,9 @@ static uint32_t gfx_cm_to_opengl(uint32_t val) {
 
 static void gfx_opengl_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
     glActiveTexture(GL_TEXTURE0 + tile);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    GLint filter = linear_filter && current_filter_mode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     textures[current_texture_ids[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gfx_cm_to_opengl(cms));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));
