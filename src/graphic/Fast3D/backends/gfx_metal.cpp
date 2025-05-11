@@ -669,8 +669,8 @@ void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t heigh
 }
 
 void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
-                                                    bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                                    bool can_extract_depth) {
+                                                       bool opengl_invertY, bool render_target, bool has_depth_buffer,
+                                                       bool can_extract_depth) {
     // Screen framebuffer is handled separately on a frame by frame basis
     // see `SetupScreenFramebuffer`.
     if (fb_id == 0) {
@@ -1021,7 +1021,7 @@ void GfxRenderingAPIMetal::SelectTextureFb(int fb_id) {
 }
 
 void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
-                                        int dstX0, int dstY0, int dstX1, int dstY1) {
+                                           int dstX0, int dstY0, int dstX1, int dstY1) {
     if (fb_src_id >= (int)mFramebuffers.size() || fb_dst_id >= (int)mFramebuffers.size()) {
         return;
     }
@@ -1094,7 +1094,7 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
 }
 
 void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height,
-                                                                uint16_t* rgba16_buf) {
+                                                                      uint16_t* rgba16_buf) {
     if (fb_id >= (int)mFramebuffers.size()) {
         return;
     }

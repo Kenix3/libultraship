@@ -128,7 +128,8 @@ void GfxRenderingAPIDX11::Init() {
     // Load D3DCompiler_47.dll
     mCompilerModule = LoadLibraryW(L"D3DCompiler_47.dll");
     if (mCompilerModule == nullptr) {
-        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), mWindowBackend->GetWindowHandle(), "D3DCompiler_47.dll not found");
+        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), mWindowBackend->GetWindowHandle(),
+                      "D3DCompiler_47.dll not found");
     }
     mD3dCompile = (pD3DCompile)GetProcAddress(mCompilerModule, "D3DCompile");
 
@@ -159,8 +160,8 @@ void GfxRenderingAPIDX11::Init() {
     // Create D3D Debug mDevice if in debug mode
 
 #if DEBUG_D3D
-    ThrowIfFailed(mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)debug.GetAddressOf()), mWindowBackend->GetWindowHandle(),
-                  "Failed to get ID3D11Debug device.");
+    ThrowIfFailed(mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)debug.GetAddressOf()),
+                  mWindowBackend->GetWindowHandle(), "Failed to get ID3D11Debug device.");
 #endif
 
     // Create the default framebuffer which represents the window
