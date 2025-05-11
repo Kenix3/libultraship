@@ -30,7 +30,7 @@
 #elif __APPLE__
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
-#elif defined(USE_OPENGLES_3) or defined(USE_OPENGLES_2)
+#elif USE_OPENGLES
 #include <SDL2/SDL.h>
 #include <GLES3/gl3.h>
 #else
@@ -78,7 +78,7 @@ struct Framebuffer {
 static map<pair<uint64_t, uint32_t>, struct ShaderProgram> shader_program_pool;
 static struct ShaderProgram *current_shader_program;
 static GLuint opengl_vbo;
-#if defined(__APPLE__) || defined(USE_OPENGLES_3)
+#if defined(__APPLE__) || defined(USE_OPENGLES)
 static GLuint opengl_vao;
 #endif
 
@@ -369,14 +369,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "core_opengl", true },
         { "texture", "texture" },
         { "vOutColor", "vOutColor" },
-#elif defined(USE_OPENGLES_2)
-        { "GLSL_VERSION", "#version 100" },
-        { "attr", "varying" },
-        { "opengles", true },
-        { "core_opengl", false },
-        { "texture", "texture2D" },
-        { "vOutColor", "gl_FragColor" },
-#elif defined(USE_OPENGLES_3)
+#elif defined(USE_OPENGLES)
         { "GLSL_VERSION", "#version 300 es\nprecision mediump float;" },
         { "attr", "in" },
         { "opengles", true },
@@ -437,15 +430,10 @@ static std::string build_vs_shader(const CCFeatures& cc_features) {
                                     { "attr", "in" },
                                     { "out", "out" },
                                     { "opengles", false }
-#elif defined(USE_OPENGLES_3)
+#elif defined(USE_OPENGLES)
                                     { "GLSL_VERSION", "#version 300 es" },
                                     { "attr", "in" },
                                     { "out", "out" },
-                                    { "opengles", true }
-#elif defined(USE_OPENGLES_2)
-                                    { "GLSL_VERSION", "#version 100" },
-                                    { "attr", "attribute" },
-                                    { "out", "varying" },
                                     { "opengles", true }
 #else
                                     { "GLSL_VERSION", "#version 110" },
@@ -647,7 +635,7 @@ static void gfx_opengl_upload_texture(const uint8_t* rgba32_buf, uint32_t width,
     textures[current_texture_ids[current_tile]].height = height;
 }
 
-#if defined(USE_OPENGLES_2) || defined(USE_OPENGLES_3)
+#ifdef USE_OPENGLES
 #define GL_MIRROR_CLAMP_TO_EDGE 0x8743
 #endif
 
@@ -764,12 +752,12 @@ static void gfx_opengl_init() {
     glGenBuffers(1, &opengl_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
 
-#if defined(__APPLE__) || defined(USE_OPENGLES_3)
+#if defined(__APPLE__) || defined(USE_OPENGLES)
     glGenVertexArrays(1, &opengl_vao);
     glBindVertexArray(opengl_vao);
 #endif
 
-#if !defined(USE_OPENGLES_2) && !defined(USE_OPENGLES_3)
+#ifndef USE_OPENGLES // not supported on gles
     glEnable(GL_DEPTH_CLAMP);
 #endif
     glDepthFunc(GL_LEQUAL);
@@ -1023,7 +1011,7 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
         glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
         int x = coordinates.begin()->first;
         int y = coordinates.begin()->second;
-#if !defined(USE_OPENGLES_2) && !defined(USE_OPENGLES_3) // not supported on gles. Runs fine without it, but this may cause issues
+#ifndef USE_OPENGLES // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(x, fb.invert_y ? fb.height - y : y, 1, 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8,
                      &depth_stencil_value);
 #endif
@@ -1063,7 +1051,7 @@ gfx_opengl_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& c
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, pixel_depth_fb);
         vector<uint32_t> depth_stencil_values(coordinates.size());
-#if !defined(USE_OPENGLES_2) && !defined(USE_OPENGLES_3) // not supported on gles. Runs fine without it, but this may cause issues
+#ifndef USE_OPENGLES // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(0, 0, coordinates.size(), 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, depth_stencil_values.data());
 #endif
         {
