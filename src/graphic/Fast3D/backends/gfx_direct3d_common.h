@@ -60,10 +60,13 @@ struct ShaderProgramD3D11 {
     bool usedTextures[SHADER_MAX_TEXTURES];
 };
 
+class GfxWindowBackendDXGI;
+
 class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
   public:
     GfxRenderingAPIDX11() = default;
     ~GfxRenderingAPIDX11() override;
+    GfxRenderingAPIDX11(GfxWindowBackendDXGI* backend);
     const char* GetName() override;
     int GetMaxTextureSize() override;
     GfxClipParameters GetClipParameters() override;
@@ -110,7 +113,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     PFN_D3D11_CREATE_DEVICE mDX11CreateDevice;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> mContext;
     Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
-
+    GfxWindowBackendDXGI* mWindowBackend = nullptr;
     D3D_FEATURE_LEVEL mFeatureLevel;
 
   private:
@@ -173,8 +176,6 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
 
     D3D_PRIMITIVE_TOPOLOGY mLastPrimitaveTopology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 };
-
-struct CCFeatures;
 
 std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,
                                              bool include_root_signature, bool three_point_filtering, bool use_srgb);

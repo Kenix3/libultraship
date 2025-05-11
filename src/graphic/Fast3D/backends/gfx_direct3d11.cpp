@@ -43,12 +43,13 @@
 
 #define DEBUG_D3D 0
 
-// TODO remove this after the graphics backend constructor takes the backend to store in a class.
-GfxWindowBackendDXGI* dxgi;
-
 using namespace Microsoft::WRL; // For ComPtr
 
 GfxRenderingAPIDX11::~GfxRenderingAPIDX11() {
+}
+
+GfxRenderingAPIDX11::GfxRenderingAPIDX11(GfxWindowBackendDXGI* backend) {
+    mWindowBackend = backend;
 }
 
 void GfxRenderingAPIDX11::CreateDepthStencilObjects(uint32_t width, uint32_t height, uint32_t msaa_count,
@@ -111,7 +112,7 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, IDXGIAdapter1* ada
     if (test_only) {
         return SUCCEEDED(res);
     } else {
-        ThrowIfFailed(res, dxgi->GetWindowHandle(), "Failed to create D3D11 device.");
+        ThrowIfFailed(res, self->mWindowBackend->GetWindowHandle(), "Failed to create D3D11 device.");
         return true;
     }
 };
@@ -120,23 +121,23 @@ void GfxRenderingAPIDX11::Init() {
     // Load d3d11.dll
     mDX11Module = LoadLibraryW(L"d3d11.dll");
     if (mDX11Module == nullptr) {
-        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), dxgi->GetWindowHandle(), "d3d11.dll not found");
+        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), mWindowBackend->GetWindowHandle(), "d3d11.dll not found");
     }
     mDX11CreateDevice = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(mDX11Module, "D3D11CreateDevice");
 
     // Load D3DCompiler_47.dll
     mCompilerModule = LoadLibraryW(L"D3DCompiler_47.dll");
     if (mCompilerModule == nullptr) {
-        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), dxgi->GetWindowHandle(), "D3DCompiler_47.dll not found");
+        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), mWindowBackend->GetWindowHandle(), "D3DCompiler_47.dll not found");
     }
     mD3dCompile = (pD3DCompile)GetProcAddress(mCompilerModule, "D3DCompile");
 
     // Create D3D11 mDevice
 
-    dxgi->CreateFactoryAndDevice(DEBUG_D3D, 11, this, CreateDeviceFunc);
+    mWindowBackend->CreateFactoryAndDevice(DEBUG_D3D, 11, this, CreateDeviceFunc);
 
     // Create the swap chain
-    dxgi->CreateSwapChain(mDevice.Get(), [this]() {
+    mWindowBackend->CreateSwapChain(mDevice.Get(), [this]() {
         mFrameBuffers[0].render_target_view.Reset();
         mTextures[mFrameBuffers[0].texture_id].texture.Reset();
         mContext->ClearState();
@@ -158,7 +159,7 @@ void GfxRenderingAPIDX11::Init() {
     // Create D3D Debug mDevice if in debug mode
 
 #if DEBUG_D3D
-    ThrowIfFailed(mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)debug.GetAddressOf()), dxgi->GetWindowHandle(),
+    ThrowIfFailed(mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)debug.GetAddressOf()), mWindowBackend->GetWindowHandle(),
                   "Failed to get ID3D11Debug device.");
 #endif
 
@@ -167,7 +168,7 @@ void GfxRenderingAPIDX11::Init() {
 
     // Check the size of the window
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
-    ThrowIfFailed(dxgi->GetSwapChain()->GetDesc1(&swap_chain_desc));
+    ThrowIfFailed(mWindowBackend->GetSwapChain()->GetDesc1(&swap_chain_desc));
     mTextures[fb.texture_id].width = swap_chain_desc.Width;
     mTextures[fb.texture_id].height = swap_chain_desc.Height;
     fb.msaa_level = 1;
@@ -189,7 +190,7 @@ void GfxRenderingAPIDX11::Init() {
     vertex_buffer_desc.MiscFlags = 0;
 
     ThrowIfFailed(mDevice->CreateBuffer(&vertex_buffer_desc, nullptr, mVertexBuffer.GetAddressOf()),
-                  dxgi->GetWindowHandle(), "Failed to create vertex buffer.");
+                  mWindowBackend->GetWindowHandle(), "Failed to create vertex buffer.");
 
     // Create per-frame constant buffer
 
@@ -203,7 +204,7 @@ void GfxRenderingAPIDX11::Init() {
     constant_buffer_desc.MiscFlags = 0;
 
     ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mPerFrameCb.GetAddressOf()),
-                  dxgi->GetWindowHandle(), "Failed to create per-frame constant buffer.");
+                  mWindowBackend->GetWindowHandle(), "Failed to create per-frame constant buffer.");
 
     // Create per-draw constant buffer
 
@@ -214,7 +215,7 @@ void GfxRenderingAPIDX11::Init() {
     constant_buffer_desc.MiscFlags = 0;
 
     ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mPerDrawCb.GetAddressOf()),
-                  dxgi->GetWindowHandle(), "Failed to create per-draw constant buffer.");
+                  mWindowBackend->GetWindowHandle(), "Failed to create per-draw constant buffer.");
 
     // Create compute shader that can be used to retrieve depth buffer values
 
@@ -256,7 +257,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
@@ -268,14 +269,14 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
     // Create ImGui
 
     Ship::GuiWindowInitData window_impl;
-    window_impl.Dx11 = { dxgi->GetWindowHandle(), mContext.Get(), mDevice.Get() };
+    window_impl.Dx11 = { mWindowBackend->GetWindowHandle(), mContext.Get(), mDevice.Get() };
     Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 }
 
@@ -325,7 +326,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
@@ -334,7 +335,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
 
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
-        MessageBoxA(dxgi->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
         throw hr;
     }
 
@@ -781,7 +782,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
             }
         } else if (diff || (render_target && tex.texture.Get() == nullptr)) {
             DXGI_SWAP_CHAIN_DESC1 desc1;
-            IDXGISwapChain1* swap_chain = dxgi->GetSwapChain();
+            IDXGISwapChain1* swap_chain = mWindowBackend->GetSwapChain();
             ThrowIfFailed(swap_chain->GetDesc1(&desc1));
             if (desc1.Width != width || desc1.Height != height) {
                 fb.render_target_view.Reset();
