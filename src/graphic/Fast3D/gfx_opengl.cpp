@@ -402,9 +402,9 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
     processor.load(*shader);
     processor.bind_include_loader(opengl_include_fs);
     auto result = processor.process();
-    SPDLOG_INFO("=========== FRAGMENT SHADER ============");
-    SPDLOG_INFO(result);
-    SPDLOG_INFO("========================================");
+    // SPDLOG_INFO("=========== FRAGMENT SHADER ============");
+    // SPDLOG_INFO(result);
+    // SPDLOG_INFO("========================================");
     return result;
 }
 
