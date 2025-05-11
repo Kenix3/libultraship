@@ -76,7 +76,7 @@ struct Framebuffer {
 };
 
 static map<pair<uint64_t, uint32_t>, struct ShaderProgram> shader_program_pool;
-static struct ShaderProgram *current_shader_program;
+static struct ShaderProgram* current_shader_program;
 static GLuint opengl_vbo;
 #if defined(__APPLE__) || defined(USE_OPENGLES)
 static GLuint opengl_vao;
@@ -152,7 +152,6 @@ static void gfx_opengl_set_per_draw_uniforms() {
         glUniform1iv(current_shader_program->texture_height_location, 2, height);
     }
 }
-    
 
 static void gfx_opengl_unload_shader(struct ShaderProgram* old_prg) {
     if (old_prg != NULL) {
