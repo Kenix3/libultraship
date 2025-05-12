@@ -119,20 +119,20 @@ constexpr int8_t F3DEX_G_MW_POINTS = 0x0c;
  * These are offsets from the address in the dmem table
  */
 
-constexpr int8_t F3DEX_G_MWO_aLIGHT_2 = 0x20;
-constexpr int8_t F3DEX_G_MWO_bLIGHT_2 = 0x24;
-constexpr int8_t F3DEX_G_MWO_aLIGHT_3 = 0x40;
-constexpr int8_t F3DEX_G_MWO_bLIGHT_3 = 0x44;
-constexpr int8_t F3DEX_G_MWO_aLIGHT_4 = 0x60;
-constexpr int8_t F3DEX_G_MWO_bLIGHT_4 = 0x64;
-constexpr int8_t F3DEX_G_MWO_aLIGHT_5 = 0x80;
-constexpr int8_t F3DEX_G_MWO_bLIGHT_5 = 0x84;
-constexpr int8_t F3DEX_G_MWO_aLIGHT_6 = 0xa0;
-constexpr int8_t F3DEX_G_MWO_bLIGHT_6 = 0xa4;
-constexpr int8_t F3DEX_G_MWO_aLIGHT_7 = 0xc0;
-constexpr int8_t F3DEX_G_MWO_bLIGHT_7 = 0xc4;
-constexpr int8_t F3DEX_G_MWO_aLIGHT_8 = 0xe0;
-constexpr int8_t F3DEX_G_MWO_bLIGHT_8 = 0xe4;
+constexpr int8_t F3DEX_G_MWO_aLIGHT_2 = OPCODE(0x20);
+constexpr int8_t F3DEX_G_MWO_bLIGHT_2 = OPCODE(0x24);
+constexpr int8_t F3DEX_G_MWO_aLIGHT_3 = OPCODE(0x40);
+constexpr int8_t F3DEX_G_MWO_bLIGHT_3 = OPCODE(0x44);
+constexpr int8_t F3DEX_G_MWO_aLIGHT_4 = OPCODE(0x60);
+constexpr int8_t F3DEX_G_MWO_bLIGHT_4 = OPCODE(0x64);
+constexpr int8_t F3DEX_G_MWO_aLIGHT_5 = OPCODE(0x80);
+constexpr int8_t F3DEX_G_MWO_bLIGHT_5 = OPCODE(0x84);
+constexpr int8_t F3DEX_G_MWO_aLIGHT_6 = OPCODE(0xa0);
+constexpr int8_t F3DEX_G_MWO_bLIGHT_6 = OPCODE(0xa4);
+constexpr int8_t F3DEX_G_MWO_aLIGHT_7 = OPCODE(0xc0);
+constexpr int8_t F3DEX_G_MWO_bLIGHT_7 = OPCODE(0xc4);
+constexpr int8_t F3DEX_G_MWO_aLIGHT_8 = OPCODE(0xe0);
+constexpr int8_t F3DEX_G_MWO_bLIGHT_8 = OPCODE(0xe4);
 
 /*===========================================================================*
  *	GBI Commands for S2DEX microcode
