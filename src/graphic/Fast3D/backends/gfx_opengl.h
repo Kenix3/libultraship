@@ -36,9 +36,9 @@ struct ShaderProgram {
     uint8_t numAttribs;
     GLint frameCountLocation;
     GLint noiseScaleLocation;
-  GLint texture_width_location;
-  GLint texture_height_location;
-  GLint texture_filtering_location;
+    GLint texture_width_location;
+    GLint texture_height_location;
+    GLint texture_filtering_location;
 };
 
 struct FramebufferOGL {
@@ -99,18 +99,19 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
   private:
     void SetUniforms(ShaderProgram* prg) const;
     std::string BuildFsShader(const CCFeatures& cc_features);
-  void SetPerDrawUniforms();
-  struct TextureInfo {
-    uint16_t width;
-    uint16_t height;
-    uint16_t filtering;
-  } textures[1024];
+    void SetPerDrawUniforms();
 
-  static GLuint current_texture_ids[2];
-  static uint8_t current_tile;
+    struct TextureInfo {
+        uint16_t width;
+        uint16_t height;
+        uint16_t filtering;
+    } textures[1024];
+
+    GLuint mCurrentTextureIds[2];
+    uint8_t mCurrentTile;
 
     std::map<std::pair<uint64_t, uint32_t>, ShaderProgram> mShaderProgramPool;
-  static struct ShaderProgram* current_shader_program;
+    ShaderProgram* mCurrentShaderProgram;
 
     GLuint mOpenglVbo = 0;
 #if defined(__APPLE__) || defined(USE_OPENGLES)

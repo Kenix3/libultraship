@@ -59,15 +59,15 @@ void GfxRenderingAPIOGL::SetUniforms(ShaderProgram* prg) const {
 }
 
 void GfxRenderingAPIOGL::SetPerDrawUniforms() {
-    if (current_shader_program->usedTextures[0] || current_shader_program->usedTextures[1]) {
-        GLint filtering[2] = { textures[current_texture_ids[0]].filtering, textures[current_texture_ids[1]].filtering };
-        glUniform1iv(current_shader_program->texture_filtering_location, 2, filtering);
+    if (mCurrentShaderProgram->usedTextures[0] || mCurrentShaderProgram->usedTextures[1]) {
+        GLint filtering[2] = { textures[mCurrentTextureIds[0]].filtering, textures[mCurrentTextureIds[1]].filtering };
+        glUniform1iv(mCurrentShaderProgram->texture_filtering_location, 2, filtering);
 
-        GLint width[2] = { textures[current_texture_ids[0]].width, textures[current_texture_ids[1]].width };
-        glUniform1iv(current_shader_program->texture_width_location, 2, width);
+        GLint width[2] = { textures[mCurrentTextureIds[0]].width, textures[mCurrentTextureIds[1]].width };
+        glUniform1iv(mCurrentShaderProgram->texture_width_location, 2, width);
 
-        GLint height[2] = { textures[current_texture_ids[0]].height, textures[current_texture_ids[1]].height };
-        glUniform1iv(current_shader_program->texture_height_location, 2, height);
+        GLint height[2] = { textures[mCurrentTextureIds[0]].height, textures[mCurrentTextureIds[1]].height };
+        glUniform1iv(mCurrentShaderProgram->texture_height_location, 2, height);
     }
 }
 
@@ -75,14 +75,13 @@ void GfxRenderingAPIOGL::UnloadShader(ShaderProgram* old_prg) {
     if (old_prg != nullptr) {
         for (unsigned int i = 0; i < old_prg->numAttribs; i++) {
             glDisableVertexAttribArray(old_prg->attribLocations[i]);
-
         }
     }
 }
 
 void GfxRenderingAPIOGL::LoadShader(ShaderProgram* new_prg) {
     // if (!new_prg) return;
-    current_shader_program = new_prg;
+    mCurrentShaderProgram = new_prg;
     glUseProgram(new_prg->openglProgramId);
     VertexArraySetAttribs(new_prg);
     SetUniforms(new_prg);
@@ -531,14 +530,14 @@ void GfxRenderingAPIOGL::DeleteTexture(uint32_t texID) {
 void GfxRenderingAPIOGL::SelectTexture(int tile, GLuint texture_id) {
     glActiveTexture(GL_TEXTURE0 + tile);
     glBindTexture(GL_TEXTURE_2D, texture_id);
-    current_texture_ids[tile] = texture_id;
-    current_tile = tile;
+    mCurrentTextureIds[tile] = texture_id;
+    mCurrentTile = tile;
 }
 
 void GfxRenderingAPIOGL::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
-    textures[current_texture_ids[current_tile]].width = width;
-    textures[current_texture_ids[current_tile]].height = height;
+    textures[mCurrentTextureIds[mCurrentTile]].width = width;
+    textures[mCurrentTextureIds[mCurrentTile]].height = height;
 }
 
 #ifdef USE_OPENGLES
@@ -564,7 +563,7 @@ void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint
     const GLint filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-    textures[current_texture_ids[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
+    textures[mCurrentTextureIds[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gfx_cm_to_opengl(cms));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));
 }
