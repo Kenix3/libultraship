@@ -7,7 +7,7 @@ namespace Ship {
 class KeyboardKeyToAnyMapping : virtual public ControllerInputMapping {
   public:
     KeyboardKeyToAnyMapping(KbScancode scancode);
-    ~KeyboardKeyToAnyMapping();
+    virtual ~KeyboardKeyToAnyMapping();
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
     std::string GetPhysicalDeviceName() override;
     std::string GetPhysicalInputName() override;

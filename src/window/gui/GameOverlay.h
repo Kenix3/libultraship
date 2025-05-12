@@ -22,7 +22,7 @@ struct Overlay {
 class GameOverlay {
   public:
     GameOverlay();
-    ~GameOverlay();
+    virtual ~GameOverlay();
 
     void Init();
     void LoadFont(const std::string& name, float fontSize, const ResourceIdentifier& identifier);

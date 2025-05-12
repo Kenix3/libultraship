@@ -22,6 +22,10 @@
 #include "resource/type/Texture.h"
 #include "window/gui/resource/GuiTexture.h"
 
+namespace Fast {
+class Interpreter;
+}
+
 namespace Ship {
 
 typedef struct {
@@ -65,7 +69,7 @@ class Gui {
   public:
     Gui();
     Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
-    ~Gui();
+    virtual ~Gui();
 
     void Init(GuiWindowInitData windowImpl);
     void StartDraw();
@@ -124,6 +128,7 @@ class Gui {
     ImVec2 mTemporaryWindowPos;
     ImGuiIO* mImGuiIo;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
+    std::weak_ptr<Fast::Interpreter> mInterpreter;
 
   private:
     GuiWindowInitData mImpl;

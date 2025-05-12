@@ -6,6 +6,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
 #include "WheelHandler.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 MouseWheelToAxisDirectionMapping::MouseWheelToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,

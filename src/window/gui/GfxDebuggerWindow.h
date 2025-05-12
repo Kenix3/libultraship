@@ -2,15 +2,19 @@
 
 #include "window/gui/GuiWindow.h"
 #include <vector>
+#include <memory>
 
+namespace Fast {
 union F3DGfx;
+class Interpreter;
+} // namespace Fast
 
 namespace LUS {
 
 class GfxDebuggerWindow : public Ship::GuiWindow {
   public:
     using GuiWindow::GuiWindow;
-    ~GfxDebuggerWindow();
+    virtual ~GfxDebuggerWindow();
 
   protected:
     void InitElement() override;
@@ -18,11 +22,12 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
     void DrawElement() override;
 
   private:
-    void DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfxPath, float parentPosY) const;
+    void DrawDisasNode(const Fast::F3DGfx* cmd, std::vector<const Fast::F3DGfx*>& gfxPath, float parentPosY) const;
     void DrawDisas();
 
   private:
-    std::vector<const F3DGfx*> mLastBreakPoint = {};
+    std::vector<const Fast::F3DGfx*> mLastBreakPoint = {};
+    std::weak_ptr<Fast::Interpreter> mInterpreter;
 };
 
 } // namespace LUS

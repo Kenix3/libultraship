@@ -30,7 +30,7 @@
 #include "gfx_rendering_api.h"
 #include "gfx_direct3d_common.h"
 #include "gfx_screen_config.h"
-#include "gfx_pc.h"
+#include "interpreter.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"

@@ -4,6 +4,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include "WheelHandler.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 MouseWheelToButtonMapping::MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,

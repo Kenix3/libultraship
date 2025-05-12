@@ -30,7 +30,7 @@ struct ResourceFactoryKeyHash {
 class ResourceLoader {
   public:
     ResourceLoader();
-    ~ResourceLoader();
+    virtual ~ResourceLoader();
 
     std::shared_ptr<IResource> LoadResource(std::string filePath, std::shared_ptr<File> fileToLoad,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);

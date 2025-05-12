@@ -4,6 +4,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
