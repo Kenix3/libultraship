@@ -53,4 +53,12 @@ void SDLButtonToButtonMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
     CVarSave();
 }
+
+std::string SDLButtonToButtonMapping::GetPhysicalDeviceName() {
+    return SDLButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string SDLButtonToButtonMapping::GetPhysicalInputName() {
+    return SDLButtonToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

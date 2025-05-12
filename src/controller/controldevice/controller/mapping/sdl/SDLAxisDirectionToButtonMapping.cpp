@@ -72,4 +72,12 @@ void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
     CVarSave();
 }
+
+std::string SDLAxisDirectionToButtonMapping::GetPhysicalDeviceName() {
+    return SDLAxisDirectionToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string SDLAxisDirectionToButtonMapping::GetPhysicalInputName() {
+    return SDLAxisDirectionToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

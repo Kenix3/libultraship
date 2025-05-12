@@ -47,4 +47,12 @@ void KeyboardKeyToAxisDirectionMapping::EraseFromConfig() {
 int8_t KeyboardKeyToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_KEYBOARD;
 }
+
+std::string KeyboardKeyToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string KeyboardKeyToAxisDirectionMapping::GetPhysicalInputName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

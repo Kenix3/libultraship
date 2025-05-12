@@ -76,4 +76,12 @@ void SDLAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
 int8_t SDLAxisDirectionToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
+
+std::string SDLAxisDirectionToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return SDLAxisDirectionToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string SDLAxisDirectionToAxisDirectionMapping::GetPhysicalInputName() {
+    return SDLAxisDirectionToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

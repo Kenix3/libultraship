@@ -47,4 +47,12 @@ void MouseButtonToAxisDirectionMapping::EraseFromConfig() {
 int8_t MouseButtonToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_MOUSE;
 }
+
+std::string MouseButtonToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return MouseButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string MouseButtonToAxisDirectionMapping::GetPhysicalInputName() {
+    return MouseButtonToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

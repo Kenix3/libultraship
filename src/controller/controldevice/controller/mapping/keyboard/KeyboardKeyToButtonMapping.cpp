@@ -50,4 +50,12 @@ void KeyboardKeyToButtonMapping::EraseFromConfig() {
 
     CVarSave();
 }
+
+std::string KeyboardKeyToButtonMapping::GetPhysicalDeviceName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string KeyboardKeyToButtonMapping::GetPhysicalInputName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

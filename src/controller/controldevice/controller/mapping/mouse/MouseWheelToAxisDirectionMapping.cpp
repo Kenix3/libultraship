@@ -54,4 +54,12 @@ void MouseWheelToAxisDirectionMapping::EraseFromConfig() {
 int8_t MouseWheelToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_MOUSE;
 }
+
+std::string MouseWheelToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return MouseWheelToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string MouseWheelToAxisDirectionMapping::GetPhysicalInputName() {
+    return MouseWheelToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

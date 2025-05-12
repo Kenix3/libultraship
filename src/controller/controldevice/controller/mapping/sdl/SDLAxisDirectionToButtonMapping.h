@@ -11,5 +11,7 @@ class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, pu
     std::string GetButtonMappingId() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
+    std::string GetPhysicalDeviceName() override;
+    std::string GetPhysicalInputName() override;
 };
 } // namespace Ship
