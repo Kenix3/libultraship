@@ -11,5 +11,7 @@ class KeyboardKeyToAxisDirectionMapping final : public KeyboardKeyToAnyMapping, 
     int8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
+    std::string GetPhysicalDeviceName() override;
+    std::string GetPhysicalInputName() override;
 };
 } // namespace Ship

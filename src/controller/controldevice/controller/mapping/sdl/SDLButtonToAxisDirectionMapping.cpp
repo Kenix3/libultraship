@@ -57,4 +57,12 @@ void SDLButtonToAxisDirectionMapping::EraseFromConfig() {
 int8_t SDLButtonToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
+
+std::string SDLButtonToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return SDLButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string SDLButtonToAxisDirectionMapping::GetPhysicalInputName() {
+    return SDLButtonToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship

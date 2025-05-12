@@ -48,4 +48,12 @@ void MouseButtonToButtonMapping::EraseFromConfig() {
 
     CVarSave();
 }
+
+std::string MouseButtonToButtonMapping::GetPhysicalDeviceName() {
+    return MouseButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string MouseButtonToButtonMapping::GetPhysicalInputName() {
+    return MouseButtonToAnyMapping::GetPhysicalInputName();
+}
 } // namespace Ship
