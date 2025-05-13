@@ -214,7 +214,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     bool mNonUniformThreadgroupSupported;
 };
 
-}
+} // namespace Fast
 
 bool Metal_IsSupported();
 

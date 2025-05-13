@@ -337,15 +337,15 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
                                      { "out", "out" },
                                      { "opengles", false }
 #elif defined(USE_OPENGLES)
-{ "GLSL_VERSION", "#version 300 es" },
-{ "attr", "in" },
-{ "out", "out" },
-{ "opengles", true }
+                                     { "GLSL_VERSION", "#version 300 es" },
+                                     { "attr", "in" },
+                                     { "out", "out" },
+                                     { "opengles", true }
 #else
-{ "GLSL_VERSION", "#version 110" },
-{ "attr", "attribute" },
-{ "out", "varying" },
-{ "opengles", false }
+                                     { "GLSL_VERSION", "#version 110" },
+                                     { "attr", "attribute" },
+                                     { "out", "varying" },
+                                     { "opengles", false }
 #endif
     };
     processor.populate(mContext);
@@ -622,19 +622,19 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
                     if (mFrameBuffers.size() >
                         mCurrentFrameBuffer) { // safety check for vector size can probably be removed
                         SSDB = -1.0f * (GLfloat)mFrameBuffers[mCurrentFrameBuffer].height / n64modeFactor;
-                        }
-                break;
+                    }
+                    break;
                 // no vanishing paths
                 case 2:
                     if (mFrameBuffers.size() >
                         mCurrentFrameBuffer) { // safety check for vector size can probably be removed
                         SSDB = -1.0f * (GLfloat)mFrameBuffers[mCurrentFrameBuffer].height / noVanishFactor;
-                        }
-                break;
+                    }
+                    break;
                 // disabled
                 case 0:
-                    default:
-                        SSDB = -2;
+                default:
+                    SSDB = -2;
             }
             glPolygonOffset(SSDB, -2);
             glEnable(GL_POLYGON_OFFSET_FILL);
@@ -768,7 +768,7 @@ void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, 
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_level, GL_DEPTH24_STENCIL8, width, height);
             }
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
-            }
+        }
 
         if (!fb.has_depth_buffer && has_depth_buffer) {
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.rbo);
@@ -990,7 +990,7 @@ void GfxRenderingAPIOGL::SetSrgbMode() {
 ImTextureID GfxRenderingAPIOGL::GetTextureById(int id) {
     return reinterpret_cast<ImTextureID>(id);
 }
-}
+} // namespace Fast
 #endif
 
 #pragma clang diagnostic pop

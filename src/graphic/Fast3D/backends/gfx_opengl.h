@@ -131,6 +131,6 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     size_t mPixelDepthRbSize = 0;
 };
 
-}
+} // namespace Fast
 #endif
 #endif

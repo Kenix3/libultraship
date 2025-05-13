@@ -29,7 +29,7 @@ struct hash_pair_ff {
 };
 
 class GfxRenderingAPI {
-public:
+  public:
     virtual ~GfxRenderingAPI() = default;
     virtual const char* GetName() = 0;
     virtual int GetMaxTextureSize() = 0;
@@ -74,7 +74,7 @@ public:
     virtual void SetSrgbMode() = 0;
     virtual ImTextureID GetTextureById(int id) = 0;
 
-protected:
+  protected:
     int8_t mCurrentDepthTest = 0;
     int8_t mCurrentDepthMask = 0;
     int8_t mCurrentZmodeDecal = 0;
@@ -83,5 +83,5 @@ protected:
     int8_t mLastZmodeDecal = -1;
     bool mSrgbMode = false;
 };
-}
+} // namespace Fast
 #endif

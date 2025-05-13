@@ -1341,5 +1341,5 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     // SPDLOG_INFO("====================================");
     return result;
 }
-}
+} // namespace Fast
 #endif

@@ -1165,6 +1165,6 @@ ImTextureID GfxRenderingAPIMetal::GetTextureById(int fb_id) {
 void GfxRenderingAPIMetal::SetSrgbMode() {
     mSrgbMode = true;
 }
-}
+} // namespace Fast
 
 #endif

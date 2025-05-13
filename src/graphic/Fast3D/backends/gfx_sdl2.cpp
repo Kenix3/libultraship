@@ -239,10 +239,10 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
                                                                                       : SDL_WINDOW_FULLSCREEN)
                                    : 0) >= 0) {
         mFullScreen = on;
-                                   } else {
-                                       SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
-                                       SPDLOG_ERROR(SDL_GetError());
-                                   }
+    } else {
+        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
+        SPDLOG_ERROR(SDL_GetError());
+    }
 #endif
 
     if (!on) {
@@ -289,8 +289,8 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
     switch (message) {
         case WM_GETDPISCALEDSIZE:
             // Something is wrong with SDLs original implementation of WM_GETDPISCALEDSIZE, so pass it to the default
-                // system window procedure instead.
-                    return DefWindowProc(h_wnd, message, w_param, l_param);
+            // system window procedure instead.
+            return DefWindowProc(h_wnd, message, w_param, l_param);
         case WM_ENDSESSION: {
             GfxWindowBackendSDL2* self =
                 reinterpret_cast<GfxWindowBackendSDL2*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
@@ -302,7 +302,7 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
         }
         default:
             // Pass anything else to SDLs original window procedure.
-                return CallWindowProc((WNDPROC)SDL_WndProc, h_wnd, message, w_param, l_param);
+            return CallWindowProc((WNDPROC)SDL_WndProc, h_wnd, message, w_param, l_param);
     }
     return 0;
 };
@@ -557,20 +557,20 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
         case SDL_KEYDOWN:
             OnKeydown(event.key.keysym.scancode);
-        break;
+            break;
         case SDL_KEYUP:
             OnKeyup(event.key.keysym.scancode);
-        break;
+            break;
         case SDL_MOUSEBUTTONDOWN:
             OnMouseButtonDown(event.button.button - 1);
-        break;
+            break;
         case SDL_MOUSEBUTTONUP:
             OnMouseButtonUp(event.button.button - 1);
-        break;
+            break;
         case SDL_MOUSEWHEEL:
             mMouseWheelX = event.wheel.x;
-        mMouseWheelY = event.wheel.y;
-        break;
+            mMouseWheelY = event.wheel.y;
+            break;
 #endif
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
@@ -578,26 +578,26 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
 #ifdef __APPLE__
                     SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
 #else
-                        SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
+                    SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
 #endif
-                break;
+                    break;
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(mWnd)) {
                         // We listen specifically for main window close because closing main window
                         // on macOS does not trigger SDL_Quit.
                         Close();
                     }
-                break;
+                    break;
             }
-        break;
+            break;
         case SDL_DROPFILE:
             Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, event.drop.file);
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
-        Ship::Context::GetInstance()->GetConsoleVariables()->Save();
-        break;
+            Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+            break;
         case SDL_QUIT:
             Close();
-        break;
+            break;
     }
 }
 
@@ -725,5 +725,5 @@ void GfxWindowBackendSDL2::Destroy() {
 bool GfxWindowBackendSDL2::IsFullscreen() {
     return mFullScreen;
 }
-}
+} // namespace Fast
 #endif
