@@ -122,11 +122,12 @@ struct CCFeatures {
 
 void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features);
 
-class GfxRenderingAPI;
-class GfxWindowBackend;
 union Gfx;
 
 namespace Fast {
+
+class GfxRenderingAPI;
+class GfxWindowBackend;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
 

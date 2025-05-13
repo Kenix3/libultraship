@@ -40,6 +40,7 @@
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
 // MARK: - Helpers
+namespace Fast {
 
 static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
     switch (val) {
@@ -1163,6 +1164,7 @@ ImTextureID GfxRenderingAPIMetal::GetTextureById(int fb_id) {
 
 void GfxRenderingAPIMetal::SetSrgbMode() {
     mSrgbMode = true;
+}
 }
 
 #endif

@@ -10,6 +10,8 @@
 #include "d3d11.h"
 #include "d3dcompiler.h"
 
+namespace Fast {
+
 struct PerFrameCB {
     uint32_t noise_frame;
     float noise_scale;
@@ -179,6 +181,6 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
 
 std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,
                                              bool include_root_signature, bool three_point_filtering, bool use_srgb);
-
+}
 #endif
 #endif

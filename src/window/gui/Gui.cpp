@@ -222,7 +222,7 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     auto guiTexture = std::static_pointer_cast<GuiTexture>(
         Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
 
-    GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
+    Fast::GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
 
     // TODO: Nothing ever unloads the texture from Fast3D here.
     guiTexture->Metadata.RendererTextureId = api->NewTexture();
@@ -737,7 +737,7 @@ void Gui::EndDraw() {
 }
 
 ImTextureID Gui::GetTextureById(int32_t id) {
-    GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
+    Fast::GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
     return api->GetTextureById(id);
 }
 
@@ -821,7 +821,7 @@ std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
 }
 
 void Gui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const ImVec4& tint) {
-    GfxRenderingAPI* api = (GfxRenderingAPI*)mInterpreter.lock()->GetCurrentRenderingAPI();
+    Fast::GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res.Width * res.Height * 4);
 
@@ -965,7 +965,7 @@ void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const
 void Gui::UnloadTexture(const std::string& name) {
     if (mGuiTextures.contains(name)) {
         GuiTextureMetadata tex = mGuiTextures[name];
-        GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
+        Fast::GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
         api->DeleteTexture(tex.RendererTextureId);
         mGuiTextures.erase(name);
     }

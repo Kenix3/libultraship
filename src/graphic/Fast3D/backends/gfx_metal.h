@@ -57,6 +57,8 @@ struct hash_pair_shader_ids {
     }
 };
 
+namespace Fast {
+
 struct ShaderProgramMetal {
     uint64_t shader_id0;
     uint32_t shader_id1;
@@ -212,7 +214,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     bool mNonUniformThreadgroupSupported;
 };
 
-ImTextureID gfx_metal_get_texture_by_id(int id);
+}
 
 bool Metal_IsSupported();
 

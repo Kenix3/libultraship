@@ -45,6 +45,8 @@
 
 using namespace Microsoft::WRL; // For ComPtr
 
+namespace Fast {
+
 GfxRenderingAPIDX11::~GfxRenderingAPIDX11() {
 }
 
@@ -1339,5 +1341,5 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     // SPDLOG_INFO("====================================");
     return result;
 }
-
+}
 #endif

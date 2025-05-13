@@ -25,7 +25,7 @@
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengl.h>
 #endif
-
+namespace Fast {
 struct ShaderProgram {
     GLuint openglProgramId;
     uint8_t numInputs;
@@ -131,7 +131,6 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     size_t mPixelDepthRbSize = 0;
 };
 
-// extern struct GfxRenderingAPI gfx_opengl_api;
-
+}
 #endif
 #endif
