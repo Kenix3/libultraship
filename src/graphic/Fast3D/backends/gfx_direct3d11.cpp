@@ -647,12 +647,12 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
                     textures_changed = true;
                 }
 
-                if (mLastSamplerStates[i].Get() != mTextures[mCurrentTextureIdsi]].sampler_state.Get()) {
-                    mLastSamplerStates[i] = mTextures[mCurrentTextureIdsi]].sampler_state.Get();
+                if (mLastSamplerStates[i].Get() != mTextures[mCurrentTextureIds[i]].sampler_state.Get()) {
+                    mLastSamplerStates[i] = mTextures[mCurrentTextureIds[i]].sampler_state.Get();
                 }
             }
         }
-        mContext->PSSetSamplers(i, 1, mTextures[mCurrentTextureIdsi]].sampler_state.GetAddressOf());
+        mContext->PSSetSamplers(i, 1, mTextures[mCurrentTextureIds[i]].sampler_state.GetAddressOf());
     }
 
     // Set per-draw constant buffer
