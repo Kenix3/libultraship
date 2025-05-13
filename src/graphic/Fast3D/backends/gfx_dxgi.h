@@ -8,6 +8,8 @@
 
 #include <dxgi1_2.h>
 
+namespace Fast {
+
 class GfxWindowBackendDXGI final : public GfxWindowBackend {
   public:
     GfxWindowBackendDXGI() = default;
@@ -110,6 +112,8 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     RAWINPUTDEVICE mRawInputDevice[1];
     POINT mPrevMouseCursorPos;
 };
+
+} // namespace Fast
 
 #ifdef DECLARE_GFX_DXGI_FUNCTIONS
 void ThrowIfFailed(HRESULT res);

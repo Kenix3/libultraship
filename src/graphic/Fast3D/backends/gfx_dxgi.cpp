@@ -54,6 +54,8 @@ using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
 
 using namespace Microsoft::WRL; // For ComPtr
 
+namespace Fast {
+
 void GfxWindowBackendDXGI::LoadDxgi() {
     dxgi_module = LoadLibraryW(L"dxgi.dll");
     *(FARPROC*)&CreateDXGIFactory1 = GetProcAddress(dxgi_module, "CreateDXGIFactory1");
@@ -1112,5 +1114,7 @@ void GfxWindowBackendDXGI::Destroy() {
 bool GfxWindowBackendDXGI::IsFullscreen() {
     return mFullScreen;
 }
+
+} // namespace Fast
 
 #endif
