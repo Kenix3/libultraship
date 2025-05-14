@@ -24,9 +24,9 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
                     *output += "\n     - Info=" + argument.Info;
 
                     if (argument.Type == ArgumentType::NUMBER) {
-                        *output += " Type=Text";
-                    } else if (argument.Type == ArgumentType::TEXT) {
                         *output += " Type=Number";
+                    } else if (argument.Type == ArgumentType::TEXT) {
+                        *output += " Type=Text";
                     } else {
                         *output += " Type=Unknown";
                     }
