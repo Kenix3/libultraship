@@ -150,13 +150,17 @@ void ArchiveManager::ResetVirtualFileSystem() {
     }
 }
 
-bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filename,
+bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filePath,
                                const std::vector<uint8_t>& data) {
     if (archive) {
-        archive->WriteFile(filename, data);
-        return true;
+        if (archive->WriteFile(filePath, data)) {
+            auto hash = CRC64(filePath.c_str());
+            mHashes[hash] = filePath;
+            mFileToArchive[hash] = archive;
+            return true; // Successfully wrote file
+        }
     }
-    return false;
+    return false; // Failed to write file
 }
 
 size_t ArchiveManager::RemoveArchive(const std::string& path) {
