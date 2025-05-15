@@ -135,6 +135,8 @@ bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_
         return false;
     }
 
+    IndexFile(filePath);
+
     // Success
     return true;
 }
