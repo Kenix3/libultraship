@@ -155,7 +155,6 @@ bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::stri
     if (archive) {
         if (archive->WriteFile(filePath, data)) {
             auto hash = CRC64(filePath.c_str());
-            archive->IndexFile(filePath);
             mHashes[hash] = filePath;
             mFileToArchive[hash] = archive;
             return true; // Successfully wrote file
