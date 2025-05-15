@@ -20,6 +20,7 @@
 #include <prism/processor.h>
 #include "resource/ResourceManager.h"
 #include "spdlog/spdlog.h"
+#include "../interpreter.h"
 // MARK: - String Helpers
 
 #define RAND_NOISE                                                                                                  \
@@ -151,7 +152,7 @@ prism::ContextTypes* p_append_formula(prism::ContextTypes* a_arg, prism::Context
 }
 
 static int vertex_index;
-static size_t raw_num_floats = 0;
+static size_t raw_numFloats = 0;
 static MTL::VertexDescriptor* vertex_descriptor;
 
 prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
@@ -173,8 +174,8 @@ prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
     }
     vertex_descriptor->attributes()->object(vertex_index)->setFormat(format);
     vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
-    vertex_descriptor->attributes()->object(vertex_index++)->setOffset(raw_num_floats * sizeof(float));
-    raw_num_floats += size;
+    vertex_descriptor->attributes()->object(vertex_index++)->setOffset(raw_numFloats * sizeof(float));
+    raw_numFloats += size;
 
     return nullptr;
 }
@@ -199,12 +200,12 @@ std::optional<std::string> metal_include_fs(const std::string& path) {
 
 // MARK: - Public Methods
 
-MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_floats, const CCFeatures& cc_features,
+MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFloats, const CCFeatures& cc_features,
                                               bool three_point_filtering) {
 
     vertex_descriptor = MTL::VertexDescriptor::vertexDescriptor();
     vertex_index = 0;
-    raw_num_floats = 0;
+    raw_numFloats = 0;
 
     prism::Processor processor;
     prism::ContextItems context = {
@@ -232,11 +233,11 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_f
         { "o_alpha_threshold", cc_features.opt_alpha_threshold },
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
-        { "o_textures", M_ARRAY(cc_features.used_textures, bool, 2) },
+        { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
-        { "o_inputs", cc_features.num_inputs },
+        { "o_inputs", cc_features.numInputs },
         { "o_do_mix", M_ARRAY(cc_features.do_mix, bool, 2, 2) },
         { "o_do_single", M_ARRAY(cc_features.do_single, bool, 2, 2) },
         { "o_do_multiply", M_ARRAY(cc_features.do_multiply, bool, 2, 2) },
@@ -266,9 +267,9 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& num_f
     // SPDLOG_INFO("=========== METAL SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("====================================");
-    vertex_descriptor->layouts()->object(0)->setStride(raw_num_floats * sizeof(float));
+    vertex_descriptor->layouts()->object(0)->setStride(raw_numFloats * sizeof(float));
     vertex_descriptor->layouts()->object(0)->setStepFunction(MTL::VertexStepFunctionPerVertex);
-    num_floats = raw_num_floats;
+    numFloats = raw_numFloats;
     return vertex_descriptor;
 }
 

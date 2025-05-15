@@ -1,8 +1,8 @@
 #pragma once
 #include "window/Window.h"
 #include "window/gui/Gui.h"
-#include "graphic/Fast3D/gfx_window_manager_api.h"
-#include "graphic/Fast3D/gfx_rendering_api.h"
+#include "graphic/Fast3D/backends/gfx_window_manager_api.h"
+#include "graphic/Fast3D/backends/gfx_rendering_api.h"
 #include "public/bridge/gfxbridge.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
@@ -69,7 +69,7 @@ class Fast3dWindow : public Ship::Window {
 
   private:
     GfxRenderingAPI* mRenderingApi;
-    GfxWindowManagerAPI* mWindowManagerApi;
+    GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
 };
 } // namespace Fast

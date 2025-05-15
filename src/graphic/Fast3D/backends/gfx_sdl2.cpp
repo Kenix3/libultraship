@@ -11,6 +11,7 @@
 #include "Context.h"
 #include "config/ConsoleVariable.h"
 #include "controller/controldeck/ControlDeck.h"
+#include "gfx_sdl.h"
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
@@ -30,8 +31,6 @@
 #include "window/gui/Gui.h"
 #include "public/bridge/consolevariablebridge.h"
 
-#include "gfx_window_manager_api.h"
-#include "gfx_screen_config.h"
 #ifdef _WIN32
 #include <WTypesbase.h>
 #include <Windows.h>
@@ -41,29 +40,11 @@
 #define GFX_BACKEND_NAME "SDL"
 #define _100NANOSECONDS_IN_SECOND 10000000
 
-static SDL_Window* wnd;
-static SDL_GLContext ctx;
-static SDL_Renderer* renderer;
-static int sdl_to_lus_table[512];
-static bool vsync_enabled = true;
-static float mouse_wheel_x = 0.0f;
-static float mouse_wheel_y = 0.0f;
-// OTRTODO: These are redundant. Info can be queried from SDL.
-static int window_width = DESIRED_SCREEN_WIDTH;
-static int window_height = DESIRED_SCREEN_HEIGHT;
-static bool fullscreen_state;
-static bool is_running = true;
-static void (*on_fullscreen_changed_callback)(bool is_now_fullscreen);
-static bool (*on_key_down_callback)(int scancode);
-static bool (*on_key_up_callback)(int scancode);
-static void (*on_all_keys_up_callback)();
-static bool (*on_mouse_button_down_callback)(int btn);
-static bool (*on_mouse_button_up_callback)(int btn);
-
 #ifdef _WIN32
 LONG_PTR SDL_WndProc;
 #endif
 
+namespace Fast {
 const SDL_Scancode lus_to_sdl_table[] = {
     SDL_SCANCODE_UNKNOWN,
     SDL_SCANCODE_ESCAPE,
@@ -222,11 +203,15 @@ const SDL_Scancode scancode_rmapping_nonextended[][2] = { { SDL_SCANCODE_KP_7, S
                                                           { SDL_SCANCODE_KP_PERIOD, SDL_SCANCODE_DELETE },
                                                           { SDL_SCANCODE_KP_MULTIPLY, SDL_SCANCODE_PRINTSCREEN } };
 
-static void set_fullscreen(bool on, bool call_callback) {
-    if (fullscreen_state == on) {
+GfxWindowBackendSDL2::~GfxWindowBackendSDL2() {
+}
+
+void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
+    if (mFullScreen == on) {
         return;
     }
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+
+    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
     if (display_in_use < 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
         SPDLOG_WARN(SDL_GetError());
@@ -236,7 +221,7 @@ static void set_fullscreen(bool on, bool call_callback) {
         // OTRTODO: Get mode from config.
         SDL_DisplayMode mode;
         if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-            SDL_SetWindowDisplayMode(wnd, &mode);
+            SDL_SetWindowDisplayMode(mWnd, &mode);
         } else {
             SPDLOG_ERROR(SDL_GetError());
         }
@@ -244,16 +229,16 @@ static void set_fullscreen(bool on, bool call_callback) {
 
 #if defined(__APPLE__)
     // Implement fullscreening with native macOS APIs
-    if (on != isNativeMacOSFullscreenActive(wnd)) {
-        toggleNativeMacOSFullscreen(wnd);
+    if (on != isNativeMacOSFullscreenActive(mWnd)) {
+        toggleNativeMacOSFullscreen(mWnd);
     }
-    fullscreen_state = on;
+    mFullScreen = on;
 #else
-    if (SDL_SetWindowFullscreen(wnd,
+    if (SDL_SetWindowFullscreen(mWnd,
                                 on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
                                                                                       : SDL_WINDOW_FULLSCREEN)
                                    : 0) >= 0) {
-        fullscreen_state = on;
+        mFullScreen = on;
     } else {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
         SPDLOG_ERROR(SDL_GetError());
@@ -262,25 +247,25 @@ static void set_fullscreen(bool on, bool call_callback) {
 
     if (!on) {
         auto conf = Ship::Context::GetInstance()->GetConfig();
-        window_width = conf->GetInt("Window.Width", 640);
-        window_height = conf->GetInt("Window.Height", 480);
+        mWindowWidth = conf->GetInt("Window.Width", 640);
+        mWindowHeight = conf->GetInt("Window.Height", 480);
         int32_t posX = conf->GetInt("Window.PositionX", 100);
         int32_t posY = conf->GetInt("Window.PositionY", 100);
         if (display_in_use < 0) { // Fallback to default if out of bounds
             posX = 100;
             posY = 100;
         }
-        SDL_SetWindowPosition(wnd, posX, posY);
-        SDL_SetWindowSize(wnd, window_width, window_height);
+        SDL_SetWindowPosition(mWnd, posX, posY);
+        SDL_SetWindowSize(mWnd, mWindowWidth, mWindowHeight);
     }
 
-    if (on_fullscreen_changed_callback != NULL && call_callback) {
-        on_fullscreen_changed_callback(on);
+    if (mOnFullscreenChanged != nullptr && call_callback) {
+        mOnFullscreenChanged(on);
     }
 }
 
-static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+void GfxWindowBackendSDL2::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
+    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
 
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(display_in_use, &mode);
@@ -289,16 +274,14 @@ static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
 
 static uint64_t previous_time;
 #ifdef _WIN32
-static HANDLE timer;
+static HANDLE mTimer;
 #endif
 
-static int target_fps = 60;
-
 #define FRAME_INTERVAL_US_NUMERATOR 1000000
-#define FRAME_INTERVAL_US_DENOMINATOR (target_fps)
+#define FRAME_INTERVAL_US_DENOMINATOR (mTargetFps)
 
-static void gfx_sdl_close(void) {
-    is_running = false;
+void GfxWindowBackendSDL2::Close() {
+    mIsRunning = false;
 }
 
 #ifdef _WIN32
@@ -308,12 +291,15 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
             // Something is wrong with SDLs original implementation of WM_GETDPISCALEDSIZE, so pass it to the default
             // system window procedure instead.
             return DefWindowProc(h_wnd, message, w_param, l_param);
-        case WM_ENDSESSION:
+        case WM_ENDSESSION: {
+            GfxWindowBackendSDL2* self =
+                reinterpret_cast<GfxWindowBackendSDL2*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
             // Apparently SDL2 does not handle this
             if (w_param == TRUE) {
-                gfx_sdl_close();
+                self->Close();
             }
             break;
+        }
         default:
             // Pass anything else to SDLs original window procedure.
             return CallWindowProc((WNDPROC)SDL_WndProc, h_wnd, message, w_param, l_param);
@@ -322,10 +308,10 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
 };
 #endif
 
-static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
-                         uint32_t height, int32_t posX, int32_t posY) {
-    window_width = width;
-    window_height = height;
+void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bool startFullScreen, uint32_t width,
+                                uint32_t height, int32_t posX, int32_t posY) {
+    mWindowWidth = width;
+    mWindowHeight = height;
 
 #if SDL_VERSION_ATLEAST(2, 24, 0)
     /* fix DPI scaling issues on Windows */
@@ -337,9 +323,9 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
 #if defined(__APPLE__)
-    bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
+    bool use_opengl = strcmp(gfxApiName, "OpenGL") == 0;
 #else
-    bool use_opengl = true;
+    constexpr bool use_opengl = true;
 #endif
 
     if (use_opengl) {
@@ -358,16 +344,16 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
 #ifdef _WIN32
-    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
-    timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
-    // Fallback to low resolution timer if unsupported by the OS
-    if (timer == nullptr) {
-        timer = CreateWaitableTimer(nullptr, false, nullptr);
+    // Use high-resolution mTimer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    mTimer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution mTimer if unsupported by the OS
+    if (mTimer == nullptr) {
+        mTimer = CreateWaitableTimer(nullptr, false, nullptr);
     }
 #endif
 
     char title[512];
-    int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
+    int len = sprintf(title, "%s (%s)", gameName, gfxApiName);
 
 #ifdef __IOS__
     Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
@@ -381,81 +367,82 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         flags = flags | SDL_WINDOW_METAL;
     }
 
-    wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
+    mWnd = SDL_CreateWindow(title, posX, posY, mWindowWidth, mWindowHeight, flags);
 #ifdef _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(wnd, &wmInfo);
+    SDL_GetWindowWMInfo(mWnd, &wmInfo);
     HWND hwnd = wmInfo.info.win.window;
     SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 #endif
     Ship::GuiWindowInitData window_impl;
 
-    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
     if (display_in_use < 0) { // Fallback to default if out of bounds
         posX = 100;
         posY = 100;
     }
 
     if (use_opengl) {
-        SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+        SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
 
-        if (start_in_fullscreen) {
-            set_fullscreen(true, false);
+        if (startFullScreen) {
+            SetFullscreenImpl(true, false);
         }
 
-        ctx = SDL_GL_CreateContext(wnd);
+        mCtx = SDL_GL_CreateContext(mWnd);
 
-        SDL_GL_MakeCurrent(wnd, ctx);
-        SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
+        SDL_GL_MakeCurrent(mWnd, mCtx);
+        SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
 
-        window_impl.Opengl = { wnd, ctx };
+        window_impl.Opengl = { mWnd, mCtx };
     } else {
         uint32_t flags = SDL_RENDERER_ACCELERATED;
-        if (vsync_enabled) {
+        if (mVsyncEnabled) {
             flags |= SDL_RENDERER_PRESENTVSYNC;
         }
-        renderer = SDL_CreateRenderer(wnd, -1, flags);
-        if (renderer == NULL) {
+        mRenderer = SDL_CreateRenderer(mWnd, -1, flags);
+        if (mRenderer == nullptr) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
         }
 
-        if (start_in_fullscreen) {
-            set_fullscreen(true, false);
+        if (startFullScreen) {
+            SetFullscreenImpl(true, false);
         }
 
-        SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
-        window_impl.Metal = { wnd, renderer };
+        SDL_GetRendererOutputSize(mRenderer, &mWindowWidth, &mWindowHeight);
+        window_impl.Metal = { mWnd, mRenderer };
     }
 
     Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 
-    for (size_t i = 0; i < sizeof(lus_to_sdl_table) / sizeof(SDL_Scancode); i++) {
-        sdl_to_lus_table[lus_to_sdl_table[i]] = i;
+    for (size_t i = 0; i < std::size(lus_to_sdl_table); i++) {
+        mSdlToLusTable[lus_to_sdl_table[i]] = i;
     }
 
-    for (size_t i = 0; i < sizeof(scancode_rmapping_extended) / sizeof(scancode_rmapping_extended[0]); i++) {
-        sdl_to_lus_table[scancode_rmapping_extended[i][0]] = sdl_to_lus_table[scancode_rmapping_extended[i][1]] + 0x100;
+    for (size_t i = 0; i < std::size(scancode_rmapping_extended); i++) {
+        mSdlToLusTable[scancode_rmapping_extended[i][0]] = mSdlToLusTable[scancode_rmapping_extended[i][1]] + 0x100;
     }
 
-    for (size_t i = 0; i < sizeof(scancode_rmapping_nonextended) / sizeof(scancode_rmapping_nonextended[0]); i++) {
-        sdl_to_lus_table[scancode_rmapping_nonextended[i][0]] = sdl_to_lus_table[scancode_rmapping_nonextended[i][1]];
-        sdl_to_lus_table[scancode_rmapping_nonextended[i][1]] += 0x100;
+    for (size_t i = 0; i < std::size(scancode_rmapping_nonextended); i++) {
+        mSdlToLusTable[scancode_rmapping_nonextended[i][0]] = mSdlToLusTable[scancode_rmapping_nonextended[i][1]];
+        mSdlToLusTable[scancode_rmapping_nonextended[i][1]] += 0x100;
     }
 }
 
-static void gfx_sdl_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
-    on_fullscreen_changed_callback = on_fullscreen_changed;
+void GfxWindowBackendSDL2::SetFullscreenChangedCallback(void (*onFullscreenChanged)(bool is_now_fullscreen)) {
+    mOnFullscreenChanged = onFullscreenChanged;
 }
 
-static void gfx_sdl_set_fullscreen(bool enable) {
-    set_fullscreen(enable, true);
+void GfxWindowBackendSDL2::SetFullscreen(bool enable) {
+    SetFullscreenImpl(enable, true);
 }
 
-static void gfx_sdl_set_cursor_visibility(bool visible) {
+void GfxWindowBackendSDL2::SetCursorVisability(bool visible) {
     if (visible) {
         SDL_ShowCursor(SDL_ENABLE);
     } else {
@@ -463,105 +450,105 @@ static void gfx_sdl_set_cursor_visibility(bool visible) {
     }
 }
 
-static void gfx_sdl_set_mouse_pos(int32_t x, int32_t y) {
-    SDL_WarpMouseInWindow(wnd, x, y);
+void GfxWindowBackendSDL2::SetMousePos(int32_t x, int32_t y) {
+    SDL_WarpMouseInWindow(mWnd, x, y);
 }
 
-static void gfx_sdl_get_mouse_pos(int32_t* x, int32_t* y) {
+void GfxWindowBackendSDL2::GetMousePos(int32_t* x, int32_t* y) {
     SDL_GetMouseState(x, y);
 }
 
-static void gfx_sdl_get_mouse_delta(int32_t* x, int32_t* y) {
+void GfxWindowBackendSDL2::GetMouseDelta(int32_t* x, int32_t* y) {
     SDL_GetRelativeMouseState(x, y);
 }
 
-static void gfx_sdl_get_mouse_wheel(float* x, float* y) {
-    *x = mouse_wheel_x;
-    *y = mouse_wheel_y;
-    mouse_wheel_x = 0.0f;
-    mouse_wheel_y = 0.0f;
+void GfxWindowBackendSDL2::GetMouseWheel(float* x, float* y) {
+    *x = mMouseWheelX;
+    *y = mMouseWheelY;
+    mMouseWheelX = 0.0f;
+    mMouseWheelY = 0.0f;
 }
 
-static bool gfx_sdl_get_mouse_state(uint32_t btn) {
-    return SDL_GetMouseState(NULL, NULL) & (1 << btn);
+bool GfxWindowBackendSDL2::GetMouseState(uint32_t btn) {
+    return SDL_GetMouseState(nullptr, nullptr) & (1 << btn);
 }
 
-static void gfx_sdl_set_mouse_capture(bool capture) {
+void GfxWindowBackendSDL2::SetMouseCapture(bool capture) {
     SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
 }
 
-static bool gfx_sdl_is_mouse_captured() {
+bool GfxWindowBackendSDL2::IsMouseCaptured() {
     return (SDL_GetRelativeMouseMode() == SDL_TRUE);
 }
 
-static void gfx_sdl_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode),
-                                           void (*on_all_keys_up)()) {
-    on_key_down_callback = on_key_down;
-    on_key_up_callback = on_key_up;
-    on_all_keys_up_callback = on_all_keys_up;
+void GfxWindowBackendSDL2::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
+                                                void (*onAllKeysUp)()) {
+    mOnKeyDown = onKeyDown;
+    mOnKeyUp = onKeyUp;
+    mOnAllKeysUp = onAllKeysUp;
 }
 
-static void gfx_sdl_set_mouse_callbacks(bool (*on_btn_down)(int btn), bool (*on_btn_up)(int btn)) {
-    on_mouse_button_down_callback = on_btn_down;
-    on_mouse_button_up_callback = on_btn_up;
+void GfxWindowBackendSDL2::SetMouseCallbacks(bool (*onMouseButtonDown)(int btn), bool (*onMouseButtonUp)(int btn)) {
+    mOnMouseButtonDown = onMouseButtonDown;
+    mOnMouseButtonUp = onMouseButtonUp;
 }
 
-static void gfx_sdl_get_dimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
 #ifdef __APPLE__
-    SDL_GetWindowSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    SDL_GetWindowSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #else
-    SDL_GL_GetDrawableSize(wnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    SDL_GL_GetDrawableSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #endif
-    SDL_GetWindowPosition(wnd, static_cast<int*>(posX), static_cast<int*>(posY));
+    SDL_GetWindowPosition(mWnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
-static int translate_scancode(int scancode) {
+int GfxWindowBackendSDL2::TranslateScancode(int scancode) const {
     if (scancode < 512) {
-        return sdl_to_lus_table[scancode];
-    } else {
-        return 0;
-    }
-}
-
-static int untranslate_scancode(int translatedScancode) {
-    for (int i = 0; i < 512; i++) {
-        if (sdl_to_lus_table[i] == translatedScancode) {
-            return i;
-        }
+        return mSdlToLusTable[scancode];
     }
     return 0;
 }
 
-static void gfx_sdl_onkeydown(int scancode) {
-    int key = translate_scancode(scancode);
-    if (on_key_down_callback != NULL) {
-        on_key_down_callback(key);
+int GfxWindowBackendSDL2::UntranslateScancode(int translatedScancode) const {
+    for (int i = 0; i < 512; i++) {
+        if (mSdlToLusTable[i] == translatedScancode) {
+            return i;
+        }
+    }
+
+    return 0;
+}
+
+void GfxWindowBackendSDL2::OnKeydown(int scancode) const {
+    int key = TranslateScancode(scancode);
+    if (mOnKeyDown != nullptr) {
+        mOnKeyDown(key);
     }
 }
 
-static void gfx_sdl_onkeyup(int scancode) {
-    int key = translate_scancode(scancode);
-    if (on_key_up_callback != NULL) {
-        on_key_up_callback(key);
+void GfxWindowBackendSDL2::OnKeyup(int scancode) const {
+    int key = TranslateScancode(scancode);
+    if (mOnKeyUp != nullptr) {
+        mOnKeyUp(key);
     }
 }
 
-static void gfx_sdl_on_mouse_button_down(int btn) {
+void GfxWindowBackendSDL2::OnMouseButtonDown(int btn) const {
     if (!(btn >= 0 && btn < 5)) {
         return;
     }
-    if (on_mouse_button_down_callback != NULL) {
-        on_mouse_button_down_callback(btn);
+    if (mOnMouseButtonDown != nullptr) {
+        mOnMouseButtonDown(btn);
     }
 }
 
-static void gfx_sdl_on_mouse_button_up(int btn) {
-    if (on_mouse_button_up_callback != NULL) {
-        on_mouse_button_up_callback(btn);
+void GfxWindowBackendSDL2::OnMouseButtonUp(int btn) const {
+    if (mOnMouseButtonUp != nullptr) {
+        mOnMouseButtonUp(btn);
     }
 }
 
-static void gfx_sdl_handle_single_event(SDL_Event& event) {
+void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
     Ship::WindowEvent event_impl;
     event_impl.Sdl = { &event };
     Ship::Context::GetInstance()->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
@@ -569,36 +556,36 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
         case SDL_KEYDOWN:
-            gfx_sdl_onkeydown(event.key.keysym.scancode);
+            OnKeydown(event.key.keysym.scancode);
             break;
         case SDL_KEYUP:
-            gfx_sdl_onkeyup(event.key.keysym.scancode);
+            OnKeyup(event.key.keysym.scancode);
             break;
         case SDL_MOUSEBUTTONDOWN:
-            gfx_sdl_on_mouse_button_down(event.button.button - 1);
+            OnMouseButtonDown(event.button.button - 1);
             break;
         case SDL_MOUSEBUTTONUP:
-            gfx_sdl_on_mouse_button_up(event.button.button - 1);
+            OnMouseButtonUp(event.button.button - 1);
             break;
         case SDL_MOUSEWHEEL:
-            mouse_wheel_x = event.wheel.x;
-            mouse_wheel_y = event.wheel.y;
+            mMouseWheelX = event.wheel.x;
+            mMouseWheelY = event.wheel.y;
             break;
 #endif
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
 #ifdef __APPLE__
-                    SDL_GetWindowSize(wnd, &window_width, &window_height);
+                    SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
 #else
-                    SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
+                    SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
 #endif
                     break;
                 case SDL_WINDOWEVENT_CLOSE:
-                    if (event.window.windowID == SDL_GetWindowID(wnd)) {
+                    if (event.window.windowID == SDL_GetWindowID(mWnd)) {
                         // We listen specifically for main window close because closing main window
                         // on macOS does not trigger SDL_Quit.
-                        gfx_sdl_close();
+                        Close();
                     }
                     break;
             }
@@ -609,34 +596,34 @@ static void gfx_sdl_handle_single_event(SDL_Event& event) {
             Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             break;
         case SDL_QUIT:
-            gfx_sdl_close();
+            Close();
             break;
     }
 }
 
-static void gfx_sdl_handle_events() {
+void GfxWindowBackendSDL2::HandleEvents() {
     SDL_Event event;
     SDL_PumpEvents();
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_CONTROLLERDEVICEADDED - 1) > 0) {
-        gfx_sdl_handle_single_event(event);
+        HandleSingleEvent(event);
     }
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
-        gfx_sdl_handle_single_event(event);
+        HandleSingleEvent(event);
     }
 
     // resync fullscreen state
 #ifdef __APPLE__
-    auto nextFullscreenState = isNativeMacOSFullscreenActive(wnd);
-    if (fullscreen_state != nextFullscreenState) {
-        fullscreen_state = nextFullscreenState;
-        if (on_fullscreen_changed_callback != nullptr) {
-            on_fullscreen_changed_callback(fullscreen_state);
+    auto nextFullscreenState = isNativeMacOSFullscreenActive(mWnd);
+    if (mFullScreen != nextFullscreenState) {
+        mFullScreen = nextFullscreenState;
+        if (mOnFullscreenChanged != nullptr) {
+            mOnFullscreenChanged(mFullScreen);
         }
     }
 #endif
 }
 
-static bool gfx_sdl_is_frame_ready() {
+bool GfxWindowBackendSDL2::IsFrameReady() {
     return true;
 }
 
@@ -645,9 +632,8 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
     return qpc / qpc_freq * _100NANOSECONDS_IN_SECOND + qpc % qpc_freq * _100NANOSECONDS_IN_SECOND / qpc_freq;
 }
 
-static inline void sync_framerate_with_timer() {
-    uint64_t t;
-    t = qpc_to_100ns(SDL_GetPerformanceCounter());
+void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
+    uint64_t t = qpc_to_100ns(SDL_GetPerformanceCounter());
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
     int64_t left = next - t;
@@ -660,11 +646,11 @@ static inline void sync_framerate_with_timer() {
         const timespec spec = { 0, left * 100 };
         nanosleep(&spec, nullptr);
 #else
-        // The accuracy of this timer seems to usually be within +- 1.0 ms
+        // The accuracy of this mTimer seems to usually be within +- 1.0 ms
         LARGE_INTEGER li;
         li.QuadPart = -left;
-        SetWaitableTimer(timer, &li, 0, nullptr, nullptr, false);
-        WaitForSingleObject(timer, INFINITE);
+        SetWaitableTimer(mTimer, &li, 0, nullptr, nullptr, false);
+        WaitForSingleObject(mTimer, INFINITE);
 #endif
     }
 
@@ -682,91 +668,62 @@ static inline void sync_framerate_with_timer() {
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
     if (left > 0 && t - next < 10000) {
         // In case it takes some time for the application to wake up after sleep,
-        // or inaccurate timer,
+        // or inaccurate mTimer,
         // don't let that slow down the framerate.
         t = next;
     }
     previous_time = t;
 }
 
-static void gfx_sdl_swap_buffers_begin() {
+void GfxWindowBackendSDL2::SwapBuffersBegin() {
     bool nextVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
 
-    if (vsync_enabled != nextVsyncEnabled) {
-        vsync_enabled = nextVsyncEnabled;
-        SDL_GL_SetSwapInterval(vsync_enabled ? 1 : 0);
-        SDL_RenderSetVSync(renderer, vsync_enabled ? 1 : 0);
+    if (mVsyncEnabled != nextVsyncEnabled) {
+        mVsyncEnabled = nextVsyncEnabled;
+        SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
+        SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
     }
 
-    sync_framerate_with_timer();
-    SDL_GL_SwapWindow(wnd);
+    SyncFramerateWithTime();
+    SDL_GL_SwapWindow(mWnd);
 }
 
-static void gfx_sdl_swap_buffers_end() {
+void GfxWindowBackendSDL2::SwapBuffersEnd() {
 }
 
-static double gfx_sdl_get_time() {
+double GfxWindowBackendSDL2::GetTime() {
     return 0.0;
 }
 
-static void gfx_sdl_set_target_fps(int fps) {
-    target_fps = fps;
+void GfxWindowBackendSDL2::SetTargetFPS(int fps) {
+    mTargetFps = fps;
 }
 
-static void gfx_sdl_set_maximum_frame_latency(int latency) {
+void GfxWindowBackendSDL2::SetMaxFrameLatency(int latency) {
     // Not supported by SDL :(
 }
 
-static const char* gfx_sdl_get_key_name(int scancode) {
-    return SDL_GetScancodeName((SDL_Scancode)untranslate_scancode(scancode));
+const char* GfxWindowBackendSDL2::GetKeyName(int scancode) {
+    return SDL_GetScancodeName((SDL_Scancode)UntranslateScancode(scancode));
 }
 
-bool gfx_sdl_can_disable_vsync() {
+bool GfxWindowBackendSDL2::CanDisableVsync() {
     return true;
 }
 
-bool gfx_sdl_is_running() {
-    return is_running;
+bool GfxWindowBackendSDL2::IsRunning() {
+    return mIsRunning;
 }
 
-void gfx_sdl_destroy() {
+void GfxWindowBackendSDL2::Destroy() {
     // TODO: destroy _any_ resources used by SDL
 
-    SDL_DestroyRenderer(renderer);
+    SDL_DestroyRenderer(mRenderer);
     SDL_Quit();
 }
 
-bool gfx_sdl_is_fullscreen() {
-    return fullscreen_state;
+bool GfxWindowBackendSDL2::IsFullscreen() {
+    return mFullScreen;
 }
-
-struct GfxWindowManagerAPI gfx_sdl = { gfx_sdl_init,
-                                       gfx_sdl_close,
-                                       gfx_sdl_set_keyboard_callbacks,
-                                       gfx_sdl_set_mouse_callbacks,
-                                       gfx_sdl_set_fullscreen_changed_callback,
-                                       gfx_sdl_set_fullscreen,
-                                       gfx_sdl_get_active_window_refresh_rate,
-                                       gfx_sdl_set_cursor_visibility,
-                                       gfx_sdl_set_mouse_pos,
-                                       gfx_sdl_get_mouse_pos,
-                                       gfx_sdl_get_mouse_delta,
-                                       gfx_sdl_get_mouse_wheel,
-                                       gfx_sdl_get_mouse_state,
-                                       gfx_sdl_set_mouse_capture,
-                                       gfx_sdl_is_mouse_captured,
-                                       gfx_sdl_get_dimensions,
-                                       gfx_sdl_handle_events,
-                                       gfx_sdl_is_frame_ready,
-                                       gfx_sdl_swap_buffers_begin,
-                                       gfx_sdl_swap_buffers_end,
-                                       gfx_sdl_get_time,
-                                       gfx_sdl_set_target_fps,
-                                       gfx_sdl_set_maximum_frame_latency,
-                                       gfx_sdl_get_key_name,
-                                       gfx_sdl_can_disable_vsync,
-                                       gfx_sdl_is_running,
-                                       gfx_sdl_destroy,
-                                       gfx_sdl_is_fullscreen };
-
+} // namespace Fast
 #endif

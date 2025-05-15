@@ -25,10 +25,9 @@
 #include <string>
 
 #include "interpreter.h"
-#include "gfx_cc.h"
 #include "lus_gbi.h"
-#include "gfx_window_manager_api.h"
-#include "gfx_rendering_api.h"
+#include "backends/gfx_window_manager_api.h"
+#include "backends/gfx_rendering_api.h"
 
 #include "window/gui/Gui.h"
 #include "resource/ResourceManager.h"
@@ -125,18 +124,18 @@ void GfxSetInstance(std::shared_ptr<Interpreter> gfx) {
 
 void Interpreter::Flush() {
     if (mBufVboLen > 0) {
-        mRapi->draw_triangles(mBufVbo, mBufVboLen, mBufVboNumTris);
+        mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
         mBufVboLen = 0;
         mBufVboNumTris = 0;
     }
 }
 
 ShaderProgram* Interpreter::LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1) {
-    ShaderProgram* prg = mRapi->lookup_shader(id0, id1);
+    ShaderProgram* prg = mRapi->LookupShader(id0, id1);
     if (prg == nullptr) {
-        mRapi->unload_shader(mRenderingState.shader_program);
-        prg = mRapi->create_and_load_new_shader(id0, id1);
-        mRenderingState.shader_program = prg;
+        mRapi->UnloadShader(mRenderingState.mShaderProgram);
+        prg = mRapi->CreateAndLoadNewShader(id0, id1);
+        mRenderingState.mShaderProgram = prg;
     }
     return prg;
 }
@@ -384,9 +383,9 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
     }
     comb->shader_id0 = shaderId0;
     comb->shader_id1 = shaderId1;
-    comb->used_textures[0] = usedTextures[0];
-    comb->used_textures[1] = usedTextures[1];
-    // comb->prg = gfx_lookup_or_create_shader_program(shader_id0, shader_id1);
+    comb->usedTextures[0] = usedTextures[0];
+    comb->usedTextures[1] = usedTextures[1];
+    // comb->prg = gfx_lookup_or_create_mShaderProgram(shader_id0, shader_id1);
     memcpy(comb->shader_input_mapping, shaderInputMapping, sizeof(shaderInputMapping));
 }
 
@@ -414,10 +413,10 @@ void Interpreter::TextureCacheClear() {
 
 bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
     TextureCacheMap::iterator it = mTextureCache.map.find(key);
-    TextureCacheNode** n = &mRenderingState.textures[i];
+    TextureCacheNode** n = &mRenderingState.mTextures[i];
 
     if (it != mTextureCache.map.end()) {
-        mRapi->select_texture(i, it->second.texture_id);
+        mRapi->SelectTexture(i, it->second.texture_id);
         *n = &*it;
         mTextureCache.lru.splice(mTextureCache.lru.end(), mTextureCache.lru,
                                  it->second.lru_location); // move to back
@@ -437,7 +436,7 @@ bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
         texture_id = mTextureCache.free_texture_ids.back();
         mTextureCache.free_texture_ids.pop_back();
     } else {
-        texture_id = mRapi->new_texture();
+        texture_id = mRapi->NewTexture();
     }
 
     it = mTextureCache.map.insert(std::make_pair(key, TextureCacheValue())).first;
@@ -445,8 +444,8 @@ bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
     node->second.texture_id = texture_id;
     node->second.lru_location = mTextureCache.lru.insert(mTextureCache.lru.end(), { it });
 
-    mRapi->select_texture(i, texture_id);
-    mRapi->set_sampler_parameters(i, false, 0, 0);
+    mRapi->SelectTexture(i, texture_id);
+    mRapi->SetSamplerParameters(i, false, 0, 0);
     *n = node;
     return false;
 }
@@ -518,7 +517,7 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
@@ -535,7 +534,7 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
 
     uint32_t width = mRdp->texture_tile[tile].line_size_bytes / 2;
     uint32_t height = (size_bytes / 2) / mRdp->texture_tile[tile].line_size_bytes;
-    mRapi->upload_texture(addr, width, height);
+    mRapi->UploadTexture(addr, width, height);
 }
 
 void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
@@ -567,7 +566,7 @@ void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
     uint32_t width = mRdp->texture_tile[tile].line_size_bytes * 2;
     uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
@@ -597,7 +596,7 @@ void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
     uint32_t width = mRdp->texture_tile[tile].line_size_bytes;
     uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
@@ -639,7 +638,7 @@ void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
@@ -683,7 +682,7 @@ void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
@@ -708,7 +707,7 @@ void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
     uint32_t width = mRdp->texture_tile[tile].line_size_bytes;
     uint32_t height = sizeBytes / mRdp->texture_tile[tile].line_size_bytes;
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
@@ -754,7 +753,7 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t width = resultLineSizeBytes * 2;
     uint32_t height = sizeBytes / resultLineSizeBytes;
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
@@ -792,7 +791,7 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     uint32_t width = resultLineSizeBytes;
     uint32_t height = sizeBytes / resultLineSizeBytes;
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
@@ -804,7 +803,7 @@ void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
-    mRapi->upload_texture(addr, width, height);
+    mRapi->UploadTexture(addr, width, height);
 }
 
 void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
@@ -846,7 +845,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
 
     if (resultNewLineSize == 4 * width && resultNewHeight == height) {
         // Can use the texture directly since it has the correct dimensions
-        mRapi->upload_texture(addr, width, height);
+        mRapi->UploadTexture(addr, width, height);
         return;
     }
 
@@ -879,7 +878,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
         memset(mTexUploadBuffer + resourceImageSizeBytes, 0, numLoadedBytes - resourceImageSizeBytes);
     }
 
-    mRapi->upload_texture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
+    mRapi->UploadTexture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
 }
 
 void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
@@ -1027,7 +1026,7 @@ void Interpreter::ImportTextureMask(int i, int tile) {
         }
     }
 
-    mRapi->upload_texture(mTexUploadBuffer, width, height);
+    mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::NormalizeVector(float v[3]) {
@@ -1409,26 +1408,26 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     uint8_t depth_test_and_mask = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
     if (depth_test_and_mask != mRenderingState.depth_test_and_mask) {
         Flush();
-        mRapi->set_depth_test_and_mask(depth_test, depth_mask);
+        mRapi->SetDepthTestAndMask(depth_test, depth_mask);
         mRenderingState.depth_test_and_mask = depth_test_and_mask;
     }
 
     bool zmode_decal = (mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
     if (zmode_decal != mRenderingState.decal_mode) {
         Flush();
-        mRapi->set_zmode_decal(zmode_decal);
+        mRapi->SetZmodeDecal(zmode_decal);
         mRenderingState.decal_mode = zmode_decal;
     }
 
     if (mRdp->viewport_or_scissor_changed) {
         if (memcmp(&mRdp->viewport, &mRenderingState.viewport, sizeof(mRdp->viewport)) != 0) {
             Flush();
-            mRapi->set_viewport(mRdp->viewport.x, mRdp->viewport.y, mRdp->viewport.width, mRdp->viewport.height);
+            mRapi->SetViewport(mRdp->viewport.x, mRdp->viewport.y, mRdp->viewport.width, mRdp->viewport.height);
             mRenderingState.viewport = mRdp->viewport;
         }
         if (memcmp(&mRdp->scissor, &mRenderingState.scissor, sizeof(mRdp->scissor)) != 0) {
             Flush();
-            mRapi->set_scissor(mRdp->scissor.x, mRdp->scissor.y, mRdp->scissor.width, mRdp->scissor.height);
+            mRapi->SetScissor(mRdp->scissor.x, mRdp->scissor.y, mRdp->scissor.width, mRdp->scissor.height);
             mRenderingState.scissor = mRdp->scissor;
         }
         mRdp->viewport_or_scissor_changed = false;
@@ -1515,7 +1514,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
     for (int i = 0; i < 2; i++) {
         uint32_t tile = mRdp->first_tile_index + i;
-        if (comb->used_textures[i]) {
+        if (comb->usedTextures[i]) {
             if (mRdp->textures_changed[i]) {
                 Flush();
                 ImportTexture(i, tile, false);
@@ -1570,24 +1569,24 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 cmt &= ~G_TX_CLAMP;
             }
 
-            if (mRenderingState.textures[i] == nullptr) {
+            if (mRenderingState.mTextures[i] == nullptr) {
                 continue;
             }
 
             bool linear_filter = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
-            if (linear_filter != mRenderingState.textures[i]->second.linear_filter ||
-                cms != mRenderingState.textures[i]->second.cms || cmt != mRenderingState.textures[i]->second.cmt) {
+            if (linear_filter != mRenderingState.mTextures[i]->second.linear_filter ||
+                cms != mRenderingState.mTextures[i]->second.cms || cmt != mRenderingState.mTextures[i]->second.cmt) {
                 Flush();
 
                 // Set the same sampler params on the blended texture. Needed for opengl.
                 if (mRdp->loaded_texture[i].blended) {
-                    mRapi->set_sampler_parameters(SHADER_FIRST_REPLACEMENT_TEXTURE + i, linear_filter, cms, cmt);
+                    mRapi->SetSamplerParameters(SHADER_FIRST_REPLACEMENT_TEXTURE + i, linear_filter, cms, cmt);
                 }
 
-                mRapi->set_sampler_parameters(i, linear_filter, cms, cmt);
-                mRenderingState.textures[i]->second.linear_filter = linear_filter;
-                mRenderingState.textures[i]->second.cms = cms;
-                mRenderingState.textures[i]->second.cmt = cmt;
+                mRapi->SetSamplerParameters(i, linear_filter, cms, cmt);
+                mRenderingState.mTextures[i]->second.linear_filter = linear_filter;
+                mRenderingState.mTextures[i]->second.cms = cms;
+                mRenderingState.mTextures[i]->second.cmt = cmt;
             }
         }
     }
@@ -1597,23 +1596,23 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         comb->prg[tm] = prg =
             LookupOrCreateShaderProgram(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
     }
-    if (prg != mRenderingState.shader_program) {
+    if (prg != mRenderingState.mShaderProgram) {
         Flush();
-        mRapi->unload_shader(mRenderingState.shader_program);
-        mRapi->load_shader(prg);
-        mRenderingState.shader_program = prg;
+        mRapi->UnloadShader(mRenderingState.mShaderProgram);
+        mRapi->LoadShader(prg);
+        mRenderingState.mShaderProgram = prg;
     }
     if (use_alpha != mRenderingState.alpha_blend) {
         Flush();
-        mRapi->set_use_alpha(use_alpha);
+        mRapi->SetUseAlpha(use_alpha);
         mRenderingState.alpha_blend = use_alpha;
     }
-    uint8_t num_inputs;
-    bool used_textures[2];
+    uint8_t numInputs;
+    bool usedTextures[2];
 
-    mRapi->shader_get_info(prg, &num_inputs, used_textures);
+    mRapi->ShaderGetInfo(prg, &numInputs, usedTextures);
 
-    struct GfxClipParameters clip_parameters = mRapi->get_clip_parameters();
+    struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
 
     for (int i = 0; i < 3; i++) {
         float z = v_arr[i]->z, w = v_arr[i]->w;
@@ -1622,12 +1621,12 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
 
         mBufVbo[mBufVboLen++] = v_arr[i]->x;
-        mBufVbo[mBufVboLen++] = clip_parameters.invert_y ? -v_arr[i]->y : v_arr[i]->y;
+        mBufVbo[mBufVboLen++] = clip_parameters.invertY ? -v_arr[i]->y : v_arr[i]->y;
         mBufVbo[mBufVboLen++] = z;
         mBufVbo[mBufVboLen++] = w;
 
         for (int t = 0; t < 2; t++) {
-            if (!used_textures[t]) {
+            if (!usedTextures[t]) {
                 continue;
             }
             float u = v_arr[i]->u / 32.0f;
@@ -1690,7 +1689,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             mBufVbo[mBufVboLen++] = mRdp->grayscale_color.a / 255.0f; // lerp interpolation factor (not alpha)
         }
 
-        for (int j = 0; j < num_inputs; j++) {
+        for (int j = 0; j < numInputs; j++) {
             RGBA* color;
             RGBA tmp;
             for (int k = 0; k < 1 + (use_alpha ? 1 : 0); k++) {
@@ -1788,8 +1787,8 @@ void Interpreter::GfxSpExtraGeometryMode(uint32_t clear, uint32_t set) {
 void Interpreter::AdjustVIewportOrScissor(XYWidthHeight* area) {
     if (!mFbActive) {
         // Adjust the y origin based on the y-inversion for the active framebuffer
-        GfxClipParameters clipParameters = mRapi->get_clip_parameters();
-        if (clipParameters.invert_y) {
+        GfxClipParameters clipParameters = mRapi->GetClipParameters();
+        if (clipParameters.invertY) {
             area->y -= area->height;
         } else {
             area->y = mNativeDimensions.height - area->y;
@@ -3475,8 +3474,8 @@ bool gfx_reset_fb_handler_custom(F3DGfx** cmd0) {
     gfx->Flush();
     gfx->mFbActive = false;
     gfx->mActiveFrameBuffer = gfx->mFrameBuffers.end();
-    gfx->mRapi->start_draw_to_framebuffer(gfx->mRendersToFb ? gfx->mGameFb : 0,
-                                          (float)gfx->mCurDimensions.height / gfx->mNativeDimensions.height);
+    gfx->mRapi->StartDrawToFramebuffer(gfx->mRendersToFb ? gfx->mGameFb : 0,
+                                       (float)gfx->mCurDimensions.height / gfx->mNativeDimensions.height);
     // Force viewport and scissor to reapply against the main framebuffer, in case a previous smaller
     // framebuffer truncated the values
     gfx->mRdp->viewport_or_scissor_changed = true;
@@ -3513,7 +3512,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     height = C1(16, 16);
 
     gfx->Flush();
-    gfx->mRapi->read_framebuffer_to_cpu(fbId, width, height, rgba16Buffer);
+    gfx->mRapi->ReadFramebufferToCPU(fbId, width, height, rgba16Buffer);
 
 #ifndef IS_BIGENDIAN
     // byteswap the output to BE
@@ -3563,7 +3562,7 @@ bool gfx_set_timg_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     gfx->Flush();
-    gfx->mRapi->select_texture_fb((uint32_t)cmd->words.w1);
+    gfx->mRapi->SelectTextureFb((uint32_t)cmd->words.w1);
     gfx->mRdp->textures_changed[0] = false;
     gfx->mRdp->textures_changed[1] = false;
     return false;
@@ -3802,7 +3801,7 @@ bool gfx_fill_wide_rect_handler_custom(F3DGfx** cmd0) {
     return false;
 }
 
-bool gfx_set_scissor_handler_rdp(F3DGfx** cmd0) {
+bool gfx_SetScissor_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *(cmd0);
 
@@ -3913,7 +3912,7 @@ static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_RDPPIPESYNC, { "mRdpPIPESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-25)
     { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-24)
     { RDP_G_RDPFULLSYNC, { "mRdpFULLSYNC", gfx_stubbed_command_handler } },          // mRdpFULLSYNC (-23)
-    { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_set_scissor_handler_rdp } },           // G_SETSCISSOR (-19)
+    { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_SetScissor_handler_rdp } },            // G_SETSCISSOR (-19)
     { RDP_G_SETPRIMDEPTH, { "G_SETPRIMDEPTH", gfx_set_prim_depth_handler_rdp } },    // G_SETPRIMDEPTH (-18)
     { RDP_G_RDPSETOTHERMODE, { "mRdpSETOTHERMODE", gfx_rdp_set_other_mode_rdp } },   // mRdpSETOTHERMODE (-17)
     { RDP_G_LOADTLUT, { "G_LOADTLUT", gfx_load_tlut_handler_rdp } },                 // G_LOADTLUT (-16)
@@ -4167,24 +4166,24 @@ void Interpreter::SpReset() {
 }
 
 void Interpreter::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
-    mWapi->get_dimensions(width, height, posX, posY);
+    mWapi->GetDimensions(width, height, posX, posY);
 }
 
-void Interpreter::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI* rapi, const char* game_name,
+void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi, const char* game_name,
                        bool start_in_fullscreen, uint32_t width, uint32_t height, uint32_t posX, uint32_t posY) {
     mWapi = wapi;
     mRapi = rapi;
-    mWapi->init(game_name, rapi->get_name(), start_in_fullscreen, width, height, posX, posY);
-    mRapi->init();
-    mRapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
+    mWapi->Init(game_name, rapi->GetName(), start_in_fullscreen, width, height, posX, posY);
+    mRapi->Init();
+    mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true);
     mCurDimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
     mMsaaLevel = CVarGetInteger(CVAR_MSAA_VALUE, 1);
 
     mCurDimensions.width = width;
     mCurDimensions.height = height;
 
-    mGameFb = mRapi->create_framebuffer();
-    mGameFbMsaaResolved = mRapi->create_framebuffer();
+    mGameFb = mRapi->CreateFramebuffer();
+    mGameFbMsaaResolved = mRapi->CreateFramebuffer();
 
     mNativeDimensions.width = SCREEN_WIDTH;
     mNativeDimensions.height = SCREEN_HEIGHT;
@@ -4195,7 +4194,7 @@ void Interpreter::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI*
 
     if (mTexUploadBuffer == nullptr) {
         // We cap texture max to 8k, because why would you need more?
-        int max_tex_size = std::min(8192, mRapi->get_max_texture_size());
+        int max_tex_size = std::min(8192, mRapi->GetMaxTextureSize());
         mTexUploadBuffer = (uint8_t*)malloc(max_tex_size * max_tex_size * 4);
     }
 
@@ -4205,7 +4204,7 @@ void Interpreter::Init(struct GfxWindowManagerAPI* wapi, struct GfxRenderingAPI*
 void Interpreter::Destroy() {
     // TODO: should also destroy rapi, and any other resources acquired in fast3d
     free(mTexUploadBuffer);
-    mWapi->destroy();
+    mWapi->Destroy();
 
     // Texture cache and loaded textures store references to Resources which need to be unreferenced.
     TextureCacheClear();
@@ -4219,11 +4218,11 @@ GfxRenderingAPI* Interpreter::GetCurrentRenderingAPI() {
 }
 
 void Interpreter::HandleWindowEvents() {
-    mWapi->handle_events();
+    mWapi->HandleEvents();
 }
 
 bool Interpreter::IsFrameReady() {
-    return IsFrameReady();
+    return mWapi->IsFrameReady();
 }
 
 bool Interpreter::ViewportMatchesRendererResolution() {
@@ -4240,8 +4239,8 @@ bool Interpreter::ViewportMatchesRendererResolution() {
 }
 
 void Interpreter::StartFrame() {
-    mWapi->get_dimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height, &mCurWindowPosX,
-                          &mCurWindowPosY);
+    mWapi->GetDimensions(&mGfxCurrentWindowDimensions.width, &mGfxCurrentWindowDimensions.height, &mCurWindowPosX,
+                         &mCurWindowPosY);
     if (mCurDimensions.height == 0) {
         // Avoid division by zero
         mCurDimensions.height = 1;
@@ -4259,7 +4258,7 @@ void Interpreter::StartFrame() {
                 AdjustWidthHeightForScale(width, height, fb.second.native_width, fb.second.native_height);
             }
             if (width != fb.second.applied_width || height != fb.second.applied_height) {
-                mRapi->update_framebuffer_parameters(fb.first, width, height, 1, true, true, true, true);
+                mRapi->UpdateFramebufferParameters(fb.first, width, height, 1, true, true, true, true);
                 fb.second.applied_width = width;
                 fb.second.applied_height = height;
             }
@@ -4271,18 +4270,17 @@ void Interpreter::StartFrame() {
     if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
         mRendersToFb = true;
         if (!ViewportMatchesRendererResolution()) {
-            mRapi->update_framebuffer_parameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
-                                                 true, true, true);
+            mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
+                                               true, true, true);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
             // match the window size
-            mRapi->update_framebuffer_parameters(mGameFb, mGfxCurrentWindowDimensions.width,
-                                                 mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true,
-                                                 true);
+            mRapi->UpdateFramebufferParameters(mGameFb, mGfxCurrentWindowDimensions.width,
+                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true, true);
         }
         if (mMsaaLevel > 1 && !ViewportMatchesRendererResolution()) {
-            mRapi->update_framebuffer_parameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
-                                                 false, false, false, false);
+            mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
+                                               false, false, false, false);
         }
     } else {
         mRendersToFb = false;
@@ -4301,12 +4299,11 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
 
     mCurMtxReplacements = &mtx_replacements;
 
-    mRapi->update_framebuffer_parameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
-                                         false, true, true, !mRendersToFb);
-    mRapi->start_frame();
-    mRapi->start_draw_to_framebuffer(mRendersToFb ? mGameFb : 0,
-                                     (float)mCurDimensions.height / mNativeDimensions.height);
-    mRapi->clear_framebuffer(false, true);
+    mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
+                                       false, true, true, !mRendersToFb);
+    mRapi->StartFrame();
+    mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
+    mRapi->ClearFramebuffer(false, true);
     mRdp->viewport_or_scissor_changed = true;
     mRenderingState.viewport = {};
     mRenderingState.scissor = {};
@@ -4323,7 +4320,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
                 // soft locking the renderer
                 if (mFbActive) {
                     mFbActive = 0;
-                    mRapi->start_draw_to_framebuffer(mRendersToFb ? mGameFb : 0, 1);
+                    mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, 1);
                 }
 
                 break;
@@ -4338,32 +4335,32 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     currentDir = std::stack<std::string>();
 
     if (mRendersToFb) {
-        mRapi->start_draw_to_framebuffer(0, 1);
-        mRapi->clear_framebuffer(true, true);
+        mRapi->StartDrawToFramebuffer(0, 1);
+        mRapi->ClearFramebuffer(true, true);
         if (mMsaaLevel > 1) {
             if (!ViewportMatchesRendererResolution()) {
-                mRapi->resolve_msaa_color_buffer(mGameFbMsaaResolved, mGameFb);
-                mGfxFrameBuffer = (uintptr_t)mRapi->get_framebuffer_texture_id(mGameFbMsaaResolved);
+                mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
+                mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFbMsaaResolved);
             } else {
-                mRapi->resolve_msaa_color_buffer(0, mGameFb);
+                mRapi->ResolveMSAAColorBuffer(0, mGameFb);
             }
         } else {
-            mGfxFrameBuffer = (uintptr_t)mRapi->get_framebuffer_texture_id(mGameFb);
+            mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFb);
         }
     } else if (mFbActive) {
         // Failsafe reset to main framebuffer to prevent softlocking the renderer
         mFbActive = 0;
-        mRapi->start_draw_to_framebuffer(0, 1);
+        mRapi->StartDrawToFramebuffer(0, 1);
 
         assert(0 && "active framebuffer was never reset back to original");
     }
 }
 
 void Interpreter::EndFrame() {
-    mRapi->end_frame();
-    mWapi->swap_buffers_begin();
-    mRapi->finish_render();
-    mWapi->swap_buffers_end();
+    mRapi->EndFrame();
+    mWapi->SwapBuffersBegin();
+    mRapi->FinishRender();
+    mWapi->SwapBuffersEnd();
 }
 
 void gfx_set_target_ucode(UcodeHandlers ucode) {
@@ -4371,11 +4368,11 @@ void gfx_set_target_ucode(UcodeHandlers ucode) {
 }
 
 void Interpreter::SetTargetFPS(int fps) {
-    mWapi->set_target_fps(fps);
+    mWapi->SetTargetFPS(fps);
 }
 
 void Interpreter::SetMaxFrameLatency(int latency) {
-    mWapi->set_maximum_frame_latency(latency);
+    mWapi->SetMaxFrameLatency(latency);
 }
 
 int Interpreter::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
@@ -4385,8 +4382,8 @@ int Interpreter::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t nat
         AdjustWidthHeightForScale(width, height, native_width, native_height);
     }
 
-    int fb = mRapi->create_framebuffer();
-    mRapi->update_framebuffer_parameters(fb, width, height, 1, true, true, true, true);
+    int fb = mRapi->CreateFramebuffer();
+    mRapi->UpdateFramebufferParameters(fb, width, height, 1, true, true, true, true);
 
     mFrameBuffers[fb] = {
         orig_width, orig_height, width, height, native_width, native_height, static_cast<bool>(resize)
@@ -4395,8 +4392,8 @@ int Interpreter::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t nat
 }
 
 void Interpreter::SetFrameBuffer(int fb, float noiseScale) {
-    mRapi->start_draw_to_framebuffer(fb, noiseScale);
-    mRapi->clear_framebuffer(false, true);
+    mRapi->StartDrawToFramebuffer(fb, noiseScale);
+    mRapi->ClearFramebuffer(false, true);
 }
 
 void Interpreter::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr) {
@@ -4433,7 +4430,7 @@ void Interpreter::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, b
     dstX1 = mCurDimensions.width;
     dstY1 = mCurDimensions.height;
 
-    mRapi->copy_framebuffer(fb_dst_id, fb_src_id, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1);
+    mRapi->CopyFramebuffer(fb_dst_id, fb_src_id, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1);
 
     // Set the copied pointer if we have one
     if (hasCopiedPtr != nullptr) {
@@ -4442,7 +4439,7 @@ void Interpreter::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, b
 }
 
 void Interpreter::ResetFrameBuffer() {
-    mRapi->start_draw_to_framebuffer(0, (float)mCurDimensions.height / mNativeDimensions.height);
+    mRapi->StartDrawToFramebuffer(0, (float)mCurDimensions.height / mNativeDimensions.height);
 }
 
 void Interpreter::AdjustPixelDepthCoordinates(float& x, float& y) {
@@ -4471,7 +4468,7 @@ uint16_t Interpreter::GetPixelDepth(float x, float y) {
     mGetPixelDepthPending.emplace(x, y);
 
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> res =
-        mRapi->get_pixel_depth(mRendersToFb ? mGameFb : 0, mGetPixelDepthPending);
+        mRapi->GetPixelDepth(mRendersToFb ? mGameFb : 0, mGetPixelDepthPending);
     mGetPixelDepthCached.merge(res);
     mGetPixelDepthPending.clear();
 
@@ -4544,6 +4541,90 @@ void Interpreter::GetCurDimensions(uint32_t* width, uint32_t* height) {
 }
 
 } // namespace Fast
+
+void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features) {
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 4; k++) {
+                cc_features->c[i][j][k] = shader_id0 >> i * 32 + j * 16 + k * 4 & 0xf;
+            }
+        }
+    }
+
+    cc_features->opt_alpha = (shader_id1 & SHADER_OPT(ALPHA)) != 0;
+    cc_features->opt_fog = (shader_id1 & SHADER_OPT(FOG)) != 0;
+    cc_features->opt_texture_edge = (shader_id1 & SHADER_OPT(TEXTURE_EDGE)) != 0;
+    cc_features->opt_noise = (shader_id1 & SHADER_OPT(NOISE)) != 0;
+    cc_features->opt_2cyc = (shader_id1 & SHADER_OPT(_2CYC)) != 0;
+    cc_features->opt_alpha_threshold = (shader_id1 & SHADER_OPT(ALPHA_THRESHOLD)) != 0;
+    cc_features->opt_invisible = (shader_id1 & SHADER_OPT(INVISIBLE)) != 0;
+    cc_features->opt_grayscale = (shader_id1 & SHADER_OPT(GRAYSCALE)) != 0;
+
+    cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
+    cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
+    cc_features->clamp[1][0] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_S);
+    cc_features->clamp[1][1] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_T);
+
+    if (shader_id1 & SHADER_OPT(USE_SHADER)) {
+        cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
+    }
+
+    cc_features->usedTextures[0] = false;
+    cc_features->usedTextures[1] = false;
+    cc_features->used_masks[0] = false;
+    cc_features->used_masks[1] = false;
+    cc_features->used_blend[0] = false;
+    cc_features->used_blend[1] = false;
+    cc_features->numInputs = 0;
+
+    for (int c = 0; c < 2; c++) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (cc_features->c[c][i][j] >= SHADER_INPUT_1 && cc_features->c[c][i][j] <= SHADER_INPUT_7) {
+                    if (cc_features->c[c][i][j] > cc_features->numInputs) {
+                        cc_features->numInputs = cc_features->c[c][i][j];
+                    }
+                }
+                if (cc_features->c[c][i][j] == SHADER_TEXEL0 || cc_features->c[c][i][j] == SHADER_TEXEL0A) {
+                    cc_features->usedTextures[0] = true;
+                    if (cc_features->opt_2cyc) {
+                        cc_features->usedTextures[1] = true;
+                    }
+                }
+                if (cc_features->c[c][i][j] == SHADER_TEXEL1 || cc_features->c[c][i][j] == SHADER_TEXEL1A) {
+                    cc_features->usedTextures[1] = true;
+                    if (cc_features->opt_2cyc) {
+                        cc_features->usedTextures[0] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int c = 0; c < 2; c++) {
+        cc_features->do_single[c][0] = cc_features->c[c][0][2] == SHADER_0;
+        cc_features->do_single[c][1] = cc_features->c[c][1][2] == SHADER_0;
+        cc_features->do_multiply[c][0] = cc_features->c[c][0][1] == SHADER_0 && cc_features->c[c][0][3] == SHADER_0;
+        cc_features->do_multiply[c][1] = cc_features->c[c][1][1] == SHADER_0 && cc_features->c[c][1][3] == SHADER_0;
+        cc_features->do_mix[c][0] = cc_features->c[c][0][1] == cc_features->c[c][0][3];
+        cc_features->do_mix[c][1] = cc_features->c[c][1][1] == cc_features->c[c][1][3];
+        cc_features->color_alpha_same[c] = (shader_id0 >> c * 32 & 0xffff) == (shader_id0 >> c * 32 + 16 & 0xffff);
+    }
+
+    if (cc_features->usedTextures[0] && shader_id1 & SHADER_OPT(TEXEL0_MASK)) {
+        cc_features->used_masks[0] = true;
+    }
+    if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_MASK)) {
+        cc_features->used_masks[1] = true;
+    }
+
+    if (cc_features->usedTextures[0] && shader_id1 & SHADER_OPT(TEXEL0_BLEND)) {
+        cc_features->used_blend[0] = true;
+    }
+    if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
+        cc_features->used_blend[1] = true;
+    }
+}
 
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize) {
