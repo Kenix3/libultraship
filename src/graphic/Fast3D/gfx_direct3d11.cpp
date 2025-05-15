@@ -29,6 +29,7 @@
 #include "window/gui/Gui.h"
 #include "Context.h"
 #include "config/ConsoleVariable.h"
+#include "window/Window.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
@@ -760,11 +761,10 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
 
                 if (d3d.last_sampler_states[i].Get() != d3d.textures[d3d.current_texture_ids[i]].sampler_state.Get()) {
                     d3d.last_sampler_states[i] = d3d.textures[d3d.current_texture_ids[i]].sampler_state.Get();
-                    d3d.context->PSSetSamplers(i, 1,
-                                               d3d.textures[d3d.current_texture_ids[i]].sampler_state.GetAddressOf());
                 }
             }
         }
+        d3d.context->PSSetSamplers(i, 1, d3d.textures[d3d.current_texture_ids[i]].sampler_state.GetAddressOf());
     }
 
     // Set per-draw constant buffer

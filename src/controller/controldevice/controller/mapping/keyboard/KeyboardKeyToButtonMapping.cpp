@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "Context.h"
 
 namespace Ship {
@@ -48,5 +49,13 @@ void KeyboardKeyToButtonMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str());
 
     CVarSave();
+}
+
+std::string KeyboardKeyToButtonMapping::GetPhysicalDeviceName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string KeyboardKeyToButtonMapping::GetPhysicalInputName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalInputName();
 }
 } // namespace Ship

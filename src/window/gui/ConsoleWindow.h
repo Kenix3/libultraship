@@ -15,7 +15,7 @@ namespace Ship {
 class ConsoleWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
-    ~ConsoleWindow();
+    virtual ~ConsoleWindow();
 
     void ClearLogs(std::string channel);
     void ClearLogs();

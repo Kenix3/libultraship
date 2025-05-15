@@ -14,5 +14,7 @@ class MouseWheelToAxisDirectionMapping final : public MouseWheelToAnyMapping, pu
     int8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
+    std::string GetPhysicalDeviceName() override;
+    std::string GetPhysicalInputName() override;
 };
 } // namespace Ship

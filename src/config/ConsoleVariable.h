@@ -11,13 +11,19 @@ namespace Ship {
 typedef enum class ConsoleVariableType { Integer, Float, String, Color, Color24 } ConsoleVariableType;
 
 typedef struct CVar {
-    const char* Name;
     ConsoleVariableType Type;
-    int32_t Integer;
-    float Float;
-    std::string String;
-    Color_RGBA8 Color;
-    Color_RGB8 Color24;
+    union {
+        int32_t Integer;
+        float Float;
+        char* String = nullptr;
+        Color_RGBA8 Color;
+        Color_RGB8 Color24;
+    };
+    ~CVar() {
+        if (Type == ConsoleVariableType::String && String != nullptr) {
+            free(String);
+        }
+    }
 } CVar;
 
 class ConsoleVariable {

@@ -10,7 +10,7 @@ class Font : public Resource<void> {
     using Resource::Resource;
 
     Font();
-    ~Font();
+    virtual ~Font();
 
     void* GetPointer() override;
     size_t GetPointerSize() override;

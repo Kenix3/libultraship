@@ -13,5 +13,7 @@ class MouseWheelToButtonMapping final : public MouseWheelToAnyMapping, public Co
     std::string GetButtonMappingId() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
+    std::string GetPhysicalDeviceName() override;
+    std::string GetPhysicalInputName() override;
 };
 } // namespace Ship

@@ -61,6 +61,9 @@ struct ShaderProgram {
     uint8_t num_attribs;
     GLint frame_count_location;
     GLint noise_scale_location;
+    GLint texture_width_location;
+    GLint texture_height_location;
+    GLint texture_filtering_location;
 };
 
 struct Framebuffer {
@@ -73,6 +76,7 @@ struct Framebuffer {
 };
 
 static map<pair<uint64_t, uint32_t>, struct ShaderProgram> shader_program_pool;
+static struct ShaderProgram* current_shader_program;
 static GLuint opengl_vbo;
 #if defined(__APPLE__) || defined(USE_OPENGLES)
 static GLuint opengl_vao;
@@ -95,6 +99,15 @@ static bool srgb_mode = false;
 GLint max_msaa_level = 1;
 GLuint pixel_depth_rb, pixel_depth_fb;
 size_t pixel_depth_rb_size;
+
+struct TextureInfo {
+    uint16_t width;
+    uint16_t height;
+    uint16_t filtering;
+} textures[1024];
+
+static GLuint current_texture_ids[2];
+static uint8_t current_tile;
 
 static int gfx_opengl_get_max_texture_size() {
     GLint max_texture_size;
@@ -127,6 +140,19 @@ static void gfx_opengl_set_uniforms(struct ShaderProgram* prg) {
     glUniform1f(prg->noise_scale_location, current_noise_scale);
 }
 
+static void gfx_opengl_set_per_draw_uniforms() {
+    if (current_shader_program->used_textures[0] || current_shader_program->used_textures[1]) {
+        GLint filtering[2] = { textures[current_texture_ids[0]].filtering, textures[current_texture_ids[1]].filtering };
+        glUniform1iv(current_shader_program->texture_filtering_location, 2, filtering);
+
+        GLint width[2] = { textures[current_texture_ids[0]].width, textures[current_texture_ids[1]].width };
+        glUniform1iv(current_shader_program->texture_width_location, 2, width);
+
+        GLint height[2] = { textures[current_texture_ids[0]].height, textures[current_texture_ids[1]].height };
+        glUniform1iv(current_shader_program->texture_height_location, 2, height);
+    }
+}
+
 static void gfx_opengl_unload_shader(struct ShaderProgram* old_prg) {
     if (old_prg != NULL) {
         for (int i = 0; i < old_prg->num_attribs; i++) {
@@ -137,6 +163,7 @@ static void gfx_opengl_unload_shader(struct ShaderProgram* old_prg) {
 
 static void gfx_opengl_load_shader(struct ShaderProgram* new_prg) {
     // if (!new_prg) return;
+    current_shader_program = new_prg;
     glUseProgram(new_prg->opengl_program_id);
     gfx_opengl_vertex_array_set_attribs(new_prg);
     gfx_opengl_set_uniforms(new_prg);
@@ -233,9 +260,7 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
 }
 
 bool get_bool(prism::ContextTypes* value) {
-    if (std::holds_alternative<bool>(*value)) {
-        return std::get<bool>(*value);
-    } else if (std::holds_alternative<int>(*value)) {
+    if (std::holds_alternative<int>(*value)) {
         return std::get<int>(*value) == 1;
     }
     return false;
@@ -286,7 +311,7 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(
+    auto res = std::static_pointer_cast<Ship::Shader>(
         Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
@@ -316,7 +341,6 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "o_do_single", M_ARRAY(cc_features.do_single, bool, 2, 2) },
         { "o_do_multiply", M_ARRAY(cc_features.do_multiply, bool, 2, 2) },
         { "o_color_alpha_same", M_ARRAY(cc_features.color_alpha_same, bool, 2) },
-        { "o_current_filter", current_filter_mode },
         { "FILTER_THREE_POINT", FILTER_THREE_POINT },
         { "FILTER_LINEAR", FILTER_LINEAR },
         { "FILTER_NONE", FILTER_NONE },
@@ -336,6 +360,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
         { "SHADER_1", SHADER_1 },
         { "SHADER_COMBINED", SHADER_COMBINED },
         { "SHADER_NOISE", SHADER_NOISE },
+        { "o_three_point_filtering", current_filter_mode == FILTER_THREE_POINT },
         { "append_formula", (InvokeFunc)append_formula },
 #ifdef __APPLE__
         { "GLSL_VERSION", "#version 410 core" },
@@ -365,7 +390,7 @@ static std::string build_fs_shader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
+    auto res = std::static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
         "shaders/opengl/default.shader.fs", true, init));
 
     if (res == nullptr) {
@@ -423,7 +448,7 @@ static std::string build_vs_shader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
+    auto res = std::static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
         "shaders/opengl/default.shader.vs", true, init));
 
     if (res == nullptr) {
@@ -542,6 +567,9 @@ static struct ShaderProgram* gfx_opengl_create_and_load_new_shader(uint64_t shad
 
     prg->frame_count_location = glGetUniformLocation(shader_program, "frame_count");
     prg->noise_scale_location = glGetUniformLocation(shader_program, "noise_scale");
+    prg->texture_width_location = glGetUniformLocation(shader_program, "texture_width");
+    prg->texture_height_location = glGetUniformLocation(shader_program, "texture_height");
+    prg->texture_filtering_location = glGetUniformLocation(shader_program, "texture_filtering");
 
     gfx_opengl_load_shader(prg);
 
@@ -597,10 +625,14 @@ static void gfx_opengl_delete_texture(uint32_t texID) {
 static void gfx_opengl_select_texture(int tile, GLuint texture_id) {
     glActiveTexture(GL_TEXTURE0 + tile);
     glBindTexture(GL_TEXTURE_2D, texture_id);
+    current_texture_ids[tile] = texture_id;
+    current_tile = tile;
 }
 
 static void gfx_opengl_upload_texture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
+    textures[current_texture_ids[current_tile]].width = width;
+    textures[current_texture_ids[current_tile]].height = height;
 }
 
 #ifdef USE_OPENGLES
@@ -622,10 +654,11 @@ static uint32_t gfx_cm_to_opengl(uint32_t val) {
 }
 
 static void gfx_opengl_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
-    const GLint filter = linear_filter && current_filter_mode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
     glActiveTexture(GL_TEXTURE0 + tile);
+    GLint filter = linear_filter && current_filter_mode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+    textures[current_texture_ids[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gfx_cm_to_opengl(cms));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));
 }
@@ -704,6 +737,8 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
             glDisable(GL_POLYGON_OFFSET_FILL);
         }
     }
+
+    gfx_opengl_set_per_draw_uniforms();
 
     // printf("flushing %d tris\n", buf_vbo_num_tris);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_vbo_len, buf_vbo, GL_STREAM_DRAW);

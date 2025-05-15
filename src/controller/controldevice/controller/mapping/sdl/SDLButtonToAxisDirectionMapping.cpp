@@ -4,6 +4,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
@@ -56,5 +57,13 @@ void SDLButtonToAxisDirectionMapping::EraseFromConfig() {
 
 int8_t SDLButtonToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
+}
+
+std::string SDLButtonToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return SDLButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string SDLButtonToAxisDirectionMapping::GetPhysicalInputName() {
+    return SDLButtonToAnyMapping::GetPhysicalInputName();
 }
 } // namespace Ship

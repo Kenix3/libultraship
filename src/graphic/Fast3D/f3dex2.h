@@ -32,12 +32,12 @@ constexpr int8_t F3DEX2_G_LINE3D = OPCODE(0x08);
 /*
  * G_MTX: parameter flags
  */
-constexpr int8_t F3DEX2_G_MTX_MODELVIEW = 0x00;
-constexpr int8_t F3DEX2_G_MTX_PROJECTION = 0x04;
-constexpr int8_t F3DEX2_G_MTX_MUL = 0x00;
-constexpr int8_t F3DEX2_G_MTX_LOAD = 0x02;
-constexpr int8_t F3DEX2_G_MTX_NOPUSH = 0x00;
-constexpr int8_t F3DEX2_G_MTX_PUSH = 0x01;
+constexpr int8_t F3DEX2_G_MTX_MODELVIEW = OPCODE(0x00);
+constexpr int8_t F3DEX2_G_MTX_PROJECTION = OPCODE(0x04);
+constexpr int8_t F3DEX2_G_MTX_MUL = OPCODE(0x00);
+constexpr int8_t F3DEX2_G_MTX_LOAD = OPCODE(0x02);
+constexpr int8_t F3DEX2_G_MTX_NOPUSH = OPCODE(0x00);
+constexpr int8_t F3DEX2_G_MTX_PUSH = OPCODE(0x01);
 
 /*
  * flags for G_SETGEOMETRYMODE
@@ -79,22 +79,22 @@ constexpr uint32_t F3DEX2_G_CULL_BOTH = 0x00000600;
  * which to store a 1-4 word DMA.
  *
  */
-constexpr int8_t F3DEX2_G_MV_MMTX = 2;
-constexpr int8_t F3DEX2_G_MV_PMTX = 6;
-constexpr int8_t F3DEX2_G_MV_VIEWPORT = 8;
-constexpr int8_t F3DEX2_G_MV_LIGHT = 10;
-constexpr int8_t F3DEX2_G_MV_POINT = 12;
-constexpr int8_t F3DEX2_G_MV_MATRIX = 14;
-constexpr int8_t F3DEX2_G_MVO_LOOKATX = 0 * 24;
-constexpr int8_t F3DEX2_G_MVO_LOOKATY = 1 * 24;
-constexpr int8_t F3DEX2_G_MVO_L0 = 2 * 24;
-constexpr int8_t F3DEX2_G_MVO_L1 = 3 * 24;
-constexpr int8_t F3DEX2_G_MVO_L2 = 4 * 24;
-constexpr int8_t F3DEX2_G_MVO_L3 = 5 * 24;
-constexpr int8_t F3DEX2_G_MVO_L4 = 6 * 24;
-constexpr int8_t F3DEX2_G_MVO_L5 = 7 * 24;
-constexpr int8_t F3DEX2_G_MVO_L6 = 8 * 24;
-constexpr int8_t F3DEX2_G_MVO_L7 = 9 * 24;
+constexpr int8_t F3DEX2_G_MV_MMTX = OPCODE(2);
+constexpr int8_t F3DEX2_G_MV_PMTX = OPCODE(6);
+constexpr int8_t F3DEX2_G_MV_VIEWPORT = OPCODE(8);
+constexpr int8_t F3DEX2_G_MV_LIGHT = OPCODE(10);
+constexpr int8_t F3DEX2_G_MV_POINT = OPCODE(12);
+constexpr int8_t F3DEX2_G_MV_MATRIX = OPCODE(14);
+constexpr int8_t F3DEX2_G_MVO_LOOKATX = OPCODE(0 * 24);
+constexpr int8_t F3DEX2_G_MVO_LOOKATY = OPCODE(1 * 24);
+constexpr int8_t F3DEX2_G_MVO_L0 = OPCODE(2 * 24);
+constexpr int8_t F3DEX2_G_MVO_L1 = OPCODE(3 * 24);
+constexpr int8_t F3DEX2_G_MVO_L2 = OPCODE(4 * 24);
+constexpr int8_t F3DEX2_G_MVO_L3 = OPCODE(5 * 24);
+constexpr int8_t F3DEX2_G_MVO_L4 = OPCODE(6 * 24);
+constexpr int8_t F3DEX2_G_MVO_L5 = OPCODE(7 * 24);
+constexpr int8_t F3DEX2_G_MVO_L6 = OPCODE(8 * 24);
+constexpr int8_t F3DEX2_G_MVO_L7 = OPCODE(9 * 24);
 
 /*
  * MOVEWORD indices
@@ -115,20 +115,20 @@ constexpr int8_t F3DEX2_G_MW_FORCEMTX = 0x0c;
  *
  * These are offsets from the address in the dmem table
  */
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_2 = 0x18;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_2 = 0x1c;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_3 = 0x30;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_3 = 0x34;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_4 = 0x48;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_4 = 0x4c;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_5 = 0x60;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_5 = 0x64;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_6 = 0x78;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_6 = 0x7c;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_7 = 0x90;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_7 = 0x94;
-constexpr int8_t F3DEX2_G_MWO_aLIGHT_8 = 0xa8;
-constexpr int8_t F3DEX2_G_MWO_bLIGHT_8 = 0xac;
+constexpr int8_t F3DEX2_G_MWO_aLIGHT_2 = OPCODE(0x18);
+constexpr int8_t F3DEX2_G_MWO_bLIGHT_2 = OPCODE(0x1c);
+constexpr int8_t F3DEX2_G_MWO_aLIGHT_3 = OPCODE(0x30);
+constexpr int8_t F3DEX2_G_MWO_bLIGHT_3 = OPCODE(0x34);
+constexpr int8_t F3DEX2_G_MWO_aLIGHT_4 = OPCODE(0x48);
+constexpr int8_t F3DEX2_G_MWO_bLIGHT_4 = OPCODE(0x4c);
+constexpr int8_t F3DEX2_G_MWO_aLIGHT_5 = OPCODE(0x60);
+constexpr int8_t F3DEX2_G_MWO_bLIGHT_5 = OPCODE(0x64);
+constexpr int8_t F3DEX2_G_MWO_aLIGHT_6 = OPCODE(0x78);
+constexpr int8_t F3DEX2_G_MWO_bLIGHT_6 = OPCODE(0x7c);
+constexpr int8_t F3DEX2_G_MWO_aLIGHT_7 = OPCODE(0x90);
+constexpr int8_t F3DEX2_G_MWO_bLIGHT_7 = OPCODE(0x94);
+constexpr int8_t F3DEX2_G_MWO_aLIGHT_8 = OPCODE(0xa8);
+constexpr int8_t F3DEX2_G_MWO_bLIGHT_8 = OPCODE(0xac);
 
 /*===========================================================================*
  *	GBI Commands for S2DEX microcode

@@ -1,6 +1,7 @@
 #include "O2rArchive.h"
 
 #include "Context.h"
+#include "window/Window.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {
@@ -97,7 +98,6 @@ bool O2rArchive::Close() {
 }
 
 bool O2rArchive::WriteFile(const std::string& filename, const std::vector<uint8_t>& data) {
-    printf("Writing file\n");
     if (!mZipArchive) {
         SPDLOG_ERROR("Cannot write to zip: Archive is not open.");
         return false;

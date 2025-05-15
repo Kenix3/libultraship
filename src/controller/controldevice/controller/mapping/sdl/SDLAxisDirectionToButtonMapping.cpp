@@ -4,6 +4,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
@@ -70,5 +71,13 @@ void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
     CVarSave();
+}
+
+std::string SDLAxisDirectionToButtonMapping::GetPhysicalDeviceName() {
+    return SDLAxisDirectionToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string SDLAxisDirectionToButtonMapping::GetPhysicalInputName() {
+    return SDLAxisDirectionToAnyMapping::GetPhysicalInputName();
 }
 } // namespace Ship

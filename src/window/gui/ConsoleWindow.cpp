@@ -1,6 +1,7 @@
 #include "ConsoleWindow.h"
 
 #include "public/bridge/consolevariablebridge.h"
+#include "window/Window.h"
 #include "Context.h"
 #include "utils/StringHelper.h"
 #include "utils/Utils.h"
@@ -23,9 +24,9 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
                     *output += "\n     - Info=" + argument.Info;
 
                     if (argument.Type == ArgumentType::NUMBER) {
-                        *output += " Type=Text";
-                    } else if (argument.Type == ArgumentType::TEXT) {
                         *output += " Type=Number";
+                    } else if (argument.Type == ArgumentType::TEXT) {
+                        *output += " Type=Text";
                     } else {
                         *output += " Type=Unknown";
                     }
@@ -245,7 +246,7 @@ int32_t ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::v
             }
         } else if (cvar->Type == ConsoleVariableType::String) {
             if (output) {
-                *output += StringHelper::Sprintf("[LUS] Variable %s is %s", args[1].c_str(), cvar->String.c_str());
+                *output += StringHelper::Sprintf("[LUS] Variable %s is %s", args[1].c_str(), cvar->String);
             }
         } else if (cvar->Type == ConsoleVariableType::Color) {
             if (output) {

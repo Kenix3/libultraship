@@ -4,6 +4,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
@@ -45,5 +46,13 @@ void KeyboardKeyToAxisDirectionMapping::EraseFromConfig() {
 
 int8_t KeyboardKeyToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_KEYBOARD;
+}
+
+std::string KeyboardKeyToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string KeyboardKeyToAxisDirectionMapping::GetPhysicalInputName() {
+    return KeyboardKeyToAnyMapping::GetPhysicalInputName();
 }
 } // namespace Ship

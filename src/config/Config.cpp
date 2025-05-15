@@ -131,6 +131,37 @@ void Config::Erase(const std::string& key) {
     mFlattenedJson.erase(FormatNestedKey(key));
 }
 
+void Config::SetBlock(const std::string& key, nlohmann::json block) {
+    nlohmann::json gjson = mFlattenedJson.unflatten();
+    if (key.find(".") != std::string::npos) {
+        nlohmann::json* gjson2 = &gjson;
+        std::vector<std::string> dots = StringHelper::Split(key, ".");
+        if (dots.size() > 1) {
+            size_t curDot = 0;
+            for (auto& dot : dots) {
+                if (curDot == dots.size() - 1) {
+                    if (gjson2->contains(dot)) {
+                        gjson2->at(dot) = block;
+                        break;
+                    } else {
+                        gjson2->emplace(dot, block);
+                        break;
+                    }
+                } else if (gjson2->contains(dot)) {
+                    gjson2 = &gjson2->at(dot);
+                    curDot++;
+                }
+            }
+        }
+    } else {
+        if (gjson.contains(key)) {
+            gjson[key] = block;
+        }
+    }
+    mFlattenedJson = gjson.flatten();
+    Save();
+}
+
 void Config::EraseBlock(const std::string& key) {
     nlohmann::json gjson = mFlattenedJson.unflatten();
     if (key.find(".") != std::string::npos) {
@@ -183,7 +214,8 @@ void Config::Reload() {
 
 void Config::Save() {
     std::ofstream file(mPath);
-    file << mFlattenedJson.unflatten().dump(4);
+    mNestedJson = mFlattenedJson.unflatten();
+    file << mNestedJson.dump(4);
 }
 
 template <typename T> std::vector<T> Config::GetArray(const std::string& key) {

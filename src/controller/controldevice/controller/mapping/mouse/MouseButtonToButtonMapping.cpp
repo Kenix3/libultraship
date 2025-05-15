@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "Context.h"
 
 namespace Ship {
@@ -47,5 +48,13 @@ void MouseButtonToButtonMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str());
 
     CVarSave();
+}
+
+std::string MouseButtonToButtonMapping::GetPhysicalDeviceName() {
+    return MouseButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string MouseButtonToButtonMapping::GetPhysicalInputName() {
+    return MouseButtonToAnyMapping::GetPhysicalInputName();
 }
 } // namespace Ship

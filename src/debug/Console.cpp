@@ -1,6 +1,7 @@
 #include "Console.h"
 #include "utils/StringHelper.h"
 #include "Context.h"
+#include <spdlog/spdlog.h>
 
 namespace Ship {
 Console::Console() {

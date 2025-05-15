@@ -3,6 +3,7 @@
 #include "utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "controller/controldeck/ControlDeck.h"
 #include "Context.h"
 
 namespace Ship {
@@ -51,5 +52,13 @@ void SDLButtonToButtonMapping::EraseFromConfig() {
     CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
     CVarClear(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
     CVarSave();
+}
+
+std::string SDLButtonToButtonMapping::GetPhysicalDeviceName() {
+    return SDLButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string SDLButtonToButtonMapping::GetPhysicalInputName() {
+    return SDLButtonToAnyMapping::GetPhysicalInputName();
 }
 } // namespace Ship

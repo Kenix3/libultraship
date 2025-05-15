@@ -8,6 +8,9 @@
 #include <public/bridge/consolevariablebridge.h>
 #include <resource/factory/ShaderFactory.h>
 #include <Context.h>
+#include <resource/ResourceManager.h>
+#include "spdlog/spdlog.h"
+#include "nlohmann/json.hpp"
 
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
@@ -88,9 +91,7 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
 }
 
 bool prism_get_bool(prism::ContextTypes* value) {
-    if (std::holds_alternative<bool>(*value)) {
-        return std::get<bool>(*value);
-    } else if (std::holds_alternative<int>(*value)) {
+    if (std::holds_alternative<int>(*value)) {
         return std::get<int>(*value) == 1;
     }
     return false;

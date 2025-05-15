@@ -14,7 +14,7 @@ namespace LUS {
 class GfxDebuggerWindow : public Ship::GuiWindow {
   public:
     using GuiWindow::GuiWindow;
-    ~GfxDebuggerWindow();
+    virtual ~GfxDebuggerWindow();
 
   protected:
     void InitElement() override;

@@ -4,6 +4,7 @@
 #include "window/gui/IconsFontAwesome4.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "Context.h"
+#include "controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 MouseButtonToAxisDirectionMapping::MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
@@ -45,5 +46,13 @@ void MouseButtonToAxisDirectionMapping::EraseFromConfig() {
 
 int8_t MouseButtonToAxisDirectionMapping::GetMappingType() {
     return MAPPING_TYPE_MOUSE;
+}
+
+std::string MouseButtonToAxisDirectionMapping::GetPhysicalDeviceName() {
+    return MouseButtonToAnyMapping::GetPhysicalDeviceName();
+}
+
+std::string MouseButtonToAxisDirectionMapping::GetPhysicalInputName() {
+    return MouseButtonToAnyMapping::GetPhysicalInputName();
 }
 } // namespace Ship

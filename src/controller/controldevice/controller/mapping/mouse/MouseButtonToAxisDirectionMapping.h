@@ -13,5 +13,7 @@ class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, 
     int8_t GetMappingType() override;
     void SaveToConfig() override;
     void EraseFromConfig() override;
+    std::string GetPhysicalDeviceName() override;
+    std::string GetPhysicalInputName() override;
 };
 } // namespace Ship

@@ -109,6 +109,16 @@ std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::l
     return list;
 }
 
+std::shared_ptr<std::vector<std::string>> ArchiveManager::ListDirectories(const std::string& searchMask) {
+    auto list = std::make_shared<std::vector<std::string>>();
+    for (const std::string& dir : mDirectories) {
+        if (glob_match(searchMask.c_str(), dir.c_str())) {
+            list->push_back(dir);
+        }
+    }
+    return list;
+}
+
 std::vector<uint32_t> ArchiveManager::GetGameVersions() {
     return mGameVersions;
 }
@@ -261,6 +271,12 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     for (auto& [hash, filename] : *fileList.get()) {
         mHashes[hash] = filename;
         mFileToArchive[hash] = archive;
+
+        size_t lastSlash = filename.find_last_of('/');
+        if (lastSlash != std::string::npos) {
+            std::string dir = filename.substr(0, lastSlash);
+            mDirectories.insert(dir);
+        }
     }
     return archive;
 }

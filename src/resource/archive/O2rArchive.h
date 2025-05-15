@@ -15,7 +15,7 @@
 namespace Ship {
 struct File;
 
-class O2rArchive : virtual public Archive {
+class O2rArchive final : virtual public Archive {
   public:
     O2rArchive(const std::string& archivePath);
     ~O2rArchive();
