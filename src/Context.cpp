@@ -9,6 +9,7 @@
 #include "config/ConsoleVariable.h"
 #include "controller/controldeck/ControlDeck.h"
 #include "debug/CrashHandler.h"
+#include "window/FileDropMgr.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -89,7 +90,8 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
                    std::shared_ptr<ControlDeck> controlDeck) {
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
-           InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger();
+           InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
+           InitFileDropMgr();
 }
 
 bool Context::InitLogging() {
@@ -330,6 +332,19 @@ bool Context::InitWindow(std::shared_ptr<Window> window) {
     return true;
 }
 
+bool Context::InitFileDropMgr() {
+    if (GetFileDropMgr() != nullptr) {
+        return true;
+    }
+
+    mFileDropMgr = std::make_shared<FileDropMgr>();
+    if (GetFileDropMgr() == nullptr) {
+        SPDLOG_ERROR("Failed to initialize file drop manager");
+        return false;
+    }
+    return true;
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -368,6 +383,10 @@ std::shared_ptr<Audio> Context::GetAudio() {
 
 std::shared_ptr<Fast::GfxDebugger> Context::GetGfxDebugger() {
     return mGfxDebugger;
+}
+
+std::shared_ptr<FileDropMgr> Context::GetFileDropMgr() {
+    return mFileDropMgr;
 }
 
 std::string Context::GetName() {

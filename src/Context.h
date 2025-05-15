@@ -24,6 +24,7 @@ class CrashHandler;
 class Window;
 class Config;
 class ResourceManager;
+class FileDropMgr;
 
 class Context {
   public:
@@ -60,6 +61,7 @@ class Context {
     std::shared_ptr<Console> GetConsole();
     std::shared_ptr<Audio> GetAudio();
     std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
+    std::shared_ptr<FileDropMgr> GetFileDropMgr();
 
     std::string GetName();
     std::string GetShortName();
@@ -75,6 +77,7 @@ class Context {
     bool InitGfxDebugger();
     bool InitConsole();
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
+    bool InitFileDropMgr();
 
   protected:
     Context() = default;
@@ -92,6 +95,7 @@ class Context {
     std::shared_ptr<Console> mConsole;
     std::shared_ptr<Audio> mAudio;
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
+    std::shared_ptr<FileDropMgr> mFileDropMgr;
 
     std::string mConfigFilePath;
     std::string mMainPath;

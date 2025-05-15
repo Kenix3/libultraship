@@ -1,3 +1,5 @@
+#include "window/FileDropMgr.h"
+
 #include <stdio.h>
 
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
@@ -11,6 +13,7 @@
 #include "Context.h"
 #include "config/ConsoleVariable.h"
 #include "controller/controldeck/ControlDeck.h"
+#include "window/FileDropMgr.h"
 #include "gfx_sdl.h"
 
 #if FOR_WINDOWS
@@ -591,9 +594,7 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, event.drop.file);
-            Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
-            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+            Ship::Context::GetInstance()->GetFileDropMgr()->SetDroppedFile(event.drop.file);
             break;
         case SDL_QUIT:
             Close();
