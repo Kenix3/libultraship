@@ -140,11 +140,13 @@ void ArchiveManager::ResetVirtualFileSystem() {
     }
 }
 
-bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filename,
+bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filePath,
                                const std::vector<uint8_t>& data) {
     if (archive) {
-        if (archive->WriteFile(filename, data)) {
-            ResetVirtualFileSystem();
+        if (archive->WriteFile(filePath, data)) {
+            IndexFile(filePath);
+            mFileToArchive[CRC64(filePath.c_str())] = archive;
+            LoadFile(filePath);
             return true; // Successfully wrote file
         }
     }
