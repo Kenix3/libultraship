@@ -59,20 +59,6 @@ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
 
 // MARK: - ImGui & SDL Wrappers
 
-bool Metal_IsSupported() {
-#ifdef __IOS__
-    // iOS always supports Metal and MTLCopyAllDevices is not available
-    return true;
-#else
-    NS::Array* devices = MTLCopyAllDevices();
-    NS::UInteger count = devices->count();
-
-    devices->release();
-
-    return count > 0;
-#endif
-}
-
 bool GfxRenderingAPIMetal::NonUniformThreadGroupSupported() {
 #ifdef __IOS__
     // iOS devices with A11 or later support dispatch threads
@@ -1166,5 +1152,19 @@ void GfxRenderingAPIMetal::SetSrgbMode() {
     mSrgbMode = true;
 }
 } // namespace Fast
+
+bool Metal_IsSupported() {
+#ifdef __IOS__
+    // iOS always supports Metal and MTLCopyAllDevices is not available
+    return true;
+#else
+    NS::Array* devices = MTLCopyAllDevices();
+    NS::UInteger count = devices->count();
+
+    devices->release();
+
+    return count > 0;
+#endif
+}
 
 #endif
