@@ -156,7 +156,6 @@ bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::stri
         if (archive->WriteFile(filePath, data)) {
             archive->IndexFile(filePath);
             mFileToArchive[CRC64(filePath.c_str())] = archive;
-            LoadFile(filePath);
             return true; // Successfully wrote file
         }
     }
