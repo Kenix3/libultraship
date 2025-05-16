@@ -1,5 +1,3 @@
-#include "window/FileDropMgr.h"
-
 #include <stdio.h>
 
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)

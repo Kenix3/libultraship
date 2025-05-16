@@ -478,10 +478,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_DROPPED_FILE, fileName);
-            Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_NEW_FILE_DROPPED, 1);
-            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
-
+            Ship::Context::GetInstance()->GetFileDropMgr()->SetDroppedFile(fileName);
             break;
         case WM_DISPLAYCHANGE:
             self->monitor_list = GetMonitorList();
