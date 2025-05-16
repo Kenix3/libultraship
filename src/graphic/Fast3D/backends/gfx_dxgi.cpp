@@ -1081,7 +1081,6 @@ IDXGISwapChain1* GfxWindowBackendDXGI::GetSwapChain() {
     return swap_chain.Get();
 }
 
-
 const char* GfxWindowBackendDXGI::GetKeyName(int scancode) {
     static char text[64];
     GetKeyNameTextA(scancode << 16, text, 64);
