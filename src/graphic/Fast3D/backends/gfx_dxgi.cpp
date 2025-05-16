@@ -31,6 +31,7 @@
 #include "gfx_direct3d_common.h"
 #include "gfx_screen_config.h"
 #include "../interpreter.h"
+#include "window/FileDropMgr.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"
