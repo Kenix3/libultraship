@@ -151,8 +151,7 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetInterpreterWeak();
     ImGuiBackendInit();
 
-    CVarClear(CVAR_NEW_FILE_DROPPED);
-    CVarClear(CVAR_DROPPED_FILE);
+    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetInterpreterWeak();
 }
 
 void Gui::ImGuiWMInit() {
