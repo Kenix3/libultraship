@@ -1081,22 +1081,6 @@ IDXGISwapChain1* GfxWindowBackendDXGI::GetSwapChain() {
     return swap_chain.Get();
 }
 
-void ThrowIfFailed(HRESULT res) {
-    if (FAILED(res)) {
-        fprintf(stderr, "Error: 0x%08X\n", res);
-        throw res;
-    }
-}
-
-void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
-    if (FAILED(res)) {
-        char full_message[256];
-        sprintf(full_message, "%s\n\nHRESULT: 0x%08X", message, res);
-        MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
-        throw res;
-    }
-}
-
 const char* GfxWindowBackendDXGI::GetKeyName(int scancode) {
     static char text[64];
     GetKeyNameTextA(scancode << 16, text, 64);
@@ -1116,5 +1100,21 @@ bool GfxWindowBackendDXGI::IsFullscreen() {
 }
 
 } // namespace Fast
+
+void ThrowIfFailed(HRESULT res) {
+    if (FAILED(res)) {
+        fprintf(stderr, "Error: 0x%08X\n", res);
+        throw res;
+    }
+}
+
+void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
+    if (FAILED(res)) {
+        char full_message[256];
+        sprintf(full_message, "%s\n\nHRESULT: 0x%08X", message, res);
+        MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
+        throw res;
+    }
+}
 
 #endif
