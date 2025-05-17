@@ -9,7 +9,7 @@ set(imgui_apply_patch_command ${CMAKE_COMMAND} -Dpatch_file=${imgui_fixes_and_co
 FetchContent_Declare(
     ImGui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.91.6-docking
+    GIT_TAG v1.91.9b-docking
     PATCH_COMMAND ${imgui_apply_patch_command}
 )
 FetchContent_MakeAvailable(ImGui)
