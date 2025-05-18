@@ -5,7 +5,7 @@
 
 namespace Ship {
 
-class Json : public Resource<void> {
+class Json final : public Resource<void> {
   public:
     using Resource::Resource;
 

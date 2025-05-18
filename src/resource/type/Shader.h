@@ -3,7 +3,7 @@
 #include "resource/Resource.h"
 namespace Ship {
 
-class Shader : public Resource<void> {
+class Shader final : public Resource<void> {
   public:
     using Resource::Resource;
 

@@ -3,7 +3,7 @@
 #include "resource/Resource.h"
 
 namespace Ship {
-class Blob : public Ship::Resource<void> {
+class Blob final : public Ship::Resource<void> {
   public:
     using Resource::Resource;
 

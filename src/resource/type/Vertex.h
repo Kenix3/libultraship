@@ -6,7 +6,7 @@
 union Vtx;
 
 namespace Fast {
-class Vertex : public Ship::Resource<Vtx> {
+class Vertex final : public Ship::Resource<Vtx> {
   public:
     using Resource::Resource;
 
