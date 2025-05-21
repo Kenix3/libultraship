@@ -102,17 +102,17 @@ class ResourceManager {
     bool OtrSignatureCheck(const char* fileName);
     bool IsAltAssetsEnabled();
     void SetAltAssetsEnabled(bool isEnabled);
+    std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier);
+    std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
 
   protected:
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
     void UnloadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
                                                                            bool loadExact = false);
-    std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath,
                                                                            bool loadExact = false);
 
-    std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
 
   private:

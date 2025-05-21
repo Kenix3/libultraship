@@ -5,9 +5,7 @@ Font::Font() : Resource(std::shared_ptr<ResourceInitData>()) {
 }
 
 Font::~Font() {
-    if (Data != nullptr) {
-        delete[] Data;
-    }
+    // let ImGui free the font data
 }
 
 void* Font::GetPointer() {
