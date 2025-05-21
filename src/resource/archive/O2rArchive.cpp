@@ -10,6 +10,7 @@ O2rArchive::O2rArchive(const std::string& archivePath) : Archive(archivePath) {
 
 O2rArchive::~O2rArchive() {
     SPDLOG_TRACE("destruct o2rarchive: {}", GetPath());
+    Close();
 }
 
 std::shared_ptr<File> O2rArchive::LoadFile(uint64_t hash) {
