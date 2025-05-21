@@ -716,7 +716,8 @@ bool GfxWindowBackendSDL2::IsRunning() {
 
 void GfxWindowBackendSDL2::Destroy() {
     // TODO: destroy _any_ resources used by SDL
-
+    SDL_GL_DeleteContext(mCtx);
+    SDL_DestroyWindow(mWnd);
     SDL_DestroyRenderer(mRenderer);
     SDL_Quit();
 }
