@@ -90,7 +90,7 @@ bool O2rArchive::Open() {
 }
 
 bool O2rArchive::Close() {
-    if (zip_close(mZipArchive) == -1) {
+    if (mZipArchive != nullptr && zip_close(mZipArchive) == -1) {
         SPDLOG_ERROR("Failed to close zip file \"{}\"", GetPath());
         return false;
     }
