@@ -10,6 +10,7 @@ O2rArchive::O2rArchive(const std::string& archivePath) : Archive(archivePath) {
 
 O2rArchive::~O2rArchive() {
     SPDLOG_TRACE("destruct o2rarchive: {}", GetPath());
+    Close();
 }
 
 std::shared_ptr<File> O2rArchive::LoadFile(uint64_t hash) {
@@ -89,6 +90,11 @@ bool O2rArchive::Open() {
 }
 
 bool O2rArchive::Close() {
+    if (mZipArchive == nullptr) {
+        SPDLOG_ERROR("Cannot close zip file. Zip file not loaded. \"{}\"", GetPath());
+        return false;
+    }
+
     if (zip_close(mZipArchive) == -1) {
         SPDLOG_ERROR("Failed to close zip file \"{}\"", GetPath());
         return false;
