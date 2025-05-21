@@ -27,6 +27,7 @@ class Interpreter;
 }
 
 namespace Ship {
+class Window;
 
 typedef struct {
     union {
@@ -105,6 +106,7 @@ class Gui {
     bool GamepadNavigationEnabled();
     void BlockGamepadNavigation();
     void UnblockGamepadNavigation();
+    void ShutDownImGui(Ship::Window* window);
 
   protected:
     void StartFrame();

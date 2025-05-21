@@ -93,6 +93,16 @@ Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
 
 Gui::~Gui() {
     SPDLOG_TRACE("destruct gui");
+    if (mImGuiIo != nullptr) {
+        if (mImGuiIo->IniFilename != nullptr) {
+            delete[] mImGuiIo->IniFilename;
+        }
+        if (mImGuiIo->LogFilename != nullptr) {
+            delete[] mImGuiIo->LogFilename;
+        }
+        mImGuiIo->IniFilename = nullptr;
+        mImGuiIo->LogFilename = nullptr;
+    }
 }
 
 void Gui::Init(GuiWindowInitData windowImpl) {
@@ -176,6 +186,30 @@ void Gui::ImGuiWMInit() {
         default:
             break;
     }
+}
+
+void Gui::ShutDownImGui(Ship::Window* window) {
+    switch (window->GetWindowBackend()) {
+#ifdef ENABLE_OPENGL
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            ImGui_ImplSDL2_Shutdown();
+            ImGui_ImplOpenGL3_Shutdown();
+            break;
+#endif
+#if __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL:
+            ImGui_ImplSDL2_Shutdown();
+            ImGui_ImplMetal_Shutdown();
+            break;
+#endif
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplWin32_Shutdown();
+            ImGui_ImplDX11_Shutdown();
+            break;
+#endif
+    }
+    ImGui::DestroyContext();
 }
 
 void Gui::ImGuiBackendInit() {
