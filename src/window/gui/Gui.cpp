@@ -190,10 +190,12 @@ void Gui::ImGuiWMInit() {
 
 void Gui::ShutDownImGui(Ship::Window *window) {
     switch (window->GetWindowBackend()) {
+#ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
             ImGui_ImplSDL2_Shutdown();
             ImGui_ImplOpenGL3_Shutdown();
             break;
+#endif
 #if __APPLE__  
         case WindowBackend::FAST3D_SDL_METAL:
             ImGui_ImplSDL2_Shutdown();
