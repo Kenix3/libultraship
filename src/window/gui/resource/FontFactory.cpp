@@ -14,7 +14,7 @@ std::shared_ptr<IResource> ResourceFactoryBinaryFontV0::ReadResource(std::shared
 
     font->DataSize = file->Buffer->size();
 
-    font->Data = (char*) malloc(font->DataSize);
+    font->Data = (char*)malloc(font->DataSize);
     reader->Read(font->Data, font->DataSize);
 
     return font;

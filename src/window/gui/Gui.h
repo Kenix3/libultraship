@@ -106,7 +106,7 @@ class Gui {
     bool GamepadNavigationEnabled();
     void BlockGamepadNavigation();
     void UnblockGamepadNavigation();
-    void ShutDownImGui(Ship::Window *window);
+    void ShutDownImGui(Ship::Window* window);
 
   protected:
     void StartFrame();
