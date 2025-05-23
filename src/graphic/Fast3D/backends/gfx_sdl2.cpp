@@ -636,9 +636,12 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
     int64_t left = next - t;
-#if defined(_WIN32) || defined(__APPLE__)
+#ifdef _WIN32
     // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
     left -= 15000UL;
+#elif defined(__APPLE__)
+    // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline (using macOS scheduler timing)
+    left -= 10000UL;
 #endif
     if (left > 0) {
 #ifndef _WIN32
