@@ -653,14 +653,10 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
 #endif
     }
 
-#if defined(_WIN32) || defined(__APPLE__)
+#ifdef _WIN32
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
     while (t < next) {
-#ifdef _WIN32
-        YieldProcessor();
-#elif defined(__APPLE__)
-        sched_yield();
-#endif
+        YieldProcessor(); // TODO: Find a way for other compilers, OSes and architectures
         t = qpc_to_100ns(SDL_GetPerformanceCounter());
     }
 #endif
