@@ -46,7 +46,7 @@ void ControllerStick::ClearAllMappings() {
     }
     mAxisDirectionMappings.clear();
     SaveAxisDirectionMappingIdsToConfig();
-    SetDeadzone(20);
+    SetDeadzone(0);
     SetNotchSnapAngle(0);
 }
 
