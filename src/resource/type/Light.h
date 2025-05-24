@@ -48,7 +48,7 @@ struct LightEntry {
     LightData Light;
 };
 
-class Light : public Ship::Resource<LightEntry> {
+class Light final : public Ship::Resource<LightEntry> {
   public:
     using Resource::Resource;
 

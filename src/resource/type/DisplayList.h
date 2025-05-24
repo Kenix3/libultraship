@@ -6,7 +6,7 @@
 #include <libultraship/libultra/gbi.h>
 
 namespace Fast {
-class DisplayList : public Ship::Resource<Gfx> {
+class DisplayList final : public Ship::Resource<Gfx> {
   public:
     using Resource::Resource;
 

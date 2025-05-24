@@ -46,7 +46,7 @@ class ControlDeck {
 } // namespace Ship
 
 namespace LUS {
-class ControlDeck : public Ship::ControlDeck {
+class ControlDeck final : public Ship::ControlDeck {
   public:
     ControlDeck();
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);

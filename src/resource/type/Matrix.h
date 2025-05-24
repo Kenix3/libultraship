@@ -4,7 +4,7 @@
 #include "libultraship/libultra/types.h"
 
 namespace Fast {
-class Matrix : public Ship::Resource<Mtx> {
+class Matrix final : public Ship::Resource<Mtx> {
   public:
     using Resource::Resource;
 

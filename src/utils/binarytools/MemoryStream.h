@@ -5,7 +5,7 @@
 #include "Stream.h"
 
 namespace Ship {
-class MemoryStream : public Stream {
+class MemoryStream final : public Stream {
   public:
     MemoryStream();
     MemoryStream(char* nBuffer, size_t nBufferSize);
