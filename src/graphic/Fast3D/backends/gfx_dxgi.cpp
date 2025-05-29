@@ -876,19 +876,6 @@ void GfxWindowBackendDXGI::SwapBuffersBegin() {
     mVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0;
 
     LARGE_INTEGER t;
-    ComPtr<ID3D11Device> mDevice;
-    mSwapChainDevice.As(&mDevice);
-
-    if (mDevice != nullptr) {
-        ComPtr<ID3D11DeviceContext> dev_ctx;
-        mDevice->GetImmediateContext(&dev_ctx);
-
-        if (dev_ctx != nullptr) {
-            // Always flush the immediate mContext before forcing a CPU-wait, otherwise the GPU might only start
-            // working when the SwapChain is presented.
-            dev_ctx->Flush();
-        }
-    }
     QueryPerformanceCounter(&t);
     int64_t next = qpc_to_100ns(mPreviousPresentTime.QuadPart) +
                    FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
