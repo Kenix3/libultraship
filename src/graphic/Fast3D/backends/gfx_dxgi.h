@@ -100,11 +100,9 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     std::set<std::pair<UINT, UINT>> mPendingFrameStats;
     bool mDroppedFrame;
     bool mZeroLatency;
-    UINT mLengthInVsyncFrames;
     uint32_t mMaxFrameLatency;
     uint32_t mAppliedMaxFrameLatency;
     HANDLE mTimer;
-    bool mUseTimer;
     bool mTearingSupport;
     bool mMousePressed[5];
     LARGE_INTEGER mPreviousPresentTime;
