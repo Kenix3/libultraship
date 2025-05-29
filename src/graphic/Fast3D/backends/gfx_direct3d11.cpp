@@ -995,6 +995,10 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
         }
     }
 
+    // Cleanup
+    staging->Release();
+    staging = nullptr;
+
     delete[] temp;
 }
 
