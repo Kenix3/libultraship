@@ -14,7 +14,6 @@
 #include <dxgi1_4.h>
 #include <dxgi1_5.h>
 #include <versionhelpers.h>
-#include <d3d11.h>
 
 #include <shellscalingapi.h>
 
@@ -52,8 +51,6 @@
 #define HID_USAGE_GENERIC_MOUSE ((unsigned short)0x02)
 #endif
 using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
-
-using namespace Microsoft::WRL; // For ComPtr
 
 namespace Fast {
 
