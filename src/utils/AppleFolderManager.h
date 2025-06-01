@@ -65,5 +65,3 @@ class FolderManager {
     void* m_autoreleasePool;
 };
 }; // namespace Ship
-
-#endif /* AppleFolderManager_h */
