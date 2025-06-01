@@ -1,5 +1,4 @@
-#ifndef GFX_SDL_H
-#define GFX_SDL_H
+#pragma once
 
 #include "gfx_window_manager_api.h"
 namespace Fast {
@@ -62,4 +61,3 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     void (*mOnAllKeysUp)();
 };
 } // namespace Fast
-#endif

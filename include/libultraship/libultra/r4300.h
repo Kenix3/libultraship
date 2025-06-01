@@ -1,5 +1,4 @@
-#ifndef ULTRA64_R4300_H
-#define ULTRA64_R4300_H
+#pragma once
 
 #ifdef _LANGUAGE_C
 #include "types.h"
@@ -363,5 +362,3 @@
 #define FPCSR_RM_RZ 0x00000001   // round to zero
 #define FPCSR_RM_RP 0x00000002   // round to positive infinity
 #define FPCSR_RM_RM 0x00000003   // round to negative infinity
-
-#endif

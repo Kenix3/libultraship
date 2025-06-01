@@ -1,5 +1,4 @@
-#ifndef COLOR_H
-#define COLOR_H
+#pragma once
 
 #include <stdint.h>
 
@@ -43,6 +42,4 @@ typedef union {
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif

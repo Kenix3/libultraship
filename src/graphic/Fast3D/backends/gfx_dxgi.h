@@ -1,7 +1,5 @@
-#ifndef GFX_DXGI_H
-#define GFX_DXGI_H
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-
+#pragma once
 #include "gfx_rendering_api.h"
 
 #include <functional>
@@ -120,5 +118,4 @@ void ThrowIfFailed(HRESULT res);
 void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message);
 #endif
 
-#endif
 #endif

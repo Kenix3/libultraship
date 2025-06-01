@@ -1,5 +1,4 @@
-#ifndef GFX_WINDOW_MANAGER_API_H
-#define GFX_WINDOW_MANAGER_API_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -50,5 +49,3 @@ class GfxWindowBackend {
     bool mVsyncEnabled = true;
 };
 } // namespace Fast
-
-#endif

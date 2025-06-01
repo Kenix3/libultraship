@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef CONTROLDECKBRIDGE_H
-#define CONTROLDECKBRIDGE_H
-
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -14,6 +11,4 @@ void ControllerUnblockGameInput(uint16_t inputBlockId);
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif
