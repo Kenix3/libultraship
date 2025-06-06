@@ -1,3 +1,5 @@
 #pragma once
 
-typedef u32 OSIntMask;
+#include <stdint.h>
+
+typedef uint32_t OSIntMask;
