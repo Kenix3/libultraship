@@ -5,8 +5,7 @@
 //  Created by David Chavez on 28.06.22.
 //
 
-#ifndef AppleFolderManager_h
-#define AppleFolderManager_h
+#pragma once
 
 #include <stdio.h>
 namespace Ship {
@@ -66,5 +65,3 @@ class FolderManager {
     void* m_autoreleasePool;
 };
 }; // namespace Ship
-
-#endif /* AppleFolderManager_h */

@@ -1,5 +1,5 @@
-#ifndef macUtils_h
-#define macUtils_h
+#pragma once
+
 #include <SDL.h>
 #ifdef __cplusplus
 extern "C" {
@@ -8,5 +8,4 @@ void toggleNativeMacOSFullscreen(SDL_Window* window);
 bool isNativeMacOSFullscreenActive(SDL_Window* window);
 #ifdef __cplusplus
 }
-#endif
 #endif

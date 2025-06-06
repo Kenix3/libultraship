@@ -1,6 +1,5 @@
-#ifndef ULTRA64_INTERRUPT_H
-#define ULTRA64_INTERRUPT_H
+#pragma once
 
-typedef u32 OSIntMask;
+#include <stdint.h>
 
-#endif
+typedef uint32_t OSIntMask;

@@ -1,5 +1,4 @@
-#ifndef _LIBULTRASHIP_H_
-#define _LIBULTRASHIP_H_
+#pragma once
 
 #include "libultra.h"
 #include "bridge.h"
@@ -8,6 +7,4 @@
 
 #ifdef __cplusplus
 #include "classes.h"
-#endif
-
 #endif

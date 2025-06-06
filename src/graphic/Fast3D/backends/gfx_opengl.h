@@ -1,6 +1,5 @@
 #ifdef ENABLE_OPENGL
-#ifndef GFX_OPENGL_H
-#define GFX_OPENGL_H
+#pragma once
 
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
@@ -132,5 +131,4 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
 };
 
 } // namespace Fast
-#endif
 #endif

@@ -1,5 +1,4 @@
-#ifndef _ULTRA64_H_
-#define _ULTRA64_H_
+#pragma once
 
 #include "libultra/abi.h"
 #include "libultra/controller.h"
@@ -26,5 +25,3 @@
 #include "libultra/time.h"
 #include "libultra/types.h"
 #include "libultra/vi.h"
-
-#endif

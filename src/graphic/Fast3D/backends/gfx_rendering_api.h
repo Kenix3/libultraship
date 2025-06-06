@@ -1,5 +1,4 @@
-#ifndef GFX_RENDERING_API_H
-#define GFX_RENDERING_API_H
+#pragma once
 
 #include <stdint.h>
 
@@ -84,4 +83,3 @@ class GfxRenderingAPI {
     bool mSrgbMode = false;
 };
 } // namespace Fast
-#endif

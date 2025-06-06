@@ -4,11 +4,8 @@
 //
 //  Created by David Chavez on 16.08.22.
 //
-
+#pragma once
 #ifdef __APPLE__
-
-#ifndef GFX_METAL_H
-#define GFX_METAL_H
 
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
@@ -218,5 +215,4 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
 
 bool Metal_IsSupported();
 
-#endif
 #endif

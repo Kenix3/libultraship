@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef ULTRA64_CONTROLLER_H
-#define ULTRA64_CONTROLLER_H
-
 #include "stdint.h"
 
 #define SIAccessQueueSize 2
@@ -163,5 +160,3 @@ typedef struct {
 } __OSContReadHeader; // size = 0x8
 
 #include "os.h"
-
-#endif

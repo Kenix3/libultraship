@@ -1,5 +1,4 @@
-#ifndef GFX_PC_H
-#define GFX_PC_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -528,5 +527,3 @@ const char* GfxGetOpcodeName(int8_t opcode);
 extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
-
-#endif

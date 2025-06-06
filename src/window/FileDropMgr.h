@@ -1,5 +1,4 @@
-#ifndef FILEDROPMGR_H
-#define FILEDROPMGR_H
+#pragma once
 
 namespace Ship {
 
@@ -18,5 +17,3 @@ class FileDropMgr {
 };
 
 } // namespace Ship
-
-#endif // FILEDROPMGR_H

@@ -1,5 +1,4 @@
-#ifndef CRASH_HANDLER_H
-#define CRASH_HANDLER_H
+#pragma once
 
 #include <stddef.h>
 
@@ -49,5 +48,3 @@ class CrashHandler {
     bool CheckStrLen(const char* str);
 };
 } // namespace Ship
-
-#endif // CRASH_HANDLER_H

@@ -1,5 +1,4 @@
-#ifndef _LIBULTRASHIP_BRIDGE_H_
-#define _LIBULTRASHIP_BRIDGE_H_
+#pragma once
 
 #include "public/bridge/resourcebridge.h"
 #include "public/bridge/audiobridge.h"
@@ -9,5 +8,3 @@
 #include "public/bridge/crashhandlerbridge.h"
 #include "public/bridge/gfxdebuggerbridge.h"
 #include "public/bridge/gfxbridge.h"
-
-#endif

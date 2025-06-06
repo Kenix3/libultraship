@@ -1,5 +1,4 @@
-#ifndef ULTRA64_CONVERT_H
-#define ULTRA64_CONVERT_H
+#pragma once
 
 #define OS_CLOCK_RATE 62500000LL
 #define OS_CPU_COUNTER (OS_CLOCK_RATE * 3 / 4)
@@ -14,5 +13,3 @@
 
 #define OS_PHYSICAL_TO_K0(x) (x)
 #define OS_PHYSICAL_TO_K1(x) (x)
-
-#endif

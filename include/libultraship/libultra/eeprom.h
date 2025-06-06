@@ -1,5 +1,4 @@
-#ifndef ULTRA64_EEPROM_H
-#define ULTRA64_EEPROM_H
+#pragma once
 
 #include "message.h"
 
@@ -16,6 +15,4 @@ int32_t osEepromLongWrite(OSMesgQueue*, uint8_t, uint8_t*, int32_t);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

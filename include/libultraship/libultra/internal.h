@@ -1,5 +1,4 @@
-#ifndef ULTRA64_INTERNAL_H
-#define ULTRA64_INTERNAL_H
+#pragma once
 
 #include "pi.h"
 
@@ -25,6 +24,4 @@ extern OSMgrArgs __osPiDevMgr;
 extern __OSEventState __osEventStateTab[];
 #ifdef __cplusplus
 }
-#endif
-
 #endif

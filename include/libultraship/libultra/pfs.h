@@ -1,5 +1,4 @@
-#ifndef ULTRA64_PFS_H
-#define ULTRA64_PFS_H
+#pragma once
 
 #include "message.h"
 
@@ -133,5 +132,3 @@ typedef struct {
     /* 0x100 */ u8 bank;
     /* 0x101 */ u8 map[PFS_INODE_DIST_MAP];
 } __OSInodeCache; // size = 0x202
-
-#endif

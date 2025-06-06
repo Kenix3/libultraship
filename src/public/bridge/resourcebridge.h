@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef RESOURCEBRIDGE_H
-#define RESOURCEBRIDGE_H
-
 #include "stdint.h"
 
 #ifdef __cplusplus
@@ -51,6 +48,4 @@ uint32_t IsResourceManagerLoaded();
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif

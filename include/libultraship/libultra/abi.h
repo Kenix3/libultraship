@@ -1,5 +1,4 @@
-#ifndef ULTRA64_ABI_H
-#define ULTRA64_ABI_H
+#pragma once
 
 typedef unsigned int u32;
 
@@ -470,5 +469,3 @@ typedef short ENVMIX_STATE[40];
         _a->words.w0 = (_SHIFTL(A_RESAMPLE_ZOH, 24, 8) | _SHIFTL(pitch, 0, 16)); \
         _a->words.w1 = _SHIFTL(pitchAccu, 0, 16);                                \
     }
-
-#endif /* ULTRA64_ABI_H */

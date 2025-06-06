@@ -1,6 +1,4 @@
-#ifndef ULTRA64_PI_H
-#define ULTRA64_PI_H
-
+#pragma once
 #include "message.h"
 
 typedef struct {
@@ -79,5 +77,3 @@ typedef struct {
 #define DEVICE_TYPE_64DD 2 /* 64 Disk Drive */
 #define DEVICE_TYPE_SRAM 3 /* SRAM */
 #define DEVICE_TYPE_INIT 7 /* initial value */
-
-#endif

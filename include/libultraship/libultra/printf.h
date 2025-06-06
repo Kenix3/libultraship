@@ -1,5 +1,4 @@
-#ifndef ULTRA64_PRINTF_H
-#define ULTRA64_PRINTF_H
+#pragma once
 
 #include "types.h"
 
@@ -29,5 +28,3 @@ typedef void* (*PrintCallback)(void*, const char*, u32);
 #define FLAGS_MINUS 4
 #define FLAGS_HASH 8
 #define FLAGS_ZERO 16
-
-#endif

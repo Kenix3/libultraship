@@ -1,5 +1,4 @@
-#ifndef ULTRA64_RCP_H
-#define ULTRA64_RCP_H
+#pragma once
 
 /**
  * PIF Physical memory map (total size = 2 KB)
@@ -268,5 +267,3 @@
 
 #define IO_READ(addr) (*(vu32*)PHYS_TO_K1(addr))
 #define IO_WRITE(addr, data) (*(vu32*)PHYS_TO_K1(addr) = (u32)(data))
-
-#endif
