@@ -4,6 +4,9 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+#include <stdint.h>
+
 void GfxDebuggerRequestDebugging();
 bool GfxDebuggerIsDebugging();
 bool GfxDebuggerIsDebuggingRequested();

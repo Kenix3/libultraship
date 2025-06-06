@@ -1,5 +1,6 @@
-#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 #pragma once
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+
 #include "gfx_rendering_api.h"
 
 #include <functional>
