@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mbi.h"
+
 #ifdef _MSC_VER
 #ifndef u8
 #define u8 uint8_t
@@ -33,8 +35,6 @@
 #define s64 int64_t
 #endif
 #endif
-
-#include "mbi.h"
 
 /* To enable Fast3DEX grucode support, define F3DEX_GBI. */
 
