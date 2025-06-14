@@ -297,7 +297,8 @@ void CrashHandler::PrintRegisters(CONTEXT* ctx) {
 }
 
 void CrashHandler::PrintStack(CONTEXT* ctx) {
-    #if 0
+    // Some crash hander features are not supported on ARM64
+    #ifndef _M_ARM64
     BOOL result;
     HANDLE process;
     HANDLE thread;

@@ -715,12 +715,11 @@ static void gfx_opengl_init() {
     glewInit();
 #endif
 
-   // glGenBuffers(1, &opengl_vbo);
-   // glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
+    glGenBuffers(1, &opengl_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
 
 #if defined(__APPLE__) || defined(USE_OPENGLES)
     glGenVertexArrays(1, &opengl_vao);
-    GLenum err = glGetError();
     glBindVertexArray(opengl_vao);
 #endif
 
