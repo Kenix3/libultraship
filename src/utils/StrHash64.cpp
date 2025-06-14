@@ -169,7 +169,7 @@ uint64_t update_crc64(const void* buf, unint len, u64 crc) {
     return ~crc;
 }
 
- u64 crc64(const void* buf, unint len) {
+u64 crc64(const void* buf, unint len) {
     return update_crc64(buf, len, INITIAL_CRC64);
 }
 
