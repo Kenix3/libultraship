@@ -1,7 +1,6 @@
-#include "mbi.h"
+#pragma once
 
-#ifndef ULTRA64_GBI_H
-#define ULTRA64_GBI_H
+#include "mbi.h"
 
 #ifdef _MSC_VER
 #ifndef u8
@@ -4212,7 +4211,5 @@ typedef union Gfx {
 #define gDPNoOpOpenDisp(pkt, file, line) gDma1p(pkt, G_NOOP, file, line, 7)
 #define gDPNoOpCloseDisp(pkt, file, line) gDma1p(pkt, G_NOOP, file, line, 8)
 #define gDPNoOpTag3(pkt, type, data, n) gDma1p(pkt, G_NOOP, data, n, type)
-
-#endif
 
 #endif

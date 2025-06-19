@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef WINDOWBRIDGE_H
-#define WINDOWBRIDGE_H
-
 #include "stdint.h"
 
 #ifdef __cplusplus
@@ -19,6 +16,4 @@ bool WindowIsFullscreen();
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif

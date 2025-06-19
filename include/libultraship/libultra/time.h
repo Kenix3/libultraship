@@ -1,5 +1,4 @@
-#ifndef ULTRA64_TIME_H
-#define ULTRA64_TIME_H
+#pragma once
 
 #include "message.h"
 
@@ -13,5 +12,3 @@ typedef struct OSTimer {
     /* 0x18 */ OSMesgQueue* mq;
     /* 0x1C */ OSMesg msg;
 } OSTimer; // size = 0x20
-
-#endif

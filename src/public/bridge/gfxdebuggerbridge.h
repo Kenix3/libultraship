@@ -1,10 +1,7 @@
 #pragma once
 
-#ifndef GFXDEBUGGER_H
-#define GFXDEBUGGER_H
-
-#include "stdint.h"
-#include "stddef.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +14,4 @@ void GfxDebuggerDebugDisplayList(void* cmds);
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif

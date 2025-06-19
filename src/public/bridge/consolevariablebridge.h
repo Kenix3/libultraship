@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef _CONSOLEVARIABLEBRIDGE_H
-#define _CONSOLEVARIABLEBRIDGE_H
-
 #include "stdint.h"
 #include "libultraship/color.h"
 
@@ -42,6 +39,4 @@ void CVarSave();
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif

@@ -1,5 +1,4 @@
-#ifndef GFX_BRIDGE_H
-#define GFX_BRIDGE_H
+#pragma once
 
 #include "stdint.h"
 
@@ -23,6 +22,4 @@ uint16_t GfxGetPixelDepth(float x, float y);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

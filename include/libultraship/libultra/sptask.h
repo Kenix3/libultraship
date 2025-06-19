@@ -1,5 +1,4 @@
-#ifndef ULTRA64_SPTASK_H
-#define ULTRA64_SPTASK_H
+#pragma once
 
 #include "types.h"
 
@@ -64,5 +63,3 @@ typedef u32 OSYieldResult;
 #define osSpTaskStart(p) \
     osSpTaskLoad(p);     \
     osSpTaskStartGo(p);
-
-#endif

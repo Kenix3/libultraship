@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef AUDIOBRIDGE_H
-#define AUDIOBRIDGE_H
-
 #include "stdint.h"
 #include "stddef.h"
 
@@ -20,6 +17,4 @@ void AudioPlayerPlayFrame(const uint8_t* buf, size_t len);
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif

@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef CRASHHANDLERBRIDGE_H
-#define CRASHHANDLERBRIDGE_H
-
 #include <stddef.h>
 
 typedef void (*CrashHandlerCallback)(char*, size_t*);
@@ -15,6 +12,4 @@ void CrashHandlerRegisterCallback(CrashHandlerCallback callback);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

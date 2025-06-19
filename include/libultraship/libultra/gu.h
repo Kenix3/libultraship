@@ -1,5 +1,4 @@
-#ifndef ULTRA64_GU_H
-#define ULTRA64_GU_H
+#pragma once
 
 #include "types.h"
 #include "gbi.h"
@@ -199,6 +198,4 @@ void guSprite2DInit(uSprite* SpritePointer, void* SourceImagePointer, void* Tlut
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
