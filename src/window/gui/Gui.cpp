@@ -102,7 +102,7 @@ Gui::~Gui() {
         if (mImGuiIo->LogFilename != nullptr) {
             // delete[] mImGuiIo->LogFilename;
         }
-        / /mImGuiIo->IniFilename = nullptr;
+        // mImGuiIo->IniFilename = nullptr;
         // mImGuiIo->LogFilename = nullptr;
     }
 }
