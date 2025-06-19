@@ -94,7 +94,8 @@ Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
 Gui::~Gui() {
     SPDLOG_TRACE("destruct gui");
     if (mImGuiIo != nullptr) {
-        //! @todo Refactor required to prevent memory leak and program quit crash.
+        //! @todo Refactor required to prevent memory leak. Also,
+        // the delete statements result in a use-after free when the program is closed.
         if (mImGuiIo->IniFilename != nullptr) {
             //delete[] mImGuiIo->IniFilename;
         }
