@@ -1,4 +1,4 @@
-#ifndef EXCLUDE_MPQ_SUPPORT
+#ifdef INCLUDE_MPQ_SUPPORT
 
 #pragma once
 
@@ -38,4 +38,4 @@ class OtrArchive final : virtual public Archive {
 };
 } // namespace Ship
 
-#endif // EXCLUDE_MPQ_SUPPORT
+#endif // INCLUDE_MPQ_SUPPORT

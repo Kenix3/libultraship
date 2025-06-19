@@ -1,4 +1,4 @@
-#ifndef EXCLUDE_MPQ_SUPPORT
+#ifdef INCLUDE_MPQ_SUPPORT
 
 #include "OtrArchive.h"
 
@@ -112,4 +112,4 @@ bool OtrArchive::WriteFile(const std::string& filename, const std::vector<uint8_
 
 } // namespace Ship
 
-#endif // EXCLUDE_MPQ_SUPPORT
+#endif // INCLUDE_MPQ_SUPPORT
