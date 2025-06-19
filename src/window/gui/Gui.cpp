@@ -97,13 +97,13 @@ Gui::~Gui() {
         //! @todo Refactor required to prevent memory leak. Also,
         // the delete statements result in a use-after free when the program is closed.
         if (mImGuiIo->IniFilename != nullptr) {
-            //delete[] mImGuiIo->IniFilename;
+            // delete[] mImGuiIo->IniFilename;
         }
         if (mImGuiIo->LogFilename != nullptr) {
-            //delete[] mImGuiIo->LogFilename;
+            // delete[] mImGuiIo->LogFilename;
         }
-        mImGuiIo->IniFilename = nullptr;
-        mImGuiIo->LogFilename = nullptr;
+        / /mImGuiIo->IniFilename = nullptr;
+        // mImGuiIo->LogFilename = nullptr;
     }
 }
 
