@@ -33,7 +33,13 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const Resour
         return;
     }
 
-    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
+    char* fontDataPtr = (char*)malloc(font->DataSize);
+    if (fontDataPtr != NULL) {
+        memcpy(fontDataPtr, font->Data, font->DataSize);
+        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontDataPtr, font->DataSize, fontSize);
+    } else {
+        SPDLOG_ERROR("Failed to allocate font: {}", name);
+    }
 }
 
 void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::string& path) {
@@ -51,7 +57,13 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
         return;
     }
 
-    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
+    char* fontDataPtr = (char*)malloc(font->DataSize);
+    if (fontDataPtr != NULL) {
+        memcpy(fontDataPtr, font->Data, font->DataSize);
+        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontDataPtr, font->DataSize, fontSize);
+    } else {
+        SPDLOG_ERROR("Failed to allocate font: {}", name);
+    }
 }
 
 void GameOverlay::TextDraw(float x, float y, bool shadow, ImVec4 color, const char* fmt, ...) {
