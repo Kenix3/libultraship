@@ -57,7 +57,7 @@
 #define PFS_ERR_NOPACK 1
 
 #ifndef CONTROLLERBUTTONS_T
-#define CONTROLLERBUTTONS_T uint16_t
+#define CONTROLLERBUTTONS_T uint32_t
 #endif
 
 /* Buttons */
