@@ -1215,10 +1215,11 @@ bool prism_get_bool(prism::ContextTypes* value) {
 
 #undef RAND_NOISE
 
-prism::ContextTypes* prism_append_formula(pritm::ContextTypes* _, prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
-                                          prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
-                                          prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
-                                          prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
+prism::ContextTypes* prism_append_formula(pritm::ContextTypes* _, prism::ContextTypes* a_arg,
+                                          prism::ContextTypes* a_single, prism::ContextTypes* a_mult,
+                                          prism::ContextTypes* a_mix, prism::ContextTypes* a_with_alpha,
+                                          prism::ContextTypes* a_only_alpha, prism::ContextTypes* a_alpha,
+                                          prism::ContextTypes* a_first_cycle) {
     auto c = std::get<prism::MTDArray<int>>(*a_arg);
     bool do_single = prism_get_bool(a_single);
     bool do_multiply = prism_get_bool(a_mult);

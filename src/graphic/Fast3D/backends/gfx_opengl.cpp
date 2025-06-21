@@ -316,7 +316,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
 
 static size_t numFloats = 0;
 
-static prism::ContextTypes* UpdateFloats(prism::ContextTypes* _ ,prism::ContextTypes* num) {
+static prism::ContextTypes* UpdateFloats(prism::ContextTypes* _, prism::ContextTypes* num) {
     numFloats += std::get<int>(*num);
     return nullptr;
 }
