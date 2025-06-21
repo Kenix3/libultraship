@@ -1215,7 +1215,7 @@ bool prism_get_bool(prism::ContextTypes* value) {
 
 #undef RAND_NOISE
 
-prism::ContextTypes* prism_append_formula(prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
+prism::ContextTypes* prism_append_formula(pritm::ContextTypes* _, prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
                                           prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
                                           prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
                                           prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
@@ -1257,7 +1257,7 @@ prism::ContextTypes* prism_append_formula(prism::ContextTypes* a_arg, prism::Con
 
 static size_t raw_numFloats = 0;
 
-prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
+prism::ContextTypes* update_raw_floats(prism::ContextTypes* _, prism::ContextTypes* num) {
     raw_numFloats += std::get<int>(*num);
     return nullptr;
 }
