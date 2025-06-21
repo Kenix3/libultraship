@@ -1215,7 +1215,7 @@ bool prism_get_bool(prism::ContextTypes* value) {
 
 #undef RAND_NOISE
 
-prism::ContextTypes* prism_append_formula(pritm::ContextTypes* _, prism::ContextTypes* a_arg,
+prism::ContextTypes* prism_append_formula(prism::ContextTypes* _, prism::ContextTypes* a_arg,
                                           prism::ContextTypes* a_single, prism::ContextTypes* a_mult,
                                           prism::ContextTypes* a_mix, prism::ContextTypes* a_with_alpha,
                                           prism::ContextTypes* a_only_alpha, prism::ContextTypes* a_alpha,
