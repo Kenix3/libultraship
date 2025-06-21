@@ -104,7 +104,7 @@ jobs:
         name: soh-linux
         path: build-cmake/src/*.a
         if-no-files-found: error
-  build-windows:
+  build-windows-x64:
     runs-on: windows-latest
     steps:
     - name: Install dependencies
@@ -146,3 +146,45 @@ jobs:
         name: soh-windows
         path: build-cmake/src/**/*.lib
         if-no-files-found: error
+  build-windows-arm64:
+    runs-on: windows-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          choco install ninja
+          Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+      - uses: actions/checkout@v4
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          variant: sccache
+          key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ github.ref }}
+            ${{ runner.os }}-ccache-
+      - name: Cache build folder
+        uses: actions/cache@v4
+        with:
+          save-always: true
+          key: ${{ runner.os }}-build-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ github.ref }}
+            ${{ runner.os }}-build-
+          path: |
+            build-cmake
+            D:/a/vcpkg
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build libultraship
+        env:
+          VCPKG_ROOT: D:/a/vcpkg
+        run: |
+          set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
+          cmake --no-warn-unused-cli -S. -Bbuild-cmake -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=arm64
+          cmake --build build-cmake --config Release --parallel 10
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: soh-windows
+          path: build-cmake/src/**/*.lib
+          if-no-files-found: error
