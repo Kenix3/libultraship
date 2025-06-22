@@ -143,7 +143,7 @@ jobs:
     - name: Upload build
       uses: actions/upload-artifact@v4
       with:
-        name: soh-windows
+        name: soh-windows-x64
         path: build-cmake-x64/src/**/*.lib
         if-no-files-found: error
   build-windows-arm64:
@@ -185,6 +185,6 @@ jobs:
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: soh-windows
+          name: soh-windows-arm64
           path: x64/**/*.lib
           if-no-files-found: error
