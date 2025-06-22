@@ -138,13 +138,13 @@ jobs:
         VCPKG_ROOT: D:/a/vcpkg
       run: |
         set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
-        cmake --no-warn-unused-cli -S. -Bbuild-cmake -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64
-        cmake --build build-cmake --config Release --parallel 10
+        cmake --no-warn-unused-cli -S. -Bbuild-cmake-x64 -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64
+        cmake --build build-cmake-x64 --config Release --parallel 10
     - name: Upload build
       uses: actions/upload-artifact@v4
       with:
         name: soh-windows
-        path: build-cmake/src/**/*.lib
+        path: build-cmake-x64/src/**/*.lib
         if-no-files-found: error
   build-windows-arm64:
     runs-on: windows-latest
@@ -180,11 +180,11 @@ jobs:
           VCPKG_ROOT: D:/a/vcpkg
         run: |
           set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
-          cmake --no-warn-unused-cli -S. -Bbuild-cmake -G "Visual Studio 17 2022" -T v143  -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=arm64
-          cmake --build build-cmake --config Release --parallel 10
+          cmake --no-warn-unused-cli -S. -Bbuild-cmake-arm64 -G "Visual Studio 17 2022" -T v143  -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=arm64
+          cmake --build build-cmake-arm64 --config Release --parallel 10
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: soh-windows
-          path: build-cmake/src/**/*.lib
+          path: build-cmake-arm64/src/**/*.lib
           if-no-files-found: error
