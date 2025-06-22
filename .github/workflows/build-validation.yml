@@ -186,5 +186,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: soh-windows
-          path: build-cmake-arm64/src/**/*.lib
+          path: x64/**/*.lib
           if-no-files-found: error
