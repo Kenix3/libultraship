@@ -4,8 +4,10 @@
 #include <spdlog/spdlog.h>
 #ifdef _MSC_VER
 #define strdup _strdup
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include "dbghelp.h"
+#include <processthreadsapi.h>
+#include <dbghelp.h>
 #endif
 #include "Context.h"
 #include "Window.h"
