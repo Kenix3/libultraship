@@ -75,7 +75,7 @@ static void PrintRegError(void* funcAddr) {
     HANDLE hProcess = GetCurrentProcess();
     SymSetOptions(SYMOPT_NO_IMAGE_SEARCH | SYMOPT_IGNORE_IMAGEDIR | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS |SYMOPT_DEBUG);
     SymInitialize(hProcess, "debug;./", true);
-    bool ret = SymFromAddr(hProcess, (DWORD64)(*(DWORD64*)funcAddr), nullptr, symbol);
+    bool ret = SymFromAddr(hProcess, (DWORD64)funcAddr, nullptr, symbol);
     DWORD err = GetLastError();
     SPDLOG_WARN("Trying to register {}. Already registered.", symbol->Name);
     SymCleanup(hProcess);
