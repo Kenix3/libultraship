@@ -4,9 +4,14 @@
 #include <spdlog/spdlog.h>
 #ifdef _MSC_VER
 #define strdup _strdup
+#include "dgbhelp.h"
 #endif
 #include "Context.h"
 #include "Window.h"
+#ifdef __unix__
+#include <dlfcn.h>
+#include <cxxabi.h>
+#endif
 
 namespace Ship {
 FileDropMgr::~FileDropMgr() {
@@ -41,12 +46,42 @@ char* FileDropMgr::GetDroppedFile() const {
     return mPath;
 }
 
+static void PrintRegError(void* funcAddr) {
+#ifdef __unix__
+    Dl_info info;
+    int gotAddress = dladdr(funcAddr, &info);
+    const char* nameFound = info.dli_sname;
+    char* demangledName = nullptr;
+    if (gotAddress && info.dli_sname != nullptr) {
+        int status;
+        demangledName = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
+        if (status == 0) {
+            nameFound = demangledName;
+        }
+    }
+    SPDLOG_WARN("Trying to register {}. Already registered.", nameFound);
+    if (demangledName != nullptr) {
+        free (demangledName);
+    }
+#elif _MSC_VER
+    char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME + sizeof(TCHAR)];
+    char module[512];
+
+    PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+    symbol->MaxNameLen = MAX_SYM_NAME;
+    HANDLE hProcess = GetCurrentProcess();
+    SymInitialize(hProcess, "debug", true);
+    SymFromAddr(hProcess, funcAddr, nullptr, symbol)
+    SPDLOG_WARN("Trying to register {}. Already registered.", symbol->Name);
+    SymCleanup(hProcess);
+#endif
+}
+
 bool FileDropMgr::RegisterDropHandler(FileDroppedFunc func) {
     for (const auto f : mRegisteredFuncs) {
         if (func == f) {
-            //Dl_info info;
-            //dladdr(func, &info);
-            //SPDLOG_WARN("Trying to register {}. Already registered.", info.dli_sname);
+            PrintRegError((void*)func);
             return false;
         }
     }
