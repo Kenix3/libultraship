@@ -4,7 +4,8 @@
 #include <spdlog/spdlog.h>
 #ifdef _MSC_VER
 #define strdup _strdup
-#include "dgbhelp.h"
+#include <Windows.h>
+#include "dbghelp.h"
 #endif
 #include "Context.h"
 #include "Window.h"
@@ -65,14 +66,15 @@ static void PrintRegError(void* funcAddr) {
     }
 #elif _MSC_VER
     char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME + sizeof(TCHAR)];
-    char module[512];
 
     PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
     symbol->MaxNameLen = MAX_SYM_NAME;
     HANDLE hProcess = GetCurrentProcess();
-    SymInitialize(hProcess, "debug", true);
-    SymFromAddr(hProcess, funcAddr, nullptr, symbol)
+    SymSetOptions(SYMOPT_NO_IMAGE_SEARCH | SYMOPT_IGNORE_IMAGEDIR | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS |SYMOPT_DEBUG);
+    SymInitialize(hProcess, "debug;./", true);
+    bool ret = SymFromAddr(hProcess, (DWORD64)(*(DWORD64*)funcAddr), nullptr, symbol);
+    DWORD err = GetLastError();
     SPDLOG_WARN("Trying to register {}. Already registered.", symbol->Name);
     SymCleanup(hProcess);
 #endif
