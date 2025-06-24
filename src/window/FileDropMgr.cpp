@@ -64,7 +64,7 @@ static void PrintRegError(void* funcAddr) {
     }
     SPDLOG_WARN("Trying to register {}. Already registered.", nameFound);
     if (demangledName != nullptr) {
-        free (demangledName);
+        free(demangledName);
     }
 #elif _MSC_VER
     char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME + sizeof(TCHAR)];
@@ -73,7 +73,8 @@ static void PrintRegError(void* funcAddr) {
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
     symbol->MaxNameLen = MAX_SYM_NAME;
     HANDLE hProcess = GetCurrentProcess();
-    SymSetOptions(SYMOPT_NO_IMAGE_SEARCH | SYMOPT_IGNORE_IMAGEDIR | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS |SYMOPT_DEBUG);
+    SymSetOptions(SYMOPT_NO_IMAGE_SEARCH | SYMOPT_IGNORE_IMAGEDIR | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS |
+                  SYMOPT_DEBUG);
     SymInitialize(hProcess, "debug;./", true);
     bool ret = SymFromAddr(hProcess, (DWORD64)funcAddr, nullptr, symbol);
     DWORD err = GetLastError();
@@ -113,6 +114,5 @@ void FileDropMgr::CallHandlers() {
     auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
     gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
 }
-
 
 } // namespace Ship
