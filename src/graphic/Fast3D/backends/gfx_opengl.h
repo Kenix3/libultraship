@@ -106,7 +106,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
         uint16_t filtering;
     } textures[1024];
 
-    GLuint mCurrentTextureIds[2];
+    GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES];
     uint8_t mCurrentTile;
 
     std::map<std::pair<uint64_t, uint32_t>, ShaderProgram> mShaderProgramPool;
