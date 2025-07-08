@@ -32,14 +32,9 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const Resour
         SPDLOG_ERROR("Failed to load font: {}", name);
         return;
     }
-
-    char* fontDataPtr = (char*)malloc(font->DataSize);
-    if (fontDataPtr != NULL) {
-        memcpy(fontDataPtr, font->Data, font->DataSize);
-        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontDataPtr, font->DataSize, fontSize);
-    } else {
-        SPDLOG_ERROR("Failed to allocate font: {}", name);
-    }
+    ImFontConfig fontConf = {};
+    fontConf.FontDataOwnedByAtlas = false;
+    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize, &fontConf);
 }
 
 void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::string& path) {
@@ -56,14 +51,9 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
         SPDLOG_ERROR("Failed to load font: {}", name);
         return;
     }
-
-    char* fontDataPtr = (char*)malloc(font->DataSize);
-    if (fontDataPtr != NULL) {
-        memcpy(fontDataPtr, font->Data, font->DataSize);
-        mFonts[name] = io.Fonts->AddFontFromMemoryTTF(fontDataPtr, font->DataSize, fontSize);
-    } else {
-        SPDLOG_ERROR("Failed to allocate font: {}", name);
-    }
+    ImFontConfig fontConf = {};
+    fontConf.FontDataOwnedByAtlas = false;
+    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize, &fontConf);
 }
 
 void GameOverlay::TextDraw(float x, float y, bool shadow, ImVec4 color, const char* fmt, ...) {
