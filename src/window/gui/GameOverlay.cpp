@@ -32,8 +32,9 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const Resour
         SPDLOG_ERROR("Failed to load font: {}", name);
         return;
     }
-
-    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
+    ImFontConfig fontConf = {};
+    fontConf.FontDataOwnedByAtlas = false;
+    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize, &fontConf);
 }
 
 void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::string& path) {
@@ -50,8 +51,9 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
         SPDLOG_ERROR("Failed to load font: {}", name);
         return;
     }
-
-    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize);
+    ImFontConfig fontConf = {};
+    fontConf.FontDataOwnedByAtlas = false;
+    mFonts[name] = io.Fonts->AddFontFromMemoryTTF(font->Data, font->DataSize, fontSize, &fontConf);
 }
 
 void GameOverlay::TextDraw(float x, float y, bool shadow, ImVec4 color, const char* fmt, ...) {
