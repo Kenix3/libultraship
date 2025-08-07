@@ -213,85 +213,85 @@ static void ShutdownHandler(int sig, siginfo_t* sigInfo, void* data) {
 #endif
 
 void CrashHandler::PrintRegisters(CONTEXT* ctx) {
-    AppendLine("Registers: ");
+    AppendLine("Registers:");
     char regBuff[25];
 #if defined(_M_AMD64)
-    sprintf_s(regBuff, std::size(regBuff), "RAX: 0x%016llX", ctx->Rax);
+    sprintf_s(regBuff, std::size(regBuff), "    RAX: 0x%016llX", ctx->Rax);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RCX: 0x%016llX", ctx->Rcx);
+    sprintf_s(regBuff, std::size(regBuff), "    RCX: 0x%016llX", ctx->Rcx);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RDX: 0x%016llX", ctx->Rdx);
+    sprintf_s(regBuff, std::size(regBuff), "    RDX: 0x%016llX", ctx->Rdx);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RBX: 0x%016llX", ctx->Rbx);
+    sprintf_s(regBuff, std::size(regBuff), "    RBX: 0x%016llX", ctx->Rbx);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RSP: 0x%016llX", ctx->Rsp);
+    sprintf_s(regBuff, std::size(regBuff), "    RSP: 0x%016llX", ctx->Rsp);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RBP: 0x%016llX", ctx->Rbp);
+    sprintf_s(regBuff, std::size(regBuff), "    RBP: 0x%016llX", ctx->Rbp);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RSI: 0x%016llX", ctx->Rsi);
+    sprintf_s(regBuff, std::size(regBuff), "    RSI: 0x%016llX", ctx->Rsi);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RDI: 0x%016llX", ctx->Rdi);
+    sprintf_s(regBuff, std::size(regBuff), "    RDI: 0x%016llX", ctx->Rdi);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "R9:  0x%016llX", ctx->R9);
+    sprintf_s(regBuff, std::size(regBuff), "    R9:  0x%016llX", ctx->R9);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "R10: 0x%016llX", ctx->R10);
+    sprintf_s(regBuff, std::size(regBuff), "    R10: 0x%016llX", ctx->R10);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "R11: 0x%016llX", ctx->R11);
+    sprintf_s(regBuff, std::size(regBuff), "    R11: 0x%016llX", ctx->R11);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "R12: 0x%016llX", ctx->R12);
+    sprintf_s(regBuff, std::size(regBuff), "    R12: 0x%016llX", ctx->R12);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "R13: 0x%016llX", ctx->R13);
+    sprintf_s(regBuff, std::size(regBuff), "    R13: 0x%016llX", ctx->R13);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "R14: 0x%016llX", ctx->R14);
+    sprintf_s(regBuff, std::size(regBuff), "    R14: 0x%016llX", ctx->R14);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "R15: 0x%016llX", ctx->R15);
+    sprintf_s(regBuff, std::size(regBuff), "    R15: 0x%016llX", ctx->R15);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "RIP: 0x%016llX", ctx->Rip);
+    sprintf_s(regBuff, std::size(regBuff), "    RIP: 0x%016llX", ctx->Rip);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "EFLAGS: 0x%08lX", ctx->EFlags);
+    sprintf_s(regBuff, std::size(regBuff), "    EFLAGS: 0x%08lX", ctx->EFlags);
     AppendLine(regBuff);
 #elif defined(WINDOWS_32_BIT)
-    sprintf_s(regBuff, std::size(regBuff), "EDI: 0x%08lX", ctx->Edi);
+    sprintf_s(regBuff, std::size(regBuff), "    EDI: 0x%08lX", ctx->Edi);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "ESI: 0x%08lX", ctx->Esi);
+    sprintf_s(regBuff, std::size(regBuff), "    ESI: 0x%08lX", ctx->Esi);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "EBX: 0x%08lX", ctx->Ebx);
+    sprintf_s(regBuff, std::size(regBuff), "    EBX: 0x%08lX", ctx->Ebx);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "ECX: 0x%08lX", ctx->Ecx);
+    sprintf_s(regBuff, std::size(regBuff), "    ECX: 0x%08lX", ctx->Ecx);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "EAX: 0x%08lX", ctx->Eax);
+    sprintf_s(regBuff, std::size(regBuff), "    EAX: 0x%08lX", ctx->Eax);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "EBP: 0x%08lX", ctx->Ebp);
+    sprintf_s(regBuff, std::size(regBuff), "    EBP: 0x%08lX", ctx->Ebp);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "ESP: 0x%08lX", ctx->Esp);
+    sprintf_s(regBuff, std::size(regBuff), "    ESP: 0x%08lX", ctx->Esp);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "EFLAGS: 0x%08lX", ctx->EFlags);
+    sprintf_s(regBuff, std::size(regBuff), "    EFLAGS: 0x%08lX", ctx->EFlags);
     AppendLine(regBuff);
 
-    sprintf_s(regBuff, std::size(regBuff), "EIP: 0x%08lX", ctx->Eip);
+    sprintf_s(regBuff, std::size(regBuff), "    EIP: 0x%08lX", ctx->Eip);
     AppendLine(regBuff);
 #endif
 }
@@ -344,6 +344,8 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
         IMAGE_FILE_MACHINE_I386;
 #endif
 
+    AppendLine("Traceback:");
+
     displacement = 0;
     for (frame = 0;; frame++) {
         result = StackWalk(machineType, process, thread, &stack, &ctx2, nullptr, SymFunctionTableAccess,
@@ -362,19 +364,18 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
 #endif
         if (SymGetLineFromAddr(process, stack.AddrPC.Offset, &disp, &line)) {
-            char lineNumberStr[16];
-            sprintf_s(lineNumberStr, sizeof(lineNumberStr), "Line: %d", line.LineNumber);
+            AppendStr("    ");
             AppendStr(symbol->Name);
             AppendStr(" in ");
             AppendStr(line.FileName);
+            char lineNumberStr[16];
+            sprintf_s(lineNumberStr, sizeof(lineNumberStr), " Line: %d\n", line.LineNumber);
             AppendStr(lineNumberStr);
-            // SPDLOG_CRITICAL("{} in {}: line: {}: ", symbol->Name, line.FileName, line.LineNumber);
         } else {
             char addrString[20];
             sprintf_s(addrString, std::size(addrString), "0x%016llX", symbol->Address);
             WRITE_VAR_M("At ", symbol->Name);
             WRITE_VAR_LINE_M("Addr: ", addrString);
-            // SPDLOG_CRITICAL("at {}, addr 0x{}", symbol->Name, addrString);
             hModule = nullptr;
             GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                               (LPCTSTR)(stack.AddrPC.Offset), &hModule);
@@ -383,7 +384,6 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
                 GetModuleFileNameA(hModule, module, sizeof(module));
             }
             WRITE_VAR_LINE_M("In: ", module);
-            // SPDLOG_CRITICAL("In {}", module);
         }
     }
     PrintCommon();
