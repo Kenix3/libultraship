@@ -369,21 +369,24 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
             AppendStr(" in ");
             AppendStr(line.FileName);
             char lineNumberStr[16];
-            sprintf_s(lineNumberStr, sizeof(lineNumberStr), " Line: %d\n", line.LineNumber);
-            AppendStr(lineNumberStr);
+            sprintf_s(lineNumberStr, sizeof(lineNumberStr), " Line: %d", line.LineNumber);
+            AppendLine(lineNumberStr);
         } else {
+            WRITE_VAR_M("    ", symbol->Name);
             char addrString[20];
             sprintf_s(addrString, std::size(addrString), "0x%016llX", symbol->Address);
-            WRITE_VAR_M("At ", symbol->Name);
-            WRITE_VAR_LINE_M("Addr: ", addrString);
+            WRITE_VAR_M("(", addrString);
+            AppendStr(")");
             hModule = nullptr;
             GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                               (LPCTSTR)(stack.AddrPC.Offset), &hModule);
 
             if (hModule != nullptr) {
                 GetModuleFileNameA(hModule, module, sizeof(module));
+                WRITE_VAR_LINE_M(" in ", module);
+            } else {
+                WRITE_VAR_LINE_M(" in ", "???");
             }
-            WRITE_VAR_LINE_M("In: ", module);
         }
     }
     PrintCommon();
