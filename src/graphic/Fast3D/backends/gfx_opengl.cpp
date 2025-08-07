@@ -172,7 +172,7 @@ bool get_bool(prism::ContextTypes* value) {
     return false;
 }
 
-prism::ContextTypes* append_formula(prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
+prism::ContextTypes* append_formula(prism::ContextTypes* _, prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
                                     prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
                                     prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
                                     prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
@@ -316,7 +316,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
 
 static size_t numFloats = 0;
 
-static prism::ContextTypes* UpdateFloats(prism::ContextTypes* num) {
+static prism::ContextTypes* UpdateFloats(prism::ContextTypes* _, prism::ContextTypes* num) {
     numFloats += std::get<int>(*num);
     return nullptr;
 }
