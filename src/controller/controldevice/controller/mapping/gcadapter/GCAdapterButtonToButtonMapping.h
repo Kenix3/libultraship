@@ -8,7 +8,6 @@ class GCAdapterButtonToButtonMapping : public GCAdapterButtonToAnyMapping, publi
   public:
     GCAdapterButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, CONTROLLERBUTTONS_T gcButton);
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
-    // Other virtual methods can be added later if needed for the UI
 
     std::string GetButtonMappingId() override;
     void SaveToConfig() override;

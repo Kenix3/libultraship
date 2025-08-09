@@ -15,4 +15,4 @@ class GCAdapterAxisDirectionToAnyMapping : public ControllerInputMapping {
     uint8_t mGcAxis;
     int32_t mAxisDirection;
 };
-}
+} // namespace Ship
