@@ -4,7 +4,7 @@
 #include "GCAdapterButtonToAnyMapping.h"
 
 namespace Ship {
-class GCAdapterButtonToButtonMapping : public GCAdapterButtonToAnyMapping, public ControllerButtonMapping {
+class GCAdapterButtonToButtonMapping :  public GCAdapterButtonToAnyMapping, public ControllerButtonMapping {
   public:
     GCAdapterButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, CONTROLLERBUTTONS_T gcButton);
     void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;

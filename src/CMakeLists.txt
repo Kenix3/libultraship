@@ -190,14 +190,22 @@ endif()
 
 if(NOT ANDROID)
     find_path(LIBUSB_INCLUDE_DIR
-        NAMES libusb.h
-        PATH_SUFFIXES "include" "libusb" "libusb-1.0"
-        REQUIRED)
-    target_include_directories(libultraship PUBLIC ${LIBUSB_INCLUDE_DIR})
-    target_link_libraries(libultraship PUBLIC usb-1.0) 
+      NAMES libusb.h
+      PATH_SUFFIXES "libusb-1.0"
+      REQUIRED)
+
+    find_library(LIBUSB_LIBRARY
+      NAMES usb-1.0
+      REQUIRED)
+
+    add_library(lus_libusb INTERFACE)
+    target_include_directories(lus_libusb INTERFACE ${LIBUSB_INCLUDE_DIR})
+    target_link_libraries(lus_libusb INTERFACE ${LIBUSB_LIBRARY})
+
+    target_link_libraries(libultraship PUBLIC lus_libusb)
 
     if(MSVC)
-        target_compile_options(libultraship PRIVATE "/FIwindows.h")
+        target_compile_definitions(libultraship PRIVATE WIN32_LEAN_AND_MEAN)
     endif()
 endif()
 

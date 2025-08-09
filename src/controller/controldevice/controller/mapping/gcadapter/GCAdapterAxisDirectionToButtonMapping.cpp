@@ -11,7 +11,8 @@ GCAdapterAxisDirectionToButtonMapping::GCAdapterAxisDirectionToButtonMapping(uin
                                                                              uint8_t gcAxis, int32_t axisDirection)
     : ControllerInputMapping(PhysicalDeviceType::GCAdapter),
       ControllerButtonMapping(PhysicalDeviceType::GCAdapter, portIndex, bitmask),
-      GCAdapterAxisDirectionToAnyMapping(gcAxis, axisDirection) {
+      GCAdapterAxisDirectionToAnyMapping(gcAxis, axisDirection)
+       {
 }
 
 void GCAdapterAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

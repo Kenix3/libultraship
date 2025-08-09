@@ -5,8 +5,7 @@
 #include "controller/physicaldevice/gc/GCAdapter.h"
 
 namespace Ship {
-class GCAdapterAxisDirectionToButtonMapping final : public ControllerButtonMapping,
-                                                    public GCAdapterAxisDirectionToAnyMapping {
+class GCAdapterAxisDirectionToButtonMapping final : public ControllerButtonMapping, public GCAdapterAxisDirectionToAnyMapping {
   public:
     GCAdapterAxisDirectionToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, uint8_t gcAxis,
                                           int32_t axisDirection);
