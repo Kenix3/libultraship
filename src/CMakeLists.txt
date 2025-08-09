@@ -190,7 +190,8 @@ endif()
 
 find_path(LIBUSB_INCLUDE_DIR
   NAMES libusb.h
-  PATH_SUFFIXES "include" "libusb" "libusb-1.0")
+  PATH_SUFFIXES "include" "libusb" "libusb-1.0"
+  REQUIRED)
 
 target_include_directories(libultraship PUBLIC ${LIBUSB_INCLUDE_DIR})
 target_link_libraries(libultraship PUBLIC usb-1.0) 
