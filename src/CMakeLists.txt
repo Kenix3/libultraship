@@ -195,6 +195,10 @@ if(NOT ANDROID)
         REQUIRED)
     target_include_directories(libultraship PUBLIC ${LIBUSB_INCLUDE_DIR})
     target_link_libraries(libultraship PUBLIC usb-1.0) 
+
+    if(MSVC)
+        target_compile_options(libultraship PRIVATE "/FIwindows.h")
+    endif()
 endif()
 
 find_package(libzip REQUIRED)
