@@ -3,6 +3,10 @@
 #include "controller/physicaldevice/gc/GCAdapter.h"
 #include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
+#ifndef CONTROLLERBUTTONS_T
+#define CONTROLLERBUTTONS_T uint16_t
+#endif
+
 namespace Ship {
 class GCAdapterButtonToAnyMapping : virtual public ControllerInputMapping {
   public:
