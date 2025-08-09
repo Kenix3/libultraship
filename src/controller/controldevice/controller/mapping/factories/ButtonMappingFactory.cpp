@@ -3,11 +3,13 @@
 #include "utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
 #include "Context.h"
+#include "controller/controldevice/controller/mapping/gcadapter/GCAdapterButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/mouse/MouseWheelToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
+#include "controller/controldevice/controller/mapping/gcadapter/GCAdapterAxisDirectionToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 #include "controller/controldeck/ControlDeck.h"
@@ -118,6 +120,49 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLL
     for (const auto& [sdlGamepadAxis, axisDirection] : defaultAxisDirectionsForBitmask) {
         mappings.push_back(
             std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, sdlGamepadAxis, axisDirection));
+    }
+
+    return mappings;
+}
+
+std::vector<std::shared_ptr<ControllerButtonMapping>>
+ButtonMappingFactory::CreateDefaultGCAdapterButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
+    std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
+
+    switch (bitmask) {
+        case A_BUTTON:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_A));
+            break;
+        case B_BUTTON:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_B));
+            break;
+        case L_CBUTTONS:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_Y));
+            break;
+        case R_CBUTTONS:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_X));
+            break;
+        case D_CBUTTONS:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_TRIGGER_Z));
+            break;
+        case U_CBUTTONS:
+            mappings.push_back(std::make_shared<GCAdapterAxisDirectionToButtonMapping>(portIndex, bitmask, 3, 1));
+            break;
+        case START_BUTTON:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_START));
+            break;
+        case Z_TRIG:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_TRIGGER_L));
+            break;
+        case R_TRIG:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_TRIGGER_R));
+            break;
+        case L_TRIG:
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_UP));
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_DOWN));
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_LEFT));
+            mappings.push_back(std::make_shared<GCAdapterButtonToButtonMapping>(portIndex, bitmask, PAD_BUTTON_RIGHT));
+            break;
     }
 
     return mappings;

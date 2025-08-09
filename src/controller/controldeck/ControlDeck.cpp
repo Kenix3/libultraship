@@ -6,6 +6,7 @@
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
+#include <controller/physicaldevice/gc/GCAdapterStubs.h>
 
 namespace Ship {
 
@@ -37,6 +38,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Mouse);
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
+    mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::GCAdapter);
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {

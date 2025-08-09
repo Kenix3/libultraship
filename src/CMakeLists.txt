@@ -188,6 +188,9 @@ if (GFX_DEBUG_DISASSEMBLER)
     target_link_libraries(libultraship PRIVATE libgfxd)
 endif()
 
+target_include_directories(libultraship PUBLIC /opt/homebrew/include/libusb-1.0)
+target_link_libraries(libultraship PUBLIC usb-1.0)
+
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)
 

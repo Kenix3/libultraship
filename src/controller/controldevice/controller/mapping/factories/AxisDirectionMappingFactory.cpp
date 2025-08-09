@@ -6,6 +6,8 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
 
+#include "controller/controldevice/controller/mapping/gcadapter/GCAdapterAxisDirectionToAxisDirectionMapping.h"
+
 #include "public/bridge/consolevariablebridge.h"
 #include "utils/StringHelper.h"
 #include "Context.h"
@@ -149,6 +151,26 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
         auto [sdlGamepadAxis, sdlGamepadDirection] = sdlGamepadAxisDirection;
         mappings.push_back(std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
             portIndex, stickIndex, direction, sdlGamepadAxis, sdlGamepadDirection));
+    }
+
+    return mappings;
+}
+
+std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
+AxisDirectionMappingFactory::CreateDefaultGCAdapterAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
+    std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
+
+    // Get the default axis-to-axis mappings for the specified stick from the central defaults class.
+    auto defaultAxisDirectionsForStick = Context::GetInstance()
+                                             ->GetControlDeck()
+                                             ->GetControllerDefaultMappings()
+                                             ->GetDefaultGCAdapterAxisDirectionToAxisDirectionMappings()[stickIndex];
+
+    // Create the mapping objects based on the retrieved defaults.
+    for (const auto& [direction, gcAdapterAxisDirection] : defaultAxisDirectionsForStick) {
+        auto [gcAdapterAxis, gcAdapterDirection] = gcAdapterAxisDirection;
+        mappings.push_back(std::make_shared<GCAdapterAxisDirectionToAxisDirectionMapping>(
+            portIndex, stickIndex, direction, gcAdapterAxis, gcAdapterDirection));
     }
 
     return mappings;
