@@ -28,7 +28,11 @@ class ControllerDefaultMappings {
         std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
             defaultSDLAxisDirectionToButtonMappings,
         std::unordered_map<StickIndex, std::vector<std::pair<Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>
-            defaultSDLAxisDirectionToAxisDirectionMappings);
+            defaultSDLAxisDirectionToAxisDirectionMappings,
+        std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>
+            defaultGCAdapterButtonToButtonMappings,
+        std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>
+            defaultGCAdapterAxisDirectionToAxisDirectionMappings);
     ControllerDefaultMappings();
     ~ControllerDefaultMappings();
 
@@ -45,6 +49,11 @@ class ControllerDefaultMappings {
     GetDefaultSDLAxisDirectionToButtonMappings();
     std::unordered_map<StickIndex, std::vector<std::pair<Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>
     GetDefaultSDLAxisDirectionToAxisDirectionMappings();
+
+    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>
+    GetDefaultGCAdapterButtonToButtonMappings();
+    std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>&
+    GetDefaultGCAdapterAxisDirectionToAxisDirectionMappings();
 
   private:
     void SetDefaultKeyboardKeyToButtonMappings(
@@ -80,5 +89,17 @@ class ControllerDefaultMappings {
             defaultSDLAxisDirectionToAxisDirectionMappings);
     std::unordered_map<StickIndex, std::vector<std::pair<Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>
         mDefaultSDLAxisDirectionToAxisDirectionMappings;
+
+    void SetDefaultGCAdapterButtonToButtonMappings(
+        std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>
+            defaultGCAdapterButtonToButtonMappings);
+    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>
+        mDefaultGCAdapterButtonToButtonMappings;
+
+    void SetDefaultGCAdapterAxisDirectionToAxisDirectionMappings(
+        std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>
+            defaultGCAdapterAxisDirectionToAxisDirectionMappings);
+    std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>
+        mDefaultGCAdapterAxisDirectionToAxisDirectionMappings;
 };
 } // namespace Ship

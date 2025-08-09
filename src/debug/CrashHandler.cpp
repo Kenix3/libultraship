@@ -297,8 +297,6 @@ void CrashHandler::PrintRegisters(CONTEXT* ctx) {
 }
 
 void CrashHandler::PrintStack(CONTEXT* ctx) {
-// Some crash hander features are not supported on ARM64
-#ifndef _M_ARM64
     BOOL result;
     HANDLE process;
     HANDLE thread;
@@ -389,7 +387,6 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     PrintCommon();
     Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
-#endif
 }
 
 extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {

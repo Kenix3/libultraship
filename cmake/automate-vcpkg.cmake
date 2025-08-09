@@ -68,15 +68,13 @@ endif()
 if (WIN32)
 
     # Since the compiler checks haven't run yet, we need to figure
-    # out the value of CMAKE_SIZEOF_VOID_P ourselfs.
-    # We also need to make sure the triplet isn't already set because
-    # ARM64 will be overriden by the 64bit check
+    # out the value of CMAKE_SIZEOF_VOID_P ourselfs
 
     include(CheckTypeSize)
     enable_language(C)
     check_type_size("void*" SIZEOF_VOID_P BUILTIN_TYPES_ONLY)
     
-    if (SIZEOF_VOID_P EQUAL 8 AND NOT DEFINED ${CMAKE_VS_PLATFORM_NAME})
+    if (SIZEOF_VOID_P EQUAL 8)
         message(STATUS "Using Vcpkg triplet 'x64-windows'")
         
         set(VCPKG_TRIPLET x64-windows)
@@ -118,7 +116,7 @@ endmacro()
 macro(_install_or_update_vcpkg)
     if(NOT EXISTS ${VCPKG_ROOT})
         message(STATUS "Cloning vcpkg in ${VCPKG_ROOT}")
-        execute_process(COMMAND git clone https://github.com/Microsoft/vcpkg.git ${VCPKG_ROOT} --depth 1)
+        execute_process(COMMAND git clone https://github.com/Microsoft/vcpkg.git ${VCPKG_ROOT})
 
         # If a reproducible build is desired (and potentially old libraries are # ok), uncomment the
         # following line and pin the vcpkg repository to a specific githash.

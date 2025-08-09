@@ -12,6 +12,7 @@
 
 #include "Context.h"
 #include "window/Window.h"
+#include <controller/physicaldevice/gc/GCAdapterStubs.h>
 
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
@@ -275,6 +276,12 @@ void ControllerButton::AddDefaultMappings(PhysicalDeviceType physicalDeviceType)
 
     if (physicalDeviceType == PhysicalDeviceType::Keyboard) {
         for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
+            AddButtonMapping(mapping);
+        }
+    }
+
+    if (physicalDeviceType == PhysicalDeviceType::GCAdapter) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultGCAdapterButtonMappings(mPortIndex, mBitmask)) {
             AddButtonMapping(mapping);
         }
     }
