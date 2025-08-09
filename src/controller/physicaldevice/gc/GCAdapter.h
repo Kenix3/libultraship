@@ -20,7 +20,7 @@ void StopScanThread();
 // Netplay and CSIDevice_GCAdapter make use of this.
 GCPadStatus Input(int chan);
 
-void Output(int chan, u_int8_t rumble_command);
+void Output(int chan, uint8_t rumble_command);
 bool IsDetected(const char** error_message);
 bool DeviceConnected(int chan);
 void ResetDeviceType(int chan);

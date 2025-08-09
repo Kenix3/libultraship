@@ -17,6 +17,9 @@ float GCAdapterAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionVa
     if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
         return 0.0f;
     }
+    if (!GCAdapter::DeviceConnected(0)) {
+        return 0.0f;
+    }
 
     // Get the current state of the GC controller for our port
     GCPadStatus status = GCAdapter::Input(mPortIndex);
