@@ -1,6 +1,6 @@
 #pragma once
 #include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
-#include "controller/physicaldevice/gc/GCAdapter.h" // Your driver header
+#include "controller/physicaldevice/gc/GCAdapter.h"
 #include "GCAdapterButtonToAnyMapping.h"
 
 namespace Ship {

@@ -188,12 +188,18 @@ if (GFX_DEBUG_DISASSEMBLER)
     target_link_libraries(libultraship PRIVATE libgfxd)
 endif()
 
-find_path(LIBUSB_INCLUDE_DIR
-  NAMES libusb.h
-  PATH_SUFFIXES "include" "libusb" "libusb-1.0")
+if(NOT ANDROID)
+    find_path(LIBUSB_INCLUDE_DIR
+        NAMES libusb.h
+        PATH_SUFFIXES "include" "libusb" "libusb-1.0"
+        REQUIRED)
+    target_include_directories(libultraship PUBLIC ${LIBUSB_INCLUDE_DIR})
+    target_link_libraries(libultraship PUBLIC usb-1.0) 
 
-target_include_directories(libultraship PUBLIC ${LIBUSB_INCLUDE_DIR})
-target_link_libraries(libultraship PUBLIC usb-1.0) 
+    if(MSVC)
+        target_compile_options(libultraship PRIVATE "/FIwindows.h")
+    endif()
+endif()
 
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)

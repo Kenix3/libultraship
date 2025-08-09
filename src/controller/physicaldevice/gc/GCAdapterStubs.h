@@ -5,6 +5,9 @@
 #include <condition_variable>
 #include <cstdio>
 #include <functional>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <libusb.h>
 #include <memory>
 #include <mutex>
@@ -16,6 +19,7 @@
 #define WARN_LOG_FMT(fmt) printf("WARN: " fmt "\n")
 #define ERROR_LOG_FMT(fmt) printf("ERROR: " fmt "\n")
 #define INFO_LOG_FMT(fmt) printf("INFO: " fmt "\n")
+
 
 namespace Common {
 class Flag {
@@ -172,6 +176,7 @@ inline void RemoveConfigChangedCallback(ConfigChangedCallbackID) {
 } // namespace Config
 
 namespace Core {
+
 enum State { Uninitialized, Starting };
 struct CoreTiming {
     uint64_t GetTicks() {
@@ -190,6 +195,7 @@ class System {
         static System instance;
         return instance;
     }
+
     CoreTiming& GetCoreTiming() {
         static CoreTiming t;
         return t;

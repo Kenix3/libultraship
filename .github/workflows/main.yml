@@ -1,0 +1,190 @@
+name: build-validation
+on:
+  push:
+  pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-macos:
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        brew install $(cat .github/workflows/brew-deps.txt)
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2.14
+      with:
+        key: ${{ runner.os }}-mac-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-mac-ccache-${{ github.ref }}
+          ${{ runner.os }}-mac-ccache-
+    - name: Build libultraship
+      run: |
+        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release
+        cmake --build build-cmake --config Release --parallel 10
+    - name: Upload build
+      uses: actions/upload-artifact@v4
+      with:
+        name: soh-mac
+        path: build-cmake/src/*.a
+        if-no-files-found: error
+  build-ios:
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@v4
+    - name: Cache build folder
+      uses: actions/cache@v4
+      with:
+        save-always: true
+        key: ${{ runner.os }}-14-ios-build-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-14-ios-build-${{ github.ref }}
+          ${{ runner.os }}-14-ios-build-
+        path: |
+          build-cmake
+    - name: Build libultraship
+      run: |
+        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
+        cmake --build build-cmake --config Release --parallel 10
+    - name: Upload build
+      uses: actions/upload-artifact@v4
+      with:
+        name: soh-ios
+        path: build-cmake/src/*/*.a
+        if-no-files-found: error
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y $(cat .github/workflows/apt-deps.txt)
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2.14
+      with:
+        key: ${{ matrix.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ matrix.os }}-ccache-${{ github.ref }}
+          ${{ matrix.os }}-ccache-
+    - name: Install latest SDL
+      run: |
+        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+        wget https://www.libsdl.org/release/SDL2-2.24.1.tar.gz
+        tar -xzf SDL2-2.24.1.tar.gz
+        cd SDL2-2.24.1
+        ./configure
+        make -j 10
+        sudo make install
+    - name: Install latest tinyxml2
+      run: |
+        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+        wget https://github.com/leethomason/tinyxml2/archive/refs/tags/10.0.0.tar.gz
+        tar -xzf 10.0.0.tar.gz
+        cd tinyxml2-10.0.0
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
+    - name: Build libultraship
+      run: |
+        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release
+        cmake --build build-cmake --config Release --parallel 10
+      env:
+        CC: gcc-12
+        CXX: g++-12
+    - name: Upload build
+      uses: actions/upload-artifact@v4
+      with:
+        name: soh-linux
+        path: build-cmake/src/*.a
+        if-no-files-found: error
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+    - name: Install dependencies
+      run: |
+        choco install ninja
+        Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+    - uses: actions/checkout@v4
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2.14
+      with:
+        variant: sccache
+        key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-${{ github.ref }}
+          ${{ runner.os }}-ccache-
+    - name: Cache build folder
+      uses: actions/cache@v4
+      with:
+        save-always: true
+        key: ${{ runner.os }}-build-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ github.ref }}
+          ${{ runner.os }}-build-
+        path: |
+          build-cmake
+          D:/a/vcpkg
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+    - name: Build libultraship
+      env:
+        VCPKG_ROOT: D:/a/vcpkg
+      run: |
+        set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
+        cmake --no-warn-unused-cli -S. -Bbuild-cmake-x64 -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64
+        cmake --build build-cmake-x64 --config Release --parallel 10
+    - name: Upload build
+      uses: actions/upload-artifact@v4
+      with:
+        name: soh-windows-x64
+        path: build-cmake-x64/src/**/*.lib
+        if-no-files-found: error
+  build-windows-arm64:
+    runs-on: windows-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          choco install ninja
+          Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+      - uses: actions/checkout@v4
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          variant: sccache
+          key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ github.ref }}
+            ${{ runner.os }}-ccache-
+      - name: Cache build folder
+        uses: actions/cache@v4
+        with:
+          save-always: true
+          key: ${{ runner.os }}-build-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ github.ref }}
+            ${{ runner.os }}-build-
+          path: |
+            build-cmake
+            D:/a/vcpkg
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build libultraship
+        env:
+          VCPKG_ROOT: D:/a/vcpkg
+        run: |
+          set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
+          cmake --no-warn-unused-cli -S. -Bbuild-cmake-arm64 -G "Visual Studio 17 2022" -T v143  -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=arm64
+          cmake --build build-cmake-arm64 --config Release --parallel 10
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: soh-windows-arm64
+          path: x64/**/*.lib
+          if-no-files-found: error
