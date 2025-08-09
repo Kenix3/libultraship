@@ -7,7 +7,6 @@
 #include <array>
 #include <mutex>
 #include <optional>
-#include <libusb.h>
 #include "GCAdapterStubs.h"
 
 namespace GCAdapter {
@@ -312,6 +311,11 @@ bool IsDetected(const char** error_message) {
     if (error_message)
         *error_message = libusb_strerror(s_adapter_error.load());
     return false;
+}
+
+bool DeviceConnected(int chan) {
+    std::lock_guard lk(s_read_mutex);
+    return s_port_states[chan].controller_type != ControllerType::None;
 }
 
 } // namespace GCAdapter

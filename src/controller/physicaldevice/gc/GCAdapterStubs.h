@@ -15,17 +15,15 @@
 #include <thread>
 #include <utility>
 
-// --- Minimal Logging (FIXED) ---
 #define NOTICE_LOG_FMT(fmt) printf("NOTICE: " fmt "\n")
 #define WARN_LOG_FMT(fmt) printf("WARN: " fmt "\n")
 #define ERROR_LOG_FMT(fmt) printf("ERROR: " fmt "\n")
 #define INFO_LOG_FMT(fmt) printf("INFO: " fmt "\n")
 
-// --- Sync Primitives ---
+
 namespace Common {
 class Flag {
   public:
-    // FIX: Added optional bool argument to match original code's usage
     void Set(bool value = true) {
         m_flag.store(value);
     }
@@ -86,7 +84,6 @@ class ScopeGuard {
 };
 } // namespace Common
 
-// --- Libusb Wrapper ---
 namespace LibusbUtils {
 class Context {
   public:
@@ -130,7 +127,6 @@ inline std::string ErrorWrap(int error_code) {
 }
 } // namespace LibusbUtils
 
-// --- Other Stubs ---
 #define LIBUSB_DT_HID 0x21
 namespace SerialInterface {
 constexpr int MAX_SI_CHANNELS = 4;
@@ -180,7 +176,7 @@ inline void RemoveConfigChangedCallback(ConfigChangedCallbackID) {
 } // namespace Config
 
 namespace Core {
-// FIX: Added 'Starting' to the enum
+
 enum State { Uninitialized, Starting };
 struct CoreTiming {
     uint64_t GetTicks() {
@@ -199,7 +195,7 @@ class System {
         static System instance;
         return instance;
     }
-    // FIX: Added missing methods
+
     CoreTiming& GetCoreTiming() {
         static CoreTiming t;
         return t;
