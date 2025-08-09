@@ -3,7 +3,7 @@
 #include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
 namespace Ship {
-class GCAdapterAxisDirectionToAnyMapping : public ControllerInputMapping {
+class GCAdapterAxisDirectionToAnyMapping : virtual public ControllerInputMapping {
   public:
     GCAdapterAxisDirectionToAnyMapping(uint8_t gcAxis, int32_t axisDirection);
     ~GCAdapterAxisDirectionToAnyMapping();
