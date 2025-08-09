@@ -49,6 +49,8 @@ float GCAdapterAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionVa
 }
 
 void GCAdapterAxisDirectionToAxisDirectionMapping::RemapStick(double& x, double& y) {
+    // Remaps the control stick into more of a squircle, à la electromodder's adapter
+
     if (x == 0.0 && y == 0.0) {
         return;
     }

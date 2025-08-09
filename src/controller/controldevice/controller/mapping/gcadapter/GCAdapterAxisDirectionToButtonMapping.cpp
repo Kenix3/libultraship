@@ -19,10 +19,8 @@ void GCAdapterAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padBu
         return;
     }
 
-    // 1. Get the raw stick data directly from your GCAdapter driver
     GCPadStatus status = GCAdapter::Input(mPortIndex);
 
-    // 2. Select the correct raw axis value from the GCPadStatus struct
     uint8_t rawValue = 0;
     switch (mGcAxis) {
         case 0:
@@ -44,7 +42,7 @@ void GCAdapterAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padBu
 
     // 4. Check if the value exceeds a threshold (e.g., 70)
     // This is a simpler replacement for the complex GetGlobal...Settings logic
-    const int16_t axisThreshold = 70;
+    const int16_t axisThreshold = 60;
 
     if ((mAxisDirection == POSITIVE && axisValue > axisThreshold) ||
         (mAxisDirection == NEGATIVE && axisValue < -axisThreshold)) {
