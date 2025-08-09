@@ -195,7 +195,7 @@ if(NOT ANDROID)
       REQUIRED)
 
     find_library(LIBUSB_LIBRARY
-      NAMES libusb-1.0
+      NAMES usb-1.0
       REQUIRED)
 
     add_library(lus_libusb INTERFACE)
