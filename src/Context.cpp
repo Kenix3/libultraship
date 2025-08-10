@@ -435,19 +435,24 @@ std::string Context::GetAppBundlePath() {
 #endif
 
 #ifdef _WIN32
-    std::string progpath(MAX_PATH, '\0');
+    std::wstring progpath(MAX_PATH, '\0');
 
-    int len = GetModuleFileNameA(NULL, &progpath[0], progpath.size());
+    int len = GetModuleFileNameW(NULL, &progpath[0], progpath.size());
     if (len != 0 && len < progpath.size()) {
         progpath.resize(len);
 
         // Find the last '\' and remove everything after it
-        long unsigned int lastSlash = progpath.find_last_of("\\");
+        long unsigned int lastSlash = progpath.find_last_of('\\');
         if (lastSlash != std::string::npos) {
             progpath.erase(lastSlash);
         }
 
-        return progpath;
+        // Convert wstring to string
+        len = WideCharToMultiByte(CP_UTF8, 0, progpath.data(), (int)progpath.size(), nullptr, 0, nullptr, nullptr);
+        std::string newProgpath(len, 0);
+        WideCharToMultiByte(CP_UTF8, 0, progpath.data(), (int)progpath.size(), &newProgpath[0], len, nullptr, nullptr);
+
+        return newProgpath;
     }
 #endif
 
