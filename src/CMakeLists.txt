@@ -253,8 +253,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_compile_definitions(libultraship PRIVATE
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
-        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=${SPDLOG_ACTIVE_LEVEL}>
+        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=4>
         __IOS__
     )
 
@@ -283,8 +283,8 @@ else()
         ENABLE_OPENGL
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
-        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=1>
+        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=${SPDLOG_ACTIVE_LEVEL}>
+        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=4>
         $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
         $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
     )
