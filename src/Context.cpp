@@ -15,6 +15,7 @@
 #include <libloaderapi.h>
 #include <tchar.h>
 #include <windows.h>
+#include <stringapiset.h>
 #endif
 
 #ifdef __APPLE__
