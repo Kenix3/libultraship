@@ -2,6 +2,7 @@
 
 #include "pi.h"
 
+// Original Name: OSDevMgr
 typedef struct {
     /* 0x00 */ u32 initialized;
     /* 0x04 */ OSThread* mgrThread;

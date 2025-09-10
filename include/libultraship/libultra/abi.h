@@ -27,6 +27,9 @@ typedef unsigned int u32;
 #define A_ENVSETUP2 22
 #define A_S8DEC 23
 #define A_UNK19 25
+#define A_SETVOL 9
+#define A_SEGMENT 7
+#define A_POLEF 14
 
 #define ACMD_SIZE 32
 
@@ -191,7 +194,7 @@ typedef struct {
     u32 w1;
 } Awords;
 
-typedef union {
+typedef union Acmd {
     Awords words;
     Aadpcm adpcm;
     Apolef polef;
