@@ -90,8 +90,6 @@ bool Window::ShouldForceCursorVisibility() {
 
 void Window::SetForceCursorVisibility(bool visible) {
     mForceCursorVisibility = visible;
-    CVarSetInteger("gForceCursorVisibility", visible);
-    CVarSave();
 }
 
 void Window::SetWindowBackend(WindowBackend backend) {

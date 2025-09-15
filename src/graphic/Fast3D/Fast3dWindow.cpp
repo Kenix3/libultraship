@@ -87,8 +87,6 @@ void Fast3dWindow::Init() {
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
 
-    SetForceCursorVisibility(CVarGetInteger("gForceCursorVisibility", 0));
-
     InitWindowManager();
     mInterpreter->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen,
                        width, height, posX, posY);
