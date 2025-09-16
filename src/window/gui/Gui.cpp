@@ -56,6 +56,8 @@ namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
+static Ship::Coords mPrevMousePos;
+
 Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
 
@@ -539,9 +541,8 @@ void Gui::DrawMenu() {
                    GetMenuBar()) {
             GetMenuBar()->ToggleVisibility();
         }
-        if (wnd->IsFullscreen()) {
-            Context::GetInstance()->GetWindow()->SetMouseCapture(
-                !(GetMenuOrMenubarVisible() || wnd->ShouldForceCursorVisibility()));
+        if (!GetMenuOrMenubarVisible()) {
+            Context::GetInstance()->GetWindow()->SetMouseCapture(wnd->ShouldAutoCaptureMouse());
         }
         if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -590,7 +591,25 @@ void Gui::HandleMouseCapture() {
     }
 }
 
+void Gui::CursorTimeoutTick() {
+    auto wnd = Context::GetInstance()->GetWindow();
+    if (!wnd->ShouldForceCursorVisibility()) {
+        Ship::Coords mousePos = wnd->GetMousePos();
+        if (!wnd->ShouldAutoCaptureMouse() && (abs(mousePos.x - mPrevMousePos.x) > 0 || abs(mousePos.y - mPrevMousePos.y) > 0)) {
+            wnd->SetCursorVisibility(true);
+            mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetCurrentRefreshRate();
+        }
+        if (mCursorVisibleTicks > 0) {
+            mCursorVisibleTicks--;
+        } else {
+            wnd->SetCursorVisibility(false);
+        }
+        mPrevMousePos = mousePos;
+    }
+}
+
 void Gui::StartFrame() {
+    CursorTimeoutTick();
     HandleMouseCapture();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
@@ -1020,12 +1039,6 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
     if (GetMenuBar()) {
         GetMenuBar()->Init();
     }
-
-    if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-        Context::GetInstance()->GetWindow()->SetMouseCapture(
-            !((GetMenuBar() && GetMenuBar()->IsVisible()) ||
-              Context::GetInstance()->GetWindow()->ShouldForceCursorVisibility()));
-    }
 }
 
 void Gui::SetMenu(std::shared_ptr<GuiWindow> menu) {
@@ -1033,12 +1046,6 @@ void Gui::SetMenu(std::shared_ptr<GuiWindow> menu) {
 
     if (GetMenu()) {
         GetMenu()->Init();
-    }
-
-    if (Context::GetInstance()->GetWindow()->IsFullscreen()) {
-        Context::GetInstance()->GetWindow()->SetMouseCapture(
-            !((GetMenu() && GetMenu()->IsVisible()) ||
-              Context::GetInstance()->GetWindow()->ShouldForceCursorVisibility()));
     }
 }
 

@@ -362,13 +362,6 @@ bool Fast3dWindow::MouseButtonDown(int button) {
 void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
 
-    if (isNowFullscreen) {
-        auto menuVisible = wnd->GetGui()->GetMenuOrMenubarVisible();
-        wnd->SetMouseCapture(!(menuVisible || wnd->ShouldForceCursorVisibility()));
-    } else {
-        wnd->SetMouseCapture(false);
-    }
-
     // Re-save fullscreen enabled after
     Ship::Context::GetInstance()->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
 }

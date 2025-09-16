@@ -84,6 +84,14 @@ bool Window::IsAvailableWindowBackend(int32_t backendId) {
            mAvailableWindowBackends->end();
 }
 
+bool Window::ShouldAutoCaptureMouse() {
+    return mAutoCaptureMouse;
+}
+
+void Window::SetAutoCaptureMouse(bool capture) {
+    mAutoCaptureMouse = capture;
+}
+
 bool Window::ShouldForceCursorVisibility() {
     return mForceCursorVisibility;
 }

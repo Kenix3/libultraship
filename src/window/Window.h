@@ -72,6 +72,8 @@ class Window {
     float GetCurrentAspectRatio();
     void SaveWindowToConfig();
     std::shared_ptr<Gui> GetGui();
+    bool ShouldAutoCaptureMouse();
+    void SetAutoCaptureMouse(bool capture);
     bool ShouldForceCursorVisibility();
     void SetForceCursorVisibility(bool visible);
 
@@ -87,6 +89,7 @@ class Window {
     // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton
     // is no longer available.
     std::shared_ptr<Config> mConfig;
-    bool mForceCursorVisibility;
+    bool mAutoCaptureMouse = false;
+    bool mForceCursorVisibility = false;
 };
 } // namespace Ship
