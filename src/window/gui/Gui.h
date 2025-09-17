@@ -128,6 +128,7 @@ class Gui {
     void CheckSaveCvars();
     void HandleMouseCapture();
     void CursorTimeoutTick();
+    void SetCursorVisibilityTime(int32_t seconds);
     ImVec2 mTemporaryWindowPos;
     ImGuiIO* mImGuiIo;
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows;
