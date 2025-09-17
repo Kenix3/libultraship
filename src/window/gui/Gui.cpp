@@ -545,6 +545,9 @@ void Gui::DrawMenu() {
             Context::GetInstance()->GetWindow()->SetMouseCapture(wnd->ShouldAutoCaptureMouse());
         } else {
             Context::GetInstance()->GetWindow()->SetMouseCapture(false);
+            Context::GetInstance()->GetWindow()->SetCursorVisibility(true);
+            auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow());
+            mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
         }
         if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
