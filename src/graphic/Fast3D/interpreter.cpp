@@ -4367,6 +4367,10 @@ void gfx_set_target_ucode(UcodeHandlers ucode) {
     ucode_handler_index = ucode;
 }
 
+int Interpreter::GetTargetFPS() {
+    return mWapi->GetTargetFPS();
+}
+
 void Interpreter::SetTargetFPS(int fps) {
     mWapi->SetTargetFPS(fps);
 }

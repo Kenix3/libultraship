@@ -97,6 +97,10 @@ void Fast3dWindow::Init() {
     SetTextureFilter((FilteringMode)CVarGetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
 
+int32_t Fast3dWindow::GetTargetFps() {
+    return mInterpreter->GetTargetFPS();
+}
+
 void Fast3dWindow::SetTargetFps(int32_t fps) {
     mInterpreter->SetTargetFPS(fps);
 }

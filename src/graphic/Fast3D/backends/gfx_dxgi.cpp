@@ -987,6 +987,10 @@ double GfxWindowBackendDXGI::GetTime() {
     return (double)(t.QuadPart - qpc_init) / qpc_freq;
 }
 
+int GfxWindowBackendDXGI::GetTargetFPS() {
+    return mTargetFps;
+}
+
 void GfxWindowBackendDXGI::SetTargetFPS(int fps) {
     uint32_t old_fps = mTargetFps;
     uint64_t t0 = mFrameTimeStamp / old_fps;

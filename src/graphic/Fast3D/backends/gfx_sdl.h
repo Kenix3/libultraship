@@ -30,6 +30,7 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     void SwapBuffersBegin() override;
     void SwapBuffersEnd() override;
     double GetTime() override;
+    int GetTargetFPS();
     void SetTargetFPS(int fps) override;
     void SetMaxFrameLatency(int latency) override;
     const char* GetKeyName(int scancode) override;

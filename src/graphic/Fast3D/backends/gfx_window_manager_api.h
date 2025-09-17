@@ -29,6 +29,7 @@ class GfxWindowBackend {
     virtual void SwapBuffersBegin() = 0;
     virtual void SwapBuffersEnd() = 0;
     virtual double GetTime() = 0;
+    virtual int GetTargetFPS() = 0;
     virtual void SetTargetFPS(int fps) = 0;
     virtual void SetMaxFrameLatency(int latency) = 0;
     virtual const char* GetKeyName(int scancode) = 0;
