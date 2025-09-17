@@ -600,8 +600,8 @@ void Gui::CursorTimeoutTick() {
     auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow());
     if (!wnd->ShouldForceCursorVisibility()) {
         Ship::Coords mousePos = wnd->GetMousePos();
-        if ((!wnd->IsMouseCaptured()) && 
-                 (abs(mousePos.x - mPrevMousePos.x) > 0 || abs(mousePos.y - mPrevMousePos.y) > 0)) {
+        if ((!wnd->IsMouseCaptured()) &&
+            (abs(mousePos.x - mPrevMousePos.x) > 0 || abs(mousePos.y - mPrevMousePos.y) > 0)) {
             wnd->SetCursorVisibility(true);
             mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
         }
