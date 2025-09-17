@@ -614,6 +614,10 @@ void Gui::CursorTimeoutTick() {
     }
 }
 
+void Gui::SetCursorVisibilityTime(int32_t seconds) {
+    mCursorVisibleSeconds = seconds;
+}
+
 void Gui::StartFrame() {
     CursorTimeoutTick();
     HandleMouseCapture();
