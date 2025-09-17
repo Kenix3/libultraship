@@ -693,11 +693,11 @@ double GfxWindowBackendSDL2::GetTime() {
     return 0.0;
 }
 
-int GfxWindowBackendSDL2::GetTargetFPS() {
+int GfxWindowBackendSDL2::GetTargetFps() {
     return mTargetFps;
 }
 
-void GfxWindowBackendSDL2::SetTargetFPS(int fps) {
+void GfxWindowBackendSDL2::SetTargetFps(int fps) {
     mTargetFps = fps;
 }
 

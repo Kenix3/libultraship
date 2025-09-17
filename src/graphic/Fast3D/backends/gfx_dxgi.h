@@ -37,8 +37,8 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     void SwapBuffersBegin() override;
     void SwapBuffersEnd() override;
     double GetTime() override;
-    int GetTargetFPS();
-    void SetTargetFPS(int fps) override;
+    int GetTargetFps();
+    void SetTargetFps(int fps) override;
     void SetMaxFrameLatency(int latency) override;
     const char* GetKeyName(int scancode) override;
     bool CanDisableVsync() override;

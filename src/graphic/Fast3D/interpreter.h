@@ -368,8 +368,8 @@ class Interpreter {
     void HandleWindowEvents();
     bool IsFrameReady();
     bool ViewportMatchesRendererResolution();
-    int GetTargetFPS();
-    void SetTargetFPS(int fps);
+    int GetTargetFps();
+    void SetTargetFps(int fps);
     void SetMaxFrameLatency(int latency);
     int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                           uint8_t resize);

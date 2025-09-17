@@ -98,11 +98,11 @@ void Fast3dWindow::Init() {
 }
 
 int32_t Fast3dWindow::GetTargetFps() {
-    return mInterpreter->GetTargetFPS();
+    return mInterpreter->GetTargetFps();
 }
 
 void Fast3dWindow::SetTargetFps(int32_t fps) {
-    mInterpreter->SetTargetFPS(fps);
+    mInterpreter->SetTargetFps(fps);
 }
 
 void Fast3dWindow::SetMaximumFrameLatency(int32_t latency) {

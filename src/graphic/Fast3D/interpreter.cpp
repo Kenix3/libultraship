@@ -4367,12 +4367,12 @@ void gfx_set_target_ucode(UcodeHandlers ucode) {
     ucode_handler_index = ucode;
 }
 
-int Interpreter::GetTargetFPS() {
-    return mWapi->GetTargetFPS();
+int Interpreter::GetTargetFps() {
+    return mWapi->GetTargetFps();
 }
 
-void Interpreter::SetTargetFPS(int fps) {
-    mWapi->SetTargetFPS(fps);
+void Interpreter::SetTargetFps(int fps) {
+    mWapi->SetTargetFps(fps);
 }
 
 void Interpreter::SetMaxFrameLatency(int latency) {
