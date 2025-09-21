@@ -78,6 +78,8 @@ class Window {
   protected:
     void SetWindowBackend(WindowBackend backend);
     void AddAvailableWindowBackend(WindowBackend backend);
+    static int32_t mFullscreenScancode;
+    static int32_t mMouseCaptureScancode;
 
   private:
     std::shared_ptr<Gui> mGui;
