@@ -14,7 +14,6 @@
 #include <dxgi1_4.h>
 #include <dxgi1_5.h>
 #include <versionhelpers.h>
-#include <d3d11.h>
 
 #include <shellscalingapi.h>
 
@@ -52,8 +51,6 @@
 #define HID_USAGE_GENERIC_MOUSE ((unsigned short)0x02)
 #endif
 using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
-
-using namespace Microsoft::WRL; // For ComPtr
 
 namespace Fast {
 
@@ -775,8 +772,6 @@ bool GfxWindowBackendDXGI::IsFrameReady() {
         mFrameStats.clear();
     }
 
-    mUseTimer = false;
-
     mFrameTimeStamp += FRAME_INTERVAL_NS_NUMERATOR;
 
     if (mFrameStats.size() >= 2) {
@@ -867,71 +862,47 @@ bool GfxWindowBackendDXGI::IsFrameReady() {
                 return false;
             }
         }
-        // printf("v: %d\n", (int)vsyncs_to_wait);
-        if (vsyncs_to_wait > 4) {
-            // Invalid, so use mTimer based solution
-            vsyncs_to_wait = 4;
-            mUseTimer = true;
-        }
-    } else {
-        mUseTimer = true;
     }
-    // mLengthInVsyncFrames is used as present interval. Present interval >1 (aka fractional V-Sync)
-    // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
-    // Get the present interval the user wants instead (V-Sync toggle).
-    mVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
-    mLengthInVsyncFrames = mVsyncEnabled ? 1 : 0;
     return true;
 }
 
 void GfxWindowBackendDXGI::SwapBuffersBegin() {
+    // mLengthInVsyncFrames (now mVsyncEnabled) was used as present interval. Present interval >1 (aka fractional
+    // V-Sync) breaks VRR and introduces even more input lag than capping via normal V-Sync does. Get the present
+    // interval the user wants instead (V-Sync toggle).
+    mVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0;
+
     LARGE_INTEGER t;
-    mUseTimer = true;
-    if (mUseTimer || (mTearingSupport && !mVsyncEnabled)) {
-        ComPtr<ID3D11Device> mDevice;
-        mSwapChainDevice.As(&mDevice);
+    QueryPerformanceCounter(&t);
+    int64_t next = qpc_to_100ns(mPreviousPresentTime.QuadPart) +
+                   FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
+    int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
+    if (left > 0) {
+        LARGE_INTEGER li;
+        li.QuadPart = -left;
+        SetWaitableTimer(mTimer, &li, 0, nullptr, nullptr, false);
+        WaitForSingleObject(mTimer, INFINITE);
+    }
 
-        if (mDevice != nullptr) {
-            ComPtr<ID3D11DeviceContext> dev_ctx;
-            mDevice->GetImmediateContext(&dev_ctx);
-
-            if (dev_ctx != nullptr) {
-                // Always flush the immediate mContext before forcing a CPU-wait, otherwise the GPU might only start
-                // working when the SwapChain is presented.
-                dev_ctx->Flush();
-            }
-        }
-        QueryPerformanceCounter(&t);
-        int64_t next = qpc_to_100ns(mPreviousPresentTime.QuadPart) +
-                       FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
-        int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
-        if (left > 0) {
-            LARGE_INTEGER li;
-            li.QuadPart = -left;
-            SetWaitableTimer(mTimer, &li, 0, nullptr, nullptr, false);
-            WaitForSingleObject(mTimer, INFINITE);
-        }
-
+    QueryPerformanceCounter(&t);
+    t.QuadPart = qpc_to_100ns(t.QuadPart);
+    while (t.QuadPart < next) {
+        YieldProcessor();
         QueryPerformanceCounter(&t);
         t.QuadPart = qpc_to_100ns(t.QuadPart);
-        while (t.QuadPart < next) {
-            YieldProcessor();
-            QueryPerformanceCounter(&t);
-            t.QuadPart = qpc_to_100ns(t.QuadPart);
-        }
     }
     QueryPerformanceCounter(&t);
     mPreviousPresentTime = t;
-    if (mTearingSupport && !mLengthInVsyncFrames) {
+    if (mTearingSupport && !mVsyncEnabled) {
         // 512: DXGI_PRESENT_ALLOW_TEARING - allows for true V-Sync off with flip model
-        ThrowIfFailed(swap_chain->Present(mLengthInVsyncFrames, DXGI_PRESENT_ALLOW_TEARING));
+        ThrowIfFailed(swap_chain->Present(mVsyncEnabled, DXGI_PRESENT_ALLOW_TEARING));
     } else {
-        ThrowIfFailed(swap_chain->Present(mLengthInVsyncFrames, 0));
+        ThrowIfFailed(swap_chain->Present(mVsyncEnabled, 0));
     }
 
     UINT this_present_id;
     if (swap_chain->GetLastPresentCount(&this_present_id) == S_OK) {
-        mPendingFrameStats.insert(std::make_pair(this_present_id, mLengthInVsyncFrames));
+        mPendingFrameStats.insert(std::make_pair(this_present_id, mVsyncEnabled));
     }
     mDroppedFrame = false;
 }

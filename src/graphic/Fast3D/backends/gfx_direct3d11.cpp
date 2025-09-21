@@ -724,7 +724,6 @@ void GfxRenderingAPIDX11::EndFrame() {
 }
 
 void GfxRenderingAPIDX11::FinishRender() {
-    mContext->Flush();
 }
 
 int GfxRenderingAPIDX11::CreateFramebuffer() {
