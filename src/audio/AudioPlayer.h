@@ -56,3 +56,4 @@ class AudioPlayer {
 #endif
 
 #include "SDLAudioPlayer.h"
+#include "NullAudioPlayer.h"
