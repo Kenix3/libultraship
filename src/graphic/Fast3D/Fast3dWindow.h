@@ -48,6 +48,7 @@ class Fast3dWindow : public Ship::Window {
     const char* GetKeyName(int32_t scancode) override;
 
     void InitWindowManager();
+    int32_t GetTargetFps();
     void SetTargetFps(int32_t fps);
     void SetMaximumFrameLatency(int32_t latency);
     void GetPixelDepthPrepare(float x, float y);

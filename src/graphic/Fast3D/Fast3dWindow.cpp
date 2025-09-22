@@ -91,8 +91,6 @@ void Fast3dWindow::Init() {
     mMouseCaptureScancode =
         Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2);
 
-    SetForceCursorVisibility(CVarGetInteger("gForceCursorVisibility", 0));
-
     InitWindowManager();
     mInterpreter->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen,
                        width, height, posX, posY);
@@ -103,8 +101,12 @@ void Fast3dWindow::Init() {
     SetTextureFilter((FilteringMode)CVarGetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
 
+int32_t Fast3dWindow::GetTargetFps() {
+    return mInterpreter->GetTargetFps();
+}
+
 void Fast3dWindow::SetTargetFps(int32_t fps) {
-    mInterpreter->SetTargetFPS(fps);
+    mInterpreter->SetTargetFps(fps);
 }
 
 void Fast3dWindow::SetMaximumFrameLatency(int32_t latency) {
@@ -365,13 +367,6 @@ bool Fast3dWindow::MouseButtonDown(int button) {
 
 void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
-
-    if (isNowFullscreen) {
-        auto menuVisible = wnd->GetGui()->GetMenuOrMenubarVisible();
-        wnd->SetMouseCapture(!(menuVisible || wnd->ShouldForceCursorVisibility()));
-    } else {
-        wnd->SetMouseCapture(false);
-    }
 
     // Re-save fullscreen enabled after
     Ship::Context::GetInstance()->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
