@@ -76,12 +76,14 @@ class Window {
     void SetAutoCaptureMouse(bool capture);
     bool ShouldForceCursorVisibility();
     void SetForceCursorVisibility(bool visible);
+    int32_t GetFullscreenScancode();
+    int32_t GetMouseCaptureScancode();
+    void SetFullscreenScancode(int32_t scancode);
+    void SetMouseCaptureScancode(int32_t scancode);
 
   protected:
     void SetWindowBackend(WindowBackend backend);
     void AddAvailableWindowBackend(WindowBackend backend);
-    static int32_t mFullscreenScancode;
-    static int32_t mMouseCaptureScancode;
 
   private:
     std::shared_ptr<Gui> mGui;
@@ -93,5 +95,7 @@ class Window {
     std::shared_ptr<Config> mConfig;
     bool mAutoCaptureMouse = false;
     bool mForceCursorVisibility = false;
+    int32_t mFullscreenScancode;
+    int32_t mMouseCaptureScancode;
 };
 } // namespace Ship
