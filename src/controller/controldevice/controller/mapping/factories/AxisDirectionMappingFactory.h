@@ -17,6 +17,9 @@ class AxisDirectionMappingFactory {
     static std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
     CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex);
 
+    static std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
+    CreateDefaultGCAdapterAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex);
+
     static std::shared_ptr<ControllerAxisDirectionMapping>
     CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex, Direction direction);
 
