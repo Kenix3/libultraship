@@ -145,7 +145,6 @@ void ArchiveManager::ResetVirtualFileSystem() {
     mFileToArchive.clear();
     for (const auto& archive : archives) {
         archive->Unload();
-        archive->Load();
         AddArchive(archive);
     }
 }
