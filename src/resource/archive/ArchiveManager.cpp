@@ -145,6 +145,7 @@ void ArchiveManager::ResetVirtualFileSystem() {
     mFileToArchive.clear();
     for (const auto& archive : archives) {
         archive->Unload();
+        archive->Load();
         AddArchive(archive);
     }
 }
@@ -155,6 +156,7 @@ bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::stri
         if (archive->WriteFile(filePath, data)) {
             auto hash = CRC64(filePath.c_str());
             archive->Unload();
+            archive->Load();
             AddArchive(archive);
             mHashes[hash] = filePath;
             mFileToArchive[hash] = archive;
