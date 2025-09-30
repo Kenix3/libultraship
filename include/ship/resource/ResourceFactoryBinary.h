@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ResourceFactory.h"
+#include <ship/resource/ResourceFactory.h>
 
 namespace Ship {
 class ResourceFactoryBinary : public ResourceFactory {

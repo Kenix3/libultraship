@@ -3,8 +3,8 @@
 #include <memory>
 #include <unordered_map>
 #include "ResourceType.h"
-#include "ResourceFactory.h"
-#include "Resource.h"
+#include <ship/resource/ResourceFactory.h>
+#include <ship/resource/Resource.h>
 
 namespace Ship {
 struct File;

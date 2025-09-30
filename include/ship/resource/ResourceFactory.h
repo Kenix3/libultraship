@@ -2,7 +2,7 @@
 
 #include <memory>
 #include "File.h"
-#include "Resource.h"
+#include <ship/resource/Resource.h>
 
 namespace Ship {
 class ResourceFactory {
