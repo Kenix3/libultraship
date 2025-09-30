@@ -1,4 +1,4 @@
-#include "ControlPort.h"
+#include "ship/controller/controldeck/ControlPort.h"
 
 namespace Ship {
 ControlPort::ControlPort(uint8_t portIndex) : mPortIndex(portIndex), mDevice(nullptr) {

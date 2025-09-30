@@ -1,4 +1,4 @@
-#include "GfxDebuggerWindow.h"
+#include "libultraship/window/gui/GfxDebuggerWindow.h"
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 #include "ship/Context.h"
@@ -6,8 +6,8 @@
 #include <stack>
 #include <spdlog/fmt/fmt.h>
 #include "libultraship/bridge.h"
-#include <graphic/Fast3D/interpreter.h>
-#include <graphic/Fast3D/Fast3dWindow.h>
+#include "fast/interpreter.h"
+#include "fast/Fast3dWindow.h"
 #include <optional>
 #ifdef GFX_DEBUG_DISASSEMBLER
 #include <gfxd.h>

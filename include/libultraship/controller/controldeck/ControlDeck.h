@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/controller/controldeck/ControlPort.h"
 #include <vector>
 #include "ship/config/Config.h"

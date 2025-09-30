@@ -1,4 +1,4 @@
-#include "ControllerButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 
 #include <random>
 #include <sstream>

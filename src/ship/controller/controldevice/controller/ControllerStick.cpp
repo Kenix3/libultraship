@@ -1,10 +1,10 @@
-#include "ControllerStick.h"
+#include "ship/controller/controldevice/controller/ControllerStick.h"
 #include <spdlog/spdlog.h>
 
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
-#include "controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
 
-#include "controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 

@@ -1,4 +1,4 @@
-#include "ControllerDefaultMappings.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
 #include "libultraship/libultra/controller.h"
 
 namespace Ship {

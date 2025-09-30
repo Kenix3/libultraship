@@ -1,4 +1,4 @@
-#include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "KeyboardKeyToAnyMapping.h"
 
 namespace Ship {

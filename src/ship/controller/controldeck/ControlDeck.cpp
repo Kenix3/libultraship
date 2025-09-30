@@ -1,11 +1,11 @@
-#include "ControlDeck.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 #include "ship/Context.h"
 #include "ship/controller/controldevice/controller/Controller.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include <imgui.h>
-#include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 

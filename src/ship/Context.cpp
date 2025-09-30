@@ -8,7 +8,7 @@
 #include "fast/debug/GfxDebugger.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "debug/CrashHandler.h"
+#include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
 
 #ifdef _WIN32

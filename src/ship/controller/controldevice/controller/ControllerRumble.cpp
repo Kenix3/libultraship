@@ -1,10 +1,10 @@
-#include "ControllerRumble.h"
+#include "ship/controller/controldevice/controller/ControllerRumble.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
 
-#include "controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h"
 
 namespace Ship {
 ControllerRumble::ControllerRumble(uint8_t portIndex) : mPortIndex(portIndex) {

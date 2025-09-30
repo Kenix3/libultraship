@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerInputMapping.h"
 #include "KeyboardScancodes.h"
 
 namespace Ship {

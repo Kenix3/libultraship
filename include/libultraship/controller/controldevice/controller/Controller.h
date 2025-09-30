@@ -10,13 +10,7 @@
 #include "libultraship/libultra/controller.h"
 #include "libultraship/color.h"
 #include <unordered_map>
-#include "ControllerButton.h"
-#include "ControllerStick.h"
-#include "ControllerGyro.h"
-#include "ControllerRumble.h"
-#include "ControllerLED.h"
-#include "controller/controldevice/ControlDevice.h"
-#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/Controller.h"
 
 namespace LUS {
 class Controller : public Ship::Controller {

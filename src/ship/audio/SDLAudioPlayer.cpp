@@ -1,4 +1,4 @@
-#include "SDLAudioPlayer.h"
+#include "ship/audio/SDLAudioPlayer.h"
 #include <spdlog/spdlog.h>
 
 namespace Ship {

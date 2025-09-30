@@ -1,9 +1,9 @@
-#include "ControllerButton.h"
+#include "ship/controller/controldevice/controller/ControllerButton.h"
 
-#include "controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
-#include "controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"

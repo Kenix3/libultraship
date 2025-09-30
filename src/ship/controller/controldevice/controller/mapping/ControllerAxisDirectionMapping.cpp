@@ -1,4 +1,4 @@
-#include "ControllerAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 
 #include <random>
 #include <sstream>

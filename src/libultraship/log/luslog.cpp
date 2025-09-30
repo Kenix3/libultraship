@@ -1,7 +1,7 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <stdarg.h>
-#include "log/luslog.h"
+#include "libultraship/log/luslog.h"
 
 extern "C" {
 void luslog(const char* file, int32_t line, int32_t logLevel, const char* msg) {

@@ -1,8 +1,8 @@
-#include "ControllerGyro.h"
+#include "ship/controller/controldevice/controller/ControllerGyro.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"
-#include "controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
 
 namespace Ship {
 ControllerGyro::ControllerGyro(uint8_t portIndex) : mPortIndex(portIndex) {

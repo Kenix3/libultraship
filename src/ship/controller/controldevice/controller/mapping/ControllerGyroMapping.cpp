@@ -1,4 +1,4 @@
-#include "ControllerGyroMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 
 namespace Ship {
 ControllerGyroMapping::ControllerGyroMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,

@@ -1,11 +1,11 @@
-#include "ControllerLED.h"
+#include "ship/controller/controldevice/controller/ControllerLED.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
 
-#include "controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
 namespace Ship {
 ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
