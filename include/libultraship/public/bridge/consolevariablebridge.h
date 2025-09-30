@@ -5,7 +5,7 @@
 
 #ifdef __cplusplus
 #include <memory>
-#include <config/ConsoleVariable.h>
+#include "ship/config/ConsoleVariable.h"
 std::shared_ptr<Ship::CVar> CVarGet(const char* name);
 
 extern "C" {

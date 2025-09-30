@@ -1,5 +1,5 @@
 #include "SDLGyroMapping.h"
-#include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 #include <spdlog/spdlog.h>
 #include "Context.h"
 

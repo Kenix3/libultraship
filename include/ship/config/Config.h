@@ -4,8 +4,8 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
-#include "audio/Audio.h"
-#include "window/Window.h"
+#include "ship/audio/Audio.h"
+#include "ship/window/Window.h"
 
 namespace Ship {
 

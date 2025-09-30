@@ -15,8 +15,8 @@
 #include "ControllerGyro.h"
 #include "ControllerRumble.h"
 #include "ControllerLED.h"
-#include "controller/controldevice/ControlDevice.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/ControlDevice.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 

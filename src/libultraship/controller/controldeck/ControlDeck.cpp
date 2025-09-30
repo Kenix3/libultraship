@@ -1,7 +1,7 @@
 #include "ControlDeck.h"
 
 #include "Context.h"
-#include "controller/controldevice/controller/Controller.h"
+#include "ship/controller/controldevice/controller/Controller.h"
 #include "utils/StringHelper.h"
 #include "public/bridge/consolevariablebridge.h"
 #include <imgui.h>

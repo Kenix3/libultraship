@@ -2,11 +2,11 @@
 
 #include "ControlPort.h"
 #include <vector>
-#include <config/Config.h>
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
-#include "controller/physicaldevice/GlobalSDLDeviceSettings.h"
-#include "controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
+#include "ship/config/Config.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
+#include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
 
 namespace Ship {
 

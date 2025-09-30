@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 
 namespace Ship {
 class ControllerGyro {

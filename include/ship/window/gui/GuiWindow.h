@@ -3,7 +3,7 @@
 #include <string>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include "window/gui/GuiElement.h"
+#include "ship/window/gui/GuiElement.h"
 #include <stdint.h>
 
 namespace Ship {

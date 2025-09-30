@@ -1,4 +1,4 @@
-#include "controller/controldevice/controller/mapping/ControllerLEDMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 #include "SDLMapping.h"
 
 namespace Ship {

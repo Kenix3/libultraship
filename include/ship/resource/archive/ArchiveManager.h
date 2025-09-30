@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stdint.h>
-#include "resource/File.h"
+#include "ship/resource/File.h"
 
 namespace Ship {
 struct File;

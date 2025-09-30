@@ -1,4 +1,4 @@
-#include "window/gui/GuiMenuBar.h"
+#include "ship/window/gui/GuiMenuBar.h"
 #include "libultraship/libultraship.h"
 
 namespace Ship {

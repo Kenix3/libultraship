@@ -1,6 +1,6 @@
 #pragma once
 
-#include "resource/Resource.h"
+#include "ship/resource/Resource.h"
 #include "resource/ResourceFactoryBinary.h"
 #include "resource/ResourceFactoryXML.h"
 

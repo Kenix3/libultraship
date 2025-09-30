@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <string>
 #include "libultraship/libultra/controller.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 

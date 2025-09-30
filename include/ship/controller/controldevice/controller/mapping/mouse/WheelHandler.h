@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "window/Window.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/window/Window.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 struct WheelDirections {

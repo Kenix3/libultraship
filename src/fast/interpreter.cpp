@@ -30,7 +30,7 @@
 #include "backends/gfx_rendering_api.h"
 
 #include "window/gui/Gui.h"
-#include "resource/ResourceManager.h"
+#include "ship/resource/ResourceManager.h"
 #include "utils/Utils.h"
 #include "Context.h"
 #include "libultraship/bridge.h"

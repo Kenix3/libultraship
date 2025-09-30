@@ -3,10 +3,10 @@
 #include <vector>
 #include <memory>
 
-#include "debug/Console.h"
+#include "ship/debug/Console.h"
 #include <imgui.h>
 #include <unordered_map>
-#include "resource/ResourceManager.h"
+#include "ship/resource/ResourceManager.h"
 
 namespace Ship {
 

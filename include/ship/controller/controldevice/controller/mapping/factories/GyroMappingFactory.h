@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/controldevice/controller/mapping/ControllerGyroMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 #include <memory>
 #include <string>
 

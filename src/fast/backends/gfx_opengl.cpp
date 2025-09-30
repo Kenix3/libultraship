@@ -18,7 +18,7 @@
 #define FOR_WINDOWS 0
 #endif
 
-#include "gfx_opengl.h"
+#include "fast/backends/gfx_opengl.h"
 #include "window/gui/Gui.h"
 #include <prism/processor.h>
 #include <fstream>

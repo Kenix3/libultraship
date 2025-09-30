@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <string>
 
-#include "controller/controldevice/controller/mapping/ControllerLEDMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 
 namespace Ship {
 class ControllerLED {

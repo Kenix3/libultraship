@@ -1,5 +1,5 @@
 #include "resource/factory/TextureFactory.h"
-#include "resource/type/Texture.h"
+#include "fast/resource/type/Texture.h"
 #include "spdlog/spdlog.h"
 
 namespace Fast {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 class MouseButtonToAnyMapping : virtual public ControllerInputMapping {

@@ -8,9 +8,9 @@
 
 #include "zip.h"
 
-#include "resource/File.h"
-#include "resource/Resource.h"
-#include "resource/archive/Archive.h"
+#include "ship/resource/File.h"
+#include "ship/resource/Resource.h"
+#include "ship/resource/archive/Archive.h"
 
 namespace Ship {
 struct File;

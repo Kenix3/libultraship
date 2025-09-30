@@ -1,10 +1,10 @@
 #pragma once
-#include "window/Window.h"
+#include "ship/window/Window.h"
 #include "window/gui/Gui.h"
 #include "graphic/Fast3D/backends/gfx_window_manager_api.h"
 #include "graphic/Fast3D/backends/gfx_rendering_api.h"
 #include "public/bridge/gfxbridge.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 union Gfx;
 #include "interpreter.h"

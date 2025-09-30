@@ -1,6 +1,6 @@
 #include "ResourceManager.h"
 #include <spdlog/spdlog.h>
-#include "resource/File.h"
+#include "ship/resource/File.h"
 #include "resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>

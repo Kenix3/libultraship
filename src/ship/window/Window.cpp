@@ -1,9 +1,9 @@
-#include "window/Window.h"
+#include "ship/window/Window.h"
 #include <string>
 #include <fstream>
 #include <iostream>
 #include "public/bridge/consolevariablebridge.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "Context.h"
 #include "controller/controldeck/ControlDeck.h"
 

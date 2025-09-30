@@ -1,7 +1,7 @@
 #pragma once
 
-#include "controller/controldevice/ControlDevice.h"
-#include "controller/controldevice/controller/Controller.h"
+#include "ship/controller/controldevice/ControlDevice.h"
+#include "ship/controller/controldevice/controller/Controller.h"
 #include <memory>
 
 namespace Ship {

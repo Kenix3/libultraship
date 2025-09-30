@@ -4,7 +4,7 @@
 
 #ifdef __cplusplus
 #include "fast/resource/type/Texture.h"
-#include "resource/Resource.h"
+#include "ship/resource/Resource.h"
 #include <memory>
 
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name);

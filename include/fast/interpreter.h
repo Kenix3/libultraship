@@ -10,13 +10,13 @@
 #include <stack>
 #include <string>
 
-#include "graphic/Fast3D/lus_gbi.h"
+#include "fast/lus_gbi.h"
 #include "libultraship/libultra/types.h"
-#include "public/bridge/gfxbridge.h"
+#include "libultraship/public/bridge/gfxbridge.h"
 #include "backends/gfx_rendering_api.h"
 
-#include "resource/type/Texture.h"
-#include "resource/Resource.h"
+#include "fast/resource/type/Texture.h"
+#include "ship/resource/Resource.h"
 
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320

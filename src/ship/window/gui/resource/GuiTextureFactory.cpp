@@ -1,5 +1,5 @@
 #include "window/gui/resource/GuiTextureFactory.h"
-#include "window/gui/resource/GuiTexture.h"
+#include "ship/window/gui/resource/GuiTexture.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {

@@ -16,7 +16,7 @@
 #include "ControllerRumble.h"
 #include "ControllerLED.h"
 #include "controller/controldevice/ControlDevice.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace LUS {
 class Controller : public Ship::Controller {

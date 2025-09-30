@@ -11,7 +11,7 @@
 #define CONTROLLERBUTTONS_T uint16_t
 #endif
 
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 

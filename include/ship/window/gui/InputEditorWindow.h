@@ -1,13 +1,13 @@
 #pragma once
 
 #include "stdint.h"
-#include "window/gui/GuiWindow.h"
+#include "ship/window/gui/GuiWindow.h"
 #include <imgui.h>
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include <set>
-#include "controller/controldevice/controller/Controller.h"
+#include "ship/controller/controldevice/controller/Controller.h"
 
 namespace Ship {
 

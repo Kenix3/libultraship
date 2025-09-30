@@ -1,10 +1,10 @@
 #pragma once
 
-#include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 

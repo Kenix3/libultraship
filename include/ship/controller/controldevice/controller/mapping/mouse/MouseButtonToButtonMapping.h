@@ -2,7 +2,7 @@
 
 #include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "MouseButtonToAnyMapping.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 class MouseButtonToButtonMapping final : public MouseButtonToAnyMapping, public ControllerButtonMapping {

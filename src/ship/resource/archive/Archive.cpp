@@ -3,13 +3,13 @@
 #include "spdlog/spdlog.h"
 
 #include "Context.h"
-#include "resource/File.h"
+#include "ship/resource/File.h"
 #include "resource/ResourceLoader.h"
 #include "resource/ResourceType.h"
 #include "utils/binarytools/MemoryStream.h"
 #include "utils/glob.h"
 #include "utils/StrHash64.h"
-#include "window/Window.h"
+#include "ship/window/Window.h"
 #include <nlohmann/json.hpp>
 #include <tinyxml2.h>
 

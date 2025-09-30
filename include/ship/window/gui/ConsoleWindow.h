@@ -5,8 +5,8 @@
 #include <string>
 #include <functional>
 
-#include "window/gui/GuiWindow.h"
-#include "debug/Console.h"
+#include "ship/window/gui/GuiWindow.h"
+#include "ship/debug/Console.h"
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "resource/Resource.h"
+#include "ship/resource/Resource.h"
 
 #define TEX_FLAG_LOAD_AS_RAW (1 << 0)
 #define TEX_FLAG_LOAD_AS_IMG (1 << 1)

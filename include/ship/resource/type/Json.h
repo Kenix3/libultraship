@@ -1,21 +1,20 @@
 #pragma once
 
 #include "ship/resource/Resource.h"
+#include <nlohmann/json.hpp>
 
 namespace Ship {
-#define RESOURCE_TYPE_FONT 0x464F4E54 // FONT
 
-class Font : public Resource<void> {
+class Json final : public Resource<void> {
   public:
     using Resource::Resource;
 
-    Font();
-    virtual ~Font();
+    Json();
 
     void* GetPointer() override;
     size_t GetPointerSize() override;
 
-    char* Data = nullptr;
+    nlohmann::json Data;
     size_t DataSize;
 };
 }; // namespace Ship

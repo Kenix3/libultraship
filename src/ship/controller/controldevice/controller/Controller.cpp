@@ -1,4 +1,4 @@
-#include "controller/controldevice/controller/Controller.h"
+#include "ship/controller/controldevice/controller/Controller.h"
 #include <memory>
 #include <algorithm>
 #include "public/bridge/consolevariablebridge.h"

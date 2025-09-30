@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include "Context.h"
-#include "window/Window.h"
+#include "ship/window/Window.h"
 
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)

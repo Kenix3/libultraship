@@ -1,4 +1,4 @@
-#include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "KeyboardKeyToAnyMapping.h"
 
 namespace Ship {

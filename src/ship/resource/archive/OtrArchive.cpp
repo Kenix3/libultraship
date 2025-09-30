@@ -4,7 +4,7 @@
 
 #include "Context.h"
 #include "utils/filesystemtools/FileHelper.h"
-#include "resource/ResourceManager.h"
+#include "ship/resource/ResourceManager.h"
 #include "resource/archive/ArchiveManager.h"
 
 #include "spdlog/spdlog.h"

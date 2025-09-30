@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "controller/physicaldevice/PhysicalDeviceType.h"
+#include "ship/controller/physicaldevice/PhysicalDeviceType.h"
 
 namespace Ship {
 

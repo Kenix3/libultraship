@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/controldevice/controller/mapping/ControllerLEDMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 #include <memory>
 #include <string>
 #include <vector>

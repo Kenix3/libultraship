@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <mutex>
-#include "utils/binarytools/BinaryReader.h"
+#include "ship/utils/binarytools/BinaryReader.h"
 
 namespace tinyxml2 {
 class XMLDocument;

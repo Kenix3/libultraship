@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <string>
 
-#include "controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
 
 namespace Ship {
 class ControllerRumble {

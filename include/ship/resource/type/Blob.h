@@ -3,19 +3,15 @@
 #include "ship/resource/Resource.h"
 
 namespace Ship {
-#define RESOURCE_TYPE_FONT 0x464F4E54 // FONT
-
-class Font : public Resource<void> {
+class Blob final : public Ship::Resource<void> {
   public:
     using Resource::Resource;
 
-    Font();
-    virtual ~Font();
+    Blob();
 
     void* GetPointer() override;
     size_t GetPointerSize() override;
 
-    char* Data = nullptr;
-    size_t DataSize;
+    std::vector<uint8_t> Data;
 };
 }; // namespace Ship

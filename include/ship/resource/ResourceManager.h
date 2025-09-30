@@ -8,10 +8,10 @@
 #include <mutex>
 #include <queue>
 #include <variant>
-#include "resource/Resource.h"
-#include "resource/ResourceLoader.h"
-#include "resource/archive/Archive.h"
-#include "resource/archive/ArchiveManager.h"
+#include "ship/resource/Resource.h"
+#include "ship/resource/ResourceLoader.h"
+#include "ship/resource/archive/Archive.h"
+#include "ship/resource/archive/ArchiveManager.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "libultraship/public/bridge/resourcebridge.h"
-#include "libultraship/public/bridge/audiobridge.h"
+#include "ship/public/bridge/audiobridge.h"
 #include "libultraship/public/bridge/controllerbridge.h"
 #include "libultraship/public/bridge/windowbridge.h"
 #include "libultraship/public/bridge/consolevariablebridge.h"

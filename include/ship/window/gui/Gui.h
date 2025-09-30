@@ -11,16 +11,16 @@
 #include <vector>
 #include <SDL2/SDL.h>
 #include "ship/window/gui/ConsoleWindow.h"
-#include "window/gui/InputEditorWindow.h"
-#include "controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
-#include "window/gui/IconsFontAwesome4.h"
-#include "window/gui/GameOverlay.h"
-#include "window/gui/StatsWindow.h"
-#include "window/gui/GuiWindow.h"
-#include "window/gui/GuiMenuBar.h"
+#include "ship/window/gui/InputEditorWindow.h"
+#include "ship/controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
+#include "ship/window/gui/IconsFontAwesome4.h"
+#include "ship/window/gui/GameOverlay.h"
+#include "ship/window/gui/StatsWindow.h"
+#include "ship/window/gui/GuiWindow.h"
+#include "ship/window/gui/GuiMenuBar.h"
 #include "libultraship/libultra/controller.h"
-#include "resource/type/Texture.h"
-#include "window/gui/resource/GuiTexture.h"
+#include "fast/resource/type/Texture.h"
+#include "ship/window/gui/resource/GuiTexture.h"
 
 namespace Fast {
 class Interpreter;

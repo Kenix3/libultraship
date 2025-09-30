@@ -15,7 +15,7 @@
 #include <mutex>
 #include <StormLib.h>
 
-#include "resource/Resource.h"
+#include "ship/resource/Resource.h"
 #include "resource/archive/Archive.h"
 
 namespace Ship {

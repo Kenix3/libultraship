@@ -1,6 +1,6 @@
 #pragma once
 
-#include "resource/File.h"
+#include "ship/resource/File.h"
 
 namespace Ship {
 class ResourceManager;

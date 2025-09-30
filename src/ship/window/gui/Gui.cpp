@@ -10,8 +10,8 @@
 #include "config/Config.h"
 #include "Context.h"
 #include "public/bridge/consolevariablebridge.h"
-#include "resource/type/Texture.h"
-#include "resource/File.h"
+#include "fast/resource/type/Texture.h"
+#include "ship/resource/File.h"
 #include <stb_image.h>
 #include "window/gui/Fonts.h"
 #include "window/gui/resource/GuiTextureFactory.h"

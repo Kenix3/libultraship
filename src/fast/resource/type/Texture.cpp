@@ -1,4 +1,4 @@
-#include "resource/type/Texture.h"
+#include "fast/resource/type/Texture.h"
 
 namespace Fast {
 Texture::Texture() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {

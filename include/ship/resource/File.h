@@ -5,8 +5,8 @@
 #include <vector>
 #include <memory>
 #include <stdint.h>
-#include "resource/ResourceType.h"
-#include "utils/binarytools/BinaryReader.h"
+#include "ship/resource/ResourceType.h"
+#include "ship/utils/binarytools/BinaryReader.h"
 
 namespace tinyxml2 {
 class XMLDocument;

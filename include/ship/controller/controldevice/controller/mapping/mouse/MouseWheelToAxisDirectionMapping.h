@@ -1,8 +1,8 @@
 #pragma once
 
 #include "MouseWheelToAnyMapping.h"
-#include "controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
 class MouseWheelToAxisDirectionMapping final : public MouseWheelToAnyMapping, public ControllerAxisDirectionMapping {

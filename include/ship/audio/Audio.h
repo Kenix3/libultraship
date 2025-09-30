@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "audio/AudioPlayer.h"
+#include "ship/audio/AudioPlayer.h"
 
 namespace Ship {
 enum class AudioBackend { WASAPI, SDL };

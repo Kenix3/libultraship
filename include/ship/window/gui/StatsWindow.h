@@ -1,6 +1,6 @@
 #pragma once
 
-#include "window/gui/GuiWindow.h"
+#include "ship/window/gui/GuiWindow.h"
 
 namespace Ship {
 class StatsWindow : public GuiWindow {
