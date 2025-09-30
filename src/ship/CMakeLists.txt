@@ -1,4 +1,4 @@
-include(../cmake/cvars.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/cvars.cmake)
 
 add_library(libultraship STATIC)
 set_target_properties(libultraship PROPERTIES PREFIX "")
