@@ -1,11 +1,11 @@
 #ifdef INCLUDE_MPQ_SUPPORT
 
-#include "OtrArchive.h"
+#include "ship/resource/archive/OtrArchive.h"
 
 #include "ship/Context.h"
 #include "ship/utils/filesystemtools/FileHelper.h"
 #include "ship/resource/ResourceManager.h"
-#include "resource/archive/ArchiveManager.h"
+#include "ship/resource/archive/ArchiveManager.h"
 
 #include "spdlog/spdlog.h"
 

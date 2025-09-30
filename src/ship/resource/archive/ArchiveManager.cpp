@@ -5,7 +5,7 @@
 
 #include "ship/resource/archive/Archive.h"
 #ifdef INCLUDE_MPQ_SUPPORT
-#include "resource/archive/OtrArchive.h"
+#include "ship/resource/archive/OtrArchive.h"
 #endif
 #include "ship/resource/archive/O2rArchive.h"
 #include "ship/resource/archive/FolderArchive.h"
