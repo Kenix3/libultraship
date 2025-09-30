@@ -1,7 +1,7 @@
-#include "SDLButtonToAnyMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLButtonToAnyMapping.h"
 
 #include "ship/utils/StringHelper.h"
-#include "window/gui/IconsFontAwesome4.h"
+#include "ship/window/gui/IconsFontAwesome4.h"
 
 namespace Ship {
 SDLButtonToAnyMapping::SDLButtonToAnyMapping(int32_t sdlControllerButton)

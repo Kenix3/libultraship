@@ -1,8 +1,8 @@
-#include "MouseButtonToAnyMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToAnyMapping.h"
 #include "ship/Context.h"
 
 #include "ship/utils/StringHelper.h"
-#include "window/gui/IconsFontAwesome4.h"
+#include "ship/window/gui/IconsFontAwesome4.h"
 
 namespace Ship {
 MouseButtonToAnyMapping::MouseButtonToAnyMapping(MouseBtn button)

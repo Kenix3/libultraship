@@ -1,11 +1,11 @@
-#include "MouseWheelToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseWheelToAxisDirectionMapping.h"
 #include <spdlog/spdlog.h>
 #include <cmath>
 #include "ship/utils/StringHelper.h"
-#include "window/gui/IconsFontAwesome4.h"
+#include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/Context.h"
-#include "WheelHandler.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {

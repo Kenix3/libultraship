@@ -1,4 +1,4 @@
-#include "O2rArchive.h"
+#include "ship/resource/archive/O2rArchive.h"
 
 #include "ship/Context.h"
 #include "ship/window/Window.h"

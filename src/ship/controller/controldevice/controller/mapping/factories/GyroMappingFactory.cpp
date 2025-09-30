@@ -1,5 +1,5 @@
-#include "GyroMappingFactory.h"
-#include "controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h"
+#include "ship/controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"

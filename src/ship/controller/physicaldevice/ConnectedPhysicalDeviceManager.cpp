@@ -1,4 +1,4 @@
-#include "ConnectedPhysicalDeviceManager.h"
+#include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 
 namespace Ship {
 ConnectedPhysicalDeviceManager::ConnectedPhysicalDeviceManager() {

@@ -1,10 +1,10 @@
-#include "ConsoleWindow.h"
+#include "ship/window/gui/ConsoleWindow.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/window/Window.h"
 #include "ship/Context.h"
 #include "ship/utils/StringHelper.h"
-#include "utils/Utils.h"
+#include "ship/utils/Utils.h"
 #include <sstream>
 
 namespace Ship {

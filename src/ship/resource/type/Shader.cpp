@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "ship/resource/type/Shader.h"
 
 namespace Ship {
 Shader::Shader() : Resource(std::shared_ptr<ResourceInitData>()) {

@@ -1,4 +1,4 @@
-#include "GuiTexture.h"
+#include "ship/window/gui/resource/GuiTexture.h"
 
 namespace Ship {
 GuiTexture::GuiTexture() : Resource(std::shared_ptr<ResourceInitData>()) {

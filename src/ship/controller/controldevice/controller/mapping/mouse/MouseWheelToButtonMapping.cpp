@@ -1,8 +1,8 @@
-#include "MouseWheelToButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseWheelToButtonMapping.h"
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
 #include "ship/public/bridge/consolevariablebridge.h"
-#include "WheelHandler.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 

@@ -1,4 +1,4 @@
-#include "ControllerLEDMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 
 namespace Ship {
 ControllerLEDMapping::ControllerLEDMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,

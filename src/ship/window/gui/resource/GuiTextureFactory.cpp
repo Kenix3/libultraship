@@ -1,4 +1,4 @@
-#include "window/gui/resource/GuiTextureFactory.h"
+#include "ship/window/gui/resource/GuiTextureFactory.h"
 #include "ship/window/gui/resource/GuiTexture.h"
 #include "spdlog/spdlog.h"
 

@@ -1,11 +1,11 @@
-#include "ResourceManager.h"
+#include "ship/resource/ResourceManager.h"
 #include <spdlog/spdlog.h>
 #include "ship/resource/File.h"
-#include "resource/archive/Archive.h"
+#include "ship/resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>
 #include "ship/utils/StringHelper.h"
-#include "utils/Utils.h"
+#include "ship/utils/Utils.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/Context.h"
 

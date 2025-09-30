@@ -1,8 +1,8 @@
-#include "public/bridge/resourcebridge.h"
+#include "libultraship/public/bridge/resourcebridge.h"
 #include "ship/Context.h"
 #include <string>
 #include <algorithm>
-#include "utils/StrHash64.h"
+#include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
 
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name) {

@@ -1,8 +1,8 @@
-#include "ConsoleVariable.h"
+#include "ship/config/ConsoleVariable.h"
 
 #include <functional>
-#include "utils/filesystemtools/DiskFile.h"
-#include <utils/Utils.h>
+#include "ship/utils/filesystemtools/DiskFile.h"
+#include "ship/utils/Utils.h"
 #include "ship/config/Config.h"
 #include "ship/Context.h"
 

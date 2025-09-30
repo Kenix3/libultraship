@@ -1,4 +1,4 @@
-#include "GuiElement.h"
+#include "ship/window/gui/GuiElement.h"
 
 #include "libultraship/libultraship.h"
 

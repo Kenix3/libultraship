@@ -1,7 +1,7 @@
-#include "MouseButtonToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
-#include "window/gui/IconsFontAwesome4.h"
+#include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"

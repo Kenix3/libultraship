@@ -1,4 +1,4 @@
-#include "Resource.h"
+#include "ship/resource/Resource.h"
 #include <spdlog/spdlog.h>
 
 namespace Ship {

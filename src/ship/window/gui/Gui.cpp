@@ -1,6 +1,6 @@
 #define NOMINMAX
 
-#include "Gui.h"
+#include "ship/window/gui/Gui.h"
 
 #include <cstring>
 #include <utility>
@@ -13,11 +13,11 @@
 #include "fast/resource/type/Texture.h"
 #include "ship/resource/File.h"
 #include <stb_image.h>
-#include "window/gui/Fonts.h"
-#include "window/gui/resource/GuiTextureFactory.h"
+#include "ship/window/gui/Fonts.h"
+#include "ship/window/gui/resource/GuiTextureFactory.h"
 #include "fast/backends/gfx_rendering_api.h"
 
-#include "window/gui/GfxDebuggerWindow.h"
+#include "libultraship/window/gui/GfxDebuggerWindow.h"
 #include "fast/interpreter.h"
 #include "fast/Fast3dWindow.h"
 #ifdef __APPLE__

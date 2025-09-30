@@ -1,9 +1,9 @@
-#include "InputEditorWindow.h"
+#include "ship/window/gui/InputEditorWindow.h"
 #include "ship/Context.h"
-#include "Gui.h"
+#include "ship/window/gui/Gui.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/public/bridge/consolevariablebridge.h"
-#include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 #define SCALE_IMGUI_SIZE(value) ((value / 13.0f) * ImGui::GetFontSize())

@@ -1,4 +1,4 @@
-#include "Console.h"
+#include "ship/debug/Console.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 #include <spdlog/spdlog.h>

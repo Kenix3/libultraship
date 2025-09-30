@@ -1,5 +1,5 @@
-#include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
-#include "SDLAxisDirectionToAnyMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.h"
 
 namespace Ship {
 class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, public SDLAxisDirectionToAnyMapping {

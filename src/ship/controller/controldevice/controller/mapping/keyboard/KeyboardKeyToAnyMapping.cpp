@@ -1,8 +1,8 @@
-#include "KeyboardKeyToAnyMapping.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAnyMapping.h"
 #include "ship/Context.h"
 
 #include "ship/utils/StringHelper.h"
-#include "window/gui/IconsFontAwesome4.h"
+#include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/window/Window.h"
 
 namespace Ship {

@@ -1,7 +1,7 @@
-#include "SDLButtonToButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLButtonToButtonMapping.h"
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
-#include "window/gui/IconsFontAwesome4.h"
+#include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/Context.h"

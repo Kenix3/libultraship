@@ -1,4 +1,4 @@
-#include "ControllerMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerMapping.h"
 
 namespace Ship {
 ControllerMapping::ControllerMapping(PhysicalDeviceType physicalDeviceType) : mPhysicalDeviceType(physicalDeviceType) {

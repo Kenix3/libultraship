@@ -1,4 +1,4 @@
-#include "gfxdebuggerbridge.h"
+#include "libultraship/public/bridge/gfxdebuggerbridge.h"
 #include "ship/Context.h"
 #include "fast/debug/GfxDebugger.h"
 

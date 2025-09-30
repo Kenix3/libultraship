@@ -1,5 +1,5 @@
-#include "resource/factory/BlobFactory.h"
-#include "resource/type/Blob.h"
+#include "ship/resource/factory/BlobFactory.h"
+#include "ship/resource/type/Blob.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {

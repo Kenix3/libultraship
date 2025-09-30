@@ -1,5 +1,5 @@
-#include "RumbleMappingFactory.h"
-#include "controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h"
+#include "ship/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"

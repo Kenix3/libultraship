@@ -1,4 +1,4 @@
-#include "FileDropMgr.h"
+#include "ship/window/FileDropMgr.h"
 #include <cstdlib>
 #include <cstring>
 #include <spdlog/spdlog.h>
@@ -10,7 +10,7 @@
 #include <dbghelp.h>
 #endif
 #include "ship/Context.h"
-#include "Window.h"
+#include "ship/window/Window.h"
 #ifdef __unix__
 #include <dlfcn.h>
 #include <cxxabi.h>

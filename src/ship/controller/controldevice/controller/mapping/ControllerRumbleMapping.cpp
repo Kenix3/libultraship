@@ -1,4 +1,4 @@
-#include "ControllerRumbleMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
 
 namespace Ship {
 ControllerRumbleMapping::ControllerRumbleMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,

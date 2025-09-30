@@ -1,4 +1,4 @@
-#include "ControllerInputMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
 namespace Ship {
 ControllerInputMapping::ControllerInputMapping(PhysicalDeviceType physicalDeviceType)

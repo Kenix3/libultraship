@@ -1,4 +1,4 @@
-#include "MouseButtonToButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
 #include "ship/public/bridge/consolevariablebridge.h"

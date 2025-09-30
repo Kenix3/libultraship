@@ -3,7 +3,7 @@
 #include "OtrArchive.h"
 
 #include "ship/Context.h"
-#include "utils/filesystemtools/FileHelper.h"
+#include "ship/utils/filesystemtools/FileHelper.h"
 #include "ship/resource/ResourceManager.h"
 #include "resource/archive/ArchiveManager.h"
 

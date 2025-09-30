@@ -1,4 +1,4 @@
-#include "Config.h"
+#include "ship/config/Config.h"
 
 #include <fstream>
 #include <string>

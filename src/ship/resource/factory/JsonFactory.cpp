@@ -1,5 +1,5 @@
-#include "resource/factory/JsonFactory.h"
-#include "resource/type/Json.h"
+#include "ship/resource/factory/JsonFactory.h"
+#include "ship/resource/type/Json.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {

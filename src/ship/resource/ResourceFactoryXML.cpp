@@ -1,4 +1,4 @@
-#include "ResourceFactoryXML.h"
+#include "ship/resource/ResourceFactoryXML.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {

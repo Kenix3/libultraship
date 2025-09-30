@@ -1,4 +1,4 @@
-#include "ResourceFactoryBinary.h"
+#include "ship/resource/ResourceFactoryBinary.h"
 #include <variant>
 #include "spdlog/spdlog.h"
 

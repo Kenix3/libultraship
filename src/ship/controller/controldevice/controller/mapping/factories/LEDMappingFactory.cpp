@@ -1,5 +1,5 @@
-#include "LEDMappingFactory.h"
-#include "controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h"
+#include "ship/controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h"
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"

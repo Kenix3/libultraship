@@ -1,4 +1,4 @@
-#include "GlobalSDLDeviceSettings.h"
+#include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 
 #include <string>
 #include "ship/utils/StringHelper.h"

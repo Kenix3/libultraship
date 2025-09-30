@@ -7,7 +7,7 @@
 #include <vector>
 #include "PathHelper.h"
 #include "ship/utils/StringHelper.h"
-#include "utils/filesystemtools/Directory.h"
+#include "ship/utils/filesystemtools/Directory.h"
 
 namespace Ship {
 class FileHelper {

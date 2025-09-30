@@ -1,5 +1,5 @@
-#include "BinaryWriter.h"
-#include "MemoryStream.h"
+#include "ship/utils/binarytools/BinaryWriter.h"
+#include "ship/utils/binarytools/MemoryStream.h"
 
 Ship::BinaryWriter::BinaryWriter() {
     mStream = std::make_shared<MemoryStream>();

@@ -1,4 +1,4 @@
-#include "KeyboardKeyToButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
 #include "ship/public/bridge/consolevariablebridge.h"

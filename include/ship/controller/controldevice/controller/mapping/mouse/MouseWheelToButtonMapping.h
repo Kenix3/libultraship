@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MouseWheelToAnyMapping.h"
-#include "controller/controldevice/controller/mapping/ControllerButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseWheelToAnyMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {

@@ -1,4 +1,4 @@
-#include "SDLLEDMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"

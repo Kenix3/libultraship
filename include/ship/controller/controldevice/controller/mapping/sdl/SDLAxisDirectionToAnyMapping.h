@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SDLMapping.h"
-#include "controller/controldevice/controller/mapping/ControllerInputMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerInputMapping.h"
 
 namespace Ship {
 class SDLAxisDirectionToAnyMapping : virtual public ControllerInputMapping {

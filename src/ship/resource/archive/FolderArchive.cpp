@@ -2,11 +2,11 @@
 
 #undef _DLL
 
-#include "FolderArchive.h"
+#include "ship/resource/archive/FolderArchive.h"
 
 #include "ship/Context.h"
 #include "spdlog/spdlog.h"
-#include "utils/filesystemtools/FileHelper.h"
+#include "ship/utils/filesystemtools/FileHelper.h"
 #include "ship/resource/ResourceManager.h"
 
 namespace Ship {

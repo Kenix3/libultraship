@@ -1,4 +1,4 @@
-#include "Blob.h"
+#include "ship/resource/type/Blob.h"
 
 namespace Ship {
 Blob::Blob() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {

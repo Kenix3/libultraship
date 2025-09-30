@@ -1,5 +1,5 @@
 #include <sstream>
-#include "stox.h"
+#include "ship/utils/stox.h"
 #include <spdlog/spdlog.h>
 
 namespace Ship {

@@ -1,5 +1,5 @@
-#include "window/gui/resource/FontFactory.h"
-#include "window/gui/resource/Font.h"
+#include "ship/window/gui/resource/FontFactory.h"
+#include "ship/window/gui/resource/Font.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {

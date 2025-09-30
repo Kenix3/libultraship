@@ -1,17 +1,17 @@
-#include "AxisDirectionMappingFactory.h"
-#include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
-#include "controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
-#include "controller/controldevice/controller/mapping/mouse/MouseWheelToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseWheelToAxisDirectionMapping.h"
 
-#include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
-#include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
+#include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
 
 #include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
+#include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 #include "ship/controller/controldeck/ControlDeck.h"
 

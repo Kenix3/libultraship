@@ -1,17 +1,17 @@
-#include "ArchiveManager.h"
+#include "ship/resource/archive/ArchiveManager.h"
 
 #include <filesystem>
 #include "spdlog/spdlog.h"
 
-#include "resource/archive/Archive.h"
+#include "ship/resource/archive/Archive.h"
 #ifdef INCLUDE_MPQ_SUPPORT
 #include "resource/archive/OtrArchive.h"
 #endif
-#include "resource/archive/O2rArchive.h"
-#include "resource/archive/FolderArchive.h"
+#include "ship/resource/archive/O2rArchive.h"
+#include "ship/resource/archive/FolderArchive.h"
 #include "ship/utils/StringHelper.h"
-#include "utils/glob.h"
-#include "utils/StrHash64.h"
+#include "ship/utils/glob.h"
+#include "ship/utils/StrHash64.h"
 
 namespace Ship {
 ArchiveManager::ArchiveManager() {

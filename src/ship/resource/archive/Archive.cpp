@@ -1,14 +1,14 @@
-#include "Archive.h"
+#include "ship/resource/archive/Archive.h"
 
 #include "spdlog/spdlog.h"
 
 #include "ship/Context.h"
 #include "ship/resource/File.h"
-#include "resource/ResourceLoader.h"
-#include "resource/ResourceType.h"
-#include "utils/binarytools/MemoryStream.h"
-#include "utils/glob.h"
-#include "utils/StrHash64.h"
+#include "ship/resource/ResourceLoader.h"
+#include "ship/resource/ResourceType.h"
+#include "ship/utils/binarytools/MemoryStream.h"
+#include "ship/utils/glob.h"
+#include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
 #include <nlohmann/json.hpp>
 #include <tinyxml2.h>
