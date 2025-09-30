@@ -26,9 +26,9 @@
 #include "gfx_dxgi.h"
 
 #include "gfx_screen_config.h"
-#include "window/gui/Gui.h"
-#include "Context.h"
-#include "config/ConsoleVariable.h"
+#include "ship/window/gui/Gui.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 
 #include "gfx_rendering_api.h"

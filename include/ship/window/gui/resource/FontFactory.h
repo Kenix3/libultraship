@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ship/resource/Resource.h"
-#include "resource/ResourceFactoryBinary.h"
+#include "ship/resource/ResourceFactoryBinary.h"
 
 namespace Ship {
 class ResourceFactoryBinaryFontV0 final : public ResourceFactoryBinary {

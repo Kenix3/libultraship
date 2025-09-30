@@ -5,12 +5,12 @@
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 
-#include "public/bridge/consolevariablebridge.h"
-#include "utils/StringHelper.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
 
-#include "Context.h"
+#include "ship/Context.h"
 #include "ship/window/Window.h"
 
 namespace Ship {

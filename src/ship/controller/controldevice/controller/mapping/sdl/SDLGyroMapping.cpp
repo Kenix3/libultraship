@@ -1,11 +1,11 @@
 #include "SDLGyroMapping.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 #include <spdlog/spdlog.h>
-#include "Context.h"
+#include "ship/Context.h"
 
-#include "public/bridge/consolevariablebridge.h"
-#include "utils/StringHelper.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,

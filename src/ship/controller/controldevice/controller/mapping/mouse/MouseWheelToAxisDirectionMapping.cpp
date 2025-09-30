@@ -1,12 +1,12 @@
 #include "MouseWheelToAxisDirectionMapping.h"
 #include <spdlog/spdlog.h>
 #include <cmath>
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "Context.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
 #include "WheelHandler.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 MouseWheelToAxisDirectionMapping::MouseWheelToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,

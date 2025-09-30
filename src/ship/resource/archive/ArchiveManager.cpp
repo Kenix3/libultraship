@@ -9,7 +9,7 @@
 #endif
 #include "resource/archive/O2rArchive.h"
 #include "resource/archive/FolderArchive.h"
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "utils/glob.h"
 #include "utils/StrHash64.h"
 

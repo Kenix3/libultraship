@@ -1,6 +1,6 @@
 #include "public/bridge/windowbridge.h"
 #include "ship/window/Window.h"
-#include "Context.h"
+#include "ship/Context.h"
 
 extern "C" {
 

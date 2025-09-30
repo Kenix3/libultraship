@@ -5,11 +5,11 @@
 #include <filesystem>
 #include <unordered_map>
 #include <any>
-#include "utils/StringHelper.h"
-#include "Context.h"
+#include "ship/utils/StringHelper.h"
+#include "ship/Context.h"
 
 #ifdef __APPLE__
-#include "graphic/Fast3D/backends/gfx_metal.h"
+#include "fast/backends/gfx_metal.h"
 #endif
 
 namespace fs = std::filesystem;

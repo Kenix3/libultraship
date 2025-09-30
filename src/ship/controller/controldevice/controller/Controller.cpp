@@ -1,14 +1,14 @@
 #include "ship/controller/controldevice/controller/Controller.h"
 #include <memory>
 #include <algorithm>
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 #if __APPLE__
 #include <SDL_events.h>
 #else
 #include <SDL2/SDL_events.h>
 #endif
 #include <spdlog/spdlog.h>
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9

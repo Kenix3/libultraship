@@ -1,10 +1,10 @@
 #include "LEDMappingFactory.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLLEDMapping.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "utils/StringHelper.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
-#include "controller/controldeck/ControlDeck.h"
-#include "Context.h"
+#include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/Context.h"
 
 namespace Ship {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {

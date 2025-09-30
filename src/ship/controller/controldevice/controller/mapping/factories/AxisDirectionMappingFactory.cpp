@@ -6,14 +6,14 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
 
-#include "public/bridge/consolevariablebridge.h"
-#include "utils/StringHelper.h"
-#include "Context.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
+#include "ship/Context.h"
 
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 std::shared_ptr<ControllerAxisDirectionMapping>

@@ -1,9 +1,9 @@
-#include "ControlDeck.h"
+#include "libultraship/controller/controldeck/ControlDeck.h"
 
-#include "Context.h"
+#include "ship/Context.h"
 #include "ship/controller/controldevice/controller/Controller.h"
-#include "utils/StringHelper.h"
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 #include <imgui.h>
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 

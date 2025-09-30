@@ -1,4 +1,4 @@
-#include "resource/type/Vertex.h"
+#include "fast/resource/type/Vertex.h"
 #include "libultraship/libultra/gbi.h"
 
 namespace Fast {

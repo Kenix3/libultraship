@@ -1,8 +1,8 @@
 #include "ButtonMappingFactory.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "utils/StringHelper.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
-#include "Context.h"
+#include "ship/Context.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 #include "controller/controldevice/controller/mapping/mouse/MouseWheelToButtonMapping.h"
@@ -10,7 +10,7 @@
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "controller/controldevice/controller/mapping/mouse/WheelHandler.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromConfig(uint8_t portIndex,

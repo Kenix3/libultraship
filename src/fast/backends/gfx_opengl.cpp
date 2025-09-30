@@ -19,13 +19,13 @@
 #endif
 
 #include "fast/backends/gfx_opengl.h"
-#include "window/gui/Gui.h"
+#include "ship/window/gui/Gui.h"
 #include <prism/processor.h>
 #include <fstream>
-#include "Context.h"
-#include <resource/factory/ShaderFactory.h>
-#include "../interpreter.h"
-#include <public/bridge/consolevariablebridge.h>
+#include "ship/Context.h"
+#include "ship/resource/factory/ShaderFactory.h"
+#include "fast/interpreter.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 
 namespace Fast {
 int GfxRenderingAPIOGL::GetMaxTextureSize() {

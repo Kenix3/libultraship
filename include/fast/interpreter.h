@@ -12,7 +12,7 @@
 
 #include "fast/lus_gbi.h"
 #include "libultraship/libultra/types.h"
-#include "libultraship/public/bridge/gfxbridge.h"
+#include "fast/public/bridge/gfxbridge.h"
 #include "backends/gfx_rendering_api.h"
 
 #include "fast/resource/type/Texture.h"

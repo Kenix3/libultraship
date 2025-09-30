@@ -1,10 +1,10 @@
 #include "GyroMappingFactory.h"
 #include "controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "utils/StringHelper.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
-#include "Context.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/Context.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromConfig(uint8_t portIndex,

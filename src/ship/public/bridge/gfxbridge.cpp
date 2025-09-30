@@ -1,8 +1,8 @@
 #include "gfxbridge.h"
 
-#include "Context.h"
-#include "graphic/Fast3D/Fast3dWindow.h"
-#include "graphic/Fast3D/interpreter.h"
+#include "ship/Context.h"
+#include "fast/Fast3dWindow.h"
+#include "fast/interpreter.h"
 
 // Set the dimensions for the VI mode that the console would be using
 // (Usually 320x240 for lo-res and 640x480 for hi-res)

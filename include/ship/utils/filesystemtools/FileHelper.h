@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "PathHelper.h"
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "utils/filesystemtools/Directory.h"
 
 namespace Ship {

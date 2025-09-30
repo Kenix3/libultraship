@@ -1,15 +1,15 @@
-#include "Context.h"
+#include "ship/Context.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include <iostream>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "install_config.h"
-#include "graphic/Fast3D/debug/GfxDebugger.h"
-#include "config/ConsoleVariable.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "fast/debug/GfxDebugger.h"
+#include "ship/config/ConsoleVariable.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 #include "debug/CrashHandler.h"
-#include "window/FileDropMgr.h"
+#include "ship/window/FileDropMgr.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>

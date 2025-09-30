@@ -1,5 +1,5 @@
-#include "resource/factory/VertexFactory.h"
-#include "resource/type/Vertex.h"
+#include "fast/resource/factory/VertexFactory.h"
+#include "fast/resource/type/Vertex.h"
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
 #include <tinyxml2.h>

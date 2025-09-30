@@ -1,5 +1,5 @@
-#include "resource/factory/MatrixFactory.h"
-#include "resource/type/Matrix.h"
+#include "fast/resource/factory/MatrixFactory.h"
+#include "fast/resource/type/Matrix.h"
 #include "spdlog/spdlog.h"
 
 namespace Fast {

@@ -3,8 +3,8 @@
 #include <functional>
 #include "utils/filesystemtools/DiskFile.h"
 #include <utils/Utils.h>
-#include "config/Config.h"
-#include "Context.h"
+#include "ship/config/Config.h"
+#include "ship/Context.h"
 
 #ifdef _MSC_VER
 #define strdup _strdup

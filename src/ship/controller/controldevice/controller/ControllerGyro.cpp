@@ -1,7 +1,7 @@
 #include "ControllerGyro.h"
 
-#include "public/bridge/consolevariablebridge.h"
-#include "utils/StringHelper.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
 #include "controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
 
 namespace Ship {

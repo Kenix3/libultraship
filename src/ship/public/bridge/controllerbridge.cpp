@@ -1,6 +1,6 @@
 #include "public/bridge/controllerbridge.h"
-#include "controller/controldeck/ControlDeck.h"
-#include "Context.h"
+#include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/Context.h"
 
 extern "C" {
 

@@ -7,24 +7,24 @@
 #include <string>
 #include <vector>
 
-#include "config/Config.h"
-#include "Context.h"
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/config/Config.h"
+#include "ship/Context.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 #include "fast/resource/type/Texture.h"
 #include "ship/resource/File.h"
 #include <stb_image.h>
 #include "window/gui/Fonts.h"
 #include "window/gui/resource/GuiTextureFactory.h"
-#include "graphic/Fast3D/backends/gfx_rendering_api.h"
+#include "fast/backends/gfx_rendering_api.h"
 
 #include "window/gui/GfxDebuggerWindow.h"
-#include "graphic/Fast3D/interpreter.h"
-#include "graphic/Fast3D/Fast3dWindow.h"
+#include "fast/interpreter.h"
+#include "fast/Fast3dWindow.h"
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
 
-#include "graphic/Fast3D/backends/gfx_metal.h"
+#include "fast/backends/gfx_metal.h"
 #include <imgui_impl_metal.h>
 #include <imgui_impl_sdl2.h>
 #else

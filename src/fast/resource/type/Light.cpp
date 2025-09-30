@@ -1,4 +1,4 @@
-#include "Light.h"
+#include "fast/resource/type/Light.h"
 
 namespace Fast {
 LightEntry* Light::GetPointer() {

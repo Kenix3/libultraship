@@ -1,14 +1,14 @@
 #include "GameOverlay.h"
 
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/resource/File.h"
 #include "window/gui/resource/Font.h"
 #include "window/gui/resource/FontFactory.h"
 #include "resource/archive/Archive.h"
 #include "ship/resource/ResourceManager.h"
-#include "Context.h"
+#include "ship/Context.h"
 #include "ship/window/Window.h"
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 
 namespace Ship {
 GameOverlay::GameOverlay() {

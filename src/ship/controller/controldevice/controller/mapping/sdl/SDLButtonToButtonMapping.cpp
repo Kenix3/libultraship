@@ -1,10 +1,10 @@
 #include "SDLButtonToButtonMapping.h"
 #include <spdlog/spdlog.h>
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "controller/controldeck/ControlDeck.h"
-#include "Context.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/Context.h"
 
 namespace Ship {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,

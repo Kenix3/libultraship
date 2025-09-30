@@ -1,7 +1,7 @@
 #if defined(__ANDROID__) || defined(__IOS__)
 #include "MobileImpl.h"
 #include <SDL2/SDL.h>
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 
 #include <imgui_internal.h>
 

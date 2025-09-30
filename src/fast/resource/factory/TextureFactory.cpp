@@ -1,4 +1,4 @@
-#include "resource/factory/TextureFactory.h"
+#include "fast/resource/factory/TextureFactory.h"
 #include "fast/resource/type/Texture.h"
 #include "spdlog/spdlog.h"
 

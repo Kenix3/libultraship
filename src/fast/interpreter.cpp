@@ -15,24 +15,24 @@
 #include <vector>
 #include <list>
 #include <stack>
-#include "resource/type/Light.h"
+#include "fast/resource/type/Light.h"
 
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "graphic/Fast3D/debug/GfxDebugger.h"
+#include "fast/debug/GfxDebugger.h"
 #include "libultraship/libultra/types.h"
 #include <string>
 
-#include "interpreter.h"
-#include "lus_gbi.h"
-#include "backends/gfx_window_manager_api.h"
-#include "backends/gfx_rendering_api.h"
+#include "fast/interpreter.h"
+#include "fast/lus_gbi.h"
+#include "fast/backends/gfx_window_manager_api.h"
+#include "fast/backends/gfx_rendering_api.h"
 
-#include "window/gui/Gui.h"
+#include "ship/window/gui/Gui.h"
 #include "ship/resource/ResourceManager.h"
-#include "utils/Utils.h"
-#include "Context.h"
+#include "ship/utils/Utils.h"
+#include "ship/Context.h"
 #include "libultraship/bridge.h"
 
 #include <spdlog/fmt/fmt.h>

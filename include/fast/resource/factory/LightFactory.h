@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ship/resource/Resource.h"
-#include "resource/ResourceFactoryBinary.h"
+#include "ship/resource/ResourceFactoryBinary.h"
 
 namespace Fast {
 class ResourceFactoryBinaryLightV0 final : public Ship::ResourceFactoryBinary {

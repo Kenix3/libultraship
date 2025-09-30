@@ -1,4 +1,4 @@
-#include "resource/type/Matrix.h"
+#include "fast/resource/type/Matrix.h"
 
 namespace Fast {
 Matrix::Matrix() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {

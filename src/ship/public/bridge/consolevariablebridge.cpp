@@ -1,5 +1,5 @@
-#include "public/bridge/consolevariablebridge.h"
-#include "Context.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
 
 std::shared_ptr<Ship::CVar> CVarGet(const char* name) {
     return Ship::Context::GetInstance()->GetConsoleVariables()->Get(name);

@@ -1,8 +1,8 @@
-#include "resource/factory/DisplayListFactory.h"
-#include "resource/type/DisplayList.h"
+#include "fast/resource/factory/DisplayListFactory.h"
+#include "fast/resource/type/DisplayList.h"
 #include "spdlog/spdlog.h"
 #include "libultraship/libultra/gbi.h"
-#include "graphic/Fast3D/lus_gbi.h"
+#include "fast/lus_gbi.h"
 #include <tinyxml2.h>
 
 namespace Fast {

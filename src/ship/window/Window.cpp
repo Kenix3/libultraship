@@ -2,10 +2,10 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "Context.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/Context.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 #ifdef __APPLE__
 #include "utils/AppleFolderManager.h"

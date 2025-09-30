@@ -1,7 +1,7 @@
 #include "Audio.h"
 
-#include "Context.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/Context.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 

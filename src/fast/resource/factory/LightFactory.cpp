@@ -1,5 +1,5 @@
-#include "resource/factory/LightFactory.h"
-#include "resource/type/Light.h"
+#include "fast/resource/factory/LightFactory.h"
+#include "fast/resource/type/Light.h"
 
 std::shared_ptr<Ship::IResource>
 Fast::ResourceFactoryBinaryLightV0::ReadResource(std::shared_ptr<Ship::File> file,

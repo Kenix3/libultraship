@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "Path.h"
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "Directory.h"
 
 class DiskFile {

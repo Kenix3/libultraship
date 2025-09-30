@@ -1,6 +1,6 @@
 #include "Console.h"
-#include "utils/StringHelper.h"
-#include "Context.h"
+#include "ship/utils/StringHelper.h"
+#include "ship/Context.h"
 #include <spdlog/spdlog.h>
 
 namespace Ship {

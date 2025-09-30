@@ -1,7 +1,7 @@
 #include "MouseButtonToAnyMapping.h"
-#include "Context.h"
+#include "ship/Context.h"
 
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
 
 namespace Ship {

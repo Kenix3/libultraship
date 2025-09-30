@@ -1,9 +1,9 @@
 #include "ConsoleWindow.h"
 
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/window/Window.h"
-#include "Context.h"
-#include "utils/StringHelper.h"
+#include "ship/Context.h"
+#include "ship/utils/StringHelper.h"
 #include "utils/Utils.h"
 #include <sstream>
 

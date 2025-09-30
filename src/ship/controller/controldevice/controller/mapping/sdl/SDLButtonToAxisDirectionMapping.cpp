@@ -1,10 +1,10 @@
 #include "SDLButtonToAxisDirectionMapping.h"
 #include <spdlog/spdlog.h>
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "window/gui/IconsFontAwesome4.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "Context.h"
-#include "controller/controldeck/ControlDeck.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 

@@ -8,11 +8,11 @@
 #define FOR_WINDOWS 0
 #endif
 
-#include "Context.h"
-#include "config/ConsoleVariable.h"
-#include "controller/controldeck/ControlDeck.h"
-#include "window/FileDropMgr.h"
-#include "gfx_sdl.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
+#include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/window/FileDropMgr.h"
+#include "fast/backends/gfx_sdl.h"
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
@@ -29,8 +29,8 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
-#include "window/gui/Gui.h"
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/window/gui/Gui.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 
 #ifdef _WIN32
 #include <WTypesbase.h>

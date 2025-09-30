@@ -6,13 +6,13 @@
 
 #include "controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
 
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
 
-#include "Context.h"
+#include "ship/Context.h"
 #include "ship/window/Window.h"
 
 // for some reason windows isn't seeing M_PI

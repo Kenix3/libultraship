@@ -4,10 +4,10 @@
 #include "resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>
-#include "utils/StringHelper.h"
+#include "ship/utils/StringHelper.h"
 #include "utils/Utils.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "Context.h"
+#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
 
 namespace Ship {
 

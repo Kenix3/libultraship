@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ship/resource/Resource.h"
-#include "resource/type/Shader.h"
-#include "resource/ResourceFactoryBinary.h"
+#include "ship/resource/type/Shader.h"
+#include "ship/resource/ResourceFactoryBinary.h"
 
 namespace Ship {
 class ResourceFactoryBinaryShaderV0 final : public ResourceFactoryBinary {

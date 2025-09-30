@@ -1,8 +1,8 @@
 #include "GlobalSDLDeviceSettings.h"
 
 #include <string>
-#include "utils/StringHelper.h"
-#include "public/bridge/consolevariablebridge.h"
+#include "ship/utils/StringHelper.h"
+#include "ship/public/bridge/consolevariablebridge.h"
 
 namespace Ship {
 GlobalSDLDeviceSettings::GlobalSDLDeviceSettings() {

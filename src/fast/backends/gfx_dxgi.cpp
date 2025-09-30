@@ -21,16 +21,16 @@
 #define _LANGUAGE_C
 #endif
 
-#include "config/ConsoleVariable.h"
-#include "config/Config.h"
-#include "Context.h"
+#include "ship/config/ConsoleVariable.h"
+#include "ship/config/Config.h"
+#include "ship/Context.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
 #include "gfx_direct3d_common.h"
 #include "gfx_screen_config.h"
 #include "../interpreter.h"
-#include "window/FileDropMgr.h"
+#include "ship/window/FileDropMgr.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"
