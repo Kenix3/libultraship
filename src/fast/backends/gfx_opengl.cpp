@@ -1,4 +1,4 @@
-#include "window/Window.h"
+#include "ship/window/Window.h"
 #ifdef ENABLE_OPENGL
 
 #include <stdint.h>

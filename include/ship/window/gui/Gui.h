@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 #include <SDL2/SDL.h>
-#include "window/gui/ConsoleWindow.h"
+#include "ship/window/gui/ConsoleWindow.h"
 #include "window/gui/InputEditorWindow.h"
 #include "controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
 #include "window/gui/IconsFontAwesome4.h"

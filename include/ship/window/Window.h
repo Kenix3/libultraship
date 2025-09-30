@@ -6,7 +6,7 @@
 #include <vector>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
-#include "window/gui/Gui.h"
+#include "ship/window/gui/Gui.h"
 #include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {

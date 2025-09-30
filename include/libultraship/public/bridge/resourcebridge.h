@@ -3,7 +3,7 @@
 #include "stdint.h"
 
 #ifdef __cplusplus
-#include "resource/type/Texture.h"
+#include "fast/resource/type/Texture.h"
 #include "resource/Resource.h"
 #include <memory>
 
