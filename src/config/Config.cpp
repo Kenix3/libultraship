@@ -249,6 +249,10 @@ AudioBackend Config::GetCurrentAudioBackend() {
         return AudioBackend::SDL;
     }
 
+    if (backendName == "null") {
+        return AudioBackend::NUL;
+    }
+
     SPDLOG_TRACE("Could not find AudioBackend matching value from config file ({}). Returning default AudioBackend.",
                  backendName);
 #ifdef _WIN32
@@ -278,6 +282,9 @@ void Config::SetCurrentAudioBackend(AudioBackend backend) {
             break;
         case AudioBackend::SDL:
             SetString("Window.AudioBackend", "sdl");
+            break;
+        case AudioBackend::NUL:
+            SetString("Window.AudioBackend", "null");
             break;
         default:
             SetString("Window.AudioBackend", "");
