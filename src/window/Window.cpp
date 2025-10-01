@@ -100,6 +100,22 @@ void Window::SetForceCursorVisibility(bool visible) {
     mForceCursorVisibility = visible;
 }
 
+int32_t Window::GetFullscreenScancode() {
+    return mFullscreenScancode;
+}
+
+int32_t Window::GetMouseCaptureScancode() {
+    return mMouseCaptureScancode;
+}
+
+void Window::SetFullscreenScancode(int32_t scancode) {
+    mFullscreenScancode = scancode;
+}
+
+void Window::SetMouseCaptureScancode(int32_t scancode) {
+    mMouseCaptureScancode = scancode;
+}
+
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
     Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());

@@ -86,10 +86,10 @@ void Fast3dWindow::Init() {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
-    mFullscreenScancode =
-        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", Ship::KbScancode::LUS_KB_F11);
-    mMouseCaptureScancode =
-        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2);
+    Ship::Context::GetInstance()->GetWindow()->SetFullscreenScancode(
+        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", Ship::KbScancode::LUS_KB_F11));
+    Ship::Context::GetInstance()->GetWindow()->SetMouseCaptureScancode(
+        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2));
 
     InitWindowManager();
     mInterpreter->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen,
@@ -327,11 +327,11 @@ const char* Fast3dWindow::GetKeyName(int32_t scancode) {
 }
 
 bool Fast3dWindow::KeyUp(int32_t scancode) {
-    if (scancode == mFullscreenScancode) {
+    if (scancode == Ship::Context::GetInstance()->GetWindow()->GetFullscreenScancode()) {
         Ship::Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
-    if (scancode == mMouseCaptureScancode) {
+    if (scancode == Ship::Context::GetInstance()->GetWindow()->GetMouseCaptureScancode()) {
         bool captureState = Ship::Context::GetInstance()->GetWindow()->IsMouseCaptured();
         Ship::Context::GetInstance()->GetWindow()->SetMouseCapture(!captureState);
     }
