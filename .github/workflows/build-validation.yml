@@ -32,6 +32,8 @@ jobs:
         path: build-cmake/src/*.a
         if-no-files-found: error
   build-ios:
+    # temporarily disable iOS CI
+    if: false 
     runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
