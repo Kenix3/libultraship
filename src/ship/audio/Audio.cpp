@@ -16,18 +16,16 @@ void Audio::InitAudioPlayer() {
             mAudioPlayer = std::make_shared<WasapiAudioPlayer>(this->mAudioSettings);
             break;
 #endif
-        default:
+        case AudioBackend::SDL:
             mAudioPlayer = std::make_shared<SDLAudioPlayer>(this->mAudioSettings);
+        default:
+            mAudioPlayer = std::make_shared<NullAudioPlayer>(this->mAudioSettings);
     }
 
-    if (mAudioPlayer) {
-        if (!mAudioPlayer->Init()) {
-            // Failed to initialize system audio player.
-            // Fallback to SDL if the native system player does not work.
-            SetCurrentAudioBackend(AudioBackend::SDL);
-            mAudioPlayer = std::make_shared<SDLAudioPlayer>(this->mAudioSettings);
-            mAudioPlayer->Init();
-        }
+    if (mAudioPlayer && !mAudioPlayer->Init()) {
+        // Failed to initialize system audio player.
+        // Fallback to Null if the native system player does not work.
+        SetCurrentAudioBackend(AudioBackend::NUL);
     }
 }
 
@@ -37,6 +35,7 @@ void Audio::Init() {
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
 #endif
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
+    mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
     SetCurrentAudioBackend(Context::GetInstance()->GetConfig()->GetCurrentAudioBackend());
 }

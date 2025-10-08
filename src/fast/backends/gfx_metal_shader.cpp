@@ -111,7 +111,7 @@ bool p_get_bool(prism::ContextTypes* value) {
 
 #undef RAND_NOISE
 
-prism::ContextTypes* p_append_formula(prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
+prism::ContextTypes* p_append_formula(prism::ContextTypes* _, prism::ContextTypes* a_arg, prism::ContextTypes* a_single,
                                       prism::ContextTypes* a_mult, prism::ContextTypes* a_mix,
                                       prism::ContextTypes* a_with_alpha, prism::ContextTypes* a_only_alpha,
                                       prism::ContextTypes* a_alpha, prism::ContextTypes* a_first_cycle) {
@@ -155,7 +155,7 @@ static int vertex_index;
 static size_t raw_numFloats = 0;
 static MTL::VertexDescriptor* vertex_descriptor;
 
-prism::ContextTypes* update_raw_floats(prism::ContextTypes* num) {
+prism::ContextTypes* update_raw_floats(prism::ContextTypes* _, prism::ContextTypes* num) {
     MTL::VertexFormat format;
     int size = std::get<int>(*num);
     switch (size) {
