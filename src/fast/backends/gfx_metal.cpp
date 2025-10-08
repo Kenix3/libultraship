@@ -32,7 +32,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
 
-#include "gfx_metal_shader.h"
+#include "fast/backends/gfx_metal_shader.h"
 
 #include "libultraship/libultra/abi.h"
 #include "ship/public/bridge/consolevariablebridge.h"
