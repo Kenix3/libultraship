@@ -33,7 +33,7 @@
 #include "ship/window/FileDropMgr.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
-#include "gfx_dxgi.h"
+#include "fast/backends/gfx_dxgi.h"
 
 #define WINCLASS_NAME L"N64GAME"
 #define GFX_BACKEND_NAME "DXGI"
