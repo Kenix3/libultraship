@@ -30,15 +30,6 @@ file(GLOB Source_Files__Config RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "config/*.cp
 source_group("config" FILES ${Source_Files__Config})
 target_sources(libultraship PRIVATE ${Source_Files__Config})
 
-#=================== Public ===================
-
-source_group("public")
-
-file(GLOB Source_Files__Public__Bridge RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "public/bridge/*.cpp")
-
-source_group("public/bridge" FILES ${Source_Files__Public__Bridge})
-target_sources(libultraship PRIVATE ${Source_Files__Public__Bridge})
-
 #=================== Debug ===================
 
 file(GLOB Source_Files__Debug RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "debug/*.cpp")

@@ -5,15 +5,25 @@ file(GLOB_RECURSE Source_Files__Controller RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} 
 source_group("controller" FILES ${Source_Files__Controller})
 target_sources(libultraship PRIVATE ${Source_Files__Controller})
 
-#=================== Public ===================
+#=================== Bridge ===================
 
-source_group("public")
+source_group("bridge")
 
-file(GLOB Source_Files__Public__Libultra RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "public/libultra/*.cpp")
+file(GLOB Source_Files__Bridge RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "bridge/*.cpp")
 
-source_group("public/libultra" FILES ${Source_Files__Public__Libultra})
+source_group("bridge" FILES ${Source_Files__Bridge})
 
-target_sources(libultraship PRIVATE ${Source_Files__Public__Libultra})
+target_sources(libultraship PRIVATE ${Source_Files__Bridge})
+
+#=================== libultra ===================
+
+source_group("libultra")
+
+file(GLOB Source_Files__Libultra RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libultra/*.cpp")
+
+source_group("libultra" FILES ${Source_Files__Libultra})
+
+target_sources(libultraship PRIVATE ${Source_Files__Libultra})
 
 #=================== Log ===================
 
