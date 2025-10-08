@@ -1,4 +1,4 @@
-#include "ship/public/bridge/controllerbridge.h"
+#include "libultraship/bridge/controllerbridge.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/Context.h"
 

@@ -1,4 +1,4 @@
-#include "ship/public/bridge/audiobridge.h"
+#include "libultraship/bridge/audiobridge.h"
 #include "ship/Context.h"
 #include "ship/audio/Audio.h"
 

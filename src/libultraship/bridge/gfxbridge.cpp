@@ -1,4 +1,4 @@
-#include "fast/public/bridge/gfxbridge.h"
+#include "libultraship/bridge/gfxbridge.h"
 
 #include "ship/Context.h"
 #include "fast/Fast3dWindow.h"

@@ -1,4 +1,4 @@
-#include "ship/public/bridge/crashhandlerbridge.h"
+#include "libultraship/bridge/crashhandlerbridge.h"
 #include "ship/Context.h"
 #include "ship/debug/CrashHandler.h"
 

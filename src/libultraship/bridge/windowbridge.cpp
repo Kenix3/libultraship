@@ -1,4 +1,4 @@
-#include "ship/public/bridge/windowbridge.h"
+#include "libultraship/bridge/windowbridge.h"
 #include "ship/window/Window.h"
 #include "ship/Context.h"
 

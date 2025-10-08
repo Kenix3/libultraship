@@ -1,4 +1,4 @@
-#include "libultraship/public/bridge/resourcebridge.h"
+#include "libultraship/bridge/resourcebridge.h"
 #include "ship/Context.h"
 #include <string>
 #include <algorithm>
