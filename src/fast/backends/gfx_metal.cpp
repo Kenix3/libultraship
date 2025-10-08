@@ -35,7 +35,8 @@
 #include "fast/backends/gfx_metal_shader.h"
 
 #include "libultraship/libultra/abi.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
 
