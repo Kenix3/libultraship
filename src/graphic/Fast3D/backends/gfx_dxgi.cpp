@@ -9,6 +9,7 @@
 
 #include <windows.h>
 #include <windowsx.h> // GET_X_LPARAM(), GET_Y_LPARAM()
+#include <shellapi.h>
 #include <wrl/client.h>
 #include <dxgi1_3.h>
 #include <dxgi1_4.h>

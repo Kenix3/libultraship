@@ -10,8 +10,7 @@ int32_t osEepromLongRead(OSMesgQueue* mq, uint8_t address, uint8_t* buffer, int3
     u8 content[512];
     s32 ret = -1;
 
-    const std::string save_file = Ship::Context::GetPathRelativeToAppDirectory("default.sav");
-    FILE* fp = fopen(save_file.c_str(), "rb");
+    FILE* fp = fopen("default.sav", "rb");
     if (fp == NULL) {
         return -1;
     }
@@ -35,8 +34,7 @@ int32_t osEepromLongWrite(OSMesgQueue* mq, uint8_t address, uint8_t* buffer, int
     }
     memcpy(content + address * 8, buffer, length);
 
-    const std::string save_file = Ship::Context::GetPathRelativeToAppDirectory("default.sav");
-    FILE* fp = fopen(save_file.c_str(), "wb");
+    FILE* fp = fopen("default.sav", "wb");
     if (fp == NULL) {
         return -1;
     }

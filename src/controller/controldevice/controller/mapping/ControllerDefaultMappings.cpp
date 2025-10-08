@@ -1,5 +1,7 @@
 #include "ControllerDefaultMappings.h"
 #include "libultraship/libultra/controller.h"
+#include <controller/physicaldevice/gc/GCAdapterStubs.h>
+#include "controller/controldevice/controller/mapping/sdl/SDLMapping.h"
 
 namespace Ship {
 ControllerDefaultMappings::ControllerDefaultMappings(
@@ -13,7 +15,11 @@ ControllerDefaultMappings::ControllerDefaultMappings(
     std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
         defaultSDLAxisDirectionToButtonMappings,
     std::unordered_map<StickIndex, std::vector<std::pair<Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>
-        defaultSDLAxisDirectionToAxisDirectionMappings) {
+        defaultSDLAxisDirectionToAxisDirectionMappings,
+    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>
+        defaultGCAdapterButtonToButtonMappings,
+    std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>
+        defaultGCAdapterAxisDirectionToAxisDirectionMappings) {
     SetDefaultKeyboardKeyToButtonMappings(defaultKeyboardKeyToButtonMappings);
     SetDefaultKeyboardKeyToAxisDirectionMappings(defaultKeyboardKeyToAxisDirectionMappings);
 
@@ -22,6 +28,9 @@ ControllerDefaultMappings::ControllerDefaultMappings(
 
     SetDefaultSDLAxisDirectionToButtonMappings(defaultSDLAxisDirectionToButtonMappings);
     SetDefaultSDLAxisDirectionToAxisDirectionMappings(defaultSDLAxisDirectionToAxisDirectionMappings);
+
+    SetDefaultGCAdapterButtonToButtonMappings(defaultGCAdapterButtonToButtonMappings);
+    SetDefaultGCAdapterAxisDirectionToAxisDirectionMappings(defaultGCAdapterAxisDirectionToAxisDirectionMappings);
 }
 
 ControllerDefaultMappings::ControllerDefaultMappings()
@@ -32,7 +41,9 @@ ControllerDefaultMappings::ControllerDefaultMappings()
           std::unordered_map<StickIndex, std::vector<std::pair<Direction, SDL_GameControllerButton>>>(),
           std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>(),
           std::unordered_map<StickIndex,
-                             std::vector<std::pair<Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>()) {
+                             std::vector<std::pair<Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>(),
+          std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>(),
+          std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>()) {
 }
 
 ControllerDefaultMappings::~ControllerDefaultMappings() {
@@ -169,6 +180,62 @@ void ControllerDefaultMappings::SetDefaultSDLAxisDirectionToAxisDirectionMapping
         { UP, { SDL_CONTROLLER_AXIS_RIGHTY, -1 } },
         { DOWN, { SDL_CONTROLLER_AXIS_RIGHTY, 1 } },
     };
+}
+
+std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>
+ControllerDefaultMappings::GetDefaultGCAdapterButtonToButtonMappings() {
+    return mDefaultGCAdapterButtonToButtonMappings;
+}
+
+void ControllerDefaultMappings::SetDefaultGCAdapterButtonToButtonMappings(
+    std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<CONTROLLERBUTTONS_T>>
+        defaultGCAdapterButtonToButtonMappings) {
+    if (!defaultGCAdapterButtonToButtonMappings.empty()) {
+        mDefaultGCAdapterButtonToButtonMappings = defaultGCAdapterButtonToButtonMappings;
+        return;
+    }
+
+    // Define the default GC Adapter button layout here
+    mDefaultGCAdapterButtonToButtonMappings[BTN_A] = { PAD_BUTTON_A };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_B] = { PAD_BUTTON_B };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_L] = { PAD_TRIGGER_L };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_R] = { PAD_TRIGGER_R };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_Z] = { PAD_TRIGGER_Z };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_START] = { PAD_BUTTON_START };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_DUP] = { PAD_BUTTON_UP };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_DDOWN] = { PAD_BUTTON_DOWN };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_DLEFT] = { PAD_BUTTON_LEFT };
+    mDefaultGCAdapterButtonToButtonMappings[BTN_DRIGHT] = { PAD_BUTTON_RIGHT };
+}
+
+// Axis Mappings
+std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>&
+ControllerDefaultMappings::GetDefaultGCAdapterAxisDirectionToAxisDirectionMappings() {
+    return mDefaultGCAdapterAxisDirectionToAxisDirectionMappings;
+}
+
+void ControllerDefaultMappings::SetDefaultGCAdapterAxisDirectionToAxisDirectionMappings(
+    std::unordered_map<StickIndex, std::unordered_map<Direction, std::pair<uint8_t, int32_t>>>
+        defaultGCAdapterAxisDirectionToAxisDirectionMappings) {
+    if (!defaultGCAdapterAxisDirectionToAxisDirectionMappings.empty()) {
+        mDefaultGCAdapterAxisDirectionToAxisDirectionMappings = defaultGCAdapterAxisDirectionToAxisDirectionMappings;
+        return;
+    }
+
+    // Define the default GC Adapter axis layout here
+    // mGcAxis: 0=LX, 1=LY, 2=CX, 3=CY
+
+    // N64 Left Stick -> GC Main Stick
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[LEFT_STICK][UP] = { 1, POSITIVE };    // LY+
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[LEFT_STICK][DOWN] = { 1, NEGATIVE };  // LY-
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[LEFT_STICK][LEFT] = { 0, NEGATIVE };  // LX-
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[LEFT_STICK][RIGHT] = { 0, POSITIVE }; // LX+
+
+    // N64 C-Buttons (Right Stick) -> GC C-Stick
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[RIGHT_STICK][UP] = { 3, POSITIVE };    // CY+
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[RIGHT_STICK][DOWN] = { 3, NEGATIVE };  // CY-
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[RIGHT_STICK][LEFT] = { 2, NEGATIVE };  // CX-
+    mDefaultGCAdapterAxisDirectionToAxisDirectionMappings[RIGHT_STICK][RIGHT] = { 2, POSITIVE }; // CX+
 }
 
 } // namespace Ship

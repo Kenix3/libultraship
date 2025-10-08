@@ -5,6 +5,7 @@
 #include "controller/controldevice/controller/mapping/mouse/MouseButtonToAxisDirectionMapping.h"
 
 #include "controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
+#include "controller/controldevice/controller/mapping/IControllerAxisRemapper.h"
 
 #include "public/bridge/consolevariablebridge.h"
 
@@ -140,6 +141,13 @@ void ControllerStick::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) 
         }
     }
 
+    if (physicalDeviceType == PhysicalDeviceType::GCAdapter) {
+        for (auto mapping :
+             AxisDirectionMappingFactory::CreateDefaultGCAdapterAxisDirectionMappings(mPortIndex, mStickIndex)) {
+            AddAxisDirectionMapping(mapping->GetDirection(), mapping);
+        }
+    }
+
     for (auto [direction, directionMappings] : mAxisDirectionMappings) {
         for (auto [id, mapping] : directionMappings) {
             mapping->SaveToConfig();
@@ -226,6 +234,17 @@ float ControllerStick::GetAxisDirectionValue(Direction direction) {
 void ControllerStick::Process(int8_t& x, int8_t& y) {
     double sx = GetAxisDirectionValue(RIGHT) - GetAxisDirectionValue(LEFT);
     double sy = GetAxisDirectionValue(UP) - GetAxisDirectionValue(DOWN);
+
+    for (auto& [direction, mappings] : mAxisDirectionMappings) {
+        for (auto& [id, mapping] : mappings) {
+            auto remapper = std::dynamic_pointer_cast<IControllerAxisRemapper>(mapping);
+            if (remapper != nullptr) {
+                remapper->RemapStick(sx, sy);
+                goto end_remap_search; // goto to break out of nested loop
+            }
+        }
+    }
+end_remap_search:;
 
     double ux = fabs(sx) * mSensitivity;
     double uy = fabs(sy) * mSensitivity;

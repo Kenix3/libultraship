@@ -188,6 +188,27 @@ if (GFX_DEBUG_DISASSEMBLER)
     target_link_libraries(libultraship PRIVATE libgfxd)
 endif()
 
+if(NOT ANDROID)
+    find_path(LIBUSB_INCLUDE_DIR
+      NAMES libusb.h
+      PATH_SUFFIXES "libusb-1.0"
+      REQUIRED)
+
+    find_library(LIBUSB_LIBRARY
+      NAMES usb-1.0
+      REQUIRED)
+
+    add_library(lus_libusb INTERFACE)
+    target_include_directories(lus_libusb INTERFACE ${LIBUSB_INCLUDE_DIR})
+    target_link_libraries(lus_libusb INTERFACE ${LIBUSB_LIBRARY})
+
+    target_link_libraries(libultraship PUBLIC lus_libusb)
+
+    if(MSVC)
+        target_compile_definitions(libultraship PRIVATE WIN32_LEAN_AND_MEAN)
+    endif()
+endif()
+
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)
 
