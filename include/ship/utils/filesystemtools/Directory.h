@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include "ship/utils/StringHelper.h"
 #include <iostream>
 
 #if __has_include(<filesystem>)
