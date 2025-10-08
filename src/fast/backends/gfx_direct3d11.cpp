@@ -19,20 +19,20 @@
 #define _LANGUAGE_C
 #endif
 
-#include "gfx_window_manager_api.h"
-#include "gfx_direct3d_common.h"
+#include "fast/backends/gfx_window_manager_api.h"
+#include "fast/backends/gfx_direct3d_common.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"
 
-#include "gfx_screen_config.h"
+#include "fast/backends/gfx_screen_config.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 
-#include "gfx_rendering_api.h"
-#include "../interpreter.h"
+#include "fast/backends/gfx_rendering_api.h"
+#include "fast/interpreter.h"
 
 #include <prism/processor.h>
 #include <public/bridge/consolevariablebridge.h>
