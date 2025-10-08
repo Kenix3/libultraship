@@ -10,10 +10,11 @@ namespace Ship {
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromConfig(uint8_t portIndex,
                                                                                        std::string id) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + id;
-    const std::string mappingClass =
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    const std::string mappingClass = Ship::Context::GetInstance()->GetConsoleVariables()->GetString(
+        StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    float sensitivity = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), 2.0f);
+    float sensitivity = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
+        StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), 2.0f);
     if (sensitivity < 0.0f || sensitivity > 1.0f) {
         // something about this mapping is invalid
         Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
@@ -22,10 +23,12 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
     }
 
     if (mappingClass == "SDLGyroMapping") {
-        float neutralPitch =
-            Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), 0.0f);
-        float neutralYaw = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
-        float neutralRoll = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
+        float neutralPitch = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
+            StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), 0.0f);
+        float neutralYaw = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
+            StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
+        float neutralRoll = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
+            StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
 
         return std::make_shared<SDLGyroMapping>(portIndex, sensitivity, neutralPitch, neutralYaw, neutralRoll);
     }

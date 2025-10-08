@@ -97,7 +97,8 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
         if (axisDirectionMappingIdListString == "") {
             Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(axisDirectionMappingIdsCvarKey.c_str());
         } else {
-            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(axisDirectionMappingIdsCvarKey.c_str(), axisDirectionMappingIdListString.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(axisDirectionMappingIdsCvarKey.c_str(),
+                                                                           axisDirectionMappingIdListString.c_str());
         }
     }
 
@@ -179,23 +180,23 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
         }
     }
 
-    SetSensitivity(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
-                                             stickIndexToConfigStickIndexName[mStickIndex].c_str())
-                           .c_str(),
-                       DEFAULT_STICK_SENSITIVITY_PERCENTAGE));
+    SetSensitivity(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
+                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
+            .c_str(),
+        DEFAULT_STICK_SENSITIVITY_PERCENTAGE));
 
-    SetDeadzone(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
-                                             stickIndexToConfigStickIndexName[mStickIndex].c_str())
-                           .c_str(),
-                       DEFAULT_STICK_DEADZONE_PERCENTAGE));
+    SetDeadzone(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
+                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
+            .c_str(),
+        DEFAULT_STICK_DEADZONE_PERCENTAGE));
 
-    SetNotchSnapAngle(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                             stickIndexToConfigStickIndexName[mStickIndex].c_str())
-                           .c_str(),
-                       0));
+    SetNotchSnapAngle(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
+                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
+            .c_str(),
+        0));
 }
 
 double ControllerStick::GetClosestNotch(double angle, double approximationThreshold) {
@@ -386,10 +387,11 @@ bool ControllerStick::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
 void ControllerStick::SetSensitivity(uint8_t sensitivityPercentage) {
     mSensitivityPercentage = sensitivityPercentage;
     mSensitivity = sensitivityPercentage / 100.0f;
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
-                                         stickIndexToConfigStickIndexName[mStickIndex].c_str())
-                       .c_str(),
-                   mSensitivityPercentage);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
+                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
+            .c_str(),
+        mSensitivityPercentage);
     Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
@@ -408,10 +410,11 @@ bool ControllerStick::SensitivityIsDefault() {
 void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     mDeadzonePercentage = deadzonePercentage;
     mDeadzone = MAX_AXIS_RANGE * (deadzonePercentage / 100.0f);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
-                                         stickIndexToConfigStickIndexName[mStickIndex].c_str())
-                       .c_str(),
-                   mDeadzonePercentage);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
+                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
+            .c_str(),
+        mDeadzonePercentage);
     Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
@@ -429,10 +432,11 @@ bool ControllerStick::DeadzoneIsDefault() {
 
 void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
     mNotchSnapAngle = notchSnapAngle;
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                                         stickIndexToConfigStickIndexName[mStickIndex].c_str())
-                       .c_str(),
-                   mNotchSnapAngle);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
+                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
+            .c_str(),
+        mNotchSnapAngle);
     Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 

@@ -98,7 +98,8 @@ void Fast3dWindow::Init() {
     mWindowManagerApi->SetKeyboardCallbacks(KeyDown, KeyUp, AllKeysUp);
     mWindowManagerApi->SetMouseCallbacks(MouseButtonDown, MouseButtonUp);
 
-    SetTextureFilter((FilteringMode)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
+    SetTextureFilter((FilteringMode)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+        CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
 
 int32_t Fast3dWindow::GetTargetFps() {

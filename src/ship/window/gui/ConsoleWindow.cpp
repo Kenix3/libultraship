@@ -327,7 +327,9 @@ void ConsoleWindow::UpdateElement() {
     }
     for (auto [key, var] : mBindingToggle) {
         if (ImGui::IsKeyPressed(key)) {
-            Dispatch("set " + var + " " + std::to_string(!static_cast<bool>(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(var.c_str(), 0))));
+            Dispatch("set " + var + " " +
+                     std::to_string(!static_cast<bool>(
+                         Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(var.c_str(), 0))));
         }
     }
 }

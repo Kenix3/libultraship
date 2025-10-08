@@ -39,7 +39,8 @@ void ControllerRumble::SaveRumbleMappingIdsToConfig() {
     if (rumbleMappingIdListString == "") {
         Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(rumbleMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(rumbleMappingIdsCvarKey.c_str(), rumbleMappingIdListString.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(rumbleMappingIdsCvarKey.c_str(),
+                                                                       rumbleMappingIdListString.c_str());
     }
 
     Ship::Context::GetInstance()->GetConsoleVariables()->Save();
@@ -117,7 +118,8 @@ void ControllerRumble::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string rumbleMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.RumbleMappingIds", mPortIndex + 1);
-    std::stringstream rumbleMappingIdsStringStream(Ship::Context::GetInstance()->GetConsoleVariables()->GetString(rumbleMappingIdsCvarKey.c_str(), ""));
+    std::stringstream rumbleMappingIdsStringStream(
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(rumbleMappingIdsCvarKey.c_str(), ""));
     std::string rumbleMappingIdString;
     while (getline(rumbleMappingIdsStringStream, rumbleMappingIdString, ',')) {
         LoadRumbleMappingFromConfig(rumbleMappingIdString);

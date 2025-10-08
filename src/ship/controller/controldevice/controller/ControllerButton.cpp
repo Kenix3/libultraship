@@ -115,7 +115,8 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
     if (buttonMappingIdListString == "") {
         Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(buttonMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(buttonMappingIdsCvarKey.c_str(),
+                                                                       buttonMappingIdListString.c_str());
     }
 
     Ship::Context::GetInstance()->GetConsoleVariables()->Save();
@@ -132,7 +133,8 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
-    std::stringstream buttonMappingIdsStringStream(Ship::Context::GetInstance()->GetConsoleVariables()->GetString(buttonMappingIdsCvarKey.c_str(), ""));
+    std::stringstream buttonMappingIdsStringStream(
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
         LoadButtonMappingFromConfig(buttonMappingIdString);

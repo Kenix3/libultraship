@@ -54,7 +54,8 @@ void ControllerGyro::SaveGyroMappingIdToConfig() {
     if (mGyroMapping == nullptr) {
         Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(gyroMappingIdCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(gyroMappingIdCvarKey.c_str(), mGyroMapping->GetGyroMappingId().c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(gyroMappingIdCvarKey.c_str(),
+                                                                       mGyroMapping->GetGyroMappingId().c_str());
     }
 
     Ship::Context::GetInstance()->GetConsoleVariables()->Save();
