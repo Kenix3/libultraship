@@ -7,7 +7,7 @@
 
 #ifdef __APPLE__
 
-#include "gfx_metal.h"
+#include "fast/backends/gfx_metal.h"
 
 #include <vector>
 #include <algorithm>
