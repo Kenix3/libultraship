@@ -36,8 +36,8 @@
 
 #include <prism/processor.h>
 #include "ship/config/ConsoleVariable.h"
-#include <resource/factory/ShaderFactory.h>
-#include <resource/ResourceManager.h>
+#include <ship/resource/factory/ShaderFactory.h>
+#include <ship/resource/ResourceManager.h>
 #include "spdlog/spdlog.h"
 #include "nlohmann/json.hpp"
 
