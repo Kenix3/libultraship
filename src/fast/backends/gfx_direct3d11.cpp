@@ -23,7 +23,7 @@
 #include "fast/backends/gfx_direct3d_common.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
-#include "gfx_dxgi.h"
+#include "fast/backends/gfx_dxgi.h"
 
 #include "fast/backends/gfx_screen_config.h"
 #include "ship/window/gui/Gui.h"
