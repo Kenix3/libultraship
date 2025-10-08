@@ -1,6 +1,6 @@
 // macUtils.mm
 #ifdef __APPLE__
-#import "macUtils.h"
+#import "ship/utils/macUtils.h"
 #import <SDL_syswm.h>
 #import <Cocoa/Cocoa.h>
 
