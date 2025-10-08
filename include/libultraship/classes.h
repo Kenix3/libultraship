@@ -29,7 +29,7 @@
 #include "ship/audio/Audio.h"
 #include "ship/audio/AudioPlayer.h"
 #if defined(_WIN32)
-#include "audio/WasapiAudioPlayer.h"
+#include "ship/audio/WasapiAudioPlayer.h"
 #endif
 #include "ship/audio/SDLAudioPlayer.h"
 #ifdef __APPLE__
