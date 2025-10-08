@@ -1,5 +1,5 @@
 #ifdef _WIN32
-#include "WasapiAudioPlayer.h"
+#include "ship/audio/WasapiAudioPlayer.h"
 #include <spdlog/spdlog.h>
 
 // These constants are currently missing from the MinGW headers.
