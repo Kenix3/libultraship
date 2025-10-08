@@ -16,7 +16,7 @@
 #undef TRUE
 #undef FALSE
 #include <ship/config/ConsoleVariable.h>
-#include "gfx_metal_shader.h"
+#include "fast/backends/gfx_metal_shader.h"
 #include <prism/processor.h>
 #include <ship/resource/ResourceManager.h>
 #include "spdlog/spdlog.h"

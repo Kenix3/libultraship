@@ -19,7 +19,7 @@
 #endif
 
 #ifdef __APPLE__
-#include "utils/AppleFolderManager.h"
+#include "ship/utils/AppleFolderManager.h"
 #include <unistd.h>
 #include <pwd.h>
 #endif

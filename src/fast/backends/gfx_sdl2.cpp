@@ -22,7 +22,7 @@
 #elif __APPLE__
 #include <SDL.h>
 #include "fast/backends/gfx_metal.h"
-#include "utils/macUtils.h"
+#include "ship/utils/macUtils.h"
 #else
 #include <SDL2/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
