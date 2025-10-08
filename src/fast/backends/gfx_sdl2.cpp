@@ -21,7 +21,7 @@
 #include "SDL_opengl.h"
 #elif __APPLE__
 #include <SDL.h>
-#include "gfx_metal.h"
+#include "fast/backends/gfx_metal.h"
 #include "utils/macUtils.h"
 #else
 #include <SDL2/SDL.h>
