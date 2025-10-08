@@ -30,7 +30,6 @@
 #endif
 
 #include "ship/window/gui/Gui.h"
-// #include "ship/public/bridge/consolevariablebridge.h"
 
 #ifdef _WIN32
 #include <WTypesbase.h>
