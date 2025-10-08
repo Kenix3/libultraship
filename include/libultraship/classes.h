@@ -33,6 +33,6 @@
 #endif
 #include "ship/audio/SDLAudioPlayer.h"
 #ifdef __APPLE__
-#include "utils/AppleFolderManager.h"
+#include "ship/utils/AppleFolderManager.h"
 #endif
 #endif

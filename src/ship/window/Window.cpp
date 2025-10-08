@@ -7,7 +7,7 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 #ifdef __APPLE__
-#include "utils/AppleFolderManager.h"
+#include "ship/utils/AppleFolderManager.h"
 #endif
 
 namespace Ship {
