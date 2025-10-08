@@ -20,7 +20,7 @@
 #include <prism/processor.h>
 #include <ship/resource/ResourceManager.h>
 #include "spdlog/spdlog.h"
-#include "../interpreter.h"
+#include "fast/interpreter.h"
 // MARK: - String Helpers
 
 #define RAND_NOISE                                                                                                  \
