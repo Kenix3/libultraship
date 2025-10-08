@@ -66,14 +66,10 @@ file(GLOB_RECURSE Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "util
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm)
-    set_source_files_properties(${INCLUDE_DIR}/utils/AppleFolderManager.h PROPERTIES COMPILE_FLAGS -fno-objc-arc)
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/macUtils.mm)
-    set_source_files_properties(${INCLUDE_DIR}/utils/macUtils.h PROPERTIES COMPILE_FLAGS -fno-objc-arc)
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/utils/macUtils.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 endif()
 
 source_group("utils" FILES ${Source_Files__Utils})

@@ -29,6 +29,14 @@ add_subdirectory("libultraship")
 
 add_subdirectory("ship")
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ship/utils/AppleFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ship/utils/macUtils.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+endif()
+
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
