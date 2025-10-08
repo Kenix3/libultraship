@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <string>
-#include <ship/utils/StringHelper.h>
+#include "../StringHelper.h"
 
 #if __has_include(<filesystem>)
 #include <filesystem>
