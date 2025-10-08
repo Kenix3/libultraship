@@ -25,11 +25,11 @@
 #include "ship/config/Config.h"
 #include "ship/Context.h"
 
-#include "gfx_window_manager_api.h"
-#include "gfx_rendering_api.h"
-#include "gfx_direct3d_common.h"
-#include "gfx_screen_config.h"
-#include "../interpreter.h"
+#include "fast/backends/gfx_window_manager_api.h"
+#include "fast/backends/gfx_rendering_api.h"
+#include "fast/backends/gfx_direct3d_common.h"
+#include "fast/backends/gfx_screen_config.h"
+#include "fast/interpreter.h"
 #include "ship/window/FileDropMgr.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
