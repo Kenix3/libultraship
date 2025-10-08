@@ -35,7 +35,7 @@
 #include "fast/interpreter.h"
 
 #include <prism/processor.h>
-#include <public/bridge/consolevariablebridge.h>
+#include "ship/config/ConsoleVariable.h"
 #include <resource/factory/ShaderFactory.h>
 #include <resource/ResourceManager.h>
 #include "spdlog/spdlog.h"
