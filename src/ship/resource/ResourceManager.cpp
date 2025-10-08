@@ -6,7 +6,7 @@
 #include <thread>
 #include "ship/utils/StringHelper.h"
 #include "ship/utils/Utils.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/Context.h"
 
 namespace Ship {

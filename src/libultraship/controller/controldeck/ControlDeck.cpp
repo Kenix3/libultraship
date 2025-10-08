@@ -3,7 +3,7 @@
 #include "ship/Context.h"
 #include "libultraship/controller/controldevice/controller/Controller.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+// #include "ship/public/bridge/consolevariablebridge.h"
 #include <imgui.h>
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 

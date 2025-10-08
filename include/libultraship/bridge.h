@@ -1,10 +1,10 @@
 #pragma once
 
-#include "libultraship/public/bridge/resourcebridge.h"
-#include "ship/public/bridge/audiobridge.h"
-#include "ship/public/bridge/controllerbridge.h"
-#include "ship/public/bridge/windowbridge.h"
-#include "ship/public/bridge/consolevariablebridge.h"
-#include "ship/public/bridge/crashhandlerbridge.h"
-#include "libultraship/public/bridge/gfxdebuggerbridge.h"
-#include "fast/public/bridge/gfxbridge.h"
+#include "libultraship/bridge/resourcebridge.h"
+#include "libultraship/bridge/audiobridge.h"
+#include "libultraship/bridge/controllerbridge.h"
+#include "libultraship/bridge/windowbridge.h"
+#include "libultraship/bridge/consolevariablebridge.h"
+#include "libultraship/bridge/crashhandlerbridge.h"
+#include "libultraship/bridge/gfxdebuggerbridge.h"
+#include "libultraship/bridge/gfxbridge.h"

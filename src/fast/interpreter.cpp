@@ -4108,7 +4108,7 @@ static void gfx_step() {
     int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
 #ifdef USE_GBI_TRACE
-    if (cmd->words.trace.valid && CVarGetInteger("gEnableGFXTrace", 0)) {
+    if (cmd->words.trace.valid && Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnableGFXTrace", 0)) {
 #define TRACE                                  \
     "\n====================================\n" \
     " - CMD: {:02X}\n"                         \
@@ -4176,8 +4176,8 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     mWapi->Init(game_name, rapi->GetName(), start_in_fullscreen, width, height, posX, posY);
     mRapi->Init();
     mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true);
-    mCurDimensions.internal_mul = CVarGetFloat(CVAR_INTERNAL_RESOLUTION, 1);
-    mMsaaLevel = CVarGetInteger(CVAR_MSAA_VALUE, 1);
+    mCurDimensions.internal_mul = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
+    mMsaaLevel = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1);
 
     mCurDimensions.width = width;
     mCurDimensions.height = height;

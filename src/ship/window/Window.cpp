@@ -2,7 +2,6 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "ship/public/bridge/consolevariablebridge.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"

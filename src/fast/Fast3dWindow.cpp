@@ -3,7 +3,7 @@
 #include "ship/Context.h"
 #include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "fast/interpreter.h"
 #include "fast/backends/gfx_sdl.h"
 #include "fast/backends/gfx_dxgi.h"
@@ -98,7 +98,7 @@ void Fast3dWindow::Init() {
     mWindowManagerApi->SetKeyboardCallbacks(KeyDown, KeyUp, AllKeysUp);
     mWindowManagerApi->SetMouseCallbacks(MouseButtonDown, MouseButtonUp);
 
-    SetTextureFilter((FilteringMode)CVarGetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
+    SetTextureFilter((FilteringMode)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
 
 int32_t Fast3dWindow::GetTargetFps() {

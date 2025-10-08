@@ -3,7 +3,7 @@
 #include <spdlog/spdlog.h>
 #include "ship/Context.h"
 
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
@@ -76,25 +76,25 @@ std::string SDLGyroMapping::GetGyroMappingId() {
 void SDLGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
-    CVarSetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
-    CVarSetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
-    CVarSetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
-    CVarSetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
-    CVarSetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), mNeutralRoll);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), mNeutralRoll);
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void SDLGyroMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
-    CVarClear(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str());
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 std::string SDLGyroMapping::GetPhysicalDeviceName() {

@@ -3,7 +3,6 @@
 #include "ship/window/gui/Gui.h"
 #include "fast/backends/gfx_window_manager_api.h"
 #include "fast/backends/gfx_rendering_api.h"
-#include "fast/public/bridge/gfxbridge.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 union Gfx;

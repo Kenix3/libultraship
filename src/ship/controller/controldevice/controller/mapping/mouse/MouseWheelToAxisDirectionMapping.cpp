@@ -3,7 +3,7 @@
 #include <cmath>
 #include "ship/utils/StringHelper.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/Context.h"
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 #include "ship/controller/controldeck/ControlDeck.h"
@@ -33,22 +33,22 @@ std::string MouseWheelToAxisDirectionMapping::GetAxisDirectionMappingId() {
 
 void MouseWheelToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "MouseWheelToAxisDirectionMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(),
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(),
                    static_cast<int>(mWheelDirection));
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void MouseWheelToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str());
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 int8_t MouseWheelToAxisDirectionMapping::GetMappingType() {

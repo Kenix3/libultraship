@@ -9,7 +9,7 @@
 
 #include "ship/config/Config.h"
 #include "ship/Context.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "fast/resource/type/Texture.h"
 #include "ship/resource/File.h"
 #include <stb_image.h>
@@ -141,11 +141,11 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     mImGuiIo->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
-    if (SupportsViewports() && CVarGetInteger(CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
+    if (SupportsViewports() && Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
+    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -323,7 +323,7 @@ void Gui::BlockGamepadNavigation() {
 }
 
 void Gui::UnblockGamepadNavigation() {
-    if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
+    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
 }
@@ -388,11 +388,11 @@ void Gui::ImGuiWMNewFrame() {
 void Gui::ApplyResolutionChanges() {
     ImVec2 size = ImGui::GetContentRegionAvail();
 
-    const float aspectRatioX = CVarGetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
-    const float aspectRatioY = CVarGetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
-    const uint32_t verticalPixelCount = CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
+    const float aspectRatioX = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
+    const float aspectRatioY = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
+    const uint32_t verticalPixelCount = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
     const bool verticalResolutionToggle =
-        CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
 
     const bool aspectRatioIsEnabled = (aspectRatioX > 0.0f) && (aspectRatioY > 0.0f);
 
@@ -442,10 +442,10 @@ void Gui::ApplyResolutionChanges() {
 }
 
 int16_t Gui::GetIntegerScaleFactor() {
-    if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
-        int16_t factor = CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
+    if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
+        int16_t factor = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
 
-        if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
+        if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
             // Screen bounds take priority over whatever Factor is set to.
 
             // The same comparison as below, but checked against the configured factor
@@ -485,7 +485,7 @@ int16_t Gui::GetIntegerScaleFactor() {
         }
 
         // Add screen bounds offset, if set.
-        factor += CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
+        factor += Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
 
         if (factor < 1) {
             factor = 1;
@@ -534,7 +534,7 @@ void Gui::DrawMenu() {
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false) ||
-        (ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false) && CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
+        (ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false) && Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
         if ((ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) && GetMenu()) {
             GetMenu()->ToggleVisibility();
         } else if ((ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) &&
@@ -549,7 +549,7 @@ void Gui::DrawMenu() {
             auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow());
             mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
         }
-        if (CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
+        if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -656,11 +656,11 @@ void Gui::CalculateGameViewport() {
     mInterpreter.lock()->mGameWindowViewport.width = (int16_t)size.x;
     mInterpreter.lock()->mGameWindowViewport.height = (int16_t)size.y;
 
-    if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
+    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
         ApplyResolutionChanges();
     }
 
-    switch (CVarGetInteger(CVAR_LOW_RES_MODE, 0)) {
+    switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_LOW_RES_MODE, 0)) {
         case 1: { // N64 Mode
             mInterpreter.lock()->mCurDimensions.width = 320;
             mInterpreter.lock()->mCurDimensions.height = 240;
@@ -704,13 +704,13 @@ void Gui::DrawGame() {
     ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (CVarGetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
+    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(floor(size.x / 2 - sw / 2), 0);
         size = ImVec2(sw, size.y);
-    } else if (CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
-        if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
-            if (!CVarGetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
+    } else if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
+        if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
+            if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
                 float sWdth =
                     size.y * mInterpreter.lock()->mCurDimensions.width / mInterpreter.lock()->mCurDimensions.height;
                 float sHght =
@@ -778,7 +778,7 @@ void Gui::DrawFloatingWindows() {
 
 void Gui::CheckSaveCvars() {
     if (mNeedsConsoleVariableSave) {
-        CVarSave();
+        Ship::Context::GetInstance()->GetConsoleVariables()->Save();
         mNeedsConsoleVariableSave = false;
     }
 }

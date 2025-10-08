@@ -1,6 +1,6 @@
 #include "ship/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h"
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
 #include "ship/Context.h"
@@ -11,18 +11,18 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                                                                                              std::string id) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + id;
     const std::string mappingClass =
-        CVarGetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
     int32_t lowFrequencyIntensityPercentage =
-        CVarGetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
     int32_t highFrequencyIntensityPercentage =
-        CVarGetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
 
     if (lowFrequencyIntensityPercentage < 0 || lowFrequencyIntensityPercentage > 100 ||
         highFrequencyIntensityPercentage < 0 || highFrequencyIntensityPercentage > 100) {
         // something about this mapping is invalid
-        CVarClear(mappingCvarKey.c_str());
-        CVarSave();
+        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->Save();
         return nullptr;
     }
 

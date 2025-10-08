@@ -2,17 +2,18 @@
 
 #include <string>
 #include "ship/utils/StringHelper.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
 GlobalSDLDeviceSettings::GlobalSDLDeviceSettings() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GlobalSDLDeviceSettings";
     const int32_t defaultAxisThresholdPercentage = 25;
     mStickAxisThresholdPercentage =
-        CVarGetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
                        defaultAxisThresholdPercentage);
     mTriggerAxisThresholdPercentage =
-        CVarGetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
                        defaultAxisThresholdPercentage);
 }
 
@@ -37,18 +38,18 @@ void GlobalSDLDeviceSettings::SetTriggerAxisThresholdPercentage(int32_t triggerA
 
 void GlobalSDLDeviceSettings::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GlobalSDLDeviceSettings";
-    CVarSetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
                    mStickAxisThresholdPercentage);
-    CVarSetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
                    mTriggerAxisThresholdPercentage);
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void GlobalSDLDeviceSettings::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GlobalSDLDeviceSettings";
-    CVarClear(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str());
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 } // namespace Ship

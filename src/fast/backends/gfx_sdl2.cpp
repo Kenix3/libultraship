@@ -30,7 +30,7 @@
 #endif
 
 #include "ship/window/gui/Gui.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+// #include "ship/public/bridge/consolevariablebridge.h"
 
 #ifdef _WIN32
 #include <WTypesbase.h>
@@ -236,7 +236,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     mFullScreen = on;
 #else
     if (SDL_SetWindowFullscreen(mWnd,
-                                on ? (CVarGetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                on ? (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
                                                                                       : SDL_WINDOW_FULLSCREEN)
                                    : 0) >= 0) {
         mFullScreen = on;

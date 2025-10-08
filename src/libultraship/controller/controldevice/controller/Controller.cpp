@@ -1,7 +1,8 @@
 #include "libultraship/controller/controldevice/controller/Controller.h"
 #include <memory>
 #include <algorithm>
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 #if __APPLE__
 #include <SDL_events.h>
 #else
@@ -43,7 +44,7 @@ void Controller::ReadToOSContPad(OSContPad* pad) {
     mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
         auto& padFromBuffer =
-            mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)CVarGetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
+            mPadBuffer[std::min(mPadBuffer.size() - 1, (size_t)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
 
         pad->button |= padFromBuffer.button;
 

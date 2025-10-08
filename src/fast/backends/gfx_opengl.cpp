@@ -25,7 +25,7 @@
 #include "ship/Context.h"
 #include "ship/resource/factory/ShaderFactory.h"
 #include "fast/interpreter.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 
 namespace Fast {
 int GfxRenderingAPIOGL::GetMaxTextureSize() {
@@ -616,7 +616,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
             const int n64modeFactor = 120;
             const int noVanishFactor = 100;
             GLfloat SSDB = -2;
-            switch (CVarGetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+            switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
                 // scaled z-fighting (N64 mode like)
                 case 1:
                     if (mFrameBuffers.size() >

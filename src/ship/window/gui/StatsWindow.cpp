@@ -1,6 +1,5 @@
 #include "ship/window/gui/StatsWindow.h"
 #include <imgui.h>
-#include "ship/public/bridge/consolevariablebridge.h"
 #include "spdlog/spdlog.h"
 
 namespace Ship {

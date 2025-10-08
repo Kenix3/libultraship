@@ -3,8 +3,6 @@
 #include <random>
 #include <sstream>
 
-#include "ship/public/bridge/consolevariablebridge.h"
-
 namespace Ship {
 ControllerButtonMapping::ControllerButtonMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,
                                                  CONTROLLERBUTTONS_T bitmask)

@@ -2,7 +2,7 @@
 #include "ship/Context.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 

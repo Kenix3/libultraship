@@ -8,7 +8,7 @@ GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const s
     : GuiElement(isVisible), mName(name), mVisibilityConsoleVariable(consoleVariable), mOriginalSize(originalSize),
       mWindowFlags(windowFlags) {
     if (!mVisibilityConsoleVariable.empty()) {
-        mIsVisible = CVarGetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
+        mIsVisible = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();
     }
 }
@@ -44,12 +44,12 @@ void GuiWindow::SyncVisibilityConsoleVariable() {
         return;
     }
 
-    bool shouldSave = CVarGetInteger(mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
+    bool shouldSave = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
 
     if (IsVisible()) {
-        CVarSetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
     } else {
-        CVarClear(mVisibilityConsoleVariable.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mVisibilityConsoleVariable.c_str());
     }
 
     if (shouldSave) {

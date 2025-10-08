@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "ship/resource/Resource.h"
-#include "fast/public/bridge/gfxbridge.h"
+#include "fast/ucodehandlers.h"
 #include <libultraship/libultra/gbi.h>
 
 namespace Fast {

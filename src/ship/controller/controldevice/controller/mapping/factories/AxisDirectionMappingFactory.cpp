@@ -6,7 +6,7 @@
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLButtonToAxisDirectionMapping.h"
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAxisDirectionMapping.h"
 
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 
@@ -21,20 +21,20 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
                                                                   std::string id) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + id;
     const std::string mappingClass =
-        CVarGetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t direction = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerAxis =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
-            CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
             sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             return nullptr;
         }
 
@@ -43,15 +43,15 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "SDLButtonToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t direction = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerButton =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
             sdlControllerButton == -1) {
             // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             return nullptr;
         }
 
@@ -60,14 +60,14 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t direction = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int32_t scancode =
-            CVarGetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             return nullptr;
         }
 
@@ -76,13 +76,13 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "MouseButtonToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+        int32_t direction = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int mouseButton = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             return nullptr;
         }
 
@@ -91,14 +91,14 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "MouseWheelToAxisDirectionMapping") {
-        int32_t direction = CVarGetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t direction = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int wheelDirection =
-            CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             return nullptr;
         }
 

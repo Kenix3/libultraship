@@ -3,7 +3,7 @@
 #include "ship/Context.h"
 #include "ship/controller/controldevice/controller/Controller.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include <imgui.h>
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
@@ -72,7 +72,7 @@ bool ControlDeck::AllGameInputBlocked() {
 bool ControlDeck::GamepadGameInputBlocked() {
     // block controller input when using the controller to navigate imgui menus
     return AllGameInputBlocked() || Context::GetInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible() &&
-                                        CVarGetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
+                                        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
 }
 
 bool ControlDeck::KeyboardGameInputBlocked() {

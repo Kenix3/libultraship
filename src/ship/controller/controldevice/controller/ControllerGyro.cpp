@@ -1,6 +1,7 @@
 #include "ship/controller/controldevice/controller/ControllerGyro.h"
 
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
 
@@ -33,8 +34,8 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     SaveGyroMappingIdToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
     return true;
 }
 
@@ -51,12 +52,12 @@ void ControllerGyro::SaveGyroMappingIdToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     if (mGyroMapping == nullptr) {
-        CVarClear(gyroMappingIdCvarKey.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(gyroMappingIdCvarKey.c_str());
     } else {
-        CVarSetString(gyroMappingIdCvarKey.c_str(), mGyroMapping->GetGyroMappingId().c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(gyroMappingIdCvarKey.c_str(), mGyroMapping->GetGyroMappingId().c_str());
     }
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void ControllerGyro::ClearGyroMapping() {
@@ -73,7 +74,7 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     const std::string gyroMappingIdCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
-    std::string id = CVarGetString(gyroMappingIdCvarKey.c_str(), "");
+    std::string id = Ship::Context::GetInstance()->GetConsoleVariables()->GetString(gyroMappingIdCvarKey.c_str(), "");
     if (id == "") {
         mGyroMapping = nullptr;
         return;

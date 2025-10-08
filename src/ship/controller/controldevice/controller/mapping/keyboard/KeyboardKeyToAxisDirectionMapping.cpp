@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
@@ -27,21 +27,21 @@ std::string KeyboardKeyToAxisDirectionMapping::GetAxisDirectionMappingId() {
 
 void KeyboardKeyToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    CVarSetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToAxisDirectionMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    CVarSetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    CVarSetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), mKeyboardScancode);
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), mKeyboardScancode);
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void KeyboardKeyToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    CVarClear(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str());
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 int8_t KeyboardKeyToAxisDirectionMapping::GetMappingType() {

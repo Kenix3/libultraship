@@ -2,8 +2,7 @@
 
 #include "stdint.h"
 #include "stddef.h"
-
-typedef enum AudioChannelsSetting { audioStereo, audioSurround51, audioMax } AudioChannelsSetting;
+#include "ship/audio/AudioChannelsSetting.h"
 
 #ifdef __cplusplus
 extern "C" {

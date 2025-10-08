@@ -1,7 +1,7 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/Context.h"
 
@@ -34,21 +34,21 @@ std::string KeyboardKeyToButtonMapping::GetButtonMappingId() {
 
 void KeyboardKeyToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    CVarSetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
                   "KeyboardKeyToButtonMapping");
-    CVarSetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    CVarSetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), mKeyboardScancode);
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), mKeyboardScancode);
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void KeyboardKeyToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
 
-    CVarClear(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    CVarClear(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str());
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 std::string KeyboardKeyToButtonMapping::GetPhysicalDeviceName() {

@@ -1,6 +1,7 @@
 #include "ship/controller/controldevice/controller/ControllerLED.h"
 
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
@@ -31,12 +32,12 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     if (ledMappingIdsCvarKey == "") {
-        CVarClear(ledMappingIdsCvarKey.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(ledMappingIdsCvarKey.c_str());
     } else {
-        CVarSetString(ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
     }
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void ControllerLED::AddLEDMapping(std::shared_ptr<ControllerLEDMapping> mapping) {
@@ -100,7 +101,7 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
-    std::stringstream ledMappingIdsStringStream(CVarGetString(ledMappingIdsCvarKey.c_str(), ""));
+    std::stringstream ledMappingIdsStringStream(Ship::Context::GetInstance()->GetConsoleVariables()->GetString(ledMappingIdsCvarKey.c_str(), ""));
     std::string ledMappingIdString;
     while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
         LoadLEDMappingFromConfig(ledMappingIdString);
@@ -125,8 +126,8 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
     SaveLEDMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
     return true;
 }
 

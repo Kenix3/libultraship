@@ -2,7 +2,7 @@
 #include "stdint.h"
 #include "stddef.h"
 #include <string>
-#include "ship/public/bridge/audiobridge.h"
+#include "ship/audio/AudioChannelsSetting.h"
 
 namespace Ship {
 

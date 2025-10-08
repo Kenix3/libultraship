@@ -1,7 +1,8 @@
 #include "ship/controller/controldevice/controller/Controller.h"
 #include <memory>
 #include <algorithm>
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 #if __APPLE__
 #include <SDL_events.h>
 #else
@@ -72,7 +73,7 @@ uint8_t Controller::GetPortIndex() {
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    return CVarGetInteger(hasConfigCvarKey.c_str(), false);
+    return Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(hasConfigCvarKey.c_str(), false);
 }
 
 void Controller::ClearAllMappings() {
@@ -112,8 +113,8 @@ void Controller::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
 
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void Controller::ReloadAllMappingsFromConfig() {

@@ -5,7 +5,7 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
 #include <algorithm>
@@ -113,12 +113,12 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
     if (buttonMappingIdListString == "") {
-        CVarClear(buttonMappingIdsCvarKey.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(buttonMappingIdsCvarKey.c_str());
     } else {
-        CVarSetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
     }
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 }
 
 void ControllerButton::ReloadAllMappingsFromConfig() {
@@ -132,7 +132,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
-    std::stringstream buttonMappingIdsStringStream(CVarGetString(buttonMappingIdsCvarKey.c_str(), ""));
+    std::stringstream buttonMappingIdsStringStream(Ship::Context::GetInstance()->GetConsoleVariables()->GetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
         LoadButtonMappingFromConfig(buttonMappingIdString);
@@ -215,8 +215,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     SaveButtonMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    CVarSetInteger(hasConfigCvarKey.c_str(), true);
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
     return true;
 }
 

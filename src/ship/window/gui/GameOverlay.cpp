@@ -1,6 +1,6 @@
 #include "ship/window/gui/GameOverlay.h"
 
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/resource/File.h"
 #include "ship/window/gui/resource/Font.h"
 #include "ship/window/gui/resource/FontFactory.h"
@@ -169,7 +169,7 @@ void GameOverlay::SetCurrentFont(const std::string& name) {
     }
 
     mCurrentFont = name;
-    CVarSetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
+    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
     Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
 }
 
@@ -204,7 +204,7 @@ void GameOverlay::Draw() {
 
         if (overlay.Type == OverlayType::TEXT) {
             const char* text = overlay.Value.c_str();
-            const auto var = CVarGet(text);
+            const auto var = Ship::Context::GetInstance()->GetConsoleVariables()->Get(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
             switch (var->Type) {

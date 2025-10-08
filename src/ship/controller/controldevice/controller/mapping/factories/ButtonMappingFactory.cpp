@@ -1,5 +1,5 @@
 #include "ship/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "libultraship/libultra/controller.h"
 #include "ship/Context.h"
@@ -17,24 +17,24 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
                                                                                              std::string id) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + id;
     const std::string mappingClass =
-        CVarGetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
     CONTROLLERBUTTONS_T bitmask =
-        CVarGetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
     if (!bitmask) {
         // all button mappings need bitmasks
-        CVarClear(mappingCvarKey.c_str());
-        CVarSave();
+        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->Save();
         return nullptr;
     }
 
     if (mappingClass == "SDLButtonToButtonMapping") {
         int32_t sdlControllerButton =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
         if (sdlControllerButton == -1) {
             // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             return nullptr;
         }
 
@@ -43,14 +43,14 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 
     if (mappingClass == "SDLAxisDirectionToButtonMapping") {
         int32_t sdlControllerAxis =
-            CVarGetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
         int32_t axisDirection =
-            CVarGetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if (sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
             // something about this mapping is invalid
-            CVarClear(mappingCvarKey.c_str());
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
             return nullptr;
         }
 
@@ -59,20 +59,20 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 
     if (mappingClass == "KeyboardKeyToButtonMapping") {
         int32_t scancode =
-            CVarGetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
 
         return std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, static_cast<KbScancode>(scancode));
     }
 
     if (mappingClass == "MouseButtonToButtonMapping") {
-        int mouseButton = CVarGetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
+        int mouseButton = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
 
         return std::make_shared<MouseButtonToButtonMapping>(portIndex, bitmask, static_cast<MouseBtn>(mouseButton));
     }
 
     if (mappingClass == "MouseWheelToButtonMapping") {
         int wheelDirection =
-            CVarGetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask,
                                                            static_cast<WheelDirection>(wheelDirection));

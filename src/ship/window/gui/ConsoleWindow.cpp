@@ -1,6 +1,6 @@
 #include "ship/window/gui/ConsoleWindow.h"
 
-#include "ship/public/bridge/consolevariablebridge.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 #include "ship/Context.h"
 #include "ship/utils/StringHelper.h"
@@ -203,9 +203,9 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
     int vType = CheckVarType(args[2]);
 
     if (vType == VARTYPE_STRING) {
-        CVarSetString(args[1].c_str(), args[2].c_str());
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(args[1].c_str(), args[2].c_str());
     } else if (vType == VARTYPE_FLOAT) {
-        CVarSetFloat((char*)args[1].c_str(), std::stof(args[2]));
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetFloat((char*)args[1].c_str(), std::stof(args[2]));
     } else if (vType == VARTYPE_RGBA) {
         uint32_t val = std::stoul(&args[2].c_str()[1], nullptr, 16);
         Color_RGBA8 clr;
@@ -213,12 +213,12 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
         clr.g = val >> 16;
         clr.b = val >> 8;
         clr.a = val & 0xFF;
-        CVarSetColor((char*)args[1].c_str(), clr);
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetColor((char*)args[1].c_str(), clr);
     } else {
-        CVarSetInteger(args[1].c_str(), std::stoi(args[2]));
+        Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(args[1].c_str(), std::stoi(args[2]));
     }
 
-    CVarSave();
+    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
 
     return 0;
 }
@@ -233,7 +233,7 @@ int32_t ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::v
         return 1;
     }
 
-    auto cvar = CVarGet(args[1].c_str());
+    auto cvar = Ship::Context::GetInstance()->GetConsoleVariables()->Get(args[1].c_str());
 
     if (cvar != nullptr) {
         if (cvar->Type == ConsoleVariableType::Integer) {
@@ -327,7 +327,7 @@ void ConsoleWindow::UpdateElement() {
     }
     for (auto [key, var] : mBindingToggle) {
         if (ImGui::IsKeyPressed(key)) {
-            Dispatch("set " + var + " " + std::to_string(!static_cast<bool>(CVarGetInteger(var.c_str(), 0))));
+            Dispatch("set " + var + " " + std::to_string(!static_cast<bool>(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(var.c_str(), 0))));
         }
     }
 }
@@ -389,7 +389,7 @@ void ConsoleWindow::DrawElement() {
         ClearLogs(mCurrentChannel);
     }
 
-    if (CVarGetInteger("gSinkEnabled", 0)) {
+    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gSinkEnabled", 0)) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(150);
         if (ImGui::BeginCombo("##channel", mCurrentChannel.c_str())) {
