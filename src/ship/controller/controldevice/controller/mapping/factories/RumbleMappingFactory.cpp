@@ -2,7 +2,6 @@
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
-#include "libultraship/libultra/controller.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
