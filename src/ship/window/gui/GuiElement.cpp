@@ -1,6 +1,6 @@
 #include "ship/window/gui/GuiElement.h"
-
-#include "libultraship/libultraship.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
 GuiElement::GuiElement(bool isVisible) : mIsVisible(isVisible), mIsInitialized(false) {

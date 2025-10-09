@@ -1,6 +1,8 @@
 #include "ship/window/gui/GuiWindow.h"
-
-#include "libultraship/libultraship.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
+#include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 
 namespace Ship {
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
