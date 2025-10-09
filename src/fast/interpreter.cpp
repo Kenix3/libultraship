@@ -21,7 +21,7 @@
 #define _LANGUAGE_C
 #endif
 #include "fast/debug/GfxDebugger.h"
-#include "libultraship/libultra/types.h"
+#include "fast/types.h"
 #include <string>
 
 #include "fast/interpreter.h"
