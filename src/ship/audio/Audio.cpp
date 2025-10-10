@@ -18,8 +18,10 @@ void Audio::InitAudioPlayer() {
 #endif
         case AudioBackend::SDL:
             mAudioPlayer = std::make_shared<SDLAudioPlayer>(this->mAudioSettings);
+            break;
         default:
             mAudioPlayer = std::make_shared<NullAudioPlayer>(this->mAudioSettings);
+            break;
     }
 
     if (mAudioPlayer && !mAudioPlayer->Init()) {
