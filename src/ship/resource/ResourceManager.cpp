@@ -227,6 +227,17 @@ std::shared_ptr<IResource> ResourceManager::LoadResource(const std::string& file
     return LoadResource({ filePath, mDefaultCacheOwner, mDefaultCacheArchive }, loadExact, initData);
 }
 
+std::shared_ptr<IResource> ResourceManager::LoadResource(uint64_t crc, bool loadExact,
+                                                         std::shared_ptr<ResourceInitData> initData) {
+    const std::string* hashStr = GetArchiveManager()->HashToString(crc);
+    if (hashStr == nullptr || hashStr->length() == 0) {
+        SPDLOG_TRACE("ResourceLoad: Unknown crc {}\n", crc);
+        return nullptr;
+    }
+
+    return LoadResource(*hashStr, loadExact, initData);
+}
+
 std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
 ResourceManager::CheckCache(const ResourceIdentifier& identifier, bool loadExact) {
     if (!loadExact && mAltAssetsEnabled && !identifier.Path.starts_with(IResource::gAltAssetPrefix)) {
@@ -408,6 +419,66 @@ bool ResourceManager::IsAltAssetsEnabled() {
 
 void ResourceManager::SetAltAssetsEnabled(bool isEnabled) {
     mAltAssetsEnabled = isEnabled;
+}
+
+size_t ResourceManager::GetResourceSize(std::shared_ptr<IResource> resource) {
+    if (resource == nullptr) {
+        return 0;
+    }
+
+    return resource->GetPointerSize();
+}
+
+size_t ResourceManager::GetResourceSize(const char* name) {
+    auto resource = LoadResource(name);
+
+    return GetResourceSize(resource);
+}
+
+size_t ResourceManager::GetResourceSize(uint64_t crc) {
+    auto resource = LoadResource(crc);
+
+    return GetResourceSize(resource);
+}
+
+bool ResourceManager::GetResourceIsCustom(std::shared_ptr<IResource> resource) {
+    if (resource == nullptr) {
+        return false;
+    }
+
+    return resource->GetInitData()->IsCustom;
+}
+
+bool ResourceManager::GetResourceIsCustom(const char* name) {
+    auto resource = LoadResource(name);
+
+    return GetResourceIsCustom(resource);
+}
+
+bool ResourceManager::GetResourceIsCustom(uint64_t crc) {
+    auto resource = LoadResource(crc);
+
+    return GetResourceIsCustom(resource);
+}
+
+void* ResourceManager::GetResourceRawPointer(std::shared_ptr<IResource> resource) {
+    if (resource == nullptr) {
+        return nullptr;
+    }
+
+    return resource->GetRawPointer();
+}
+
+void* ResourceManager::GetResourceRawPointer(const char* name) {
+    auto resource = LoadResource(name);
+
+    return GetResourceRawPointer(resource);
+}
+
+void* ResourceManager::GetResourceRawPointer(uint64_t crc) {
+    auto resource = LoadResource(crc);
+
+    return GetResourceRawPointer(resource);
 }
 
 } // namespace Ship

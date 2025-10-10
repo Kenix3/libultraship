@@ -33,7 +33,7 @@
 #include "ship/resource/ResourceManager.h"
 #include "ship/utils/Utils.h"
 #include "ship/Context.h"
-#include "libultraship/bridge.h"
+#include "ship/config/ConsoleVariable.h"
 
 #include <spdlog/fmt/fmt.h>
 
@@ -2708,8 +2708,6 @@ bool gfx_marker_handler_otr(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     (*cmd0)++;
     F3DGfx* cmd = (*cmd0);
-    const uint64_t hash = ((uint64_t)(cmd)->words.w0 << 32) + (cmd)->words.w1;
-    std::string dlName = ResourceGetNameByCrc(hash);
     gfx->mMarkerOn = true;
     return false;
 }
@@ -2765,7 +2763,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3dex2(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     const char* fileName = (const char*)cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)ResourceGetDataByName((const char*)fileName);
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
 
     if (mtx != NULL) {
         gfx->GfxSpMatrix(C0(0, 8) ^ F3DEX2_G_MTX_PUSH, mtx);
@@ -2778,7 +2776,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3d(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     const char* fileName = (const char*)cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)ResourceGetDataByName((const char*)fileName);
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
 
     if (mtx != NULL) {
         gfx->GfxSpMatrix(C0(16, 8), mtx);
@@ -2800,7 +2798,7 @@ bool gfx_mtx_otr_handler_custom_f3dex2(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)ResourceGetDataByCrc(hash);
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
     if (mtx != NULL) {
         Interpreter* gfx = mInstance.lock().get();
@@ -2818,7 +2816,7 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)ResourceGetDataByCrc(hash);
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
     if (mtx != nullptr) {
         cmd--;
         gfx->GfxSpMatrix(C0(16, 8), (const int32_t*)gfx->SegAddr(cmd->words.w1));
@@ -2884,9 +2882,9 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     const uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
     if (ucode_handler_index == ucode_f3dex2) {
-        gfx->GfxSpMovememF3dex2(index, offset, ResourceGetDataByCrc(hash));
+        gfx->GfxSpMovememF3dex2(index, offset, Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash));
     } else {
-        auto light = (Fast::LightEntry*)ResourceGetDataByCrc(hash);
+        auto light = (Fast::LightEntry*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
         uintptr_t data = (uintptr_t)&light->Ambient;
         gfx->GfxSpMovememF3d(index, offset, (void*)(data + (hasOffset == 1 ? 0x8 : 0)));
     }
@@ -3004,7 +3002,7 @@ bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
         gfx->GfxSpVertex(C0(12, 8), C0(1, 7) - C0(12, 8), (F3DVtx*)offset);
         (*cmd0)++;
     } else {
-        F3DVtx* vtx = (F3DVtx*)ResourceGetDataByCrc(hash);
+        F3DVtx* vtx = (F3DVtx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
         if (vtx != NULL) {
             vtx = (F3DVtx*)((char*)vtx + offset);
@@ -3031,7 +3029,7 @@ bool gfx_vtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
     size_t vtxCnt = cmd->words.w0;
     size_t vtxIdxOff = cmd->words.w1 >> 16;
     size_t vtxDataOff = cmd->words.w1 & 0xFFFF;
-    F3DVtx* vtx = (F3DVtx*)ResourceGetDataByName((const char*)fileName);
+    F3DVtx* vtx = (F3DVtx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
     vtx += vtxDataOff;
 
     gfx->GfxSpVertex(vtxCnt, vtxIdxOff, vtx);
@@ -3041,7 +3039,7 @@ bool gfx_vtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
 bool gfx_dl_otr_filepath_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     char* fileName = (char*)cmd->words.w1;
-    F3DGfx* nDL = (F3DGfx*)ResourceGetDataByName((const char*)fileName);
+    F3DGfx* nDL = (F3DGfx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
 
     if (C0(16, 1) == 0 && nDL != nullptr) {
         g_exec_stack.call(*cmd0, nDL);
@@ -3094,7 +3092,7 @@ bool gfx_dl_otr_hash_handler_custom(F3DGfx** cmd0) {
 
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-        F3DGfx* gfx = (F3DGfx*)ResourceGetDataByCrc(hash);
+        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
         if (gfx != 0) {
             g_exec_stack.call(cmd, gfx);
@@ -3152,7 +3150,7 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
         (gfx->mRsp->extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-        F3DGfx* gfx = (F3DGfx*)ResourceGetDataByCrc(hash);
+        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
         if (gfx != 0) {
             (*cmd0) = gfx;
@@ -3364,7 +3362,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     (*cmd0)++;
     uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (uint64_t)(*cmd0)->words.w1;
 
-    const char* fileName = ResourceGetNameByCrc(hash);
+    const char* fileName = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash);
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
@@ -3374,7 +3372,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     }
 
     std::shared_ptr<Fast::Texture> texture = std::static_pointer_cast<Fast::Texture>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(ResourceGetNameByCrc(hash)));
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash)));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
