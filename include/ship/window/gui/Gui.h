@@ -18,7 +18,6 @@
 #include "ship/window/gui/StatsWindow.h"
 #include "ship/window/gui/GuiWindow.h"
 #include "ship/window/gui/GuiMenuBar.h"
-#include "libultraship/libultra/controller.h"
 #include "fast/resource/type/Texture.h"
 #include "ship/window/gui/resource/GuiTexture.h"
 

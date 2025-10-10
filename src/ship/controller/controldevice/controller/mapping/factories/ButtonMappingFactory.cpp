@@ -1,7 +1,6 @@
 #include "ship/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
-#include "libultraship/libultra/controller.h"
 #include "ship/Context.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
