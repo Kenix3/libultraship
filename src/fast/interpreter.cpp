@@ -4293,6 +4293,46 @@ void Interpreter::StartFrame() {
 
 GfxExecStack g_exec_stack = {};
 
+void Interpreter::RunGuiOnly() {
+    SpReset();
+
+    mGetPixelDepthPending.clear();
+    mGetPixelDepthCached.clear();
+
+    mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
+        false, true, true, !mRendersToFb);
+    mRapi->StartFrame();
+    mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
+    mRapi->ClearFramebuffer(false, true);
+    mRdp->viewport_or_scissor_changed = true;
+    mRenderingState.viewport = {};
+    mRenderingState.scissor = {};
+
+    Flush();
+    mGfxFrameBuffer = 0;
+
+    if (mRendersToFb) {
+        mRapi->StartDrawToFramebuffer(0, 1);
+        mRapi->ClearFramebuffer(true, true);
+        if (mMsaaLevel > 1) {
+            if (!ViewportMatchesRendererResolution()) {
+                mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
+                mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFbMsaaResolved);
+            } else {
+                mRapi->ResolveMSAAColorBuffer(0, mGameFb);
+            }
+        } else {
+            mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFb);
+        }
+    } else if (mFbActive) {
+        // Failsafe reset to main framebuffer to prevent softlocking the renderer
+        mFbActive = 0;
+        mRapi->StartDrawToFramebuffer(0, 1);
+
+        assert(0 && "active framebuffer was never reset back to original");
+    }
+}
+
 void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
     SpReset();
 

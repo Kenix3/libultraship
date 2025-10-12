@@ -166,6 +166,10 @@ void Fast3dWindow::Close() {
     mWindowManagerApi->Close();
 }
 
+void Fast3dWindow::RunGuiOnly() {
+    mInterpreter->RunGuiOnly();
+}
+
 void Fast3dWindow::StartFrame() {
     mInterpreter->StartFrame();
 }

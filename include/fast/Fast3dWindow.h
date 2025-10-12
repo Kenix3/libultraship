@@ -18,6 +18,7 @@ class Fast3dWindow : public Ship::Window {
 
     void Init() override;
     void Close() override;
+    void RunGuiOnly();
     void StartFrame() override;
     void EndFrame() override;
     bool IsFrameReady() override;
