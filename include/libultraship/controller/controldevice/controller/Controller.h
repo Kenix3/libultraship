@@ -8,7 +8,7 @@
 #include <vector>
 #include <map>
 #include "libultraship/libultra/controller.h"
-#include "libultraship/color.h"
+#include "ship/utils/color.h"
 #include <unordered_map>
 #include "ship/controller/controldevice/controller/Controller.h"
 

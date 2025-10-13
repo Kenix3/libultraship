@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 #include "ControllerMapping.h"
-#include "libultraship/color.h"
+#include "ship/utils/color.h"
 
 namespace Ship {
 
