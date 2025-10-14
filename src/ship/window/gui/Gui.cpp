@@ -15,16 +15,13 @@
 #include <stb_image.h>
 #include "ship/window/gui/Fonts.h"
 #include "ship/window/gui/resource/GuiTextureFactory.h"
-#include "fast/backends/gfx_rendering_api.h"
 
 #include "libultraship/window/gui/GfxDebuggerWindow.h"
-#include "fast/interpreter.h"
 #include "fast/Fast3dWindow.h"
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
 
-#include "fast/backends/gfx_metal.h"
 #include <imgui_impl_metal.h>
 #include <imgui_impl_sdl2.h>
 #else
@@ -43,7 +40,6 @@
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-// #include <fast/backends/gfx_direct3d11.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
