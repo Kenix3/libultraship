@@ -2,8 +2,8 @@
 
 #include "ship/Context.h"
 #include "libultraship/controller/controldevice/controller/Controller.h"
+#include "libultraship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
 #include "ship/utils/StringHelper.h"
-// #include "ship/public/bridge/consolevariablebridge.h"
 #include <imgui.h>
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
@@ -17,7 +17,7 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
 }
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : ControlDeck(additionalBitmasks, nullptr) {
+    : LUS::ControlDeck(additionalBitmasks, std::make_shared<LUS::ControllerDefaultMappings>()) {
 }
 
 ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
