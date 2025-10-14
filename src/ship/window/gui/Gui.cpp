@@ -22,6 +22,7 @@
 #include <SDL_hints.h>
 #include <SDL_video.h>
 
+#include "fast/backends/gfx_metal.h"
 #include <imgui_impl_metal.h>
 #include <imgui_impl_sdl2.h>
 #else
