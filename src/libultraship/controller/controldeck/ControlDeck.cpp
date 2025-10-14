@@ -17,7 +17,7 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
 }
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : LUS::ControlDeck(additionalBitmasks, std::make_shared<LUS::ControllerDefaultMappings>()) {
+    : ControlDeck(additionalBitmasks, std::make_shared<LUS::ControllerDefaultMappings>()) {
 }
 
 ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
