@@ -32,6 +32,7 @@ class ControlDeck {
     std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
     std::shared_ptr<GlobalSDLDeviceSettings> GetGlobalSDLDeviceSettings();
     std::shared_ptr<ControllerDefaultMappings> GetControllerDefaultMappings();
+    const std::unordered_map<CONTROLLERBUTTONS_T, std::string>& GetAllButtonNames() const;
     std::string GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask);
 
   protected:

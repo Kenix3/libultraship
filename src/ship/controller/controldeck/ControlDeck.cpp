@@ -120,6 +120,10 @@ std::shared_ptr<ControllerDefaultMappings> ControlDeck::GetControllerDefaultMapp
     return mControllerDefaultMappings;
 }
 
+const std::unordered_map<CONTROLLERBUTTONS_T, std::string>& ControlDeck::GetAllButtonNames() const {
+    return mButtonNames;
+}
+
 std::string ControlDeck::GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask) {
     // if we don't have a name for this bitmask,
     // return the stringified bitmask
