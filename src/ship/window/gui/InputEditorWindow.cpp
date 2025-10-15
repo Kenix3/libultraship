@@ -5,6 +5,7 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "ship/controller/controldeck/ControlDeck.h"
+#include "libultraship/libultra/controller.h"
 
 #define SCALE_IMGUI_SIZE(value) ((value / 13.0f) * ImGui::GetFontSize())
 

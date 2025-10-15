@@ -8,6 +8,7 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
+#include "libultraship/libultra/controller.h"
 
 namespace LUS {
 class ControlDeck final : public Ship::ControlDeck {
