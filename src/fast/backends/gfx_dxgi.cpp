@@ -607,13 +607,28 @@ void GfxWindowBackendDXGI::SetFullscreenChangedCallback(void (*mOnFullscreenChan
 }
 
 void GfxWindowBackendDXGI::SetCursorVisibility(bool visible) {
-    // This used to utilize the Windows API of ShowCursor(), but because you'd have to loop through the
-    // return values from ShowCursor() to get to the value you wanted, it was changed to SetCursor, as
-    // this was instantaneously effective for hiding and showing
+    // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showcursor
+    // https://devblogs.microsoft.com/oldnewthing/20091217-00/?p=15643
+    // ShowCursor uses a counter, not a boolean value, and increments or decrements that value when called
+    // This means we need to keep calling it until we get the value we want
+
+    //
+    //  NOTE:  If you continue calling until you "get the value you want" and there is no mouse attached,
+    //  it will lock the software up.  Windows always returns -1 if there is no mouse!
+    //
+
+    const int _MAX_TRIES = 15; // Prevent spinning infinitely if no mouse is plugged in
+
+    int cursorVisibilityTries = 0;
+    int cursorVisibilityCounter;
     if (visible) {
-        SetCursor(LoadCursor(nullptr, IDC_ARROW));
+        do {
+            cursorVisibilityCounter = ShowCursor(true);
+        } while (cursorVisibilityCounter < 0 && ++cursorVisibilityTries < _MAX_TRIES);
     } else {
-        SetCursor(nullptr);
+        do {
+            cursorVisibilityCounter = ShowCursor(false);
+        } while (cursorVisibilityCounter >= 0);
     }
 }
 
