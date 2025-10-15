@@ -16,7 +16,8 @@
 
 namespace LUS {
 
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks) : Ship::Controller(portIndex, additionalBitmasks) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : Ship::Controller(portIndex, additionalBitmasks) {
 }
 
 Controller::Controller(uint8_t portIndex) : Ship::Controller(portIndex, {}) {
