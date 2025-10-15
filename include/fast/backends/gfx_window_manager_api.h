@@ -15,7 +15,7 @@ class GfxWindowBackend {
     virtual void SetFullscreenChangedCallback(void (*mOnFullscreenChanged)(bool is_now_fullscreen)) = 0;
     virtual void SetFullscreen(bool fullscreen) = 0;
     virtual void GetActiveWindowRefreshRate(uint32_t* refreshRate) = 0;
-    virtual void SetCursorVisability(bool visability) = 0;
+    virtual void SetCursorVisibility(bool visability) = 0;
     virtual void SetMousePos(int32_t posX, int32_t posY) = 0;
     virtual void GetMousePos(int32_t* x, int32_t* y) = 0;
     virtual void GetMouseDelta(int32_t* x, int32_t* y) = 0;

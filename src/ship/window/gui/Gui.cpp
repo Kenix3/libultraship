@@ -619,8 +619,9 @@ void Gui::CursorTimeoutTick() {
         }
         if (mCursorVisibleTicks > 0) {
             mCursorVisibleTicks--;
-        } else {
+        } else if (mCursorVisibleTicks == 0) {
             wnd->SetCursorVisibility(false);
+            mCursorVisibleTicks = -1;
         }
         mPrevMousePos = mousePos;
     }

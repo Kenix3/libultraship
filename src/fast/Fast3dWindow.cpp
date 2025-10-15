@@ -206,7 +206,7 @@ void Fast3dWindow::HandleEvents() {
 }
 
 void Fast3dWindow::SetCursorVisibility(bool visible) {
-    mWindowManagerApi->SetCursorVisability(visible);
+    mWindowManagerApi->SetCursorVisibility(visible);
 }
 
 uint32_t Fast3dWindow::GetWidth() {

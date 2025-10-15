@@ -443,7 +443,7 @@ void GfxWindowBackendSDL2::SetFullscreen(bool enable) {
     SetFullscreenImpl(enable, true);
 }
 
-void GfxWindowBackendSDL2::SetCursorVisability(bool visible) {
+void GfxWindowBackendSDL2::SetCursorVisibility(bool visible) {
     if (visible) {
         SDL_ShowCursor(SDL_ENABLE);
     } else {
