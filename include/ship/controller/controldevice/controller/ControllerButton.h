@@ -10,7 +10,8 @@ namespace Ship {
 
 class ControllerButton {
   public:
-    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
+    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                     std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
     ~ControllerButton();
 
     std::shared_ptr<ControllerButtonMapping> GetButtonMappingById(std::string id);
@@ -40,7 +41,7 @@ class ControllerButton {
     uint8_t mPortIndex;
     CONTROLLERBUTTONS_T mBitmask;
     std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> mButtonMappings;
-    
+
     std::unordered_map<CONTROLLERBUTTONS_T, std::string> mButtonNames;
     std::string GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask);
 

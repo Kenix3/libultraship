@@ -14,9 +14,11 @@
 #include "ship/window/Window.h"
 
 namespace Ship {
-ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                   std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN), mButtonNames(buttonNames) {
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN),
+      mButtonNames(buttonNames) {
 }
 
 ControllerButton::~ControllerButton() {
