@@ -15,7 +15,6 @@
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace LUS {
-
 Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
     : Ship::Controller(portIndex, additionalBitmasks) {
 }
