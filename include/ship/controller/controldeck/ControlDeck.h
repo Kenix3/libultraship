@@ -13,7 +13,8 @@ namespace Ship {
 class ControlDeck {
   public:
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
-                std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings);
+                std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
+                std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);

@@ -22,6 +22,8 @@ class Controller : public ControlDevice {
   public:
     Controller(uint8_t portIndex);
     Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+               std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
     ~Controller();
 
     void ReloadAllMappingsFromConfig();

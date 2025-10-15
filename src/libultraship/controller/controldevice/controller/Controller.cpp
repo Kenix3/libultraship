@@ -15,11 +15,15 @@
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace LUS {
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : Ship::Controller(portIndex, additionalBitmasks) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
+    : Ship::Controller(portIndex, additionalBitmasks, buttonNames) {
 }
 
-Controller::Controller(uint8_t portIndex) : Ship::Controller(portIndex, {}) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+    : Controller(portIndex, additionalBitmasks, std::unordered_map<CONTROLLERBUTTONS_T, std::string>()) {
+}
+
+Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}) {
 }
 
 void Controller::ReadToPad(void* pad) {

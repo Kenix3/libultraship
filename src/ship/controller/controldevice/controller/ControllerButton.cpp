@@ -14,50 +14,22 @@
 #include "ship/window/Window.h"
 
 namespace Ship {
-ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN), mButtonNames(buttonNames) {
 }
 
 ControllerButton::~ControllerButton() {
 }
 
 std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
-    switch (bitmask) {
-        case BTN_A:
-            return "A";
-        case BTN_B:
-            return "B";
-        case BTN_L:
-            return "L";
-        case BTN_R:
-            return "R";
-        case BTN_Z:
-            return "Z";
-        case BTN_START:
-            return "Start";
-        case BTN_CLEFT:
-            return "CLeft";
-        case BTN_CRIGHT:
-            return "CRight";
-        case BTN_CUP:
-            return "CUp";
-        case BTN_CDOWN:
-            return "CDown";
-        case BTN_DLEFT:
-            return "DLeft";
-        case BTN_DRIGHT:
-            return "DRight";
-        case BTN_DUP:
-            return "DUp";
-        case BTN_DDOWN:
-            return "DDown";
-        default:
-            // if we don't have a name for this bitmask,
-            // which happens with additionalBitmasks provided by ports,
-            // return the stringified bitmask
-            return std::to_string(bitmask);
+    // if we don't have a name for this bitmask,
+    // return the stringified bitmask
+    if (!mButtonNames.contains(bitmask)) {
+        return std::to_string(bitmask);
     }
+
+    return mButtonNames[bitmask];
 }
 
 std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> ControllerButton::GetAllButtonMappings() {

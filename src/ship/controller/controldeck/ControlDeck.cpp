@@ -10,7 +10,8 @@
 namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
-                         std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings) {
+                         std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
+                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
     mControllerDefaultMappings = controllerDefaultMappings == nullptr ? std::make_shared<ControllerDefaultMappings>()
