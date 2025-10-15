@@ -12,26 +12,19 @@
 
 #include "ship/Context.h"
 #include "ship/window/Window.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
-ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                   std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
-      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN),
-      mButtonNames(buttonNames) {
+      mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
 }
 
 ControllerButton::~ControllerButton() {
 }
 
 std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
-    // if we don't have a name for this bitmask,
-    // return the stringified bitmask
-    if (!mButtonNames.contains(bitmask)) {
-        return std::to_string(bitmask);
-    }
-
-    return mButtonNames[bitmask];
+    return Ship::Context::GetInstance()->GetControlDeck()->GetButtonNameForBitmask(bitmask);
 }
 
 std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> ControllerButton::GetAllButtonMappings() {

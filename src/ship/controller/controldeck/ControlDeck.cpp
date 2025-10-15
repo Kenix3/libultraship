@@ -119,4 +119,14 @@ std::shared_ptr<GlobalSDLDeviceSettings> ControlDeck::GetGlobalSDLDeviceSettings
 std::shared_ptr<ControllerDefaultMappings> ControlDeck::GetControllerDefaultMappings() {
     return mControllerDefaultMappings;
 }
+
+std::string ControlDeck::GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask) {
+    // if we don't have a name for this bitmask,
+    // return the stringified bitmask
+    if (!mButtonNames.contains(bitmask)) {
+        return std::to_string(bitmask);
+    }
+
+    return mButtonNames[bitmask];
+}
 } // namespace Ship
