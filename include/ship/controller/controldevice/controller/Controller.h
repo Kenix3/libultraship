@@ -20,8 +20,7 @@ namespace Ship {
 
 class Controller : public ControlDevice {
   public:
-    Controller(uint8_t portIndex);
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
     ~Controller();
 
     void ReloadAllMappingsFromConfig();

@@ -12,8 +12,13 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings,
                          std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
     : Ship::ControlDeck(additionalBitmasks, controllerDefaultMappings, buttonNames), mPads(nullptr) {
+    std::vector<CONTROLLERBUTTONS_T> bitmasks;
+    for (auto [bitmask, name] : buttonNames) {
+        bitmasks.push_back(bitmask);
+    }
+    bitmasks.insert(bitmasks.end(), additionalBitmasks.begin(), additionalBitmasks.end());
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPorts.push_back(std::make_shared<Ship::ControlPort>(i, std::make_shared<Controller>(i, additionalBitmasks)));
+        mPorts.push_back(std::make_shared<Ship::ControlPort>(i, std::make_shared<Controller>(i, bitmasks)));
     }
 }
 
