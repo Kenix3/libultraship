@@ -607,19 +607,28 @@ void Gui::HandleMouseCapture() {
 
 void Gui::CursorTimeoutTick() {
     auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow());
-    if (!wnd->ShouldForceCursorVisibility()) {
-        Ship::Coords mousePos = wnd->GetMousePos();
-        if ((!wnd->IsMouseCaptured()) &&
-            (abs(mousePos.x - mPrevMousePos.x) > 0 || abs(mousePos.y - mPrevMousePos.y) > 0)) {
-            wnd->SetCursorVisibility(true);
-            mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
-        }
-        if (mCursorVisibleTicks > 0) {
-            mCursorVisibleTicks--;
-        } else {
-            wnd->SetCursorVisibility(false);
-        }
-        mPrevMousePos = mousePos;
+    if (wnd->ShouldForceCursorVisibility() || wnd->IsMouseCaptured()) {
+        return;
+    }
+
+    Ship::Coords mousePos = wnd->GetMousePos();
+    bool mouseMoved = abs(mousePos.x - mPrevMousePos.x) > 0 || abs(mousePos.y - mPrevMousePos.y) > 0;
+    mPrevMousePos = mousePos;
+
+    if (mouseMoved) {
+        wnd->SetCursorVisibility(true);
+        mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
+        return;
+    }
+
+    if (mCursorVisibleTicks == 0) {
+        wnd->SetCursorVisibility(false);
+        mCursorVisibleTicks = -1;
+        return;
+    }
+
+    if (mCursorVisibleTicks > 0) {
+        mCursorVisibleTicks--;
     }
 }
 
