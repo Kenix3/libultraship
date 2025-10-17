@@ -15,8 +15,7 @@
 namespace LUS {
 class Controller : public Ship::Controller {
   public:
-    Controller(uint8_t portIndex);
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
 
     void ReadToPad(void* pad) override;
 

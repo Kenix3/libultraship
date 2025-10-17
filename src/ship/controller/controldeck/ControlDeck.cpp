@@ -10,7 +10,8 @@
 namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
-                         std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings) {
+                         std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
+                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
     mControllerDefaultMappings = controllerDefaultMappings == nullptr ? std::make_shared<ControllerDefaultMappings>()
@@ -117,5 +118,19 @@ std::shared_ptr<GlobalSDLDeviceSettings> ControlDeck::GetGlobalSDLDeviceSettings
 
 std::shared_ptr<ControllerDefaultMappings> ControlDeck::GetControllerDefaultMappings() {
     return mControllerDefaultMappings;
+}
+
+const std::unordered_map<CONTROLLERBUTTONS_T, std::string>& ControlDeck::GetAllButtonNames() const {
+    return mButtonNames;
+}
+
+std::string ControlDeck::GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask) {
+    // if we don't have a name for this bitmask,
+    // return the stringified bitmask
+    if (!mButtonNames.contains(bitmask)) {
+        return std::to_string(bitmask);
+    }
+
+    return mButtonNames[bitmask];
 }
 } // namespace Ship

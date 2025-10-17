@@ -13,7 +13,8 @@ namespace Ship {
 class ControlDeck {
   public:
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
-                std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings);
+                std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
+                std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
     ~ControlDeck();
 
     void Init(uint8_t* controllerBits);
@@ -31,6 +32,8 @@ class ControlDeck {
     std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
     std::shared_ptr<GlobalSDLDeviceSettings> GetGlobalSDLDeviceSettings();
     std::shared_ptr<ControllerDefaultMappings> GetControllerDefaultMappings();
+    const std::unordered_map<CONTROLLERBUTTONS_T, std::string>& GetAllButtonNames() const;
+    std::string GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask);
 
   protected:
     bool AllGameInputBlocked();
@@ -42,5 +45,6 @@ class ControlDeck {
     std::shared_ptr<ConnectedPhysicalDeviceManager> mConnectedPhysicalDeviceManager;
     std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;
     std::shared_ptr<ControllerDefaultMappings> mControllerDefaultMappings;
+    std::unordered_map<CONTROLLERBUTTONS_T, std::string> mButtonNames;
 };
 } // namespace Ship
