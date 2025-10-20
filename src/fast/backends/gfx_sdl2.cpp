@@ -480,8 +480,7 @@ void GfxWindowBackendSDL2::SetMouseCapture(bool capture) {
     if (capture) {
         SDL_Rect window;
         SDL_GetWindowSize(mWnd, &window.w, &window.h);
-        SDL_GetWindowPosition(mWnd, &window.x, &window.y);
-        mCursorClip = { window.x + (window.w / 2) - 1, window.y + (window.h / 2) - 1, 2, 2 };
+        mCursorClip = { (window.w / 2) - 1, (window.h / 2) - 1, 2, 2 };
     }
     SDL_SetWindowMouseRect(mWnd, capture ? &mCursorClip : NULL);
 }
