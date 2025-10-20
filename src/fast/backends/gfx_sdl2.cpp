@@ -476,6 +476,9 @@ bool GfxWindowBackendSDL2::GetMouseState(uint32_t btn) {
 
 void GfxWindowBackendSDL2::SetMouseCapture(bool capture) {
     SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
+    // TODO: Manually setting a clipping rect here because
+    // https://wiki.libsdl.org/SDL2/SDL_HINT_MOUSE_RELATIVE_MODE_CENTER isn't working as epxected.
+    // Revisit on SDL3
     auto mouse = SDL_GetWindowMouseRect(mWnd);
     if (capture) {
         int w,h;
