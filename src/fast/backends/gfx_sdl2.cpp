@@ -478,9 +478,9 @@ void GfxWindowBackendSDL2::SetMouseCapture(bool capture) {
     SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
     auto mouse = SDL_GetWindowMouseRect(mWnd);
     if (capture) {
-        SDL_Rect window;
-        SDL_GetWindowSize(mWnd, &window.w, &window.h);
-        mCursorClip = { (window.w / 2) - 1, (window.h / 2) - 1, 2, 2 };
+        int w,h;
+        SDL_GetWindowSize(mWnd, &w, &h);
+        mCursorClip = { (w / 2) - 1, (h / 2) - 1, 2, 2 };
     }
     SDL_SetWindowMouseRect(mWnd, capture ? &mCursorClip : NULL);
 }
