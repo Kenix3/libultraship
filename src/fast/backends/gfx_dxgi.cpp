@@ -279,10 +279,10 @@ void GfxWindowBackendDXGI::Close() {
 
 void GfxWindowBackendDXGI::ApplyMouseCaptureClip() {
     RECT rect;
-    rect.left = mPosX + 1;
-    rect.top = mPosY + 1;
-    rect.right = mPosX + current_width - 1;
-    rect.bottom = mPosY + current_height - 1;
+    rect.left = mPosX + (current_width / 2) - 1;
+    rect.top = mPosY + (current_height / 2) - 1;
+    rect.right = rect.left + 2;
+    rect.bottom = rect.top + 2;
     ClipCursor(&rect);
 }
 
