@@ -225,7 +225,8 @@ void GfxRenderingAPIDX11::Init() {
     mDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &features,
                                  sizeof(D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS));
     if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
-        ThrowWithMessage(mWindowBackend->GetWindowHandle(), "D3D device doesn't support compute shaders 4.0 or greater.");
+        ThrowWithMessage(mWindowBackend->GetWindowHandle(),
+                         "D3D device doesn't support compute shaders 4.0 or greater.");
     }
 
     const char* shader_source = R"(
