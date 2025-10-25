@@ -1089,5 +1089,11 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
         throw res;
     }
 }
+void ThrowWithMessage(HWND h_wnd, const char* message) {
+        char full_message[256];
+        sprintf(full_message, message);
+        MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
+        throw;
+}
 
 #endif
