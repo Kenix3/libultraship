@@ -15,10 +15,8 @@
 #include <stb_image.h>
 #include "ship/window/gui/Fonts.h"
 #include "ship/window/gui/resource/GuiTextureFactory.h"
-#include "fast/backends/gfx_rendering_api.h"
 
 #include "libultraship/window/gui/GfxDebuggerWindow.h"
-#include "fast/interpreter.h"
 #include "fast/Fast3dWindow.h"
 #ifdef __APPLE__
 #include <SDL_hints.h>
@@ -43,7 +41,6 @@
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
-#include <fast/backends/gfx_direct3d11.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
@@ -610,19 +607,28 @@ void Gui::HandleMouseCapture() {
 
 void Gui::CursorTimeoutTick() {
     auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow());
-    if (!wnd->ShouldForceCursorVisibility()) {
-        Ship::Coords mousePos = wnd->GetMousePos();
-        if ((!wnd->IsMouseCaptured()) &&
-            (abs(mousePos.x - mPrevMousePos.x) > 0 || abs(mousePos.y - mPrevMousePos.y) > 0)) {
-            wnd->SetCursorVisibility(true);
-            mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
-        }
-        if (mCursorVisibleTicks > 0) {
-            mCursorVisibleTicks--;
-        } else {
-            wnd->SetCursorVisibility(false);
-        }
-        mPrevMousePos = mousePos;
+    if (wnd->ShouldForceCursorVisibility() || wnd->IsMouseCaptured()) {
+        return;
+    }
+
+    Ship::Coords mousePos = wnd->GetMousePos();
+    bool mouseMoved = abs(mousePos.x - mPrevMousePos.x) > 0 || abs(mousePos.y - mPrevMousePos.y) > 0;
+    mPrevMousePos = mousePos;
+
+    if (mouseMoved) {
+        wnd->SetCursorVisibility(true);
+        mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
+        return;
+    }
+
+    if (mCursorVisibleTicks == 0) {
+        wnd->SetCursorVisibility(false);
+        mCursorVisibleTicks = -1;
+        return;
+    }
+
+    if (mCursorVisibleTicks > 0) {
+        mCursorVisibleTicks--;
     }
 }
 

@@ -8,6 +8,7 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
+#include "libultraship/libultra/controller.h"
 
 namespace LUS {
 class ControlDeck final : public Ship::ControlDeck {
@@ -15,7 +16,8 @@ class ControlDeck final : public Ship::ControlDeck {
     ControlDeck();
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
-                std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings);
+                std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings,
+                std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
 
     OSContPad* GetPads();
     void WriteToPad(void* pad) override;

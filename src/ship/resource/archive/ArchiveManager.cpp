@@ -200,6 +200,11 @@ const std::string* ArchiveManager::HashToString(uint64_t hash) const {
     return it != mHashes.end() ? &it->second : nullptr;
 }
 
+const char* ArchiveManager::HashToCString(uint64_t hash) const {
+    const std::string* hashStr = HashToString(hash);
+    return hashStr != nullptr ? hashStr->c_str() : nullptr;
+}
+
 std::vector<std::string> ArchiveManager::GetArchiveListInPaths(const std::vector<std::string>& archivePaths) {
     std::vector<std::string> fileList = {};
 

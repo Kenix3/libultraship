@@ -10,14 +10,7 @@ std::shared_ptr<Ship::IResource> ResourceLoad(const char* name) {
 }
 
 std::shared_ptr<Ship::IResource> ResourceLoad(uint64_t crc) {
-    auto name = ResourceGetNameByCrc(crc);
-
-    if (name == nullptr || strlen(name) == 0) {
-        SPDLOG_TRACE("ResourceLoad: Unknown crc {}\n", crc);
-        return nullptr;
-    }
-
-    return ResourceLoad(name);
+    return Ship::Context::GetInstance()->GetResourceManager()->LoadResource(crc);
 }
 
 extern "C" {
@@ -27,58 +20,31 @@ uint64_t ResourceGetCrcByName(const char* name) {
 }
 
 const char* ResourceGetNameByCrc(uint64_t crc) {
-    const std::string* hashStr =
-        Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(crc);
-    return hashStr != nullptr ? hashStr->c_str() : nullptr;
+    return Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(crc);
 }
 
 size_t ResourceGetSizeByName(const char* name) {
-    auto resource = ResourceLoad(name);
-
-    if (resource == nullptr) {
-        return 0;
-    }
-
-    return resource->GetPointerSize();
+    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceSize(name);
 }
 
 size_t ResourceGetSizeByCrc(uint64_t crc) {
-    return ResourceGetSizeByName(ResourceGetNameByCrc(crc));
+    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceSize(crc);
 }
 
 uint8_t ResourceGetIsCustomByName(const char* name) {
-    auto resource = ResourceLoad(name);
-
-    if (resource == nullptr) {
-        return false;
-    }
-
-    return resource->GetInitData()->IsCustom;
+    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceIsCustom(name);
 }
 
 uint8_t ResourceGetIsCustomByCrc(uint64_t crc) {
-    return ResourceGetIsCustomByName(ResourceGetNameByCrc(crc));
+    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceIsCustom(crc);
 }
 
 void* ResourceGetDataByName(const char* name) {
-    auto resource = ResourceLoad(name);
-
-    if (resource == nullptr) {
-        return nullptr;
-    }
-
-    return resource->GetRawPointer();
+    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(name);
 }
 
 void* ResourceGetDataByCrc(uint64_t crc) {
-    auto name = ResourceGetNameByCrc(crc);
-
-    if (name == nullptr || strlen(name) == 0) {
-        SPDLOG_TRACE("ResourceGetDataByCrc: Unknown crc 0x{:X}\n", crc);
-        return nullptr;
-    }
-
-    return ResourceGetDataByName(name);
+    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(crc);
 }
 
 uint16_t ResourceGetTexWidthByName(const char* name) {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libultraship/color.h"
+#include "ship/utils/color.h"
 #include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <memory>

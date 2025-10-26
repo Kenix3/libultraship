@@ -279,10 +279,10 @@ void GfxWindowBackendDXGI::Close() {
 
 void GfxWindowBackendDXGI::ApplyMouseCaptureClip() {
     RECT rect;
-    rect.left = mPosX + 1;
-    rect.top = mPosY + 1;
-    rect.right = mPosX + current_width - 1;
-    rect.bottom = mPosY + current_height - 1;
+    rect.left = mPosX + (current_width / 2) - 1;
+    rect.top = mPosY + (current_height / 2) - 1;
+    rect.right = rect.left + 2;
+    rect.bottom = rect.top + 2;
     ClipCursor(&rect);
 }
 
@@ -606,7 +606,7 @@ void GfxWindowBackendDXGI::SetFullscreenChangedCallback(void (*mOnFullscreenChan
     mOnFullscreenChanged = mOnFullscreenChanged;
 }
 
-void GfxWindowBackendDXGI::SetCursorVisability(bool visible) {
+void GfxWindowBackendDXGI::SetCursorVisibility(bool visible) {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showcursor
     // https://devblogs.microsoft.com/oldnewthing/20091217-00/?p=15643
     // ShowCursor uses a counter, not a boolean value, and increments or decrements that value when called
@@ -678,12 +678,12 @@ void GfxWindowBackendDXGI::SetMouseCapture(bool capture) {
     mIsMouseCaptured = capture;
     if (capture) {
         ApplyMouseCaptureClip();
-        SetCursorVisability(false);
+        SetCursorVisibility(false);
         SetCapture(h_wnd);
         mHasMousePosition = false;
     } else {
         ClipCursor(nullptr);
-        SetCursorVisability(true);
+        SetCursorVisibility(true);
         ReleaseCapture();
         UpdateMousePrevPos();
     }

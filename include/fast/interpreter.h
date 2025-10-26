@@ -11,7 +11,7 @@
 #include <string>
 
 #include "fast/lus_gbi.h"
-#include "libultraship/libultra/types.h"
+#include "fast/types.h"
 #include "fast/ucodehandlers.h"
 #include "backends/gfx_rendering_api.h"
 

@@ -1,5 +1,8 @@
 #include "ship/window/gui/GuiMenuBar.h"
-#include "libultraship/libultraship.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
+#include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 
 namespace Ship {
 GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)

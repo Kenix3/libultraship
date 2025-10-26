@@ -72,6 +72,8 @@ class ResourceManager {
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& identifier, bool loadExact = false,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
+    std::shared_ptr<IResource> LoadResource(uint64_t crc, bool loadExact = false,
+                                            std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<IResource> LoadResourceProcess(const std::string& filePath, bool loadExact = false,
                                                    std::shared_ptr<ResourceInitData> initData = nullptr);
     std::shared_ptr<IResource> LoadResourceProcess(const ResourceIdentifier& identifier, bool loadExact = false,
@@ -104,6 +106,18 @@ class ResourceManager {
     void SetAltAssetsEnabled(bool isEnabled);
     std::shared_ptr<File> LoadFileProcess(const ResourceIdentifier& identifier);
     std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
+
+    size_t GetResourceSize(std::shared_ptr<IResource> resource);
+    size_t GetResourceSize(const char* name);
+    size_t GetResourceSize(uint64_t crc);
+
+    bool GetResourceIsCustom(std::shared_ptr<IResource> resource);
+    bool GetResourceIsCustom(const char* name);
+    bool GetResourceIsCustom(uint64_t crc);
+
+    void* GetResourceRawPointer(std::shared_ptr<IResource> resource);
+    void* GetResourceRawPointer(const char* name);
+    void* GetResourceRawPointer(uint64_t crc);
 
   protected:
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);

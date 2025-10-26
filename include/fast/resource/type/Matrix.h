@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ship/resource/Resource.h"
-#include "libultraship/libultra/types.h"
+#include "fast/types.h"
 
 namespace Fast {
 class Matrix final : public Ship::Resource<Mtx> {

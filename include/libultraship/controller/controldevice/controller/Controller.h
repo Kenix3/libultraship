@@ -8,15 +8,14 @@
 #include <vector>
 #include <map>
 #include "libultraship/libultra/controller.h"
-#include "libultraship/color.h"
+#include "ship/utils/color.h"
 #include <unordered_map>
 #include "ship/controller/controldevice/controller/Controller.h"
 
 namespace LUS {
 class Controller : public Ship::Controller {
   public:
-    Controller(uint8_t portIndex);
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
 
     void ReadToPad(void* pad) override;
 

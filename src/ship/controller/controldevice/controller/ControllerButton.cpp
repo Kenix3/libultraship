@@ -12,6 +12,7 @@
 
 #include "ship/Context.h"
 #include "ship/window/Window.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
@@ -23,41 +24,7 @@ ControllerButton::~ControllerButton() {
 }
 
 std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
-    switch (bitmask) {
-        case BTN_A:
-            return "A";
-        case BTN_B:
-            return "B";
-        case BTN_L:
-            return "L";
-        case BTN_R:
-            return "R";
-        case BTN_Z:
-            return "Z";
-        case BTN_START:
-            return "Start";
-        case BTN_CLEFT:
-            return "CLeft";
-        case BTN_CRIGHT:
-            return "CRight";
-        case BTN_CUP:
-            return "CUp";
-        case BTN_CDOWN:
-            return "CDown";
-        case BTN_DLEFT:
-            return "DLeft";
-        case BTN_DRIGHT:
-            return "DRight";
-        case BTN_DUP:
-            return "DUp";
-        case BTN_DDOWN:
-            return "DDown";
-        default:
-            // if we don't have a name for this bitmask,
-            // which happens with additionalBitmasks provided by ports,
-            // return the stringified bitmask
-            return std::to_string(bitmask);
-    }
+    return Ship::Context::GetInstance()->GetControlDeck()->GetButtonNameForBitmask(bitmask);
 }
 
 std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> ControllerButton::GetAllButtonMappings() {

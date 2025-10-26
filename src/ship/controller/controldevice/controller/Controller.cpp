@@ -1,4 +1,5 @@
 #include "ship/controller/controldevice/controller/Controller.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 #include <memory>
 #include <algorithm>
 #include "ship/Context.h"
@@ -16,12 +17,8 @@
 
 namespace Ship {
 
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
-    : ControlDevice(portIndex) {
-    for (auto bitmask : { BUTTON_BITMASKS }) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
-    }
-    for (auto bitmask : additionalBitmasks) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks) : ControlDevice(portIndex) {
+    for (auto bitmask : bitmasks) {
         mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
     }
     mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK);
@@ -29,9 +26,6 @@ Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> addit
     mGyro = std::make_shared<ControllerGyro>(portIndex);
     mRumble = std::make_shared<ControllerRumble>(portIndex);
     mLED = std::make_shared<ControllerLED>(portIndex);
-}
-
-Controller::Controller(uint8_t portIndex) : Controller(portIndex, {}) {
 }
 
 Controller::~Controller() {

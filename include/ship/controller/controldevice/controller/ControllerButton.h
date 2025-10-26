@@ -4,14 +4,9 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
-#include "libultraship/libultra/controller.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
-
-#define BUTTON_BITMASKS                                                                                             \
-    BTN_A, BTN_B, BTN_L, BTN_R, BTN_Z, BTN_START, BTN_CLEFT, BTN_CRIGHT, BTN_CUP, BTN_CDOWN, BTN_DLEFT, BTN_DRIGHT, \
-        BTN_DUP, BTN_DDOWN
 
 class ControllerButton {
   public:

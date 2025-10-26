@@ -7,8 +7,6 @@
 #include <queue>
 #include <vector>
 #include <map>
-#include "libultraship/libultra/controller.h"
-#include "libultraship/color.h"
 #include <unordered_map>
 #include "ControllerButton.h"
 #include "ControllerStick.h"
@@ -22,8 +20,7 @@ namespace Ship {
 
 class Controller : public ControlDevice {
   public:
-    Controller(uint8_t portIndex);
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
     ~Controller();
 
     void ReloadAllMappingsFromConfig();

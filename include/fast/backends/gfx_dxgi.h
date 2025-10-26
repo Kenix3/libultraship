@@ -23,7 +23,7 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     void SetFullscreenChangedCallback(void (*onnFullscreenChanged)(bool is_now_fullscreen)) override;
     void SetFullscreen(bool fullscreen) override;
     void GetActiveWindowRefreshRate(uint32_t* refreshRate) override;
-    void SetCursorVisability(bool visability) override;
+    void SetCursorVisibility(bool visability) override;
     void SetMousePos(int32_t posX, int32_t posY) override;
     void GetMousePos(int32_t* x, int32_t* y) override;
     void GetMouseDelta(int32_t* x, int32_t* y) override;

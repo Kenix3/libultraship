@@ -38,7 +38,7 @@
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 
-#define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof(arr[0]))
+#define ARRAY_COUNT(arr) (int32_t)(sizeof(arr) / sizeof(arr[0]))
 
 // MARK: - Helpers
 namespace Fast {
