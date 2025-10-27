@@ -4308,7 +4308,7 @@ void Interpreter::RunGuiOnly() {
     mGetPixelDepthCached.clear();
 
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
-        false, true, true, !mRendersToFb);
+                                       false, true, true, !mRendersToFb);
     mRapi->StartFrame();
     mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->ClearFramebuffer(false, true);
