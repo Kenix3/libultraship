@@ -214,7 +214,7 @@ static void ShutdownHandler(int sig, siginfo_t* sigInfo, void* data) {
 
 void CrashHandler::PrintRegisters(CONTEXT* ctx) {
     AppendLine("Registers:");
-    char regBuff[25];
+    char regBuff[29];
 #if defined(_M_AMD64)
     sprintf_s(regBuff, std::size(regBuff), "    RAX: 0x%016llX", ctx->Rax);
     AppendLine(regBuff);
