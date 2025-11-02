@@ -35,6 +35,7 @@ class Window {
 
     virtual void Init() = 0;
     virtual void Close() = 0;
+    virtual void RunGuiOnly() = 0;
     virtual void StartFrame() = 0;
     virtual void EndFrame() = 0;
     virtual bool IsFrameReady() = 0;
