@@ -50,9 +50,7 @@ bool Component::Update() {
     }
     SetUpdateEndClock(std::chrono::high_resolution_clock::now());
     if (IsUpdatingChildren()) {
-        mMutex.lock();
-        const auto childrenCopy = mChildren;
-        mMutex.unlock();
+        const auto childrenCopy = GetChildren();
         for (const auto& pair : childrenCopy) {
             auto child = pair.second;
             if (child != nullptr) {
@@ -60,6 +58,37 @@ bool Component::Update() {
             }
         }
     }
+    // Update the association of parent-child at the end of the tick.
+    mMutex.lock();
+    for (const auto& pair : mParentsToAdd) {
+        auto parent = pair.second;
+        if (parent != nullptr) {
+            AddParentRaw(parent);
+        }
+    }
+    mParentsToAdd.clear();
+    for (const auto& pair : mChildrenToAdd) {
+        auto child = pair.second;
+        if (child != nullptr) {
+            AddChildRaw(child);
+        }
+    }
+    mChildrenToAdd.clear();
+    for (const auto& pair : mParentsToRemove) {
+        auto parent = pair.second;
+        if (parent != nullptr) {
+            RemoveParentRaw(parent);
+        }
+    }
+    mParentsToRemove.clear();
+    for (const auto& pair : mChildrenToRemove) {
+        auto child = pair.second;
+        if (child != nullptr) {
+            RemoveChildRaw(child);
+        }
+    }
+    mChildrenToRemove.clear();
+    mMutex.unlock();
     SetUpdateFullEndClock(std::chrono::high_resolution_clock::now());
 
     return result;
@@ -618,117 +647,117 @@ Component& Component::RemoveChildren(bool now) {
     return *this;
 }
 
-double Component::GetUpdateStartTime() {
+double Component::GetUpdateStartTime() const {
     return std::chrono::duration<double>(GetUpdateStartClock().time_since_epoch()).count();
 }
 
-double Component::GetDrawStartTime() {
+double Component::GetDrawStartTime() const {
     return std::chrono::duration<double>(GetDrawStartClock().time_since_epoch()).count();
 }
 
-double Component::GetUpdateEndTime() {
+double Component::GetUpdateEndTime() const {
     return std::chrono::duration<double>(GetUpdateEndClock().time_since_epoch()).count();
 }
 
-double Component::GetDrawEndTime() {
+double Component::GetDrawEndTime() const {
     return std::chrono::duration<double>(GetDrawEndClock().time_since_epoch()).count();
 }
 
-double Component::GetUpdateFullEndTime() {
+double Component::GetUpdateFullEndTime() const {
     return std::chrono::duration<double>(GetUpdateFullEndClock().time_since_epoch()).count();
 }
 
-double Component::GetDrawFullEndTime() {
+double Component::GetDrawFullEndTime() const {
     return std::chrono::duration<double>(GetDrawFullEndClock().time_since_epoch()).count();
 }
 
-double Component::GetPreviousUpdateStartTime() {
+double Component::GetPreviousUpdateStartTime() const {
     return std::chrono::duration<double>(GetPreviousUpdateStartClock().time_since_epoch()).count();
 }
 
-double Component::GetPreviousDrawStartTime() {
+double Component::GetPreviousDrawStartTime() const {
     return std::chrono::duration<double>(GetPreviousDrawStartClock().time_since_epoch()).count();
 }
 
-double Component::GetPreviousUpdateEndTime() {
+double Component::GetPreviousUpdateEndTime() const {
     return std::chrono::duration<double>(GetPreviousUpdateEndClock().time_since_epoch()).count();
 }
-double Component::GetPreviousDrawEndTime() {
+double Component::GetPreviousDrawEndTime() const {
     return std::chrono::duration<double>(GetPreviousDrawEndClock().time_since_epoch()).count();
 }
 
-double Component::GetPreviousUpdateFullEndTime() {
+double Component::GetPreviousUpdateFullEndTime() const {
     return std::chrono::duration<double>(GetPreviousUpdateFullEndClock().time_since_epoch()).count();
 }
-double Component::GetPreviousDrawFullEndTime() {
+double Component::GetPreviousDrawFullEndTime() const {
     return std::chrono::duration<double>(GetPreviousDrawFullEndClock().time_since_epoch()).count();
 }
 
-double Component::GetDurationSinceLastTick() {
+double Component::GetDurationSinceLastTick() const {
     return std::chrono::duration<double>(GetUpdateStartClock() - GetPreviousUpdateStartClock()).count();
 }
 
-double Component::GetPreviousUpdateDuration() {
+double Component::GetPreviousUpdateDuration() const {
     return std::chrono::duration<double>(GetPreviousUpdateStartClock() - GetPreviousUpdateEndClock()).count();
 }
 
-double Component::GetPreviousDrawDuration() {
+double Component::GetPreviousDrawDuration() const {
     return std::chrono::duration<double>(GetPreviousDrawStartClock() - GetPreviousDrawEndClock()).count();
 }
 
-double Component::GetPreviousUpdateFullDuration() {
+double Component::GetPreviousUpdateFullDuration() const {
     return std::chrono::duration<double>(GetPreviousUpdateStartClock() - GetPreviousUpdateFullEndClock()).count();
 }
 
-double Component::GetPreviousDrawFullDuration() {
+double Component::GetPreviousDrawFullDuration() const {
     return std::chrono::duration<double>(GetPreviousDrawStartClock() - GetPreviousDrawFullEndClock()).count();
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetUpdateStartClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetUpdateStartClock() const {
     return mUpdateStartClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetDrawStartClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetDrawStartClock() const {
     return mDrawStartClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetUpdateEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetUpdateEndClock() const {
     return mUpdateEndClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetDrawEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetDrawEndClock() const {
     return mDrawEndClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetUpdateFullEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetUpdateFullEndClock() const {
     return mUpdateFullEndClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetDrawFullEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetDrawFullEndClock() const {
     return mDrawFullEndClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousUpdateStartClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousUpdateStartClock() const {
     return mPreviousUpdateStartClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousDrawStartClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousDrawStartClock() const {
     return mPreviousDrawStartClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousUpdateEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousUpdateEndClock() const {
     return mPreviousUpdateEndClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousDrawEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousDrawEndClock() const {
     return mPreviousDrawEndClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousUpdateFullEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousUpdateFullEndClock() const {
     return mPreviousUpdateFullEndClock;
 }
 
-std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousDrawFullEndClock() {
+std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousDrawFullEndClock() const {
     return mPreviousDrawFullEndClock;
 }
 
