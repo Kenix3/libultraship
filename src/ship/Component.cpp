@@ -4,10 +4,11 @@
 
 
 namespace Ship {
+std::atomic_int Component::NextComponentId = 0;
 
 Component::Component(const std::string& name, bool isUpdating, bool isDrawing, bool isUpdatingChildren,
                      bool isDrawingChildren)
-    : mName(name), mIsUpdating(isUpdating), mIsDrawing(isDrawing), mIsUpdatingChildren(isUpdatingChildren),
+    : mId(NextComponentId++), mName(name), mIsUpdating(isUpdating), mIsDrawing(isDrawing), mIsUpdatingChildren(isUpdatingChildren),
       mIsDrawingChildren(isDrawingChildren), mMutex(),
       mParentsToAdd(), mChildrenToAdd(), mParentsToRemove(), mChildrenToRemove(), mParents(), mChildren(),
       mUpdateStartClock(std::chrono::high_resolution_clock::now()),
@@ -22,11 +23,11 @@ Component::Component(const std::string& name, bool isUpdating, bool isDrawing, b
       mPreviousDrawEndClock(std::chrono::high_resolution_clock::now()),
       mPreviousUpdateFullEndClock(std::chrono::high_resolution_clock::now()),
       mPreviousDrawFullEndClock(std::chrono::high_resolution_clock::now()) {
+    SPDLOG_INFO("Constructing component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
 }
 
 Component::~Component() {
-    SPDLOG_INFO("Destructing component {} ({})", parent->GetName(), typeid(*(parent.get())).name(),
-                GetName(), typeid(*this).name());
+    SPDLOG_INFO("Destructing component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
 }
 
 bool Component::Update() {
@@ -99,6 +100,17 @@ bool Component::Draw() {
     return result;
 }
 
+bool Component::DrawDebugMenu() {
+    // TODO: Not implemented.
+    // The idea is that we display generic properties of the Component, then call the overridable method which will draw the specific stuff.
+    // Then we create a collapsable box to show all children and recursively call DrawDebugMenu
+    return true;
+}
+
+int Component::GetId() {
+    return mId;
+}
+
 std::string Component::GetName() {
     return mName;
 }
@@ -119,172 +131,188 @@ bool Component::IsDrawingChildren() {
     return mIsDrawingChildren;
 }
 
-Component& Component::StartUpdating(bool force) {
-    if (IsUpdating()) {
-        return *this;
-    }
-
+bool Component::StartUpdating(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (IsUpdating()) {
+        return true;
+    }
 
     bool success = UpdatingStarted(force);
     if (force || success) {
         mIsUpdating = true;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Update Start on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Update Start on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StartDrawing(bool force) {
-    if (IsDrawing()) {
-        return *this;
-    }
-
+bool Component::StartDrawing(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (IsDrawing()) {
+        return true;
+    }
 
     bool success = DrawingStarted(force);
     if (force || success) {
         mIsDrawing = true;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Draw Start on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Draw Start on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StopUpdating(bool force) {
-    if (!IsUpdating()) {
-        return *this;
-    }
-
+bool Component::StopUpdating(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (!IsUpdating()) {
+        return true;
+    }
 
     bool success = UpdatingStopped(force);
     if (force || success) {
         mIsUpdating = false;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Update Stop on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Update Stop on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StopDrawing(bool force) {
-    if (!IsDrawing()) {
-        return *this;
-    }
-
+bool Component::StopDrawing(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (!IsDrawing()) {
+        return true;
+    }
 
     bool success = DrawingStopped(force);
     if (force || success) {
         mIsDrawing = false;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Draw Stop on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Draw Stop on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StartUpdatingChildren(bool force) {
-    if (IsUpdatingChildren()) {
-        return *this;
-    }
-
+bool Component::StartUpdatingChildren(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (IsUpdatingChildren()) {
+        return true;
+    }
 
     bool success = UpdatingChildrenStarted(force);
     if (force || success) {
         mIsUpdatingChildren = true;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Update Children Start on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Update Children Start on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StartDrawingChildren(bool force) {
-    if (IsDrawingChildren()) {
-        return *this;
-    }
-
+bool Component::StartDrawingChildren(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (IsDrawingChildren()) {
+        return true;
+    }
 
     bool success = DrawingChildrenStarted(force);
     if (force || success) {
         mIsDrawingChildren = true;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Draw Children Start on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Draw Children Start on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StopUpdatingChildren(bool force) {
-    if (!IsUpdatingChildren()) {
-        return *this;
-    }
-
+bool Component::StopUpdatingChildren(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (!IsUpdatingChildren()) {
+        return true;
+    }
 
     bool success = UpdatingChildrenStopped(force);
     if (force || success) {
         mIsUpdatingChildren = false;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Update Children Stop on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Update Children Stop on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StopDrawingChildren(bool force) {
-    if (!IsDrawingChildren()) {
-        return *this;
-    }
-
+bool Component::StopDrawingChildren(bool force) {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+    if (!IsDrawingChildren()) {
+        return true;
+    }
 
     bool success = DrawingChildrenStopped(force);
     if (force || success) {
         mIsDrawingChildren = false;
 
         if (force && !success) {
-            SPDLOG_WARN("Forcing Draw Children Stop on Component {} ({})", GetName(), typeid(*this).name());
+            SPDLOG_WARN("Forcing Draw Children Stop on Component {}-{}-{}", GetId(), GetName(), typeid(*this).name());
+        } else if (!force && !success) {
+            return false;
         }
     }
 
-    return *this;
+    return true;
 }
 
-Component& Component::StartUpdatingAll(bool force) {
-    return StartUpdating(force).StartUpdatingChildren(force);
+bool Component::StartUpdatingAll(bool force) {
+    return StartUpdating(force) & StartUpdatingChildren(force);
 }
 
-Component& Component::StartDrawingAll(bool force) {
-    return StartDrawing(force).StartDrawingChildren(force);
+bool Component::StartDrawingAll(bool force) {
+    return StartDrawing(force) & StartDrawingChildren(force);
 }
 
-Component& Component::StopUpdatingAll(bool force) {
-    return StopUpdating(force).StopUpdatingChildren(force);
+bool Component::StopUpdatingAll(bool force) {
+    return StopUpdating(force) & StopUpdatingChildren(force);
 }
 
-Component& Component::StopDrawingAll(bool force) {
-    return StopDrawing(force).StopDrawingChildren(force);
+bool Component::StopDrawingAll(bool force) {
+    return StopDrawing(force) & StopDrawingChildren(force);
 }
 
 std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> Component::GetParents() {
@@ -682,7 +710,7 @@ std::chrono::time_point<std::chrono::steady_clock> Component::GetPreviousDrawFul
 
 
 Component& Component::AddParentRaw(std::shared_ptr<Component> parent) {
-    SPDLOG_INFO("Adding parent {} ({}) to this component {} ({})", parent->GetName(), typeid(*(parent.get())).name(), GetName(),
+    SPDLOG_INFO("Adding parent {}-{}-{} to this component {}-{}-{}", parent->GetId(), parent->GetName(), typeid(*(parent.get())).name(), GetId(), GetName(),
                 typeid(*this).name());
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
     mParents[parent->GetName()] = parent;
@@ -690,24 +718,24 @@ Component& Component::AddParentRaw(std::shared_ptr<Component> parent) {
 }
 
 Component& Component::AddChildRaw(std::shared_ptr<Component> child) {
-    SPDLOG_INFO("Adding child {} ({}) to this component {} ({})", child->GetName(), typeid(*(child.get())).name(),
-                GetName(), typeid(*this).name());
+    SPDLOG_INFO("Adding child {}-{}-{} to this component {}-{}-{}", child->GetId(), child->GetName(), typeid(*(child.get())).name(),
+                GetId(), GetName(), typeid(*this).name());
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
     mChildren[child->GetName()] = child;
     return *this;
 }
 
 Component& Component::RemoveParentRaw(std::shared_ptr<Component> parent) {
-    SPDLOG_INFO("Removing parent {} ({}) from this component {} ({})", parent->GetName(), typeid(*(parent.get())).name(),
-                GetName(), typeid(*this).name());
+    SPDLOG_INFO("Removing parent {}-{}-{} from this component {}-{}-{}", parent->GetId(), parent->GetName(), typeid(*(parent.get())).name(),
+                GetId(), GetName(), typeid(*this).name());
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
     mParents.erase(parent->GetName());
     return *this;
 }
 
 Component& Component::RemoveChildRaw(std::shared_ptr<Component> child) {
-    SPDLOG_INFO("Removing child {} ({}) from this component {} ({})", child->GetName(),
-                typeid(*(child.get())).name(), GetName(), typeid(*this).name());
+    SPDLOG_INFO("Removing child {}-{}-{} from this component {}-{}-{}", child->GetId(), child->GetName(),
+                typeid(*(child.get())).name(), GetId(), GetName(), typeid(*this).name());
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
     mChildren.erase(child->GetName());
     return *this;

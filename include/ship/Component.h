@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <chrono>
+#include <atomic>
 
 namespace Ship {
 class Component : private std::enable_shared_from_this<Component> {
@@ -16,24 +17,27 @@ class Component : private std::enable_shared_from_this<Component> {
 
     bool Update();
     bool Draw();
+    bool DrawDebugMenu();
 
+    int GetId();
     std::string GetName();
+
     bool IsUpdating();
     bool IsDrawing();
     bool IsUpdatingChildren();
     bool IsDrawingChildren();
-    Component& StartUpdating(bool force = false);
-    Component& StartDrawing(bool force = false);
-    Component& StopUpdating(bool force = false);
-    Component& StopDrawing(bool force = false);
-    Component& StartUpdatingChildren(bool force = false);
-    Component& StartDrawingChildren(bool force = false);
-    Component& StopUpdatingChildren(bool force = false);
-    Component& StopDrawingChildren(bool force = false);
-    Component& StartUpdatingAll(bool force = false);
-    Component& StartDrawingAll(bool force = false);
-    Component& StopUpdatingAll(bool force = false);
-    Component& StopDrawingAll(bool force = false);
+    bool StartUpdating(bool force = false);
+    bool StartDrawing(bool force = false);
+    bool StopUpdating(bool force = false);
+    bool StopDrawing(bool force = false);
+    bool StartUpdatingChildren(bool force = false);
+    bool StartDrawingChildren(bool force = false);
+    bool StopUpdatingChildren(bool force = false);
+    bool StopDrawingChildren(bool force = false);
+    bool StartUpdatingAll(bool force = false);
+    bool StartDrawingAll(bool force = false);
+    bool StopUpdatingAll(bool force = false);
+    bool StopDrawingAll(bool force = false);
 
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> GetParents();
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> GetChildren();
@@ -99,6 +103,7 @@ protected:
 
     virtual bool Updated(const double durationSinceLastUpdate) = 0;
     virtual bool Drawn(const double durationSinceLastUpdate) = 0;
+    virtual bool DebugMenuDrawn(const double durationSinceLastUpdate) = 0;
     virtual bool UpdatingStarted(bool forced) = 0;
     virtual bool DrawingStarted(bool forced) = 0;
     virtual bool UpdatingStopped(bool forced) = 0;
@@ -131,7 +136,11 @@ private:
     Component& SetPreviousUpdateFullEndClock(std::chrono::time_point<std::chrono::steady_clock> previousUpdateFullEndClock);
     Component& SetPreviousDrawFullEndClock(std::chrono::time_point<std::chrono::steady_clock> previousUpdateFullEndClock);
 
+    static std::atomic_int NextComponentId;
+
+    int mId;
     std::string mName;
+
     bool mIsUpdating;
     bool mIsDrawing;
     bool mIsUpdatingChildren;
