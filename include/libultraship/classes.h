@@ -7,6 +7,7 @@
 #include "ship/resource/archive/O2rArchive.h"
 #include "ship/resource/ResourceManager.h"
 #include "ship/Context.h"
+#include "ship/Component.h"
 #include "ship/window/Window.h"
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
