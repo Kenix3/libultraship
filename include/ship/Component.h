@@ -19,13 +19,15 @@ class Component : private std::enable_shared_from_this<Component> {
     bool Draw();
     bool DrawDebugMenu();
 
-    int GetId();
-    std::string GetName();
+    int GetId() const;
+    std::string GetName() const;
+    std::string ToString() const;
+    explicit operator std::string() const;
 
-    bool IsUpdating();
-    bool IsDrawing();
-    bool IsUpdatingChildren();
-    bool IsDrawingChildren();
+    bool IsUpdating() const;
+    bool IsDrawing() const;
+    bool IsUpdatingChildren() const;
+    bool IsDrawingChildren() const;
     bool StartUpdating(bool force = false);
     bool StartDrawing(bool force = false);
     bool StopUpdating(bool force = false);
@@ -39,8 +41,17 @@ class Component : private std::enable_shared_from_this<Component> {
     bool StopUpdatingAll(bool force = false);
     bool StopDrawingAll(bool force = false);
 
+    std::shared_ptr<Component> GetParent(const std::string& parent);
+    std::shared_ptr<Component> GetChild(const std::string& child);
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> GetChildren();
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> GetParents();
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> GetChildren();
+    bool HasParent(std::shared_ptr<Component> parent);
+    bool HasParent(const std::string& parent);
+    bool HasParent();
+    bool HasChild(std::shared_ptr<Component> child);
+    bool HasChild(const std::string& child);
+    bool HasChild();
     Component& AddParent(std::shared_ptr<Component> parent, bool now = false);
     Component& AddChild(std::shared_ptr<Component> child, bool now = false);
     Component& RemoveParent(std::shared_ptr<Component> parent, bool now = false);
@@ -62,12 +73,6 @@ class Component : private std::enable_shared_from_this<Component> {
     Component& RemoveChildren(const std::vector<std::string>& children, bool now = false);
     Component& RemoveParents(bool now = false);
     Component& RemoveChildren(bool now = false);
-    bool HasParent(std::shared_ptr<Component> parent);
-    bool HasParent(const std::string& parent);
-    bool HasParent();
-    bool HasChild(std::shared_ptr<Component> child);
-    bool HasChild(const std::string& child);
-    bool HasChild();
 
     double GetUpdateStartTime();
     double GetDrawStartTime();
@@ -168,4 +173,5 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> mPreviousUpdateFullEndClock;
     std::chrono::time_point<std::chrono::steady_clock> mPreviousDrawFullEndClock;
 };
+
 } // namespace Ship
