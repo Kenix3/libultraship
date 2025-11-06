@@ -94,7 +94,8 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
            InitFileDropMgr();
 }
 
-bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel, spdlog::level::level_enum releaseBuildLogLevel) {
+bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
+                          spdlog::level::level_enum releaseBuildLogLevel) {
     if (GetLogger() != nullptr) {
         return true;
     }

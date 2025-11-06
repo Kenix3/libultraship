@@ -67,7 +67,8 @@ class Context {
     std::string GetName();
     std::string GetShortName();
 
-    bool InitLogging(spdlog::level::level_enum debugBuildLogLevel = spdlog::level::debug, spdlog::level::level_enum releaseBuildLogLevel = spdlog::level::warn);
+    bool InitLogging(spdlog::level::level_enum debugBuildLogLevel = spdlog::level::debug,
+                     spdlog::level::level_enum releaseBuildLogLevel = spdlog::level::warn);
     bool InitConfiguration();
     bool InitConsoleVariables();
     bool InitResourceManager(const std::vector<std::string>& archivePaths = {},
