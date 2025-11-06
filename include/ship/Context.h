@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <vector>
 #include <unordered_map>
+#include <spdlog/async.h>
 #include "ship/audio/Audio.h"
 
 namespace spdlog {
@@ -66,7 +67,7 @@ class Context {
     std::string GetName();
     std::string GetShortName();
 
-    bool InitLogging();
+    bool InitLogging(spdlog::level::level_enum debugBuildLogLevel = spdlog::level::debug, spdlog::level::level_enum releaseBuildLogLevel = spdlog::level::warn);
     bool InitConfiguration();
     bool InitConsoleVariables();
     bool InitResourceManager(const std::vector<std::string>& archivePaths = {},
