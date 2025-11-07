@@ -100,6 +100,7 @@ bool O2rArchive::Close() {
         return false;
     }
 
+    mZipArchive = nullptr;
     return true;
 }
 
