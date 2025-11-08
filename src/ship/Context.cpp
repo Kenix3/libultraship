@@ -1,7 +1,6 @@
 #include "ship/Context.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include <iostream>
-#include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "ship/install_config.h"
@@ -95,7 +94,8 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
            InitFileDropMgr();
 }
 
-bool Context::InitLogging() {
+bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
+                          spdlog::level::level_enum releaseBuildLogLevel) {
     if (GetLogger() != nullptr) {
         return true;
     }
@@ -147,12 +147,14 @@ bool Context::InitLogging() {
         sinks.push_back(fileSink);
 #ifdef _DEBUG
         mLogger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
+        GetLogger()->set_level(debugBuildLogLevel);
         GetLogger()->flush_on(spdlog::level::trace);
 #else
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
+        GetLogger()->set_level(releaseBuildLogLevel);
+        GetLogger()->flush_on(spdlog::level::info);
 #endif
-
         GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
 
         spdlog::register_logger(GetLogger());
