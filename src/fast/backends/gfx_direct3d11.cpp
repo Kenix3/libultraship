@@ -221,6 +221,13 @@ void GfxRenderingAPIDX11::Init() {
                   mWindowBackend->GetWindowHandle(), "Failed to create per-draw constant buffer.");
 
     // Create compute shader that can be used to retrieve depth buffer values
+    D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS features;
+    mDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &features,
+                                 sizeof(D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS));
+    if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
+        ThrowWithMessage(mWindowBackend->GetWindowHandle(),
+                         "D3D device doesn't support compute shaders 4.0 or greater.");
+    }
 
     const char* shader_source = R"(
 sampler my_sampler : register(s0);
@@ -236,7 +243,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     const char* shader_source_msaa = R"(
 sampler my_sampler : register(s0);
-Texture2DMS<float, 2> tex : register(t0);
+Texture2DMS<float> tex : register(t0);
 StructuredBuffer<int2> coord : register(t1);
 RWStructuredBuffer<float> output : register(u0);
 

@@ -116,6 +116,7 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
 #ifdef DECLARE_GFX_DXGI_FUNCTIONS
 void ThrowIfFailed(HRESULT res);
 void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message);
+void ThrowWithMessage(HWND h_wnd, const char* message);
 #endif
 
 #endif
