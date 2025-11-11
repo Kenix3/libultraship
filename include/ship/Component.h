@@ -5,41 +5,20 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
-#include <chrono>
 #include <atomic>
 
 namespace Ship {
 class Component : private std::enable_shared_from_this<Component> {
   public:
-    Component(const std::string& name, bool isUpdating = true, bool isDrawing = true, bool isUpdatingChildren = true,
-              bool isDrawingChildren = true);
+    Component(const std::string& name);
     ~Component();
 
-    bool Update();
-    bool Draw();
     bool DrawDebugMenu();
 
     int GetId() const;
     std::string GetName() const;
     std::string ToString() const;
     explicit operator std::string() const;
-
-    bool IsUpdating() const;
-    bool IsDrawing() const;
-    bool IsUpdatingChildren() const;
-    bool IsDrawingChildren() const;
-    bool StartUpdating(bool force = false);
-    bool StartDrawing(bool force = false);
-    bool StopUpdating(bool force = false);
-    bool StopDrawing(bool force = false);
-    bool StartUpdatingChildren(bool force = false);
-    bool StartDrawingChildren(bool force = false);
-    bool StopUpdatingChildren(bool force = false);
-    bool StopDrawingChildren(bool force = false);
-    bool StartUpdatingAll(bool force = false);
-    bool StartDrawingAll(bool force = false);
-    bool StopUpdatingAll(bool force = false);
-    bool StopDrawingAll(bool force = false);
 
     std::shared_ptr<Component> GetParent(const std::string& parent);
     std::shared_ptr<Component> GetChild(const std::string& child);
@@ -73,49 +52,8 @@ class Component : private std::enable_shared_from_this<Component> {
     Component& RemoveParents(bool now = false);
     Component& RemoveChildren(bool now = false);
 
-    double GetUpdateStartTime() const;
-    double GetDrawStartTime() const;
-    double GetUpdateEndTime() const;
-    double GetDrawEndTime() const;
-    double GetUpdateFullEndTime() const;
-    double GetDrawFullEndTime() const;
-    double GetPreviousUpdateStartTime() const;
-    double GetPreviousDrawStartTime() const;
-    double GetPreviousUpdateEndTime() const;
-    double GetPreviousDrawEndTime() const;
-    double GetPreviousUpdateFullEndTime() const;
-    double GetPreviousDrawFullEndTime() const;
-    double GetDurationSinceLastTick() const;
-    double GetPreviousUpdateDuration() const;
-    double GetPreviousDrawDuration() const;
-    double GetPreviousUpdateFullDuration() const;
-    double GetPreviousDrawFullDuration() const;
-
 protected:
-    std::chrono::time_point<std::chrono::steady_clock> GetUpdateStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetDrawStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetUpdateEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetDrawEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetUpdateFullEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetDrawFullEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousUpdateStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousDrawStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousUpdateEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousDrawEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousUpdateFullEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousDrawFullEndClock() const;
-
-    virtual bool Updated(const double durationSinceLastUpdate) = 0;
-    virtual bool Drawn(const double durationSinceLastUpdate) = 0;
-    virtual bool DebugMenuDrawn(const double durationSinceLastUpdate) = 0;
-    virtual bool UpdatingStarted(bool forced) = 0;
-    virtual bool DrawingStarted(bool forced) = 0;
-    virtual bool UpdatingStopped(bool forced) = 0;
-    virtual bool DrawingStopped(bool forced) = 0;
-    virtual bool UpdatingChildrenStarted(bool forced) = 0;
-    virtual bool DrawingChildrenStarted(bool forced) = 0;
-    virtual bool UpdatingChildrenStopped(bool forced) = 0;
-    virtual bool DrawingChildrenStopped(bool forced) = 0;
+    virtual bool DebugMenuDrawn() = 0;
     virtual bool AddedParent(std::shared_ptr<Component> parent) = 0;
     virtual bool AddedChild(std::shared_ptr<Component> child) = 0;
     virtual bool RemovedParent(std::shared_ptr<Component> parent) = 0;
@@ -127,28 +65,10 @@ private:
     Component& RemoveParentRaw(std::shared_ptr<Component> parent);
     Component& RemoveChildRaw(std::shared_ptr<Component> child);
 
-    Component& SetUpdateStartClock(std::chrono::time_point<std::chrono::steady_clock> updateStartClock);
-    Component& SetDrawStartClock(std::chrono::time_point<std::chrono::steady_clock> drawStartClock);
-    Component& SetUpdateEndClock(std::chrono::time_point<std::chrono::steady_clock> updateEndClock);
-    Component& SetDrawEndClock(std::chrono::time_point<std::chrono::steady_clock> drawEndClock);
-    Component& SetUpdateFullEndClock(std::chrono::time_point<std::chrono::steady_clock> updateFullEndClock);
-    Component& SetDrawFullEndClock(std::chrono::time_point<std::chrono::steady_clock> drawFullEndClock);
-    Component& SetPreviousUpdateStartClock(std::chrono::time_point<std::chrono::steady_clock> previousUpdateStartClock);
-    Component& SetPreviousDrawStartClock(std::chrono::time_point<std::chrono::steady_clock> previousDrawStartClock);
-    Component& SetPreviousUpdateEndClock(std::chrono::time_point<std::chrono::steady_clock> previousUpdateEndClock);
-    Component& SetPreviousDrawEndClock(std::chrono::time_point<std::chrono::steady_clock> previousUpdateEndClock);
-    Component& SetPreviousUpdateFullEndClock(std::chrono::time_point<std::chrono::steady_clock> previousUpdateFullEndClock);
-    Component& SetPreviousDrawFullEndClock(std::chrono::time_point<std::chrono::steady_clock> previousUpdateFullEndClock);
-
     static std::atomic_int NextComponentId;
 
     int mId;
     std::string mName;
-
-    bool mIsUpdating;
-    bool mIsDrawing;
-    bool mIsUpdatingChildren;
-    bool mIsDrawingChildren;
 
     std::recursive_mutex mMutex;
 
@@ -158,19 +78,6 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Component>> mChildrenToRemove;
     std::unordered_map<std::string, std::shared_ptr<Component>> mParents;
     std::unordered_map<std::string, std::shared_ptr<Component>> mChildren;
-
-    std::chrono::time_point<std::chrono::steady_clock> mUpdateStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mDrawStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mUpdateEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mDrawEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mUpdateFullEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mDrawFullEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousUpdateStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousDrawStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousUpdateEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousDrawEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousUpdateFullEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousDrawFullEndClock;
 };
 
 } // namespace Ship
