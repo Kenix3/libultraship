@@ -4,9 +4,9 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-Tickable::Tickable(bool isTicking, bool isDrawing)
+Tickable::Tickable(const bool isTicking, const bool isDrawing)
     : mIsTicking(isTicking), mIsDrawing(isDrawing)
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
+#ifdef INCLUDE_MUTEX
 ,     mMutex()
 #endif
 #ifdef INCLDUE_TICKABLE_PROFILING
@@ -50,15 +50,15 @@ bool Tickable::Tick(const double durationSinceLastTick) {
 
 bool Tickable::Draw(const double durationSinceLastDraw) {
 #ifdef INCLDUE_TICKABLE_PROFILING
-        // Set Previous clocks to the current clock.
-        SetPreviousDrawStartClock(GetDrawStartClock());
-        SetPreviousDrawEndClock(GetDrawEndClock());
+    // Set Previous clocks to the current clock.
+    SetPreviousDrawStartClock(GetDrawStartClock());
+    SetPreviousDrawEndClock(GetDrawEndClock());
 
-        // Set Start clock to now, and end clocks to "empty"
-        // Then run the logic. After the logic, set the end time.
-        SetDrawStartClock(std::chrono::high_resolution_clock::now());
-        SetDrawEndClock(
-            std::chrono::time_point<std::chrono::steady_clock>(std::chrono::system_clock::duration::zero()));
+    // Set Start clock to now, and end clocks to "empty"
+    // Then run the logic. After the logic, set the end time.
+    SetDrawStartClock(std::chrono::high_resolution_clock::now());
+    SetDrawEndClock(
+        std::chrono::time_point<std::chrono::steady_clock>(std::chrono::system_clock::duration::zero()));
 #endif
 
     bool val = true;
@@ -67,132 +67,140 @@ bool Tickable::Draw(const double durationSinceLastDraw) {
     }
 
 #ifdef INCLDUE_TICKABLE_PROFILING
-        SetDrawEndClock(std::chrono::high_resolution_clock::now());
+    SetDrawEndClock(std::chrono::high_resolution_clock::now());
 #endif
 
     return val;
 }
 
 bool Tickable::IsTicking() {
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
+#ifdef INCLUDE_MUTEX
     const std::lock_guard<std::mutex> lock(mMutex);
 #endif
     return mIsTicking;
 }
 
 bool Tickable::IsDrawing() {
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
+#ifdef INCLUDE_MUTEX
     const std::lock_guard<std::mutex> lock(mMutex);
 #endif
     return mIsDrawing;
 }
 
-bool Tickable::StartTicking(bool force) {
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
-    const std::lock_guard<std::mutex> lock(mMutex);
-#endif
-
+bool Tickable::StartTicking(const bool force) {
     if (IsTicking()) {
         return true;
     }
 
-    bool success = TickingStarted(force);
-    if (force || success) {
-        mIsTicking = true;
+    const bool canStartTicking = CanStartTicking();
+    if (!canStartTicking && !force) {
+        return false;
+    }
 
-        if (force && !success) {
-            // If this is also a component, log out.
-            auto component = dynamic_cast<Component*>(this);
-            if (component != nullptr) {
-                auto string = component->ToString();
-                SPDLOG_WARN("Forcing Tick Start on Component {}", string);
-            }
-        } else if (!force && !success) {
-            return false;
+    const bool forced = !canStartTicking && force;
+    {
+#ifdef INCLUDE_MUTEX
+        const std::lock_guard<std::mutex> lock(mMutex);
+#endif
+        mIsTicking = true;
+    }
+    TickingStarted(forced);
+
+    if (forced) {
+        // If this is also a component, log out.
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing Tick Start on Component {}", component->ToString());
         }
     }
 
     return true;
 }
 
-bool Tickable::StartDrawing(bool force) {
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
+bool Tickable::StartDrawing(const bool force) {
     if (IsDrawing()) {
         return true;
     }
 
-    bool success = DrawingStarted(force);
-    if (force || success) {
-        mIsDrawing = true;
+    const bool canStartDrawing = CanStartDrawing();
+    if (!canStartDrawing && !force) {
+        return false;
+    }
 
-        if (force && !success) {
-            // If this is also a component, log out.
-            auto component = dynamic_cast<Component*>(this);
-            if (component != nullptr) {
-                auto string = component->ToString();
-                SPDLOG_WARN("Forcing Draw Start on Component {}", string);
-            }
-        } else if (!force && !success) {
-            return false;
+    const bool forced = !canStartDrawing && force;
+    {
+#ifdef INCLUDE_MUTEX
+        const std::lock_guard<std::mutex> lock(mMutex);
+#endif
+        mIsDrawing = true;
+    }
+    DrawingStarted(forced);
+
+    if (forced) {
+        // If this is also a component, log out.
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing Draw Start on Component {}", component->ToString());
         }
     }
 
     return true;
 }
 
-bool Tickable::StopTicking(bool force) {
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
+bool Tickable::StopTicking(const bool force) {
     if (!IsTicking()) {
         return true;
     }
 
-    bool success = TickingStopped(force);
-    if (force || success) {
-        mIsTicking = false;
+    const bool canStopTicking = CanStopTicking();
+    if (!canStopTicking && !force) {
+        return false;
+    }
 
-        if (force && !success) {
-            // If this is also a component, log out.
-            auto component = dynamic_cast<Component*>(this);
-            if (component != nullptr) {
-                auto string = component->ToString();
-                SPDLOG_WARN("Forcing Tick Stop on Component {}", string);
-            }
-        } else if (!force && !success) {
-            return false;
+    const bool forced = !canStopTicking && force;
+    {
+#ifdef INCLUDE_MUTEX
+        const std::lock_guard<std::mutex> lock(mMutex);
+#endif
+        mIsTicking = true;
+    }
+    TickingStopped(forced);
+
+    if (forced) {
+        // If this is also a component, log out.
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing Tick Stop on Component {}", component->ToString());
         }
     }
 
     return true;
 }
 
-bool Tickable::StopDrawing(bool force) {
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
+bool Tickable::StopDrawing(const bool force) {
     if (!IsDrawing()) {
         return true;
     }
 
-    bool success = DrawingStopped(force);
-    if (force || success) {
-        mIsDrawing = false;
+    const bool canStopDrawing = CanStopDrawing();
+    if (!canStopDrawing && !force) {
+        return false;
+    }
 
-        if (force && !success) {
-            // If this is also a component, log out.
-            auto component = dynamic_cast<Component*>(this);
-            if (component != nullptr) {
-                auto string = component->ToString();
-                SPDLOG_WARN("Forcing Draw Stop on Component {}", string);
-            }
-        } else if (!force && !success) {
-            return false;
+    const bool forced = !canStopDrawing && force;
+    {
+#ifdef INCLUDE_MUTEX
+        const std::lock_guard<std::mutex> lock(mMutex);
+#endif
+        mIsDrawing = true;
+    }
+    DrawingStopped(forced);
+
+    if (forced) {
+        // If this is also a component, log out.
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing Draw Stop on Component {}", component->ToString());
         }
     }
 

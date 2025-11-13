@@ -7,6 +7,8 @@
 #include <mutex>
 #include <atomic>
 
+// TODO: Compiler define for the mutex.
+
 namespace Ship {
 class Component : private std::enable_shared_from_this<Component> {
   public:
@@ -30,34 +32,39 @@ class Component : private std::enable_shared_from_this<Component> {
     bool HasChild(std::shared_ptr<Component> child);
     bool HasChild(const std::string& child);
     bool HasChild();
-    Component& AddParent(std::shared_ptr<Component> parent, bool now = false);
-    Component& AddChild(std::shared_ptr<Component> child, bool now = false);
-    Component& RemoveParent(std::shared_ptr<Component> parent, bool now = false);
-    Component& RemoveChild(std::shared_ptr<Component> child, bool now = false);
-    Component& RemoveParent(const std::string& parent, bool now = false);
-    Component& RemoveChild(const std::string& child, bool now = false);
-    Component& AddParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents, bool now = false);
-    Component& AddChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
-                           bool now = false);
-    Component& AddParents(const std::vector<std::shared_ptr<Component>>& parents, bool now = false);
-    Component& AddChildren(const std::vector<std::shared_ptr<Component>>& children, bool now = false);
-    Component& RemoveParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents,
-                             bool now = false);
-    Component& RemoveChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
-                              bool now = false);
-    Component& RemoveParents(const std::vector<std::shared_ptr<Component>>& parents, bool now = false);
-    Component& RemoveChildren(const std::vector<std::shared_ptr<Component>>& children, bool now = false);
-    Component& RemoveParents(const std::vector<std::string>& parents, bool now = false);
-    Component& RemoveChildren(const std::vector<std::string>& children, bool now = false);
-    Component& RemoveParents(bool now = false);
-    Component& RemoveChildren(bool now = false);
+    bool AddParent(std::shared_ptr<Component> parent, const bool force = false);
+    bool AddChild(std::shared_ptr<Component> child, const bool force = false);
+    bool RemoveParent(std::shared_ptr<Component> parent, const bool force = false);
+    bool RemoveChild(std::shared_ptr<Component> child, const bool force = false);
+    bool RemoveParent(const std::string& parent, const bool force = false);
+    bool RemoveChild(const std::string& child, const bool force = false);
+    bool AddParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents,
+                          const bool force = false);
+    bool AddChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
+                           const bool force = false);
+    bool AddParents(const std::vector<std::shared_ptr<Component>>& parents, const bool force = false);
+    bool AddChildren(const std::vector<std::shared_ptr<Component>>& children, const bool force = false);
+    bool RemoveParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents,
+                             const bool force = false);
+    bool RemoveChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
+                              const bool force = false);
+    bool RemoveParents(const std::vector<std::shared_ptr<Component>>& parents, const bool force = false);
+    bool RemoveChildren(const std::vector<std::shared_ptr<Component>>& children, const bool force = false);
+    bool RemoveParents(const std::vector<std::string>& parents, const bool force = false);
+    bool RemoveChildren(const std::vector<std::string>& children, const bool force = false);
+    bool RemoveParents(const bool force = false);
+    bool RemoveChildren(const bool force = false);
 
 protected:
     virtual bool DebugMenuDrawn() = 0;
-    virtual bool AddedParent(std::shared_ptr<Component> parent) = 0;
-    virtual bool AddedChild(std::shared_ptr<Component> child) = 0;
-    virtual bool RemovedParent(std::shared_ptr<Component> parent) = 0;
-    virtual bool RemovedChild(std::shared_ptr<Component> child) = 0;
+    virtual bool CanAddParent(std::shared_ptr<Component> parent) = 0;
+    virtual bool CanAddChild(std::shared_ptr<Component> child) = 0;
+    virtual bool CanRemoveParent(std::shared_ptr<Component> parent) = 0;
+    virtual bool CanRemoveChild(std::shared_ptr<Component> child) = 0;
+    virtual void AddedParent(std::shared_ptr<Component> parent, const bool forced) = 0;
+    virtual void AddedChild(std::shared_ptr<Component> child, const bool forced) = 0;
+    virtual void RemovedParent(std::shared_ptr<Component> parent, const bool forced) = 0;
+    virtual void RemovedChild(std::shared_ptr<Component> child, const bool forced) = 0;
 
 private:
     Component& AddParentRaw(std::shared_ptr<Component> parent);
@@ -69,15 +76,11 @@ private:
 
     int mId;
     std::string mName;
-
-    std::recursive_mutex mMutex;
-
-    std::unordered_map<std::string, std::shared_ptr<Component>> mParentsToAdd;
-    std::unordered_map<std::string, std::shared_ptr<Component>> mChildrenToAdd;
-    std::unordered_map<std::string, std::shared_ptr<Component>> mParentsToRemove;
-    std::unordered_map<std::string, std::shared_ptr<Component>> mChildrenToRemove;
     std::unordered_map<std::string, std::shared_ptr<Component>> mParents;
     std::unordered_map<std::string, std::shared_ptr<Component>> mChildren;
+#ifdef INCLUDE_MUTEX
+    std::mutex mMutex;
+#endif
 };
 
 } // namespace Ship

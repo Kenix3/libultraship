@@ -10,18 +10,18 @@
 namespace Ship {
 class Tickable : private std::enable_shared_from_this<Tickable> {
   public:
-    Tickable(bool isTicking = true, bool isDrawing = true);
+    Tickable(const bool isTicking = true, const bool isDrawing = true);
     ~Tickable();
 
-    bool Tick(const double durationSinceLastTick = -1);
-    bool Draw(const double durationSinceLastDraw = -1);
+    bool Tick(const double durationSinceLastTick);
+    bool Draw(const double durationSinceLastDraw);
 
     bool IsTicking();
     bool IsDrawing();
-    bool StartTicking(bool force = false);
-    bool StartDrawing(bool force = false);
-    bool StopTicking(bool force = false);
-    bool StopDrawing(bool force = false);
+    bool StartTicking(const bool force = false);
+    bool StartDrawing(const bool force = false);
+    bool StopTicking(const bool force = false);
+    bool StopDrawing(const bool force = false);
 
 #ifdef INCLDUE_TICKABLE_PROFILING
     double GetTickStartTime() const;
@@ -52,10 +52,14 @@ protected:
 
     virtual bool Ticked(const double durationSinceLastTick) = 0;
     virtual bool Drawn(const double durationSinceLastTick) = 0;
-    virtual bool TickingStarted(bool forced) = 0;
-    virtual bool DrawingStarted(bool forced) = 0;
-    virtual bool TickingStopped(bool forced) = 0;
-    virtual bool DrawingStopped(bool forced) = 0;
+    virtual bool CanStartTicking() = 0;
+    virtual bool CanStartDrawing() = 0;
+    virtual bool CanStopTicking() = 0;
+    virtual bool CanStopDrawing() = 0;
+    virtual void TickingStarted(const bool forced) = 0;
+    virtual void DrawingStarted(const bool forced) = 0;
+    virtual void TickingStopped(const bool forced) = 0;
+    virtual void DrawingStopped(const bool forced) = 0;
 
 private:
 #ifdef INCLDUE_TICKABLE_PROFILING
@@ -72,7 +76,7 @@ private:
     bool mIsTicking;
     bool mIsDrawing;
 
-#ifdef INCLUDE_TICKABLE_MULTITHREAD
+#ifdef INCLUDE_MUTEX
     std::mutex mMutex;
 #endif
 

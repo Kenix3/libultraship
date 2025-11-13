@@ -7,8 +7,11 @@ namespace Ship {
 std::atomic_int Component::NextComponentId = 0;
 
 Component::Component(const std::string& name)
-    : mId(NextComponentId++), mName(name), mMutex(),
-      mParentsToAdd(), mChildrenToAdd(), mParentsToRemove(), mChildrenToRemove(), mParents(), mChildren() {
+    : mId(NextComponentId++), mName(name), mParents(), mChildren()
+#ifdef INCLUDE_MUTEX
+    , mMutex()
+#endif
+{
     SPDLOG_INFO("Constructing component {}", static_cast<std::string>(*this));
 }
 
@@ -42,7 +45,9 @@ Component::operator std::string() const {
 }
 
 std::shared_ptr<Component> Component::GetParent(const std::string& parent) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     if (HasParent(parent)) {
         return mParents[parent];
     }
@@ -50,7 +55,9 @@ std::shared_ptr<Component> Component::GetParent(const std::string& parent) {
 }
 
 std::shared_ptr<Component> Component::GetChild(const std::string& child) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     if (HasChild(child)) {
         return mChildren[child];
     }
@@ -58,287 +65,276 @@ std::shared_ptr<Component> Component::GetChild(const std::string& child) {
 }
 
 std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> Component::GetParents() {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-    return std::make_shared<std::unordered_map<std::string, std::shared_ptr<Component>>>(mParents);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
+    return std::make_shared < std::unordered_map < std::string, std::shared_ptr < Component>>>(mParents);
 }
 
 std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Component>>> Component::GetChildren() {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     return std::make_shared<std::unordered_map<std::string, std::shared_ptr<Component>>>(mChildren);
 }
 
 bool Component::HasParent(std::shared_ptr<Component> parent) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     return HasParent(parent->GetName());
 }
 
 bool Component::HasParent(const std::string& parent) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     return mParents.contains(parent);
 }
 
 bool Component::HasParent() {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     return !mParents.empty();
 }
 
 bool Component::HasChild(std::shared_ptr<Component> child) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     return HasChild(child->GetName());
 }
 bool Component::HasChild(const std::string& child) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     return mChildren.contains(child);
 }
 
 bool Component::HasChild() {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     return !mChildren.empty();
 }
 
-Component& Component::AddParent(std::shared_ptr<Component> parent, bool now) {
+bool Component::AddParent(std::shared_ptr<Component> parent, const bool force) {
     if (parent == nullptr) {
-        return *this;
+        return false;
     }
-
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
 
     if (HasParent(parent->GetName())) {
-        return *this;
+        return true;
     }
 
-    if (now) {
-        AddParentRaw(parent);
-    } else {
-        if (mParentsToAdd.contains(parent->GetName())) {
-            return *this;
-        }
-        mParentsToAdd[parent->GetName()] = parent;
+    auto ptr = shared_from_this();
+    const bool canAddParent = CanAddParent(parent);
+    const bool canAddChild = parent->CanAddChild(ptr);
+    if ((!canAddParent || !canAddChild) && !force) {
+        return false;
     }
 
-    parent->AddChild(shared_from_this(), now);
+    const bool forced = (!canAddParent || !canAddChild) && force;
+    AddParentRaw(parent);
+    AddedParent(parent, forced);
+    parent->AddChild(ptr, force);
 
-    return *this;
+    return true;
 }
 
-Component& Component::AddChild(std::shared_ptr<Component> child, bool now) {
+bool Component::AddChild(std::shared_ptr<Component> child, const bool force) {
     if (child == nullptr) {
-        return *this;
+        return false;
     }
-
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
 
     if (HasChild(child->GetName())) {
-        return *this;
+        return true;
     }
 
-    if (now) {
-        AddChildRaw(child);
-    } else {
-        if (mChildrenToAdd.contains(child->GetName())) {
-            return *this;
-        }
-        mChildrenToAdd[child->GetName()] = child;
+    auto ptr = shared_from_this();
+    const bool canAddChild = CanAddChild(child);
+    const bool canAddParent = child->CanAddParent(ptr);
+    if ((!canAddParent || !canAddChild) && !force) {
+        return false;
     }
 
-    child->AddParent(shared_from_this(), now);
+    const bool forced = (!canAddParent || !canAddChild) && force;
+    AddChildRaw(child);
+    AddedChild(child, forced);
+    child->AddParent(ptr, force);
 
-    return *this;
+    return true;
 }
 
-Component& Component::RemoveParent(std::shared_ptr<Component> parent, bool now) {
+bool Component::RemoveParent(std::shared_ptr<Component> parent, bool force) {
     if (parent == nullptr) {
-        return *this;
+        return false;
     }
 
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
-    if (HasChild(parent->GetName())) {
-        return *this;
+    if (!HasParent(parent->GetName())) {
+        return true;
     }
 
-    if (now) {
-        RemoveParentRaw(parent);
-    } else {
-        if (mParentsToRemove.contains(parent->GetName())) {
-            return *this;
-        }
-        mParentsToRemove[parent->GetName()] = parent;
+    auto ptr = shared_from_this();
+    const bool canRemoveParent = CanRemoveParent(parent);
+    const bool canRemoveChild = parent->CanRemoveChild(ptr);
+    if ((!canRemoveParent || !canRemoveChild) && !force) {
+        return false;
     }
 
-    parent->RemoveChild(shared_from_this(), now);
+    const bool forced = (!canRemoveParent || !canRemoveChild) && force;
+    RemoveParentRaw(parent);
+    RemovedParent(parent, forced);
+    parent->RemoveChild(ptr, force);
 
-    return *this;
+    return true;
 }
-Component& Component::RemoveChild(std::shared_ptr<Component> child, bool now) {
+
+bool Component::RemoveChild(std::shared_ptr<Component> child, bool force) {
     if (child == nullptr) {
-        return *this;
+        return false;
     }
 
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
-    if (HasParent(child->GetName())) {
-        return *this;
+    if (!HasChild(child->GetName())) {
+        return true;
     }
 
-    if (now) {
-        RemoveChildRaw(child);
-    } else {
-        if (mChildrenToRemove.contains(child->GetName())) {
-            return *this;
-        }
-        mParentsToRemove[child->GetName()] = child;
+    auto ptr = shared_from_this();
+    const bool canRemoveChild = CanRemoveChild(child);
+    const bool canRemoveParent = child->CanRemoveParent(ptr);
+    if ((!canRemoveParent || !canRemoveChild) && !force) {
+        return false;
     }
 
-    child->RemoveParent(shared_from_this(), now);
+    const bool forced = (!canRemoveParent || !canRemoveChild) && force;
+    RemoveChildRaw(child);
+    RemovedChild(child, forced);
+    child->RemoveParent(ptr, force);
 
-    return *this;
+    return true;
 }
 
-Component& Component::RemoveParent(const std::string& parent, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
-    if (HasParent(parent)) {
-        return *this;
-    }
-    return RemoveParent(mParents[parent]);
+bool Component::RemoveParent(const std::string& parent, bool force) {
+    return RemoveParent(parent);
 }
 
-Component& Component::RemoveChild(const std::string& child, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
-    if (HasChild(child)) {
-        return *this;
-    }
-    return RemoveChild(mChildren[child]);
+bool Component::RemoveChild(const std::string& child, bool force) {
+    return RemoveChild(child);
 }
 
-Component& Component::AddParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::AddParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents, bool force) {
+    bool val = true;
     for (const auto& pair : parents) {
-        AddParent(pair.second, now);
+        val &= AddParent(pair.second, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::AddChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
-                                  bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::AddChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
+                                  bool force) {
+    bool val = true;
     for (const auto& pair : children) {
-        AddChild(pair.second, now);
+        val &= AddChild(pair.second, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::AddParents(const std::vector<std::shared_ptr<Component>>& parents, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::AddParents(const std::vector<std::shared_ptr<Component>>& parents, bool force) {
+    bool val = true;
     for (const auto& parent : parents) {
-        AddParent(parent, now);
+        val &= AddParent(parent, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::AddChildren(const std::vector<std::shared_ptr<Component>>& children, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::AddChildren(const std::vector<std::shared_ptr<Component>>& children, bool force) {
+    bool val = true;
     for (const auto& child : children) {
-        AddChild(child, now);
+        val &= AddChild(child, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents,
-                                    bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::RemoveParents(const std::unordered_map<std::string, std::shared_ptr<Component>>& parents,
+                                    bool force) {
+    bool val = true;
     for (const auto& pair : parents) {
-        RemoveParent(pair.second, now);
+        val &= RemoveParent(pair.second, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
-                                     bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::RemoveChildren(const std::unordered_map<std::string, std::shared_ptr<Component>>& children,
+                                     bool force) {
+    bool val = true;
     for (const auto& pair : children) {
-        RemoveChild(pair.second, now);
+        val &= RemoveChild(pair.second, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveParents(const std::vector<std::shared_ptr<Component>>& parents, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::RemoveParents(const std::vector<std::shared_ptr<Component>>& parents, bool force) {
+    bool val = true;
     for (const auto& parent : parents) {
-        RemoveParent(parent, now);
+        val &= RemoveParent(parent, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveChildren(const std::vector<std::shared_ptr<Component>>& children, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::RemoveChildren(const std::vector<std::shared_ptr<Component>>& children, bool force) {
+    bool val = true;
     for (const auto& child : children) {
-        RemoveChild(child, now);
+        val &= RemoveChild(child, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveParents(const std::vector<std::string>& parents, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::RemoveParents(const std::vector<std::string>& parents, bool force) {
+    bool val = true;
     for (const auto& parent : parents) {
-        RemoveParent(parent, now);
+        val &= RemoveParent(parent, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveChildren(const std::vector<std::string>& children, bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
+bool Component::RemoveChildren(const std::vector<std::string>& children, bool force) {
+    bool val = true;
     for (const auto& child : children) {
-        RemoveChild(child, now);
+        val &= RemoveChild(child, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveParents(bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
-    for (const auto& pair : mParents) {
-        RemoveParent(pair.second, now);
+bool Component::RemoveParents(bool force) {
+    auto parents = GetParents();
+    bool val = true;
+    for (const auto& pair : parents) {
+        val &= RemoveParent(pair.second, force);
     }
 
-    return *this;
+    return val;
 }
 
-Component& Component::RemoveChildren(bool now) {
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-
-    for (const auto& pair : mParents) {
-        RemoveParent(pair.second, now);
+bool Component::RemoveChildren(bool force) {
+    auto children = GetChildren();
+    bool val = true;
+    for (const auto& pair : children) {
+        RemoveParent(pair.second, force);
     }
 
-    return *this;
+    return val;
 }
 
 Component& Component::AddParentRaw(std::shared_ptr<Component> parent) {
     SPDLOG_INFO("Adding parent {} to this component {}", static_cast<std::string>(*parent), static_cast<std::string>(*this));
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     mParents[parent->GetName()] = parent;
     return *this;
 }
@@ -346,7 +342,9 @@ Component& Component::AddParentRaw(std::shared_ptr<Component> parent) {
 Component& Component::AddChildRaw(std::shared_ptr<Component> child) {
     SPDLOG_INFO("Adding parent {} to this component {}", static_cast<std::string>(*child),
                 static_cast<std::string>(*this));
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     mChildren[child->GetName()] = child;
     return *this;
 }
@@ -354,8 +352,9 @@ Component& Component::AddChildRaw(std::shared_ptr<Component> child) {
 Component& Component::RemoveParentRaw(std::shared_ptr<Component> parent) {
     SPDLOG_INFO("Removing parent {} from this component {}", static_cast<std::string>(*parent),
                 static_cast<std::string>(*this));
-
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     mParents.erase(parent->GetName());
     return *this;
 }
@@ -363,7 +362,9 @@ Component& Component::RemoveParentRaw(std::shared_ptr<Component> parent) {
 Component& Component::RemoveChildRaw(std::shared_ptr<Component> child) {
     SPDLOG_INFO("Adding child {} from this component {}", static_cast<std::string>(*child),
                 static_cast<std::string>(*this));
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#ifdef INCLUDE_MUTEX
+    const std::lock_guard<std::mutex> lock(mMutex);
+#endif
     mChildren.erase(child->GetName());
     return *this;
 }
