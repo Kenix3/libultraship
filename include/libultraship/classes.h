@@ -8,6 +8,8 @@
 #include "ship/resource/ResourceManager.h"
 #include "ship/Context.h"
 #include "ship/Component.h"
+#include "ship/Tickable.h"
+#include "ship/TickableComponent.h"
 #include "ship/window/Window.h"
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
