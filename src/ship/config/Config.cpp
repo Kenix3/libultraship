@@ -156,6 +156,8 @@ void Config::SetBlock(const std::string& key, nlohmann::json block) {
     } else {
         if (gjson.contains(key)) {
             gjson[key] = block;
+        } else {
+            gjson.emplace(key, block);
         }
     }
     mFlattenedJson = gjson.flatten();
