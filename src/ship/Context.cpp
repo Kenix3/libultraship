@@ -83,7 +83,7 @@ std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string 
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : mConfigFilePath(std::move(configFilePath)), mName(std::move(name)), mShortName(std::move(shortName)) {
+    : mConfigFilePath(std::move(configFilePath)), mName(std::move(name)), mShortName(std::move(shortName)), Component(std::move(name)) {
 }
 
 bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
@@ -520,5 +520,4 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     // current dir
     return "./" + std::string(path);
 }
-
 } // namespace Ship

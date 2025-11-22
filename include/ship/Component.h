@@ -7,10 +7,12 @@
 #include <atomic>
 #include <stdint.h>
 
+#define INCLUDE_MUTEX 1
+
 namespace Ship {
 #define INVALID_COMPONENT_ID -1
 
-class Component : private std::enable_shared_from_this<Component> {
+class Component : public std::enable_shared_from_this<Component> {
   public:
     Component(const std::string& name);
     ~Component();
@@ -73,14 +75,14 @@ class Component : private std::enable_shared_from_this<Component> {
     bool RemoveChildren(const std::vector<std::string>& children, const bool force = false);
 
 protected:
-    virtual bool CanAddParent(std::shared_ptr<Component> parent) = 0;
-    virtual bool CanAddChild(std::shared_ptr<Component> child) = 0;
-    virtual bool CanRemoveParent(std::shared_ptr<Component> parent) = 0;
-    virtual bool CanRemoveChild(std::shared_ptr<Component> child) = 0;
-    virtual void AddedParent(std::shared_ptr<Component> parent, const bool forced) = 0;
-    virtual void AddedChild(std::shared_ptr<Component> child, const bool forced) = 0;
-    virtual void RemovedParent(std::shared_ptr<Component> parent, const bool forced) = 0;
-    virtual void RemovedChild(std::shared_ptr<Component> child, const bool forced) = 0;
+    virtual bool CanAddParent(std::shared_ptr<Component> parent);
+    virtual bool CanAddChild(std::shared_ptr<Component> child);
+    virtual bool CanRemoveParent(std::shared_ptr<Component> parent);
+    virtual bool CanRemoveChild(std::shared_ptr<Component> child);
+    virtual void AddedParent(std::shared_ptr<Component> parent, const bool forced);
+    virtual void AddedChild(std::shared_ptr<Component> child, const bool forced);
+    virtual void RemovedParent(std::shared_ptr<Component> parent, const bool forced);
+    virtual void RemovedChild(std::shared_ptr<Component> child, const bool forced);
 
 private:
     Component& AddParentRaw(std::shared_ptr<Component> parent);

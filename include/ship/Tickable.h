@@ -2,93 +2,84 @@
 
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
-#ifdef INCLDUE_TICKABLE_PROFILING
+#define INCLUDE_PROFILING 1
+#define INCLUDE_MUTEX 1
+
+
+#ifdef INCLUDE_PROFILING
 #include <chrono>
 #endif
 
 namespace Ship {
-class Tickable : private std::enable_shared_from_this<Tickable> {
+#ifdef INCLUDE_PROFILING
+enum class ClockType : uint64_t {
+    TickStart,
+    DrawStart,
+    DebugMenuDrawStart,
+    TickEnd,
+    DrawEnd,
+    DebugMenuDrawEnd,
+    PreviousTickStart,
+    PreviousDrawStart,
+    PreviousDebugMenuDrawStart,
+    PreviousTickEnd,
+    PreviousDrawEnd,
+    PreviousDebugMenuDrawEnd,
+    ClockMax
+};
+#endif
+
+enum class ActionType : size_t {
+    Tick,
+    Draw,
+    DrawDebugMenu
+};
+
+class Tickable {
   public:
+    Tickable(const std::vector<bool>& actions);
     Tickable(const bool isTicking = true, const bool isDrawing = true);
     ~Tickable();
 
-    bool Tick(const double durationSinceLastTick);
-    bool Draw(const double durationSinceLastDraw);
+    bool RunAction(const ActionType action, const double durationSinceLastTick);
+    bool IsActionRunning(const ActionType action);
+    bool StartAction(const ActionType action, const bool force = false);
+    bool StopAction(const ActionType action, const bool force = false);
 
-    bool IsTicking();
-    bool IsDrawing();
-    bool StartTicking(const bool force = false);
-    bool StartDrawing(const bool force = false);
-    bool StopTicking(const bool force = false);
-    bool StopDrawing(const bool force = false);
+    virtual bool ActionRan(const ActionType action, const double durationSinceLastTick);
 
-#ifdef INCLDUE_TICKABLE_PROFILING
-    double GetTickStartTime() const;
-    double GetDrawStartTime() const;
-    double GetTickEndTime() const;
-    double GetDrawEndTime() const;
-    double GetPreviousTickStartTime() const;
-    double GetPreviousDrawStartTime() const;
-    double GetPreviousTickEndTime() const;
-    double GetPreviousDrawEndTime() const;
+#ifdef INCLUDE_PROFILING
+    double GetTime(const ClockType clockType) const;
+
     double GetDurationSinceLastTick() const;
     double GetPreviousUpdateDuration() const;
     double GetPreviousDrawDuration() const;
-    double GetPreviousDrawFullDuration() const;
 #endif
 
 protected:
-#ifdef INCLDUE_TICKABLE_PROFILING
-    std::chrono::time_point<std::chrono::steady_clock> GetTickStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetDrawStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetTickEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetDrawEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousTickStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousDrawStartClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousTickEndClock() const;
-    std::chrono::time_point<std::chrono::steady_clock> GetPreviousDrawEndClock() const;
+#ifdef INCLUDE_PROFILING
+  std::chrono::time_point<std::chrono::steady_clock> GetClock(const ClockType clockType) const;
 #endif
 
-    virtual bool Ticked(const double durationSinceLastTick) = 0;
-    virtual bool Drawn(const double durationSinceLastTick) = 0;
-    virtual bool CanStartTicking() = 0;
-    virtual bool CanStartDrawing() = 0;
-    virtual bool CanStopTicking() = 0;
-    virtual bool CanStopDrawing() = 0;
-    virtual void TickingStarted(const bool forced) = 0;
-    virtual void DrawingStarted(const bool forced) = 0;
-    virtual void TickingStopped(const bool forced) = 0;
-    virtual void DrawingStopped(const bool forced) = 0;
+    virtual bool CanStartAction(const ActionType action);
+    virtual bool CanStopAction(const ActionType action);
+    virtual void ActionStarted(const ActionType action, const bool forced);
+    virtual void ActionStopped(const ActionType action, const bool forced);
 
 private:
-#ifdef INCLDUE_TICKABLE_PROFILING
-    Tickable& SetTickStartClock(std::chrono::time_point<std::chrono::steady_clock> tickStartClock);
-    Tickable& SetDrawStartClock(std::chrono::time_point<std::chrono::steady_clock> drawStartClock);
-    Tickable& SetTickEndClock(std::chrono::time_point<std::chrono::steady_clock> tickEndClock);
-    Tickable& SetDrawEndClock(std::chrono::time_point<std::chrono::steady_clock> drawEndClock);
-    Tickable& SetPreviousTickStartClock(std::chrono::time_point<std::chrono::steady_clock> previousTickStartClock);
-    Tickable& SetPreviousDrawStartClock(std::chrono::time_point<std::chrono::steady_clock> previousDrawStartClock);
-    Tickable& SetPreviousTickEndClock(std::chrono::time_point<std::chrono::steady_clock> previousTickEndClock);
-    Tickable& SetPreviousDrawEndClock(std::chrono::time_point<std::chrono::steady_clock> previousDrawEndClock);
+#ifdef INCLUDE_PROFILING
+    Tickable& SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue);
 #endif
 
-    bool mIsTicking;
-    bool mIsDrawing;
+    std::unordered_map<ActionType, bool> mActions;
 
 #ifdef INCLUDE_MUTEX
     std::mutex mMutex;
 #endif
-
-#ifdef INCLDUE_TICKABLE_PROFILING
-    std::chrono::time_point<std::chrono::steady_clock> mTickStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mDrawStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mTickEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mDrawEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousTickStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousDrawStartClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousTickEndClock;
-    std::chrono::time_point<std::chrono::steady_clock> mPreviousDrawEndClock;
+#ifdef INCLUDE_PROFILING
+    std::chrono::time_point<std::chrono::steady_clock> mClocks[static_cast<unsigned long long>(ClockType::ClockMax)];
 #endif
 };
 

@@ -5,7 +5,10 @@
 #include <unordered_set>
 #include <vector>
 #include <unordered_map>
+#include <stdint.h>
 #include "ship/audio/Audio.h"
+#include "ship/Component.h"
+#include "ship/Tickable.h"
 
 namespace spdlog {
 class logger;
@@ -17,6 +20,8 @@ class GfxDebugger;
 
 namespace Ship {
 
+class TickableComponent;
+
 class Console;
 class ConsoleVariable;
 class ControlDeck;
@@ -26,7 +31,7 @@ class Config;
 class ResourceManager;
 class FileDropMgr;
 
-class Context {
+class Context : public Component, public Tickable {
   public:
     static std::shared_ptr<Context> GetInstance();
     static std::shared_ptr<Context> CreateInstance(const std::string name, const std::string shortName,
@@ -78,6 +83,44 @@ class Context {
     bool InitConsole();
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
     bool InitFileDropMgr();
+
+
+    // TODO: NEw stuff below here
+    bool HasTickableComponent(std::shared_ptr<TickableComponent> tickableComponent);
+    size_t CountTickableComponent();
+    bool AddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force = false);
+    bool RemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force = false);
+    template <typename T> std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents();
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents();
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
+    GetTickableComponents(const std::vector<std::string>& names);
+    template <typename T>
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
+    GetTickableComponents(const std::vector<std::string>& names);
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents(const std::string& name);
+    template <typename T>
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents(const std::string& name);
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
+    GetTickableComponent(const std::vector<int32_t>& ids);
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponent(const int32_t id);
+
+    Context& SetTickableComponentsOrderStale();
+    Context& UnsetTickableComponentsOrderStale();
+    Context& SortTickableComponents();
+
+    bool CanAddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent);
+    bool CanRemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent);
+    void AddedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced);
+    void RemovedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced);
+
+    std::vector<std::shared_ptr<TickableComponent>> mTickableComponents;
+    bool mIsTickableComponentsOrderStale;
+#ifdef INCLUDE_MUTEX
+    std::mutex mMutex;
+#endif
+    // TODO: END NEW!
+
+
 
   protected:
     Context() = default;

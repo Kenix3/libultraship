@@ -17,6 +17,8 @@ Component::Component(const std::string& name)
 
 Component::~Component() {
     SPDLOG_INFO("Destructing component {}", ToString());
+    RemoveChildren(true);
+    RemoveParents(true);
 }
 
 int32_t Component::GetId() const {
@@ -75,7 +77,7 @@ template <typename T> bool Component::HasParent(const std::string name) {
 #endif
     auto iterator = std::find_if(list->begin(), list->end(),
          [&name](const std::shared_ptr<Component>& component) {
-            return component->GetName() == name && dynamic_cast<std::shared_ptr<T>>(component) != nullptr;
+            return component->GetName() == name && std::dynamic_pointer_cast<T>(component) != nullptr;
          });
     return iterator != list->end();
 }
@@ -90,7 +92,7 @@ template <typename T> bool Component::HasChild(const std::string name) {
 #endif
     auto iterator = std::find_if(list->begin(), list->end(), [&name](const std::shared_ptr<Component>& component) {
             return component->GetName() == name &&
-                   dynamic_cast<std::shared_ptr<T>>(component) != nullptr;
+                   std::dynamic_pointer_cast<T>(component) != nullptr;
         });
     return iterator != list->end();
 }
@@ -103,7 +105,7 @@ template <typename T> bool Component::HasParent() {
     list = &mParents;
 #endif
     auto iterator = std::find_if(list->begin(), list->end(),
-                                 [](const std::shared_ptr<Component>& component) { return dynamic_cast<std::shared_ptr<T>>(component) != nullptr; });
+                                 [](const std::shared_ptr<Component>& component) { return std::dynamic_pointer_cast<T>(component) != nullptr; });
     return iterator != list->end();
 }
 
@@ -116,7 +118,7 @@ template <typename T> bool Component::HasChild() {
     list = &mChildren;
 #endif
     auto iterator = std::find_if(list->begin(), list->end(), [](const std::shared_ptr<Component>& component) {
-        return dynamic_cast<std::shared_ptr<T>>(component) != nullptr;
+        return std::dynamic_pointer_cast<T>(component) != nullptr;
     });
     return iterator != list->end();
 }
@@ -265,7 +267,7 @@ template <typename T> std::shared_ptr<T> Component::GetParents(const std::string
 #endif
     auto val = std::make_shared<std::vector<T>>(list->size());
     for (const auto& parentObject : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(parentObject) != nullptr && parentObject->GetName() == parent) {
+        if (std::dynamic_pointer_cast<T>(parentObject) != nullptr && parentObject->GetName() == parent) {
             val.push_back(parentObject);
         }
     }
@@ -282,7 +284,7 @@ template <typename T> std::shared_ptr<T> Component::GetChildren(const std::strin
 #endif
     auto val = std::make_shared<std::vector<T>>(list->size());
     for (const auto& childObject : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(childObject) != nullptr && childObject->GetName() == child) {
+        if (std::dynamic_pointer_cast<T>(childObject) != nullptr && childObject->GetName() == child) {
             val->push_back(childObject);
         }
     }
@@ -299,7 +301,7 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
 #endif
     auto val = std::make_shared<std::vector<T>>(list->size());
     for (const auto& parent : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(parent) != nullptr) {
+        if (std::dynamic_pointer_cast<T>(parent) != nullptr) {
             val.push_back(parent);
         }
     }
@@ -316,7 +318,7 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
 #endif
     auto val = std::make_shared<std::vector<T>>(list->size());
     for (const auto& child : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(child) != nullptr) {
+        if (std::dynamic_pointer_cast<T>(child) != nullptr) {
             val->push_back(child);
         }
     }
@@ -390,7 +392,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Component>>> Component::GetChildren(
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
@@ -433,7 +434,6 @@ Component::GetChildren(const std::vector<std::string>& children) {
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
@@ -545,6 +545,7 @@ bool Component::RemoveParent(std::shared_ptr<Component> parent, const bool force
     const bool forced = (!canRemoveParent || !canRemoveChild) && force;
     {
 #ifdef INCLUDE_MUTEX
+        // This use of recursive mutex allows us to make sure duplicates are never added to the parent list
         const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
 
@@ -578,6 +579,7 @@ bool Component::RemoveChild(std::shared_ptr<Component> child, const bool force) 
     const bool forced = (!canRemoveParent || !canRemoveChild) && force;
     {
 #ifdef INCLUDE_MUTEX
+        // This use of recursive mutex allows us to make sure duplicates are never added to the children list
         const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
 
@@ -621,7 +623,6 @@ bool Component::RemoveChild(const int32_t child, const bool force) {
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
@@ -654,7 +655,6 @@ bool Component::RemoveChildren(const bool force) {
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
@@ -694,7 +694,7 @@ template <typename T> bool Component::RemoveParents(const std::string& name, con
 #endif
     bool val = true;
     for (const auto& parent : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(parent) != nullptr && parent->GetName() == name) {
+        if (std::dynamic_pointer_cast<T>(parent) != nullptr && parent->GetName() == name) {
             val &= RemoveParent(parent, force);
         }
     }
@@ -706,13 +706,12 @@ template <typename T> bool Component::RemoveChildren(const std::string& name, co
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
     bool val = true;
     for (const auto& child : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(child) != nullptr && child->GetName() == name) {
+        if (std::dynamic_pointer_cast<T>(child) != nullptr && child->GetName() == name) {
             val &= RemoveChild(child, force);
         }
     }
@@ -729,7 +728,7 @@ template <typename T> bool Component::RemoveParents(const bool force) {
 #endif
     bool val = true;
     for (const auto& parent : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(parent) != nullptr) {
+        if (std::dynamic_pointer_cast<T>(parent) != nullptr) {
             val &= RemoveParent(parent, force);
         }
     }
@@ -741,13 +740,12 @@ template <typename T> bool Component::RemoveChildren(const bool force) {
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
     bool val = true;
     for (const auto& child : *list) {
-        if (dynamic_cast<std::shared_ptr<T>>(child) != nullptr) {
+        if (std::dynamic_pointer_cast<T>(child) != nullptr) {
             val &= RemoveChild(child, force);
         }
     }
@@ -782,7 +780,6 @@ bool Component::RemoveChildren(const std::vector<int32_t>& children, const bool 
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
@@ -821,7 +818,6 @@ bool Component::RemoveChildren(const std::string& child, const bool force) {
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
@@ -862,7 +858,6 @@ bool Component::RemoveChildren(const std::vector<std::string>& children, const b
 #ifdef INCLUDE_MUTEX
     auto sharedList = GetChildren();
     list = sharedList.get();
-    listCount = = GetChildrenCount();
 #else
     list = &mChildren;
 #endif
@@ -877,6 +872,38 @@ bool Component::RemoveChildren(const std::vector<std::string>& children, const b
         }
     }
     return val;
+}
+
+bool Component::CanAddParent(std::shared_ptr<Component> parent) {
+    return true;
+}
+
+bool Component::CanAddChild(std::shared_ptr<Component> child) {
+    return true;
+}
+
+bool Component::CanRemoveParent(std::shared_ptr<Component> parent) {
+    return true;
+}
+
+bool Component::CanRemoveChild(std::shared_ptr<Component> child) {
+    return true;
+}
+
+void Component::AddedParent(std::shared_ptr<Component> parent, const bool forced) {
+
+}
+
+void Component::AddedChild(std::shared_ptr<Component> child, const bool forced) {
+
+}
+
+void Component::RemovedParent(std::shared_ptr<Component> parent, const bool forced) {
+
+}
+
+void Component::RemovedChild(std::shared_ptr<Component> child, const bool forced) {
+
 }
 
 Component& Component::AddParentRaw(std::shared_ptr<Component> parent) {

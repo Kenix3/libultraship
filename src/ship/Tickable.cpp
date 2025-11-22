@@ -5,325 +5,169 @@
 
 namespace Ship {
 Tickable::Tickable(const bool isTicking, const bool isDrawing)
-    : mIsTicking(isTicking), mIsDrawing(isDrawing)
+    : mActions(false)
+#ifdef INCLUDE_MUTEX
+      ,
+      mMutex()
+#endif
+#ifdef INCLUDE_PROFILING
+      ,
+      mClocks()
+#endif
+{
+    if (isTicking) {
+        StartAction(ActionType::Tick);
+    }
+
+    if (isDrawing) {
+        StartAction(ActionType::Draw);
+    }
+}
+
+Tickable::Tickable(const std::vector<bool>& actions)
+    : mActions(false)
 #ifdef INCLUDE_MUTEX
 ,     mMutex()
 #endif
-#ifdef INCLDUE_TICKABLE_PROFILING
-,     mTickStartClock(std::chrono::high_resolution_clock::now()),
-      mDrawStartClock(std::chrono::high_resolution_clock::now()),
-      mTickEndClock(std::chrono::high_resolution_clock::now()),
-      mDrawEndClock(std::chrono::high_resolution_clock::now()),
-      mPreviousTickStartClock(std::chrono::high_resolution_clock::now()),
-      mPreviousDrawStartClock(std::chrono::high_resolution_clock::now()),
-      mPreviousTickEndClock(std::chrono::high_resolution_clock::now()),
-      mPreviousDrawEndClock(std::chrono::high_resolution_clock::now())
+#ifdef INCLUDE_PROFILING
+      ,
+      mClocks()
 #endif
 {
+    auto actionCount = actions.size();
+    for (size_t i = 0; i < actionCount; i++) {
+        StartAction(static_cast<ActionType>(i));
+    }
 }
 
 Tickable::~Tickable() = default;
 
-bool Tickable::Tick(const double durationSinceLastTick) {
-#ifdef INCLDUE_TICKABLE_PROFILING
+bool Tickable::RunAction(const ActionType action, const double durationSinceLastTick) {
+#ifdef INCLUDE_PROFILING
     // Set Previous clocks to the current clock.
-    SetPreviousTickStartClock(GetTickStartClock());
-    SetPreviousTickEndClock(GetTickEndClock());
+    SetClock(ClockType::PreviousTickStart, GetClock(ClockType::TickStart));
+    SetClock(ClockType::PreviousTickEnd, GetClock(ClockType::TickEnd));
 
     // Set Start clock to now, and end clocks to "empty"
     // Then run the logic. After the logic, set the end time.
-    SetTickStartClock(std::chrono::high_resolution_clock::now());
-    SetTickEndClock(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::system_clock::duration::zero()));
+    SetClock(ClockType::TickStart, std::chrono::high_resolution_clock::now());
+    SetClock(ClockType::TickEnd, std::chrono::time_point<std::chrono::steady_clock>(std::chrono::system_clock::duration::zero()));
 #endif
 
     bool val = true;
-    if (IsTicking()) {
-        val = Ticked(durationSinceLastTick);
+    if (IsActionRunning(action)) {
+        val = ActionRan(action, durationSinceLastTick);
     }
 
-#ifdef INCLDUE_TICKABLE_PROFILING
-    SetTickEndClock(std::chrono::high_resolution_clock::now());
+#ifdef INCLUDE_PROFILING
+    SetClock(ClockType::TickEnd, std::chrono::high_resolution_clock::now());
 #endif
 
     return val;
 }
 
-bool Tickable::Draw(const double durationSinceLastDraw) {
-#ifdef INCLDUE_TICKABLE_PROFILING
-    // Set Previous clocks to the current clock.
-    SetPreviousDrawStartClock(GetDrawStartClock());
-    SetPreviousDrawEndClock(GetDrawEndClock());
-
-    // Set Start clock to now, and end clocks to "empty"
-    // Then run the logic. After the logic, set the end time.
-    SetDrawStartClock(std::chrono::high_resolution_clock::now());
-    SetDrawEndClock(
-        std::chrono::time_point<std::chrono::steady_clock>(std::chrono::system_clock::duration::zero()));
-#endif
-
-    bool val = true;
-    if (IsDrawing()) {
-        val = Drawn(durationSinceLastDraw);
-    }
-
-#ifdef INCLDUE_TICKABLE_PROFILING
-    SetDrawEndClock(std::chrono::high_resolution_clock::now());
-#endif
-
-    return val;
-}
-
-bool Tickable::IsTicking() {
+bool Tickable::IsActionRunning(const ActionType action) {
 #ifdef INCLUDE_MUTEX
     const std::lock_guard<std::mutex> lock(mMutex);
 #endif
-    return mIsTicking;
+    return mActions[action];
 }
 
-bool Tickable::IsDrawing() {
-#ifdef INCLUDE_MUTEX
-    const std::lock_guard<std::mutex> lock(mMutex);
-#endif
-    return mIsDrawing;
-}
-
-bool Tickable::StartTicking(const bool force) {
-    if (IsTicking()) {
+bool Tickable::StartAction(const ActionType action, const bool force) {
+    if (IsActionRunning(action)) {
         return true;
     }
 
-    const bool canStartTicking = CanStartTicking();
-    if (!canStartTicking && !force) {
+    const bool canStartAction = CanStartAction(action);
+    if (!canStartAction && !force) {
         return false;
     }
 
-    const bool forced = !canStartTicking && force;
+    const bool forced = !canStartAction && force;
     {
 #ifdef INCLUDE_MUTEX
         const std::lock_guard<std::mutex> lock(mMutex);
 #endif
-        mIsTicking = true;
+        mActions[action] = true;
     }
-    TickingStarted(forced);
+    ActionStarted(action, forced);
 
     if (forced) {
         // If this is also a component, log out.
         auto component = dynamic_cast<Component*>(this);
         if (component != nullptr) {
-            SPDLOG_WARN("Forcing Tick Start on Component {}", component->ToString());
+            SPDLOG_WARN("Forcing Action {} Start on Component {}", static_cast<uint32_t>(action), component->ToString());
         }
     }
 
     return true;
 }
 
-bool Tickable::StartDrawing(const bool force) {
-    if (IsDrawing()) {
+bool Tickable::StopAction(const ActionType action, const bool force) {
+    if (!IsActionRunning(action)) {
         return true;
     }
 
-    const bool canStartDrawing = CanStartDrawing();
-    if (!canStartDrawing && !force) {
+    const bool canStopAction = CanStopAction(action);
+    if (!canStopAction && !force) {
         return false;
     }
 
-    const bool forced = !canStartDrawing && force;
+    const bool forced = !canStopAction && force;
     {
 #ifdef INCLUDE_MUTEX
         const std::lock_guard<std::mutex> lock(mMutex);
 #endif
-        mIsDrawing = true;
+        mActions[action] = false;
     }
-    DrawingStarted(forced);
+    ActionStopped(action, forced);
 
     if (forced) {
         // If this is also a component, log out.
         auto component = dynamic_cast<Component*>(this);
         if (component != nullptr) {
-            SPDLOG_WARN("Forcing Draw Start on Component {}", component->ToString());
+            SPDLOG_WARN("Forcing Action {} Stop on Component {}", static_cast<uint32_t>(action), component->ToString());
         }
     }
 
     return true;
 }
 
-bool Tickable::StopTicking(const bool force) {
-    if (!IsTicking()) {
-        return true;
-    }
 
-    const bool canStopTicking = CanStopTicking();
-    if (!canStopTicking && !force) {
-        return false;
-    }
-
-    const bool forced = !canStopTicking && force;
-    {
-#ifdef INCLUDE_MUTEX
-        const std::lock_guard<std::mutex> lock(mMutex);
+#ifdef INCLUDE_PROFILING
+double Tickable::GetTime(const ClockType clockType) const {
+    return std::chrono::duration<double>(GetClock(clockType).time_since_epoch()).count();
+}
 #endif
-        mIsTicking = true;
-    }
-    TickingStopped(forced);
 
-    if (forced) {
-        // If this is also a component, log out.
-        auto component = dynamic_cast<Component*>(this);
-        if (component != nullptr) {
-            SPDLOG_WARN("Forcing Tick Stop on Component {}", component->ToString());
-        }
-    }
-
+bool Tickable::ActionRan(const ActionType action, const double durationSinceLastTick) {
     return true;
 }
 
-bool Tickable::StopDrawing(const bool force) {
-    if (!IsDrawing()) {
-        return true;
-    }
 
-    const bool canStopDrawing = CanStopDrawing();
-    if (!canStopDrawing && !force) {
-        return false;
-    }
-
-    const bool forced = !canStopDrawing && force;
-    {
-#ifdef INCLUDE_MUTEX
-        const std::lock_guard<std::mutex> lock(mMutex);
-#endif
-        mIsDrawing = true;
-    }
-    DrawingStopped(forced);
-
-    if (forced) {
-        // If this is also a component, log out.
-        auto component = dynamic_cast<Component*>(this);
-        if (component != nullptr) {
-            SPDLOG_WARN("Forcing Draw Stop on Component {}", component->ToString());
-        }
-    }
-
+bool Tickable::CanStartAction(const ActionType action) {
     return true;
 }
 
-#ifdef INCLDUE_TICKABLE_PROFILING
-double Tickable::GetTickStartTime() const {
-    return std::chrono::duration<double>(GetTickStartClock().time_since_epoch()).count();
+bool Tickable::CanStopAction(const ActionType action) {
+    return true;
 }
 
-double Tickable::GetDrawStartTime() const {
-    return std::chrono::duration<double>(GetDrawStartClock().time_since_epoch()).count();
+void Tickable::ActionStarted(const ActionType action, const bool forced) {
+
 }
 
-double Tickable::GetTickEndTime() const {
-    return std::chrono::duration<double>(GetTickEndClock().time_since_epoch()).count();
+void Tickable::ActionStopped(const ActionType action, const bool forced) {
+
 }
 
-double Tickable::GetDrawEndTime() const {
-    return std::chrono::duration<double>(GetDrawEndClock().time_since_epoch()).count();
+#ifdef INCLUDE_PROFILING
+std::chrono::time_point<std::chrono::steady_clock> Tickable::GetClock(const ClockType clockType) const {
+    return mClocks[static_cast<unsigned long long>(clockType)];
 }
 
-double Tickable::GetPreviousTickStartTime() const {
-    return std::chrono::duration<double>(GetPreviousTickStartClock().time_since_epoch()).count();
-}
-
-double Tickable::GetPreviousDrawStartTime() const {
-    return std::chrono::duration<double>(GetPreviousDrawStartClock().time_since_epoch()).count();
-}
-
-double Tickable::GetPreviousTickEndTime() const {
-    return std::chrono::duration<double>(GetPreviousTickEndClock().time_since_epoch()).count();
-}
-double Tickable::GetPreviousDrawEndTime() const {
-    return std::chrono::duration<double>(GetPreviousDrawEndClock().time_since_epoch()).count();
-}
-
-double Tickable::GetDurationSinceLastTick() const {
-    return std::chrono::duration<double>(GetTickStartClock() - GetPreviousTickStartClock()).count();
-}
-
-double Tickable::GetPreviousTickDuration() const {
-    return std::chrono::duration<double>(GetPreviousTickStartClock() - GetPreviousTickEndClock()).count();
-}
-
-double Tickable::GetPreviousDrawDuration() const {
-    return std::chrono::duration<double>(GetPreviousDrawStartClock() - GetPreviousDrawEndClock()).count();
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetTickStartClock() const {
-    return mTickStartClock;
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetDrawStartClock() const {
-    return mDrawStartClock;
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetTickEndClock() const {
-    return mTickEndClock;
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetDrawEndClock() const {
-    return mDrawEndClock;
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetPreviousTickStartClock() const {
-    return mPreviousTickStartClock;
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetPreviousDrawStartClock() const {
-    return mPreviousDrawStartClock;
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetPreviousTickEndClock() const {
-    return mPreviousTickEndClock;
-}
-
-std::chrono::time_point<std::chrono::steady_clock> Tickable::GetPreviousDrawEndClock() const {
-    return mPreviousDrawEndClock;
-}
-
-Tickable& Tickable::SetTickStartClock(std::chrono::time_point<std::chrono::steady_clock> updateStartClock) {
-    mTickStartClock = updateStartClock;
-    return *this;
-}
-
-Tickable& Tickable::SetDrawStartClock(std::chrono::time_point<std::chrono::steady_clock> drawStartClock) {
-    mDrawStartClock = drawStartClock;
-    return *this;
-}
-
-Tickable& Tickable::SetTickEndClock(std::chrono::time_point<std::chrono::steady_clock> updateEndClock) {
-    mTickEndClock = updateEndClock;
-    return *this;
-}
-
-Tickable& Tickable::SetDrawEndClock(std::chrono::time_point<std::chrono::steady_clock> drawEndClock) {
-    mDrawEndClock = drawEndClock;
-    return *this;
-}
-
-Tickable&
-Tickable::SetPreviousTickStartClock(std::chrono::time_point<std::chrono::steady_clock> previousTickStartClock) {
-    mPreviousTickStartClock = previousTickStartClock;
-    return *this;
-}
-
-Tickable&
-Tickable::SetPreviousDrawStartClock(std::chrono::time_point<std::chrono::steady_clock> previousDrawStartClock) {
-    mPreviousDrawStartClock = previousDrawStartClock;
-    return *this;
-}
-
-Tickable&
-Tickable::SetPreviousTickEndClock(std::chrono::time_point<std::chrono::steady_clock> previousTickEndClock) {
-    mPreviousTickEndClock = previousTickEndClock;
-    return *this;
-}
-
-Tickable&
-Tickable::SetPreviousDrawEndClock(std::chrono::time_point<std::chrono::steady_clock> previousTickEndClock) {
-    mPreviousDrawEndClock = previousTickEndClock;
+Tickable& Tickable::SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue) {
+    mClocks[static_cast<unsigned long long>(clockType)] = clockValue;
     return *this;
 }
 #endif
