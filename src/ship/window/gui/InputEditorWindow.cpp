@@ -75,7 +75,7 @@ void InputEditorWindow::UpdateElement() {
     }
 }
 
-void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone, bool gyro) {
+void InputEditorWindow::DrawAnaloguePreview(const char* label, ImVec2 stick, float deadzone, bool gyro) {
     ImGui::BeginChild(label, ImVec2(gyro ? SCALE_IMGUI_SIZE(78) : SCALE_IMGUI_SIZE(96), SCALE_IMGUI_SIZE(85)), false);
     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + gyro ? SCALE_IMGUI_SIZE(10) : SCALE_IMGUI_SIZE(18),
                                ImGui::GetCursorPos().y + gyro ? SCALE_IMGUI_SIZE(10) : 0));
@@ -614,7 +614,7 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
         controllerStick = Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
     }
     controllerStick->Process(sX, sY);
-    DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(sX, sY));
+    DrawAnaloguePreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(sX, sY));
 
     ImGui::SameLine();
     ImGui::BeginGroup();
@@ -624,7 +624,7 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
     DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_RIGHT, stick).c_str(), port, stick, RIGHT, color);
     ImGui::EndGroup();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
+    if (ImGui::TreeNode(StringHelper::Sprintf("Analogue Stick Options##%d", id).c_str())) {
         ImGui::Text("Sensitivity:");
 
         int32_t sensitivityPercentage = controllerStick->GetSensitivityPercentage();
@@ -1101,9 +1101,9 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         // I tried to find the maximum value reported by shaking
         // a PS5 controller as hard as I could without worrying about breaking it
         // the max I found for both pitch and yaw was ~21
-        // the preview window expects values in an n64 analog stick range (-85 to 85)
+        // the preview window expects values in an n64 analogue stick range (-85 to 85)
         // so I decided to multiply these by 85/21
-        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(),
+        DrawAnaloguePreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(),
                           ImVec2(sYaw * (85.0f / 21.0f), sPitch * (85.0f / 21.0f)), 0.0f, true);
         ImGui::SameLine();
         ImGui::SetCursorPos(
@@ -1270,7 +1270,7 @@ void InputEditorWindow::DrawPortTab(uint8_t portIndex) {
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_DRIGHT);
         }
 
-        if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Analogue Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
             DrawStickSection(portIndex, LEFT, 0);
         }
 
