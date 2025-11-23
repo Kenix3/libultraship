@@ -618,10 +618,10 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
 
     ImGui::SameLine();
     ImGui::BeginGroup();
-    DrawStickDirectionLine(ICON_FA_ARROW_UP, port, stick, UP, color);
-    DrawStickDirectionLine(ICON_FA_ARROW_DOWN, port, stick, DOWN, color);
-    DrawStickDirectionLine(ICON_FA_ARROW_LEFT, port, stick, LEFT, color);
-    DrawStickDirectionLine(ICON_FA_ARROW_RIGHT, port, stick, RIGHT, color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_UP, stick).c_str(), port, stick, UP, color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_DOWN, stick).c_str(), port, stick, DOWN, color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_LEFT, stick).c_str(), port, stick, LEFT, color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_RIGHT, stick).c_str(), port, stick, RIGHT, color);
     ImGui::EndGroup();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
