@@ -22,8 +22,8 @@ class ArchiveManager {
 
     std::shared_ptr<Archive> AddArchive(const std::string& archivePath);
     std::shared_ptr<Archive> AddArchive(std::shared_ptr<Archive> archive);
-    std::shared_ptr<std::vector<std::shared_ptr<Archive>>> GetArchives();
-    void SetArchives(std::shared_ptr<std::vector<std::shared_ptr<Archive>>> archives);
+    std::vector<std::shared_ptr<Archive>> GetArchives();
+    void SetArchives(std::vector<std::shared_ptr<Archive>> archives);
     size_t RemoveArchive(std::shared_ptr<Archive> archive);
     size_t RemoveArchive(const std::string& path);
 
