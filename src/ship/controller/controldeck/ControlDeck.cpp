@@ -39,23 +39,8 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
 
-    // Assign different gamepads to each port without config
-    // Get all connected gamepad instance IDs
-    auto connectedGamepadNames = mConnectedPhysicalDeviceManager->GetConnectedSDLGamepadNames();
-    std::vector<int32_t> gamepadInstanceIds;
-    for (const auto& [instanceId, name] : connectedGamepadNames) {
-        gamepadInstanceIds.push_back(instanceId);
-    }
-
-    // Start from index 1 since index 0 is typically used by port 0
-    size_t gamepadIndex = 1;
     for (size_t i = 1; i < mPorts.size(); i++) {
         if (!mPorts[i]->GetConnectedController()->HasConfig()) {
-            // If we have an available gamepad for this port, unignore it
-            if (gamepadIndex < gamepadInstanceIds.size()) {
-                mConnectedPhysicalDeviceManager->UnignoreInstanceIdForPort(i, gamepadInstanceIds[gamepadIndex]);
-                gamepadIndex++;
-            }
             mPorts[i]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
         }
     }

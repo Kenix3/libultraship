@@ -52,6 +52,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
     mConnectedSDLGamepads.clear();
     mConnectedSDLGamepadNames.clear();
 
+    uint8_t port = 0;
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
         // skip if this SDL joystick isn't a Gamepad
         if (!SDL_IsGameController(i)) {
@@ -65,9 +66,13 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         mConnectedSDLGamepads[instanceId] = gamepad;
         mConnectedSDLGamepadNames[instanceId] = name;
 
-        for (uint8_t port = 1; port < 4; port++) {
-            mIgnoredInstanceIds[port].insert(instanceId);
+        for (uint8_t j = 0; j < 4; j++) {
+            if (port == j) {
+                continue;
+            }
+            mIgnoredInstanceIds[j].insert(instanceId);
         }
+        port++;
     }
 }
 } // namespace Ship
