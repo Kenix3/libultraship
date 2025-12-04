@@ -45,11 +45,11 @@ size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
 ResourceManager::ResourceManager() {
 }
 
-void ResourceManager::Init(const std::vector<std::string>& archivePaths,
+void ResourceManager::Init(const std::vector<std::string>& archiveList,
                            const std::unordered_set<uint32_t>& validHashes, int32_t reservedThreadCount) {
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
-    GetArchiveManager()->Init(archivePaths, validHashes);
+    GetArchiveManager()->Init(archiveList, validHashes);
 
     // the extra `- 1` is because we reserve an extra thread for spdlog
     size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));

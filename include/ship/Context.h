@@ -71,7 +71,7 @@ class Context {
                      spdlog::level::level_enum releaseBuildLogLevel = spdlog::level::warn);
     bool InitConfiguration();
     bool InitConsoleVariables();
-    bool InitResourceManager(const std::vector<std::string>& archivePaths = {},
+    bool InitResourceManager(const std::optional<std::vector<std::string>>& archiveList = std::nullopt,
                              const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
     bool InitControlDeck(std::shared_ptr<ControlDeck> controlDeck = nullptr);
     bool InitCrashHandler();
