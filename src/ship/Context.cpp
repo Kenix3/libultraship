@@ -86,11 +86,11 @@ Context::Context(std::string name, std::string shortName, std::string configFile
     : mConfigFilePath(std::move(configFilePath)), mName(std::move(name)), mShortName(std::move(shortName)) {
 }
 
-bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
+bool Context::Init(const std::optional<std::vector<std::string>>& archiveList, const std::unordered_set<uint32_t>& validHashes,
                    uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window,
                    std::shared_ptr<ControlDeck> controlDeck) {
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
-           InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
+           InitResourceManager(archiveList, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
            InitFileDropMgr();
 }
