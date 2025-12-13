@@ -39,11 +39,13 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
 
+#ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
     for (size_t i = 1; i < mPorts.size(); i++) {
         if (!mPorts[i]->GetConnectedController()->HasConfig()) {
             mPorts[i]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
         }
     }
+#endif
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {

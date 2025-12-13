@@ -1,4 +1,7 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
+#include <cstdint>
 
 namespace Ship {
 ConnectedPhysicalDeviceManager::ConnectedPhysicalDeviceManager() {
@@ -52,6 +55,12 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
     mConnectedSDLGamepads.clear();
     mConnectedSDLGamepadNames.clear();
 
+#ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
+    for (uint8_t i = 0; i < 4; i++) {
+        mIgnoredInstanceIds[i].clear();
+    }
+#endif
+
     uint8_t port = 0;
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
         // skip if this SDL joystick isn't a Gamepad
@@ -66,6 +75,25 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         mConnectedSDLGamepads[instanceId] = gamepad;
         mConnectedSDLGamepadNames[instanceId] = name;
 
+#ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
+        // Check if auto-configure controllers is enabled (default: enabled/1)
+        bool autoConfigureEnabled = Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
+
+        // Only auto-assign controllers to specific ports if enabled
+        if (autoConfigureEnabled) {
+            for (uint8_t j = 0; j < 4; j++) {
+                if (port == j) {
+                    continue;
+                }
+                mIgnoredInstanceIds[j].insert(instanceId);
+            }
+            port++;
+        } else {
+            for (uint8_t p = 1; p < 4; p++) {
+                mIgnoredInstanceIds[p].insert(instanceId);
+            }
+        }
+#else
         for (uint8_t j = 0; j < 4; j++) {
             if (port == j) {
                 continue;
@@ -73,6 +101,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             mIgnoredInstanceIds[j].insert(instanceId);
         }
         port++;
+#endif
     }
 }
 } // namespace Ship
