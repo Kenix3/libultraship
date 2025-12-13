@@ -94,10 +94,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             }
         }
 #else
-        for (uint8_t j = 0; j < 4; j++) {
-            if (port == j) {
-                continue;
-            }
+        for (uint8_t j = 1; j < 4; j++) {
             mIgnoredInstanceIds[j].insert(instanceId);
         }
         port++;
