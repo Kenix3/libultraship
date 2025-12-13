@@ -77,7 +77,8 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
 
 #ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
         // Check if auto-configure controllers is enabled (default: enabled/1)
-        bool autoConfigureEnabled = Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
+        bool autoConfigureEnabled =
+            Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
 
         // Only auto-assign controllers to specific ports if enabled
         if (autoConfigureEnabled) {

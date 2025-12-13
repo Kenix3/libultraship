@@ -1396,15 +1396,19 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 void InputEditorWindow::DrawElement() {
 #ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
     // Checkbox for auto-configure controllers
-    bool autoConfigureControllers = Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
-    if (ImGui::Checkbox("Auto-configure controllers (assign each controller to a specific port) (Experimental)", &autoConfigureControllers)) {
-        Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, autoConfigureControllers ? 1 : 0);
+    bool autoConfigureControllers =
+        Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
+    if (ImGui::Checkbox("Auto-configure controllers (assign each controller to a specific port) (Experimental)",
+                        &autoConfigureControllers)) {
+        Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS,
+                                                                  autoConfigureControllers ? 1 : 0);
         Context::GetInstance()->GetConsoleVariables()->Save();
         // Refresh connected gamepads to apply the new setting
         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->RefreshConnectedSDLGamepads();
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("When enabled, each connected controller is automatically assigned to a specific port.\nWhen disabled, all controllers are available on all ports.");
+        ImGui::SetTooltip("When enabled, each connected controller is automatically assigned to a specific port.\nWhen "
+                          "disabled, all controllers are available on all ports.");
     }
     ImGui::Separator();
 #endif
