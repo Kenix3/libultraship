@@ -131,16 +131,20 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self) {
         DXGIDevice->Release();
     }
 
+    bool SoftwareFallback = false;
+
     if (FAILED(res)) {
+        SoftwareFallback = true;
         sprintf(full_message,
-                "Failed to create a D3D device on %s\n\nHRESULT: 0x%08X",
+                "Failed to create a D3D device on %s\nFalling back to software renderer.\nHRESULT: 0x%08X",
                 adapterNameCStr, res);
         MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
     }
 
     else if (self->mFeatureLevel < D3D_FEATURE_LEVEL_10_0) {
+        SoftwareFallback = true;
         sprintf(full_message,
-                "%s doesn't support D3D feature level 10_0 or greater.",
+                "%s doesn't support D3D feature level 10_0 or greater.\nFalling back to software renderer.",
                 adapterNameCStr);
         MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
 
@@ -151,13 +155,26 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self) {
             self->mDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &features,
                                                sizeof(D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS));
             if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
+                SoftwareFallback = true;
 
                 sprintf(full_message,
-                        "%s doesn't support compute shaders / DirectCompute.",
+                        "%s doesn't support compute shaders / DirectCompute.\nFalling back to software renderer.",
                         adapterNameCStr);
                 MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
             }
         }
+    }
+
+    if (SoftwareFallback) {
+        if (self->mContext) {
+            self->mContext->Release();
+        }
+        if (self->mDevice) {
+            self->mDevice->Release();
+        }
+        res = self->mDX11CreateDevice(NULL, D3D_DRIVER_TYPE_WARP, nullptr, device_creation_flags, NULL, NULL,
+                                      D3D11_SDK_VERSION, self->mDevice.GetAddressOf(), &self->mFeatureLevel,
+                                      self->mContext.GetAddressOf());
     }
 
     ThrowIfFailed(res, self->mWindowBackend->GetWindowHandle(), "Failed to create D3D11 device.");
