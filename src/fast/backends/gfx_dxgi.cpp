@@ -975,8 +975,7 @@ void GfxWindowBackendDXGI::SetMaxFrameLatency(int latency) {
 }
 
 void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, class GfxRenderingAPIDX11* self,
-                                                  bool (*createFunc)(class GfxRenderingAPIDX11* self,
-                                                                     IDXGIAdapter1* adapter, bool test_only)) {
+                                                  bool (*createFunc)(class GfxRenderingAPIDX11* self)) {
     if (CreateDXGIFactory2 != nullptr) {
         ThrowIfFailed(CreateDXGIFactory2(debug ? DXGI_CREATE_FACTORY_DEBUG : 0, __uuidof(IDXGIFactory2), &mFactory));
     } else {
@@ -997,18 +996,7 @@ void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, c
         mTearingSupport = SUCCEEDED(hr) && allowTearing;
     }
 
-    ComPtr<IDXGIAdapter1> adapter;
-    for (UINT i = 0; mFactory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; i++) {
-        DXGI_ADAPTER_DESC1 desc;
-        adapter->GetDesc1(&desc);
-        if (desc.Flags & 2 /*DXGI_ADAPTER_FLAG_SOFTWARE*/) { // declaration missing in mingw headers
-            continue;
-        }
-        if (createFunc(self, adapter.Get(), true)) {
-            break;
-        }
-    }
-    createFunc(self, adapter.Get(), false);
+    createFunc(self);
 }
 
 void GfxWindowBackendDXGI::CreateSwapChain(IUnknown* mDevice, std::function<void()>&& before_destroy_fn) {
