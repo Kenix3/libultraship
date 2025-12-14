@@ -97,26 +97,21 @@ void GfxRenderingAPIDX11::CreateDepthStencilObjects(uint32_t width, uint32_t hei
         ThrowIfFailed(mDevice->CreateShaderResourceView(texture.Get(), &srv_desc, srv));
     }
 }
-static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, IDXGIAdapter1* adapter, bool test_only) {
+static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self) {
 #if DEBUG_D3D
     UINT device_creation_flags = D3D11_CREATE_DEVICE_DEBUG;
 #else
     UINT device_creation_flags = 0;
 #endif
-    D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
+    // D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
 
-    HRESULT res = self->mDX11CreateDevice(adapter,
-                                          D3D_DRIVER_TYPE_UNKNOWN, // since we use a specific adapter
-                                          nullptr, device_creation_flags, FeatureLevels, ARRAYSIZE(FeatureLevels),
-                                          D3D11_SDK_VERSION, test_only ? nullptr : self->mDevice.GetAddressOf(),
-                                          &self->mFeatureLevel, test_only ? nullptr : self->mContext.GetAddressOf());
+    HRESULT res = self->mDX11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, nullptr, device_creation_flags, NULL, NULL,
+                                          D3D11_SDK_VERSION, self->mDevice.GetAddressOf(), &self->mFeatureLevel,
+                                          self->mContext.GetAddressOf());
 
-    if (test_only) {
-        return SUCCEEDED(res);
-    } else {
-        ThrowIfFailed(res, self->mWindowBackend->GetWindowHandle(), "Failed to create D3D11 device.");
-        return true;
-    }
+
+    ThrowIfFailed(res, self->mWindowBackend->GetWindowHandle(), "Failed to create D3D11 device.");
+    return SUCCEEDED(res);
 };
 
 void GfxRenderingAPIDX11::Init() {
