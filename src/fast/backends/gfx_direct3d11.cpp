@@ -109,6 +109,56 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self) {
                                           D3D11_SDK_VERSION, self->mDevice.GetAddressOf(), &self->mFeatureLevel,
                                           self->mContext.GetAddressOf());
 
+    // Get name of adapter
+    IDXGIDevice* DXGIDevice = nullptr;
+    IDXGIAdapter* Adapter = nullptr;
+    DXGI_ADAPTER_DESC adapterDesc;
+    std::wstring adapterName;
+    char adapterNameCStr[128];
+    char full_message[256];
+    HRESULT res2;
+    res2 = self->mDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&DXGIDevice);
+    if (SUCCEEDED(res2)) {
+        res2 = DXGIDevice->GetAdapter(&Adapter);
+        if (SUCCEEDED(res2)) {
+            res2 = Adapter->GetDesc(&adapterDesc);
+            if (SUCCEEDED(res2)) {
+                adapterName = adapterDesc.Description;
+                wcstombs(adapterNameCStr, adapterName.c_str(), 128);
+            }
+            Adapter->Release();
+        }
+        DXGIDevice->Release();
+    }
+
+    if (FAILED(res)) {
+        sprintf(full_message,
+                "Failed to create a D3D device on %s\n\nHRESULT: 0x%08X",
+                adapterNameCStr, res);
+        MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
+    }
+
+    else if (self->mFeatureLevel < D3D_FEATURE_LEVEL_10_0) {
+        sprintf(full_message,
+                "%s doesn't support D3D feature level 10_0 or greater.",
+                adapterNameCStr);
+        MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
+
+    } else {
+        // Check for Compute Shader support
+        if (self->mDevice != NULL) {
+            D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS features;
+            self->mDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &features,
+                                               sizeof(D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS));
+            if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
+
+                sprintf(full_message,
+                        "%s doesn't support compute shaders / DirectCompute.",
+                        adapterNameCStr);
+                MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
+            }
+        }
+    }
 
     ThrowIfFailed(res, self->mWindowBackend->GetWindowHandle(), "Failed to create D3D11 device.");
     return SUCCEEDED(res);
