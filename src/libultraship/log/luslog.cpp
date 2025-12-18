@@ -20,4 +20,9 @@ void lusprintf(const char* file, int32_t line, int32_t logLevel, const char* fmt
     vsnprintf(buffer, sizeof(buffer), fmt, args);
     luslog(file, line, logLevel, buffer);
 }
+
+void luslog_err(const char* msg) {
+    std::string str(msg);
+    spdlog::error(str);
+}
 }
