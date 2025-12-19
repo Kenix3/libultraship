@@ -165,7 +165,7 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
             D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS features;
             self->mDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &features,
                                                sizeof(D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS));
-            if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == true) {
+            if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
                 CreationFailed = true;
                 sprintf(log_message, "D3D adapter doesn't support compute shaders.");
                 sprintf(error_message, "%s doesn't support compute shaders.%s", adapterNameCStr,
