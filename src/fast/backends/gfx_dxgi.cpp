@@ -975,7 +975,8 @@ void GfxWindowBackendDXGI::SetMaxFrameLatency(int latency) {
 }
 
 void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, class GfxRenderingAPIDX11* self,
-                                                  bool (*createFunc)(class GfxRenderingAPIDX11* self)) {
+                                                  bool (*createFunc)(class GfxRenderingAPIDX11* self,
+                                                                     bool SoftwareRenderer)) {
     if (CreateDXGIFactory2 != nullptr) {
         ThrowIfFailed(CreateDXGIFactory2(debug ? DXGI_CREATE_FACTORY_DEBUG : 0, __uuidof(IDXGIFactory2), &mFactory));
     } else {
@@ -996,7 +997,9 @@ void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, c
         mTearingSupport = SUCCEEDED(hr) && allowTearing;
     }
 
-    createFunc(self);
+    if (!createFunc(self, false)) {
+        createFunc(self, true);
+    }
 }
 
 void GfxWindowBackendDXGI::CreateSwapChain(IUnknown* mDevice, std::function<void()>&& before_destroy_fn) {
