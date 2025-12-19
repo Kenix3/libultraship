@@ -97,26 +97,39 @@ void GfxRenderingAPIDX11::CreateDepthStencilObjects(uint32_t width, uint32_t hei
         ThrowIfFailed(mDevice->CreateShaderResourceView(texture.Get(), &srv_desc, srv));
     }
 }
-static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self) {
+static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRenderer) {
 #if DEBUG_D3D
     UINT device_creation_flags = D3D11_CREATE_DEVICE_DEBUG;
 #else
     UINT device_creation_flags = 0;
 #endif
-    // D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
+    bool CreationFailed = false;
+    const char HardwareText[319] = "\nUsing software renderer. Performance issues are to be expected.\n\n"
+                                   "Please check your prefered GPU in Windows graphics or GPU driver settings and make "
+                                   "sure you have the correct GPU drivers installed.\n\n"
+                                   "You can also try to change the graphic backend of the port in its config file.\n"
+                                   "Window->Backend->Id\n"
+                                   "0 = DX11, 1 = OpenGL";
+    const char SoftwareText[42] = "\nUsing software renderer failed. Exiting.";
 
-    HRESULT res = self->mDX11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, nullptr, device_creation_flags, NULL, NULL,
-                                          D3D11_SDK_VERSION, self->mDevice.GetAddressOf(), &self->mFeatureLevel,
-                                          self->mContext.GetAddressOf());
+    if (SoftwareRenderer) {
+        SPDLOG_INFO("Using software renderer.");
+    }
 
-    // Get name of adapter
+    HRESULT res = self->mDX11CreateDevice(
+        NULL, SoftwareRenderer ? D3D_DRIVER_TYPE_WARP : D3D_DRIVER_TYPE_HARDWARE, nullptr, device_creation_flags, NULL,
+        NULL, D3D11_SDK_VERSION, self->mDevice.GetAddressOf(), &self->mFeatureLevel, self->mContext.GetAddressOf());
+
+    // Get and log name of adapter
     IDXGIDevice* DXGIDevice = nullptr;
     IDXGIAdapter* Adapter = nullptr;
     DXGI_ADAPTER_DESC adapterDesc;
     std::wstring adapterName;
-    char adapterNameCStr[128];
-    char full_message[256];
+    char adapterNameCStr[128] = "";
+    char log_message[256];
+    char error_message[512];
     HRESULT res2;
+
     res2 = self->mDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&DXGIDevice);
     if (SUCCEEDED(res2)) {
         res2 = DXGIDevice->GetAdapter(&Adapter);
@@ -130,23 +143,21 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self) {
         }
         DXGIDevice->Release();
     }
-
-    bool SoftwareFallback = false;
+    sprintf(log_message, "Using D3D adapter: %s", adapterNameCStr);
+    SPDLOG_INFO(log_message);
 
     if (FAILED(res)) {
-        SoftwareFallback = true;
-        sprintf(full_message,
-                "Failed to create a D3D device on %s\nFalling back to software renderer.\nHRESULT: 0x%08X",
-                adapterNameCStr, res);
-        MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
+        CreationFailed = true;
+        sprintf(log_message, "Failed to create a D3D device. HRESULT: 0x%08X", res);
+        sprintf(error_message, "Failed to create a D3D device on %s\nHRESULT: 0x%08X%s", adapterNameCStr, res,
+                SoftwareRenderer ? SoftwareText : HardwareText);
     }
 
     else if (self->mFeatureLevel < D3D_FEATURE_LEVEL_10_0) {
-        SoftwareFallback = true;
-        sprintf(full_message,
-                "%s doesn't support D3D feature level 10_0 or greater.\nFalling back to software renderer.",
-                adapterNameCStr);
-        MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
+        CreationFailed = true;
+        sprintf(log_message, "D3D adapter doesn't support D3D feature level 10_0 or greater.");
+        sprintf(error_message, "%s doesn't support D3D feature level 10_0 or greater.%s", adapterNameCStr,
+                SoftwareRenderer ? SoftwareText : HardwareText);
 
     } else {
         // Check for Compute Shader support
@@ -154,31 +165,33 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self) {
             D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS features;
             self->mDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &features,
                                                sizeof(D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS));
-            if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
-                SoftwareFallback = true;
-
-                sprintf(full_message,
-                        "%s doesn't support compute shaders / DirectCompute.\nFalling back to software renderer.",
-                        adapterNameCStr);
-                MessageBoxA(self->mWindowBackend->GetWindowHandle(), full_message, "Warning", MB_OK | MB_ICONWARNING);
+            if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == true) {
+                CreationFailed = true;
+                sprintf(log_message, "D3D adapter doesn't support compute shaders.");
+                sprintf(error_message, "%s doesn't support compute shaders.%s", adapterNameCStr,
+                        SoftwareRenderer ? SoftwareText : HardwareText);
             }
         }
     }
 
-    if (SoftwareFallback) {
+    if (CreationFailed) {
         if (self->mContext) {
             self->mContext->Release();
         }
         if (self->mDevice) {
             self->mDevice->Release();
         }
-        res = self->mDX11CreateDevice(NULL, D3D_DRIVER_TYPE_WARP, nullptr, device_creation_flags, NULL, NULL,
-                                      D3D11_SDK_VERSION, self->mDevice.GetAddressOf(), &self->mFeatureLevel,
-                                      self->mContext.GetAddressOf());
+        if (SoftwareRenderer) {
+            SPDLOG_ERROR(log_message);
+            MessageBoxA(self->mWindowBackend->GetWindowHandle(), error_message, "Error", MB_OK | MB_ICONERROR);
+            throw;
+        } else {
+            SPDLOG_WARN(log_message);
+            MessageBoxA(self->mWindowBackend->GetWindowHandle(), error_message, "Warning", MB_OK | MB_ICONWARNING);
+            return false;
+        }
     }
-
-    ThrowIfFailed(res, self->mWindowBackend->GetWindowHandle(), "Failed to create D3D11 device.");
-    return SUCCEEDED(res);
+    return true;
 };
 
 void GfxRenderingAPIDX11::Init() {
