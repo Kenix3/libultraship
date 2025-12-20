@@ -1407,7 +1407,8 @@ void InputEditorWindow::DrawElement() {
         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->RefreshConnectedSDLGamepads();
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("when it's disabled, all controllers are set to work on the first port (and ignored on the others by default)");
+        ImGui::SetTooltip("when it's disabled, all controllers are set to work on the first port (and ignored on the "
+                          "others by default)");
     }
     ImGui::Separator();
 #endif
