@@ -59,9 +59,10 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
     for (uint8_t i = 0; i < 4; i++) {
         mIgnoredInstanceIds[i].clear();
     }
-#endif
 
     uint8_t port = 0;
+#endif
+
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
         // skip if this SDL joystick isn't a Gamepad
         if (!SDL_IsGameController(i)) {
@@ -76,7 +77,6 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         mConnectedSDLGamepadNames[instanceId] = name;
 
 #ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
-        // Check if auto-configure controllers is enabled (default: enabled/1)
         bool autoConfigureEnabled =
             Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
 
@@ -95,10 +95,9 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             }
         }
 #else
-        for (uint8_t j = 1; j < 4; j++) {
-            mIgnoredInstanceIds[j].insert(instanceId);
+        for (uint8_t port = 1; port < 4; port++) {
+            mIgnoredInstanceIds[port].insert(instanceId);
         }
-        port++;
 #endif
     }
 }
