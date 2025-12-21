@@ -55,7 +55,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
     mConnectedSDLGamepads.clear();
     mConnectedSDLGamepadNames.clear();
 
-#ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
+#ifdef ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS
     for (uint8_t i = 0; i < 4; i++) {
         mIgnoredInstanceIds[i].clear();
     }
@@ -76,7 +76,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         mConnectedSDLGamepads[instanceId] = gamepad;
         mConnectedSDLGamepadNames[instanceId] = name;
 
-#ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
+#ifdef ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS
         bool autoConfigureEnabled =
             Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
 

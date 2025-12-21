@@ -1394,7 +1394,7 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 }
 
 void InputEditorWindow::DrawElement() {
-#ifdef ENABLE_EXP_AUTO_CONFIGURE_CONTROLLERS
+#ifdef ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS
     // Checkbox for auto-configure controllers
     bool autoConfigureControllers =
         Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
