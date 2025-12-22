@@ -1,4 +1,5 @@
 #include "ship/window/gui/InputEditorWindow.h"
+#include "imgui.h"
 #include "ship/Context.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/utils/StringHelper.h"
@@ -1393,6 +1394,26 @@ void InputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 }
 
 void InputEditorWindow::DrawElement() {
+#ifdef ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS
+    // Checkbox for auto-configure controllers
+    bool autoMultiplayerControllers =
+        Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_MULTIPLAYER_CONTROLLERS, 0);
+    if (ImGui::Checkbox(
+            "Automatically configure controllers (assign each controller to a specific port) (Experimental)",
+            &autoMultiplayerControllers)) {
+        Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_AUTO_MULTIPLAYER_CONTROLLERS,
+                                                                  autoMultiplayerControllers ? 1 : 0);
+        Context::GetInstance()->GetConsoleVariables()->Save();
+        // Refresh connected gamepads to apply the new setting
+        Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->RefreshConnectedSDLGamepads();
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("when it's disabled, all controllers are set to work on the first port (and ignored on the "
+                          "others by default)");
+    }
+    ImGui::Separator();
+#endif
+
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
     for (uint8_t i = 0; i < 4; i++) {
         DrawPortTab(i);

@@ -107,6 +107,9 @@ target_link_libraries(libultraship PUBLIC prism)
 #=================== Compile Options & Defs ===================
 
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
+if(ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS)
+    add_compile_definitions(ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS)
+endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(${PROJECT_NAME} PRIVATE

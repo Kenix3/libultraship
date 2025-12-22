@@ -26,6 +26,7 @@ set(ADDITIONAL_LIB_INCLUDES "")
 # ========= Configuration Options =========
 option(INCLUDE_MPQ_SUPPORT "Enable StormLib and MPQ archive support" OFF)
 option(GBI_UCODE "Specify the GBI ucode version" F3DEX_GBI_2)
+option(ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS "Experimental: add support for an alternate default controller-to-port routing where the first four SDL controllers use distinct player ports" OFF)
 
 # =========== Dependencies =============
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
