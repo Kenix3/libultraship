@@ -1397,10 +1397,11 @@ void InputEditorWindow::DrawElement() {
 #ifdef ENABLE_EXP_AUTO_MULTIPLAYER_CONTROLLERS
     // Checkbox for auto-configure controllers
     bool autoConfigureControllers =
-        Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS, 0);
-    if (ImGui::Checkbox("Auto-configure controllers (assign each controller to a specific port) (Experimental)",
-                        &autoConfigureControllers)) {
-        Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_AUTO_CONFIGURE_CONTROLLERS,
+        Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_AUTO_MULTIPLAYER_CONTROLLERS, 0);
+    if (ImGui::Checkbox(
+            "Automatically configure controllers (assign each controller to a specific port) (Experimental)",
+            &autoConfigureControllers)) {
+        Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_AUTO_MULTIPLAYER_CONTROLLERS,
                                                                   autoConfigureControllers ? 1 : 0);
         Context::GetInstance()->GetConsoleVariables()->Save();
         // Refresh connected gamepads to apply the new setting
