@@ -104,9 +104,9 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
     UINT device_creation_flags = 0;
 #endif
     bool CreationFailed = false;
-    const char HardwareText[319] = "\nUsing software renderer. Performance issues are to be expected.\n\n"
-                                   "Please check your prefered GPU in Windows graphics or GPU driver settings and make "
-                                   "sure you have the correct GPU drivers installed.\n\n"
+    const char HardwareText[320] = "\nUsing software renderer. Performance issues are to be expected.\n\n"
+                                   "Please check your preferred GPU in Windows graphics or GPU driver settings and "
+                                   "make sure you have the correct GPU drivers installed.\n\n"
                                    "You can also try to change the graphic backend of the port in its config file.\n"
                                    "Window->Backend->Id\n"
                                    "0 = DX11, 1 = OpenGL";
