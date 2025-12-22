@@ -1515,7 +1515,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     uint32_t tm = 0;
     uint32_t tex_width[2], tex_height[2], tex_width2[2], tex_height2[2];
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
         uint32_t tile = mRdp->first_tile_index + i;
         if (comb->usedTextures[i]) {
             if (mRdp->textures_changed[i]) {
@@ -1557,15 +1557,30 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
             tex_width[i] = line_size;
 
+
             if (mRdp->texture_tile[tile].interpolate == 1) {
                 if (mInterpolationIndex < mScrollingTextureInterpolation.size()) {
                     TextureInterpValues& data = mScrollingTextureInterpolation[mInterpolationIndex];
+                    
+                   // printf("interp %d %f %f %f %f\n", mInterpolationIndex, data.lrs, data.lrt, data.uls, data.ult);
                     mRdp->texture_tile[tile].lrs = data.lrs;
                     mRdp->texture_tile[tile].lrt = data.lrt;
                     mRdp->texture_tile[tile].uls = data.uls;
                     mRdp->texture_tile[tile].ult = data.ult;
                 }
             }
+
+            // if (mRdp->texture_tile[tile].interpolate == 1) {
+            //     if (mInterpolationIndex < mRdp->texture_tile[tile].vecInterp.size()) {
+            //         TextureInterpValues& data = mRdp->texture_tile[tile].vecInterp[mInterpolationIndex];
+                    
+            //         printf("interp %f %f %f %f %f\n", mInterpolationIndex, data.lrs, data.lrt, data.uls, data.ult);
+            //         mRdp->texture_tile[tile].lrs = data.lrs;
+            //         mRdp->texture_tile[tile].lrt = data.lrt;
+            //         mRdp->texture_tile[tile].uls = data.uls;
+            //         mRdp->texture_tile[tile].ult = data.ult;
+            //     }
+            // }
 
             tex_width2[i] = (mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4;
             tex_height2[i] = (mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4;
@@ -2017,8 +2032,9 @@ void Interpreter::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uin
     mRdp->textures_changed[1] = true;
 }
 
-void Interpreter::GfxDpSetTileInterp(uint8_t tile) {
-    mRdp->texture_tile[tile].interpolate = true;
+void Interpreter::GfxDpSetTileInterp(TextureInterpValues& interp) {
+    mRdp->texture_tile[interp.tile].interpolate = true;
+   // mRdp->texture_tile[interp.tile].vecInterp.push_back(interp);
 }
 
 void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
@@ -3646,38 +3662,61 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     /** Get Values **/
     tile = C1(24, 3);
     ++(*cmd0);
-    x = ((*cmd0)->words.w0 >> 32) & 0xFFFFFFFF;
-    y = (*cmd0)->words.w0 & 0xFFFFFFFF;
+    x = (int32_t) ((*cmd0)->words.w0 >> 32);
+    y = (int32_t) (*cmd0)->words.w0;
 
-    width = ((*cmd0)->words.w1 >> 32) & 0xFFFFFFFF;
-    height = (*cmd0)->words.w1 & 0xFFFFFFFF;
+    width = (int32_t) ((*cmd0)->words.w1 >> 32);
+    height = (int32_t) (*cmd0)->words.w1;
 
     ++(*cmd0);
 
-    stepX = ((*cmd0)->words.w0 >> 32) & 0xFFFFFFFF;
-    stepY = (*cmd0)->words.w0 & 0xFFFFFFFF;
+    stepX = (int32_t) ((*cmd0)->words.w0 >> 32);
+    stepY = (int32_t) (*cmd0)->words.w0;
+
 
     /** Interpolate **/
     uint32_t interpFrames = Ship::Context::GetInstance()->GetWindow()->GetCurrentRefreshRate();
     interpFrames /= ceil((60.0f / 2)); /* gVIsPerFrame */
 
-    gfx->bScrollingTexture = true;
+    uint64_t frameCount = Ship::Context::GetInstance()->GetWindow()->mFrameCount;
 
-    lrs = (float)x;
-    lrt = (float)y;
+    x *= (float)(frameCount);
+    y *= (float)(frameCount);
+
+    x %= 2048;
+    y %= 2048;
+
+    lrs = x;
+    lrt = y;
 
     incX = (float)stepX / (float)interpFrames;
     incY = (float)stepY / (float)interpFrames;
-
+TextureInterpValues interp;
     for (size_t i = 0; i < interpFrames; i++) {
-        gfx->mScrollingTextureInterpolation.push_back({tile, lrs, lrt, (lrs + ((width - 1) << 2)), (lrt + ((height - 1) << 2))});
+        //printf("tile %d lrs %f lrt %f uls %f ult %f\n", tile, lrs, lrt, (lrs + ((width - 1))), (lrt + ((height - 1) )));
+        gfx->mScrollingTextureInterpolation.push_back({tile, lrs, lrt, (lrs + ((width - 1))), (lrt + ((height - 1) ))});
+
+        interp = {
+            tile, lrs, lrt, (lrs + ((width - 1))), (lrt + ((height - 1) ))
+        };
 
         lrs += incX;
         lrt += incY;
     }
 
-    gfx->GfxDpSetTileInterp(tile);
+       gfx->GfxDpSetTileInterp(interp);
+//    gfx->GfxDpSetTileSize(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
 
+    return false;
+}
+
+bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    Interpreter* gfx = mInstance.lock().get();
+
+    gfx->mInterpolationIndexTarget = cmd->words.w1;
+
+    //gfx->mInterpolationIndexTarget = GetInterpolationFrameCount();
     return false;
 }
 
@@ -3945,13 +3984,15 @@ class UcodeHandler {
 };
 
 static constexpr UcodeHandler rdpHandlers = {
+    { RDP_G_SETTARGETINTERPINDEX,
+      { "G_SETTARGETINTERPINDEX", gfx_set_interpolation_index_target } }, // G_SETTARGETINTERPINDEX
     { RDP_G_SETTILESIZE_INTERP,
       { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },            // G_SETTILESIZE_INTERP
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "mRdpLOADSYNC", gfx_stubbed_command_handler } },          // mRdpLOADSYNC (-26)
     { RDP_G_RDPPIPESYNC, { "mRdpPIPESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-25)
-    { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_tile_sync } },          // mRdpPIPESYNC (-24)
+    { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-24)
     { RDP_G_RDPFULLSYNC, { "mRdpFULLSYNC", gfx_stubbed_command_handler } },          // mRdpFULLSYNC (-23)
     { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_SetScissor_handler_rdp } },            // G_SETSCISSOR (-19)
     { RDP_G_SETPRIMDEPTH, { "G_SETPRIMDEPTH", gfx_set_prim_depth_handler_rdp } },    // G_SETPRIMDEPTH (-18)
@@ -4146,6 +4187,10 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
 static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
+
+    //printf("command %llX %llX 0x%llX\n", cmd->words.w0, cmd->words.w1, &cmd->words.w0);
+
+
     int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
 #ifdef USE_GBI_TRACE
@@ -4158,9 +4203,12 @@ static void gfx_step() {
     " - W0: {:08X}\n"                          \
     " - W1: {:08X}\n"                          \
     "===================================="
-        SPDLOG_INFO(TRACE, (uint8_t)opcode, cmd->words.trace.file, cmd->words.trace.idx, cmd->words.w0, cmd->words.w1);
     }
 #endif
+    //printf("op %d w0 %llX w1 %llX\n",(uint8_t)opcode, cmd->words.w0, cmd->words.w1);
+    if (cmd->words.w0 == 0x44) {
+       printf("asdf\n");
+    }
 
     if (opcode == F3DEX2_G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
