@@ -255,6 +255,15 @@ struct RSP {
     ShaderMod current_shader;
 };
 
+
+struct TextureInterpValues {
+    uint32_t tile;
+    float lrs;
+    float lrt;
+    float uls;
+    float ult;
+};
+
 struct RDP {
     const uint8_t* palettes[2];
     struct {
@@ -286,6 +295,7 @@ struct RDP {
         uint8_t palette;
         uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively
         uint8_t interpolate;
+        std::vector<TextureInterpValues> vecInterp;
     } texture_tile[8];
     bool textures_changed[2];
 
@@ -429,7 +439,7 @@ class Interpreter {
     void GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette,
                       uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks, uint32_t shifts);
     void GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uint16_t lrs, uint16_t lrt);
-    void GfxDpSetTileInterp(uint8_t tile);
+    void GfxDpSetTileInterp(TextureInterpValues& interp);
     void GfxDpLoadTlut(uint8_t tile, uint32_t high_index);
     void GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt);
     void GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt);
@@ -520,15 +530,6 @@ class Interpreter {
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
 
-    struct TextureInterpValues {
-        uint32_t tile;
-        float lrs;
-        float lrt;
-        float uls;
-        float ult;
-    };
-
-    bool bScrollingTexture;
     std::vector<TextureInterpValues> mScrollingTextureInterpolation;
 };
 
