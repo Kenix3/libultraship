@@ -3221,8 +3221,6 @@ typedef union Gfx {
         _g->words.w1 = index;                        \
     })
 
-#define __gDPSetTileSizeInterp(pkt, t, uls, ult, lrs, lrt) \
-    gDPLoadTileGeneric(pkt, G_SETTILESIZE_INTERP, t, uls, ult, lrs, lrt)
 #define gDPSetTileSize(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gsDPSetTileSize(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gDPLoadTile(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_LOADTILE, t, uls, ult, lrs, lrt)
