@@ -82,6 +82,8 @@ class Window {
     void SetFullscreenScancode(int32_t scancode);
     void SetMouseCaptureScancode(int32_t scancode);
 
+    uint64_t mFrameCount;
+
   protected:
     void SetWindowBackend(WindowBackend backend);
     void AddAvailableWindowBackend(WindowBackend backend);
