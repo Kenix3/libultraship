@@ -255,15 +255,6 @@ struct RSP {
     ShaderMod current_shader;
 };
 
-
-struct TextureInterpValues {
-    uint32_t tile;
-    float lrs;
-    float lrt;
-    float uls;
-    float ult;
-};
-
 struct RDP {
     const uint8_t* palettes[2];
     struct {
