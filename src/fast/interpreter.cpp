@@ -36,7 +36,6 @@
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 
-
 #include "libultraship/libultra/os.h"
 
 #include <spdlog/fmt/fmt.h>
