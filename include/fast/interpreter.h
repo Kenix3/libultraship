@@ -135,7 +135,7 @@ struct GfxExecStack {
     std::stack<F3DGfx*> cmd_stack = {};
     // This is also a dlist stack but a std::vector is used to make it possible
     // to iterate on the elements.
-    // The purpose of this is to identify an instruction at a poin in time
+    // The purpose of this is to identify an instruction at a point in time
     // which would not be possible with just a F3DGfx* because a dlist can be called multiple times
     // what we do instead is store the call path that leads to the instruction (including branches)
     std::vector<const F3DGfx*> gfx_path = {};
@@ -146,7 +146,7 @@ struct GfxExecStack {
     // stack for OpenDisp/CloseDisps
     std::vector<CodeDisp> disp_stack{};
 
-    void start(F3DGfx* dlist);
+    void start(F3DGfx* stack);
     void stop();
     F3DGfx*& currCmd();
     void openDisp(const char* file, int line);
@@ -294,8 +294,6 @@ struct RDP {
         uint32_t line_size_bytes;
         uint8_t palette;
         uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively
-        uint8_t interpolate;
-        std::vector<TextureInterpValues> vecInterp;
     } texture_tile[8];
     bool textures_changed[2];
 
@@ -439,7 +437,6 @@ class Interpreter {
     void GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette,
                       uint32_t cmt, uint32_t maskt, uint32_t shiftt, uint32_t cms, uint32_t masks, uint32_t shifts);
     void GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uint16_t lrs, uint16_t lrt);
-    void GfxDpSetTileInterp(TextureInterpValues& interp);
     void GfxDpLoadTlut(uint8_t tile, uint32_t high_index);
     void GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt);
     void GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt);
@@ -527,10 +524,8 @@ class Interpreter {
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
     std::vector<std::string> shader_ids;
-    int mInterpolationIndex;
-    int mInterpolationIndexTarget;
-
-    std::vector<TextureInterpValues> mScrollingTextureInterpolation;
+    int32_t mInterpolationIndex;
+    int32_t mNumInterpolatedFrames;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
