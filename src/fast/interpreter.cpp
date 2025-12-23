@@ -1557,31 +1557,6 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
             tex_width[i] = line_size;
 
-
-            if (mRdp->texture_tile[tile].interpolate == 1) {
-                if (mInterpolationIndex < mScrollingTextureInterpolation.size()) {
-                    TextureInterpValues& data = mScrollingTextureInterpolation[mInterpolationIndex];
-                    
-                   // printf("interp %d %f %f %f %f\n", mInterpolationIndex, data.lrs, data.lrt, data.uls, data.ult);
-                    mRdp->texture_tile[tile].lrs = data.lrs;
-                    mRdp->texture_tile[tile].lrt = data.lrt;
-                    mRdp->texture_tile[tile].uls = data.uls;
-                    mRdp->texture_tile[tile].ult = data.ult;
-                }
-            }
-
-            // if (mRdp->texture_tile[tile].interpolate == 1) {
-            //     if (mInterpolationIndex < mRdp->texture_tile[tile].vecInterp.size()) {
-            //         TextureInterpValues& data = mRdp->texture_tile[tile].vecInterp[mInterpolationIndex];
-                    
-            //         printf("interp %f %f %f %f %f\n", mInterpolationIndex, data.lrs, data.lrt, data.uls, data.ult);
-            //         mRdp->texture_tile[tile].lrs = data.lrs;
-            //         mRdp->texture_tile[tile].lrt = data.lrt;
-            //         mRdp->texture_tile[tile].uls = data.uls;
-            //         mRdp->texture_tile[tile].ult = data.ult;
-            //     }
-            // }
-
             tex_width2[i] = (mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4;
             tex_height2[i] = (mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4;
 
@@ -2011,7 +1986,6 @@ void Interpreter::GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_
     mRdp->texture_tile[tile].shifts = shifts;
     mRdp->texture_tile[tile].shiftt = shiftt;
     mRdp->texture_tile[tile].line_size_bytes = line * 8;
-    mRdp->texture_tile[tile].interpolate = 0;
 
     mRdp->texture_tile[tile].tmem = tmem;
     // mRdp->texture_tile[tile].tmem_index = tmem / 256; // tmem is the 64-bit word offset, so 256 words means 2 kB
@@ -2030,11 +2004,6 @@ void Interpreter::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uin
     mRdp->texture_tile[tile].lrt = lrt;
     mRdp->textures_changed[0] = true;
     mRdp->textures_changed[1] = true;
-}
-
-void Interpreter::GfxDpSetTileInterp(TextureInterpValues& interp) {
-    mRdp->texture_tile[interp.tile].interpolate = true;
-   // mRdp->texture_tile[interp.tile].vecInterp.push_back(interp);
 }
 
 void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
@@ -2658,11 +2627,11 @@ void* Interpreter::SegAddr(uintptr_t w1) {
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
-void GfxExecStack::start(F3DGfx* dlist) {
+void GfxExecStack::start(F3DGfx* stack) {
     while (!cmd_stack.empty())
         cmd_stack.pop();
     gfx_path.clear();
-    cmd_stack.push(dlist);
+    cmd_stack.push(stack);
     disp_stack.clear();
 }
 
@@ -3653,15 +3622,28 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     Interpreter* gfx = mInstance.lock().get();
 
+    uint64_t frameCount = Ship::Context::GetInstance()->GetWindow()->mFrameCount;
     uint32_t tile;
     int32_t x, y, width, height, stepX, stepY;
-
-    float uls, ult, lrs, lrt;
+    float lrs, lrt, uls, ult;
     float incX, incY;
+
+    /** Interpolate **/
+    uint32_t interpFrames = Ship::Context::GetInstance()->GetWindow()->GetCurrentRefreshRate();
+    interpFrames /= ceil((60.0f / 2)); /* gVIsPerFrame */
+
+    // Verify the frame should be interpolated
+    if (gfx->mInterpolationIndex >= interpFrames) {
+        ++(*cmd0);
+        ++(*cmd0);
+        return false;
+    }
 
     /** Get Values **/
     tile = C1(24, 3);
+
     ++(*cmd0);
+
     x = (int32_t) ((*cmd0)->words.w0 >> 32);
     y = (int32_t) (*cmd0)->words.w0;
 
@@ -3673,50 +3655,32 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     stepX = (int32_t) ((*cmd0)->words.w0 >> 32);
     stepY = (int32_t) (*cmd0)->words.w0;
 
+    /** Calculate Interpolation **/
 
-    /** Interpolate **/
-    uint32_t interpFrames = Ship::Context::GetInstance()->GetWindow()->GetCurrentRefreshRate();
-    interpFrames /= ceil((60.0f / 2)); /* gVIsPerFrame */
-
-    uint64_t frameCount = Ship::Context::GetInstance()->GetWindow()->mFrameCount;
-
+    // Apply frameCount based translation
     x *= (float)(frameCount);
     y *= (float)(frameCount);
 
-    x %= 2048;
-    y %= 2048;
-
-    lrs = x;
-    lrt = y;
+    // Wrap values to stay within allowable bounds
+    lrs = (float) (x % 2048);
+    lrt = (float) (y % 2048);
 
     incX = (float)stepX / (float)interpFrames;
     incY = (float)stepY / (float)interpFrames;
-TextureInterpValues interp;
-    for (size_t i = 0; i < interpFrames; i++) {
-        //printf("tile %d lrs %f lrt %f uls %f ult %f\n", tile, lrs, lrt, (lrs + ((width - 1))), (lrt + ((height - 1) )));
-        gfx->mScrollingTextureInterpolation.push_back({tile, lrs, lrt, (lrs + ((width - 1))), (lrt + ((height - 1) ))});
 
-        interp = {
-            tile, lrs, lrt, (lrs + ((width - 1))), (lrt + ((height - 1) ))
-        };
+    // Calculate the interpolation for the current frame
+    lrs += incX * gfx->mInterpolationIndex;
+    lrt += incY * gfx->mInterpolationIndex;
+    uls = (float) ( lrs + ( (width - 1) ) );
+    ult = (float) ( lrt + ( (height - 1) ) );
 
-        lrs += incX;
-        lrt += incY;
-    }
+    // Apply to texture
+    gfx->mRdp->texture_tile[tile].lrs = lrs;
+    gfx->mRdp->texture_tile[tile].lrt = lrt;
+    gfx->mRdp->texture_tile[tile].uls = uls;
+    gfx->mRdp->texture_tile[tile].ult = ult;
+    // printf("tile %d lrs %f lrt %f uls %f ult %f\n", tile, lrs, lrt, uls, ult);
 
-       gfx->GfxDpSetTileInterp(interp);
-//    gfx->GfxDpSetTileSize(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
-
-    return false;
-}
-
-bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
-    F3DGfx* cmd = *cmd0;
-    Interpreter* gfx = mInstance.lock().get();
-
-    gfx->mInterpolationIndexTarget = cmd->words.w1;
-
-    //gfx->mInterpolationIndexTarget = GetInterpolationFrameCount();
     return false;
 }
 
@@ -3984,8 +3948,6 @@ class UcodeHandler {
 };
 
 static constexpr UcodeHandler rdpHandlers = {
-    { RDP_G_SETTARGETINTERPINDEX,
-      { "G_SETTARGETINTERPINDEX", gfx_set_interpolation_index_target } }, // G_SETTARGETINTERPINDEX
     { RDP_G_SETTILESIZE_INTERP,
       { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },            // G_SETTILESIZE_INTERP
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
@@ -4187,10 +4149,6 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
 static void gfx_step() {
     auto& cmd = g_exec_stack.currCmd();
     auto cmd0 = cmd;
-
-    //printf("command %llX %llX 0x%llX\n", cmd->words.w0, cmd->words.w1, &cmd->words.w0);
-
-
     int8_t opcode = (int8_t)(cmd->words.w0 >> 24);
 
 #ifdef USE_GBI_TRACE
@@ -4203,12 +4161,9 @@ static void gfx_step() {
     " - W0: {:08X}\n"                          \
     " - W1: {:08X}\n"                          \
     "===================================="
+        SPDLOG_INFO(TRACE, (uint8_t)opcode, cmd->words.trace.file, cmd->words.trace.idx, cmd->words.w0, cmd->words.w1);
     }
 #endif
-    //printf("op %d w0 %llX w1 %llX\n",(uint8_t)opcode, cmd->words.w0, cmd->words.w1);
-    if (cmd->words.w0 == 0x44) {
-       printf("asdf\n");
-    }
 
     if (opcode == F3DEX2_G_LOAD_UCODE) {
         gfx_set_ucode_handler((UcodeHandlers)(cmd->words.w0 & 0xFFFFFF));
