@@ -515,9 +515,8 @@ class Interpreter {
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
     std::vector<std::string> shader_ids;
-    int32_t mInterpolationIndex;
-    int32_t mInterpolationCount;
-    float mVIsPerFrame;
+    uint32_t mInterpolationIndex;
+    uint32_t mInterpolationCount;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
