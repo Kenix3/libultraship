@@ -34,7 +34,6 @@
 #include "ship/utils/Utils.h"
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/window/Window.h"
 
 #include "libultraship/libultra/os.h"
 
@@ -2627,11 +2626,11 @@ void* Interpreter::SegAddr(uintptr_t w1) {
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
 #define C1(pos, width) ((cmd->words.w1 >> (pos)) & ((1U << width) - 1))
 
-void GfxExecStack::start(F3DGfx* stack) {
+void GfxExecStack::start(F3DGfx* dlist) {
     while (!cmd_stack.empty())
         cmd_stack.pop();
     gfx_path.clear();
-    cmd_stack.push(stack);
+    cmd_stack.push(dlist);
     disp_stack.clear();
 }
 
@@ -3633,7 +3632,7 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     interpFrames /= ceil((60.0f / 2)); /* gVIsPerFrame */
 
     // Verify the frame should be interpolated
-    if (gfx->mInterpolationIndex >= interpFrames) {
+    if (gfx->mInterpolationIndex >= gfx->mInterpolationCount) {
         ++(*cmd0);
         ++(*cmd0);
         return false;
@@ -3665,8 +3664,8 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     lrs = (float) (x % 2048);
     lrt = (float) (y % 2048);
 
-    incX = (float)stepX / (float)interpFrames;
-    incY = (float)stepY / (float)interpFrames;
+    incX = (float)stepX / (float)gfx->mInterpolationCount;
+    incY = (float)stepY / (float)gfx->mInterpolationCount;
 
     // Calculate the interpolation for the current frame
     lrs += incX * gfx->mInterpolationIndex;
