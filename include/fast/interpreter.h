@@ -516,7 +516,7 @@ class Interpreter {
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
     std::vector<std::string> shader_ids;
     int32_t mInterpolationIndex;
-    int32_t mNumInterpolatedFrames;
+    int32_t mInterpolatedFrameCount;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
