@@ -3627,10 +3627,6 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     float lrs, lrt, uls, ult;
     float incX, incY;
 
-    /** Interpolate **/
-    uint32_t interpFrames = Ship::Context::GetInstance()->GetWindow()->GetCurrentRefreshRate();
-    interpFrames /= ceil((60.0f / 2)); /* gVIsPerFrame */
-
     // Verify the frame should be interpolated
     if (gfx->mInterpolationIndex >= gfx->mInterpolationCount) {
         ++(*cmd0);
@@ -3673,7 +3669,7 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
     uls = (float) ( lrs + ( (width - 1) ) );
     ult = (float) ( lrt + ( (height - 1) ) );
 
-    // Apply to texture
+    // Apply values to texture
     gfx->mRdp->texture_tile[tile].lrs = lrs;
     gfx->mRdp->texture_tile[tile].lrt = lrt;
     gfx->mRdp->texture_tile[tile].uls = uls;
