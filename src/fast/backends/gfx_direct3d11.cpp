@@ -110,7 +110,7 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
                                    "You can also try to change the graphic backend of the port in its config file.\n"
                                    "Window->Backend->Id\n"
                                    "0 = DX11, 1 = OpenGL";
-    const char SoftwareText[42] = "\nUsing software renderer failed. Exiting.";
+    const char SoftwareText[33] = "\nUsing software renderer failed.";
 
     if (SoftwareRenderer) {
         SPDLOG_INFO("Using software renderer.");
@@ -181,15 +181,9 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
         if (self->mDevice) {
             self->mDevice->Release();
         }
-        if (SoftwareRenderer) {
-            SPDLOG_ERROR(log_message);
-            MessageBoxA(self->mWindowBackend->GetWindowHandle(), error_message, "Error", MB_OK | MB_ICONERROR);
-            throw;
-        } else {
-            SPDLOG_WARN(log_message);
-            MessageBoxA(self->mWindowBackend->GetWindowHandle(), error_message, "Warning", MB_OK | MB_ICONWARNING);
-            return false;
-        }
+        SPDLOG_WARN(log_message);
+        MessageBoxA(self->mWindowBackend->GetWindowHandle(), error_message, "Warning", MB_OK | MB_ICONWARNING);
+        return false;
     }
     return true;
 };
