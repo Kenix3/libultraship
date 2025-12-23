@@ -146,7 +146,7 @@ struct GfxExecStack {
     // stack for OpenDisp/CloseDisps
     std::vector<CodeDisp> disp_stack{};
 
-    void start(F3DGfx* stack);
+    void start(F3DGfx* dlist);
     void stop();
     F3DGfx*& currCmd();
     void openDisp(const char* file, int line);
@@ -516,7 +516,8 @@ class Interpreter {
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
     std::vector<std::string> shader_ids;
     int32_t mInterpolationIndex;
-    int32_t mInterpolatedFrameCount;
+    int32_t mInterpolationCount;
+    float mVIsPerFrame;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
