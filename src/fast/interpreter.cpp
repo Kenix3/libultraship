@@ -3618,14 +3618,12 @@ bool gfx_set_tile_size_handler_rdp(F3DGfx** cmd0) {
     return false;
 }
 
-bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
+bool gfx_scroll_texture_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     Interpreter* gfx = mInstance.lock().get();
-
     uint64_t frameCount = Ship::Context::GetInstance()->GetWindow()->mFrameCount;
-    uint32_t tile;
-    int32_t x, y, width, height, stepX, stepY;
-    float lrs, lrt, uls, ult;
+    uint32_t tile = C0(0, 12);
+    float uls, ult, lrs, lrt;
     float incX, incY;
 
     // Verify the frame should be interpolated
@@ -3635,47 +3633,44 @@ bool gfx_set_tile_size_interp_handler_rdp(F3DGfx** cmd0) {
         return false;
     }
 
-    /** Get Values **/
-    tile = C1(24, 3);
+    int32_t stepX = (int32_t) C1(32, 32);
+    int32_t stepY = (int32_t) C1( 0, 32);
 
     ++(*cmd0);
 
-    x = (int32_t) ((*cmd0)->words.w0 >> 32);
-    y = (int32_t) (*cmd0)->words.w0;
-
-    width = (int32_t) ((*cmd0)->words.w1 >> 32);
-    height = (int32_t) (*cmd0)->words.w1;
-
-    ++(*cmd0);
-
-    stepX = (int32_t) ((*cmd0)->words.w0 >> 32);
-    stepY = (int32_t) (*cmd0)->words.w0;
+    int32_t origin_uls = (int32_t)C0(32, 32);
+    int32_t origin_ult = (int32_t)C0( 0, 32);
+    int32_t origin_lrs = (int32_t)C1(32, 32);
+    int32_t origin_lrt = (int32_t)C1( 0, 32);
 
     /** Calculate Interpolation **/
+    origin_uls += stepX;
+    origin_ult += stepY;
 
-    // Apply frameCount based translation
-    x *= (float)(frameCount);
-    y *= (float)(frameCount);
-
-    // Wrap values to stay within allowable bounds
-    lrs = (float) (x % 2048);
-    lrt = (float) (y % 2048);
+    uls = (origin_uls * frameCount) % 2048;
+    ult = (origin_ult * frameCount) % 2048;
 
     incX = (float)stepX / (float)gfx->mInterpolationCount;
     incY = (float)stepY / (float)gfx->mInterpolationCount;
 
-    // Calculate the interpolation for the current frame
-    lrs += incX * gfx->mInterpolationIndex;
-    lrt += incY * gfx->mInterpolationIndex;
-    uls = (float) ( lrs + ( (width - 1) ) );
-    ult = (float) ( lrt + ( (height - 1) ) );
+    uls += incX * gfx->mInterpolationIndex;
+    ult += incY * gfx->mInterpolationIndex;
+
+    //     x   +  width
+    lrs = (uls + (origin_lrs));
+    lrt = (ult + (origin_lrt));
 
     // Apply values to texture
-    gfx->mRdp->texture_tile[tile].lrs = lrs;
-    gfx->mRdp->texture_tile[tile].lrt = lrt;
     gfx->mRdp->texture_tile[tile].uls = uls;
     gfx->mRdp->texture_tile[tile].ult = ult;
-    // printf("tile %d lrs %f lrt %f uls %f ult %f\n", tile, lrs, lrt, uls, ult);
+    gfx->mRdp->texture_tile[tile].lrs = lrs;
+    gfx->mRdp->texture_tile[tile].lrt = lrt;
+
+    // This isn't strictly necessary, but a port can
+    // overwrite the tile size command making this necessary
+    gfx->mRdp->textures_changed[0] = true;
+    gfx->mRdp->textures_changed[1] = true;
+    // printf("Scroll: uls %f ult %f lrs %f lrt %f interp count %d\n", uls, ult, lrs, lrt, gfx->mInterpolationIndex);
 
     return false;
 }
@@ -3944,8 +3939,8 @@ class UcodeHandler {
 };
 
 static constexpr UcodeHandler rdpHandlers = {
-    { RDP_G_SETTILESIZE_INTERP,
-      { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },            // G_SETTILESIZE_INTERP
+    { RDP_G_SCROLL_TEXTURE,
+      { "G_SCROLL_TEXTURE", gfx_scroll_texture_handler_rdp } },            // G_SETTILESIZE_INTERP
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "mRdpLOADSYNC", gfx_stubbed_command_handler } },          // mRdpLOADSYNC (-26)
