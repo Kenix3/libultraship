@@ -81,7 +81,6 @@ class Window {
     int32_t GetMouseCaptureScancode();
     void SetFullscreenScancode(int32_t scancode);
     void SetMouseCaptureScancode(int32_t scancode);
-
     uint64_t mFrameCount;
 
   protected:
