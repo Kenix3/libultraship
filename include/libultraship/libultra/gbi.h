@@ -3222,7 +3222,7 @@ typedef union Gfx {
         _g++;                                                                     \
         _g->words.w0 = (_SHIFTL(uls, 32, 32) | _SHIFTL(ult, 0, 32));              \
         _g->words.w1 = (_SHIFTL(lrs, 32, 32) | _SHIFTL(lrt, 0, 32));              \
-    })                                                                            \
+    })
 
 #define gsDPScrollTexture(t, uls, ult, lrs, lrt, stepX, stepY)                                      \
     {                                                                                               \
