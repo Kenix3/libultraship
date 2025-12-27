@@ -3634,14 +3634,14 @@ bool gfx_scroll_texture_handler_rdp(F3DGfx** cmd0) {
     }
 
     int32_t stepX = (int32_t) C1(32, 32);
-    int32_t stepY = (int32_t) C1( 0, 32);
+    int32_t stepY = (int32_t) C1(0, 32);
 
     ++(*cmd0);
 
     int32_t origin_uls = (int32_t)C0(32, 32);
-    int32_t origin_ult = (int32_t)C0( 0, 32);
+    int32_t origin_ult = (int32_t)C0(0, 32);
     int32_t origin_lrs = (int32_t)C1(32, 32);
-    int32_t origin_lrt = (int32_t)C1( 0, 32);
+    int32_t origin_lrt = (int32_t)C1(0, 32);
 
     /** Calculate Interpolation **/
     origin_uls += stepX;
@@ -3940,7 +3940,7 @@ class UcodeHandler {
 
 static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_SCROLL_TEXTURE,
-      { "G_SCROLL_TEXTURE", gfx_scroll_texture_handler_rdp } },            // G_SETTILESIZE_INTERP
+    { "G_SCROLL_TEXTURE", gfx_scroll_texture_handler_rdp } },                        // G_SCROLL_TEXTURE
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "mRdpLOADSYNC", gfx_stubbed_command_handler } },          // mRdpLOADSYNC (-26)
