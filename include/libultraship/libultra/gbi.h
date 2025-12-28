@@ -1,7 +1,6 @@
-#include "mbi.h"
+#pragma once
 
-#ifndef ULTRA64_GBI_H
-#define ULTRA64_GBI_H
+#include "mbi.h"
 
 #ifdef _MSC_VER
 #ifndef u8
@@ -191,6 +190,8 @@
 #define G_READFB 0x3e
 #define G_SETINTENSITY 0x40
 #define G_LOAD_SHADER 0x43
+#define G_SETTILESIZE_INTERP 0x44
+#define G_SETTARGETINTERPINDEX 0x45
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1173,6 +1174,7 @@ typedef union {
 #define G_MW_NUMLIGHT 0x02
 #define G_MW_CLIP 0x04
 #define G_MW_SEGMENT 0x06
+#define G_MW_SEGMENT_INTERP 0x07
 #define G_MW_FOG 0x08
 #define G_MW_LIGHTCOL 0x0a
 #ifdef F3DEX_GBI_2
@@ -2156,6 +2158,7 @@ typedef union Gfx {
     { _SHIFTL(G_CULLDL, 24, 8) | ((0x0f & (vstart)) * 40), ((0x0f & ((vend) + 1)) * 40) }
 #endif
 
+#define __gSPSegmentInterp(pkt, segment, base) gMoveWd(pkt, G_MW_SEGMENT_INTERP, segment, base)
 #define __gSPSegment(pkt, segment, base) gMoveWd(pkt, G_MW_SEGMENT, (segment)*4, base)
 #define gsSPSegment(segment, base) gsMoveWd(G_MW_SEGMENT, (segment)*4, base)
 
@@ -3218,6 +3221,16 @@ typedef union Gfx {
             _SHIFTL(tile, 24, 3) | _SHIFTL(lrs, 12, 12) | _SHIFTL(lrt, 0, 12) \
     }
 
+#define gDPSetInterpolation(pkt, index)              \
+    _DW({                                            \
+        Gfx* _g = (Gfx*)(pkt);                       \
+                                                     \
+        _g->words.w0 = G_SETTARGETINTERPINDEX << 24; \
+        _g->words.w1 = index;                        \
+    })
+
+#define __gDPSetTileSizeInterp(pkt, t, uls, ult, lrs, lrt) \
+    gDPLoadTileGeneric(pkt, G_SETTILESIZE_INTERP, t, uls, ult, lrs, lrt)
 #define gDPSetTileSize(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gsDPSetTileSize(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gDPLoadTile(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_LOADTILE, t, uls, ult, lrs, lrt)
@@ -4206,7 +4219,5 @@ typedef union Gfx {
 #define gDPNoOpOpenDisp(pkt, file, line) gDma1p(pkt, G_NOOP, file, line, 7)
 #define gDPNoOpCloseDisp(pkt, file, line) gDma1p(pkt, G_NOOP, file, line, 8)
 #define gDPNoOpTag3(pkt, type, data, n) gDma1p(pkt, G_NOOP, data, n, type)
-
-#endif
 
 #endif

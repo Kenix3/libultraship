@@ -1,0 +1,17 @@
+#pragma once
+
+#include "ship/controller/controldevice/controller/mapping/ControllerInputMapping.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+
+namespace Ship {
+class MouseWheelToAnyMapping : virtual public ControllerInputMapping {
+  public:
+    MouseWheelToAnyMapping(WheelDirection wheelDirection);
+    virtual ~MouseWheelToAnyMapping();
+    std::string GetPhysicalInputName() override;
+    std::string GetPhysicalDeviceName() override;
+
+  protected:
+    WheelDirection mWheelDirection;
+};
+} // namespace Ship

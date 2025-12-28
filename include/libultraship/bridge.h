@@ -1,13 +1,10 @@
-#ifndef _LIBULTRASHIP_BRIDGE_H_
-#define _LIBULTRASHIP_BRIDGE_H_
+#pragma once
 
-#include "public/bridge/resourcebridge.h"
-#include "public/bridge/audiobridge.h"
-#include "public/bridge/controllerbridge.h"
-#include "public/bridge/windowbridge.h"
-#include "public/bridge/consolevariablebridge.h"
-#include "public/bridge/crashhandlerbridge.h"
-#include "public/bridge/gfxdebuggerbridge.h"
-#include "public/bridge/gfxbridge.h"
-
-#endif
+#include "libultraship/bridge/resourcebridge.h"
+#include "libultraship/bridge/audiobridge.h"
+#include "libultraship/bridge/controllerbridge.h"
+#include "libultraship/bridge/windowbridge.h"
+#include "libultraship/bridge/consolevariablebridge.h"
+#include "libultraship/bridge/crashhandlerbridge.h"
+#include "libultraship/bridge/gfxdebuggerbridge.h"
+#include "libultraship/bridge/gfxbridge.h"

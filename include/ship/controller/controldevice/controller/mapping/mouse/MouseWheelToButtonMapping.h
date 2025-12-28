@@ -1,0 +1,19 @@
+#pragma once
+
+#include "ship/controller/controldevice/controller/mapping/mouse/MouseWheelToAnyMapping.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
+#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+
+namespace Ship {
+class MouseWheelToButtonMapping final : public MouseWheelToAnyMapping, public ControllerButtonMapping {
+  public:
+    MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, WheelDirection wheelDirection);
+    void UpdatePad(CONTROLLERBUTTONS_T& padButtons) override;
+    int8_t GetMappingType() override;
+    std::string GetButtonMappingId() override;
+    void SaveToConfig() override;
+    void EraseFromConfig() override;
+    std::string GetPhysicalDeviceName() override;
+    std::string GetPhysicalInputName() override;
+};
+} // namespace Ship
