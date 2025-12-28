@@ -2794,17 +2794,29 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gsSPSetShader(shader, frag, vtx)          \
-    { (_SHIFTL(G_LOAD_SHADER, 24, 8)), (vtx) }, { \
-        0, (frag)                                 \
+#define gsSPSetFragmentShader(shader, frag)          \
+    { (_SHIFTL(G_LOAD_FRAGMENT_SHADER, 24, 8)), (frag) }, { \
+        0, 0                                       \
     }
 
-#define gSPSetShader(pkt, frag, vtx)                   \
+#define gsSPSetVertexShader(shader, vtx)          \
+    { (_SHIFTL(G_LOAD_VERTEX_SHADER, 24, 8)), (vtx) }, { \
+        0, 0                                      \
+    }
+
+#define gSPSetFragmentShader(pkt, frag)                   \
     {                                                  \
-        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);    \
+        Gfx *_g0 = (Gfx*)(pkt);                        \
                                                        \
-        _g0->words.w0 = _SHIFTL(G_LOAD_SHADER, 24, 8); \
+        _g0->words.w0 = _SHIFTL(G_LOAD_FRAGMENT_SHADER, 24, 8); \
         _g0->words.w1 = vtx;                           \
+    }
+
+#define gSPSetVertexShader(pkt, vtx)                   \
+    {                                                  \
+        Gfx *_g0 = (Gfx*)(pkt);                        \
+                                                       \
+        _g0->words.w0 = _SHIFTL(G_LOAD_VERTEX_SHADER, 24, 8); \
         _g1->words.w1 = frag;                          \
     }
 

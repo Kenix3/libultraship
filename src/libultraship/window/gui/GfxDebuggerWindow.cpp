@@ -486,12 +486,16 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
-            case OTR_G_LOAD_SHADER: {
-                const char* vtx = (const char*)cmd->words.w1;
-                cmd++;
+            case OTR_G_LOAD_FRAGMENT_SHADER: {
                 const char* frag = (const char*)cmd->words.w1;
-                nodeWithText(cmd0, fmt::format("G_LOAD_SHADER: Vertex {} - Fragment {}", vtx == nullptr ? "None" : vtx,
-                                               frag == nullptr ? "None" : frag));
+                nodeWithText(cmd0, fmt::format("G_LOAD_SHADER: Fragment {}", frag == nullptr ? "None" : frag));
+                cmd++;
+                break;
+            }
+
+            case OTR_G_LOAD_VERTEX_SHADER: {
+                const char* vtx = (const char*)cmd->words.w1;
+                nodeWithText(cmd0, fmt::format("G_LOAD_SHADER: Vertex {}", vtx == nullptr ? "None" : vtx));
                 cmd++;
                 break;
             }

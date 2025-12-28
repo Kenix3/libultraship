@@ -2891,28 +2891,57 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
-int16_t gfx_search_existing_shader(const char* vertex, const char* fragment) {
+int16_t gfx_search_fragment_shader(const char* fragment) {
     Interpreter* gfx = mInstance.lock().get();
-    ShaderMod shader = { vertex, fragment };
     for (int i = 0; i < gfx->shader_ids.size(); i++) {
-        if (memcmp(&gfx->shader_ids[i], &shader, sizeof(ShaderMod)) == 0) {
+        if (strcmp(gfx->shader_ids[i].fragment, fragment) == 0) {
             return i;
         }
     }
     return -1;
 }
 
-bool gfx_set_shader_custom(F3DGfx** cmd0) {
+int16_t gfx_search_vertex_shader(const char* vertex) {
+    Interpreter* gfx = mInstance.lock().get();
+    for (int i = 0; i < gfx->shader_ids.size(); i++) {
+        if (strcmp(gfx->shader_ids[i].vertex, vertex) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool gfx_set_fragment_shader(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+    ShaderMod shader = { NULL, NULL };
+    shader.fragment = (char*)cmd->words.w1;
+
+    if (NULL != shader.fragment) {
+        // Search for duplicate shaders
+        auto cache = gfx_search_fragment_shader(shader.fragment);
+        if (cache != -1) {
+            gfx->mRdp->current_shader = cache;
+        } else {
+            gfx->shader_ids.push_back(shader);
+            gfx->mRdp->current_shader = gfx->shader_ids.size() - 1;
+        }
+    } else {
+        gfx->mRdp->current_shader = -1;
+    }
+
+    return false;
+}
+
+bool gfx_set_vertex_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     ShaderMod shader = { NULL, NULL };
     shader.vertex = (char*)cmd->words.w1;
-    (*cmd0)++;
-    shader.fragment = (char*)((*cmd0)->words.w1);
 
-    if (shader.vertex != NULL || shader.fragment != NULL) {
+    if (NULL != shader.vertex) {
         // Search for duplicate shaders
-        auto cache = gfx_search_existing_shader(shader.vertex, shader.fragment);
+        auto cache = gfx_search_vertex_shader(shader.vertex);
         if (cache != -1) {
             gfx->mRdp->current_shader = cache;
         } else {
@@ -3980,7 +4009,8 @@ static constexpr UcodeHandler otrHandlers = {
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
-    { OTR_G_LOAD_SHADER, { "G_LOAD_SHADER", gfx_set_shader_custom } },
+    { OTR_G_LOAD_FRAGMENT_SHADER, { "G_LOAD_FRAGMENT_SHADER", gfx_set_fragment_shader } },
+    { OTR_G_LOAD_VERTEX_SHADER, { "G_LOAD_VERTEX_SHADER", gfx_set_vertex_shader } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
