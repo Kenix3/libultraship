@@ -77,6 +77,7 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
+    PRISM_SHADER, // 16 bit width
     MAX
 };
 
