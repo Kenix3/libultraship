@@ -3959,7 +3959,7 @@ static constexpr UcodeHandler otrHandlers = {
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
-    { OTR_G_LOAD_FRAGMENT_SHADER, { "G_LOAD_SHADER", gfx_set_shader } },
+    { OTR_G_LOAD_SHADER, { "G_LOAD_SHADER", gfx_set_shader } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
