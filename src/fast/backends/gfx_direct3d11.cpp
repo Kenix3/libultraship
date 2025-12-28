@@ -1327,14 +1327,11 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    const char* shaderName = gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/directx/default.shader.hlsl";
 
-    if (shaderMod.has_value()) {
-        auto raw = shaderMod.value().GetFragment();
-        if (raw.has_value()) {
-            path = raw.value() + ".hlsl";
-        }
+    if (nullptr != shaderName) {
+        path = std::string(shaderName) + ".hlsl";
     }
 
     auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(

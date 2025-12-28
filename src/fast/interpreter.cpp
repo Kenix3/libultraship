@@ -1483,7 +1483,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
 
-    cc_options |= (mRdp->current_shader << SHADER_ID_SHIFT);
+    cc_options |= (mRdp->shader_id << SHADER_ID_SHIFT);
 
     if (mRdp->loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
@@ -2891,76 +2891,26 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
-int16_t gfx_search_fragment_shader(const char* fragment) {
-    Interpreter* gfx = mInstance.lock().get();
-    for (int i = 0; i < gfx->shader_ids.size(); i++) {
-        if (strcmp(gfx->shader_ids[i].fragment, fragment) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-int16_t gfx_search_vertex_shader(const char* vertex) {
-    Interpreter* gfx = mInstance.lock().get();
-    for (int i = 0; i < gfx->shader_ids.size(); i++) {
-        if (strcmp(gfx->shader_ids[i].vertex, vertex) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-bool gfx_set_fragment_shader(F3DGfx** cmd0) {
+bool gfx_set_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
-    ShaderMod shader = { NULL, NULL };
-    shader.fragment = (char*)cmd->words.w1;
+    const char* vertex = (char*)cmd->words.w1;
 
-    if (NULL != shader.fragment) {
-        // Search for duplicate shaders
-        auto cache = gfx_search_fragment_shader(shader.fragment);
-        if (cache != -1) {
-            gfx->mRdp->current_shader = cache;
-        } else {
-            gfx->shader_ids.push_back(shader);
-            gfx->mRdp->current_shader = gfx->shader_ids.size() - 1;
-        }
+    if (NULL != vertex) {
+        gfx->mShaders[gfx->mShadersIndex] = vertex;
+        gfx->mRdp->shader_id = gfx->mShadersIndex;
+        gfx->mShadersIndex++;
     } else {
-        gfx->mRdp->current_shader = -1;
+        SPDLOG_ERROR("[Interpreter] Invalid vertex shader! {:s}", vertex);
     }
 
     return false;
 }
 
-bool gfx_set_vertex_shader(F3DGfx** cmd0) {
+const char* gfx_get_shader(int16_t id) {
     Interpreter* gfx = mInstance.lock().get();
-    F3DGfx* cmd = *cmd0;
-    ShaderMod shader = { NULL, NULL };
-    shader.vertex = (char*)cmd->words.w1;
 
-    if (NULL != shader.vertex) {
-        // Search for duplicate shaders
-        auto cache = gfx_search_vertex_shader(shader.vertex);
-        if (cache != -1) {
-            gfx->mRdp->current_shader = cache;
-        } else {
-            gfx->shader_ids.push_back(shader);
-            gfx->mRdp->current_shader = gfx->shader_ids.size() - 1;
-        }
-    } else {
-        gfx->mRdp->current_shader = -1;
-    }
-
-    return false;
-}
-
-std::optional<Fast::ShaderMod> gfx_get_shader(int16_t id) {
-    Interpreter* gfx = mInstance.lock().get();
-    if (id < 0 || id >= gfx->shader_ids.size()) {
-        return std::nullopt;
-    }
-    return gfx->shader_ids[id];
+    return gfx->mShaders[id];
 }
 
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
@@ -4009,8 +3959,7 @@ static constexpr UcodeHandler otrHandlers = {
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
-    { OTR_G_LOAD_FRAGMENT_SHADER, { "G_LOAD_FRAGMENT_SHADER", gfx_set_fragment_shader } },
-    { OTR_G_LOAD_VERTEX_SHADER, { "G_LOAD_VERTEX_SHADER", gfx_set_vertex_shader } },
+    { OTR_G_LOAD_FRAGMENT_SHADER, { "G_LOAD_SHADER", gfx_set_shader } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
@@ -4200,7 +4149,7 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
-    mRdp->current_shader = -1;
+    mRdp->shader_id = -1;
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;

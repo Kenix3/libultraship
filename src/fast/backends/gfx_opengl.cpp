@@ -296,14 +296,11 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    const char* shaderName = gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/opengl/default.shader.fs";
 
-    if (shaderMod.has_value()) {
-        auto raw = shaderMod.value().GetFragment();
-        if (raw.has_value()) {
-            path = raw.value() + ".fs";
-        }
+    if (nullptr != shaderName) {
+        path = std::string(shaderName) + ".fs";
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
@@ -364,14 +361,11 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    const char* shaderName = gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/opengl/default.shader.vs";
 
-    if (shaderMod.has_value()) {
-        auto raw = shaderMod.value().GetVertex();
-        if (raw.has_value()) {
-            path = raw.value() + ".vs";
-        }
+    if (nullptr != shaderName) {
+        path = std::string(shaderName) + ".vs";
     }
 
     auto res = static_pointer_cast<Ship::Shader>(

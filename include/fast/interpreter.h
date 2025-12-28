@@ -77,7 +77,7 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
-    PRISM_SHADER, // 16 bit width
+    PRISM_SHADER, // 16-bit width
     MAX
 };
 
@@ -224,25 +224,6 @@ struct RawTexMetadata {
     Fast::TextureType type;
 };
 
-struct ShaderMod {
-    const char* vertex;
-    const char* fragment;
-
-    std::optional<std::string> GetVertex() const {
-        if (vertex) {
-            return std::string(vertex);
-        }
-        return std::nullopt;
-    }
-
-    std::optional<std::string> GetFragment() const {
-        if (fragment) {
-            return std::string(fragment);
-        }
-        return std::nullopt;
-    }
-};
-
 #define MAX_LIGHTS 32
 #define MAX_VERTICES 64
 
@@ -271,7 +252,6 @@ struct RSP {
     } texture_scaling_factor;
 
     struct LoadedVertex loaded_vertices[MAX_VERTICES + 4];
-    ShaderMod current_shader;
 };
 
 struct RDP {
@@ -312,7 +292,7 @@ struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     bool grayscale;
-    int16_t current_shader = -1;
+    int16_t shader_id = -1;
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
@@ -532,7 +512,8 @@ class Interpreter {
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
-    std::vector<ShaderMod> shader_ids;
+    std::unordered_map<size_t, const char*> mShaders;
+    size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
 };
@@ -548,5 +529,5 @@ extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
 #ifdef __cplusplus
-extern std::optional<Fast::ShaderMod> gfx_get_shader(int16_t id);
+extern const char* gfx_get_shader(int16_t id);
 #endif
