@@ -74,8 +74,8 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     GfxClipParameters GetClipParameters() override;
     void UnloadShader(struct ShaderProgram* oldPrg) override;
     void LoadShader(struct ShaderProgram* newPrg) override;
-    struct ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) override;
-    struct ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) override;
+    struct ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint64_t shaderId1) override;
+    struct ShaderProgram* LookupShader(uint64_t shaderId0, uint64_t shaderId1) override;
     void ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) override;
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;

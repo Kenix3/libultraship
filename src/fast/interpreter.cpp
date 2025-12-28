@@ -1483,7 +1483,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
 
-    cc_options |= (g_rdp.current_shader << 16);
+    cc_options |= (mRdp->current_shader << 16);
 
     if (mRdp->loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
@@ -2892,9 +2892,10 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 }
 
 int16_t gfx_search_existing_shader(const char* vertex, const char* fragment) {
+    Interpreter* gfx = mInstance.lock().get();
     ShaderMod shader = { vertex, fragment };
-    for (int i = 0; i < shader_ids.size(); i++) {
-        if (memcmp(&shader_ids[i], &shader, sizeof(ShaderMod)) == 0) {
+    for (int i = 0; i < gfx->shader_ids.size(); i++) {
+        if (memcmp(&gfx->shader_ids[i], &shader, sizeof(ShaderMod)) == 0) {
             return i;
         }
     }
@@ -2902,6 +2903,7 @@ int16_t gfx_search_existing_shader(const char* vertex, const char* fragment) {
 }
 
 bool gfx_set_shader_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     ShaderMod shader = { NULL, NULL };
     shader.vertex = (char*)cmd->words.w1;
@@ -2912,23 +2914,24 @@ bool gfx_set_shader_custom(F3DGfx** cmd0) {
         // Search for duplicate shaders
         auto cache = gfx_search_existing_shader(shader.vertex, shader.fragment);
         if (cache != -1) {
-            g_rdp.current_shader = cache;
+            gfx->mRdp->current_shader = cache;
         } else {
-            shader_ids.push_back(shader);
-            g_rdp.current_shader = shader_ids.size() - 1;
+            gfx->shader_ids.push_back(shader);
+            gfx->mRdp->current_shader = gfx->shader_ids.size() - 1;
         }
     } else {
-        g_rdp.current_shader = -1;
+        gfx->mRdp->current_shader = -1;
     }
 
     return false;
 }
 
-std::optional<ShaderMod> gfx_get_shader(int16_t id) {
-    if (id < 0 || id >= shader_ids.size()) {
+std::optional<Fast::ShaderMod> gfx_get_shader(int16_t id) {
+    Interpreter* gfx = mInstance.lock().get();
+    if (id < 0 || id >= gfx->shader_ids.size()) {
         return std::nullopt;
     }
-    return shader_ids[id];
+    return gfx->shader_ids[id];
 }
 
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
@@ -4167,7 +4170,7 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
-    g_rdp.current_shader = -1;
+    mRdp->current_shader = -1;
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;

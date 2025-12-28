@@ -543,5 +543,5 @@ extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
 #ifdef __cplusplus
-extern std::optional<ShaderMod> gfx_get_shader(int16_t id);
+extern std::optional<Fast::ShaderMod> gfx_get_shader(int16_t id);
 #endif
