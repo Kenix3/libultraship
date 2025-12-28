@@ -9,6 +9,7 @@
 #include <vector>
 #include <stack>
 #include <string>
+#include <optional>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
@@ -76,7 +77,6 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
-    USE_SHADER,
     MAX
 };
 
@@ -86,6 +86,7 @@ enum class ShaderOpts {
 struct ColorCombinerKey {
     uint64_t combine_mode;
     uint64_t options;
+    uint64_t shader_id;
 
 #ifdef __cplusplus
     auto operator<=>(const ColorCombinerKey&) const = default;
@@ -119,7 +120,7 @@ struct CCFeatures {
     int16_t shader_id;
 };
 
-void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features);
+void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeatures* cc_features);
 
 union Gfx;
 
@@ -219,9 +220,22 @@ struct RawTexMetadata {
 };
 
 struct ShaderMod {
-    bool enabled = false;
-    int16_t id;
-    uint8_t type;
+    const char* vertex;
+    const char* fragment;
+
+    std::optional<std::string> GetVertex() const {
+        if (vertex) {
+            return std::string(vertex);
+        }
+        return std::nullopt;
+    }
+
+    std::optional<std::string> GetFragment() const {
+        if (fragment) {
+            return std::string(fragment);
+        }
+        return std::nullopt;
+    }
 };
 
 #define MAX_LIGHTS 32
@@ -293,7 +307,7 @@ struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     bool grayscale;
-    ShaderMod current_shader;
+    int16_t current_shader = -1;
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
@@ -325,7 +339,7 @@ struct GfxTextureCache {
 
 struct ColorCombiner {
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
     bool usedTextures[2];
     struct ShaderProgram* prg[16];
     uint8_t shader_input_mapping[2][7];
@@ -458,7 +472,6 @@ class Interpreter {
     float AdjXForAspectRatio(float x) const;
     void AdjustVIewportOrScissor(XYWidthHeight* area);
     void CalcAndSetViewport(const F3DVp_t* viewport);
-    int16_t CreateShader(const std::string& path);
 
     void SpReset();
     void* SegAddr(uintptr_t w1);
@@ -514,7 +527,7 @@ class Interpreter {
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
-    std::vector<std::string> shader_ids;
+    std::vector<ShaderMod> shader_ids;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
 };
@@ -529,3 +542,6 @@ const char* GfxGetOpcodeName(int8_t opcode);
 extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
+#ifdef __cplusplus
+extern std::optional<ShaderMod> gfx_get_shader(int16_t id);
+#endif

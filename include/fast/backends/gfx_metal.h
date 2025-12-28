@@ -58,7 +58,7 @@ namespace Fast {
 
 struct ShaderProgramMetal {
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
 
     uint8_t numInputs;
     uint8_t numFloats;

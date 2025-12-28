@@ -187,7 +187,7 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
 
     uint8_t c[2][2][4];
     uint64_t shaderId0 = 0;
-    uint32_t shaderId1 = key.options;
+    uint64_t shaderId1 = key.options;
     uint8_t shaderInputMapping[2][7] = { { 0 } };
     bool usedTextures[2]{};
     for (uint32_t i = 0; i < 2 && (i == 0 || is2Cyc); i++) {
@@ -1449,7 +1449,6 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     bool invisible =
         (mRdp->other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = mRdp->grayscale;
-    auto shader = mRdp->current_shader;
 
     if (texture_edge) {
         if (use_alpha) {
@@ -1483,6 +1482,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     if (use_grayscale) {
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
+
+    cc_options |= (g_rdp.current_shader << 16);
+
     if (mRdp->loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
     }
@@ -1495,19 +1497,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     if (mRdp->loaded_texture[1].blended) {
         cc_options |= SHADER_OPT(TEXEL1_BLEND);
     }
-    if (shader.enabled) {
-        cc_options |= SHADER_OPT(USE_SHADER);
-        cc_options |= (shader.id << 17);
-    }
 
     ColorCombinerKey key;
     key.combine_mode = mRdp->combine_mode;
     key.options = cc_options;
-
-    // If we are not using alpha, clear the alpha components of the combiner as they have no effect
-    if (!use_alpha && !shader.enabled) {
-        key.combine_mode &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
-    }
 
     ColorCombiner* comb = LookupOrCreateColorCombiner(key);
 
@@ -2898,34 +2891,44 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
-int16_t Interpreter::CreateShader(const std::string& path) {
-    std::shared_ptr<Ship::ResourceInitData> initData = std::make_shared<Ship::ResourceInitData>();
-    initData->Path = path;
-    initData->IsCustom = false;
-    initData->ByteOrder = Ship::Endianness::Native;
-    auto shader = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->LoadFile(path);
-    if (shader == nullptr || !shader->IsLoaded) {
-        return -1;
+int16_t gfx_search_existing_shader(const char* vertex, const char* fragment) {
+    ShaderMod shader = { vertex, fragment };
+    for (int i = 0; i < shader_ids.size(); i++) {
+        if (memcmp(&shader_ids[i], &shader, sizeof(ShaderMod)) == 0) {
+            return i;
+        }
     }
-    shader_ids.push_back(std::string(shader->Buffer->data()));
-    return shader_ids.size() - 1;
+    return -1;
 }
 
 bool gfx_set_shader_custom(F3DGfx** cmd0) {
-    Interpreter* gfx = mInstance.lock().get();
-
     F3DGfx* cmd = *cmd0;
-    char* file = (char*)cmd->words.w1;
+    ShaderMod shader = { NULL, NULL };
+    shader.vertex = (char*)cmd->words.w1;
+    (*cmd0)++;
+    shader.fragment = (char*)((*cmd0)->words.w1);
 
-    if (file == nullptr) {
-        gfx->mRsp->current_shader = { 0, 0, false };
-        return false;
+    if (shader.vertex != NULL || shader.fragment != NULL) {
+        // Search for duplicate shaders
+        auto cache = gfx_search_existing_shader(shader.vertex, shader.fragment);
+        if (cache != -1) {
+            g_rdp.current_shader = cache;
+        } else {
+            shader_ids.push_back(shader);
+            g_rdp.current_shader = shader_ids.size() - 1;
+        }
+    } else {
+        g_rdp.current_shader = -1;
     }
 
-    const auto path = std::string(file);
-    const auto shaderId = gfx->CreateShader(path);
-    gfx->mRdp->current_shader = { true, shaderId, (uint8_t)C0(16, 1) };
     return false;
+}
+
+std::optional<ShaderMod> gfx_get_shader(int16_t id) {
+    if (id < 0 || id >= shader_ids.size()) {
+        return std::nullopt;
+    }
+    return shader_ids[id];
 }
 
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
@@ -4164,6 +4167,7 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
+    g_rdp.current_shader = -1;
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;
@@ -4596,7 +4600,7 @@ void Interpreter::GetCurDimensions(uint32_t* width, uint32_t* height) {
 
 } // namespace Fast
 
-void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features) {
+void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeatures* cc_features) {
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 4; k++) {
@@ -4618,10 +4622,6 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
     cc_features->clamp[1][0] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_S);
     cc_features->clamp[1][1] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_T);
-
-    if (shader_id1 & SHADER_OPT(USE_SHADER)) {
-        cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
-    }
 
     cc_features->usedTextures[0] = false;
     cc_features->usedTextures[1] = false;
@@ -4678,6 +4678,8 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
         cc_features->used_blend[1] = true;
     }
+
+    cc_features->shader_id = (shader_id1 >> 16) & 0xFFFF;
 }
 
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,

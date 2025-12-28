@@ -302,7 +302,7 @@ void GfxRenderingAPIDX11::LoadShader(struct ShaderProgram* new_prg) {
     mShaderProgram = (struct ShaderProgramD3D11*)new_prg;
 }
 
-struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
+struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
@@ -441,7 +441,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     return (struct ShaderProgram*)(mShaderProgram = prg);
 }
 
-struct ShaderProgram* GfxRenderingAPIDX11::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
+struct ShaderProgram* GfxRenderingAPIDX11::LookupShader(uint64_t shader_id0, uint64_t shader_id1) {
     auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
     return it == mShaderProgramPool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }
@@ -1327,6 +1327,16 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
+    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/directx/default.shader.hlsl";
+
+    if (shaderMod.has_value()) {
+        auto raw = shaderMod.value().GetFragment();
+        if (raw.has_value()) {
+            path = raw.value() + ".hlsl";
+        }
+    }
+
     auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
         "shaders/directx/default.shader.hlsl", true, init));
 
