@@ -296,7 +296,6 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-
     auto shaderMod = gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/opengl/default.shader.fs";
 
@@ -365,7 +364,6 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-
     auto shaderMod = gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/opengl/default.shader.vs";
 
