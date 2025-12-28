@@ -10,7 +10,6 @@ find_package(SDL2 REQUIRED)
 include_directories("/usr/X11R6/include")
 
 target_link_libraries(ImGui PUBLIC SDL2::SDL2)
-set_property(GLOBAL PROPERTY SDL2_INCLUDE_DIRS "${SDL2_INCLUDE_DIRS}")
 
 if (USE_OPENGLES)
     # XXX copy linux.cmake but maybe this actually need gles3_LIBRARY
