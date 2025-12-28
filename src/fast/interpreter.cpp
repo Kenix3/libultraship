@@ -1483,7 +1483,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
 
-    cc_options |= (mRdp->current_shader << 16);
+    cc_options |= (mRdp->current_shader << SHADER_ID_SHIFT);
 
     if (mRdp->loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
@@ -4682,7 +4682,7 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
         cc_features->used_blend[1] = true;
     }
 
-    cc_features->shader_id = (shader_id1 >> 16) & 0xFFFF;
+    cc_features->shader_id = Fast::ShaderIdUnmask(shader_id1);
 }
 
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,

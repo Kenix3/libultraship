@@ -130,6 +130,10 @@ class GfxRenderingAPI;
 class GfxWindowBackend;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
+constexpr size_t SHADER_ID_SHIFT = 16;
+constexpr int16_t ShaderIdUnmask(int id) {
+    return (id >> SHADER_ID_SHIFT) & 0xFFFF;
+}
 
 struct GfxExecStack {
     // This is a dlist stack used to handle dlist calls.
