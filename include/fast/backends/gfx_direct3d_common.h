@@ -56,7 +56,7 @@ struct ShaderProgramD3D11 {
     Microsoft::WRL::ComPtr<ID3D11BlendState> blend_state;
 
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
     uint8_t numInputs;
     uint8_t numFloats;
     bool usedTextures[SHADER_MAX_TEXTURES];
