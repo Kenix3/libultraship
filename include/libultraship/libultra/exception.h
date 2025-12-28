@@ -1,5 +1,4 @@
-#ifndef ULTRA64_EXCEPTION_H
-#define ULTRA64_EXCEPTION_H
+#pragma once
 
 #include "types.h"
 
@@ -41,5 +40,3 @@ void __osSetGlobalIntMask(OSHWIntr mask);
 void __osResetGlobalIntMask(OSHWIntr mask);
 
 extern __osHwInt __osHwIntTable[];
-
-#endif

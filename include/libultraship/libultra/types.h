@@ -1,9 +1,9 @@
-#ifndef ULTRA64_TYPES_H
-#define ULTRA64_TYPES_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <fast/types.h>
 
 typedef signed char s8;
 typedef unsigned char u8;
@@ -30,30 +30,4 @@ typedef double f64;
 typedef s32 ptrdiff_t;
 typedef s32 intptr_t;
 typedef u32 uintptr_t;
-#endif
-
-typedef int Mtx_t[4][4];
-typedef union {
-    Mtx_t m;
-    struct {
-        u16 intPart[4][4];
-        u16 fracPart[4][4];
-    };
-    long long int forc_structure_alignment;
-} MtxS;
-
-typedef float MtxF_t[4][4];
-typedef union {
-    MtxF_t mf;
-    struct {
-        float xx, yx, zx, wx, xy, yy, zy, wy, xz, yz, zz, wz, xw, yw, zw, ww;
-    };
-} MtxF;
-
-#ifndef GBI_FLOATS
-typedef MtxS Mtx;
-#else
-typedef MtxF Mtx;
-#endif
-
 #endif

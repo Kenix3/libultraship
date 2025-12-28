@@ -1,5 +1,4 @@
-#ifndef _ULTRA64_H_
-#define _ULTRA64_H_
+#pragma once
 
 #include "libultra/abi.h"
 #include "libultra/controller.h"
@@ -21,11 +20,8 @@
 #include "libultra/r4300.h"
 #include "libultra/rcp.h"
 #include "libultra/rdp.h"
-#include "libultra/rsp.h"
 #include "libultra/sptask.h"
 #include "libultra/thread.h"
 #include "libultra/time.h"
 #include "libultra/types.h"
 #include "libultra/vi.h"
-
-#endif

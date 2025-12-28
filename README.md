@@ -1,7 +1,7 @@
 # libultraship
 libultraship (LUS) is a library meant to provide reimplementations of libultra (n64 sdk) functions that run on modern hardware.
 
-LUS uses an asset loading system where data is stored separately from the executable in an archive file ending in `.otr`, which is an [`.mpq`](http://www.zezula.net/en/mpq/main.html) compatible file. This separation the data from the executable follows modern design practices and that it is more mod friendly. All one needs to do is supply a patch `.otr` and the system will automatically replace the data.
+LUS uses an asset loading system where data is stored separately from the executable in an archive file ending in `.otr` or `.o2r`. `.otr` files are [`.mpq`](http://www.zezula.net/en/mpq/main.html) compatible files. `.o2r` files are `.zip` compatible files. This separation of data from executable follows modern design practices which are more mod friendly. All one needs to do is supply a patch `.otr` or `.o2r` and the system will automatically replace the data.
 
 ## Contributing
 LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/shipofharkinian).
@@ -30,7 +30,7 @@ cmake --build build
 ```
 
 ## Sponsors
-Thankyou to JetBrains for providing their IDE [CLion](https://www.jetbrains.com/clion/) to me for free!
+Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com/clion/) to me for free!
 
 ## License
 LUS is licensed under the [MIT](https://github.com/Kenix3/libultraship/blob/main/LICENSE) license.
@@ -41,7 +41,6 @@ LUS makes use of the following third party libraries and resources:
 - [StormLib](https://github.com/ladislav-zezula/StormLib) (MIT) create and read `.mpq` compatible archive files.
 - [StrHash64](https://github.com/Kenix3/libultraship/blob/main/extern/StrHash64/StrHash64.h) (MIT, zlib, BSD-3-Clause) provide crc64 implementation.
 - [ZAPD](https://github.com/zeldaret/ZAPD) (MIT) asset utilities.
-- [dr_libs](https://github.com/mackron/dr_libs) (MIT-0) mp3 and wav file conversion.
 - [metal-cpp](https://github.com/bkaradzic/metal-cpp) (Apache 2.0) interface to the Apple Metal rendering backend.
 - [nlohmann-json](https://github.com/nlohmann/json) (MIT) json parsing and saving.
 - [spdlog](https://github.com/gabime/spdlog) (MIT) logging

@@ -1,5 +1,4 @@
-#ifndef ULTRA64_VI_H
-#define ULTRA64_VI_H
+#pragma once
 
 #include "message.h"
 
@@ -133,5 +132,3 @@ typedef struct {
 #define OS_TV_NTSC 1
 #define OS_TV_MPAL 2
 #define OS_VI_UNK28 28
-
-#endif

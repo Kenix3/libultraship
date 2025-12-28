@@ -1,5 +1,4 @@
-#ifndef ULTRA64_RDP_H
-#define ULTRA64_RDP_H
+#pragma once
 
 /* DP Command Registers */
 
@@ -47,5 +46,3 @@
 #define DPC_CLR_PIPE_CTR 0x0080
 #define DPC_CLR_CMD_CTR 0x0100
 #define DPC_CLR_CLOCK_CTR 0x0200
-
-#endif

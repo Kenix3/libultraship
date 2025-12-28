@@ -50,7 +50,7 @@ jobs:
           mkdir clang-tidy-result
       - name: Analyze
         run: |
-          git diff -U0 HEAD^ -- 'src' 'include' ':!include/color.h' ':!include/libultra/*' ':!src/public/libultra/*' ':!src/graphic/Fast3D/*' ':!src/log/spd' | clang-tidy-diff -p1 -path build -export-fixes clang-tidy-result/fixes.yml
+          git diff -U0 HEAD^ -- 'src' 'include' ':!include/libultraship/color.h' ':!include/ship/utils/color.h' ':!include/libultraship/libultra/*' ':!src/libultraship/libultra/*' ':!src/fast/*' ':!include/fast/*' ':!src/ship/utils/AppleFolderManager.mm' | clang-tidy-diff -p1 -path build -export-fixes clang-tidy-result/fixes.yml
       - name: Save PR metadata
         run: |
           echo ${{ github.event.number }} > clang-tidy-result/pr-id.txt
