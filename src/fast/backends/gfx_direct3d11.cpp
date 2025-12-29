@@ -126,7 +126,6 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
     DXGI_ADAPTER_DESC adapterDesc;
     std::wstring adapterName;
     char adapterNameCStr[128] = "";
-    char log_message[256];
     char error_message[512];
     HRESULT res2;
 
@@ -143,19 +142,18 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
         }
         DXGIDevice->Release();
     }
-    sprintf(log_message, "Using D3D adapter: %s", adapterNameCStr);
-    SPDLOG_INFO(log_message);
+    SPDLOG_INFO("Using D3D adapter: {0}", adapterNameCStr);
 
     if (FAILED(res)) {
         CreationFailed = true;
-        sprintf(log_message, "Failed to create a D3D device. HRESULT: 0x%08X", res);
+        SPDLOG_WARN("Failed to create a D3D device. HRESULT: 0x{0:08x}", res);
         sprintf(error_message, "Failed to create a D3D device on %s\nHRESULT: 0x%08X%s", adapterNameCStr, res,
                 SoftwareRenderer ? SoftwareText : HardwareText);
     }
 
     else if (self->mFeatureLevel < D3D_FEATURE_LEVEL_10_0) {
         CreationFailed = true;
-        sprintf(log_message, "D3D adapter doesn't support D3D feature level 10_0 or greater.");
+        SPDLOG_WARN("D3D adapter doesn't support D3D feature level 10_0 or greater.");
         sprintf(error_message, "%s doesn't support D3D feature level 10_0 or greater.%s", adapterNameCStr,
                 SoftwareRenderer ? SoftwareText : HardwareText);
 
@@ -167,7 +165,7 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
                                                sizeof(D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS));
             if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
                 CreationFailed = true;
-                sprintf(log_message, "D3D adapter doesn't support compute shaders.");
+                SPDLOG_WARN("D3D adapter doesn't support compute shaders.");
                 sprintf(error_message, "%s doesn't support compute shaders.%s", adapterNameCStr,
                         SoftwareRenderer ? SoftwareText : HardwareText);
             }
@@ -181,7 +179,6 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
         if (self->mDevice) {
             self->mDevice->Release();
         }
-        SPDLOG_WARN(log_message);
         MessageBoxA(self->mWindowBackend->GetWindowHandle(), error_message, "Warning", MB_OK | MB_ICONWARNING);
         return false;
     }
