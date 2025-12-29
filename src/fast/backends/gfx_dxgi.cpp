@@ -996,9 +996,13 @@ void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, c
 
         mTearingSupport = SUCCEEDED(hr) && allowTearing;
     }
-
-    if (!createFunc(self, false)) {
-        createFunc(self, true);
+    // Try preferred hardware adapter and then try software adapter (WARP), if that fails.
+    // Maybe we can try a different renderer (like OpenGL) here first before software?
+    if (!createFunc(self, false) && !createFunc(self, true)) {
+        SPDLOG_CRITICAL("Creating D3D renderer failed. Exiting");
+        MessageBoxA(self->mWindowBackend->GetWindowHandle(), "Creating D3D renderer failed. Exiting", "Error",
+                    MB_OK | MB_ICONERROR);
+        throw;
     }
 }
 
