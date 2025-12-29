@@ -252,14 +252,11 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto shaderMod = gfx_get_shader(cc_features.shader_id);
+    const char* shaderName = gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/metal/default.shader.metal";
 
-    if (shaderMod.has_value()) {
-        auto raw = shaderMod.value().GetFragment();
-        if (raw.has_value()) {
-            path = raw.value() + ".metal";
-        }
+    if (nullptr != shaderName) {
+        path = string(shaderName) + ".metal";
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
