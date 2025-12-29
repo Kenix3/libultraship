@@ -2896,13 +2896,9 @@ bool gfx_set_shader(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     const char* shader = (char*)cmd->words.w1;
 
-    if (NULL != shader) {
-        gfx->mShaders[gfx->mShadersIndex] = shader;
-        gfx->mRdp->shader_id = gfx->mShadersIndex;
-        gfx->mShadersIndex++;
-    } else {
-        SPDLOG_ERROR("[Interpreter] Invalid vertex shader! {:s}", shader);
-    }
+    gfx->mShaders[gfx->mShadersIndex] = shader;
+    gfx->mRdp->shader_id = gfx->mShadersIndex;
+    gfx->mShadersIndex++;
 
     return false;
 }
@@ -2916,7 +2912,7 @@ const char* gfx_get_shader(int16_t id) {
         }
     }
 
-    return 0; // Return default shader
+    return -1; // Use no shader
 }
 
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
