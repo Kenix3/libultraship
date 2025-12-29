@@ -2894,14 +2894,14 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 bool gfx_set_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
-    const char* vertex = (char*)cmd->words.w1;
+    const char* shader = (char*)cmd->words.w1;
 
-    if (NULL != vertex) {
-        gfx->mShaders[gfx->mShadersIndex] = vertex;
+    if (NULL != shader) {
+        gfx->mShaders[gfx->mShadersIndex] = shader;
         gfx->mRdp->shader_id = gfx->mShadersIndex;
         gfx->mShadersIndex++;
     } else {
-        SPDLOG_ERROR("[Interpreter] Invalid vertex shader! {:s}", vertex);
+        SPDLOG_ERROR("[Interpreter] Invalid vertex shader! {:s}", shader);
     }
 
     return false;
