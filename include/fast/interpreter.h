@@ -291,7 +291,6 @@ struct RDP {
     uint32_t other_mode_l, other_mode_h;
     uint64_t combine_mode;
     bool grayscale;
-    int16_t shader_id = -1;
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
@@ -512,6 +511,9 @@ class Interpreter {
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
     std::unordered_map<size_t, const char*> mShaders;
+
+    typedef size_t ShaderId;
+    std::stack<ShaderId> mShaderStack;
     size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;

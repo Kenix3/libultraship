@@ -2794,17 +2794,29 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gsSPSetShader(shader)          \
-    { (_SHIFTL(G_LOAD_SHADER, 24, 8)), (shader) }, { \
-        0, 0                                       \
+#define gsSPPushShader(shader)                       \
+    { (_SHIFTL(G_PUSH_SHADER, 24, 8)), (shader) }, { \
+        0, 0                                         \
     }
 
-#define gSPSetShader(pkt, shader)                   \
+#define gSPPushShader(pkt, shader)                     \
     {                                                  \
         Gfx *_g0 = (Gfx*)(pkt);                        \
                                                        \
-        _g0->words.w0 = _SHIFTL(G_LOAD_SHADER, 24, 8); \
-        _g0->words.w1 = shader;                           \
+        _g0->words.w0 = _SHIFTL(G_PUSH_SHADER, 24, 8); \
+        _g0->words.w1 = shader;                        \
+    }
+
+#define gsSPPopShader()                      \
+    { (_SHIFTL(G_POP_SHADER, 24, 8)), 0 }, { \
+        0, 0                                 \
+    }
+
+#define gSPPopShader(pkt)                             \
+    {                                                 \
+        Gfx *_g0 = (Gfx*)(pkt);                       \
+                                                      \
+        _g0->words.w0 = _SHIFTL(G_POP_SHADER, 24, 8); \
     }
 
 #define gSPExtraGeometryMode(pkt, c, s)                                                 \

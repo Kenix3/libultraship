@@ -1483,7 +1483,11 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         cc_options |= SHADER_OPT(GRAYSCALE);
     }
 
-    cc_options |= (mRdp->shader_id << SHADER_ID_SHIFT);
+    if (!mShaderStack.empty()) {
+        cc_options |= (mShaderStack.top() << SHADER_ID_SHIFT);
+    } else {
+        cc_options |= -1 << SHADER_ID_SHIFT;
+    }
 
     if (mRdp->loaded_texture[0].masked) {
         cc_options |= SHADER_OPT(TEXEL0_MASK);
@@ -2891,14 +2895,23 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
-bool gfx_set_shader(F3DGfx** cmd0) {
+bool gfx_push_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     const char* shader = (char*)cmd->words.w1;
 
     gfx->mShaders[gfx->mShadersIndex] = shader;
-    gfx->mRdp->shader_id = gfx->mShadersIndex;
+    gfx->mShaderStack.push(gfx->mShadersIndex);
     gfx->mShadersIndex++;
+
+    return false;
+}
+
+bool gfx_pop_shader(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->mShaderStack.pop();
 
     return false;
 }
@@ -3961,7 +3974,8 @@ static constexpr UcodeHandler otrHandlers = {
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
-    { OTR_G_LOAD_SHADER, { "G_LOAD_SHADER", gfx_set_shader } },
+    { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
+    { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
@@ -4148,10 +4162,12 @@ static void gfx_step() {
 }
 
 void Interpreter::SpReset() {
+    while (!mShaderStack.empty()) {
+        mShaderStack.pop();
+    }
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
-    mRdp->shader_id = -1;
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;
