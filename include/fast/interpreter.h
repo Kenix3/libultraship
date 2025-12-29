@@ -9,7 +9,6 @@
 #include <vector>
 #include <stack>
 #include <string>
-#include <optional>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
