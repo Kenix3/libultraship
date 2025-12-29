@@ -229,6 +229,7 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
 std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     prism::Processor processor;
     prism::ContextItems mContext = {
+        { "VERTEX_SHADER", false },
         { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
         { "o_alpha", cc_features.opt_alpha },
         { "o_fog", cc_features.opt_fog },
@@ -297,10 +298,10 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     const char* shaderName = gfx_get_shader(cc_features.shader_id);
-    std::string path = "shaders/opengl/default.shader.fs";
+    std::string path = "shaders/opengl/default.shader.glsl";
 
     if (nullptr != shaderName) {
-        path = std::string(shaderName) + ".fs";
+        path = std::string(shaderName) + ".glsl";
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
@@ -331,7 +332,8 @@ static prism::ContextTypes* UpdateFloats(prism::ContextTypes* _, prism::ContextT
 static std::string BuildVsShader(const CCFeatures& cc_features) {
     numFloats = 4;
     prism::Processor processor;
-    prism::ContextItems mContext = { { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+    prism::ContextItems mContext = { { "VERTEX_SHADER", true },
+                                     { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
                                      { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
                                      { "o_fog", cc_features.opt_fog },
                                      { "o_grayscale", cc_features.opt_grayscale },
@@ -362,10 +364,10 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     const char* shaderName = gfx_get_shader(cc_features.shader_id);
-    std::string path = "shaders/opengl/default.shader.vs";
+    std::string path = "shaders/opengl/default.shader.glsl";
 
     if (nullptr != shaderName) {
-        path = std::string(shaderName) + ".vs";
+        path = std::string(shaderName) + ".glsl";
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
