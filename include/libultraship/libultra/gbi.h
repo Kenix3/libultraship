@@ -2801,7 +2801,7 @@ typedef union Gfx {
 
 #define gSPPushShader(pkt, shader)                     \
     {                                                  \
-        Gfx *_g0 = (Gfx*)(pkt);                        \
+        Gfx* _g0 = (Gfx*)(pkt);                        \
                                                        \
         _g0->words.w0 = _SHIFTL(G_PUSH_SHADER, 24, 8); \
         _g0->words.w1 = shader;                        \
@@ -2814,7 +2814,7 @@ typedef union Gfx {
 
 #define gSPPopShader(pkt)                             \
     {                                                 \
-        Gfx *_g0 = (Gfx*)(pkt);                       \
+        Gfx* _g0 = (Gfx*)(pkt);                       \
                                                       \
         _g0->words.w0 = _SHIFTL(G_POP_SHADER, 24, 8); \
     }
