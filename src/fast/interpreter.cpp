@@ -2912,7 +2912,7 @@ const char* gfx_get_shader(int16_t id) {
         }
     }
 
-    return -1; // Use no shader
+    return nullptr; // Use no shader
 }
 
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
