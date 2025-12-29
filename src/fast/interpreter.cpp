@@ -2910,7 +2910,13 @@ bool gfx_set_shader(F3DGfx** cmd0) {
 const char* gfx_get_shader(int16_t id) {
     Interpreter* gfx = mInstance.lock().get();
 
-    return gfx->mShaders[id];
+    for (const std::pair<size_t, const char*>& shader : gfx->mShaders) {
+        if (shader.first == id) {
+            return shader.second;
+        }
+    }
+
+    return 0; // Return default shader
 }
 
 bool gfx_moveword_handler_f3dex2(F3DGfx** cmd0) {
