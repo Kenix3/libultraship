@@ -256,7 +256,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     std::string path = "shaders/metal/default.shader.metal";
 
     if (nullptr != shaderName) {
-        path = string(shaderName) + ".metal";
+        path = std::string(shaderName) + ".metal";
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
