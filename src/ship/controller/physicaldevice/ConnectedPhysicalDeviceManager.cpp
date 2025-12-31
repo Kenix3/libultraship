@@ -63,7 +63,8 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         auto name = SDL_GameControllerName(gamepad);
 
         mConnectedSDLGamepads[instanceId] = gamepad;
-        mConnectedSDLGamepadNames[instanceId] = name;
+        // "name" can be NULL and the map only likes strings
+        mConnectedSDLGamepadNames[instanceId] = name ? name : "Unknown " + std::to_string(instanceId); 
 
         for (uint8_t port = 1; port < 4; port++) {
             mIgnoredInstanceIds[port].insert(instanceId);
