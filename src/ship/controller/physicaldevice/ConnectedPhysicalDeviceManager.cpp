@@ -59,6 +59,10 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         }
 
         auto gamepad = SDL_GameControllerOpen(i);
+        // skip if it could not be opened (isn't usable)
+        if (!gamepad) {
+            continue;
+        }
         auto instanceId = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamepad));
         auto name = SDL_GameControllerName(gamepad);
 
