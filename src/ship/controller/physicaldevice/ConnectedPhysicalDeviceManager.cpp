@@ -1,4 +1,5 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
+#include <spdlog/spdlog.h>
 
 namespace Ship {
 ConnectedPhysicalDeviceManager::ConnectedPhysicalDeviceManager() {
@@ -53,22 +54,41 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
     mConnectedSDLGamepadNames.clear();
 
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
-        // skip if this SDL joystick isn't a Gamepad
+        char deviceGUID[33] = "";
+        SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), deviceGUID, sizeof(deviceGUID));
+
         if (!SDL_IsGameController(i)) {
+            SPDLOG_WARN("SDL Joystick (GUID: {}) not recognized as gamepad."
+                        "This is likely due to a missing mapping string in gamecontrollerdb.txt."
+                        "See https://github.com/mdqinc/SDL_GameControllerDB for more info.",
+                        i, deviceGUID);
             continue;
         }
 
         auto gamepad = SDL_GameControllerOpen(i);
-        // skip if it could not be opened (isn't usable)
-        if (!gamepad) {
+        if (gamepad == nullptr) {
+            SPDLOG_ERROR("SDL GameControllerOpen error (GUID: {}): {}", deviceGUID, SDL_GetError());
             continue;
         }
+
         auto instanceId = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamepad));
+        if (instanceId < 0) {
+            SPDLOG_ERROR("SDL JoystickInstanceID error (GUID: {}): {}", deviceGUID, SDL_GetError());
+            continue;
+        }
+
+        std::string gamepadName;
         auto name = SDL_GameControllerName(gamepad);
+        if (name == nullptr) {
+            gamepadName = "Gamepad " + std::to_string(instanceId);
+            SPDLOG_WARN("SDL_GameControllerName returned null (GUID: {}). Setting name to \"{}\"", deviceGUID,
+                        gamepadName);
+        } else {
+            gamepadName = name;
+        }
 
         mConnectedSDLGamepads[instanceId] = gamepad;
-        // "name" can be NULL and the map only likes strings
-        mConnectedSDLGamepadNames[instanceId] = name ? name : "Unknown " + std::to_string(instanceId); 
+        mConnectedSDLGamepadNames[instanceId] = gamepadName;
 
         for (uint8_t port = 1; port < 4; port++) {
             mIgnoredInstanceIds[port].insert(instanceId);
