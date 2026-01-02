@@ -844,7 +844,11 @@ constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x45);
  * Vertex (set up for use with colors)
  */
 typedef struct {
-    short ob[3]; /* x, y, z */
+#ifndef GBI_FLOATS
+	short		ob[3];	/* x, y, z */
+#else
+	float		ob[3];	/* x, y, z */
+#endif
     unsigned short flag;
     short tc[2];         /* texture coord */
     unsigned char cn[4]; /* color & alpha */
@@ -854,7 +858,11 @@ typedef struct {
  * Vertex (set up for use with normals)
  */
 typedef struct {
-    short ob[3]; /* x, y, z */
+#ifndef GBI_FLOATS
+	short		ob[3];	/* x, y, z */
+#else
+	float		ob[3];	/* x, y, z */
+#endif
     unsigned short flag;
     short tc[2];      /* texture coord */
     signed char n[3]; /* normal */
