@@ -55,7 +55,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
 
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
         char deviceGUID[33] = "";
-        // Sould return 00000000000000000000000000000000 if the GUID or controller index is invalid
+        // Should return 00000000000000000000000000000000 (32*0) if the GUID or controller index is invalid
         SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), deviceGUID, sizeof(deviceGUID));
 
         if (!SDL_IsGameController(i)) {
