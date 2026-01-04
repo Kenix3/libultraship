@@ -55,12 +55,13 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
 
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
         char deviceGUID[33] = "";
+        // Sould return 00000000000000000000000000000000 if the GUID or controller index is invalid
         SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), deviceGUID, sizeof(deviceGUID));
 
         if (!SDL_IsGameController(i)) {
             SPDLOG_WARN("SDL Joystick (GUID: {}) not recognized as gamepad."
                         "This is likely due to a missing mapping string in gamecontrollerdb.txt."
-                        "See https://github.com/mdqinc/SDL_GameControllerDB for more info.",
+                        "Refer to https://github.com/mdqinc/SDL_GameControllerDB for more information.",
                         i, deviceGUID);
             continue;
         }
@@ -80,9 +81,8 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         std::string gamepadName;
         auto name = SDL_GameControllerName(gamepad);
         if (name == nullptr) {
-            gamepadName = "Gamepad " + std::to_string(instanceId);
-            SPDLOG_WARN("SDL_GameControllerName returned null (GUID: {}). Setting name to \"{}\"", deviceGUID,
-                        gamepadName);
+            gamepadName = deviceGUID;
+            SPDLOG_WARN("SDL_GameControllerName returned null. Setting name to GUID \"{}\" instead.", gamepadName);
         } else {
             gamepadName = name;
         }
