@@ -52,12 +52,12 @@ void ConnectedPhysicalDeviceManager::HandlePhysicalDeviceDisconnect(int32_t sdlJ
 void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
     mConnectedSDLGamepads.clear();
     mConnectedSDLGamepadNames.clear();
-    static SDL_JoystickGUID s_zeroGUID;
+    static SDL_JoystickGUID sZeroGuid;
 
     for (int32_t i = 0; i < SDL_NumJoysticks(); i++) {
 
         SDL_JoystickGUID deviceGUID = SDL_JoystickGetDeviceGUID(i);
-        if (SDL_memcmp(&deviceGUID, &s_zeroGUID, sizeof(deviceGUID)) == 0) {
+        if (SDL_memcmp(&deviceGUID, &sZeroGuid, sizeof(deviceGUID)) == 0) {
             SPDLOG_WARN(
                 "Calling SDL JoystickGetDeviceGUID with index ({}) returned zero GUID. This is likely due to an "
                 "invalid index. Refer to https://wiki.libsdl.org/SDL2/SDL_JoystickGetDeviceGUID for more information.",
@@ -65,33 +65,33 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             continue;
         }
 
-        char deviceGUID_CStr[33] = "";
-        SDL_JoystickGetGUIDString(deviceGUID, deviceGUID_CStr, sizeof(deviceGUID_CStr));
+        char deviceGuidCStr[33] = "";
+        SDL_JoystickGetGUIDString(deviceGUID, deviceGuidCStr, sizeof(deviceGuidCStr));
 
         if (!SDL_IsGameController(i)) {
             SPDLOG_WARN("SDL Joystick (GUID: {}) not recognized as gamepad."
                         "This is likely due to a missing mapping string in gamecontrollerdb.txt."
                         "Refer to https://github.com/mdqinc/SDL_GameControllerDB for more information.",
-                        i, deviceGUID_CStr);
+                        i, deviceGuidCStr);
             continue;
         }
 
         auto gamepad = SDL_GameControllerOpen(i);
         if (gamepad == nullptr) {
-            SPDLOG_ERROR("SDL GameControllerOpen error (GUID: {}): {}", deviceGUID_CStr, SDL_GetError());
+            SPDLOG_ERROR("SDL GameControllerOpen error (GUID: {}): {}", deviceGuidCStr, SDL_GetError());
             continue;
         }
 
         auto instanceId = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamepad));
         if (instanceId < 0) {
-            SPDLOG_ERROR("SDL JoystickInstanceID error (GUID: {}): {}", deviceGUID_CStr, SDL_GetError());
+            SPDLOG_ERROR("SDL JoystickInstanceID error (GUID: {}): {}", deviceGuidCStr, SDL_GetError());
             continue;
         }
 
         std::string gamepadName;
         auto name = SDL_GameControllerName(gamepad);
         if (name == nullptr) {
-            gamepadName = deviceGUID_CStr;
+            gamepadName = deviceGuidCStr;
             SPDLOG_WARN("SDL_GameControllerName returned null. Setting name to GUID \"{}\" instead.", gamepadName);
         } else {
             gamepadName = name;
