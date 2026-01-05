@@ -59,7 +59,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         SDL_JoystickGUID deviceGUID = SDL_JoystickGetDeviceGUID(i);
         if (SDL_memcmp(&deviceGUID, &sZeroGuid, sizeof(deviceGUID)) == 0) {
             SPDLOG_WARN(
-                "Calling SDL JoystickGetDeviceGUID with index ({}) returned zero GUID. This is likely due to an "
+                "Calling SDL JoystickGetDeviceGUID with index ({:d}) returned zero GUID. This is likely due to an "
                 "invalid index. Refer to https://wiki.libsdl.org/SDL2/SDL_JoystickGetDeviceGUID for more information.",
                 i);
             continue;
@@ -72,7 +72,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             SPDLOG_WARN("SDL Joystick (GUID: {}) not recognized as gamepad."
                         "This is likely due to a missing mapping string in gamecontrollerdb.txt."
                         "Refer to https://github.com/mdqinc/SDL_GameControllerDB for more information.",
-                        i, deviceGuidCStr);
+                        deviceGuidCStr);
             continue;
         }
 
