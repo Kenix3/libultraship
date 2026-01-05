@@ -156,6 +156,10 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
         SPDLOG_WARN("D3D adapter doesn't support D3D feature level 10_0 or greater.");
         sprintf(error_message, "%s doesn't support D3D feature level 10_0 or greater.%s", adapterNameCStr,
                 SoftwareRenderer ? SoftwareText : HardwareText);
+    }
+
+    else if (self->mFeatureLevel < D3D_FEATURE_LEVEL_10_1) {
+        SPDLOG_WARN("D3D adapter doesn't support D3D feature level 10_1 or greater. MSAA setting will be ignored.");
 
     } else {
         // Check for Compute Shader support
@@ -818,7 +822,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
 
     width = ((width) > (1U) ? (width) : (1U));
     height = ((height) > (1U) ? (height) : (1U));
-    // We can't use MSAA the way we are using it on Feature Level 10.0 Hardware, so disable it altogether.
+    // We can't use MSAA the way we are using it on feature level 10_0 hardware, so disable it altogether.
     msaa_level = mFeatureLevel < D3D_FEATURE_LEVEL_10_1 ? 1 : msaa_level;
     while (msaa_level > 1 && mMsaaNumQualityLevels[msaa_level - 1] == 0) {
         --msaa_level;
