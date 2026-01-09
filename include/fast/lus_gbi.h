@@ -845,9 +845,9 @@ constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x45);
  */
 typedef struct {
 #ifndef GBI_FLOATS
-	short		ob[3];	/* x, y, z */
+    short ob[3]; /* x, y, z */
 #else
-	float		ob[3];	/* x, y, z */
+    float ob[3]; /* x, y, z */
 #endif
     unsigned short flag;
     short tc[2];         /* texture coord */
@@ -859,9 +859,9 @@ typedef struct {
  */
 typedef struct {
 #ifndef GBI_FLOATS
-	short		ob[3];	/* x, y, z */
+    short ob[3]; /* x, y, z */
 #else
-	float		ob[3];	/* x, y, z */
+    float ob[3]; /* x, y, z */
 #endif
     unsigned short flag;
     short tc[2];      /* texture coord */
