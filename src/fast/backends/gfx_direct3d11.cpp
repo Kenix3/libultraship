@@ -236,7 +236,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     const char* shader_source_msaa = R"(
 sampler my_sampler : register(s0);
-Texture2DMS<float, 2> tex : register(t0);
+Texture2DMS<float> tex : register(t0);
 StructuredBuffer<int2> coord : register(t1);
 RWStructuredBuffer<float> output : register(u0);
 
