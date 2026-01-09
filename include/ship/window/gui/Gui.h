@@ -136,6 +136,8 @@ class Gui {
   private:
     GuiWindowInitData mImpl;
     bool mNeedsConsoleVariableSave;
+    std::string mImGuiIniPath;
+    std::string mImGuiLogPath;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
