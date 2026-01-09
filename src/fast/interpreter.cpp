@@ -2825,7 +2825,7 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
         (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
     if (mtx != nullptr) {
         cmd--;
-        gfx->GfxSpMatrix(C0(16, 8), (const int32_t*)gfx->SegAddr(cmd->words.w1));
+        gfx->GfxSpMatrix(C0(16, 8), mtx);
         cmd++;
     }
     return false;
