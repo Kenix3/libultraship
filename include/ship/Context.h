@@ -72,7 +72,8 @@ class Context {
     bool InitConfiguration();
     bool InitConsoleVariables();
     bool InitResourceManager(const std::vector<std::string>& archivePaths = {},
-                             const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1);
+                             const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1,
+                             const bool allowEmptyPaths = false);
     bool InitControlDeck(std::shared_ptr<ControlDeck> controlDeck = nullptr);
     bool InitCrashHandler();
     bool InitAudio(AudioSettings settings);

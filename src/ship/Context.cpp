@@ -197,7 +197,8 @@ bool Context::InitConsoleVariables() {
 }
 
 bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
-                                  const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
+                                  const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount,
+                                  const bool allowEmptyPaths) {
     if (GetResourceManager() != nullptr) {
         return true;
     }
@@ -216,7 +217,7 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
         GetResourceManager()->Init(archivePaths, validHashes, reservedThreadCount);
     }
 
-    if (!GetResourceManager()->IsLoaded()) {
+    if (!allowEmptyPaths && !GetResourceManager()->IsLoaded()) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
