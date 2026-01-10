@@ -57,7 +57,7 @@ class ResourceManager {
 
   public:
     ResourceManager();
-    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
+    void Init(const std::vector<std::string>& archiveList, const std::unordered_set<uint32_t>& validHashes,
               int32_t reservedThreadCount = 1);
     ~ResourceManager();
 

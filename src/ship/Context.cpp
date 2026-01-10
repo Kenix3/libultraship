@@ -9,6 +9,7 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
+#include "ship/utils/StringHelper.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -85,11 +86,11 @@ Context::Context(std::string name, std::string shortName, std::string configFile
     : mConfigFilePath(std::move(configFilePath)), mName(std::move(name)), mShortName(std::move(shortName)) {
 }
 
-bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
+bool Context::Init(const std::optional<std::vector<std::string>>& archiveList, const std::unordered_set<uint32_t>& validHashes,
                    uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window,
                    std::shared_ptr<ControlDeck> controlDeck) {
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
-           InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
+           InitResourceManager(archiveList, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
            InitFileDropMgr();
 }
@@ -196,7 +197,7 @@ bool Context::InitConsoleVariables() {
     return true;
 }
 
-bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
+bool Context::InitResourceManager(const std::optional<std::vector<std::string>>& archiveList,
                                   const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
     if (GetResourceManager() != nullptr) {
         return true;
@@ -204,27 +205,48 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
 
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
-    if (archivePaths.empty()) {
+    if (!archiveList.has_value()) {
         std::vector<std::string> paths = std::vector<std::string>();
         paths.push_back(mMainPath);
         paths.push_back(mPatchesPath);
 
         mResourceManager = std::make_shared<ResourceManager>();
-        GetResourceManager()->Init(paths, validHashes, reservedThreadCount);
+        std::vector<std::string> fileList;
+        for (const auto& archivePath : paths) {
+            if (archivePath.length() > 0) {
+                if (std::filesystem::is_directory(archivePath)) {
+                    for (const auto& p : std::filesystem::recursive_directory_iterator(archivePath)) {
+                        if (StringHelper::IEquals(p.path().extension().string(), ".otr") ||
+                            StringHelper::IEquals(p.path().extension().string(), ".zip") ||
+                            StringHelper::IEquals(p.path().extension().string(), ".mpq") ||
+                            StringHelper::IEquals(p.path().extension().string(), ".o2r")) {
+                            fileList.push_back(std::filesystem::absolute(p).string());
+                        }
+                    }
+                } else if (std::filesystem::is_regular_file(archivePath)) {
+                    fileList.push_back(std::filesystem::absolute(archivePath).string());
+                } else {
+                    SPDLOG_WARN("The archive at path {} does not exist", std::filesystem::absolute(archivePath).string());
+                }
+            } else {
+                SPDLOG_WARN("No archive path supplied");
+            }
+        }
+        GetResourceManager()->Init(fileList, validHashes, reservedThreadCount);
+
+        if (!GetResourceManager()->IsLoaded()) {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
+                                    "Main OTR file not found. Please generate one", nullptr);
+            SPDLOG_ERROR("Main OTR file not found!");
+    #ifdef __IOS__
+            // We need this exit to close the app when we dismiss the dialog
+            exit(0);
+    #endif
+            return false;
+        }
     } else {
         mResourceManager = std::make_shared<ResourceManager>();
-        GetResourceManager()->Init(archivePaths, validHashes, reservedThreadCount);
-    }
-
-    if (!GetResourceManager()->IsLoaded()) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
-                                 "Main OTR file not found. Please generate one", nullptr);
-        SPDLOG_ERROR("Main OTR file not found!");
-#ifdef __IOS__
-        // We need this exit to close the app when we dismiss the dialog
-        exit(0);
-#endif
-        return false;
+        GetResourceManager()->Init(archiveList.value(), validHashes, reservedThreadCount);
     }
 
     return true;

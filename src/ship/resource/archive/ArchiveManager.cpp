@@ -17,15 +17,14 @@ namespace Ship {
 ArchiveManager::ArchiveManager() {
 }
 
-void ArchiveManager::Init(const std::vector<std::string>& archivePaths) {
-    Init(archivePaths, {});
+void ArchiveManager::Init(const std::vector<std::string>& archiveList) {
+    Init(archiveList, {});
 }
 
-void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
+void ArchiveManager::Init(const std::vector<std::string>& archiveList,
                           const std::unordered_set<uint32_t>& validGameVersions) {
     mValidGameVersions = validGameVersions;
-    auto archives = GetArchiveListInPaths(archivePaths);
-    for (const auto& archive : archives) {
+    for (const auto& archive : archiveList) {
         AddArchive(archive);
     }
 }
@@ -203,33 +202,6 @@ const std::string* ArchiveManager::HashToString(uint64_t hash) const {
 const char* ArchiveManager::HashToCString(uint64_t hash) const {
     const std::string* hashStr = HashToString(hash);
     return hashStr != nullptr ? hashStr->c_str() : nullptr;
-}
-
-std::vector<std::string> ArchiveManager::GetArchiveListInPaths(const std::vector<std::string>& archivePaths) {
-    std::vector<std::string> fileList = {};
-
-    for (const auto& archivePath : archivePaths) {
-        if (archivePath.length() > 0) {
-            if (std::filesystem::is_directory(archivePath)) {
-                for (const auto& p : std::filesystem::recursive_directory_iterator(archivePath)) {
-                    if (StringHelper::IEquals(p.path().extension().string(), ".otr") ||
-                        StringHelper::IEquals(p.path().extension().string(), ".zip") ||
-                        StringHelper::IEquals(p.path().extension().string(), ".mpq") ||
-                        StringHelper::IEquals(p.path().extension().string(), ".o2r")) {
-                        fileList.push_back(std::filesystem::absolute(p).string());
-                    }
-                }
-            } else if (std::filesystem::is_regular_file(archivePath)) {
-                fileList.push_back(std::filesystem::absolute(archivePath).string());
-            } else {
-                SPDLOG_WARN("The archive at path {} does not exist", std::filesystem::absolute(archivePath).string());
-            }
-        } else {
-            SPDLOG_WARN("No archive path supplied");
-        }
-    }
-
-    return fileList;
 }
 
 std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePath) {

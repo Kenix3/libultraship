@@ -16,8 +16,8 @@ class Archive;
 class ArchiveManager {
   public:
     ArchiveManager();
-    void Init(const std::vector<std::string>& archivePaths);
-    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validGameVersions);
+    void Init(const std::vector<std::string>& archiveList);
+    void Init(const std::vector<std::string>& archiveList, const std::unordered_set<uint32_t>& validGameVersions);
     ~ArchiveManager();
 
     std::shared_ptr<Archive> AddArchive(const std::string& archivePath);
@@ -45,7 +45,6 @@ class ArchiveManager {
     bool IsGameVersionValid(uint32_t gameVersion);
 
   protected:
-    static std::vector<std::string> GetArchiveListInPaths(const std::vector<std::string>& archivePaths);
     void AddGameVersion(uint32_t newGameVersion);
     void ResetVirtualFileSystem();
 
