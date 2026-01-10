@@ -206,6 +206,7 @@ bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordere
 }
 
 void Fast3dWindow::HandleEvents() {
+    mFrameCount += 1;
     mWindowManagerApi->HandleEvents();
 }
 
