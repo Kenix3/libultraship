@@ -1836,15 +1836,15 @@ typedef union Gfx {
     { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v)MakeTrace() }
 
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
-/*
- * F3DEX_GBI: G_VTX GBI format was changed to support 64 vertice.
- *
- *        +--------+--------+------+----------+
- *  G_VTX |  cmd:8 |  v0:8  |  n:6 |length:10 |
- *        +-+---+--+--------+------+----------+
- *        | |seg|          address            |
- *        +-+---+-----------------------------+
- */
+                 /*
+                  * F3DEX_GBI: G_VTX GBI format was changed to support 64 vertice.
+                  *
+                  *        +--------+--------+------+----------+
+                  *  G_VTX |  cmd:8 |  v0:8  |  n:6 |length:10 |
+                  *        +-+---+--+--------+------+----------+
+                  *        | |seg|          address            |
+                  *        +-+---+-----------------------------+
+                  */
 #define __gSPVertex(pkt, v, n, v0) gDma1p((pkt), G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #define gsSPVertex(v, n, v0) gsDma1p(G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #else
