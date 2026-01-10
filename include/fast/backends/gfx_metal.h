@@ -58,7 +58,7 @@ namespace Fast {
 
 struct ShaderProgramMetal {
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
 
     uint8_t numInputs;
     uint8_t numFloats;
@@ -122,8 +122,8 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     GfxClipParameters GetClipParameters() override;
     void UnloadShader(ShaderProgram* oldPrg) override;
     void LoadShader(ShaderProgram* newPrg) override;
-    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) override;
-    ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) override;
+    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint64_t shaderId1) override;
+    ShaderProgram* LookupShader(uint64_t shaderId0, uint64_t shaderId1) override;
     void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) override;
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
