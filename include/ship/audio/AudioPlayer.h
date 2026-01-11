@@ -76,5 +76,9 @@ class AudioPlayer {
 #include "WasapiAudioPlayer.h"
 #endif
 
+#ifdef __APPLE__
+#include "CoreAudioAudioPlayer.h"
+#endif
+
 #include "SDLAudioPlayer.h"
 #include "NullAudioPlayer.h"

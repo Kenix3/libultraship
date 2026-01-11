@@ -1,5 +1,9 @@
 #include "ship/audio/Audio.h"
 
+#ifdef __APPLE__
+#include "ship/audio/CoreAudioAudioPlayer.h"
+#endif
+
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
@@ -14,6 +18,11 @@ void Audio::InitAudioPlayer() {
 #ifdef _WIN32
         case AudioBackend::WASAPI:
             mAudioPlayer = std::make_shared<WasapiAudioPlayer>(this->mAudioSettings);
+            break;
+#endif
+#ifdef __APPLE__
+        case AudioBackend::COREAUDIO:
+            mAudioPlayer = std::make_shared<CoreAudioAudioPlayer>(this->mAudioSettings);
             break;
 #endif
         case AudioBackend::SDL:
@@ -35,6 +44,9 @@ void Audio::Init() {
     mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
 #ifdef _WIN32
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
+#endif
+#ifdef __APPLE__
+    mAvailableAudioBackends->push_back(AudioBackend::COREAUDIO);
 #endif
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);

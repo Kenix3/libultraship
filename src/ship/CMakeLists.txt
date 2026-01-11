@@ -13,6 +13,10 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Audio EXCLUDE REGEX "audio/WasapiAudioPlayer.*")
 endif()
 
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(FILTER Source_Files__Audio EXCLUDE REGEX "audio/CoreAudioAudioPlayer.*")
+endif()
+
 source_group("audio" FILES ${Source_Files__Audio})
 target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
