@@ -36,7 +36,7 @@ Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com
 LUS is licensed under the [MIT](https://github.com/Kenix3/libultraship/blob/main/LICENSE) license.
 
 LUS makes use of the following third party libraries and resources:
-- [Fast3D](https://github.com/Kenix3/libultraship/tree/main/src/graphic/Fast3D) (MIT) render display lists.
+- [Fast3D](https://github.com/Kenix3/libultraship/tree/main/src/fast) (MIT) render display lists.
 - [ImGui](https://github.com/ocornut/imgui) (MIT)  display UI.
 - [StormLib](https://github.com/ladislav-zezula/StormLib) (MIT) create and read `.mpq` compatible archive files.
 - [StrHash64](https://github.com/Kenix3/libultraship/blob/main/extern/StrHash64/StrHash64.h) (MIT, zlib, BSD-3-Clause) provide crc64 implementation.
