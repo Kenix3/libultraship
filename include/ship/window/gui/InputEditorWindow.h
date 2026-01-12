@@ -17,7 +17,7 @@ class InputEditorWindow : public GuiWindow {
     virtual ~InputEditorWindow();
 
     void DrawInputChip(const char* buttonName, ImVec4 color);
-    void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);
+    void DrawAnaloguePreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);
     bool TestingRumble();
 
   protected:
