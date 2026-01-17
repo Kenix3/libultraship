@@ -13,10 +13,19 @@ typedef union {
     void* ptr;
 } OSMesg;
 
+#ifdef __cplusplus
+// C++ compatible initialization (MSVC doesn't support compound literals in C++)
+static inline OSMesg OS_MESG_8(u8 x) { OSMesg m; m.data8 = x; return m; }
+static inline OSMesg OS_MESG_16(u16 x) { OSMesg m; m.data16 = x; return m; }
+static inline OSMesg OS_MESG_32(u32 x) { OSMesg m; m.data32 = x; return m; }
+static inline OSMesg OS_MESG_PTR(void* x) { OSMesg m; m.ptr = x; return m; }
+#else
+// C99 compound literals
 #define OS_MESG_8(x) ((OSMesg){ .data8 = (x) })
 #define OS_MESG_16(x) ((OSMesg){ .data16 = (x) })
 #define OS_MESG_32(x) ((OSMesg){ .data32 = (x) })
 #define OS_MESG_PTR(x) ((OSMesg){ .ptr = (x) })
+#endif
 
 #define osSendMesg8(queue, msg, flag) osSendMesg(queue, OS_MESG_8(msg), flag)
 #define osSendMesg16(queue, msg, flag) osSendMesg(queue, OS_MESG_16(msg), flag)
