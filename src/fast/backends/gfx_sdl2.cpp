@@ -40,6 +40,22 @@
 #define GFX_BACKEND_NAME "SDL"
 #define _100NANOSECONDS_IN_SECOND 10000000
 
+// Weak linkage for SharedGraphics API from combo library
+// These functions may not be available if combo is not linked
+#if defined(__GNUC__) || defined(__clang__)
+extern "C" __attribute__((weak)) bool Combo_GetSharedGraphics(uint32_t* sdlWindowID, void** glContext);
+extern "C" __attribute__((weak)) void Combo_SetSharedGraphics(uint32_t sdlWindowID, void* glContext);
+#elif defined(_MSC_VER)
+// On Windows/MSVC, we use __declspec(selectany) with function pointers
+// to allow linking even if the symbols aren't present
+extern "C" __declspec(dllimport) bool Combo_GetSharedGraphics(uint32_t* sdlWindowID, void** glContext);
+extern "C" __declspec(dllimport) void Combo_SetSharedGraphics(uint32_t sdlWindowID, void* glContext);
+#pragma comment(linker, "/alternatename:Combo_GetSharedGraphics=__Combo_GetSharedGraphics_stub")
+#pragma comment(linker, "/alternatename:Combo_SetSharedGraphics=__Combo_SetSharedGraphics_stub")
+extern "C" bool __Combo_GetSharedGraphics_stub(uint32_t*, void**) { return false; }
+extern "C" void __Combo_SetSharedGraphics_stub(uint32_t, void*) {}
+#endif
+
 #ifdef _WIN32
 LONG_PTR SDL_WndProc;
 #endif
@@ -368,6 +384,56 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         flags = flags | SDL_WINDOW_METAL;
     }
 
+    Ship::GuiWindowInitData window_impl;
+
+    // Check for shared graphics from combo library (for game switching)
+    uint32_t sharedWindowID = 0;
+    void* sharedGLContext = nullptr;
+    bool hasSharedGraphics = false;
+
+#if defined(__GNUC__) || defined(__clang__)
+    // Weak symbol will be nullptr if combo is not linked
+    if (Combo_GetSharedGraphics != nullptr) {
+        hasSharedGraphics = Combo_GetSharedGraphics(&sharedWindowID, &sharedGLContext);
+    }
+#else
+    // On MSVC, the stub functions handle the case where combo isn't linked
+    hasSharedGraphics = Combo_GetSharedGraphics(&sharedWindowID, &sharedGLContext);
+#endif
+
+    if (hasSharedGraphics && sharedWindowID != 0 && sharedGLContext != nullptr && use_opengl) {
+        // Reuse existing window and GL context from another game
+        mWnd = SDL_GetWindowFromID(sharedWindowID);
+        mCtx = static_cast<SDL_GLContext>(sharedGLContext);
+        mUsingSharedGraphics = true;
+
+        if (mWnd != nullptr) {
+            SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
+            SDL_GL_MakeCurrent(mWnd, mCtx);
+            SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
+
+            window_impl.Opengl = { mWnd, mCtx };
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+
+            // Initialize scancode tables and return early
+            for (size_t i = 0; i < std::size(lus_to_sdl_table); i++) {
+                mSdlToLusTable[lus_to_sdl_table[i]] = i;
+            }
+            for (size_t i = 0; i < std::size(scancode_rmapping_extended); i++) {
+                mSdlToLusTable[scancode_rmapping_extended[i][0]] = mSdlToLusTable[scancode_rmapping_extended[i][1]] + 0x100;
+            }
+            for (size_t i = 0; i < std::size(scancode_rmapping_nonextended); i++) {
+                mSdlToLusTable[scancode_rmapping_nonextended[i][0]] = mSdlToLusTable[scancode_rmapping_nonextended[i][1]];
+                mSdlToLusTable[scancode_rmapping_nonextended[i][1]] += 0x100;
+            }
+            return;
+        }
+        // If SDL_GetWindowFromID failed, fall through to normal window creation
+        mUsingSharedGraphics = false;
+    }
+
+    // Normal path: create new window
+    mUsingSharedGraphics = false;
     mWnd = SDL_CreateWindow(title, posX, posY, mWindowWidth, mWindowHeight, flags);
 #ifdef _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
@@ -379,7 +445,6 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 #endif
-    Ship::GuiWindowInitData window_impl;
 
     int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
     if (display_in_use < 0) { // Fallback to default if out of bounds
@@ -400,6 +465,15 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
 
         window_impl.Opengl = { mWnd, mCtx };
+
+        // Store window/context for other games to reuse
+#if defined(__GNUC__) || defined(__clang__)
+        if (Combo_SetSharedGraphics != nullptr) {
+            Combo_SetSharedGraphics(SDL_GetWindowID(mWnd), mCtx);
+        }
+#else
+        Combo_SetSharedGraphics(SDL_GetWindowID(mWnd), mCtx);
+#endif
     } else {
         uint32_t flags = SDL_RENDERER_ACCELERATED;
         if (mVsyncEnabled) {
@@ -729,10 +803,15 @@ bool GfxWindowBackendSDL2::IsRunning() {
 
 void GfxWindowBackendSDL2::Destroy() {
     // TODO: destroy _any_ resources used by SDL
-    SDL_GL_DeleteContext(mCtx);
-    SDL_DestroyWindow(mWnd);
-    SDL_DestroyRenderer(mRenderer);
-    SDL_Quit();
+    if (!mUsingSharedGraphics) {
+        // Only destroy window/context if we own them
+        // When using shared graphics, leave them alive for other games
+        SDL_GL_DeleteContext(mCtx);
+        SDL_DestroyWindow(mWnd);
+        SDL_DestroyRenderer(mRenderer);
+        SDL_Quit();
+    }
+    // If using shared graphics, don't destroy anything - other games need them
 }
 
 bool GfxWindowBackendSDL2::IsFullscreen() {

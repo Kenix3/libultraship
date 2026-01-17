@@ -61,5 +61,9 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     int mWindowWidth = 640;
     int mWindowHeight = 480;
     void (*mOnAllKeysUp)();
+
+    // Whether we're using a shared window/context from another game
+    // When true, we skip destroying the window on shutdown
+    bool mUsingSharedGraphics = false;
 };
 } // namespace Fast
