@@ -71,8 +71,8 @@ class AudioPlayer {
 
     AudioSettings mAudioSettings;
 
-    // Number of audio frames to skip after channel switch (to prevent glitches)
-    int mSkipFrames = 0;
+    // Whether DPL II decoder needs priming (to fill delay buffers)
+    bool mNeedsPriming = false;
 
   private:
     bool mInitialized = false;
