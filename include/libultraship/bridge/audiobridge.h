@@ -14,6 +14,10 @@ AudioChannelsSetting GetAudioChannels();
 int32_t GetNumAudioChannels();
 void AudioPlayerPlayFrame(const uint8_t* buf, size_t len);
 
+// Set audio channels configuration at runtime (stereo or 5.1 surround)
+// This will reinitialize the audio backend without requiring a game restart
+void SetAudioChannelsSetting(AudioChannelsSetting channels);
+
 #ifdef __cplusplus
 };
 #endif

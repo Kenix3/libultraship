@@ -20,6 +20,11 @@ class Audio {
     std::shared_ptr<std::vector<AudioBackend>> GetAvailableAudioBackends();
     void SetCurrentAudioBackend(AudioBackend backend);
 
+    // Set audio channels configuration and reinitialize audio player
+    // This can be called at runtime without restarting the game
+    void SetAudioChannels(AudioChannelsSetting channels);
+    AudioChannelsSetting GetAudioChannels() const;
+
   protected:
     void InitAudioPlayer();
 

@@ -61,4 +61,13 @@ void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
 
     audio->Play(buf, len);
 }
+
+void SetAudioChannelsSetting(AudioChannelsSetting channels) {
+    auto audio = Ship::Context::GetInstance()->GetAudio();
+    if (audio == nullptr) {
+        return;
+    }
+
+    audio->SetAudioChannels(channels);
+}
 }

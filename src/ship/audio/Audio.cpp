@@ -62,4 +62,18 @@ std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {
     return mAvailableAudioBackends;
 }
 
+void Audio::SetAudioChannels(AudioChannelsSetting channels) {
+    if (mAudioSettings.AudioSurround != channels) {
+        mAudioSettings.AudioSurround = channels;
+        // Reinitialize the existing audio player with the new channel configuration
+        if (mAudioPlayer) {
+            mAudioPlayer->SetAudioChannels(channels);
+        }
+    }
+}
+
+AudioChannelsSetting Audio::GetAudioChannels() const {
+    return mAudioSettings.AudioSurround;
+}
+
 } // namespace Ship
