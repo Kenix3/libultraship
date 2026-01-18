@@ -386,7 +386,7 @@ void GfxRenderingAPIMetal::SetViewport(int x, int y, int width, int height) {
     FramebufferMetal& fb = mFramebuffers[mCurrentFramebuffer];
 
     fb.mViewport->originX = x;
-    fb.mViewport->originY = mRenderTargetHeight - y - height;
+    fb.mViewport->originY = mRenderTargetHeight - static_cast<float>(y) - height;
     fb.mViewport->width = width;
     fb.mViewport->height = height;
     fb.mViewport->znear = 0;
@@ -401,7 +401,7 @@ void GfxRenderingAPIMetal::SetScissor(int x, int y, int width, int height) {
 
     // clamp to viewport size as metal does not support larger values than viewport size
     fb.mScissorRect->x = std::max(0, std::min<int>(x, tex.width));
-    fb.mScissorRect->y = std::max(0, std::min<int>(mRenderTargetHeight - y - height, tex.height));
+    fb.mScissorRect->y = std::max(0, std::min<int>(mRenderTargetHeight - static_cast<float>(y) - height, tex.height));
     fb.mScissorRect->width = std::max(0, std::min<int>(width, tex.width));
     fb.mScissorRect->height = std::max(0, std::min<int>(height, tex.height));
 
