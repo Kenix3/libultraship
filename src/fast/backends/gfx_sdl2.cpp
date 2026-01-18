@@ -391,21 +391,35 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     void* sharedGLContext = nullptr;
     bool hasSharedGraphics = false;
 
+    SPDLOG_INFO("[GFX_SDL2] Checking for shared graphics from combo library...");
 #if defined(__GNUC__) || defined(__clang__)
     // Weak symbol will be nullptr if combo is not linked
     if (Combo_GetSharedGraphics != nullptr) {
+        SPDLOG_INFO("[GFX_SDL2] Weak symbol available, calling Combo_GetSharedGraphics");
         hasSharedGraphics = Combo_GetSharedGraphics(&sharedWindowID, &sharedGLContext);
+    } else {
+        SPDLOG_WARN("[GFX_SDL2] Weak symbol is NULL - combo not linked");
     }
 #else
     // On MSVC, the stub functions handle the case where combo isn't linked
+    SPDLOG_INFO("[GFX_SDL2] Windows path - calling Combo_GetSharedGraphics directly");
     hasSharedGraphics = Combo_GetSharedGraphics(&sharedWindowID, &sharedGLContext);
 #endif
+    SPDLOG_INFO("[GFX_SDL2] SharedGraphics result: has={}, windowID={}, ctx={}",
+                hasSharedGraphics, sharedWindowID, sharedGLContext);
 
     if (hasSharedGraphics && sharedWindowID != 0 && sharedGLContext != nullptr && use_opengl) {
         // Reuse existing window and GL context from another game
+        SPDLOG_INFO("[GFX_SDL2] Attempting to reuse shared window ID {}", sharedWindowID);
         mWnd = SDL_GetWindowFromID(sharedWindowID);
         mCtx = static_cast<SDL_GLContext>(sharedGLContext);
         mUsingSharedGraphics = true;
+
+        if (mWnd != nullptr) {
+            SPDLOG_INFO("[GFX_SDL2] Successfully reusing shared window!");
+        } else {
+            SPDLOG_WARN("[GFX_SDL2] SDL_GetWindowFromID({}) returned NULL!", sharedWindowID);
+        }
 
         if (mWnd != nullptr) {
             SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
@@ -467,12 +481,18 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         window_impl.Opengl = { mWnd, mCtx };
 
         // Store window/context for other games to reuse
+        uint32_t newWindowID = SDL_GetWindowID(mWnd);
+        SPDLOG_INFO("[GFX_SDL2] Created new window, storing for sharing: ID={}", newWindowID);
 #if defined(__GNUC__) || defined(__clang__)
         if (Combo_SetSharedGraphics != nullptr) {
-            Combo_SetSharedGraphics(SDL_GetWindowID(mWnd), mCtx);
+            SPDLOG_INFO("[GFX_SDL2] Calling Combo_SetSharedGraphics (weak symbol available)");
+            Combo_SetSharedGraphics(newWindowID, mCtx);
+        } else {
+            SPDLOG_WARN("[GFX_SDL2] Combo_SetSharedGraphics weak symbol is NULL");
         }
 #else
-        Combo_SetSharedGraphics(SDL_GetWindowID(mWnd), mCtx);
+        SPDLOG_INFO("[GFX_SDL2] Calling Combo_SetSharedGraphics (Windows path)");
+        Combo_SetSharedGraphics(newWindowID, mCtx);
 #endif
     } else {
         uint32_t flags = SDL_RENDERER_ACCELERATED;
