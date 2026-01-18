@@ -10,9 +10,8 @@ AudioPlayer::~AudioPlayer() {
 bool AudioPlayer::Init() {
     // Initialize PLII decoder if surround mode is enabled
     if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51) {
+        SPDLOG_INFO("Initializing Dolby Pro Logic II decoder");
         mPLIIDecoder = std::make_unique<DolbyProLogicIIDecoder>(mAudioSettings.SampleRate);
-        // Pre-allocate surround buffer for typical buffer sizes
-        mSurroundBuffer.reserve(4096 * 6);
     }
     mInitialized = DoInit();
     return IsInitialized();
@@ -59,6 +58,11 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
                 mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 ? "5.1 Surround" : "Stereo",
                 channels == AudioChannelsSetting::audioSurround51 ? "5.1 Surround" : "Stereo");
 
+    // Skip frames after switching to surround to let filters settle
+    if (channels == AudioChannelsSetting::audioSurround51 && mSkipFrames == 0) {
+        mSkipFrames = 6;
+    }
+
     // Close current audio device
     DoClose();
     mInitialized = false;
@@ -86,11 +90,6 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     // Reinitialize with new settings
     mInitialized = DoInit();
 
-    // Skip frames after switching to surround to let filters settle
-    if (channels == AudioChannelsSetting::audioSurround51) {
-        mSkipFrames = 5;
-    }
-
     return mInitialized;
 }
 
@@ -99,14 +98,6 @@ int32_t AudioPlayer::GetNumOutputChannels() const {
 }
 
 void AudioPlayer::Play(const uint8_t* buf, size_t len) {
-    // Skip frames after channel switch to prevent glitches
-    // Process audio to prime filters but output silence
-    bool outputSilence = false;
-    if (mSkipFrames > 0) {
-        mSkipFrames--;
-        outputSilence = true;
-    }
-
     if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 && mPLIIDecoder) {
         // Input is stereo, decode to surround
         const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
@@ -121,7 +112,10 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
         // Decode stereo to surround using PLII
         mPLIIDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
 
-        if (outputSilence) {
+        // Skip frames after channel switch to prevent glitches
+        // Process audio to prime filters but output silence
+        if (mSkipFrames > 0) {
+            mSkipFrames--;
             // Output silence but filters are primed
             std::fill(mSurroundBuffer.begin(), mSurroundBuffer.begin() + surroundSamplesNeeded, int16_t(0));
         }
