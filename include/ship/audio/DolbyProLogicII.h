@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cmath>
+#include <algorithm>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -57,9 +58,13 @@ class DolbyProLogicIIDecoder {
     // Delay buffer
     static constexpr int MAX_DELAY_SAMPLES = 1024;  // Supports up to ~21ms at 48kHz
     struct DelayBuffer {
-        float buffer[MAX_DELAY_SAMPLES] = {0};
+        float buffer[MAX_DELAY_SAMPLES];
         int writePos = 0;
         int delaySamples = 0;
+
+        DelayBuffer() {
+            std::fill(buffer, buffer + MAX_DELAY_SAMPLES, 0.0f);
+        }
     };
 
     // Filter coefficient calculation

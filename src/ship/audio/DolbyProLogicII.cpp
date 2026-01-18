@@ -59,6 +59,11 @@ void DolbyProLogicIIDecoder::Reset() {
 
 DolbyProLogicIIDecoder::LRFilterCoeffs DolbyProLogicIIDecoder::CalcLRLowPassCoeffs(double cutoff) {
     LRFilterCoeffs c{};
+    // Clamp cutoff to 95% of Nyquist to avoid numerical issues with bilinear transform
+    double maxCutoff = mSampleRate * 0.475;
+    if (cutoff > maxCutoff) {
+        cutoff = maxCutoff;
+    }
     double wc = 2.0 * M_PI * cutoff;
     double wc2 = wc * wc;
     double wc3 = wc2 * wc;
@@ -185,6 +190,7 @@ int16_t DolbyProLogicIIDecoder::ClampToS16(float v) {
 }
 
 void DolbyProLogicIIDecoder::Process(const int16_t* stereoIn, int16_t* surroundOut, int numSamples) {
+    bool initialized = mInitialized;
     if (!mInitialized) {
         Reset();
     }
@@ -233,7 +239,7 @@ void DolbyProLogicIIDecoder::Process(const int16_t* stereoIn, int16_t* surroundO
         // Output (5.1 channel order: FL, FR, C, LFE, RL, RR)
         surroundOut[i * 6 + 0] = ClampToS16(frontLeft);
         surroundOut[i * 6 + 1] = ClampToS16(frontRight);
-        // surroundOut[i * 6 + 2] = ClampToS16(center);
+        surroundOut[i * 6 + 2] = ClampToS16(center);
         surroundOut[i * 6 + 3] = ClampToS16(lfe);
         surroundOut[i * 6 + 4] = ClampToS16(surroundLeft);
         surroundOut[i * 6 + 5] = ClampToS16(surroundRight);
