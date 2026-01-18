@@ -548,7 +548,7 @@ void GfxRenderingAPIDX11::SetZmodeDecal(bool zmode_decal) {
 void GfxRenderingAPIDX11::SetViewport(int x, int y, int width, int height) {
     D3D11_VIEWPORT viewport;
     viewport.TopLeftX = x;
-    viewport.TopLeftY = mRenderTargetHeight - static_cast<float>(y) - height;
+    viewport.TopLeftY = mRenderTargetHeight - y - height;
     viewport.Width = width;
     viewport.Height = height;
     viewport.MinDepth = 0.0f;
@@ -560,9 +560,9 @@ void GfxRenderingAPIDX11::SetViewport(int x, int y, int width, int height) {
 void GfxRenderingAPIDX11::SetScissor(int x, int y, int width, int height) {
     D3D11_RECT rect;
     rect.left = x;
-    rect.top = mRenderTargetHeight - static_cast<float>(y) - height;
+    rect.top = mRenderTargetHeight - y - height;
     rect.right = x + width;
-    rect.bottom = mRenderTargetHeight - static_cast<float>(y);
+    rect.bottom = mRenderTargetHeight - y;
 
     mContext->RSSetScissorRects(1, &rect);
 }
