@@ -233,7 +233,7 @@ void DolbyProLogicIIDecoder::Process(const int16_t* stereoIn, int16_t* surroundO
         // Output (5.1 channel order: FL, FR, C, LFE, RL, RR)
         surroundOut[i * 6 + 0] = ClampToS16(frontLeft);
         surroundOut[i * 6 + 1] = ClampToS16(frontRight);
-        surroundOut[i * 6 + 2] = ClampToS16(center);
+        // surroundOut[i * 6 + 2] = ClampToS16(center);
         surroundOut[i * 6 + 3] = ClampToS16(lfe);
         surroundOut[i * 6 + 4] = ClampToS16(surroundLeft);
         surroundOut[i * 6 + 5] = ClampToS16(surroundRight);

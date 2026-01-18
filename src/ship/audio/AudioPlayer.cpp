@@ -12,8 +12,6 @@ bool AudioPlayer::Init() {
     if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51) {
         SPDLOG_INFO("Initializing Dolby Pro Logic II decoder");
         mPLIIDecoder = std::make_unique<DolbyProLogicIIDecoder>(mAudioSettings.SampleRate);
-        // Mark that we need to prime the delay buffers with real audio
-        mNeedsPriming = true;
     }
     mInitialized = DoInit();
     return IsInitialized();
@@ -60,39 +58,18 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
                 mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 ? "5.1 Surround" : "Stereo",
                 channels == AudioChannelsSetting::audioSurround51 ? "5.1 Surround" : "Stereo");
 
-    // Skip frames after switching to surround to let filters settle
-    if (channels == AudioChannelsSetting::audioSurround51) {
-        mNeedsPriming = true;
-    }
-
     // Close current audio device
     DoClose();
-    mInitialized = false;
 
     // Update channel setting
     mAudioSettings.AudioSurround = channels;
 
     // Setup or teardown PLII decoder
-    if (channels == AudioChannelsSetting::audioSurround51) {
-        if (!mPLIIDecoder) {
-            mPLIIDecoder = std::make_unique<DolbyProLogicIIDecoder>(mAudioSettings.SampleRate);
-        } else {
-            // Reset filter state to prevent glitches from old filter history
-            mPLIIDecoder->Reset();
-        }
-        // Clear and reserve surround buffer
-        mSurroundBuffer.clear();
-        mSurroundBuffer.reserve(4096 * 6);
-    } else {
-        mPLIIDecoder.reset();
-        mSurroundBuffer.clear();
-        mSurroundBuffer.shrink_to_fit();
+    if (channels == AudioChannelsSetting::audioSurround51 && !mPLIIDecoder) {
+        mPLIIDecoder = std::make_unique<DolbyProLogicIIDecoder>(mAudioSettings.SampleRate);
     }
 
-    // Reinitialize with new settings
-    mInitialized = DoInit();
-
-    return mInitialized;
+    return DoInit();
 }
 
 int32_t AudioPlayer::GetNumOutputChannels() const {
@@ -111,20 +88,8 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
             mSurroundBuffer.resize(surroundSamplesNeeded);
         }
 
-        // Prime the PLII decoder by running the first audio through multiple times
-        // This fills the delay buffers with real audio data instead of zeros
-        if (mNeedsPriming) {
-            mNeedsPriming = false;
-            // Run the first buffer through ~10 times to fill delay buffers (~10ms at 32kHz)
-            // The delay is 320 samples, and each buffer is typically 528-560 samples
-            for (int i = 0; i < 1000; i++) {
-                mPLIIDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
-            }
-        }
-
         // Decode stereo to surround using PLII
         mPLIIDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
-
 
         // Play the surround audio
         DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()),
