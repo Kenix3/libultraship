@@ -1920,7 +1920,7 @@ void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width)
     float dy = y2 - y1;
     float len = sqrtf(dx * dx + dy * dy);
 
-    float w_scale = (float)width * (1.0f / mRdp->viewport.width);
+    float w_scale = (((float)width / 2.0f) + 1.5f) * (1.0f / mRdp->viewport.width);
     float nx = (-dy / len) * w_scale;
     float ny = (dx / len) * w_scale;
 
