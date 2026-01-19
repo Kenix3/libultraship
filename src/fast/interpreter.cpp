@@ -128,10 +128,8 @@ void GfxSetInstance(std::shared_ptr<Interpreter> gfx) {
 void Interpreter::Flush() {
     if (mBufVboLen > 0) {
         mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
-        mRapi->DrawLines(mBufVbo, mBufVboLen, mBufVboNumLines);
         mBufVboLen = 0;
         mBufVboNumTris = 0;
-        mBufVboNumLines = 0;
     }
 }
 
@@ -1912,14 +1910,36 @@ void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width,
 
     struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
 
-    for (int i = 0; i < 2; i++) {
-        float z = v_arr[i]->z, w = v_arr[i]->w;
+    // Convert from line to quad
+    float x1 = v1->x / v1->w;
+    float y1 = v1->y / v1->w;
+    float x2 = v2->x / v2->w;
+    float y2 = v2->y / v2->w;
+
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float len = sqrtf(dx * dx + dy * dy);
+
+    float w_scale = (float)width * (1.0f / mRdp->viewport.width);
+    float nx = (-dy / len) * w_scale;
+    float ny = (dx / len) * w_scale;
+
+    float offsets_x[4] = { nx, -nx, nx, -nx };
+    float offsets_y[4] = { ny, -ny, ny, -ny };
+    struct LoadedVertex* parents[4] = { v1, v1, v2, v2 };
+    // Quad vtx index order
+    int indices[6] = { 0, 1, 2, 1, 3, 2 };
+
+    for (int i = 0; i < 6; i++) {
+        int idx = indices[i];
+        struct LoadedVertex* parent = parents[idx];
+        float z = parent->z, w = parent->w;
         if (clip_parameters.z_is_from_0_to_1) {
             z = (z + w) / 2.0f;
         }
 
-        mBufVbo[mBufVboLen++] = v_arr[i]->x;
-        mBufVbo[mBufVboLen++] = clip_parameters.invertY ? -v_arr[i]->y : v_arr[i]->y;
+        mBufVbo[mBufVboLen++] = parent->x + (offsets_x[idx] * w);
+        mBufVbo[mBufVboLen++] = (clip_parameters.invertY ? -1 : 1) * (parent->y + (offsets_y[idx] * w));
         mBufVbo[mBufVboLen++] = z;
         mBufVbo[mBufVboLen++] = w;
 
@@ -2010,7 +2030,9 @@ void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width,
         }
     }
 
-    if (++mBufVboNumLines == MAX_LINE_BUFFER) {
+    mBufVboNumTris += 2;
+
+    if (mBufVboNumTris >= MAX_TRI_BUFFER - 1) {
         Flush();
     }
 }
