@@ -651,6 +651,60 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
     glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_tris);
 }
 
+void GfxRenderingAPIOGL::DrawLines(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_lines) {
+    if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask) {
+        mLastDepthTest = mCurrentDepthTest;
+        mLastDepthMask = mCurrentDepthMask;
+
+        if (mCurrentDepthTest || mLastDepthMask) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(mLastDepthMask ? GL_TRUE : GL_FALSE);
+            glDepthFunc(mCurrentDepthTest ? (mCurrentZmodeDecal ? GL_LEQUAL : GL_LESS) : GL_ALWAYS);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
+    }
+
+    if (mCurrentZmodeDecal != mLastZmodeDecal) {
+        mLastZmodeDecal = mCurrentZmodeDecal;
+        if (mCurrentZmodeDecal) {
+            // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
+            // fighting
+            const int n64modeFactor = 120;
+            const int noVanishFactor = 100;
+            GLfloat SSDB = -2;
+            switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+                // scaled z-fighting (N64 mode like)
+                case 1:
+                    if (mFrameBuffers.size() >
+                        mCurrentFrameBuffer) { // safety check for vector size can probably be removed
+                        SSDB = -1.0f * (GLfloat)mFrameBuffers[mCurrentFrameBuffer].height / n64modeFactor;
+                    }
+                    break;
+                // no vanishing paths
+                case 2:
+                    if (mFrameBuffers.size() >
+                        mCurrentFrameBuffer) { // safety check for vector size can probably be removed
+                        SSDB = -1.0f * (GLfloat)mFrameBuffers[mCurrentFrameBuffer].height / noVanishFactor;
+                    }
+                    break;
+                // disabled
+                case 0:
+                default:
+                    SSDB = -2;
+            }
+            glPolygonOffset(SSDB, -2);
+            glEnable(GL_POLYGON_OFFSET_FILL);
+        } else {
+            glPolygonOffset(0, 0);
+            glDisable(GL_POLYGON_OFFSET_FILL);
+        }
+    }
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_vbo_len, buf_vbo, GL_STREAM_DRAW);
+    glDrawArrays(GL_LINES, 0, 2 * buf_vbo_num_lines);
+}
+
 void GfxRenderingAPIOGL::Init() {
 #ifndef __linux__
     glewInit();

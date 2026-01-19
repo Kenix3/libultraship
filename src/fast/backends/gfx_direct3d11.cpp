@@ -703,6 +703,105 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
     mContext->Draw(buf_vbo_num_tris * 3, 0);
 }
 
+void GfxRenderingAPIDX11::DrawLines(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_lines) {
+
+    if (mLastDepthTest != mCurrentDepthTest || mLastDepthMask != mCurrentDepthMask) {
+        mLastDepthTest = mCurrentDepthTest;
+        mLastDepthMask = mCurrentDepthMask;
+
+        mDepthStencilState.Reset();
+
+        D3D11_DEPTH_STENCIL_DESC depth_stencil_desc;
+        ZeroMemory(&depth_stencil_desc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+
+        depth_stencil_desc.DepthEnable = mCurrentDepthTest || mCurrentDepthMask;
+        depth_stencil_desc.DepthWriteMask =
+            mCurrentDepthMask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+        depth_stencil_desc.DepthFunc = mCurrentDepthTest
+                                           ? (mCurrentZmodeDecal ? D3D11_COMPARISON_LESS_EQUAL : D3D11_COMPARISON_LESS)
+                                           : D3D11_COMPARISON_ALWAYS;
+        depth_stencil_desc.StencilEnable = false;
+
+        ThrowIfFailed(mDevice->CreateDepthStencilState(&depth_stencil_desc, mDepthStencilState.GetAddressOf()));
+        mContext->OMSetDepthStencilState(mDepthStencilState.Get(), 0);
+    }
+
+    if (mLastZmodeDecal != mCurrentZmodeDecal) {
+        mLastZmodeDecal = mCurrentZmodeDecal;
+
+        mRasterizerState.Reset();
+
+        D3D11_RASTERIZER_DESC rasterizer_desc;
+        ZeroMemory(&rasterizer_desc, sizeof(D3D11_RASTERIZER_DESC));
+
+        rasterizer_desc.FillMode = D3D11_FILL_SOLID;
+        rasterizer_desc.CullMode = D3D11_CULL_NONE;
+        rasterizer_desc.FrontCounterClockwise = true;
+        rasterizer_desc.DepthBias = 0;
+        // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
+        // fighting
+        const int n64modeFactor = 120;
+        const int noVanishFactor = 100;
+        float SSDB = -2;
+
+        switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+            case 1: // scaled z-fighting (N64 mode like)
+                SSDB = -1.0f * (float)mRenderTargetHeight / n64modeFactor;
+                break;
+            case 2: // no vanishing paths
+                SSDB = -1.0f * (float)mRenderTargetHeight / noVanishFactor;
+                break;
+            case 0: // disabled
+            default:
+                SSDB = -2;
+        }
+        rasterizer_desc.SlopeScaledDepthBias = mCurrentZmodeDecal ? SSDB : 0.0f;
+        rasterizer_desc.DepthBiasClamp = 0.0f;
+        rasterizer_desc.DepthClipEnable = false;
+        rasterizer_desc.ScissorEnable = true;
+        rasterizer_desc.MultisampleEnable = false;
+        rasterizer_desc.AntialiasedLineEnable = false;
+
+        ThrowIfFailed(mDevice->CreateRasterizerState(&rasterizer_desc, mRasterizerState.GetAddressOf()));
+        mContext->RSSetState(mRasterizerState.Get());
+    }
+
+    // Set vertex buffer data
+
+    D3D11_MAPPED_SUBRESOURCE ms;
+    ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
+    mContext->Map(mVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+    memcpy(ms.pData, buf_vbo, buf_vbo_len * sizeof(float));
+    mContext->Unmap(mVertexBuffer.Get(), 0);
+
+    uint32_t stride = mShaderProgram->numFloats * sizeof(float);
+    uint32_t offset = 0;
+
+    if (mLastVertexBufferStride != stride) {
+        mLastVertexBufferStride = stride;
+        mContext->IASetVertexBuffers(0, 1, mVertexBuffer.GetAddressOf(), &stride, &offset);
+    }
+
+    if (mLastShaderProgram != mShaderProgram) {
+        mLastShaderProgram = mShaderProgram;
+        mContext->IASetInputLayout(mShaderProgram->input_layout.Get());
+        mContext->VSSetShader(mShaderProgram->vertex_shader.Get(), 0, 0);
+        mContext->PSSetShader(mShaderProgram->pixel_shader.Get(), 0, 0);
+
+        if (mLastBlendState.Get() != mShaderProgram->blend_state.Get()) {
+            mLastBlendState = mShaderProgram->blend_state.Get();
+            mContext->OMSetBlendState(mShaderProgram->blend_state.Get(), 0, 0xFFFFFFFF);
+        }
+    }
+
+    if (mLastPrimitaveTopology != D3D_PRIMITIVE_TOPOLOGY_LINELIST) {
+        mLastPrimitaveTopology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+        mContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+    }
+
+    mContext->Draw(buf_vbo_num_lines * 2, 0);
+}
+
 void GfxRenderingAPIDX11::OnResize() {
     // create_render_target_views(true);
 }
