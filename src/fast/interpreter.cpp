@@ -1777,7 +1777,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     }
 }
 
-void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width, uint8_t flag) {
+void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width) {
     struct LoadedVertex* v1 = &mRsp->loaded_vertices[vtx1_idx];
     struct LoadedVertex* v2 = &mRsp->loaded_vertices[vtx2_idx];
     struct LoadedVertex* v_arr[2] = { v1, v2 };
@@ -1947,7 +1947,7 @@ void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width,
             mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
             mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
             mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
-            mBufVbo[mBufVboLen++] = v_arr[flag]->color.a / 255.0f; // fog factor (not alpha)
+            mBufVbo[mBufVboLen++] = parent->color.a / 255.0f; // fog factor (not alpha)
         }
 
         if (use_grayscale) {
@@ -1968,7 +1968,7 @@ void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width,
                         color = &mRdp->prim_color;
                         break;
                     case G_CCMUX_SHADE:
-                        color = &v_arr[flag]->color;
+                        color = &parent->color;
                         break;
                     case G_CCMUX_ENVIRONMENT:
                         color = &mRdp->env_color;
@@ -2019,7 +2019,7 @@ void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width,
                     mBufVbo[mBufVboLen++] = color->g / 255.0f;
                     mBufVbo[mBufVboLen++] = color->b / 255.0f;
                 } else {
-                    if (use_fog && color == &v_arr[flag]->color) {
+                    if (use_fog && color == &parent->color) {
                         // Shade alpha is 100% for fog
                         mBufVbo[mBufVboLen++] = 1.0f;
                     } else {
@@ -3542,12 +3542,11 @@ bool gfx_line3d_handler_f3dex2(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
-    uint8_t flag = C0(24, 8);
-    uint8_t v1 = C0(16, 8) / 10;
-    uint8_t v2 = C0(8, 8) / 10;
+    uint8_t v1 = C0(16, 8) / 2;
+    uint8_t v2 = C0(8, 8) / 2;
     uint8_t width = C0(0, 8);
 
-    gfx->GfxSpLine3D(v1, v2, width, flag);
+    gfx->GfxSpLine3D(v1, v2, width);
 
     return false;
 }
