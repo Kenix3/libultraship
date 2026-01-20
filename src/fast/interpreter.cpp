@@ -105,7 +105,6 @@ static std::string GetPathWithoutFileName(char* filePath) {
 }
 
 constexpr size_t MAX_TRI_BUFFER = 256;
-constexpr size_t MAX_LINE_BUFFER = 256;
 
 Interpreter::Interpreter() {
     mRsp = new RSP();
