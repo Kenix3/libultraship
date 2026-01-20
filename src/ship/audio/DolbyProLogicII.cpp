@@ -183,10 +183,12 @@ float DolbyProLogicIIDecoder::ApplyDelay(float input, DelayBuffer& delay) {
 }
 
 int16_t DolbyProLogicIIDecoder::ClampToS16(float v) {
-    if (v > 32767.0f)
+    if (v > 32767.0f) {
         return 32767;
-    if (v < -32768.0f)
+    }
+    if (v < -32768.0f) {
         return -32768;
+    }
     return static_cast<int16_t>(v);
 }
 
