@@ -39,33 +39,33 @@ class DolbyProLogicIIDecoder {
   private:
     // Linkwitz-Riley 4th order filter state (24dB/octave)
     struct LRFilterState {
-        double xm1 = 0, xm2 = 0, xm3 = 0, xm4 = 0;
-        double ym1 = 0, ym2 = 0, ym3 = 0, ym4 = 0;
+        double Xm1 = 0, Xm2 = 0, Xm3 = 0, Xm4 = 0;
+        double Ym1 = 0, Ym2 = 0, Ym3 = 0, Ym4 = 0;
     };
 
     // Linkwitz-Riley filter coefficients
     struct LRFilterCoeffs {
-        double a0, a1, a2, a3, a4;
-        double b1, b2, b3, b4;
+        double A0, A1, A2, A3, A4;
+        double B1, B2, B3, B4;
     };
 
     // Phase shifter state
     struct PhaseShiftState {
-        double wp = 0, min_wp = 0, max_wp = 0, sweepfac = 0;
-        double lx1 = 0, ly1 = 0, lx2 = 0, ly2 = 0;
-        double lx3 = 0, ly3 = 0, lx4 = 0, ly4 = 0;
-        bool initialized = false;
+        double Wp = 0, MinWp = 0, MaxWp = 0, SweepFac = 0;
+        double Lx1 = 0, Ly1 = 0, Lx2 = 0, Ly2 = 0;
+        double Lx3 = 0, Ly3 = 0, Lx4 = 0, Ly4 = 0;
+        bool Initialized = false;
     };
 
     // Delay buffer
-    static constexpr int MAX_DELAY_SAMPLES = 1024; // Supports up to ~21ms at 48kHz
+    static constexpr int gMaxDelaySamples = 1024; // Supports up to ~21ms at 48kHz
     struct DelayBuffer {
-        float buffer[MAX_DELAY_SAMPLES];
-        int writePos = 0;
-        int delaySamples = 0;
+        float Buffer[gMaxDelaySamples];
+        int WritePos = 0;
+        int DelaySamples = 0;
 
         DelayBuffer() {
-            std::fill(buffer, buffer + MAX_DELAY_SAMPLES, 0.0f);
+            std::fill(Buffer, Buffer + gMaxDelaySamples, 0.0f);
         }
     };
 
