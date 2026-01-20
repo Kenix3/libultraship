@@ -3551,6 +3551,20 @@ bool gfx_line3d_handler_f3dex2(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_line3d_handler_f3dex(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint8_t flag = C0(24, 8);
+    uint8_t v1 = C0(16, 8) / 10;
+    uint8_t v2 = C0(8, 8) / 10;
+    uint8_t width = C0(0, 8);
+
+    gfx->GfxSpLine3D((flag == 0) ? v1 : v2, (flag == 0) ? v2 : v1, width);
+
+    return false;
+}
+
 bool gfx_othermode_l_handler_f3dex2(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
@@ -4294,6 +4308,7 @@ static constexpr UcodeHandler f3dexHandlers = {
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
     { F3DEX_G_RDPHALF_1, { "mRdpHALF_1", gfx_stubbed_command_handler } },
     { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } },
+    { F3DEX_G_LINE3D, { "G_LINE3D", gfx_line3d_handler_f3dex } },
 };
 
 static constexpr UcodeHandler f3dHandlers = {
