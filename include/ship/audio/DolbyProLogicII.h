@@ -28,7 +28,9 @@ class DolbyProLogicIIDecoder {
 
     // Set sample rate (requires Reset() after changing)
     void SetSampleRate(int32_t sampleRate);
-    int32_t GetSampleRate() const { return mSampleRate; }
+    int32_t GetSampleRate() const {
+        return mSampleRate;
+    }
 
   private:
     // Linkwitz-Riley 4th order filter state (24dB/octave)
@@ -52,7 +54,7 @@ class DolbyProLogicIIDecoder {
     };
 
     // Delay buffer
-    static constexpr int MAX_DELAY_SAMPLES = 1024;  // Supports up to ~21ms at 48kHz
+    static constexpr int MAX_DELAY_SAMPLES = 1024; // Supports up to ~21ms at 48kHz
     struct DelayBuffer {
         float buffer[MAX_DELAY_SAMPLES];
         int writePos = 0;

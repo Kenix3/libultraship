@@ -4,14 +4,13 @@
 namespace Ship {
 
 // Dolby Pro Logic II coefficients
-static constexpr float COEF_CENTER = 0.35355339059327376220042218105242f;      // 1/(2*sqrt(2))
+static constexpr float COEF_CENTER = 0.35355339059327376220042218105242f; // 1/(2*sqrt(2))
 static constexpr float COEF_FRONT = 0.5f;
-static constexpr float COEF_SURR_MAIN = 0.43588989435406735522369819838596f;   // sqrt(19)/10
-static constexpr float COEF_SURR_CROSS = 0.24494897427831780981972840747059f;  // sqrt(6)/10
+static constexpr float COEF_SURR_MAIN = 0.43588989435406735522369819838596f;  // sqrt(19)/10
+static constexpr float COEF_SURR_CROSS = 0.24494897427831780981972840747059f; // sqrt(6)/10
 static constexpr int DELAY_MS = 10;
 
-DolbyProLogicIIDecoder::DolbyProLogicIIDecoder(int32_t sampleRate)
-    : mSampleRate(sampleRate) {
+DolbyProLogicIIDecoder::DolbyProLogicIIDecoder(int32_t sampleRate) : mSampleRate(sampleRate) {
     Reset();
 }
 
@@ -120,8 +119,8 @@ DolbyProLogicIIDecoder::LRFilterCoeffs DolbyProLogicIIDecoder::CalcLRHighPassCoe
 
 float DolbyProLogicIIDecoder::ApplyLRFilter(float input, LRFilterState& state, const LRFilterCoeffs& c) {
     double tempx = input;
-    double tempy = c.a0 * tempx + c.a1 * state.xm1 + c.a2 * state.xm2 + c.a3 * state.xm3 + c.a4 * state.xm4
-                 - c.b1 * state.ym1 - c.b2 * state.ym2 - c.b3 * state.ym3 - c.b4 * state.ym4;
+    double tempy = c.a0 * tempx + c.a1 * state.xm1 + c.a2 * state.xm2 + c.a3 * state.xm3 + c.a4 * state.xm4 -
+                   c.b1 * state.ym1 - c.b2 * state.ym2 - c.b3 * state.ym3 - c.b4 * state.ym4;
     state.xm4 = state.xm3;
     state.xm3 = state.xm2;
     state.xm2 = state.xm1;
@@ -184,8 +183,10 @@ float DolbyProLogicIIDecoder::ApplyDelay(float input, DelayBuffer& delay) {
 }
 
 int16_t DolbyProLogicIIDecoder::ClampToS16(float v) {
-    if (v > 32767.0f) return 32767;
-    if (v < -32768.0f) return -32768;
+    if (v > 32767.0f)
+        return 32767;
+    if (v < -32768.0f)
+        return -32768;
     return static_cast<int16_t>(v);
 }
 
@@ -213,7 +214,7 @@ void DolbyProLogicIIDecoder::Process(const int16_t* stereoIn, int16_t* surroundO
         // Surround Left: L * 0.436 (HP, phase inverted) + R * 0.245 (HP, phase shifted), delayed
         float slL = left * COEF_SURR_MAIN;
         slL = ApplyLRFilter(slL, mSLLeftHP, mSurroundHPCoeffs);
-        slL = ApplyPhaseShift(slL, mSLLeftPhase, true);  // inverted
+        slL = ApplyPhaseShift(slL, mSLLeftPhase, true); // inverted
 
         float slR = right * COEF_SURR_CROSS;
         slR = ApplyLRFilter(slR, mSLRightHP, mSurroundHPCoeffs);
@@ -224,7 +225,7 @@ void DolbyProLogicIIDecoder::Process(const int16_t* stereoIn, int16_t* surroundO
         // Surround Right: L * 0.245 (HP, phase inverted) + R * 0.436 (HP, phase shifted), delayed
         float srL = left * COEF_SURR_CROSS;
         srL = ApplyLRFilter(srL, mSRLeftHP, mSurroundHPCoeffs);
-        srL = ApplyPhaseShift(srL, mSRLeftPhase, true);  // inverted
+        srL = ApplyPhaseShift(srL, mSRLeftPhase, true); // inverted
 
         float srR = right * COEF_SURR_MAIN;
         srR = ApplyLRFilter(srR, mSRRightHP, mSurroundHPCoeffs);

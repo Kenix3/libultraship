@@ -51,7 +51,7 @@ void AudioPlayer::SetDesiredBuffered(int32_t size) {
 
 bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     if (mAudioSettings.AudioSurround == channels) {
-        return true;  // No change needed
+        return true; // No change needed
     }
 
     SPDLOG_INFO("Changing audio channels from {} to {}",
@@ -80,7 +80,7 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
     if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 && mPLIIDecoder) {
         // Input is stereo, decode to surround
         const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
-        int numStereoSamples = len / (2 * sizeof(int16_t));  // Number of stereo sample pairs
+        int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
 
         // Resize surround buffer if needed
         size_t surroundSamplesNeeded = numStereoSamples * 6;
@@ -92,8 +92,7 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
         mPLIIDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
 
         // Play the surround audio
-        DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()),
-               numStereoSamples * 6 * sizeof(int16_t));
+        DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), numStereoSamples * 6 * sizeof(int16_t));
     } else {
         // Stereo passthrough
         DoPlay(buf, len);
