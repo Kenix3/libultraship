@@ -72,18 +72,18 @@ DolbyProLogicIIDecoder::LRFilterCoeffs DolbyProLogicIIDecoder::CalcLRLowPassCoef
     double k3 = k2 * k;
     double k4 = k2 * k2;
     double sqrt2 = sqrt(2.0);
-    double sq_tmp1 = sqrt2 * wc3 * k;
-    double sq_tmp2 = sqrt2 * wc * k3;
-    double a_tmp = 4.0 * wc2 * k2 + 2.0 * sq_tmp1 + k4 + 2.0 * sq_tmp2 + wc4;
+    double sqTmp1 = sqrt2 * wc3 * k;
+    double sqTmp2 = sqrt2 * wc * k3;
+    double aTmp = 4.0 * wc2 * k2 + 2.0 * sqTmp1 + k4 + 2.0 * sqTmp2 + wc4;
 
-    c.B1 = (4.0 * (wc4 + sq_tmp1 - k4 - sq_tmp2)) / a_tmp;
-    c.B2 = (6.0 * wc4 - 8.0 * wc2 * k2 + 6.0 * k4) / a_tmp;
-    c.B3 = (4.0 * (wc4 - sq_tmp1 + sq_tmp2 - k4)) / a_tmp;
-    c.B4 = (k4 - 2.0 * sq_tmp1 + wc4 - 2.0 * sq_tmp2 + 4.0 * wc2 * k2) / a_tmp;
+    c.B1 = (4.0 * (wc4 + sqTmp1 - k4 - sqTmp2)) / aTmp;
+    c.B2 = (6.0 * wc4 - 8.0 * wc2 * k2 + 6.0 * k4) / aTmp;
+    c.B3 = (4.0 * (wc4 - sqTmp1 + sqTmp2 - k4)) / aTmp;
+    c.B4 = (k4 - 2.0 * sqTmp1 + wc4 - 2.0 * sqTmp2 + 4.0 * wc2 * k2) / aTmp;
 
-    c.A0 = wc4 / a_tmp;
-    c.A1 = 4.0 * wc4 / a_tmp;
-    c.A2 = 6.0 * wc4 / a_tmp;
+    c.A0 = wc4 / aTmp;
+    c.A1 = 4.0 * wc4 / aTmp;
+    c.A2 = 6.0 * wc4 / aTmp;
     c.A3 = c.A1;
     c.A4 = c.A0;
     return c;
@@ -100,18 +100,18 @@ DolbyProLogicIIDecoder::LRFilterCoeffs DolbyProLogicIIDecoder::CalcLRHighPassCoe
     double k3 = k2 * k;
     double k4 = k2 * k2;
     double sqrt2 = sqrt(2.0);
-    double sq_tmp1 = sqrt2 * wc3 * k;
-    double sq_tmp2 = sqrt2 * wc * k3;
-    double a_tmp = 4.0 * wc2 * k2 + 2.0 * sq_tmp1 + k4 + 2.0 * sq_tmp2 + wc4;
+    double sqTmp1 = sqrt2 * wc3 * k;
+    double sqTmp2 = sqrt2 * wc * k3;
+    double aTmp = 4.0 * wc2 * k2 + 2.0 * sqTmp1 + k4 + 2.0 * sqTmp2 + wc4;
 
-    c.B1 = (4.0 * (wc4 + sq_tmp1 - k4 - sq_tmp2)) / a_tmp;
-    c.B2 = (6.0 * wc4 - 8.0 * wc2 * k2 + 6.0 * k4) / a_tmp;
-    c.B3 = (4.0 * (wc4 - sq_tmp1 + sq_tmp2 - k4)) / a_tmp;
-    c.B4 = (k4 - 2.0 * sq_tmp1 + wc4 - 2.0 * sq_tmp2 + 4.0 * wc2 * k2) / a_tmp;
+    c.B1 = (4.0 * (wc4 + sqTmp1 - k4 - sqTmp2)) / aTmp;
+    c.B2 = (6.0 * wc4 - 8.0 * wc2 * k2 + 6.0 * k4) / aTmp;
+    c.B3 = (4.0 * (wc4 - sqTmp1 + sqTmp2 - k4)) / aTmp;
+    c.B4 = (k4 - 2.0 * sqTmp1 + wc4 - 2.0 * sqTmp2 + 4.0 * wc2 * k2) / aTmp;
 
-    c.A0 = k4 / a_tmp;
-    c.A1 = -4.0 * k4 / a_tmp;
-    c.A2 = 6.0 * k4 / a_tmp;
+    c.A0 = k4 / aTmp;
+    c.A1 = -4.0 * k4 / aTmp;
+    c.A2 = 6.0 * k4 / aTmp;
     c.A3 = c.A1;
     c.A4 = c.A0;
     return c;
