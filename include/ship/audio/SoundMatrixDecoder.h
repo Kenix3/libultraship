@@ -60,9 +60,9 @@ class SoundMatrixDecoder {
     };
 
     // Circular delay buffer
-    static constexpr int kMaxDelay = 1024;
+    static constexpr int gMaxDelay = 1024;
     struct CircularDelay {
-        std::array<float, kMaxDelay> data = {};
+        std::array<float, gMaxDelay> data = {};
         int head = 0;
         int length = 0;
     };

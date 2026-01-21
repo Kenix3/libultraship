@@ -4,15 +4,15 @@ namespace Ship {
 
 // Standard matrix decoding gains derived from psychoacoustic principles
 namespace Gains {
-constexpr float kCenter = 0.7071067811865476f * 0.5f; // -3dB (1/sqrt(2)) * 0.5
-constexpr float kFront = 0.5f;                        // -6dB
-constexpr float kSurroundPrimary = 0.4359f;           // Primary surround contribution
-constexpr float kSurroundSecondary = 0.2449f;         // Cross-feed surround contribution
+constexpr float gCenter = 0.7071067811865476f * 0.5f; // -3dB (1/sqrt(2)) * 0.5
+constexpr float gFront = 0.5f;                        // -6dB
+constexpr float gSurroundPrimary = 0.4359f;           // Primary surround contribution
+constexpr float gSurroundSecondary = 0.2449f;         // Cross-feed surround contribution
 } // namespace Gains
 
 // Timing constants
 namespace Timing {
-constexpr int kSurroundDelayMs = 10; // ITU-R BS.775 recommends 10-25ms
+constexpr int gSurroundDelayMs = 10; // ITU-R BS.775 recommends 10-25ms
 }
 
 SoundMatrixDecoder::SoundMatrixDecoder(int32_t sampleRate) : mSampleRate(sampleRate) {
@@ -26,9 +26,9 @@ void SoundMatrixDecoder::SetSampleRate(int32_t sampleRate) {
 
 void SoundMatrixDecoder::Reset() {
     // Compute delay length from sample rate
-    mDelayLength = (mSampleRate * Timing::kSurroundDelayMs) / 1000;
-    if (mDelayLength > kMaxDelay) {
-        mDelayLength = kMaxDelay;
+    mDelayLength = (mSampleRate * Timing::gSurroundDelayMs) / 1000;
+    if (mDelayLength > gMaxDelay) {
+        mDelayLength = gMaxDelay;
     }
 
     // Design filters for this sample rate
@@ -61,22 +61,23 @@ void SoundMatrixDecoder::Reset() {
     mReady = true;
 }
 
-SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double freq) {
+SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double frequency) {
     FilterCoefficients coef = {};
 
     // Clamp to safe range for bilinear transform stability
     double maxFreq = mSampleRate * 0.475;
-    if (freq > maxFreq)
-        freq = maxFreq;
+    if (frequency > maxFreq) {
+        frequency = maxFreq;
+    }
 
     // Linkwitz-Riley 4th order: two cascaded Butterworth 2nd order
-    double omega = 2.0 * M_PI * freq;
+    double omega = 2.0 * M_PI * frequency;
     double omega2 = omega * omega;
     double omega3 = omega2 * omega;
     double omega4 = omega2 * omega2;
 
     // Bilinear transform warping
-    double kVal = omega / std::tan(M_PI * freq / mSampleRate);
+    double kVal = omega / std::tan(M_PI * frequency / mSampleRate);
     double k2 = kVal * kVal;
     double k3 = k2 * kVal;
     double k4 = k2 * k2;
@@ -102,15 +103,15 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double 
     return coef;
 }
 
-SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double freq) {
+SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double frequency) {
     FilterCoefficients coef = {};
 
-    double omega = 2.0 * M_PI * freq;
+    double omega = 2.0 * M_PI * frequency;
     double omega2 = omega * omega;
     double omega3 = omega2 * omega;
     double omega4 = omega2 * omega2;
 
-    double kVal = omega / std::tan(M_PI * freq / mSampleRate);
+    double kVal = omega / std::tan(M_PI * frequency / mSampleRate);
     double k2 = kVal * kVal;
     double k3 = k2 * kVal;
     double k4 = k2 * k2;
@@ -135,20 +136,21 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double
     return coef;
 }
 
-float SoundMatrixDecoder::ProcessFilter(float sample, BiquadCascade& st, const FilterCoefficients& cf) {
+float SoundMatrixDecoder::ProcessFilter(float sample, BiquadCascade& state, const FilterCoefficients& coef) {
     double in = sample;
-    double out = cf.a[0] * in + cf.a[1] * st.x[0] + cf.a[2] * st.x[1] + cf.a[3] * st.x[2] + cf.a[4] * st.x[3] -
-                 cf.b[0] * st.y[0] - cf.b[1] * st.y[1] - cf.b[2] * st.y[2] - cf.b[3] * st.y[3];
+    double out = coef.a[0] * in + coef.a[1] * state.x[0] + coef.a[2] * state.x[1] + coef.a[3] * state.x[2] +
+                 coef.a[4] * state.x[3] - coef.b[0] * state.y[0] - coef.b[1] * state.y[1] - coef.b[2] * state.y[2] -
+                 coef.b[3] * state.y[3];
 
     // Shift history
-    st.x[3] = st.x[2];
-    st.x[2] = st.x[1];
-    st.x[1] = st.x[0];
-    st.x[0] = in;
-    st.y[3] = st.y[2];
-    st.y[2] = st.y[1];
-    st.y[1] = st.y[0];
-    st.y[0] = out;
+    state.x[3] = state.x[2];
+    state.x[2] = state.x[1];
+    state.x[1] = state.x[0];
+    state.x[0] = in;
+    state.y[3] = state.y[2];
+    state.y[2] = state.y[1];
+    state.y[1] = state.y[0];
+    state.y[0] = out;
 
     return static_cast<float>(out);
 }
@@ -205,18 +207,20 @@ float SoundMatrixDecoder::ProcessAllPass(float sample, AllPassChain& chain, bool
     return static_cast<float>(result);
 }
 
-float SoundMatrixDecoder::ProcessDelay(float sample, CircularDelay& buf) {
-    float output = buf.data[buf.head];
-    buf.data[buf.head] = sample;
-    buf.head = (buf.head + 1) % buf.length;
+float SoundMatrixDecoder::ProcessDelay(float sample, CircularDelay& buffer) {
+    float output = buffer.data[buffer.head];
+    buffer.data[buffer.head] = sample;
+    buffer.head = (buffer.head + 1) % buffer.length;
     return output;
 }
 
 int16_t SoundMatrixDecoder::Saturate(float value) {
-    if (value > 32767.0f)
+    if (value > 32767.0f) {
         return 32767;
-    if (value < -32768.0f)
+    }
+    if (value < -32768.0f) {
         return -32768;
+    }
     return static_cast<int16_t>(value);
 }
 
@@ -230,38 +234,38 @@ void SoundMatrixDecoder::Process(const int16_t* stereoInput, int16_t* surroundOu
         float inR = static_cast<float>(stereoInput[i * 2 + 1]);
 
         // Center: sum of L+R, band-limited
-        float ctr = (inL + inR) * Gains::kCenter;
+        float ctr = (inL + inR) * Gains::gCenter;
         ctr = ProcessFilter(ctr, mCenterHighPass, mCoefCenterHP);
         ctr = ProcessFilter(ctr, mCenterLowPass, mCoefCenterLP);
 
         // Front channels: attenuated direct signal
-        float frontL = inL * Gains::kFront;
-        float frontR = inR * Gains::kFront;
+        float frontL = inL * Gains::gFront;
+        float frontR = inR * Gains::gFront;
 
         // Surround Left: L primary (inverted phase) + R secondary (shifted phase)
-        float slMain = inL * Gains::kSurroundPrimary;
+        float slMain = inL * Gains::gSurroundPrimary;
         slMain = ProcessFilter(slMain, mSurrLeftMainHP, mCoefSurroundHP);
         slMain = ProcessAllPass(slMain, mPhaseLeftMain, true);
 
-        float slCross = inR * Gains::kSurroundSecondary;
+        float slCross = inR * Gains::gSurroundSecondary;
         slCross = ProcessFilter(slCross, mSurrLeftCrossHP, mCoefSurroundHP);
         slCross = ProcessAllPass(slCross, mPhaseLeftCross, false);
 
         float surrL = ProcessDelay(slMain + slCross, mDelaySurrLeft);
 
         // Surround Right: R primary (shifted phase) + L secondary (inverted phase)
-        float srMain = inR * Gains::kSurroundPrimary;
+        float srMain = inR * Gains::gSurroundPrimary;
         srMain = ProcessFilter(srMain, mSurrRightMainHP, mCoefSurroundHP);
         srMain = ProcessAllPass(srMain, mPhaseRightMain, false);
 
-        float srCross = inL * Gains::kSurroundSecondary;
+        float srCross = inL * Gains::gSurroundSecondary;
         srCross = ProcessFilter(srCross, mSurrRightCrossHP, mCoefSurroundHP);
         srCross = ProcessAllPass(srCross, mPhaseRightCross, true);
 
         float surrR = ProcessDelay(srMain + srCross, mDelaySurrRight);
 
         // LFE: low-passed sum
-        float lfe = (inL + inR) * Gains::kCenter;
+        float lfe = (inL + inR) * Gains::gCenter;
         lfe = ProcessFilter(lfe, mSubLowPass, mCoefSubLP);
 
         // Output: FL, FR, C, LFE, SL, SR
