@@ -8,10 +8,10 @@ AudioPlayer::~AudioPlayer() {
 }
 
 bool AudioPlayer::Init() {
-    // Initialize PLII decoder if surround mode is enabled
+    // Initialize sound matrix decoder if surround mode is enabled
     if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51) {
-        SPDLOG_INFO("Initializing Dolby Pro Logic II decoder");
-        mPLIIDecoder = std::make_unique<DolbyProLogicIIDecoder>(mAudioSettings.SampleRate);
+        SPDLOG_INFO("Initializing sound matrix decoder for surround");
+        mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
     }
     mInitialized = DoInit();
     return IsInitialized();
@@ -64,9 +64,9 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     // Update channel setting
     mAudioSettings.AudioSurround = channels;
 
-    // Setup or teardown PLII decoder
-    if (channels == AudioChannelsSetting::audioSurround51 && !mPLIIDecoder) {
-        mPLIIDecoder = std::make_unique<DolbyProLogicIIDecoder>(mAudioSettings.SampleRate);
+    // Setup or teardown sound matrix decoder
+    if (channels == AudioChannelsSetting::audioSurround51 && !mSoundMatrixDecoder) {
+        mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
     }
 
     return DoInit();
@@ -77,7 +77,7 @@ int32_t AudioPlayer::GetNumOutputChannels() const {
 }
 
 void AudioPlayer::Play(const uint8_t* buf, size_t len) {
-    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 && mPLIIDecoder) {
+    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 && mSoundMatrixDecoder) {
         // Input is stereo, decode to surround
         const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
         int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
@@ -88,8 +88,8 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
             mSurroundBuffer.resize(surroundSamplesNeeded);
         }
 
-        // Decode stereo to surround using PLII
-        mPLIIDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
+        // Decode stereo to surround using sound matrix decoder
+        mSoundMatrixDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
 
         // Play the surround audio
         DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), numStereoSamples * 6 * sizeof(int16_t));

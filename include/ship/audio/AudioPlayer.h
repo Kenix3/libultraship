@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 #include "ship/audio/AudioChannelsSetting.h"
-#include "ship/audio/DolbyProLogicII.h"
+#include "ship/audio/SoundMatrixDecoder.h"
 
 namespace Ship {
 
@@ -63,15 +63,15 @@ class AudioPlayer {
     // Internal play method - receives audio in the output format (stereo or surround)
     virtual void DoPlay(const uint8_t* buf, size_t len) = 0;
 
-    // PLII decoder for surround mode
-    std::unique_ptr<DolbyProLogicIIDecoder> mPLIIDecoder;
+    // Sound matrix decoder for surround mode
+    std::unique_ptr<SoundMatrixDecoder> mSoundMatrixDecoder;
 
     // Surround output buffer
     std::vector<int16_t> mSurroundBuffer;
 
     AudioSettings mAudioSettings;
 
-    // Whether DPL II decoder needs priming (to fill delay buffers)
+    // Whether matrix decoder needs priming (to fill delay buffers)
     bool mNeedsPriming = false;
 
   private:
