@@ -39,32 +39,32 @@ class SoundMatrixDecoder {
   private:
     // 4th-order IIR filter (Linkwitz-Riley) for 24dB/octave slopes
     struct BiquadCascade {
-        double x[4] = {}; // Input history
-        double y[4] = {}; // Output history
+        double X[4] = {}; // Input history
+        double Y[4] = {}; // Output history
     };
 
     struct FilterCoefficients {
-        double a[5]; // Feedforward (numerator)
-        double b[4]; // Feedback (denominator, excluding b0=1)
+        double A[5]; // Feedforward (numerator)
+        double B[4]; // Feedback (denominator, excluding b0=1)
     };
 
     // Sweeping all-pass for phase decorrelation
     struct AllPassChain {
-        double freq = 0;
-        double freqMin = 0;
-        double freqMax = 0;
-        double sweepRate = 0;
-        double xHist[4] = {};
-        double yHist[4] = {};
-        bool ready = false;
+        double Freq = 0;
+        double FreqMin = 0;
+        double FreqMax = 0;
+        double SweepRate = 0;
+        double XHist[4] = {};
+        double YHist[4] = {};
+        bool Ready = false;
     };
 
     // Circular delay buffer
     static constexpr int gMaxDelay = 1024;
     struct CircularDelay {
-        std::array<float, gMaxDelay> data = {};
-        int head = 0;
-        int length = 0;
+        std::array<float, gMaxDelay> Data = {};
+        int Head = 0;
+        int Length = 0;
     };
 
     // Filter design

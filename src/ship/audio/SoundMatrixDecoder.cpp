@@ -54,9 +54,9 @@ void SoundMatrixDecoder::Reset() {
 
     // Reset delay lines
     mDelaySurrLeft = {};
-    mDelaySurrLeft.length = mDelayLength;
+    mDelaySurrLeft.Length = mDelayLength;
     mDelaySurrRight = {};
-    mDelaySurrRight.length = mDelayLength;
+    mDelaySurrRight.Length = mDelayLength;
 
     mReady = true;
 }
@@ -88,17 +88,17 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double 
     double norm = 4.0 * omega2 * k2 + 2.0 * term1 + k4 + 2.0 * term2 + omega4;
 
     // Feedback coefficients
-    coef.b[0] = (4.0 * (omega4 + term1 - k4 - term2)) / norm;
-    coef.b[1] = (6.0 * omega4 - 8.0 * omega2 * k2 + 6.0 * k4) / norm;
-    coef.b[2] = (4.0 * (omega4 - term1 + term2 - k4)) / norm;
-    coef.b[3] = (k4 - 2.0 * term1 + omega4 - 2.0 * term2 + 4.0 * omega2 * k2) / norm;
+    coef.B[0] = (4.0 * (omega4 + term1 - k4 - term2)) / norm;
+    coef.B[1] = (6.0 * omega4 - 8.0 * omega2 * k2 + 6.0 * k4) / norm;
+    coef.B[2] = (4.0 * (omega4 - term1 + term2 - k4)) / norm;
+    coef.B[3] = (k4 - 2.0 * term1 + omega4 - 2.0 * term2 + 4.0 * omega2 * k2) / norm;
 
     // Feedforward coefficients (low-pass response)
-    coef.a[0] = omega4 / norm;
-    coef.a[1] = 4.0 * omega4 / norm;
-    coef.a[2] = 6.0 * omega4 / norm;
-    coef.a[3] = coef.a[1];
-    coef.a[4] = coef.a[0];
+    coef.A[0] = omega4 / norm;
+    coef.A[1] = 4.0 * omega4 / norm;
+    coef.A[2] = 6.0 * omega4 / norm;
+    coef.A[3] = coef.A[1];
+    coef.A[4] = coef.A[0];
 
     return coef;
 }
@@ -121,36 +121,36 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double
     double term2 = rt2 * omega * k3;
     double norm = 4.0 * omega2 * k2 + 2.0 * term1 + k4 + 2.0 * term2 + omega4;
 
-    coef.b[0] = (4.0 * (omega4 + term1 - k4 - term2)) / norm;
-    coef.b[1] = (6.0 * omega4 - 8.0 * omega2 * k2 + 6.0 * k4) / norm;
-    coef.b[2] = (4.0 * (omega4 - term1 + term2 - k4)) / norm;
-    coef.b[3] = (k4 - 2.0 * term1 + omega4 - 2.0 * term2 + 4.0 * omega2 * k2) / norm;
+    coef.B[0] = (4.0 * (omega4 + term1 - k4 - term2)) / norm;
+    coef.B[1] = (6.0 * omega4 - 8.0 * omega2 * k2 + 6.0 * k4) / norm;
+    coef.B[2] = (4.0 * (omega4 - term1 + term2 - k4)) / norm;
+    coef.B[3] = (k4 - 2.0 * term1 + omega4 - 2.0 * term2 + 4.0 * omega2 * k2) / norm;
 
     // Feedforward coefficients (high-pass response)
-    coef.a[0] = k4 / norm;
-    coef.a[1] = -4.0 * k4 / norm;
-    coef.a[2] = 6.0 * k4 / norm;
-    coef.a[3] = coef.a[1];
-    coef.a[4] = coef.a[0];
+    coef.A[0] = k4 / norm;
+    coef.A[1] = -4.0 * k4 / norm;
+    coef.A[2] = 6.0 * k4 / norm;
+    coef.A[3] = coef.A[1];
+    coef.A[4] = coef.A[0];
 
     return coef;
 }
 
 float SoundMatrixDecoder::ProcessFilter(float sample, BiquadCascade& state, const FilterCoefficients& coef) {
     double in = sample;
-    double out = coef.a[0] * in + coef.a[1] * state.x[0] + coef.a[2] * state.x[1] + coef.a[3] * state.x[2] +
-                 coef.a[4] * state.x[3] - coef.b[0] * state.y[0] - coef.b[1] * state.y[1] - coef.b[2] * state.y[2] -
-                 coef.b[3] * state.y[3];
+    double out = coef.A[0] * in + coef.A[1] * state.X[0] + coef.A[2] * state.X[1] + coef.A[3] * state.X[2] +
+                 coef.A[4] * state.X[3] - coef.B[0] * state.Y[0] - coef.B[1] * state.Y[1] - coef.B[2] * state.Y[2] -
+                 coef.B[3] * state.Y[3];
 
     // Shift history
-    state.x[3] = state.x[2];
-    state.x[2] = state.x[1];
-    state.x[1] = state.x[0];
-    state.x[0] = in;
-    state.y[3] = state.y[2];
-    state.y[2] = state.y[1];
-    state.y[1] = state.y[0];
-    state.y[0] = out;
+    state.X[3] = state.X[2];
+    state.X[2] = state.X[1];
+    state.X[1] = state.X[0];
+    state.X[0] = in;
+    state.Y[3] = state.Y[2];
+    state.Y[2] = state.Y[1];
+    state.Y[1] = state.Y[0];
+    state.Y[0] = out;
 
     return static_cast<float>(out);
 }
@@ -161,56 +161,56 @@ void SoundMatrixDecoder::PrepareAllPass(AllPassChain& chain) {
     constexpr double baseDelay = 100.0;
     constexpr double sweepSpeed = 0.1;
 
-    chain.freqMin = (M_PI * baseDelay) / mSampleRate;
-    chain.freq = chain.freqMin;
+    chain.FreqMin = (M_PI * baseDelay) / mSampleRate;
+    chain.Freq = chain.FreqMin;
 
     double range = std::pow(2.0, depth);
-    chain.freqMax = (M_PI * baseDelay * range) / mSampleRate;
-    chain.sweepRate = std::pow(range, sweepSpeed / (mSampleRate / 2.0));
-    chain.ready = true;
+    chain.FreqMax = (M_PI * baseDelay * range) / mSampleRate;
+    chain.SweepRate = std::pow(range, sweepSpeed / (mSampleRate / 2.0));
+    chain.Ready = true;
 }
 
 float SoundMatrixDecoder::ProcessAllPass(float sample, AllPassChain& chain, bool negate) {
-    if (!chain.ready) {
+    if (!chain.Ready) {
         PrepareAllPass(chain);
     }
 
     // First-order all-pass coefficient
-    double c = (1.0 - chain.freq) / (1.0 + chain.freq);
+    double c = (1.0 - chain.Freq) / (1.0 + chain.Freq);
     double input = static_cast<double>(sample);
 
     // Cascade of 4 first-order all-pass sections
-    chain.yHist[0] = c * (chain.yHist[0] + input) - chain.xHist[0];
-    chain.xHist[0] = input;
+    chain.YHist[0] = c * (chain.YHist[0] + input) - chain.XHist[0];
+    chain.XHist[0] = input;
 
-    chain.yHist[1] = c * (chain.yHist[1] + chain.yHist[0]) - chain.xHist[1];
-    chain.xHist[1] = chain.yHist[0];
+    chain.YHist[1] = c * (chain.YHist[1] + chain.YHist[0]) - chain.XHist[1];
+    chain.XHist[1] = chain.YHist[0];
 
-    chain.yHist[2] = c * (chain.yHist[2] + chain.yHist[1]) - chain.xHist[2];
-    chain.xHist[2] = chain.yHist[1];
+    chain.YHist[2] = c * (chain.YHist[2] + chain.YHist[1]) - chain.XHist[2];
+    chain.XHist[2] = chain.YHist[1];
 
-    chain.yHist[3] = c * (chain.yHist[3] + chain.yHist[2]) - chain.xHist[3];
-    chain.xHist[3] = chain.yHist[2];
+    chain.YHist[3] = c * (chain.YHist[3] + chain.YHist[2]) - chain.XHist[3];
+    chain.XHist[3] = chain.YHist[2];
 
-    double result = negate ? -chain.yHist[3] : chain.yHist[3];
+    double result = negate ? -chain.YHist[3] : chain.YHist[3];
 
     // Sweep the frequency for time-varying decorrelation
     double baseRate = std::pow(std::pow(2.0, 4.0), 0.1 / (mSampleRate / 2.0));
-    chain.freq *= chain.sweepRate;
+    chain.Freq *= chain.SweepRate;
 
-    if (chain.freq > chain.freqMax) {
-        chain.sweepRate = 1.0 / baseRate;
-    } else if (chain.freq < chain.freqMin) {
-        chain.sweepRate = baseRate;
+    if (chain.Freq > chain.FreqMax) {
+        chain.SweepRate = 1.0 / baseRate;
+    } else if (chain.Freq < chain.FreqMin) {
+        chain.SweepRate = baseRate;
     }
 
     return static_cast<float>(result);
 }
 
 float SoundMatrixDecoder::ProcessDelay(float sample, CircularDelay& buffer) {
-    float output = buffer.data[buffer.head];
-    buffer.data[buffer.head] = sample;
-    buffer.head = (buffer.head + 1) % buffer.length;
+    float output = buffer.Data[buffer.Head];
+    buffer.Data[buffer.Head] = sample;
+    buffer.Head = (buffer.Head + 1) % buffer.Length;
     return output;
 }
 
