@@ -4,15 +4,15 @@ namespace Ship {
 
 // Standard matrix decoding gains derived from psychoacoustic principles
 namespace Gains {
-    constexpr float kCenter = 0.7071067811865476f * 0.5f;     // -3dB (1/sqrt(2)) * 0.5
-    constexpr float kFront = 0.5f;                             // -6dB
-    constexpr float kSurroundPrimary = 0.4359f;               // Primary surround contribution
-    constexpr float kSurroundSecondary = 0.2449f;             // Cross-feed surround contribution
-}
+constexpr float kCenter = 0.7071067811865476f * 0.5f; // -3dB (1/sqrt(2)) * 0.5
+constexpr float kFront = 0.5f;                        // -6dB
+constexpr float kSurroundPrimary = 0.4359f;           // Primary surround contribution
+constexpr float kSurroundSecondary = 0.2449f;         // Cross-feed surround contribution
+} // namespace Gains
 
 // Timing constants
 namespace Timing {
-    constexpr int kSurroundDelayMs = 10;  // ITU-R BS.775 recommends 10-25ms
+constexpr int kSurroundDelayMs = 10; // ITU-R BS.775 recommends 10-25ms
 }
 
 SoundMatrixDecoder::SoundMatrixDecoder(int32_t sampleRate) : mSampleRate(sampleRate) {
@@ -32,10 +32,10 @@ void SoundMatrixDecoder::Reset() {
     }
 
     // Design filters for this sample rate
-    mCoefCenterHP = DesignHighPass(70.0);      // Remove rumble from center
-    mCoefCenterLP = DesignLowPass(20000.0);    // Anti-alias center
-    mCoefSurroundHP = DesignHighPass(100.0);   // Surround channels high-passed
-    mCoefSubLP = DesignLowPass(120.0);         // LFE low-pass
+    mCoefCenterHP = DesignHighPass(70.0);    // Remove rumble from center
+    mCoefCenterLP = DesignLowPass(20000.0);  // Anti-alias center
+    mCoefSurroundHP = DesignHighPass(100.0); // Surround channels high-passed
+    mCoefSubLP = DesignLowPass(120.0);       // LFE low-pass
 
     // Clear all filter states
     mCenterHighPass = {};
@@ -66,7 +66,8 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double 
 
     // Clamp to safe range for bilinear transform stability
     double maxFreq = mSampleRate * 0.475;
-    if (freq > maxFreq) freq = maxFreq;
+    if (freq > maxFreq)
+        freq = maxFreq;
 
     // Linkwitz-Riley 4th order: two cascaded Butterworth 2nd order
     double omega = 2.0 * M_PI * freq;
@@ -136,12 +137,18 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double
 
 float SoundMatrixDecoder::ProcessFilter(float sample, BiquadCascade& st, const FilterCoefficients& cf) {
     double in = sample;
-    double out = cf.a[0] * in + cf.a[1] * st.x[0] + cf.a[2] * st.x[1] + cf.a[3] * st.x[2] + cf.a[4] * st.x[3]
-                 - cf.b[0] * st.y[0] - cf.b[1] * st.y[1] - cf.b[2] * st.y[2] - cf.b[3] * st.y[3];
+    double out = cf.a[0] * in + cf.a[1] * st.x[0] + cf.a[2] * st.x[1] + cf.a[3] * st.x[2] + cf.a[4] * st.x[3] -
+                 cf.b[0] * st.y[0] - cf.b[1] * st.y[1] - cf.b[2] * st.y[2] - cf.b[3] * st.y[3];
 
     // Shift history
-    st.x[3] = st.x[2]; st.x[2] = st.x[1]; st.x[1] = st.x[0]; st.x[0] = in;
-    st.y[3] = st.y[2]; st.y[2] = st.y[1]; st.y[1] = st.y[0]; st.y[0] = out;
+    st.x[3] = st.x[2];
+    st.x[2] = st.x[1];
+    st.x[1] = st.x[0];
+    st.x[0] = in;
+    st.y[3] = st.y[2];
+    st.y[2] = st.y[1];
+    st.y[1] = st.y[0];
+    st.y[0] = out;
 
     return static_cast<float>(out);
 }
@@ -206,8 +213,10 @@ float SoundMatrixDecoder::ProcessDelay(float sample, CircularDelay& buf) {
 }
 
 int16_t SoundMatrixDecoder::Saturate(float value) {
-    if (value > 32767.0f) return 32767;
-    if (value < -32768.0f) return -32768;
+    if (value > 32767.0f)
+        return 32767;
+    if (value < -32768.0f)
+        return -32768;
     return static_cast<int16_t>(value);
 }
 

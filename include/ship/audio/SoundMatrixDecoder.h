@@ -32,18 +32,20 @@ class SoundMatrixDecoder {
 
     void Reset();
     void SetSampleRate(int32_t sampleRate);
-    int32_t GetSampleRate() const { return mSampleRate; }
+    int32_t GetSampleRate() const {
+        return mSampleRate;
+    }
 
   private:
     // 4th-order IIR filter (Linkwitz-Riley) for 24dB/octave slopes
     struct BiquadCascade {
-        double x[4] = {};  // Input history
-        double y[4] = {};  // Output history
+        double x[4] = {}; // Input history
+        double y[4] = {}; // Output history
     };
 
     struct FilterCoefficients {
-        double a[5];  // Feedforward (numerator)
-        double b[4];  // Feedback (denominator, excluding b0=1)
+        double a[5]; // Feedforward (numerator)
+        double b[4]; // Feedback (denominator, excluding b0=1)
     };
 
     // Sweeping all-pass for phase decorrelation
