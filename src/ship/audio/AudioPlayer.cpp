@@ -23,7 +23,7 @@ AudioPlayer::~AudioPlayer() {
 
 bool AudioPlayer::Init() {
     // Initialize sound matrix decoder if matrix surround mode is enabled
-    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioMatrix51) {
+    if (mAudioSettings.ChannelSetting == AudioChannelsSetting::audioMatrix51) {
         SPDLOG_INFO("Initializing sound matrix decoder for surround");
         mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
     }
@@ -48,7 +48,7 @@ int32_t AudioPlayer::GetDesiredBuffered() const {
 }
 
 AudioChannelsSetting AudioPlayer::GetAudioChannels() const {
-    return mAudioSettings.AudioSurround;
+    return mAudioSettings.ChannelSetting;
 }
 
 void AudioPlayer::SetSampleRate(int32_t rate) {
@@ -64,18 +64,18 @@ void AudioPlayer::SetDesiredBuffered(int32_t size) {
 }
 
 bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
-    if (mAudioSettings.AudioSurround == channels) {
+    if (mAudioSettings.ChannelSetting == channels) {
         return true; // No change needed
     }
 
-    SPDLOG_INFO("Changing audio channels from {} to {}", AudioChannelsSettingName(mAudioSettings.AudioSurround),
+    SPDLOG_INFO("Changing audio channels from {} to {}", AudioChannelsSettingName(mAudioSettings.ChannelSetting),
                 AudioChannelsSettingName(channels));
 
     // Close current audio device
     DoClose();
 
     // Update channel setting
-    mAudioSettings.AudioSurround = channels;
+    mAudioSettings.ChannelSetting = channels;
 
     // Setup or teardown sound matrix decoder
     if (channels == AudioChannelsSetting::audioMatrix51 && !mSoundMatrixDecoder) {
@@ -88,7 +88,7 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
 }
 
 int32_t AudioPlayer::GetNumOutputChannels() const {
-    switch (mAudioSettings.AudioSurround) {
+    switch (mAudioSettings.ChannelSetting) {
         case AudioChannelsSetting::audioMatrix51:
         case AudioChannelsSetting::audioRaw51:
             return 6;
@@ -98,7 +98,7 @@ int32_t AudioPlayer::GetNumOutputChannels() const {
 }
 
 void AudioPlayer::Play(const uint8_t* buf, size_t len) {
-    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioMatrix51 && mSoundMatrixDecoder) {
+    if (mAudioSettings.ChannelSetting == AudioChannelsSetting::audioMatrix51 && mSoundMatrixDecoder) {
         // Input is stereo, decode to surround using matrix decoder
         const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
         int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
