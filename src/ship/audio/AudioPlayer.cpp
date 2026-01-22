@@ -3,13 +3,27 @@
 #include <algorithm>
 
 namespace Ship {
+
+static const char* AudioChannelsSettingName(AudioChannelsSetting setting) {
+    switch (setting) {
+        case AudioChannelsSetting::audioStereo:
+            return "Stereo";
+        case AudioChannelsSetting::audioMatrix51:
+            return "5.1 Matrix";
+        case AudioChannelsSetting::audioRaw51:
+            return "5.1 Raw";
+        default:
+            return "Unknown";
+    }
+}
+
 AudioPlayer::~AudioPlayer() {
     SPDLOG_TRACE("destruct audio player");
 }
 
 bool AudioPlayer::Init() {
-    // Initialize sound matrix decoder if surround mode is enabled
-    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51) {
+    // Initialize sound matrix decoder if matrix surround mode is enabled
+    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioMatrix51) {
         SPDLOG_INFO("Initializing sound matrix decoder for surround");
         mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
     }
@@ -54,9 +68,8 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
         return true; // No change needed
     }
 
-    SPDLOG_INFO("Changing audio channels from {} to {}",
-                mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 ? "5.1 Surround" : "Stereo",
-                channels == AudioChannelsSetting::audioSurround51 ? "5.1 Surround" : "Stereo");
+    SPDLOG_INFO("Changing audio channels from {} to {}", AudioChannelsSettingName(mAudioSettings.AudioSurround),
+                AudioChannelsSettingName(channels));
 
     // Close current audio device
     DoClose();
@@ -65,20 +78,28 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     mAudioSettings.AudioSurround = channels;
 
     // Setup or teardown sound matrix decoder
-    if (channels == AudioChannelsSetting::audioSurround51 && !mSoundMatrixDecoder) {
+    if (channels == AudioChannelsSetting::audioMatrix51 && !mSoundMatrixDecoder) {
         mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
+    } else if (channels != AudioChannelsSetting::audioMatrix51 && mSoundMatrixDecoder) {
+        mSoundMatrixDecoder.reset();
     }
 
     return DoInit();
 }
 
 int32_t AudioPlayer::GetNumOutputChannels() const {
-    return mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 ? 6 : 2;
+    switch (mAudioSettings.AudioSurround) {
+        case AudioChannelsSetting::audioMatrix51:
+        case AudioChannelsSetting::audioRaw51:
+            return 6;
+        default:
+            return 2;
+    }
 }
 
 void AudioPlayer::Play(const uint8_t* buf, size_t len) {
-    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioSurround51 && mSoundMatrixDecoder) {
-        // Input is stereo, decode to surround
+    if (mAudioSettings.AudioSurround == AudioChannelsSetting::audioMatrix51 && mSoundMatrixDecoder) {
+        // Input is stereo, decode to surround using matrix decoder
         const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
         int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
 
@@ -94,7 +115,7 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
         // Play the surround audio
         DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), numStereoSamples * 6 * sizeof(int16_t));
     } else {
-        // Stereo passthrough
+        // Stereo or Raw 5.1 passthrough
         DoPlay(buf, len);
     }
 }

@@ -42,7 +42,8 @@ AudioChannelsSetting GetAudioChannels() {
 
 int32_t GetNumAudioChannels() {
     switch (GetAudioChannels()) {
-        case audioSurround51:
+        case audioMatrix51:
+        case audioRaw51:
             return 6;
         default:
             return 2;
@@ -62,7 +63,7 @@ void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
     audio->Play(buf, len);
 }
 
-void SetAudioChannelsSetting(AudioChannelsSetting channels) {
+void SetAudioChannels(AudioChannelsSetting channels) {
     auto audio = Ship::Context::GetInstance()->GetAudio();
     if (audio == nullptr) {
         return;

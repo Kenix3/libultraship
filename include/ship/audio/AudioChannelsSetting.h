@@ -1,3 +1,3 @@
 #pragma once
 
-typedef enum AudioChannelsSetting { audioStereo, audioSurround51, audioMax } AudioChannelsSetting;
+typedef enum AudioChannelsSetting { audioStereo, audioMatrix51, audioRaw51, audioMax } AudioChannelsSetting;

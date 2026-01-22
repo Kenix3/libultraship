@@ -264,8 +264,10 @@ AudioChannelsSetting Config::GetCurrentAudioChannelsSetting() {
     int32_t surround =
         GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
     switch (surround) {
-        case AudioChannelsSetting::audioSurround51:
-            return AudioChannelsSetting::audioSurround51;
+        case AudioChannelsSetting::audioMatrix51:
+            return AudioChannelsSetting::audioMatrix51;
+        case AudioChannelsSetting::audioRaw51:
+            return AudioChannelsSetting::audioRaw51;
         case AudioChannelsSetting::audioStereo:
         case AudioChannelsSetting::audioMax:
         default:
