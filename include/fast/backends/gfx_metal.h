@@ -203,7 +203,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     int mCurrentTile;
     uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES];
 
-    uint32_t mRenderTargetHeight;
+    int32_t mRenderTargetHeight;
     int mCurrentFramebuffer;
     size_t mCurrentVertexBufferOffset;
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
