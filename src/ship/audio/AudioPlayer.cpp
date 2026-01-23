@@ -98,25 +98,30 @@ int32_t AudioPlayer::GetNumOutputChannels() const {
 }
 
 void AudioPlayer::Play(const uint8_t* buf, size_t len) {
-    if (mAudioSettings.ChannelSetting == AudioChannelsSetting::audioMatrix51 && mSoundMatrixDecoder) {
-        // Input is stereo, decode to surround using matrix decoder
-        const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
-        int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
-
-        // Resize surround buffer if needed
-        size_t surroundSamplesNeeded = numStereoSamples * 6;
-        if (mSurroundBuffer.size() < surroundSamplesNeeded) {
-            mSurroundBuffer.resize(surroundSamplesNeeded);
-        }
-
-        // Decode stereo to surround using sound matrix decoder
-        mSoundMatrixDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
-
-        // Play the surround audio
-        DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), numStereoSamples * 6 * sizeof(int16_t));
-    } else {
+    if (mAudioSettings.ChannelSetting != AudioChannelsSetting::audioMatrix51) {
         // Stereo or Raw 5.1 passthrough
         DoPlay(buf, len);
+        return;
     }
+    
+    if (!mSoundMatrixDecoder) {
+        // todo: log error about not having the decoder
+    }
+    
+    // Input is stereo, decode to surround using matrix decoder
+    const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
+    int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
+
+    // Resize surround buffer if needed
+    size_t surroundSamplesNeeded = numStereoSamples * 6;
+    if (mSurroundBuffer.size() < surroundSamplesNeeded) {
+        mSurroundBuffer.resize(surroundSamplesNeeded);
+    }
+
+    // Decode stereo to surround using sound matrix decoder
+    mSoundMatrixDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
+
+    // Play the surround audio
+    DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), numStereoSamples * 6 * sizeof(int16_t));
 }
 } // namespace Ship
