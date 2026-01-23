@@ -261,9 +261,9 @@ AudioBackend Config::GetCurrentAudioBackend() {
 }
 
 AudioChannelsSetting Config::GetCurrentAudioChannelsSetting() {
-    int32_t surround =
+    int32_t channels_setting =
         GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
-    switch (surround) {
+    switch (channels_setting) {
         case AudioChannelsSetting::audioMatrix51:
             return AudioChannelsSetting::audioMatrix51;
         case AudioChannelsSetting::audioRaw51:
