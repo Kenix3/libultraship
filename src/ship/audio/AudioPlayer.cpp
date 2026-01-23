@@ -103,11 +103,12 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
         DoPlay(buf, len);
         return;
     }
-    
+
     if (!mSoundMatrixDecoder) {
-        // todo: log error about not having the decoder
+        SPDLOG_ERROR("AudioPlayer: Matrix 5.1 mode enabled but SoundMatrixDecoder is not initialized");
+        return;
     }
-    
+
     // Input is stereo, decode to surround using matrix decoder
     const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
     int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
@@ -121,7 +122,7 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
     // Decode stereo to surround using sound matrix decoder
     mSoundMatrixDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
 
-    // Play the surround audio
+    // Play the audio
     DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), numStereoSamples * 6 * sizeof(int16_t));
 }
 } // namespace Ship

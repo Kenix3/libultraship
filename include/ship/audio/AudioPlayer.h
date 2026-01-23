@@ -26,8 +26,8 @@ class AudioPlayer {
     bool Init();
     virtual int32_t Buffered() = 0;
 
-    // Play stereo audio - will decode to surround if surround mode is enabled
-    // buf: interleaved stereo samples (L, R, L, R, ...)
+    // Play audio
+    // buf: interleaved samples in either stereo: (L, R, L, R, ...), or surround: (FL, FR, C, LFE, SL, SR, ...)
     // len: length in bytes
     void Play(const uint8_t* buf, size_t len);
 
