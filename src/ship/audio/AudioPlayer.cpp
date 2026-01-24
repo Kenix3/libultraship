@@ -67,9 +67,10 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     if (channels == AudioChannelsSetting::audioMatrix51) {
         if (!mSoundMatrixDecoder) {
             mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
-        } else {
-            mSoundMatrixDecoder.reset();
         }
+    } else {
+        // When switching away from matrix mode, release the decoder
+        mSoundMatrixDecoder.reset();
     }
 
     return DoInit();
