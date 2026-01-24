@@ -206,6 +206,7 @@ struct RGBA {
 
 struct LoadedVertex {
     float x, y, z, w;
+    float inv_w; // precomputed 1/w for back-face culling optimization
     float u, v;
     struct RGBA color;
     uint8_t clip_rej;
