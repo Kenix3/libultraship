@@ -291,10 +291,11 @@ int32_t ConsoleWindow::CheckVarType(const std::string& input) {
 
 ConsoleWindow::~ConsoleWindow() {
     SPDLOG_TRACE("destruct console window");
+    delete[] mInputBuffer;
+    delete[] mFilterBuffer;
 }
 
 void ConsoleWindow::InitElement() {
-    // TODO: These buffers are never freed.
     mInputBuffer = new char[gMaxBufferSize];
     strcpy(mInputBuffer, "");
     mFilterBuffer = new char[gMaxBufferSize];
