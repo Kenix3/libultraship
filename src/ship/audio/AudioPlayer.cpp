@@ -67,8 +67,7 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     if (channels == AudioChannelsSetting::audioMatrix51) {
         if (!mSoundMatrixDecoder) {
             mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
-        }
-        else {
+        } else {
             mSoundMatrixDecoder.reset();
         }
     }

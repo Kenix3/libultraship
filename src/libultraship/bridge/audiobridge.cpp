@@ -42,7 +42,7 @@ AudioChannelsSetting GetAudioChannels() {
 
 int32_t GetNumAudioChannels() {
     auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
-    
+
     if (audio == nullptr) {
         return 2;
     }
