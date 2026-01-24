@@ -105,10 +105,6 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
 
     // Decode stereo to surround using sound matrix decoder
     const int16_t* surroundOut = mSoundMatrixDecoder->Process(stereoIn, numStereoSamples);
-    if (!surroundOut) {
-        SPDLOG_ERROR("AudioPlayer: SoundMatrixDecoder::Process failed - decoder not initialized");
-        return;
-    }
 
     // Play the audio
     DoPlay(reinterpret_cast<const uint8_t*>(surroundOut), numStereoSamples * 6 * sizeof(int16_t));

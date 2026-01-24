@@ -43,8 +43,6 @@ SoundMatrixDecoder::SoundMatrixDecoder(int32_t sampleRate) {
 
     // Reset filter states
     ResetState();
-
-    mReady = true;
 }
 
 void SoundMatrixDecoder::ResetState() {
@@ -223,11 +221,6 @@ int16_t SoundMatrixDecoder::Saturate(float value) {
 }
 
 const int16_t* SoundMatrixDecoder::Process(const int16_t* stereoInput, int samplePairs) {
-    // Init() must be called before Process()
-    if (!mReady) {
-        return nullptr;
-    }
-
     // Resize output buffer if needed
     size_t samplesNeeded = static_cast<size_t>(samplePairs) * 6;
     if (mSurroundBuffer.size() < samplesNeeded) {

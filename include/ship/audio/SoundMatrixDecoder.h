@@ -86,7 +86,6 @@ class SoundMatrixDecoder {
 
     int32_t mDelayLength = 0;
     double mAllPassBaseRate = 1.0; // Precomputed for ProcessAllPass
-    bool mReady = false;
 
     // Filter coefficients (computed once per sample rate)
     FilterCoefficients mCoefCenterHP;

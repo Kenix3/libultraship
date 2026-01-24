@@ -57,7 +57,7 @@ class AudioPlayer {
     // Initialize the audio device.
     virtual bool DoInit() = 0;
 
-    // Close the current audio device and reset the audio player.
+    // Close the current audio device.
     virtual void DoClose() = 0;
 
     // Internal play method - receives audio in the output format (stereo or surround)
