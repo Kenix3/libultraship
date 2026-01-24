@@ -113,16 +113,14 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
     const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
     int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
 
-    // Resize surround buffer if needed
-    size_t surroundSamplesNeeded = numStereoSamples * 6;
-    if (mSurroundBuffer.size() < surroundSamplesNeeded) {
-        mSurroundBuffer.resize(surroundSamplesNeeded);
+    // Decode stereo to surround using sound matrix decoder
+    const int16_t* surroundOut = mSoundMatrixDecoder->Process(stereoIn, numStereoSamples);
+    if (!surroundOut) {
+        SPDLOG_ERROR("AudioPlayer: SoundMatrixDecoder::Process failed - decoder not initialized");
+        return;
     }
 
-    // Decode stereo to surround using sound matrix decoder
-    mSoundMatrixDecoder->Process(stereoIn, mSurroundBuffer.data(), numStereoSamples);
-
     // Play the audio
-    DoPlay(reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), numStereoSamples * 6 * sizeof(int16_t));
+    DoPlay(reinterpret_cast<const uint8_t*>(surroundOut), numStereoSamples * 6 * sizeof(int16_t));
 }
 } // namespace Ship

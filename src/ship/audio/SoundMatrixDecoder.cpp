@@ -15,28 +15,39 @@ namespace Timing {
 constexpr int gSurroundDelayMs = 10; // ITU-R BS.775 recommends 10-25ms
 }
 
-SoundMatrixDecoder::SoundMatrixDecoder(int32_t sampleRate) : mSampleRate(sampleRate) {
-    Reset();
-}
-
-void SoundMatrixDecoder::SetSampleRate(int32_t sampleRate) {
-    mSampleRate = sampleRate;
-    mReady = false;
-}
-
-void SoundMatrixDecoder::Reset() {
+SoundMatrixDecoder::SoundMatrixDecoder(int32_t sampleRate) {
     // Compute delay length from sample rate
-    mDelayLength = (mSampleRate * Timing::gSurroundDelayMs) / 1000;
+    mDelayLength = (sampleRate * Timing::gSurroundDelayMs) / 1000;
     if (mDelayLength > gMaxDelay) {
         mDelayLength = gMaxDelay;
     }
 
-    // Design filters for this sample rate
-    mCoefCenterHP = DesignHighPass(70.0);    // Remove rumble from center
-    mCoefCenterLP = DesignLowPass(20000.0);  // Anti-alias center
-    mCoefSurroundHP = DesignHighPass(100.0); // Surround channels high-passed
-    mCoefSubLP = DesignLowPass(120.0);       // LFE low-pass
+    // Precompute base rate for all-pass sweep
+    mAllPassBaseRate = std::pow(std::pow(2.0, 4.0), 0.1 / (sampleRate / 2.0));
 
+    // Design filters for this sample rate
+    mCoefCenterHP = DesignHighPass(70.0, sampleRate);    // Remove rumble from center
+    mCoefCenterLP = DesignLowPass(20000.0, sampleRate);  // Anti-alias center
+    mCoefSurroundHP = DesignHighPass(100.0, sampleRate); // Surround channels high-passed
+    mCoefSubLP = DesignLowPass(120.0, sampleRate);       // LFE low-pass
+
+    // Initialize phase chains with sample rate
+    mPhaseLeftMain = {};
+    mPhaseLeftCross = {};
+    mPhaseRightMain = {};
+    mPhaseRightCross = {};
+    PrepareAllPass(mPhaseLeftMain, sampleRate);
+    PrepareAllPass(mPhaseLeftCross, sampleRate);
+    PrepareAllPass(mPhaseRightMain, sampleRate);
+    PrepareAllPass(mPhaseRightCross, sampleRate);
+
+    // Reset filter states
+    ResetState();
+
+    mReady = true;
+}
+
+void SoundMatrixDecoder::ResetState() {
     // Clear all filter states
     mCenterHighPass = {};
     mCenterLowPass = {};
@@ -46,26 +57,18 @@ void SoundMatrixDecoder::Reset() {
     mSurrRightCrossHP = {};
     mSubLowPass = {};
 
-    // Reset phase chains
-    mPhaseLeftMain = {};
-    mPhaseLeftCross = {};
-    mPhaseRightMain = {};
-    mPhaseRightCross = {};
-
     // Reset delay lines
     mDelaySurrLeft = {};
     mDelaySurrLeft.Length = mDelayLength;
     mDelaySurrRight = {};
     mDelaySurrRight.Length = mDelayLength;
-
-    mReady = true;
 }
 
-SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double frequency) {
+SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double frequency, int32_t sampleRate) {
     FilterCoefficients coef = {};
 
     // Clamp to safe range for bilinear transform stability
-    double maxFreq = mSampleRate * 0.475;
+    double maxFreq = sampleRate * 0.475;
     if (frequency > maxFreq) {
         frequency = maxFreq;
     }
@@ -77,7 +80,7 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double 
     double omega4 = omega2 * omega2;
 
     // Bilinear transform warping
-    double kVal = omega / std::tan(M_PI * frequency / mSampleRate);
+    double kVal = omega / std::tan(M_PI * frequency / sampleRate);
     double k2 = kVal * kVal;
     double k3 = k2 * kVal;
     double k4 = k2 * k2;
@@ -103,7 +106,7 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignLowPass(double 
     return coef;
 }
 
-SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double frequency) {
+SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double frequency, int32_t sampleRate) {
     FilterCoefficients coef = {};
 
     double omega = 2.0 * M_PI * frequency;
@@ -111,7 +114,7 @@ SoundMatrixDecoder::FilterCoefficients SoundMatrixDecoder::DesignHighPass(double
     double omega3 = omega2 * omega;
     double omega4 = omega2 * omega2;
 
-    double kVal = omega / std::tan(M_PI * frequency / mSampleRate);
+    double kVal = omega / std::tan(M_PI * frequency / sampleRate);
     double k2 = kVal * kVal;
     double k3 = k2 * kVal;
     double k4 = k2 * k2;
@@ -155,26 +158,22 @@ float SoundMatrixDecoder::ProcessFilter(float sample, BiquadCascade& state, cons
     return static_cast<float>(out);
 }
 
-void SoundMatrixDecoder::PrepareAllPass(AllPassChain& chain) {
+void SoundMatrixDecoder::PrepareAllPass(AllPassChain& chain, int32_t sampleRate) {
     // Sweeping all-pass parameters for decorrelation
     constexpr double depth = 4.0;
     constexpr double baseDelay = 100.0;
     constexpr double sweepSpeed = 0.1;
 
-    chain.FreqMin = (M_PI * baseDelay) / mSampleRate;
+    chain.FreqMin = (M_PI * baseDelay) / sampleRate;
     chain.Freq = chain.FreqMin;
 
     double range = std::pow(2.0, depth);
-    chain.FreqMax = (M_PI * baseDelay * range) / mSampleRate;
-    chain.SweepRate = std::pow(range, sweepSpeed / (mSampleRate / 2.0));
+    chain.FreqMax = (M_PI * baseDelay * range) / sampleRate;
+    chain.SweepRate = std::pow(range, sweepSpeed / (sampleRate / 2.0));
     chain.Ready = true;
 }
 
 float SoundMatrixDecoder::ProcessAllPass(float sample, AllPassChain& chain, bool negate) {
-    if (!chain.Ready) {
-        PrepareAllPass(chain);
-    }
-
     // First-order all-pass coefficient
     double c = (1.0 - chain.Freq) / (1.0 + chain.Freq);
     double input = static_cast<double>(sample);
@@ -195,13 +194,12 @@ float SoundMatrixDecoder::ProcessAllPass(float sample, AllPassChain& chain, bool
     double result = negate ? -chain.YHist[3] : chain.YHist[3];
 
     // Sweep the frequency for time-varying decorrelation
-    double baseRate = std::pow(std::pow(2.0, 4.0), 0.1 / (mSampleRate / 2.0));
     chain.Freq *= chain.SweepRate;
 
     if (chain.Freq > chain.FreqMax) {
-        chain.SweepRate = 1.0 / baseRate;
+        chain.SweepRate = 1.0 / mAllPassBaseRate;
     } else if (chain.Freq < chain.FreqMin) {
-        chain.SweepRate = baseRate;
+        chain.SweepRate = mAllPassBaseRate;
     }
 
     return static_cast<float>(result);
@@ -224,9 +222,16 @@ int16_t SoundMatrixDecoder::Saturate(float value) {
     return static_cast<int16_t>(value);
 }
 
-void SoundMatrixDecoder::Process(const int16_t* stereoInput, int16_t* surroundOutput, int samplePairs) {
+const int16_t* SoundMatrixDecoder::Process(const int16_t* stereoInput, int samplePairs) {
+    // Init() must be called before Process()
     if (!mReady) {
-        Reset();
+        return nullptr;
+    }
+
+    // Resize output buffer if needed
+    size_t samplesNeeded = static_cast<size_t>(samplePairs) * 6;
+    if (mSurroundBuffer.size() < samplesNeeded) {
+        mSurroundBuffer.resize(samplesNeeded);
     }
 
     for (int i = 0; i < samplePairs; ++i) {
@@ -269,13 +274,15 @@ void SoundMatrixDecoder::Process(const int16_t* stereoInput, int16_t* surroundOu
         lfe = ProcessFilter(lfe, mSubLowPass, mCoefSubLP);
 
         // Output: FL, FR, C, LFE, SL, SR
-        surroundOutput[i * 6 + 0] = Saturate(frontL);
-        surroundOutput[i * 6 + 1] = Saturate(frontR);
-        surroundOutput[i * 6 + 2] = Saturate(ctr);
-        surroundOutput[i * 6 + 3] = Saturate(lfe);
-        surroundOutput[i * 6 + 4] = Saturate(surrL);
-        surroundOutput[i * 6 + 5] = Saturate(surrR);
+        mSurroundBuffer[i * 6 + 0] = Saturate(frontL);
+        mSurroundBuffer[i * 6 + 1] = Saturate(frontR);
+        mSurroundBuffer[i * 6 + 2] = Saturate(ctr);
+        mSurroundBuffer[i * 6 + 3] = Saturate(lfe);
+        mSurroundBuffer[i * 6 + 4] = Saturate(surrL);
+        mSurroundBuffer[i * 6 + 5] = Saturate(surrR);
     }
+
+    return mSurroundBuffer.data();
 }
 
 } // namespace Ship

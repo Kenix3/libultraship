@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cmath>
 #include <array>
+#include <vector>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -19,22 +20,26 @@ namespace Ship {
  */
 class SoundMatrixDecoder {
   public:
-    explicit SoundMatrixDecoder(int32_t sampleRate = 32000);
+    /**
+     * Construct and initialize the decoder with a specific sample rate.
+     * @param sampleRate The audio sample rate in Hz
+     */
+    SoundMatrixDecoder(int32_t sampleRate);
     ~SoundMatrixDecoder() = default;
+
+    /**
+     * Reset filter states without recomputing coefficients.
+     * Useful when audio is interrupted to prevent clicks.
+     */
+    void ResetState();
 
     /**
      * Decode stereo to 5.1 surround
      * @param stereoInput Interleaved stereo samples [L0, R0, L1, R1, ...]
-     * @param surroundOutput Interleaved 5.1 samples [FL, FR, C, LFE, SL, SR, ...]
      * @param samplePairs Number of stereo sample pairs to process
+     * @return Pointer to internal buffer with interleaved 5.1 samples [FL, FR, C, LFE, SL, SR, ...]
      */
-    void Process(const int16_t* stereoInput, int16_t* surroundOutput, int samplePairs);
-
-    void Reset();
-    void SetSampleRate(int32_t sampleRate);
-    int32_t GetSampleRate() const {
-        return mSampleRate;
-    }
+    const int16_t* Process(const int16_t* stereoInput, int samplePairs);
 
   private:
     // 4th-order IIR filter (Linkwitz-Riley) for 24dB/octave slopes
@@ -68,19 +73,19 @@ class SoundMatrixDecoder {
     };
 
     // Filter design
-    FilterCoefficients DesignLowPass(double frequency);
-    FilterCoefficients DesignHighPass(double frequency);
+    FilterCoefficients DesignLowPass(double frequency, int32_t sampleRate);
+    FilterCoefficients DesignHighPass(double frequency, int32_t sampleRate);
 
     // Signal processing
     float ProcessFilter(float sample, BiquadCascade& state, const FilterCoefficients& coef);
-    void PrepareAllPass(AllPassChain& chain);
+    void PrepareAllPass(AllPassChain& chain, int32_t sampleRate);
     float ProcessAllPass(float sample, AllPassChain& chain, bool negate);
     float ProcessDelay(float sample, CircularDelay& buffer);
 
     static int16_t Saturate(float value);
 
-    int32_t mSampleRate;
-    int32_t mDelayLength;
+    int32_t mDelayLength = 0;
+    double mAllPassBaseRate = 1.0; // Precomputed for ProcessAllPass
     bool mReady = false;
 
     // Filter coefficients (computed once per sample rate)
@@ -107,6 +112,9 @@ class SoundMatrixDecoder {
     // Timing
     CircularDelay mDelaySurrLeft;
     CircularDelay mDelaySurrRight;
+
+    // Output buffer
+    std::vector<int16_t> mSurroundBuffer;
 };
 
 } // namespace Ship

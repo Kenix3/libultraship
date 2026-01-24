@@ -3,7 +3,6 @@
 #include "stddef.h"
 #include <string>
 #include <memory>
-#include <vector>
 #include "ship/audio/AudioChannelsSetting.h"
 #include "ship/audio/SoundMatrixDecoder.h"
 
@@ -63,18 +62,11 @@ class AudioPlayer {
     // Internal play method - receives audio in the output format (stereo or surround)
     virtual void DoPlay(const uint8_t* buf, size_t len) = 0;
 
+  private:
     // Sound matrix decoder for surround mode
     std::unique_ptr<SoundMatrixDecoder> mSoundMatrixDecoder;
 
-    // Surround output buffer
-    std::vector<int16_t> mSurroundBuffer;
-
     AudioSettings mAudioSettings;
-
-    // Whether matrix decoder needs priming (to fill delay buffers)
-    bool mNeedsPriming = false;
-
-  private:
     bool mInitialized = false;
 };
 } // namespace Ship
