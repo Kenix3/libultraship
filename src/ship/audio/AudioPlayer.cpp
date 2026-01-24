@@ -1,21 +1,7 @@
 #include "ship/audio/AudioPlayer.h"
 #include "spdlog/spdlog.h"
-#include <algorithm>
 
 namespace Ship {
-
-static const char* AudioChannelsSettingName(AudioChannelsSetting setting) {
-    switch (setting) {
-        case AudioChannelsSetting::audioStereo:
-            return "Stereo";
-        case AudioChannelsSetting::audioMatrix51:
-            return "5.1 Matrix";
-        case AudioChannelsSetting::audioRaw51:
-            return "5.1 Raw";
-        default:
-            return "Unknown";
-    }
-}
 
 AudioPlayer::~AudioPlayer() {
     SPDLOG_TRACE("destruct audio player");
@@ -78,10 +64,13 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     mAudioSettings.ChannelSetting = channels;
 
     // Setup or teardown sound matrix decoder
-    if (channels == AudioChannelsSetting::audioMatrix51 && !mSoundMatrixDecoder) {
-        mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
-    } else if (channels != AudioChannelsSetting::audioMatrix51 && mSoundMatrixDecoder) {
-        mSoundMatrixDecoder.reset();
+    if (channels == AudioChannelsSetting::audioMatrix51) {
+        if (!mSoundMatrixDecoder) {
+            mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
+        }
+        else {
+            mSoundMatrixDecoder.reset();
+        }
     }
 
     return DoInit();

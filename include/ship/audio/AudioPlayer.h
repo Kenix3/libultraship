@@ -54,9 +54,10 @@ class AudioPlayer {
     int32_t GetNumOutputChannels() const;
 
   protected:
+    // Initialize the audio device.
     virtual bool DoInit() = 0;
 
-    // Reinitialize the audio device with current settings (called after channel change)
+    // Close the current audio device and reset the audio player.
     virtual void DoClose() = 0;
 
     // Internal play method - receives audio in the output format (stereo or surround)

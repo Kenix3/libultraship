@@ -22,7 +22,7 @@ void SDLAudioPlayer::DoClose() {
 
 bool SDLAudioPlayer::DoInit() {
     if (SDL_Init(SDL_INIT_AUDIO) != 0) {
-        SPDLOG_ERROR("SDL init error: {}", SDL_GetError());
+        SPDLOG_ERROR("SDL init error: %s\n", SDL_GetError());
         return false;
     }
 

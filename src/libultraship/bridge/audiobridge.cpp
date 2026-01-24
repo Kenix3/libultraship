@@ -41,13 +41,13 @@ AudioChannelsSetting GetAudioChannels() {
 }
 
 int32_t GetNumAudioChannels() {
-    switch (GetAudioChannels()) {
-        case audioMatrix51:
-        case audioRaw51:
-            return 6;
-        default:
-            return 2;
+    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    
+    if (audio == nullptr) {
+        return 2;
     }
+
+    return audio->GetNumOutputChannels();
 }
 
 void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {

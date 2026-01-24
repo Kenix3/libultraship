@@ -44,7 +44,7 @@ bool WasapiAudioPlayer::SetupStream() {
             ThrowIfFailed(mClient->Initialize(
                 AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
                 2000000, 0, &desired, nullptr));
-        } else {
+        } else if (mNumChannels == 6) {
             // 5.1 surround (6 channels)
             WAVEFORMATEXTENSIBLE desired;
             desired.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
