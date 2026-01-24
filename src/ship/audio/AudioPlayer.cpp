@@ -80,6 +80,7 @@ int32_t AudioPlayer::GetNumOutputChannels() const {
         case AudioChannelsSetting::audioMatrix51:
         case AudioChannelsSetting::audioRaw51:
             return 6;
+        case AudioChannelsSetting::audioStereo:
         default:
             return 2;
     }
