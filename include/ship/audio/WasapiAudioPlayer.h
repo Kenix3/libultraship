@@ -15,10 +15,13 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     WasapiAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
     }
 
-    int Buffered();
-    void Play(const uint8_t* buf, size_t len);
+    int Buffered() override;
 
   protected:
+    bool DoInit() override;
+    void DoClose() override;
+    void DoPlay(const uint8_t* buf, size_t len) override;
+
     virtual HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState);
     virtual HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR pwstrDeviceId);
     virtual HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR pwstrDeviceId);
@@ -29,7 +32,6 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID** ppvInterface);
     void ThrowIfFailed(HRESULT res);
     bool SetupStream();
-    bool DoInit();
 
   private:
     ComPtr<IMMDeviceEnumerator> mDeviceEnumerator;
