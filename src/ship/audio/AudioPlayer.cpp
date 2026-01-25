@@ -99,14 +99,10 @@ void AudioPlayer::Play(const uint8_t* buf, size_t len) {
         return;
     }
 
-    // Input is stereo, decode to surround using matrix decoder
-    const int16_t* stereoIn = reinterpret_cast<const int16_t*>(buf);
-    int numStereoSamples = len / (2 * sizeof(int16_t)); // Number of stereo sample pairs
-
     // Decode stereo to surround using sound matrix decoder
-    const int16_t* surroundOut = mSoundMatrixDecoder->Process(stereoIn, numStereoSamples);
+    const auto [surroundOut, surroundLen] = mSoundMatrixDecoder->Process(buf, len);
 
     // Play the audio
-    DoPlay(reinterpret_cast<const uint8_t*>(surroundOut), numStereoSamples * 6 * sizeof(int16_t));
+    DoPlay(surroundOut, surroundLen);
 }
 } // namespace Ship

@@ -220,7 +220,10 @@ int16_t SoundMatrixDecoder::Saturate(float value) {
     return static_cast<int16_t>(value);
 }
 
-const int16_t* SoundMatrixDecoder::Process(const int16_t* stereoInput, int samplePairs) {
+std::tuple<const uint8_t*, int> SoundMatrixDecoder::Process(const uint8_t* buf, size_t len) {
+    const int16_t* stereoInput = reinterpret_cast<const int16_t*>(buf);
+    int samplePairs = len / (2 * sizeof(int16_t));
+
     // Resize output buffer if needed
     size_t samplesNeeded = static_cast<size_t>(samplePairs) * 6;
     if (mSurroundBuffer.size() < samplesNeeded) {
@@ -275,7 +278,7 @@ const int16_t* SoundMatrixDecoder::Process(const int16_t* stereoInput, int sampl
         mSurroundBuffer[i * 6 + 5] = Saturate(surrR);
     }
 
-    return mSurroundBuffer.data();
+    return { reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), samplePairs * 6 * sizeof(int16_t) };
 }
 
 } // namespace Ship
