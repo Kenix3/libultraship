@@ -47,9 +47,11 @@ static void VertexArraySetAttribs(ShaderProgram* prg) {
     size_t pos = 0;
 
     for (int i = 0; i < prg->numAttribs; i++) {
-        glEnableVertexAttribArray(prg->attribLocations[i]);
-        glVertexAttribPointer(prg->attribLocations[i], prg->attribSizes[i], GL_FLOAT, GL_FALSE,
-                              numFloats * sizeof(float), (void*)(pos * sizeof(float)));
+        if (prg->attribLocations[i] >= 0) {
+            glEnableVertexAttribArray(prg->attribLocations[i]);
+            glVertexAttribPointer(prg->attribLocations[i], prg->attribSizes[i], GL_FLOAT, GL_FALSE,
+                                  numFloats * sizeof(float), (void*)(pos * sizeof(float)));
+        }
         pos += prg->attribSizes[i];
     }
 }
@@ -73,18 +75,24 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
 }
 
 void GfxRenderingAPIOGL::UnloadShader(ShaderProgram* old_prg) {
-    if (old_prg != nullptr) {
+    if (old_prg != nullptr && old_prg == mLastLoadedShader) {
         for (unsigned int i = 0; i < old_prg->numAttribs; i++) {
-            glDisableVertexAttribArray(old_prg->attribLocations[i]);
+            if (old_prg->attribLocations[i] >= 0) {
+                glDisableVertexAttribArray(old_prg->attribLocations[i]);
+            }
         }
+        mLastLoadedShader = nullptr;
     }
 }
 
 void GfxRenderingAPIOGL::LoadShader(ShaderProgram* new_prg) {
     // if (!new_prg) return;
     mCurrentShaderProgram = new_prg;
-    glUseProgram(new_prg->openglProgramId);
-    VertexArraySetAttribs(new_prg);
+    if (new_prg != mLastLoadedShader) {
+        glUseProgram(new_prg->openglProgramId);
+        VertexArraySetAttribs(new_prg);
+        mLastLoadedShader = new_prg;
+    }
     SetUniforms(new_prg);
 }
 
@@ -529,8 +537,14 @@ void GfxRenderingAPIOGL::DeleteTexture(uint32_t texID) {
 }
 
 void GfxRenderingAPIOGL::SelectTexture(int tile, GLuint texture_id) {
-    glActiveTexture(GL_TEXTURE0 + tile);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    if (mLastActiveTexture != tile) {
+        mLastActiveTexture = tile;
+        glActiveTexture(GL_TEXTURE0 + tile);
+    }
+    if (mLastBoundTextures[tile] != texture_id) {
+        mLastBoundTextures[tile] = texture_id;
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+    }
     mCurrentTextureIds[tile] = texture_id;
     mCurrentTile = tile;
 }
@@ -560,7 +574,10 @@ static uint32_t gfx_cm_to_opengl(uint32_t val) {
 }
 
 void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
-    glActiveTexture(GL_TEXTURE0 + tile);
+    if (mLastActiveTexture != tile) {
+        mLastActiveTexture = tile;
+        glActiveTexture(GL_TEXTURE0 + tile);
+    }
     const GLint filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
@@ -587,10 +604,14 @@ void GfxRenderingAPIOGL::SetScissor(int x, int y, int width, int height) {
 }
 
 void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
-    if (use_alpha) {
-        glEnable(GL_BLEND);
-    } else {
-        glDisable(GL_BLEND);
+    int8_t val = use_alpha ? 1 : 0;
+    if (mLastBlendEnabled != val) {
+        mLastBlendEnabled = val;
+        if (use_alpha) {
+            glEnable(GL_BLEND);
+        } else {
+            glDisable(GL_BLEND);
+        }
     }
 }
 
@@ -795,12 +816,18 @@ void GfxRenderingAPIOGL::StartDrawToFramebuffer(int fb_id, float noise_scale) {
 }
 
 void GfxRenderingAPIOGL::ClearFramebuffer(bool color, bool depth) {
-    glDisable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 0) {
+        mLastScissorEnabled = 0;
+        glDisable(GL_SCISSOR_TEST);
+    }
     glDepthMask(GL_TRUE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
     glDepthMask(mCurrentDepthMask ? GL_TRUE : GL_FALSE);
-    glEnable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 1) {
+        mLastScissorEnabled = 1;
+        glEnable(GL_SCISSOR_TEST);
+    }
 }
 
 void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
@@ -810,13 +837,19 @@ void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_sour
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_src.fbo);
 
     // Disabled for blit
-    glDisable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 0) {
+        mLastScissorEnabled = 0;
+        glDisable(GL_SCISSOR_TEST);
+    }
 
     glBlitFramebuffer(0, 0, fb_src.width, fb_src.height, 0, 0, fb_dst.width, fb_dst.height, GL_COLOR_BUFFER_BIT,
                       GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, mCurrentFrameBuffer);
 
-    glEnable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 1) {
+        mLastScissorEnabled = 1;
+        glEnable(GL_SCISSOR_TEST);
+    }
 }
 
 void* GfxRenderingAPIOGL::GetFramebufferTextureId(int fb_id) {
@@ -825,8 +858,8 @@ void* GfxRenderingAPIOGL::GetFramebufferTextureId(int fb_id) {
 
 void GfxRenderingAPIOGL::SelectTextureFb(int fb_id) {
     // glDisable(GL_DEPTH_TEST);
-    glActiveTexture(GL_TEXTURE0 + 0);
-    glBindTexture(GL_TEXTURE_2D, mFrameBuffers[fb_id].clrbuf);
+    int tile = 0;
+    SelectTexture(tile, mFrameBuffers[fb_id].clrbuf);
 }
 
 void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
@@ -851,7 +884,10 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
     }
 
     // Disabled for blit
-    glDisable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 0) {
+        mLastScissorEnabled = 0;
+        glDisable(GL_SCISSOR_TEST);
+    }
 
     // For msaa enabled buffers we can't perform a scaled blit to a simple sample buffer
     // First do an unscaled blit to a msaa resolved buffer
@@ -892,7 +928,10 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
 
     glReadBuffer(GL_BACK);
 
-    glEnable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 1) {
+        mLastScissorEnabled = 1;
+        glEnable(GL_SCISSOR_TEST);
+    }
 }
 
 void GfxRenderingAPIOGL::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
