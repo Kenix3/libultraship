@@ -1,4 +1,22 @@
 #include "libultraship/libultraship.h"
+#include <string>
+
+#ifdef __ANDROID__
+#include <jni.h>
+extern "C" {
+    const char* Android_GetSaveDir();
+}
+#endif
+
+static std::string GetSaveFilePath() {
+#ifdef __ANDROID__
+    const char* saveDir = Android_GetSaveDir();
+    if (saveDir != nullptr) {
+        return std::string(saveDir) + "/default.sav";
+    }
+#endif
+    return Ship::Context::GetPathRelativeToAppDirectory("default.sav");
+}
 
 extern "C" {
 
@@ -10,7 +28,7 @@ int32_t osEepromLongRead(OSMesgQueue* mq, uint8_t address, uint8_t* buffer, int3
     u8 content[512];
     s32 ret = -1;
 
-    const std::string save_file = Ship::Context::GetPathRelativeToAppDirectory("default.sav");
+    const std::string save_file = GetSaveFilePath();
     FILE* fp = fopen(save_file.c_str(), "rb");
     if (fp == NULL) {
         return -1;
@@ -35,7 +53,7 @@ int32_t osEepromLongWrite(OSMesgQueue* mq, uint8_t address, uint8_t* buffer, int
     }
     memcpy(content + address * 8, buffer, length);
 
-    const std::string save_file = Ship::Context::GetPathRelativeToAppDirectory("default.sav");
+    const std::string save_file = GetSaveFilePath();
     FILE* fp = fopen(save_file.c_str(), "wb");
     if (fp == NULL) {
         return -1;

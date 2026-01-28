@@ -31,7 +31,7 @@
 #endif
 
 #if defined(__ANDROID__) || defined(__IOS__)
-#include "port/mobile/MobileImpl.h"
+#include "ship/port/mobile/MobileImpl.h"
 #endif
 
 #ifdef ENABLE_OPENGL
@@ -92,6 +92,18 @@ Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
 
 Gui::~Gui() {
     SPDLOG_TRACE("destruct gui");
+    if (mImGuiIo != nullptr) {
+        //! @todo Refactor required to prevent memory leak. Also,
+        // the delete statements result in a use-after free when the program is closed.
+        if (mImGuiIo->IniFilename != nullptr) {
+            // delete[] mImGuiIo->IniFilename;
+        }
+        if (mImGuiIo->LogFilename != nullptr) {
+            // delete[] mImGuiIo->LogFilename;
+        }
+        // mImGuiIo->IniFilename = nullptr;
+        // mImGuiIo->LogFilename = nullptr;
+    }
 }
 
 void Gui::Init(GuiWindowInitData windowImpl) {
@@ -121,10 +133,10 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->FontGlobalScale = 2.0f;
 #endif
 
-    mImGuiIniPath = Context::GetPathRelativeToAppDirectory("imgui.ini");
-    mImGuiLogPath = Context::GetPathRelativeToAppDirectory("imgui_log.txt");
-    mImGuiIo->IniFilename = mImGuiIniPath.c_str();
-    mImGuiIo->LogFilename = mImGuiLogPath.c_str();
+    auto imguiIniPath = Context::GetPathRelativeToAppDirectory("imgui.ini");
+    auto imguiLogPath = Context::GetPathRelativeToAppDirectory("imgui_log.txt");
+    mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
+    mImGuiIo->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
     if (SupportsViewports() &&
         Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
@@ -490,6 +502,14 @@ int16_t Gui::GetIntegerScaleFactor() {
 }
 
 void Gui::DrawMenu() {
+#if defined(__ANDROID__)
+    if (GetMenuOrMenubarVisible()) {
+        Ship::Mobile::DisableTouchArea();
+    } else {
+        Ship::Mobile::EnableTouchArea();
+    }
+#endif
+
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
 
