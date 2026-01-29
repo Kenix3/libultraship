@@ -107,9 +107,6 @@ target_link_libraries(libultraship PUBLIC prism)
 #=================== Compile Options & Defs ===================
 
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
-if (CMAKE_SYSTEM_NAME STREQUAL "Android")
-    target_compile_definitions(libultraship PRIVATE SHIP_ANDROID_JNI_CLASS=${SHIP_ANDROID_JNI_CLASS})
-endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(${PROJECT_NAME} PRIVATE

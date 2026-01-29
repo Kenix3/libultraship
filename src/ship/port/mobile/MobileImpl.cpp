@@ -35,13 +35,6 @@ void Ship::Mobile::ImGuiProcessEvent(bool wantsTextInput) {
 #include <SDL2/SDL_gamecontroller.h>
 #include <jni.h>
 
-#ifndef SHIP_ANDROID_JNI_CLASS
-// JNI-mangled class name (dots replaced with underscores). Example: com_example_android_MainActivity
-#define SHIP_ANDROID_JNI_CLASS com_libultraship_android_MainActivity
-#endif
-
-#define SHIP_ANDROID_JNI_METHOD(name) Java_##SHIP_ANDROID_JNI_CLASS##_##name
-
 bool Ship::Mobile::IsUsingTouchscreenControls() {
     return isUsingTouchscreenControls;
 }
@@ -84,7 +77,7 @@ float Ship::Mobile::GetCameraPitch() {
 static int virtual_joystick_id = -1;
 static SDL_Joystick* virtual_joystick = nullptr;
 
-static void AttachControllerNative() {
+extern "C" void JNICALL Java_com_ghostship_android_MainActivity_attachController(JNIEnv* env, jobject obj) {
     virtual_joystick_id = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 18, 0);
     if (virtual_joystick_id == -1) {
         SDL_Log("Could not create overlay virtual controller");
@@ -99,7 +92,8 @@ static void AttachControllerNative() {
     isUsingTouchscreenControls = true;
 }
 
-static void SetCameraStateNative(jint axis, jfloat value) {
+extern "C" void JNICALL Java_com_ghostship_android_MainActivity_setCameraState(JNIEnv* env, jobject jobj, jint axis,
+                                                                              jfloat value) {
     switch (axis) {
         case 0:
             cameraYaw = value;
@@ -110,7 +104,8 @@ static void SetCameraStateNative(jint axis, jfloat value) {
     }
 }
 
-static void SetButtonNative(jint button, jboolean value) {
+extern "C" void JNICALL Java_com_ghostship_android_MainActivity_setButton(JNIEnv* env, jobject jobj, jint button,
+                                                                          jboolean value) {
     if (button < 0) {
         SDL_JoystickSetVirtualAxis(virtual_joystick, -button,
                                    value ? SDL_MAX_SINT16 : -SDL_MAX_SINT16); // SDL virtual axis bug workaround
@@ -119,11 +114,12 @@ static void SetButtonNative(jint button, jboolean value) {
     }
 }
 
-static void SetAxisNative(jint axis, jshort value) {
+extern "C" void JNICALL Java_com_ghostship_android_MainActivity_setAxis(JNIEnv* env, jobject jobj, jint axis,
+                                                                        jshort value) {
     SDL_JoystickSetVirtualAxis(virtual_joystick, axis, value);
 }
 
-static void DetachControllerNative() {
+extern "C" void JNICALL Java_com_ghostship_android_MainActivity_detachController(JNIEnv* env, jobject jobj) {
     SDL_JoystickClose(virtual_joystick);
     SDL_JoystickDetachVirtual(virtual_joystick_id);
     virtual_joystick = nullptr;
@@ -131,48 +127,8 @@ static void DetachControllerNative() {
     isUsingTouchscreenControls = false;
 }
 
-static void HandleSelectedFileNative(JNIEnv* env, jstring filename) {
-    (void)env;
-    (void)filename;
-}
-
-extern "C" JNIEXPORT void JNICALL SHIP_ANDROID_JNI_METHOD(attachController)(JNIEnv* env, jobject obj) {
-    (void)env;
-    (void)obj;
-    AttachControllerNative();
-}
-
-extern "C" JNIEXPORT void JNICALL SHIP_ANDROID_JNI_METHOD(setCameraState)(JNIEnv* env, jobject jobj, jint axis,
-                                                                          jfloat value) {
-    (void)env;
-    (void)jobj;
-    SetCameraStateNative(axis, value);
-}
-
-extern "C" JNIEXPORT void JNICALL SHIP_ANDROID_JNI_METHOD(setButton)(JNIEnv* env, jobject jobj, jint button,
-                                                                     jboolean value) {
-    (void)env;
-    (void)jobj;
-    SetButtonNative(button, value);
-}
-
-extern "C" JNIEXPORT void JNICALL SHIP_ANDROID_JNI_METHOD(setAxis)(JNIEnv* env, jobject jobj, jint axis,
-                                                                   jshort value) {
-    (void)env;
-    (void)jobj;
-    SetAxisNative(axis, value);
-}
-
-extern "C" JNIEXPORT void JNICALL SHIP_ANDROID_JNI_METHOD(detachController)(JNIEnv* env, jobject jobj) {
-    (void)env;
-    (void)jobj;
-    DetachControllerNative();
-}
-
-extern "C" JNIEXPORT void JNICALL SHIP_ANDROID_JNI_METHOD(nativeHandleSelectedFile)(JNIEnv* env, jobject thiz,
-                                                                                    jstring filename) {
-    (void)thiz;
-    HandleSelectedFileNative(env, filename);
+extern "C" JNIEXPORT void JNICALL
+Java_com_ghostship_android_MainActivity_nativeHandleSelectedFile(JNIEnv* env, jobject thiz, jstring filename) {
 }
 
 #endif
