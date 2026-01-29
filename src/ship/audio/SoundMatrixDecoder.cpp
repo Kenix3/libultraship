@@ -4,10 +4,10 @@ namespace Ship {
 
 // Standard matrix decoding gains derived from psychoacoustic principles
 namespace Gains {
-constexpr float gCenter = 0.7071067811865476f * 0.5f; // -3dB (1/sqrt(2)) * 0.5
-constexpr float gFront = 0.5f;                        // -6dB
-constexpr float gSurroundPrimary = 0.4359f;           // Primary surround contribution
-constexpr float gSurroundSecondary = 0.2449f;         // Cross-feed surround contribution
+constexpr float gFront = 0.7071067811865476f;  // -3dB
+constexpr float gCenter = 0.5f;                // -6dB
+constexpr float gSurroundPrimary = 0.5f;       // Primary surround contribution (-6dB)
+constexpr float gSurroundSecondary = 0.25f;    // Cross-feed surround contribution (-12dB)
 } // namespace Gains
 
 // Timing constants
