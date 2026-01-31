@@ -6,6 +6,7 @@ extern "C" {
 #endif
 void toggleNativeMacOSFullscreen(SDL_Window* window);
 bool isNativeMacOSFullscreenActive(SDL_Window* window);
+bool isRunningUnderRosetta();
 #ifdef __cplusplus
 }
 #endif
