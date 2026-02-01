@@ -31,7 +31,7 @@
 #endif
 
 #if defined(__ANDROID__) || defined(__IOS__)
-#include "port/mobile/MobileImpl.h"
+#include "ship/port/mobile/MobileImpl.h"
 #endif
 
 #ifdef ENABLE_OPENGL
