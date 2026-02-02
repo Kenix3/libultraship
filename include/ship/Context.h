@@ -86,8 +86,6 @@ class Context {
     Context() = default;
 
   private:
-    static std::weak_ptr<Context> mContext;
-
     std::shared_ptr<spdlog::logger> mLogger;
     std::shared_ptr<Config> mConfig;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;

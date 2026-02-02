@@ -24,10 +24,18 @@
 #endif
 
 namespace Ship {
-std::weak_ptr<Context> Context::mContext;
+
+// Global raw pointer singleton - never deleted (lives for program lifetime)
+static Context* sRawContextInstance = nullptr;
+// The shared_ptr that keeps it alive
+static std::shared_ptr<Context>* sSharedPtrStorage = nullptr;
 
 std::shared_ptr<Context> Context::GetInstance() {
-    return mContext.lock();
+    if (!sRawContextInstance) {
+        return nullptr;
+    }
+    // Return the stored shared_ptr by value
+    return *sSharedPtrStorage;
 }
 
 Context::~Context() {
@@ -52,33 +60,31 @@ Context::CreateInstance(const std::string name, const std::string shortName, con
                         const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
                         uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window,
                         std::shared_ptr<ControlDeck> controlDeck) {
-    if (mContext.expired()) {
-        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
-        mContext = shared;
-        if (shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window, controlDeck)) {
-            return shared;
+    if (!sRawContextInstance) {
+        // Allocate on heap and never delete
+        sSharedPtrStorage = new std::shared_ptr<Context>(std::make_shared<Context>(name, shortName, configFilePath));
+        sRawContextInstance = sSharedPtrStorage->get();
+        if (sRawContextInstance->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window, controlDeck)) {
+            return *sSharedPtrStorage;
         } else {
             SPDLOG_ERROR("Failed to initialize");
+            delete sSharedPtrStorage;
+            sSharedPtrStorage = nullptr;
+            sRawContextInstance = nullptr;
             return nullptr;
-        };
+        }
     }
-
-    SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
-
-    return GetInstance();
+    return *sSharedPtrStorage;
 }
 
 std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string name, const std::string shortName,
                                                               const std::string configFilePath) {
-    if (mContext.expired()) {
-        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
-        mContext = shared;
-        return shared;
+    if (!sRawContextInstance) {
+        // Allocate on heap and never delete
+        sSharedPtrStorage = new std::shared_ptr<Context>(std::make_shared<Context>(name, shortName, configFilePath));
+        sRawContextInstance = sSharedPtrStorage->get();
     }
-
-    SPDLOG_DEBUG("Trying to create an uninitialized context when it already exists. Returning existing.");
-
-    return GetInstance();
+    return *sSharedPtrStorage;
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
