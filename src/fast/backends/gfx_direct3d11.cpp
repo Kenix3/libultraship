@@ -302,7 +302,11 @@ void GfxRenderingAPIDX11::LoadShader(struct ShaderProgram* new_prg) {
     mShaderProgram = (struct ShaderProgramD3D11*)new_prg;
 }
 
-struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
+void GfxRenderingAPIDX11::ClearShaderCache() {
+    mShaderProgramPool.clear();
+}
+
+struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1, const char* display_list) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
@@ -342,7 +346,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
         throw hr;
     }
 
-    struct ShaderProgramD3D11* prg = &mShaderProgramPool[std::make_pair(shader_id0, shader_id1)];
+    struct ShaderProgramD3D11* prg = &mShaderProgramPool[ShaderProgramKey{ shader_id0, shader_id1, display_list }];
 
     ThrowIfFailed(mDevice->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr,
                                               prg->vertex_shader.GetAddressOf()));
@@ -429,6 +433,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
 
     prg->shader_id0 = shader_id0;
     prg->shader_id1 = shader_id1;
+    prg->display_list = display_list;
     prg->numInputs = cc_features.numInputs;
     prg->numFloats = numFloats;
     prg->usedTextures[0] = cc_features.usedTextures[0];
@@ -441,8 +446,8 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     return (struct ShaderProgram*)(mShaderProgram = prg);
 }
 
-struct ShaderProgram* GfxRenderingAPIDX11::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
-    auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
+struct ShaderProgram* GfxRenderingAPIDX11::LookupShader(uint64_t shader_id0, uint32_t shader_id1, const char* display_list) {
+    auto it = mShaderProgramPool.find(ShaderProgramKey{ shader_id0, shader_id1, display_list });
     return it == mShaderProgramPool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }
 

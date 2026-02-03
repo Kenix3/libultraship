@@ -17,10 +17,13 @@
 #undef FALSE
 #include <ship/config/ConsoleVariable.h>
 #include "fast/backends/gfx_metal_shader.h"
+#include "fast/backends/gfx_rendering_api.h"
 #include <prism/processor.h>
 #include <ship/resource/ResourceManager.h>
 #include "spdlog/spdlog.h"
 #include "fast/interpreter.h"
+#include "fast/Fast3dWindow.h"
+#include <ship/utils/StrHash64.h>
 // MARK: - String Helpers
 
 #define RAND_NOISE                                                                                                  \
@@ -184,6 +187,14 @@ prism::ContextTypes* get_vertex_index() {
     return new prism::ContextTypes{ vertex_index };
 }
 
+prism::ContextTypes* calculate_crc(prism::ContextTypes* _, prism::ContextTypes* str) {
+    auto interpreter = static_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetInterpreterWeak().lock().get();
+    auto path = std::get<std::string>(*str);
+    interpreter->RegisterShaderAwareDisplayList(path.c_str());
+    uint32_t crc = CRC32(path.c_str());
+    return new prism::ContextTypes{ static_cast<int>(crc) };
+}
+
 std::optional<std::string> metal_include_fs(const std::string& path) {
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -206,6 +217,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     vertex_descriptor = MTL::VertexDescriptor::vertexDescriptor();
     vertex_index = 0;
     raw_numFloats = 0;
+    int32_t crc = cc_features.display_list == nullptr ? 0 : CRC32(cc_features.display_list);
 
     prism::Processor processor;
     prism::ContextItems context = {
@@ -224,6 +236,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "SHADER_1", SHADER_1 },
         { "SHADER_COMBINED", SHADER_COMBINED },
         { "SHADER_NOISE", SHADER_NOISE },
+        { "FILTER_THREE_POINT", Fast::FILTER_THREE_POINT },
         { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
         { "o_alpha", cc_features.opt_alpha },
         { "o_fog", cc_features.opt_fog },
@@ -246,14 +259,22 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "get_vertex_index", (InvokeFunc)get_vertex_index },
         { "append_formula", (InvokeFunc)p_append_formula },
         { "update_floats", (InvokeFunc)update_raw_floats },
+        { "OTR", (InvokeFunc)calculate_crc },
+        { "DisplayList", crc }
     };
     processor.populate(context);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        "shaders/metal/default.shader.metal", true, init));
+    std::string fallback = "shaders/metal/default.shader.metal";
+    std::string path = cc_features.display_list == nullptr ? fallback : std::string(cc_features.display_list) + ".shader.metal";
+
+    auto res = Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init);
+
+    if (res == nullptr) {
+        res = Ship::Context::GetInstance()->GetResourceManager()->LoadResource(fallback, true, init);
+    }
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default metal shader, missing f3d.o2r?");
